@@ -3,6 +3,8 @@
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -10,6 +12,9 @@ from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+
+client_router = APIRouter()
+server_router = APIRouter()
 
 # Track pending video generations that wait for images
 # Format: {scenario_id: {"image_ids": set, "prompt": str, "agent_id": str, "department_id": str, "sid": str, "trace_id": str, "video_id": str}}
@@ -211,3 +216,16 @@ async def scenario_tool_image_internal(data: dict[str, Any]) -> None:
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}
     await _scenario_tool_image_impl(sid, payload)
+
+
+# FastAPI endpoints for OpenAPI documentation
+@client_router.post("/image", response_model=dict[str, bool])
+async def scenario_tool_image_api(request: ImageToolPayload) -> dict[str, bool]:
+    """Client-to-server event: Generate an image from scenario generation tool."""
+    return {"success": True}
+
+
+@server_router.post("/image_complete", response_model=dict[str, bool])
+async def image_tool_complete_api(request: ImageToolCompletePayload) -> dict[str, bool]:
+    """Server-to-client event: Image tool completed successfully."""
+    return {"success": True}

@@ -3,6 +3,7 @@
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_internal_sio, get_pool, sio
@@ -11,6 +12,9 @@ from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+
+client_router = APIRouter()
+server_router = APIRouter()
 
 
 class ProblemStatementToolPayload(BaseModel):
@@ -172,3 +176,16 @@ async def scenario_tool_problem_statement_internal(data: dict[str, Any]) -> None
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}
     await _scenario_tool_problem_statement_impl(sid, payload)
+
+
+# FastAPI endpoint for OpenAPI documentation
+@client_router.post("/statement", response_model=dict[str, bool])
+async def scenario_tool_problem_statement_api(request: ProblemStatementToolPayload) -> dict[str, bool]:
+    """Client-to-server event: Create a problem statement from scenario generation tool."""
+    return {"success": True}
+
+
+@server_router.post("/statement_complete", response_model=dict[str, bool])
+async def problem_statement_tool_complete_api(request: ProblemStatementToolCompletePayload) -> dict[str, bool]:
+    """Server-to-client event: Problem statement tool completed successfully."""
+    return {"success": True}

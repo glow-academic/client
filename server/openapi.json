@@ -9754,6 +9754,2848 @@
         ]
       }
     },
+    "/socket/v3/connection_confirmed": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Connection Confirmed Api",
+        "description": "No-op API endpoint for connection_confirmed WebSocket event.",
+        "operationId": "connection_confirmed_api_socket_v3_connection_confirmed_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionConfirmedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Connection Confirmed Api Socket V3 Connection Confirmed Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_join": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Join Api",
+        "description": "No-op API endpoint for simulation_join WebSocket event.",
+        "operationId": "simulation_join_api_socket_v3_simulation_join_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationJoinPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Join Api Socket V3 Simulation Join Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_joined": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Joined Api",
+        "description": "No-op API endpoint for simulation_joined WebSocket event.",
+        "operationId": "simulation_joined_api_socket_v3_simulation_joined_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationJoinedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Joined Api Socket V3 Simulation Joined Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_leave": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Leave Api",
+        "description": "No-op API endpoint for simulation_leave WebSocket event.",
+        "operationId": "simulation_leave_api_socket_v3_simulation_leave_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationLeavePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Leave Api Socket V3 Simulation Leave Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_send": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text Send Api",
+        "description": "No-op API endpoint for simulation_text_send WebSocket event.",
+        "operationId": "simulation_text_send_api_socket_v3_simulation_text_send_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendSimulationMessagePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text Send Api Socket V3 Simulation Text Send Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_send_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text Send Error Api",
+        "description": "No-op API endpoint for simulation_text_send_error WebSocket event.",
+        "operationId": "simulation_text_send_error_api_socket_v3_simulation_text_send_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendSimulationMessageErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text Send Error Api Socket V3 Simulation Text Send Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/hint_generation_progress": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Hint Generation Progress Api",
+        "description": "No-op API endpoint for hint_generation_progress WebSocket event.",
+        "operationId": "hint_generation_progress_api_socket_v3_hint_generation_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HintGenerationProgressPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Hint Generation Progress Api Socket V3 Hint Generation Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_new_message": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation New Message Api",
+        "description": "No-op API endpoint for simulation_new_message WebSocket event.",
+        "operationId": "simulation_new_message_api_socket_v3_simulation_new_message_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationNewMessagePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation New Message Api Socket V3 Simulation New Message Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_message_token": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Message Token Api",
+        "description": "No-op API endpoint for simulation_message_token WebSocket event.",
+        "operationId": "simulation_message_token_api_socket_v3_simulation_message_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationMessageTokenPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Message Token Api Socket V3 Simulation Message Token Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_message_complete": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Message Complete Api",
+        "description": "No-op API endpoint for simulation_message_complete WebSocket event.",
+        "operationId": "simulation_message_complete_api_socket_v3_simulation_message_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationMessageCompletePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Message Complete Api Socket V3 Simulation Message Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_message_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Message Error Api",
+        "description": "No-op API endpoint for simulation_message_error WebSocket event.",
+        "operationId": "simulation_message_error_api_socket_v3_simulation_message_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationMessageErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Message Error Api Socket V3 Simulation Message Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_message_cancelled": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Message Cancelled Api",
+        "description": "No-op API endpoint for simulation_message_cancelled WebSocket event.",
+        "operationId": "simulation_message_cancelled_api_socket_v3_simulation_message_cancelled_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationMessageCancelledPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Message Cancelled Api Socket V3 Simulation Message Cancelled Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/message_sent": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Message Sent Api",
+        "description": "No-op API endpoint for message_sent WebSocket event.",
+        "operationId": "message_sent_api_socket_v3_message_sent_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageSentPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Message Sent Api Socket V3 Message Sent Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_start": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text Start Api",
+        "description": "No-op API endpoint for simulation_text_start WebSocket event.",
+        "operationId": "simulation_text_start_api_socket_v3_simulation_text_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartSimulationPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text Start Api Socket V3 Simulation Text Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_started": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Started Api",
+        "description": "No-op API endpoint for simulation_started WebSocket event.",
+        "operationId": "simulation_started_api_socket_v3_simulation_started_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationStartedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Started Api Socket V3 Simulation Started Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_start_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text Start Error Api",
+        "description": "No-op API endpoint for simulation_text_start_error WebSocket event.",
+        "operationId": "simulation_text_start_error_api_socket_v3_simulation_text_start_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartSimulationErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text Start Error Api Socket V3 Simulation Text Start Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_practice": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text Practice Api",
+        "description": "No-op API endpoint for simulation_text_practice WebSocket event.",
+        "operationId": "simulation_text_practice_api_socket_v3_simulation_text_practice_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePracticeScenarioPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text Practice Api Socket V3 Simulation Text Practice Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_practice_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text Practice Error Api",
+        "description": "No-op API endpoint for simulation_text_practice_error WebSocket event.",
+        "operationId": "simulation_text_practice_error_api_socket_v3_simulation_text_practice_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePracticeScenarioErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text Practice Error Api Socket V3 Simulation Text Practice Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_stop": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text Stop Api",
+        "description": "No-op API endpoint for simulation_text_stop WebSocket event.",
+        "operationId": "simulation_text_stop_api_socket_v3_simulation_text_stop_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopSimulationPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text Stop Api Socket V3 Simulation Text Stop Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_stopped": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Stopped Api",
+        "description": "No-op API endpoint for simulation_stopped WebSocket event.",
+        "operationId": "simulation_stopped_api_socket_v3_simulation_stopped_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationStoppedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Stopped Api Socket V3 Simulation Stopped Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_stop_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text Stop Error Api",
+        "description": "No-op API endpoint for simulation_text_stop_error WebSocket event.",
+        "operationId": "simulation_text_stop_error_api_socket_v3_simulation_text_stop_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopSimulationErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text Stop Error Api Socket V3 Simulation Text Stop Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_next": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text Next Api",
+        "description": "No-op API endpoint for simulation_text_next WebSocket event.",
+        "operationId": "simulation_text_next_api_socket_v3_simulation_text_next_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContinueSimulationPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text Next Api Socket V3 Simulation Text Next Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_next_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text Next Error Api",
+        "description": "No-op API endpoint for simulation_text_next_error WebSocket event.",
+        "operationId": "simulation_text_next_error_api_socket_v3_simulation_text_next_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContinueSimulationErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text Next Error Api Socket V3 Simulation Text Next Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_grading_progress": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Grading Progress Api",
+        "description": "No-op API endpoint for simulation_grading_progress WebSocket event.",
+        "operationId": "simulation_grading_progress_api_socket_v3_simulation_grading_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationGradingProgressPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Grading Progress Api Socket V3 Simulation Grading Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_continued": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Continued Api",
+        "description": "No-op API endpoint for simulation_continued WebSocket event.",
+        "operationId": "simulation_continued_api_socket_v3_simulation_continued_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationContinuedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Continued Api Socket V3 Simulation Continued Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/end_all_started": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "End All Started Api",
+        "description": "No-op API endpoint for end_all_started WebSocket event.",
+        "operationId": "end_all_started_api_socket_v3_end_all_started_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndAllStartedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response End All Started Api Socket V3 End All Started Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/end_chat_started": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "End Chat Started Api",
+        "description": "No-op API endpoint for end_chat_started WebSocket event.",
+        "operationId": "end_chat_started_api_socket_v3_end_chat_started_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndChatStartedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response End Chat Started Api Socket V3 End Chat Started Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/end_all_completed": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "End All Completed Api",
+        "description": "No-op API endpoint for end_all_completed WebSocket event.",
+        "operationId": "end_all_completed_api_socket_v3_end_all_completed_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndAllCompletedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response End All Completed Api Socket V3 End All Completed Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_end": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text End Api",
+        "description": "No-op API endpoint for simulation_text_end WebSocket event.",
+        "operationId": "simulation_text_end_api_socket_v3_simulation_text_end_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationTextEndPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text End Api Socket V3 Simulation Text End Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_text_ended": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Text Ended Api",
+        "description": "No-op API endpoint for simulation_text_ended WebSocket event.",
+        "operationId": "simulation_text_ended_api_socket_v3_simulation_text_ended_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatStoppedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Text Ended Api Socket V3 Simulation Text Ended Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_start": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice Start Api",
+        "description": "No-op API endpoint for simulation_voice_start WebSocket event.",
+        "operationId": "simulation_voice_start_api_socket_v3_simulation_voice_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartVoicePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Start Api Socket V3 Simulation Voice Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_start_response": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice Start Response Api",
+        "description": "No-op API endpoint for simulation_voice_start_response WebSocket event.",
+        "operationId": "simulation_voice_start_response_api_socket_v3_simulation_voice_start_response_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartVoiceResponsePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Start Response Api Socket V3 Simulation Voice Start Response Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_start_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice Start Error Api",
+        "description": "No-op API endpoint for simulation_voice_start_error WebSocket event.",
+        "operationId": "simulation_voice_start_error_api_socket_v3_simulation_voice_start_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartVoiceErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Start Error Api Socket V3 Simulation Voice Start Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_stop": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice Stop Api",
+        "description": "No-op API endpoint for simulation_voice_stop WebSocket event.",
+        "operationId": "simulation_voice_stop_api_socket_v3_simulation_voice_stop_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopVoicePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Stop Api Socket V3 Simulation Voice Stop Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_stop_response": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice Stop Response Api",
+        "description": "No-op API endpoint for simulation_voice_stop_response WebSocket event.",
+        "operationId": "simulation_voice_stop_response_api_socket_v3_simulation_voice_stop_response_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopVoiceResponsePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Stop Response Api Socket V3 Simulation Voice Stop Response Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_stop_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice Stop Error Api",
+        "description": "No-op API endpoint for simulation_voice_stop_error WebSocket event.",
+        "operationId": "simulation_voice_stop_error_api_socket_v3_simulation_voice_stop_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopVoiceErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Stop Error Api Socket V3 Simulation Voice Stop Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_debug_info": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice Debug Info Api",
+        "description": "No-op API endpoint for simulation_voice_debug_info WebSocket event.",
+        "operationId": "simulation_voice_debug_info_api_socket_v3_simulation_voice_debug_info_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceDebugInfoPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Debug Info Api Socket V3 Simulation Voice Debug Info Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_user_text": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice User Text Api",
+        "description": "No-op API endpoint for simulation_voice_user_text WebSocket event.",
+        "operationId": "simulation_voice_user_text_api_socket_v3_simulation_voice_user_text_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserMessagePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Text Api Socket V3 Simulation Voice User Text Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_user_text_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice User Text Error Api",
+        "description": "No-op API endpoint for simulation_voice_user_text_error WebSocket event.",
+        "operationId": "simulation_voice_user_text_error_api_socket_v3_simulation_voice_user_text_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserMessageErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Text Error Api Socket V3 Simulation Voice User Text Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_user_delta": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice User Delta Api",
+        "description": "No-op API endpoint for simulation_voice_user_delta WebSocket event.",
+        "operationId": "simulation_voice_user_delta_api_socket_v3_simulation_voice_user_delta_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserDeltaPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Delta Api Socket V3 Simulation Voice User Delta Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_user_delta_emit": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice User Delta Emit Api",
+        "description": "No-op API endpoint for simulation_voice_user_delta_emit WebSocket event.",
+        "operationId": "simulation_voice_user_delta_emit_api_socket_v3_simulation_voice_user_delta_emit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserDeltaPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Delta Emit Api Socket V3 Simulation Voice User Delta Emit Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_user_transcript": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice User Transcript Api",
+        "description": "No-op API endpoint for simulation_voice_user_transcript WebSocket event.",
+        "operationId": "simulation_voice_user_transcript_api_socket_v3_simulation_voice_user_transcript_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserTranscriptPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Transcript Api Socket V3 Simulation Voice User Transcript Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_user_transcript_emit": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice User Transcript Emit Api",
+        "description": "No-op API endpoint for simulation_voice_user_transcript_emit WebSocket event.",
+        "operationId": "simulation_voice_user_transcript_emit_api_socket_v3_simulation_voice_user_transcript_emit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserTranscriptPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Transcript Emit Api Socket V3 Simulation Voice User Transcript Emit Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_user_start": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice User Start Api",
+        "description": "No-op API endpoint for simulation_voice_user_start WebSocket event.",
+        "operationId": "simulation_voice_user_start_api_socket_v3_simulation_voice_user_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserStartPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Start Api Socket V3 Simulation Voice User Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_user_start_emit": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice User Start Emit Api",
+        "description": "No-op API endpoint for simulation_voice_user_start_emit WebSocket event.",
+        "operationId": "simulation_voice_user_start_emit_api_socket_v3_simulation_voice_user_start_emit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserStartPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Start Emit Api Socket V3 Simulation Voice User Start Emit Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_user_speech": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice User Speech Api",
+        "description": "No-op API endpoint for simulation_voice_user_speech WebSocket event.",
+        "operationId": "simulation_voice_user_speech_api_socket_v3_simulation_voice_user_speech_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserSpeechPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Speech Api Socket V3 Simulation Voice User Speech Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_assistant_interrupted": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice Assistant Interrupted Api",
+        "description": "No-op API endpoint for simulation_voice_assistant_interrupted WebSocket event.",
+        "operationId": "simulation_voice_assistant_interrupted_api_socket_v3_simulation_voice_assistant_interrupted_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceInterruptedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Assistant Interrupted Api Socket V3 Simulation Voice Assistant Interrupted Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_assistant_delta": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice Assistant Delta Api",
+        "description": "No-op API endpoint for simulation_voice_assistant_delta WebSocket event.",
+        "operationId": "simulation_voice_assistant_delta_api_socket_v3_simulation_voice_assistant_delta_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceToolCallDeltaPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Assistant Delta Api Socket V3 Simulation Voice Assistant Delta Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/voice_tool_call_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Voice Tool Call Error Api",
+        "description": "No-op API endpoint for voice_tool_call_error WebSocket event.",
+        "operationId": "voice_tool_call_error_api_socket_v3_voice_tool_call_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceToolCallErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Voice Tool Call Error Api Socket V3 Voice Tool Call Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/simulation_voice_assistant_done": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Simulation Voice Assistant Done Api",
+        "description": "No-op API endpoint for simulation_voice_assistant_done WebSocket event.",
+        "operationId": "simulation_voice_assistant_done_api_socket_v3_simulation_voice_assistant_done_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceToolCallDonePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Assistant Done Api Socket V3 Simulation Voice Assistant Done Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/generate_scenario": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Generate Scenario Api",
+        "description": "No-op API endpoint for generate_scenario WebSocket event.",
+        "operationId": "generate_scenario_api_socket_v3_generate_scenario_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateScenarioAIPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Generate Scenario Api Socket V3 Generate Scenario Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/scenario_generation_progress": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Scenario Generation Progress Api",
+        "description": "No-op API endpoint for scenario_generation_progress WebSocket event.",
+        "operationId": "scenario_generation_progress_api_socket_v3_scenario_generation_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioGenerationProgressPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Scenario Generation Progress Api Socket V3 Scenario Generation Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/scenario_generation_complete": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Scenario Generation Complete Api",
+        "description": "No-op API endpoint for scenario_generation_complete WebSocket event.",
+        "operationId": "scenario_generation_complete_api_socket_v3_scenario_generation_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioGenerationCompletePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Scenario Generation Complete Api Socket V3 Scenario Generation Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/scenario_generation_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Scenario Generation Error Api",
+        "description": "No-op API endpoint for scenario_generation_error WebSocket event.",
+        "operationId": "scenario_generation_error_api_socket_v3_scenario_generation_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioGenerationErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Scenario Generation Error Api Socket V3 Scenario Generation Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/document_generate": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Document Generate Api",
+        "description": "No-op API endpoint for document_generate WebSocket event.",
+        "operationId": "document_generate_api_socket_v3_document_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateDocumentTemplatePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Document Generate Api Socket V3 Document Generate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/document_template_generation_progress": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Document Template Generation Progress Api",
+        "description": "No-op API endpoint for document_template_generation_progress WebSocket event.",
+        "operationId": "document_template_generation_progress_api_socket_v3_document_template_generation_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentTemplateGenerationProgressPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Document Template Generation Progress Api Socket V3 Document Template Generation Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/document_template_generation_complete": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Document Template Generation Complete Api",
+        "description": "No-op API endpoint for document_template_generation_complete WebSocket event.",
+        "operationId": "document_template_generation_complete_api_socket_v3_document_template_generation_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentTemplateGenerationCompletePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Document Template Generation Complete Api Socket V3 Document Template Generation Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
+    "/socket/v3/document_template_generation_error": {
+      "post": {
+        "tags": [
+          "socket"
+        ],
+        "summary": "Document Template Generation Error Api",
+        "description": "No-op API endpoint for document_template_generation_error WebSocket event.",
+        "operationId": "document_template_generation_error_api_socket_v3_document_template_generation_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentTemplateGenerationErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Document Template Generation Error Api Socket V3 Document Template Generation Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket"
+        ]
+      }
+    },
     "/": {
       "get": {
         "summary": "Root Info",
@@ -11797,6 +14639,24 @@
         ],
         "title": "ChatItem"
       },
+      "ChatStoppedPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "chat_type": {
+            "type": "string",
+            "title": "Chat Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "chat_type"
+        ],
+        "title": "ChatStoppedPayload"
+      },
       "ClassifyUploadRequest": {
         "properties": {
           "profileId": {
@@ -12751,6 +15611,48 @@
         "title": "CohortsListResponse",
         "description": "Response for cohorts list."
       },
+      "ConnectionConfirmedPayload": {
+        "properties": {
+          "sid": {
+            "type": "string",
+            "title": "Sid"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "guest_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guest Id"
+          },
+          "server_time": {
+            "type": "number",
+            "title": "Server Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sid",
+          "profile_id",
+          "guest_id",
+          "server_time"
+        ],
+        "title": "ConnectionConfirmedPayload"
+      },
       "ContinuationOption": {
         "properties": {
           "scenarioId": {
@@ -12827,6 +15729,79 @@
         ],
         "title": "ContinuationOption",
         "description": "A single continuation option for a scenario."
+      },
+      "ContinueSimulationErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "ContinueSimulationErrorPayload"
+      },
+      "ContinueSimulationPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "end_all": {
+            "type": "boolean",
+            "title": "End All",
+            "default": false
+          },
+          "previous_chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chat Id"
+          },
+          "previous_chat_map": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chat Map"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "attempt_id"
+        ],
+        "title": "ContinueSimulationPayload"
       },
       "CreateAgentRequest": {
         "properties": {
@@ -14192,6 +17167,98 @@
         ],
         "title": "CreatePersonaResponse",
         "description": "Response from create persona."
+      },
+      "CreatePracticeScenarioErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "CreatePracticeScenarioErrorPayload"
+      },
+      "CreatePracticeScenarioPayload": {
+        "properties": {
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Item Ids",
+            "default": []
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "infinite_mode": {
+            "type": "boolean",
+            "title": "Infinite Mode",
+            "default": false
+          },
+          "infinite_time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Time Limit"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          }
+        },
+        "type": "object",
+        "title": "CreatePracticeScenarioPayload"
       },
       "CreatePromptRequest": {
         "properties": {
@@ -17047,6 +20114,127 @@
         "title": "DocumentItem",
         "description": "Document item for list view."
       },
+      "DocumentTemplateGenerationCompletePayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "template_html": {
+            "type": "string",
+            "title": "Template Html"
+          },
+          "template_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Template Schema"
+          },
+          "upload_id": {
+            "type": "string",
+            "title": "Upload Id"
+          },
+          "template_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Mapping"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "template_html",
+          "template_schema",
+          "upload_id"
+        ],
+        "title": "DocumentTemplateGenerationCompletePayload"
+      },
+      "DocumentTemplateGenerationErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DocumentTemplateGenerationErrorPayload"
+      },
+      "DocumentTemplateGenerationProgressPayload": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "DocumentTemplateGenerationProgressPayload"
+      },
       "DocumentsListRequest": {
         "properties": {
           "profileId": {
@@ -17647,6 +20835,122 @@
           "totalPossiblePoints"
         ],
         "title": "DynamicRubric"
+      },
+      "EndAllCompletedPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "completed_chat_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Chat Ids"
+          },
+          "next_chat_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Chat Ids"
+          },
+          "all_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "All Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "chat_id"
+        ],
+        "title": "EndAllCompletedPayload"
+      },
+      "EndAllStartedPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "attempt_id"
+        ],
+        "title": "EndAllStartedPayload"
+      },
+      "EndChatStartedPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "attempt_id"
+        ],
+        "title": "EndChatStartedPayload"
       },
       "EphemeralKeyRequest": {
         "properties": {
@@ -18814,6 +22118,223 @@
         "title": "GenerateCertificateRequest",
         "description": "Request to generate certificate."
       },
+      "GenerateDocumentTemplatePayload": {
+        "properties": {
+          "departmentId": {
+            "type": "string",
+            "title": "Departmentid"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          },
+          "documentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentid"
+          },
+          "documentName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentname"
+          },
+          "documentDescription": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentdescription"
+          },
+          "fieldIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fieldids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "departmentId"
+        ],
+        "title": "GenerateDocumentTemplatePayload"
+      },
+      "GenerateScenarioAIPayload": {
+        "properties": {
+          "departmentId": {
+            "type": "string",
+            "title": "Departmentid"
+          },
+          "scenarioAgentId": {
+            "type": "string",
+            "title": "Scenarioagentid"
+          },
+          "imageAgentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imageagentid"
+          },
+          "videoAgentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Videoagentid"
+          },
+          "personaIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaids"
+          },
+          "documentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentids"
+          },
+          "fieldIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fieldids"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          },
+          "scenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarioid"
+          },
+          "objectivesMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectivesmin"
+          },
+          "objectivesMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectivesmax"
+          },
+          "imagesEnabled": {
+            "type": "boolean",
+            "title": "Imagesenabled",
+            "default": false
+          },
+          "videoEnabled": {
+            "type": "boolean",
+            "title": "Videoenabled",
+            "default": false
+          },
+          "objectivesEnabled": {
+            "type": "boolean",
+            "title": "Objectivesenabled",
+            "default": false
+          },
+          "questionsEnabled": {
+            "type": "boolean",
+            "title": "Questionsenabled",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "departmentId",
+          "scenarioAgentId"
+        ],
+        "title": "GenerateScenarioAIPayload"
+      },
       "GradeItem": {
         "properties": {
           "id": {
@@ -19204,7 +22725,110 @@
         "title": "HealthKPIs",
         "description": "All health KPIs."
       },
-      "HintItem": {
+      "HintGenerationProgressPayload": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "hint_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint Ids"
+          },
+          "hints_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints Count"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HintItem-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "chat_id",
+          "message_id"
+        ],
+        "title": "HintGenerationProgressPayload"
+      },
+      "HintItem-Input": {
+        "properties": {
+          "idx": {
+            "type": "integer",
+            "title": "Idx"
+          },
+          "hint": {
+            "type": "string",
+            "title": "Hint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "idx",
+          "hint"
+        ],
+        "title": "HintItem",
+        "description": "Individual hint item with index and text."
+      },
+      "HintItem-Output": {
         "properties": {
           "simulationMessageId": {
             "type": "string",
@@ -19240,7 +22864,7 @@
           },
           "hints": {
             "items": {
-              "$ref": "#/components/schemas/HintItem"
+              "$ref": "#/components/schemas/HintItem-Output"
             },
             "type": "array",
             "title": "Hints"
@@ -20916,6 +24540,34 @@
         ],
         "title": "MessageItem"
       },
+      "MessageSentPayload": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "chat_id",
+          "message",
+          "created_at"
+        ],
+        "title": "MessageSentPayload"
+      },
       "Method": {
         "type": "string",
         "enum": [
@@ -22342,6 +25994,32 @@
         ],
         "title": "PersonaSearchResult",
         "description": "Persona search result."
+      },
+      "PersonaToolContext": {
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "title": "Persona Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_id",
+          "profile_id"
+        ],
+        "title": "PersonaToolContext",
+        "description": "Context for a persona tool call."
       },
       "PersonaTrendData": {
         "properties": {
@@ -27276,6 +30954,110 @@
         "title": "ScenarioFact",
         "description": "Scenario fact."
       },
+      "ScenarioGenerationCompletePayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "ScenarioGenerationCompletePayload"
+      },
+      "ScenarioGenerationErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "ScenarioGenerationErrorPayload"
+      },
+      "ScenarioGenerationProgressPayload": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "tool_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Name"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "ScenarioGenerationProgressPayload"
+      },
       "ScenarioInRequest": {
         "properties": {
           "scenario_id": {
@@ -28134,6 +31916,53 @@
         "title": "SelectAttributesResponse",
         "description": "Response with selected scenario attributes."
       },
+      "SendSimulationMessageErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "SendSimulationMessageErrorPayload"
+      },
+      "SendSimulationMessagePayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "is_retry": {
+            "type": "boolean",
+            "title": "Is Retry",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "SendSimulationMessagePayload"
+      },
       "SettingsActiveRequest": {
         "properties": {
           "profileId": {
@@ -28901,6 +32730,63 @@
         "title": "SimulationContextItem",
         "description": "Simplified simulation item for profile context."
       },
+      "SimulationContinuedPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "completed_chat_id": {
+            "type": "string",
+            "title": "Completed Chat Id"
+          },
+          "next_chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Chat Id"
+          },
+          "is_attempt_finished": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Attempt Finished"
+          },
+          "simulation_grade_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Grade Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "completed_chat_id",
+          "next_chat_id"
+        ],
+        "title": "SimulationContinuedPayload"
+      },
       "SimulationDetailRequest": {
         "properties": {
           "simulationId": {
@@ -28968,6 +32854,211 @@
         ],
         "title": "SimulationFilter",
         "description": "Simulation filter types."
+      },
+      "SimulationGradingProgressPayload": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "rubric_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Name"
+          },
+          "standards_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards Count"
+          },
+          "grade_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Id"
+          },
+          "total_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "standards_graded": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards Graded"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "standard_group_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Name"
+          },
+          "standard_group_short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Short Name"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "feedback_preview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Preview"
+          },
+          "completed_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Count"
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
+          },
+          "summary_preview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary Preview"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "chat_id"
+        ],
+        "title": "SimulationGradingProgressPayload"
       },
       "SimulationInCohort": {
         "properties": {
@@ -29042,6 +33133,60 @@
         "title": "SimulationInCohort",
         "description": "Simulation with cohort-specific statistics."
       },
+      "SimulationJoinPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "chat_type": {
+            "type": "string",
+            "title": "Chat Type",
+            "default": "assistant"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "SimulationJoinPayload"
+      },
+      "SimulationJoinedPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "chat_type": {
+            "type": "string",
+            "title": "Chat Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "chat_type"
+        ],
+        "title": "SimulationJoinedPayload"
+      },
+      "SimulationLeavePayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "chat_type": {
+            "type": "string",
+            "title": "Chat Type",
+            "default": "assistant"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "SimulationLeavePayload"
+      },
       "SimulationMappingItem": {
         "properties": {
           "name": {
@@ -29085,6 +33230,147 @@
         ],
         "title": "SimulationMappingItem",
         "description": "Simulation mapping item."
+      },
+      "SimulationMessageCancelledPayload": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "final_content": {
+            "type": "string",
+            "title": "Final Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "chat_id",
+          "final_content"
+        ],
+        "title": "SimulationMessageCancelledPayload"
+      },
+      "SimulationMessageCompletePayload": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "final_content": {
+            "type": "string",
+            "title": "Final Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "chat_id",
+          "final_content"
+        ],
+        "title": "SimulationMessageCompletePayload"
+      },
+      "SimulationMessageErrorPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "error"
+        ],
+        "title": "SimulationMessageErrorPayload"
+      },
+      "SimulationMessageTokenPayload": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "accumulated_content": {
+            "type": "string",
+            "title": "Accumulated Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "chat_id",
+          "token",
+          "accumulated_content"
+        ],
+        "title": "SimulationMessageTokenPayload"
+      },
+      "SimulationNewMessagePayload": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "chat_id",
+          "role",
+          "content",
+          "completed",
+          "created_at"
+        ],
+        "title": "SimulationNewMessagePayload"
       },
       "SimulationNewRequest": {
         "properties": {
@@ -29324,6 +33610,70 @@
         ],
         "title": "SimulationSearchResult",
         "description": "Simulation search result."
+      },
+      "SimulationStartedPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "attempt_id"
+        ],
+        "title": "SimulationStartedPayload"
+      },
+      "SimulationStoppedPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "success",
+          "message"
+        ],
+        "title": "SimulationStoppedPayload"
+      },
+      "SimulationTextEndPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "chat_type": {
+            "type": "string",
+            "title": "Chat Type",
+            "default": "assistant"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "SimulationTextEndPayload"
       },
       "SimulationsData": {
         "properties": {
@@ -30059,6 +34409,203 @@
         "title": "StandardMappingItem",
         "description": "Standard mapping item with points."
       },
+      "StartSimulationErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StartSimulationErrorPayload"
+      },
+      "StartSimulationPayload": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "infinite": {
+            "type": "boolean",
+            "title": "Infinite",
+            "default": false
+          },
+          "infinite_time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Time Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id"
+        ],
+        "title": "StartSimulationPayload"
+      },
+      "StartVoiceErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StartVoiceErrorPayload",
+        "description": "Server-to-client error payload."
+      },
+      "StartVoicePayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "StartVoicePayload",
+        "description": "Client-to-server payload for simulation_voice_start."
+      },
+      "StartVoiceResponsePayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "ephemeral_key": {
+            "type": "string",
+            "title": "Ephemeral Key"
+          },
+          "persona_tools": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Persona Tools"
+          },
+          "tool_context_map": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PersonaToolContext"
+            },
+            "type": "object",
+            "title": "Tool Context Map"
+          },
+          "instructions": {
+            "type": "string",
+            "title": "Instructions"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "voice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice"
+          },
+          "transcription_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transcription Model"
+          },
+          "transcription_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transcription Prompt"
+          },
+          "history": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "History",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "ephemeral_key",
+          "persona_tools",
+          "tool_context_map",
+          "instructions",
+          "model"
+        ],
+        "title": "StartVoiceResponsePayload",
+        "description": "Server-to-client response payload."
+      },
       "StopEvalRequest": {
         "properties": {
           "evalId": {
@@ -30106,6 +34653,89 @@
         ],
         "title": "StopEvalResponse",
         "description": "Response from stop eval."
+      },
+      "StopSimulationErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StopSimulationErrorPayload"
+      },
+      "StopSimulationPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "StopSimulationPayload"
+      },
+      "StopVoiceErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StopVoiceErrorPayload",
+        "description": "Server-to-client error payload."
+      },
+      "StopVoicePayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "StopVoicePayload",
+        "description": "Client-to-server payload for simulation_voice_stop."
+      },
+      "StopVoiceResponsePayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StopVoiceResponsePayload",
+        "description": "Server-to-client response payload."
       },
       "StudentSimReportRequest": {
         "properties": {
@@ -33034,6 +37664,293 @@
           "showImage"
         ],
         "title": "VideoItem"
+      },
+      "VoiceDebugInfoPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "content"
+        ],
+        "title": "VoiceDebugInfoPayload",
+        "description": "Client-to-server payload for simulation_voice_debug_info."
+      },
+      "VoiceInterruptedPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "VoiceInterruptedPayload",
+        "description": "Client-to-server payload for simulation_voice_assistant_interrupted."
+      },
+      "VoiceToolCallDeltaPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "call_id": {
+            "type": "string",
+            "title": "Call Id"
+          },
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "delta": {
+            "type": "string",
+            "title": "Delta"
+          },
+          "response_id": {
+            "type": "string",
+            "title": "Response Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "call_id",
+          "item_id",
+          "delta",
+          "response_id"
+        ],
+        "title": "VoiceToolCallDeltaPayload",
+        "description": "Client-to-server payload for simulation_voice_assistant_delta."
+      },
+      "VoiceToolCallDonePayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "call_id": {
+            "type": "string",
+            "title": "Call Id"
+          },
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "arguments": {
+            "type": "string",
+            "title": "Arguments"
+          },
+          "response_id": {
+            "type": "string",
+            "title": "Response Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "call_id",
+          "item_id",
+          "arguments",
+          "response_id"
+        ],
+        "title": "VoiceToolCallDonePayload",
+        "description": "Client-to-server payload for simulation_voice_assistant_done."
+      },
+      "VoiceToolCallErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "VoiceToolCallErrorPayload",
+        "description": "Server-to-client error payload."
+      },
+      "VoiceUserDeltaPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "delta": {
+            "type": "string",
+            "title": "Delta"
+          },
+          "content_index": {
+            "type": "integer",
+            "title": "Content Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "item_id",
+          "delta",
+          "content_index"
+        ],
+        "title": "VoiceUserDeltaPayload",
+        "description": "Client-to-server payload for simulation_voice_user_delta."
+      },
+      "VoiceUserMessageErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "VoiceUserMessageErrorPayload",
+        "description": "Server-to-client error payload."
+      },
+      "VoiceUserMessagePayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "transcription_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transcription Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "message"
+        ],
+        "title": "VoiceUserMessagePayload",
+        "description": "Client-to-server payload for simulation_voice_user_text."
+      },
+      "VoiceUserSpeechPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "response_id": {
+            "type": "string",
+            "title": "Response Id"
+          },
+          "conversation_id": {
+            "type": "string",
+            "title": "Conversation Id"
+          },
+          "usage": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "event_id",
+          "response_id",
+          "conversation_id",
+          "usage"
+        ],
+        "title": "VoiceUserSpeechPayload",
+        "description": "Client-to-server payload for simulation_voice_user_speech."
+      },
+      "VoiceUserStartPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "item_id"
+        ],
+        "title": "VoiceUserStartPayload",
+        "description": "Client-to-server payload for simulation_voice_user_start."
+      },
+      "VoiceUserTranscriptPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "item_id": {
+            "type": "string",
+            "title": "Item Id"
+          },
+          "transcript": {
+            "type": "string",
+            "title": "Transcript"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "item_id",
+          "transcript"
+        ],
+        "title": "VoiceUserTranscriptPayload",
+        "description": "Client-to-server payload for simulation_voice_user_transcript."
       },
       "app__api__v3__agents__detail__AgentDetailResponse": {
         "properties": {

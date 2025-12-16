@@ -1,13 +1,24 @@
-"""Simulation voice user WebSocket event handlers."""
+"""Voice user WebSocket event handlers."""
 
-# Import handlers so they register themselves via @sio.event decorators
-from app.socket.v3.simulations.voice.user.delta import \
-    simulation_voice_user_delta  # noqa: F401
-from app.socket.v3.simulations.voice.user.speech import \
-    simulation_voice_user_speech  # noqa: F401
-from app.socket.v3.simulations.voice.user.start import \
-    simulation_voice_user_start  # noqa: F401
-from app.socket.v3.simulations.voice.user.text import \
-    simulation_voice_user_text  # noqa: F401
-from app.socket.v3.simulations.voice.user.transcript import \
-    simulation_voice_user_transcript  # noqa: F401
+from fastapi import APIRouter
+
+from .delta import client_router as delta_client_router, server_router as delta_server_router
+from .speech import client_router as speech_client_router
+from .start import client_router as start_client_router, server_router as start_server_router
+from .text import client_router as text_client_router, server_router as text_server_router
+from .transcript import client_router as transcript_client_router, server_router as transcript_server_router
+
+client_router = APIRouter(prefix="/user", tags=["socket-client"])
+server_router = APIRouter(prefix="/user", tags=["socket-server"])
+
+client_router.include_router(start_client_router)
+client_router.include_router(delta_client_router)
+client_router.include_router(transcript_client_router)
+client_router.include_router(text_client_router)
+client_router.include_router(speech_client_router)
+
+server_router.include_router(start_server_router)
+server_router.include_router(delta_server_router)
+server_router.include_router(transcript_server_router)
+server_router.include_router(text_server_router)
+

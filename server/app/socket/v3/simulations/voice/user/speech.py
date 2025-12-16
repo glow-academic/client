@@ -3,8 +3,11 @@
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.main import _voice_message_ids, get_internal_sio, get_pool, sio
-from app.socket.v3.simulations.text.send import (SimulationRunCompletePayload,
+from app.socket.v3.simulations.text.send import (
+    SimulationRunCompletePayload,
                                                  simulation_run_complete)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -12,6 +15,9 @@ from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+
+client_router = APIRouter()
+server_router = APIRouter()
 
 
 # Pydantic models
@@ -408,3 +414,10 @@ async def simulation_voice_user_speech(sid: str, data: dict[str, Any]) -> None:
         await _simulation_voice_user_speech_impl(sid, validated)
     except ValidationError as e:
         logger.error(f"Validation error in simulation_voice_user_speech for {sid}: {e}")
+
+
+# FastAPI endpoint for OpenAPI documentation
+@client_router.post("/speech", response_model=dict[str, bool])
+async def simulation_voice_user_speech_api(request: VoiceUserSpeechPayload) -> dict[str, bool]:
+    """Client-to-server event: Send user speech audio in voice simulation."""
+    return {"success": True}

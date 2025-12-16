@@ -14,9 +14,13 @@ from app.socket.v3.simulations.text.send import (
 from app.utils.agents.tools.create_persona_tools import find_persona_by_name
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+
+client_router = APIRouter()
+server_router = APIRouter()
 
 
 # Pydantic models
@@ -429,3 +433,13 @@ async def simulation_voice_assistant_done(sid: str, data: dict[str, Any]) -> Non
             ),
             room=sid,
         )
+
+
+# FastAPI endpoint for OpenAPI documentation
+@client_router.post("/done", response_model=dict[str, bool])
+async def simulation_voice_assistant_done_api(request: VoiceToolCallDonePayload) -> dict[str, bool]:
+    """Client-to-server event: Signal that assistant tool call is done in voice simulation."""
+    return {"success": True}
+
+
+@server_router.post("/done", response_model=dict[str, bool])

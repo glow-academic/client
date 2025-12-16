@@ -4406,6 +4406,1106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/connection_confirmed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Connection Confirmed Api
+         * @description No-op API endpoint for connection_confirmed WebSocket event.
+         */
+        post: operations["connection_confirmed_api_socket_v3_connection_confirmed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Join Api
+         * @description No-op API endpoint for simulation_join WebSocket event.
+         */
+        post: operations["simulation_join_api_socket_v3_simulation_join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_joined": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Joined Api
+         * @description No-op API endpoint for simulation_joined WebSocket event.
+         */
+        post: operations["simulation_joined_api_socket_v3_simulation_joined_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Leave Api
+         * @description No-op API endpoint for simulation_leave WebSocket event.
+         */
+        post: operations["simulation_leave_api_socket_v3_simulation_leave_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text Send Api
+         * @description No-op API endpoint for simulation_text_send WebSocket event.
+         */
+        post: operations["simulation_text_send_api_socket_v3_simulation_text_send_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_send_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text Send Error Api
+         * @description No-op API endpoint for simulation_text_send_error WebSocket event.
+         */
+        post: operations["simulation_text_send_error_api_socket_v3_simulation_text_send_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/hint_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hint Generation Progress Api
+         * @description No-op API endpoint for hint_generation_progress WebSocket event.
+         */
+        post: operations["hint_generation_progress_api_socket_v3_hint_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_new_message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation New Message Api
+         * @description No-op API endpoint for simulation_new_message WebSocket event.
+         */
+        post: operations["simulation_new_message_api_socket_v3_simulation_new_message_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_message_token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Message Token Api
+         * @description No-op API endpoint for simulation_message_token WebSocket event.
+         */
+        post: operations["simulation_message_token_api_socket_v3_simulation_message_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_message_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Message Complete Api
+         * @description No-op API endpoint for simulation_message_complete WebSocket event.
+         */
+        post: operations["simulation_message_complete_api_socket_v3_simulation_message_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_message_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Message Error Api
+         * @description No-op API endpoint for simulation_message_error WebSocket event.
+         */
+        post: operations["simulation_message_error_api_socket_v3_simulation_message_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_message_cancelled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Message Cancelled Api
+         * @description No-op API endpoint for simulation_message_cancelled WebSocket event.
+         */
+        post: operations["simulation_message_cancelled_api_socket_v3_simulation_message_cancelled_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/message_sent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Message Sent Api
+         * @description No-op API endpoint for message_sent WebSocket event.
+         */
+        post: operations["message_sent_api_socket_v3_message_sent_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text Start Api
+         * @description No-op API endpoint for simulation_text_start WebSocket event.
+         */
+        post: operations["simulation_text_start_api_socket_v3_simulation_text_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Started Api
+         * @description No-op API endpoint for simulation_started WebSocket event.
+         */
+        post: operations["simulation_started_api_socket_v3_simulation_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_start_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text Start Error Api
+         * @description No-op API endpoint for simulation_text_start_error WebSocket event.
+         */
+        post: operations["simulation_text_start_error_api_socket_v3_simulation_text_start_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_practice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text Practice Api
+         * @description No-op API endpoint for simulation_text_practice WebSocket event.
+         */
+        post: operations["simulation_text_practice_api_socket_v3_simulation_text_practice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_practice_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text Practice Error Api
+         * @description No-op API endpoint for simulation_text_practice_error WebSocket event.
+         */
+        post: operations["simulation_text_practice_error_api_socket_v3_simulation_text_practice_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text Stop Api
+         * @description No-op API endpoint for simulation_text_stop WebSocket event.
+         */
+        post: operations["simulation_text_stop_api_socket_v3_simulation_text_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_stopped": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Stopped Api
+         * @description No-op API endpoint for simulation_stopped WebSocket event.
+         */
+        post: operations["simulation_stopped_api_socket_v3_simulation_stopped_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_stop_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text Stop Error Api
+         * @description No-op API endpoint for simulation_text_stop_error WebSocket event.
+         */
+        post: operations["simulation_text_stop_error_api_socket_v3_simulation_text_stop_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text Next Api
+         * @description No-op API endpoint for simulation_text_next WebSocket event.
+         */
+        post: operations["simulation_text_next_api_socket_v3_simulation_text_next_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_next_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text Next Error Api
+         * @description No-op API endpoint for simulation_text_next_error WebSocket event.
+         */
+        post: operations["simulation_text_next_error_api_socket_v3_simulation_text_next_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_grading_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Grading Progress Api
+         * @description No-op API endpoint for simulation_grading_progress WebSocket event.
+         */
+        post: operations["simulation_grading_progress_api_socket_v3_simulation_grading_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_continued": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Continued Api
+         * @description No-op API endpoint for simulation_continued WebSocket event.
+         */
+        post: operations["simulation_continued_api_socket_v3_simulation_continued_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/end_all_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End All Started Api
+         * @description No-op API endpoint for end_all_started WebSocket event.
+         */
+        post: operations["end_all_started_api_socket_v3_end_all_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/end_chat_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Chat Started Api
+         * @description No-op API endpoint for end_chat_started WebSocket event.
+         */
+        post: operations["end_chat_started_api_socket_v3_end_chat_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/end_all_completed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End All Completed Api
+         * @description No-op API endpoint for end_all_completed WebSocket event.
+         */
+        post: operations["end_all_completed_api_socket_v3_end_all_completed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text End Api
+         * @description No-op API endpoint for simulation_text_end WebSocket event.
+         */
+        post: operations["simulation_text_end_api_socket_v3_simulation_text_end_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_text_ended": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Text Ended Api
+         * @description No-op API endpoint for simulation_text_ended WebSocket event.
+         */
+        post: operations["simulation_text_ended_api_socket_v3_simulation_text_ended_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Start Api
+         * @description No-op API endpoint for simulation_voice_start WebSocket event.
+         */
+        post: operations["simulation_voice_start_api_socket_v3_simulation_voice_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_start_response": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Start Response Api
+         * @description No-op API endpoint for simulation_voice_start_response WebSocket event.
+         */
+        post: operations["simulation_voice_start_response_api_socket_v3_simulation_voice_start_response_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_start_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Start Error Api
+         * @description No-op API endpoint for simulation_voice_start_error WebSocket event.
+         */
+        post: operations["simulation_voice_start_error_api_socket_v3_simulation_voice_start_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Stop Api
+         * @description No-op API endpoint for simulation_voice_stop WebSocket event.
+         */
+        post: operations["simulation_voice_stop_api_socket_v3_simulation_voice_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_stop_response": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Stop Response Api
+         * @description No-op API endpoint for simulation_voice_stop_response WebSocket event.
+         */
+        post: operations["simulation_voice_stop_response_api_socket_v3_simulation_voice_stop_response_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_stop_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Stop Error Api
+         * @description No-op API endpoint for simulation_voice_stop_error WebSocket event.
+         */
+        post: operations["simulation_voice_stop_error_api_socket_v3_simulation_voice_stop_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_debug_info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Debug Info Api
+         * @description No-op API endpoint for simulation_voice_debug_info WebSocket event.
+         */
+        post: operations["simulation_voice_debug_info_api_socket_v3_simulation_voice_debug_info_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_user_text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Text Api
+         * @description No-op API endpoint for simulation_voice_user_text WebSocket event.
+         */
+        post: operations["simulation_voice_user_text_api_socket_v3_simulation_voice_user_text_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_user_text_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Text Error Api
+         * @description No-op API endpoint for simulation_voice_user_text_error WebSocket event.
+         */
+        post: operations["simulation_voice_user_text_error_api_socket_v3_simulation_voice_user_text_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_user_delta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Delta Api
+         * @description No-op API endpoint for simulation_voice_user_delta WebSocket event.
+         */
+        post: operations["simulation_voice_user_delta_api_socket_v3_simulation_voice_user_delta_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_user_delta_emit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Delta Emit Api
+         * @description No-op API endpoint for simulation_voice_user_delta_emit WebSocket event.
+         */
+        post: operations["simulation_voice_user_delta_emit_api_socket_v3_simulation_voice_user_delta_emit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_user_transcript": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Transcript Api
+         * @description No-op API endpoint for simulation_voice_user_transcript WebSocket event.
+         */
+        post: operations["simulation_voice_user_transcript_api_socket_v3_simulation_voice_user_transcript_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_user_transcript_emit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Transcript Emit Api
+         * @description No-op API endpoint for simulation_voice_user_transcript_emit WebSocket event.
+         */
+        post: operations["simulation_voice_user_transcript_emit_api_socket_v3_simulation_voice_user_transcript_emit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_user_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Start Api
+         * @description No-op API endpoint for simulation_voice_user_start WebSocket event.
+         */
+        post: operations["simulation_voice_user_start_api_socket_v3_simulation_voice_user_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_user_start_emit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Start Emit Api
+         * @description No-op API endpoint for simulation_voice_user_start_emit WebSocket event.
+         */
+        post: operations["simulation_voice_user_start_emit_api_socket_v3_simulation_voice_user_start_emit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_user_speech": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Speech Api
+         * @description No-op API endpoint for simulation_voice_user_speech WebSocket event.
+         */
+        post: operations["simulation_voice_user_speech_api_socket_v3_simulation_voice_user_speech_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_assistant_interrupted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Assistant Interrupted Api
+         * @description No-op API endpoint for simulation_voice_assistant_interrupted WebSocket event.
+         */
+        post: operations["simulation_voice_assistant_interrupted_api_socket_v3_simulation_voice_assistant_interrupted_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_assistant_delta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Assistant Delta Api
+         * @description No-op API endpoint for simulation_voice_assistant_delta WebSocket event.
+         */
+        post: operations["simulation_voice_assistant_delta_api_socket_v3_simulation_voice_assistant_delta_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/voice_tool_call_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Voice Tool Call Error Api
+         * @description No-op API endpoint for voice_tool_call_error WebSocket event.
+         */
+        post: operations["voice_tool_call_error_api_socket_v3_voice_tool_call_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/simulation_voice_assistant_done": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Assistant Done Api
+         * @description No-op API endpoint for simulation_voice_assistant_done WebSocket event.
+         */
+        post: operations["simulation_voice_assistant_done_api_socket_v3_simulation_voice_assistant_done_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/generate_scenario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Scenario Api
+         * @description No-op API endpoint for generate_scenario WebSocket event.
+         */
+        post: operations["generate_scenario_api_socket_v3_generate_scenario_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/scenario_generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scenario Generation Progress Api
+         * @description No-op API endpoint for scenario_generation_progress WebSocket event.
+         */
+        post: operations["scenario_generation_progress_api_socket_v3_scenario_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/scenario_generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scenario Generation Complete Api
+         * @description No-op API endpoint for scenario_generation_complete WebSocket event.
+         */
+        post: operations["scenario_generation_complete_api_socket_v3_scenario_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/scenario_generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scenario Generation Error Api
+         * @description No-op API endpoint for scenario_generation_error WebSocket event.
+         */
+        post: operations["scenario_generation_error_api_socket_v3_scenario_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/document_generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Document Generate Api
+         * @description No-op API endpoint for document_generate WebSocket event.
+         */
+        post: operations["document_generate_api_socket_v3_document_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -5179,6 +6279,13 @@ export interface components {
             /** Documentids */
             documentIds: string[];
         };
+        /** ChatStoppedPayload */
+        ChatStoppedPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Chat Type */
+            chat_type: string;
+        };
         /**
          * ClassifyUploadRequest
          * @description Request body for upload classification.
@@ -5603,6 +6710,17 @@ export interface components {
                 [key: string]: string;
             }[];
         };
+        /** ConnectionConfirmedPayload */
+        ConnectionConfirmedPayload: {
+            /** Sid */
+            sid: string;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Guest Id */
+            guest_id: string | null;
+            /** Server Time */
+            server_time: number;
+        };
         /**
          * ContinuationOption
          * @description A single continuation option for a scenario.
@@ -5624,6 +6742,31 @@ export interface components {
             percentage: number | null;
             /** Timetaken */
             timeTaken: number | null;
+        };
+        /** ContinueSimulationErrorPayload */
+        ContinueSimulationErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /** ContinueSimulationPayload */
+        ContinueSimulationPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Attempt Id */
+            attempt_id: string;
+            /**
+             * End All
+             * @default false
+             */
+            end_all: boolean;
+            /** Previous Chat Id */
+            previous_chat_id?: string | null;
+            /** Previous Chat Map */
+            previous_chat_map?: {
+                [key: string]: string | null;
+            } | null;
         };
         /** CreateAgentRequest */
         CreateAgentRequest: {
@@ -6164,6 +7307,36 @@ export interface components {
             personaId: string;
             /** Message */
             message: string;
+        };
+        /** CreatePracticeScenarioErrorPayload */
+        CreatePracticeScenarioErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /** CreatePracticeScenarioPayload */
+        CreatePracticeScenarioPayload: {
+            /** Persona Id */
+            persona_id?: string | null;
+            /**
+             * Parameter Item Ids
+             * @default []
+             */
+            parameter_item_ids: string[];
+            /** Department Id */
+            department_id?: string | null;
+            /**
+             * Infinite Mode
+             * @default false
+             */
+            infinite_mode: boolean;
+            /** Infinite Time Limit */
+            infinite_time_limit?: number | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
         };
         /**
          * CreatePromptRequest
@@ -7574,6 +8747,37 @@ export interface components {
             /** Totalpossiblepoints */
             totalPossiblePoints: number;
         };
+        /** EndAllCompletedPayload */
+        EndAllCompletedPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Completed Chat Ids */
+            completed_chat_ids?: string[] | null;
+            /** Next Chat Ids */
+            next_chat_ids?: (string | null)[] | null;
+            /** All Completed */
+            all_completed?: boolean | null;
+        };
+        /** EndAllStartedPayload */
+        EndAllStartedPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Attempt Id */
+            attempt_id: string;
+        };
+        /** EndChatStartedPayload */
+        EndChatStartedPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Attempt Id */
+            attempt_id: string;
+        };
         /**
          * EphemeralKeyRequest
          * @description Request to generate ephemeral key.
@@ -8063,6 +9267,66 @@ export interface components {
             /** Profileid */
             profileId: string;
         };
+        /** GenerateDocumentTemplatePayload */
+        GenerateDocumentTemplatePayload: {
+            /** Departmentid */
+            departmentId: string;
+            /** Profileid */
+            profileId?: string | null;
+            /** Documentid */
+            documentId?: string | null;
+            /** Documentname */
+            documentName?: string | null;
+            /** Documentdescription */
+            documentDescription?: string | null;
+            /** Fieldids */
+            fieldIds?: string[] | null;
+        };
+        /** GenerateScenarioAIPayload */
+        GenerateScenarioAIPayload: {
+            /** Departmentid */
+            departmentId: string;
+            /** Scenarioagentid */
+            scenarioAgentId: string;
+            /** Imageagentid */
+            imageAgentId?: string | null;
+            /** Videoagentid */
+            videoAgentId?: string | null;
+            /** Personaids */
+            personaIds?: string[] | null;
+            /** Documentids */
+            documentIds?: string[] | null;
+            /** Fieldids */
+            fieldIds?: string[] | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Scenarioid */
+            scenarioId?: string | null;
+            /** Objectivesmin */
+            objectivesMin?: number | null;
+            /** Objectivesmax */
+            objectivesMax?: number | null;
+            /**
+             * Imagesenabled
+             * @default false
+             */
+            imagesEnabled: boolean;
+            /**
+             * Videoenabled
+             * @default false
+             */
+            videoEnabled: boolean;
+            /**
+             * Objectivesenabled
+             * @default false
+             */
+            objectivesEnabled: boolean;
+            /**
+             * Questionsenabled
+             * @default false
+             */
+            questionsEnabled: boolean;
+        };
         /** GradeItem */
         GradeItem: {
             /** Id */
@@ -8203,8 +9467,37 @@ export interface components {
             database: components["schemas"]["HealthKPI"];
             authentication: components["schemas"]["HealthKPI"];
         };
+        /** HintGenerationProgressPayload */
+        HintGenerationProgressPayload: {
+            /** Type */
+            type: string;
+            /** Message */
+            message?: string | null;
+            /** Error */
+            error?: string | null;
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Hint Ids */
+            hint_ids?: string[] | null;
+            /** Hints Count */
+            hints_count?: number | null;
+            /** Hints */
+            hints?: components["schemas"]["HintItem-Input"][] | null;
+        };
+        /**
+         * HintItem
+         * @description Individual hint item with index and text.
+         */
+        "HintItem-Input": {
+            /** Idx */
+            idx: number;
+            /** Hint */
+            hint: string;
+        };
         /** HintItem */
-        HintItem: {
+        "HintItem-Output": {
             /** Simulationmessageid */
             simulationMessageId: string;
             /** Hint */
@@ -8219,7 +9512,7 @@ export interface components {
             /** Messageid */
             messageId: string;
             /** Hints */
-            hints: components["schemas"]["HintItem"][];
+            hints: components["schemas"]["HintItem-Output"][];
         };
         /**
          * HomeFilters
@@ -8835,6 +10128,17 @@ export interface components {
             /** Personaid */
             personaId?: string | null;
         };
+        /** MessageSentPayload */
+        MessageSentPayload: {
+            /** Message Id */
+            message_id: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Message */
+            message: string;
+            /** Created At */
+            created_at: string;
+        };
         /**
          * Method
          * @description Analytics computation methods.
@@ -9391,6 +10695,16 @@ export interface components {
             description: string | null;
             /** Score */
             score: number;
+        };
+        /**
+         * PersonaToolContext
+         * @description Context for a persona tool call.
+         */
+        PersonaToolContext: {
+            /** Persona Id */
+            persona_id: string;
+            /** Profile Id */
+            profile_id: string | null;
         };
         /**
          * PersonaTrendData
@@ -11137,6 +12451,35 @@ export interface components {
             /** Completedattempts */
             completedAttempts: number;
         };
+        /** ScenarioGenerationCompletePayload */
+        ScenarioGenerationCompletePayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /** ScenarioGenerationErrorPayload */
+        ScenarioGenerationErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /** ScenarioGenerationProgressPayload */
+        ScenarioGenerationProgressPayload: {
+            /** Type */
+            type: string;
+            /** Message */
+            message?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
         /**
          * ScenarioInRequest
          * @description Scenario in request format.
@@ -11433,6 +12776,25 @@ export interface components {
              */
             parameterItemIds: string[];
         };
+        /** SendSimulationMessageErrorPayload */
+        SendSimulationMessageErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /** SendSimulationMessagePayload */
+        SendSimulationMessagePayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message */
+            message?: string | null;
+            /**
+             * Is Retry
+             * @default false
+             */
+            is_retry: boolean;
+        };
         /**
          * SettingsActiveRequest
          * @description Request to get active settings.
@@ -11718,6 +13080,21 @@ export interface components {
             /** Practicesimulation */
             practiceSimulation: boolean;
         };
+        /** SimulationContinuedPayload */
+        SimulationContinuedPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Completed Chat Id */
+            completed_chat_id: string;
+            /** Next Chat Id */
+            next_chat_id: string | null;
+            /** Is Attempt Finished */
+            is_attempt_finished?: boolean | null;
+            /** Simulation Grade Id */
+            simulation_grade_id?: string | null;
+        };
         /**
          * SimulationDetailRequest
          * @description Request to get simulation details.
@@ -11752,6 +13129,47 @@ export interface components {
          * @enum {string}
          */
         SimulationFilter: "general" | "practice" | "archived";
+        /** SimulationGradingProgressPayload */
+        SimulationGradingProgressPayload: {
+            /** Type */
+            type: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Message */
+            message?: string | null;
+            /** Error */
+            error?: string | null;
+            /** Rubric Name */
+            rubric_name?: string | null;
+            /** Standards Count */
+            standards_count?: number | null;
+            /** Grade Id */
+            grade_id?: string | null;
+            /** Total Score */
+            total_score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Standards Graded */
+            standards_graded?: number | null;
+            /** Time Taken */
+            time_taken?: number | null;
+            /** Summary */
+            summary?: string | null;
+            /** Standard Group Name */
+            standard_group_name?: string | null;
+            /** Standard Group Short Name */
+            standard_group_short_name?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Feedback Preview */
+            feedback_preview?: string | null;
+            /** Completed Count */
+            completed_count?: number | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Summary Preview */
+            summary_preview?: string | null;
+        };
         /**
          * SimulationInCohort
          * @description Simulation with cohort-specific statistics.
@@ -11778,6 +13196,33 @@ export interface components {
             /** Can Remove */
             can_remove: boolean;
         };
+        /** SimulationJoinPayload */
+        SimulationJoinPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /**
+             * Chat Type
+             * @default assistant
+             */
+            chat_type: string;
+        };
+        /** SimulationJoinedPayload */
+        SimulationJoinedPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Chat Type */
+            chat_type: string;
+        };
+        /** SimulationLeavePayload */
+        SimulationLeavePayload: {
+            /** Chat Id */
+            chat_id: string;
+            /**
+             * Chat Type
+             * @default assistant
+             */
+            chat_type: string;
+        };
         /**
          * SimulationMappingItem
          * @description Simulation mapping item.
@@ -11791,6 +13236,59 @@ export interface components {
             time_limit?: number | null;
             /** Department Ids */
             department_ids?: string[] | null;
+        };
+        /** SimulationMessageCancelledPayload */
+        SimulationMessageCancelledPayload: {
+            /** Message Id */
+            message_id: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Final Content */
+            final_content: string;
+        };
+        /** SimulationMessageCompletePayload */
+        SimulationMessageCompletePayload: {
+            /** Message Id */
+            message_id: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Final Content */
+            final_content: string;
+        };
+        /** SimulationMessageErrorPayload */
+        SimulationMessageErrorPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Error */
+            error: string;
+        };
+        /** SimulationMessageTokenPayload */
+        SimulationMessageTokenPayload: {
+            /** Message Id */
+            message_id: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Token */
+            token: string;
+            /** Accumulated Content */
+            accumulated_content: string;
+        };
+        /** SimulationNewMessagePayload */
+        SimulationNewMessagePayload: {
+            /** Message Id */
+            message_id: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+            /** Completed */
+            completed: boolean;
+            /** Created At */
+            created_at: string;
+            /** Persona Id */
+            persona_id?: string | null;
         };
         /**
          * SimulationNewRequest
@@ -11896,6 +13394,34 @@ export interface components {
             created_at: string | null;
             /** Score */
             score: number;
+        };
+        /** SimulationStartedPayload */
+        SimulationStartedPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Attempt Id */
+            attempt_id: string;
+        };
+        /** SimulationStoppedPayload */
+        SimulationStoppedPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /** SimulationTextEndPayload */
+        SimulationTextEndPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /**
+             * Chat Type
+             * @default assistant
+             */
+            chat_type: string;
         };
         /**
          * SimulationsData
@@ -12192,6 +13718,84 @@ export interface components {
             /** Points */
             points: number;
         };
+        /** StartSimulationErrorPayload */
+        StartSimulationErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /** StartSimulationPayload */
+        StartSimulationPayload: {
+            /** Simulation Id */
+            simulation_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /**
+             * Infinite
+             * @default false
+             */
+            infinite: boolean;
+            /** Infinite Time Limit */
+            infinite_time_limit?: number | null;
+        };
+        /**
+         * StartVoiceErrorPayload
+         * @description Server-to-client error payload.
+         */
+        StartVoiceErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * StartVoicePayload
+         * @description Client-to-server payload for simulation_voice_start.
+         */
+        StartVoicePayload: {
+            /** Chat Id */
+            chat_id: string;
+        };
+        /**
+         * StartVoiceResponsePayload
+         * @description Server-to-client response payload.
+         */
+        StartVoiceResponsePayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Ephemeral Key */
+            ephemeral_key: string;
+            /** Persona Tools */
+            persona_tools: {
+                [key: string]: string;
+            }[];
+            /** Tool Context Map */
+            tool_context_map: {
+                [key: string]: components["schemas"]["PersonaToolContext"];
+            };
+            /** Instructions */
+            instructions: string;
+            /** Model */
+            model: string;
+            /** Voice */
+            voice?: string | null;
+            /** Transcription Model */
+            transcription_model?: string | null;
+            /** Transcription Prompt */
+            transcription_prompt?: string | null;
+            /**
+             * History
+             * @default []
+             */
+            history: {
+                [key: string]: unknown;
+            }[];
+        };
         /**
          * StopEvalRequest
          * @description Request to stop an eval.
@@ -12213,6 +13817,46 @@ export interface components {
             evalId: string;
             /** Stopped Count */
             stopped_count: number;
+            /** Message */
+            message: string;
+        };
+        /** StopSimulationErrorPayload */
+        StopSimulationErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /** StopSimulationPayload */
+        StopSimulationPayload: {
+            /** Chat Id */
+            chat_id: string;
+        };
+        /**
+         * StopVoiceErrorPayload
+         * @description Server-to-client error payload.
+         */
+        StopVoiceErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * StopVoicePayload
+         * @description Client-to-server payload for simulation_voice_stop.
+         */
+        StopVoicePayload: {
+            /** Chat Id */
+            chat_id: string;
+        };
+        /**
+         * StopVoiceResponsePayload
+         * @description Server-to-client response payload.
+         */
+        StopVoiceResponsePayload: {
+            /** Success */
+            success: boolean;
             /** Message */
             message: string;
         };
@@ -13257,6 +14901,144 @@ export interface components {
             questions: components["schemas"]["QuestionItem"][];
             /** Showimage */
             showImage: boolean;
+        };
+        /**
+         * VoiceDebugInfoPayload
+         * @description Client-to-server payload for simulation_voice_debug_info.
+         */
+        VoiceDebugInfoPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Content */
+            content: string;
+        };
+        /**
+         * VoiceInterruptedPayload
+         * @description Client-to-server payload for simulation_voice_assistant_interrupted.
+         */
+        VoiceInterruptedPayload: {
+            /** Chat Id */
+            chat_id: string;
+        };
+        /**
+         * VoiceToolCallDeltaPayload
+         * @description Client-to-server payload for simulation_voice_assistant_delta.
+         */
+        VoiceToolCallDeltaPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Call Id */
+            call_id: string;
+            /** Item Id */
+            item_id: string;
+            /** Delta */
+            delta: string;
+            /** Response Id */
+            response_id: string;
+        };
+        /**
+         * VoiceToolCallDonePayload
+         * @description Client-to-server payload for simulation_voice_assistant_done.
+         */
+        VoiceToolCallDonePayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Call Id */
+            call_id: string;
+            /** Item Id */
+            item_id: string;
+            /** Arguments */
+            arguments: string;
+            /** Response Id */
+            response_id: string;
+        };
+        /**
+         * VoiceToolCallErrorPayload
+         * @description Server-to-client error payload.
+         */
+        VoiceToolCallErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * VoiceUserDeltaPayload
+         * @description Client-to-server payload for simulation_voice_user_delta.
+         */
+        VoiceUserDeltaPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Item Id */
+            item_id: string;
+            /** Delta */
+            delta: string;
+            /** Content Index */
+            content_index: number;
+        };
+        /**
+         * VoiceUserMessageErrorPayload
+         * @description Server-to-client error payload.
+         */
+        VoiceUserMessageErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * VoiceUserMessagePayload
+         * @description Client-to-server payload for simulation_voice_user_text.
+         */
+        VoiceUserMessagePayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message */
+            message: string;
+            /** Transcription Id */
+            transcription_id?: string | null;
+        };
+        /**
+         * VoiceUserSpeechPayload
+         * @description Client-to-server payload for simulation_voice_user_speech.
+         */
+        VoiceUserSpeechPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Event Id */
+            event_id: string;
+            /** Response Id */
+            response_id: string;
+            /** Conversation Id */
+            conversation_id: string;
+            /** Usage */
+            usage: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * VoiceUserStartPayload
+         * @description Client-to-server payload for simulation_voice_user_start.
+         */
+        VoiceUserStartPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Item Id */
+            item_id: string;
+        };
+        /**
+         * VoiceUserTranscriptPayload
+         * @description Client-to-server payload for simulation_voice_user_transcript.
+         */
+        VoiceUserTranscriptPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Item Id */
+            item_id: string;
+            /** Transcript */
+            transcript: string;
+            /** Upload Id */
+            upload_id?: string | null;
         };
         /** AgentDetailResponse */
         app__api__v3__agents__detail__AgentDetailResponse: {
@@ -24262,6 +26044,1931 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    connection_confirmed_api_socket_v3_connection_confirmed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectionConfirmedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_join_api_socket_v3_simulation_join_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationJoinPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_joined_api_socket_v3_simulation_joined_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationJoinedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_leave_api_socket_v3_simulation_leave_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationLeavePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_send_api_socket_v3_simulation_text_send_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendSimulationMessagePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_send_error_api_socket_v3_simulation_text_send_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendSimulationMessageErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    hint_generation_progress_api_socket_v3_hint_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HintGenerationProgressPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_new_message_api_socket_v3_simulation_new_message_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationNewMessagePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_message_token_api_socket_v3_simulation_message_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationMessageTokenPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_message_complete_api_socket_v3_simulation_message_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationMessageCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_message_error_api_socket_v3_simulation_message_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationMessageErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_message_cancelled_api_socket_v3_simulation_message_cancelled_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationMessageCancelledPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_sent_api_socket_v3_message_sent_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageSentPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_start_api_socket_v3_simulation_text_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartSimulationPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_started_api_socket_v3_simulation_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationStartedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_start_error_api_socket_v3_simulation_text_start_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartSimulationErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_practice_api_socket_v3_simulation_text_practice_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePracticeScenarioPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_practice_error_api_socket_v3_simulation_text_practice_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePracticeScenarioErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_stop_api_socket_v3_simulation_text_stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StopSimulationPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_stopped_api_socket_v3_simulation_stopped_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationStoppedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_stop_error_api_socket_v3_simulation_text_stop_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StopSimulationErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_next_api_socket_v3_simulation_text_next_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContinueSimulationPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_next_error_api_socket_v3_simulation_text_next_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContinueSimulationErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_grading_progress_api_socket_v3_simulation_grading_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationGradingProgressPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_continued_api_socket_v3_simulation_continued_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationContinuedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_all_started_api_socket_v3_end_all_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndAllStartedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_chat_started_api_socket_v3_end_chat_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndChatStartedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_all_completed_api_socket_v3_end_all_completed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndAllCompletedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_end_api_socket_v3_simulation_text_end_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationTextEndPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_text_ended_api_socket_v3_simulation_text_ended_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatStoppedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_start_api_socket_v3_simulation_voice_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartVoicePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_start_response_api_socket_v3_simulation_voice_start_response_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartVoiceResponsePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_start_error_api_socket_v3_simulation_voice_start_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartVoiceErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_stop_api_socket_v3_simulation_voice_stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StopVoicePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_stop_response_api_socket_v3_simulation_voice_stop_response_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StopVoiceResponsePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_stop_error_api_socket_v3_simulation_voice_stop_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StopVoiceErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_debug_info_api_socket_v3_simulation_voice_debug_info_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceDebugInfoPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_user_text_api_socket_v3_simulation_voice_user_text_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserMessagePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_user_text_error_api_socket_v3_simulation_voice_user_text_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserMessageErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_user_delta_api_socket_v3_simulation_voice_user_delta_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserDeltaPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_user_delta_emit_api_socket_v3_simulation_voice_user_delta_emit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserDeltaPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_user_transcript_api_socket_v3_simulation_voice_user_transcript_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserTranscriptPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_user_transcript_emit_api_socket_v3_simulation_voice_user_transcript_emit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserTranscriptPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_user_start_api_socket_v3_simulation_voice_user_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_user_start_emit_api_socket_v3_simulation_voice_user_start_emit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_user_speech_api_socket_v3_simulation_voice_user_speech_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserSpeechPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_assistant_interrupted_api_socket_v3_simulation_voice_assistant_interrupted_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceInterruptedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_assistant_delta_api_socket_v3_simulation_voice_assistant_delta_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceToolCallDeltaPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    voice_tool_call_error_api_socket_v3_voice_tool_call_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceToolCallErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_assistant_done_api_socket_v3_simulation_voice_assistant_done_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceToolCallDonePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_scenario_api_socket_v3_generate_scenario_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateScenarioAIPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scenario_generation_progress_api_socket_v3_scenario_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioGenerationProgressPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scenario_generation_complete_api_socket_v3_scenario_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioGenerationCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scenario_generation_error_api_socket_v3_scenario_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioGenerationErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_generate_api_socket_v3_document_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateDocumentTemplatePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
                 };
             };
             /** @description Validation Error */

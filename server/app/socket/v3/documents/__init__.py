@@ -1,4 +1,12 @@
 """Document WebSocket event handlers."""
 
-# Import handlers so they register themselves via @sio.event decorators
-from app.socket.v3.documents.generate import document_generate  # noqa: F401
+from fastapi import APIRouter
+
+from .generate import client_router as generate_client_router, server_router as generate_server_router
+
+client_router = APIRouter(prefix="/documents", tags=["socket-client"])
+server_router = APIRouter(prefix="/documents", tags=["socket-server"])
+
+client_router.include_router(generate_client_router)
+server_router.include_router(generate_server_router)
+

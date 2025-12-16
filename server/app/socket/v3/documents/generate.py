@@ -7,25 +7,24 @@ from typing import Any
 
 from agents import Runner, trace
 from agents.items import TResponseInputItem
-from pydantic import BaseModel, ValidationError
-
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.agents.build_document_agent import build_document_agent
 from app.utils.agents.tools.create_document_tools import (
-    create_document_tools,
-    document_progress,
-    document_results,
-)
+    create_document_tools, document_progress, document_results)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.debug_info import DebugContext
-from app.utils.document.format_document_template_context import (
-    format_document_template_context,
-)
+from app.utils.document.format_document_template_context import \
+    format_document_template_context
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+
+client_router = APIRouter()
+server_router = APIRouter()
 
 
 # Pydantic models for server-to-client events
@@ -481,3 +480,28 @@ async def document_generate(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+
+
+# FastAPI endpoint for OpenAPI documentation
+@client_router.post("/generate", response_model=dict[str, bool])
+async def document_generate_api(request: GenerateDocumentTemplatePayload) -> dict[str, bool]:
+    """Client-to-server event: Generate a document template using AI."""
+    return {"success": True}
+
+
+@server_router.post("/generation_progress", response_model=dict[str, bool])
+async def document_template_generation_progress_api(request: DocumentTemplateGenerationProgressPayload) -> dict[str, bool]:
+    """Server-to-client event: Progress update for document template generation."""
+    return {"success": True}
+
+
+@server_router.post("/generation_complete", response_model=dict[str, bool])
+async def document_template_generation_complete_api(request: DocumentTemplateGenerationCompletePayload) -> dict[str, bool]:
+    """Server-to-client event: Document template generation completed successfully."""
+    return {"success": True}
+
+
+@server_router.post("/generation_error", response_model=dict[str, bool])
+async def document_template_generation_error_api(request: DocumentTemplateGenerationErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred during document template generation."""
+    return {"success": True}

@@ -1,15 +1,19 @@
 """Scenario WebSocket event handlers."""
 
-# Import handlers so they register themselves via @sio.event decorators
-from app.socket.v3.scenarios.generate import generate_scenario  # noqa: F401
-from app.socket.v3.scenarios.regenerate import \
-    regenerate_scenario  # noqa: F401
-# Import tool handlers
-from app.socket.v3.scenarios.tools.document import \
-    scenario_tool_document  # noqa: F401
-from app.socket.v3.scenarios.tools.image import \
-    scenario_tool_image  # noqa: F401
-from app.socket.v3.scenarios.tools.objectives import \
-    scenario_tool_objectives  # noqa: F401
-from app.socket.v3.scenarios.tools.statement import \
-    scenario_tool_problem_statement  # noqa: F401
+from fastapi import APIRouter
+
+from .generate import client_router as generate_client_router, server_router as generate_server_router
+from .regenerate import client_router as regenerate_client_router, server_router as regenerate_server_router
+from .tools import client_router as tools_client_router, server_router as tools_server_router
+
+client_router = APIRouter(prefix="/scenarios", tags=["socket-client"])
+server_router = APIRouter(prefix="/scenarios", tags=["socket-server"])
+
+client_router.include_router(generate_client_router)
+client_router.include_router(regenerate_client_router)
+client_router.include_router(tools_client_router)
+
+server_router.include_router(generate_server_router)
+server_router.include_router(regenerate_server_router)
+server_router.include_router(tools_server_router)
+

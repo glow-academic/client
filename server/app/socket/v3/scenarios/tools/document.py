@@ -3,14 +3,17 @@
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, ValidationError
-
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+
+client_router = APIRouter()
+server_router = APIRouter()
 
 
 class DocumentToolPayload(BaseModel):
@@ -169,3 +172,22 @@ async def scenario_tool_document_internal(data: dict[str, Any]) -> None:
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}
     await _scenario_tool_document_impl(sid, payload)
+
+
+# FastAPI endpoints for OpenAPI documentation
+@client_router.post("/document", response_model=dict[str, bool])
+async def scenario_tool_document_api(request: DocumentToolPayload) -> dict[str, bool]:
+    """Client-to-server event: Create a dynamic document from scenario generation tool."""
+    return {"success": True}
+
+
+@server_router.post("/document_complete", response_model=dict[str, bool])
+async def document_tool_complete_api(request: DocumentToolCompletePayload) -> dict[str, bool]:
+    """Server-to-client event: Document tool completed successfully."""
+    return {"success": True}
+
+
+@server_router.post("/document_error", response_model=dict[str, bool])
+async def document_tool_error_api(request: DocumentToolErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred in document tool."""
+    return {"success": True}

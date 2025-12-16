@@ -3,14 +3,21 @@
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+
 from app.main import get_pool, sio
-from app.socket.v3.simulations.text.start import (StartSimulationPayload,
-                                                  _simulation_text_start_impl)
+from app.socket.v3.simulations.text.start import (
+    StartSimulationPayload,
+    _simulation_text_start_impl,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
+
+client_router = APIRouter()
+server_router = APIRouter()
 
 
 # Pydantic models for server-to-client events
@@ -274,3 +281,13 @@ async def simulation_text_practice(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+
+
+# FastAPI endpoint for OpenAPI documentation
+@client_router.post("/practice", response_model=dict[str, bool])
+async def simulation_text_practice_api(request: CreatePracticeScenarioPayload) -> dict[str, bool]:
+    """Client-to-server event: Create and start a practice scenario simulation."""
+    return {"success": True}
+
+
+@server_router.post("/practice_error", response_model=dict[str, bool])
