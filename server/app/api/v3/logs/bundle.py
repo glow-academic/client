@@ -64,23 +64,11 @@ class MetricsDataPoint(BaseModel):
     sample_count: int
 
 
-class FeedbackItem(BaseModel):
-    """Feedback item."""
-
-    feedback_id: int
-    type: str
-    message: str
-    created_at: str
-    author_name: str
-    author_profile_id: str
-
-
 class LogsBundleResponse(BaseModel):
     """Logs bundle response."""
 
     health_kpis: HealthKPIs
     metrics: list[MetricsDataPoint]
-    feedback: list[FeedbackItem]
 
 
 def _parse_json_strings_recursive(obj: Any) -> Any:
@@ -105,7 +93,7 @@ async def get_logs_bundle(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> LogsBundleResponse:
-    """Get logs bundle with health KPIs, metrics, and feedback."""
+    """Get logs bundle with health KPIs and metrics."""
     tags = ["logs"]  # From router tags
 
     # Check for cache bypass header (for hard refresh)
@@ -176,20 +164,10 @@ async def get_logs_bundle(
             for item in (metrics_data if isinstance(metrics_data, list) else [])
         ]
 
-        # Parse feedback
-        feedback_data = parsed_result.get("feedback", [])
-        if isinstance(feedback_data, str):
-            feedback_data = json.loads(feedback_data)
-        feedback = [
-            FeedbackItem(**item)
-            for item in (feedback_data if isinstance(feedback_data, list) else [])
-        ]
-
         # Build response
         response_data = LogsBundleResponse(
             health_kpis=health_kpis,
             metrics=metrics,
-            feedback=feedback,
         )
 
         # Cache response

@@ -1,5 +1,5 @@
--- Logs bundle query - returns KPIs, metrics, and feedback in single JSONB response
--- Returns: JSONB object with health KPIs, metrics time series, and feedback list
+-- Logs bundle query - returns KPIs and metrics in single JSONB response
+-- Returns: JSONB object with health KPIs and metrics time series
 
 WITH
 -- Current health status for each service (latest record per service)
@@ -100,21 +100,6 @@ metrics_trend AS (
     WHERE ts >= NOW() - INTERVAL '7 days'
     GROUP BY date_hour
     ORDER BY date_hour
-),
-
--- Recent feedback (last 50 items)
-recent_feedback AS (
-    SELECT 
-        f.id as feedback_id,
-        f.type,
-        COALESCE(f.message, '') as message,
-        f.created_at,
-        COALESCE(p.first_name || ' ' || p.last_name, 'Anonymous') as author_name,
-        COALESCE(f.profile_id::text, '') as author_profile_id
-    FROM feedback f
-    LEFT JOIN profiles p ON p.id = f.profile_id
-    ORDER BY f.created_at DESC
-    LIMIT 50
 ),
 
 -- Build health KPIs with current status and trends
@@ -224,19 +209,6 @@ SELECT jsonb_build_object(
             ) ORDER BY mt.date_hour
         ), '[]'::jsonb)
         FROM metrics_trend mt
-    ),
-    'feedback', (
-        SELECT COALESCE(jsonb_agg(
-            jsonb_build_object(
-                'feedback_id', rf.feedback_id,
-                'type', rf.type,
-                'message', rf.message,
-                'created_at', rf.created_at,
-                'author_name', rf.author_name,
-                'author_profile_id', rf.author_profile_id
-            ) ORDER BY rf.created_at DESC
-        ), '[]'::jsonb)
-        FROM recent_feedback rf
     )
 ) as result;
 
