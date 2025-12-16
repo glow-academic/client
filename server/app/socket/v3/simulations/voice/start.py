@@ -740,5 +740,12 @@ async def simulation_voice_start_api(request: StartVoicePayload) -> dict[str, bo
 
 
 @server_router.post("/start_response", response_model=dict[str, bool])
+async def simulation_voice_start_response_api(request: StartVoiceResponsePayload) -> dict[str, bool]:
+    """Server-to-client event: Voice simulation start response."""
+    return {"success": True}
+
 
 @server_router.post("/start_error", response_model=dict[str, bool])
+async def simulation_voice_start_error_api(request: StartVoiceErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while starting voice simulation."""
+    return {"success": True}

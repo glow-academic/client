@@ -8,10 +8,14 @@ from app.main import IMAGE_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+
+client_router = APIRouter()
+server_router = APIRouter()
 
 # Try to import litellm, fall back gracefully if not available
 try:
@@ -488,3 +492,10 @@ async def generate_image_internal(data: dict[str, Any]) -> None:
         if isinstance(data, dict) and "image_id" in data:
             image_id = data["image_id"]
             await _emit_image_error(image_id, room, f"Invalid request: {str(e)}")
+
+
+# FastAPI endpoint for OpenAPI documentation
+@client_router.post("/generate", response_model=dict[str, bool])
+async def generate_image_api(request: GenerateImagePayload) -> dict[str, bool]:
+    """Client-to-server event: Generate an image."""
+    return {"success": True}

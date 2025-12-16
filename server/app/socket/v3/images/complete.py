@@ -7,10 +7,14 @@ from app.socket.v3.scenarios.tools.image import (ImageToolCompletePayload,
                                                  image_tool_complete)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
+
+client_router = APIRouter()
+server_router = APIRouter()
 
 
 class ImageGenerationCompletePayload(BaseModel):
@@ -113,3 +117,10 @@ async def image_generation_complete_internal(data: dict[str, Any]) -> None:
         logger.error(
             f"Error in image_generation_complete_internal: {str(e)}", exc_info=True
         )
+
+
+# FastAPI endpoint for OpenAPI documentation
+@client_router.post("/complete", response_model=dict[str, bool])
+async def image_generation_complete_api(request: ImageGenerationCompletePayload) -> dict[str, bool]:
+    """Client-to-server event: Complete image generation."""
+    return {"success": True}

@@ -458,3 +458,6 @@ async def simulation_voice_assistant_delta_api(request: VoiceToolCallDeltaPayloa
 
 
 @server_router.post("/tool_call_error", response_model=dict[str, bool])
+async def voice_tool_call_error_api(request: VoiceToolCallErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred in voice tool call."""
+    return {"success": True}

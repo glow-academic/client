@@ -2,12 +2,12 @@
 
 from typing import Any
 
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
 from app.main import sio
 from app.utils.logging.db_logger import get_logger
-from app.utils.websocket.remove_active_connection import remove_active_connection
+from app.utils.websocket.remove_active_connection import \
+    remove_active_connection
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -80,5 +80,12 @@ async def simulation_text_end_api(request: SimulationTextEndPayload) -> dict[str
 
 
 @server_router.post("/ended", response_model=dict[str, bool])
+async def simulation_text_ended_api(request: ChatStoppedPayload) -> dict[str, bool]:
+    """Server-to-client event: Simulation chat session ended successfully."""
+    return {"success": True}
+
 
 @server_router.post("/end_error", response_model=dict[str, bool])
+async def simulation_text_end_error_api(request: SimulationTextEndErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while ending simulation chat session."""
+    return {"success": True}

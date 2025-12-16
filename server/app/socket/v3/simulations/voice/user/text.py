@@ -236,3 +236,6 @@ async def simulation_voice_user_text_api(request: VoiceUserMessagePayload) -> di
 
 
 @server_router.post("/text_error", response_model=dict[str, bool])
+async def simulation_voice_user_text_error_api(request: VoiceUserMessageErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while processing user text in voice simulation."""
+    return {"success": True}

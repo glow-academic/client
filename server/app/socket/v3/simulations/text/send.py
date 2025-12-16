@@ -2722,17 +2722,48 @@ async def simulation_text_send_api(request: SendSimulationMessagePayload) -> dic
 
 
 @server_router.post("/send_error", response_model=dict[str, bool])
+async def simulation_text_send_error_api(request: SendSimulationMessageErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while sending simulation message."""
+    return {"success": True}
+
 
 @server_router.post("/hint_generation_progress", response_model=dict[str, bool])
+async def hint_generation_progress_api(request: HintGenerationProgressPayload) -> dict[str, bool]:
+    """Server-to-client event: Hint generation progress update."""
+    return {"success": True}
+
 
 @server_router.post("/new_message", response_model=dict[str, bool])
+async def simulation_new_message_api(request: SimulationNewMessagePayload) -> dict[str, bool]:
+    """Server-to-client event: New simulation message created."""
+    return {"success": True}
+
 
 @server_router.post("/message_token", response_model=dict[str, bool])
+async def simulation_message_token_api(request: SimulationMessageTokenPayload) -> dict[str, bool]:
+    """Server-to-client event: Simulation message token update."""
+    return {"success": True}
+
 
 @server_router.post("/message_complete", response_model=dict[str, bool])
+async def simulation_message_complete_api(request: SimulationMessageCompletePayload) -> dict[str, bool]:
+    """Server-to-client event: Simulation message completed."""
+    return {"success": True}
+
 
 @server_router.post("/message_error", response_model=dict[str, bool])
+async def simulation_message_error_api(request: SimulationMessageErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred in simulation message."""
+    return {"success": True}
+
 
 @server_router.post("/message_cancelled", response_model=dict[str, bool])
+async def simulation_message_cancelled_api(request: SimulationMessageCancelledPayload) -> dict[str, bool]:
+    """Server-to-client event: Simulation message was cancelled."""
+    return {"success": True}
+
 
 @server_router.post("/message_sent", response_model=dict[str, bool])
+async def message_sent_api(request: MessageSentPayload) -> dict[str, bool]:
+    """Server-to-client event: User message sent successfully."""
+    return {"success": True}

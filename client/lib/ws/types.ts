@@ -1,289 +1,60 @@
 /**
- * This file was auto-generated from ws.json.
- * Do not make direct changes to this file.
+ * Socket event types extracted from OpenAPI schema using type introspection.
+ * This file uses InputOf/OutputOf helpers to extract types directly from the OpenAPI schema.
+ * Types update automatically when the OpenAPI schema changes.
  */
 
+import type { InputOf, OutputOf, PathKey } from "@/lib/api/types";
+
+// Extract all socket paths (both client and server)
+type SocketPath = Extract<PathKey, `/socket/v3/${string}`>;
+
+// Extract client-to-server paths
+type ClientToServerPath = Extract<SocketPath, `/socket/v3/client/${string}`>;
+
+// Extract server-to-client paths
+type ServerToClientPath = Extract<SocketPath, `/socket/v3/server/${string}`>;
+
+// Helper to collapse slashes to underscores: "simulations/text/start" → "simulations_text_start"
+type CollapseSlashes<S extends string> = S extends `${infer A}/${infer B}`
+  ? `${A}_${CollapseSlashes<B>}`
+  : S;
+
+// Extract event name from path by removing prefix and collapsing slashes
+// "/socket/v3/client/simulations/text/start" → "simulations_text_start"
+// "/socket/v3/server/simulations/text/started" → "simulations_text_started"
+type EventName<P extends SocketPath> = P extends `/socket/v3/client/${infer E}`
+  ? CollapseSlashes<E>
+  : P extends `/socket/v3/server/${infer E}`
+    ? CollapseSlashes<E>
+    : never;
+
+// Helper to get payload type from InputOf (for client-to-server events)
+// InputOf returns an object with optional fields, so we extract the body field
+type SocketInputPayload<P extends SocketPath> =
+  InputOf<P, "post"> extends {
+    body: infer B;
+  }
+    ? B
+    : never;
+
+// Helper to get payload type from OutputOf (for server-to-client events)
+type SocketOutputPayload<P extends SocketPath> = OutputOf<P, "post">;
+
+// Note: The OpenAPI paths use /socket/v3/client/ for client-to-server events
+// and /socket/v3/server/ for server-to-client events, so we can use the path prefix
+// to determine direction instead of relying on naming patterns.
+
+// Build ServerToClientEvents type
 export type ServerToClientEvents = {
-  simulation_text_start_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  simulation_text_stop_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  simulation_text_send_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  simulation_text_next_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  simulation_text_practice_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  simulation_started: (payload: {
-    success: boolean;
-    message: string;
-    attempt_id: string;
-  }) => void;
-  simulation_message_cancelled: (payload: {
-    message_id: string;
-    chat_id: string;
-    final_content: string;
-  }) => void;
-  simulation_stopped: (payload: {
-    chat_id: string;
-    success: boolean;
-    message: string;
-  }) => void;
-  simulation_new_message: (payload: {
-    message_id: string;
-    chat_id: string;
-    role: string;
-    content: string;
-    completed: boolean;
-    created_at: string;
-    persona_id?: string;
-  }) => void;
-  simulation_message_token: (payload: {
-    message_id: string;
-    chat_id: string;
-    token: string;
-    accumulated_content: string;
-  }) => void;
-  simulation_message_complete: (payload: {
-    message_id: string;
-    chat_id: string;
-    final_content: string;
-  }) => void;
-  simulation_message_error: (payload: {
-    chat_id: string;
-    error: string;
-  }) => void;
-  message_sent: (payload: {
-    message_id: string;
-    chat_id: string;
-    message: string;
-    created_at: string;
-  }) => void;
-  hint_generation_progress: (payload: {
-    type: string;
-    message?: string;
-    error?: string;
-    chat_id: string;
-    message_id: string;
-    hint_ids?: string[];
-    hints_count?: number;
-    hints?: { idx: number; hint: string }[];
-  }) => void;
-  simulation_grading_progress: (payload: {
-    type: string;
-    chat_id: string;
-    message?: string;
-    error?: string;
-    rubric_name?: string;
-    standards_count?: number;
-    grade_id?: string;
-    total_score?: number;
-    passed?: boolean;
-    standards_graded?: number;
-    time_taken?: number;
-    summary?: string;
-    standard_group_name?: string;
-    standard_group_short_name?: string;
-    score?: number;
-    feedback_preview?: string;
-    completed_count?: number;
-    total_count?: number;
-    summary_preview?: string;
-  }) => void;
-  simulation_continued: (payload: {
-    success: boolean;
-    message: string;
-    completed_chat_id: string;
-    next_chat_id?: string;
-    is_attempt_finished?: boolean;
-    simulation_grade_id?: string;
-  }) => void;
-  end_all_started: (payload: {
-    chat_id: string;
-    attempt_id: string;
-  }) => void;
-  end_chat_started: (payload: {
-    chat_id: string;
-    attempt_id: string;
-  }) => void;
-  end_all_completed: (payload: {
-    success: boolean;
-    message: string;
-    chat_id: string;
-    attempt_id?: string;
-    completed_chat_ids?: string[];
-    next_chat_ids?: string[];
-    all_completed?: boolean;
-  }) => void;
-  connection_confirmed: (payload: {
-    sid: string;
-    profile_id?: string;
-    guest_id?: string;
-    server_time: number;
-  }) => void;
-  simulation_joined: (payload: {
-    chat_id: string;
-    chat_type: string;
-  }) => void;
-  simulation_text_ended: (payload: {
-    chat_id: string;
-    chat_type: string;
-  }) => void;
-  scenario_generation_progress: (payload: {
-    type: string;
-    message?: string;
-    tool_name?: string;
-    trace_id?: string;
-  }) => void;
-  scenario_generation_complete: (payload: {
-    success: boolean;
-    message: string;
-    trace_id?: string;
-  }) => void;
-  scenario_generation_error: (payload: {
-    success: boolean;
-    message: string;
-    trace_id?: string;
-  }) => void;
-  document_template_generation_progress: (payload: {
-    type: string;
-    message?: string;
-    trace_id?: string;
-  }) => void;
-  document_template_generation_complete: (payload: {
-    success: boolean;
-    message: string;
-    template_html: string;
-    template_schema: Record<string, unknown>;
-    upload_id: string;
-    template_mapping: Record<string, unknown>;
-    trace_id?: string;
-  }) => void;
-  document_template_generation_error: (payload: {
-    success: boolean;
-    message: string;
-    trace_id?: string;
-  }) => void;
-  document_tool_complete: (payload: {
-    success: boolean;
-    document_id: string;
-    parent_document_id: string;
-    trace_id: string;
-    message?: string;
-  }) => void;
-  problem_statement_tool_complete: (payload: {
-    success: boolean;
-    problem_statement_id: string;
-    trace_id: string;
-    message?: string;
-  }) => void;
-  objectives_tool_complete: (payload: {
-    success: boolean;
-    objective_ids: string[];
-    trace_id: string;
-    message?: string;
-  }) => void;
-  image_tool_complete: (payload: {
-    success: boolean;
-    image_id: string;
-    trace_id: string;
-    message?: string;
-  }) => void;
-  scenario_video_tool_complete: (payload: {
-    success: boolean;
-    generation_id?: string;
-    video_id?: string;
-    trace_id: string;
-    message?: string;
-  }) => void;
-  scenario_video_tool_error: (payload: {
-    success: boolean;
-    message: string;
-    trace_id: string;
-  }) => void;
-  scenario_questions_tool_complete: (payload: {
-    success: boolean;
-    question_ids: string[];
-    trace_id: string;
-    message?: string;
-  }) => void;
-  scenario_questions_tool_error: (payload: {
-    success: boolean;
-    message: string;
-    trace_id: string;
-  }) => void;
-  simulation_voice_start_response: (payload: {
-    success: boolean;
-    message: string;
-    ephemeral_key: string;
-    persona_tools: string[];
-    tool_context_map: Record<string, { persona_id: string; profile_id: string | null }>;
-    instructions: string;
-    model: string;
-    voice?: string;
-    transcription_model?: string;
-    transcription_prompt?: string;
-    history?: string[];
-  }) => void;
-  simulation_voice_start_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  simulation_voice_stop_response: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  simulation_voice_stop_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  simulation_voice_user_start_emit: (payload: {
-    chat_id: string;
-    item_id: string;
-  }) => void;
-  simulation_voice_user_delta_emit: (payload: {
-    chat_id: string;
-    item_id: string;
-    delta: string;
-    content_index: number;
-  }) => void;
-  simulation_voice_user_transcript_emit: (payload: {
-    chat_id: string;
-    item_id: string;
-    transcript: string;
-    upload_id?: string;
-  }) => void;
-  simulation_voice_user_text_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
-  voice_tool_call_error: (payload: {
-    success: boolean;
-    message: string;
-  }) => void;
+  [K in ServerToClientPath as EventName<K>]: (
+    payload: SocketOutputPayload<K>
+  ) => void;
 };
 
+// Build ClientToServerEvents type
 export type ClientToServerEvents = {
-  simulation_join: (payload: {
-    chat_id: string;
-    chat_type?: string;
-  }) => void;
-  simulation_leave: (payload: {
-    chat_id: string;
-    chat_type?: string;
-  }) => void;
-  simulation_text_end: (payload: {
-    chat_id: string;
-    chat_type?: string;
-  }) => void;
+  [K in ClientToServerPath as EventName<K>]: (
+    payload: SocketInputPayload<K>
+  ) => void;
 };

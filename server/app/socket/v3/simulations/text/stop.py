@@ -183,7 +183,18 @@ async def simulation_text_stop_api(request: StopSimulationPayload) -> dict[str, 
 
 
 @server_router.post("/stopped", response_model=dict[str, bool])
+async def simulation_stopped_api(request: SimulationStoppedPayload) -> dict[str, bool]:
+    """Server-to-client event: Simulation stopped successfully."""
+    return {"success": True}
+
 
 @server_router.post("/message_cancelled", response_model=dict[str, bool])
+async def simulation_message_cancelled_api(request: SimulationMessageCancelledPayload) -> dict[str, bool]:
+    """Server-to-client event: Simulation message was cancelled."""
+    return {"success": True}
+
 
 @server_router.post("/stop_error", response_model=dict[str, bool])
+async def simulation_text_stop_error_api(request: StopSimulationErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while stopping simulation."""
+    return {"success": True}

@@ -82,3 +82,6 @@ async def simulation_voice_user_delta_api(request: VoiceUserDeltaPayload) -> dic
 
 
 @server_router.post("/delta", response_model=dict[str, bool])
+async def simulation_voice_user_delta_api(request: VoiceUserDeltaPayload) -> dict[str, bool]:
+    """Server-to-client event: User speech delta from voice simulation."""
+    return {"success": True}

@@ -430,5 +430,12 @@ async def simulation_text_start_api(request: StartSimulationPayload) -> dict[str
 
 
 @server_router.post("/started", response_model=dict[str, bool])
+async def simulation_started_api(request: SimulationStartedPayload) -> dict[str, bool]:
+    """Server-to-client event: Simulation started successfully."""
+    return {"success": True}
+
 
 @server_router.post("/start_error", response_model=dict[str, bool])
+async def simulation_text_start_error_api(request: StartSimulationErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while starting simulation."""
+    return {"success": True}

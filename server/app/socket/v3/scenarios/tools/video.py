@@ -3,10 +3,9 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter
-
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
+from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
@@ -235,5 +234,12 @@ async def scenario_tool_video_api(request: ScenarioVideoToolPayload) -> dict[str
 
 
 @server_router.post("/video_complete", response_model=dict[str, bool])
+async def scenario_video_tool_complete_api(request: ScenarioVideoToolCompletePayload) -> dict[str, bool]:
+    """Server-to-client event: Video tool completed successfully."""
+    return {"success": True}
+
 
 @server_router.post("/video_error", response_model=dict[str, bool])
+async def scenario_video_tool_error_api(request: ScenarioVideoToolErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred in video tool."""
+    return {"success": True}

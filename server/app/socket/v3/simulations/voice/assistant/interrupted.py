@@ -80,3 +80,6 @@ async def simulation_voice_assistant_interrupted_api(request: VoiceInterruptedPa
 
 
 @server_router.post("/interrupted", response_model=dict[str, bool])
+async def simulation_voice_assistant_interrupted_api(request: VoiceInterruptedPayload) -> dict[str, bool]:
+    """Client-to-server event: Signal that assistant was interrupted in voice simulation."""
+    return {"success": True}

@@ -252,3 +252,6 @@ async def simulation_voice_user_transcript_api(request: VoiceUserTranscriptPaylo
 
 
 @server_router.post("/transcript", response_model=dict[str, bool])
+async def simulation_voice_user_transcript_api(request: VoiceUserTranscriptPayload) -> dict[str, bool]:
+    """Server-to-client event: User transcript from voice simulation."""
+    return {"success": True}

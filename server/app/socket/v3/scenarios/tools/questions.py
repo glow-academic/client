@@ -223,5 +223,12 @@ async def scenario_tool_questions_api(request: ScenarioQuestionsToolPayload) -> 
 
 
 @server_router.post("/questions_complete", response_model=dict[str, bool])
+async def scenario_questions_tool_complete_api(request: ScenarioQuestionsToolCompletePayload) -> dict[str, bool]:
+    """Server-to-client event: Questions tool completed successfully."""
+    return {"success": True}
+
 
 @server_router.post("/questions_error", response_model=dict[str, bool])
+async def scenario_questions_tool_error_api(request: ScenarioQuestionsToolErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred in questions tool."""
+    return {"success": True}

@@ -443,3 +443,6 @@ async def simulation_voice_assistant_done_api(request: VoiceToolCallDonePayload)
 
 
 @server_router.post("/done", response_model=dict[str, bool])
+async def simulation_voice_assistant_done_api(request: VoiceToolCallDonePayload) -> dict[str, bool]:
+    """Client-to-server event: Assistant tool call done in voice simulation."""
+    return {"success": True}

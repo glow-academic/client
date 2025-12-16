@@ -5,20 +5,10 @@ import os
 import uuid
 from typing import Any
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    Tool,
-    ToolsToFinalOutputResult,
-    function_tool,
-    gen_trace_id,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, gen_trace_id,
+                    trace)
 from agents.items import TResponseInputItem
-from fastapi import APIRouter
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
-
 from app.api.v3.settings.active import ThemePrimitives, derive_theme_tokens
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
@@ -31,6 +21,9 @@ from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.scenario.image_generation import set_image_generation_context
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter
+from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
+                      create_model)
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -1493,7 +1486,18 @@ async def generate_scenario_api(request: GenerateScenarioAIPayload) -> dict[str,
 
 
 @server_router.post("/generation_progress", response_model=dict[str, bool])
+async def scenario_generation_progress_api(request: ScenarioGenerationProgressPayload) -> dict[str, bool]:
+    """Server-to-client event: Scenario generation progress update."""
+    return {"success": True}
+
 
 @server_router.post("/generation_complete", response_model=dict[str, bool])
+async def scenario_generation_complete_api(request: ScenarioGenerationCompletePayload) -> dict[str, bool]:
+    """Server-to-client event: Scenario generation completed successfully."""
+    return {"success": True}
+
 
 @server_router.post("/generation_error", response_model=dict[str, bool])
+async def scenario_generation_error_api(request: ScenarioGenerationErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred during scenario generation."""
+    return {"success": True}

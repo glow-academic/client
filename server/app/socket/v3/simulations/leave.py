@@ -71,3 +71,6 @@ async def simulation_leave_api(request: SimulationLeavePayload) -> dict[str, boo
 
 
 @server_router.post("/leave_error", response_model=dict[str, bool])
+async def simulation_leave_error_api(request: SimulationLeaveErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while leaving simulation chat room."""
+    return {"success": True}

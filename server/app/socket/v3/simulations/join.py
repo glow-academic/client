@@ -83,5 +83,12 @@ async def simulation_join_api(request: SimulationJoinPayload) -> dict[str, bool]
 
 
 @server_router.post("/joined", response_model=dict[str, bool])
+async def simulation_joined_api(request: SimulationJoinedPayload) -> dict[str, bool]:
+    """Server-to-client event: Successfully joined simulation chat room."""
+    return {"success": True}
+
 
 @server_router.post("/join_error", response_model=dict[str, bool])
+async def simulation_join_error_api(request: SimulationJoinErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while joining simulation chat room."""
+    return {"success": True}

@@ -1503,13 +1503,36 @@ async def simulation_text_next_api(request: ContinueSimulationPayload) -> dict[s
 
 
 @server_router.post("/next_error", response_model=dict[str, bool])
+async def simulation_text_next_error_api(request: ContinueSimulationErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while continuing simulation."""
+    return {"success": True}
+
 
 @server_router.post("/grading_progress", response_model=dict[str, bool])
+async def simulation_grading_progress_api(request: SimulationGradingProgressPayload) -> dict[str, bool]:
+    """Server-to-client event: Simulation grading progress update."""
+    return {"success": True}
+
 
 @server_router.post("/continued", response_model=dict[str, bool])
+async def simulation_continued_api(request: SimulationContinuedPayload) -> dict[str, bool]:
+    """Server-to-client event: Simulation continued to next scenario."""
+    return {"success": True}
+
 
 @server_router.post("/end_all_started", response_model=dict[str, bool])
+async def end_all_started_api(request: EndAllStartedPayload) -> dict[str, bool]:
+    """Server-to-client event: Ending all chats started."""
+    return {"success": True}
+
 
 @server_router.post("/end_chat_started", response_model=dict[str, bool])
+async def end_chat_started_api(request: EndChatStartedPayload) -> dict[str, bool]:
+    """Server-to-client event: Ending chat started."""
+    return {"success": True}
+
 
 @server_router.post("/end_all_completed", response_model=dict[str, bool])
+async def end_all_completed_api(request: EndAllCompletedPayload) -> dict[str, bool]:
+    """Server-to-client event: Ending all chats completed."""
+    return {"success": True}

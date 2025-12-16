@@ -113,5 +113,12 @@ async def simulation_voice_stop_api(request: StopVoicePayload) -> dict[str, bool
 
 
 @server_router.post("/stop_response", response_model=dict[str, bool])
+async def simulation_voice_stop_response_api(request: StopVoiceResponsePayload) -> dict[str, bool]:
+    """Server-to-client event: Voice simulation stop response."""
+    return {"success": True}
+
 
 @server_router.post("/stop_error", response_model=dict[str, bool])
+async def simulation_voice_stop_error_api(request: StopVoiceErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while stopping voice simulation."""
+    return {"success": True}

@@ -530,71 +530,69 @@ async def transaction(
 
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
-# Updated to use new client/ structure
-from app.socket.v3.client.connect import connect  # type: ignore
-from app.socket.v3.client.disconnect import disconnect  # type: ignore
-from app.socket.v3.client.documents.generate import \
+from app.socket.v3.connect import connect  # type: ignore
+from app.socket.v3.disconnect import disconnect  # type: ignore
+from app.socket.v3.documents.generate import \
     document_generate  # noqa: E402; type: ignore
-from app.socket.v3.client.images.complete import \
+from app.socket.v3.images.complete import \
     image_generation_complete  # noqa: F401
 # Import image modules to register internal_sio handlers
-from app.socket.v3.client.images.generate import generate_image  # noqa: F401
+from app.socket.v3.images.generate import generate_image  # noqa: F401
 # Import log module to register internal_sio handler
-from app.socket.v3.client.log import log_run  # noqa: F401
+from app.socket.v3.log import log_run  # noqa: F401
 # Import quiz handlers
 # Note: Quiz events removed - questions now handled through scenarios
-from app.socket.v3.client.scenarios.generate import \
+from app.socket.v3.scenarios.generate import \
     generate_scenario  # noqa: E402; type: ignore
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.client.scenarios.tools.document import \
+from app.socket.v3.scenarios.tools.document import \
     scenario_tool_document  # noqa: F401
-from app.socket.v3.client.scenarios.tools.image import \
+from app.socket.v3.scenarios.tools.image import \
     scenario_tool_image  # noqa: F401
-from app.socket.v3.client.scenarios.tools.objectives import \
+from app.socket.v3.scenarios.tools.objectives import \
     scenario_tool_objectives  # noqa: F401
-from app.socket.v3.client.scenarios.tools.questions import \
+from app.socket.v3.scenarios.tools.questions import \
     scenario_tool_questions  # noqa: F401
-from app.socket.v3.client.scenarios.tools.statement import \
+from app.socket.v3.scenarios.tools.statement import \
     scenario_tool_problem_statement  # noqa: F401
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.client.scenarios.tools.video import \
+from app.socket.v3.scenarios.tools.video import \
     scenario_tool_video  # noqa: F401
-from app.socket.v3.client.simulations.join import \
-    simulation_join  # type: ignore
-from app.socket.v3.client.simulations.leave import simulation_leave
-from app.socket.v3.client.simulations.text.end import \
+from app.socket.v3.simulations.join import simulation_join  # type: ignore
+from app.socket.v3.simulations.leave import simulation_leave
+from app.socket.v3.simulations.text.end import \
     simulation_text_end  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.text.next import \
+from app.socket.v3.simulations.text.next import \
     simulation_text_next  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.text.practice import \
+from app.socket.v3.simulations.text.practice import \
     simulation_text_practice  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.text.send import \
+from app.socket.v3.simulations.text.send import \
     simulation_text_send  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.text.start import \
+from app.socket.v3.simulations.text.start import \
     simulation_text_start  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.text.stop import \
+from app.socket.v3.simulations.text.stop import \
     simulation_text_stop  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.voice.assistant.delta import \
+from app.socket.v3.simulations.voice.assistant.delta import \
     simulation_voice_assistant_delta  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.voice.assistant.done import \
+from app.socket.v3.simulations.voice.assistant.done import \
     simulation_voice_assistant_done  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.voice.assistant.interrupted import \
+from app.socket.v3.simulations.voice.assistant.interrupted import \
     simulation_voice_assistant_interrupted  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.voice.debug import \
+from app.socket.v3.simulations.voice.debug import \
     simulation_voice_debug_info  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.voice.start import \
+from app.socket.v3.simulations.voice.start import \
     simulation_voice_start  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.voice.stop import \
+from app.socket.v3.simulations.voice.stop import \
     simulation_voice_stop  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.voice.user.delta import \
+from app.socket.v3.simulations.voice.user.delta import \
     simulation_voice_user_delta  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.voice.user.speech import \
+from app.socket.v3.simulations.voice.user.speech import \
     simulation_voice_user_speech  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.voice.user.start import \
+from app.socket.v3.simulations.voice.user.start import \
     simulation_voice_user_start  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.voice.user.text import \
+from app.socket.v3.simulations.voice.user.text import \
     simulation_voice_user_text  # noqa: E402; type: ignore
-from app.socket.v3.client.simulations.voice.user.transcript import \
+from app.socket.v3.simulations.voice.user.transcript import \
     simulation_voice_user_transcript  # noqa: E402; type: ignore
 
 # Export IMAGE_FOLDER for use in other modules
@@ -1232,164 +1230,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         openapi_path.write_text(json.dumps(schema, indent=2))
         logger.info(f"✅ OpenAPI schema written to {openapi_path}")
 
-        # Generate WebSocket contract and write to disk
-        from app.utils.socket_contract import build_socket_contract
-
-        client_to_server_handlers = [
-            connect,
-            disconnect,
-            # Note: log_run is internal-only (async background work)
-            # Simulation events
-            simulation_join,
-            simulation_leave,
-            simulation_text_send,
-            simulation_text_start,
-            simulation_text_practice,
-            simulation_text_stop,
-            simulation_text_next,
-            simulation_text_end,
-            # Voice events
-            simulation_voice_start,
-            simulation_voice_stop,
-            simulation_voice_debug_info,
-            simulation_voice_user_text,
-            simulation_voice_user_delta,
-            simulation_voice_user_transcript,
-            simulation_voice_user_start,
-            simulation_voice_user_speech,
-            simulation_voice_assistant_interrupted,
-            simulation_voice_assistant_delta,
-            simulation_voice_assistant_done,
-            # AI generation events
-            generate_scenario,
-            document_generate,
-            # Note: quiz events removed - questions now handled through scenarios
-            # Note: generate_image, image_generation_complete, and scenario_tool_* events
-            # are internal-only (triggered by scenario generation, not called directly by clients)
-        ]
-
-        # Import server-to-client emit functions (with Pydantic payload models)
-        # Updated to use new client/ structure (emit helpers are in client files)
-        from app.socket.v3.client.connect import connection_confirmed
-        from app.socket.v3.client.documents.generate import (
-            document_template_generation_complete,
-            document_template_generation_error,
-            document_template_generation_progress)
-        from app.socket.v3.client.scenarios.generate import (
-            scenario_generation_complete, scenario_generation_error,
-            scenario_generation_progress)
-        from app.socket.v3.client.scenarios.tools.document import \
-            document_tool_complete
-        from app.socket.v3.client.scenarios.tools.image import \
-            image_tool_complete
-        from app.socket.v3.client.scenarios.tools.objectives import \
-            objectives_tool_complete
-        from app.socket.v3.client.scenarios.tools.questions import (
-            scenario_questions_tool_complete, scenario_questions_tool_error)
-        from app.socket.v3.client.scenarios.tools.statement import \
-            problem_statement_tool_complete
-        from app.socket.v3.client.scenarios.tools.video import (
-            scenario_video_tool_complete, scenario_video_tool_error)
-        from app.socket.v3.client.simulations.join import simulation_joined
-        from app.socket.v3.client.simulations.text.end import \
-            simulation_text_ended
-        from app.socket.v3.client.simulations.text.next import (
-            end_all_completed, end_all_started, end_chat_started,
-            simulation_continued, simulation_grading_progress,
-            simulation_text_next_error)
-        from app.socket.v3.client.simulations.text.practice import \
-            simulation_text_practice_error
-        from app.socket.v3.client.simulations.text.send import (
-            hint_generation_progress, message_sent,
-            simulation_message_complete, simulation_message_error,
-            simulation_message_token, simulation_new_message,
-            simulation_text_send_error)
-        from app.socket.v3.client.simulations.text.start import \
-            simulation_started
-        from app.socket.v3.client.simulations.text.start import \
-            simulation_text_start_error as simulation_error_start
-        from app.socket.v3.client.simulations.text.stop import (
-            simulation_message_cancelled, simulation_stopped,
-            simulation_text_stop_error)
-        from app.socket.v3.client.simulations.voice.assistant.delta import \
-            voice_tool_call_error
-        from app.socket.v3.client.simulations.voice.start import (
-            simulation_voice_start_error, simulation_voice_start_response)
-        from app.socket.v3.client.simulations.voice.stop import (
-            simulation_voice_stop_error, simulation_voice_stop_response)
-        from app.socket.v3.client.simulations.voice.user.delta import \
-            simulation_voice_user_delta_emit
-        from app.socket.v3.client.simulations.voice.user.start import \
-            simulation_voice_user_start_emit
-        from app.socket.v3.client.simulations.voice.user.text import \
-            simulation_voice_user_text_error
-        from app.socket.v3.client.simulations.voice.user.transcript import \
-            simulation_voice_user_transcript_emit
-
-        # Collect all unique emit functions (use one instance of each event name)
-        server_to_client_stubs = [
-            # Simulation text events
-            simulation_error_start,  # simulation_text_start_error
-            simulation_text_stop_error,
-            simulation_text_send_error,
-            simulation_text_next_error,
-            simulation_text_practice_error,
-            simulation_started,
-            simulation_message_cancelled,
-            simulation_stopped,
-            simulation_new_message,
-            simulation_message_token,
-            simulation_message_complete,
-            simulation_message_error,
-            message_sent,
-            hint_generation_progress,
-            simulation_grading_progress,
-            simulation_continued,
-            end_all_started,
-            end_chat_started,
-            end_all_completed,
-            # Connection events
-            connection_confirmed,
-            simulation_joined,
-            simulation_text_ended,
-            # AI generation events
-            scenario_generation_progress,
-            scenario_generation_complete,
-            scenario_generation_error,
-            document_template_generation_progress,
-            document_template_generation_complete,
-            document_template_generation_error,
-            # Scenario tool completion events
-            document_tool_complete,  # scenario_tool_document_complete
-            problem_statement_tool_complete,  # scenario_tool_problem_statement_complete
-            objectives_tool_complete,  # scenario_tool_objectives_complete
-            image_tool_complete,  # scenario_tool_image_complete
-            # Scenario video/questions tool events
-            scenario_video_tool_complete,  # scenario_tool_video_complete
-            scenario_video_tool_error,  # scenario_tool_video_error
-            scenario_questions_tool_complete,  # scenario_tool_questions_complete
-            scenario_questions_tool_error,  # scenario_tool_questions_error
-            # Voice events
-            simulation_voice_start_response,
-            simulation_voice_start_error,
-            simulation_voice_stop_response,
-            simulation_voice_stop_error,
-            simulation_voice_user_start_emit,
-            simulation_voice_user_delta_emit,
-            simulation_voice_user_transcript_emit,
-            simulation_voice_user_text_error,
-            voice_tool_call_error,
-            # Note: quiz events removed - questions now handled through scenarios
-        ]
-
-        contract = build_socket_contract(
-            client_to_server=client_to_server_handlers,
-            server_to_client=server_to_client_stubs,  # type: ignore[arg-type]
-        )
-
-        ws_path = Path(__file__).parent.parent / "ws.json"
-        ws_path.write_text(json.dumps(contract, indent=2))
-        logger.info(f"✅ WebSocket contract written to {ws_path}")
+        # Note: Socket event types are now extracted from OpenAPI schema via TypeScript type introspection
+        # No need to generate ws.json - socket events are already in openapi.json via FastAPI routers
 
         yield
 

@@ -136,3 +136,6 @@ async def simulation_voice_debug_info_api(request: VoiceDebugInfoPayload) -> dic
 
 
 @server_router.post("/debug_error", response_model=dict[str, bool])
+async def simulation_voice_debug_info_error_api(request: VoiceDebugInfoErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while processing debug info in voice simulation."""
+    return {"success": True}
