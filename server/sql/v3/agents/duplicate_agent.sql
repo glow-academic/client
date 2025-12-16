@@ -1,6 +1,13 @@
 -- Duplicate agent with profile_id for auditing
 -- Parameters: $1 = agent_id (uuid), $2 = profile_id (uuid)
-WITH source_agent AS (
+WITH actor_profile AS (
+    SELECT 
+        $2::uuid as profile_id,
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+source_agent AS (
     SELECT 
         a.id as source_id,
         a.name,
@@ -80,5 +87,11 @@ copy_departments AS (
     JOIN agent_departments ad ON ad.agent_id = sa.source_id AND ad.active = true
     CROSS JOIN new_agent na
 )
-SELECT agent_id FROM new_agent
+SELECT 
+    na.agent_id,
+    sa.name as agent_name,
+    ap.actor_name
+FROM new_agent na
+CROSS JOIN source_agent sa
+CROSS JOIN actor_profile ap
 

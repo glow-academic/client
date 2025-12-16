@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -70,7 +71,15 @@ class RubricDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail", response_model=RubricDetailResponse)
+@router.post(
+    "/detail",
+    response_model=RubricDetailResponse,
+    dependencies=[
+        audit_activity(
+            "rubric.viewed", "{{ actor.name }} viewed rubric '{{ rubric.name }}'"
+        )
+    ],
+)
 async def get_rubric_detail(
     request_body: RubricDetailRequest,
     request: Request,
@@ -181,6 +190,16 @@ async def get_rubric_detail(
         dept_ids = None
         if row.get("department_ids"):
             dept_ids = [str(d) for d in row["department_ids"]]
+
+        # Set audit context with data from SQL query
+        actor_name = row.get("actor_name")
+        rubric_name = row.get("name")
+        if actor_name:
+            audit_set(
+                request,
+                actor={"name": actor_name, "id": request_body.profileId},
+                rubric={"name": rubric_name, "id": request_body.rubricId},
+            )
 
         response_data = RubricDetailResponse(
             name=row.get("name", ""),

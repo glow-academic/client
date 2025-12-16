@@ -69,10 +69,8 @@ export function RubricStandardSection({
   standards,
   gridCells,
   position,
-  totalGroups,
   onGroupChange,
   onStandardsChange,
-  onGridCellChange,
   onAddStandard,
   onRemoveStandard,
   readonly = false,
@@ -82,14 +80,6 @@ export function RubricStandardSection({
 }: RubricStandardSectionProps) {
   const groupStandards = standards.filter((s) => s.standardGroupId === group.id);
   const displayNumber = stepNumber ?? position;
-
-  // Get description for a standard from grid cells
-  const getStandardDescription = (standardId: string): string => {
-    const cell = gridCells.find(
-      (c) => c.standardGroupId === group.id && c.standardId === standardId
-    );
-    return cell?.description || "";
-  };
 
   return (
     <Card

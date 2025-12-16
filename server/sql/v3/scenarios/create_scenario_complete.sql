@@ -10,44 +10,18 @@
 --            $19=video_ids (text array, nullable), $20=active_video_id (text, nullable - only one active),
 --            $21=question_ids (text array, nullable), $22=question_timestamps (JSONB, nullable - maps question_id to video_id to times array),
 --            $23=run_id (uuid, nullable - for linking AI-generated problem_statements and objectives to runs),
---            $24=parameter_ids (text array, nullable), $25=profile_id (uuid or "guest-profile-id")
+--            $24=parameter_ids (text array, nullable), $25=profile_id (uuid, required)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Note: objective_ids should only contain new objective text (composite IDs like "scenarioId_idx" should be filtered out in Python)
 -- Note: problem_statement_versions contains all versions; the one matching problem_statement should be active
 -- Returns: scenario_id, actor_name
-WITH resolve_guest_profile AS (
-    -- Resolve guest-profile-id using settings system (department-specific or default)
-    SELECT 
-        COALESCE(
-            -- Department-specific settings guest profile (if user has departments)
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
-             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $25::uuid AND sdg.active = true
-             LIMIT 1),
-            -- Fallback to default (active) settings guest profile
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             WHERE sdg.active = true
-             LIMIT 1)
-        ) as guest_profile_id
-),
-resolve_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $25::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $25::text IS NULL OR $25::text = '' THEN NULL::uuid
-            ELSE $25::uuid
-        END as resolved_profile_id
-),
+-- profile_id is always a UUID (required in request body)
 actor_profile AS (
     SELECT 
-        rpi.resolved_profile_id,
+        $25::uuid as resolved_profile_id,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    FROM profiles p
+    WHERE p.id = $25::uuid
 ),
 new_scenario AS (
     INSERT INTO scenarios (

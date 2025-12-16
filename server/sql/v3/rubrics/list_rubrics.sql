@@ -62,7 +62,11 @@ rubric_departments_data AS (
     GROUP BY rd.rubric_id
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM profiles p
+    WHERE p.id = $1
 ),
 rubric_data AS (
     SELECT 
@@ -196,12 +200,14 @@ simulation_mapping_data AS (
 )
 SELECT 
     rd.*,
+    up.actor_name,
     COALESCE(rgs.groups_structure, '{}'::jsonb) as standard_groups,
     sgm.mapping as standard_groups_mapping,
     sm.mapping as standards_mapping,
     dmd.mapping as department_mapping,
     simd.mapping as simulation_mapping
 FROM rubric_data rd
+CROSS JOIN user_profile up
 LEFT JOIN rubric_groups_structure rgs ON rgs.rubric_id = rd.rubric_id
 CROSS JOIN standard_groups_mapping_data sgm
 CROSS JOIN standards_mapping_data sm

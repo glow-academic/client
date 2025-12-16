@@ -75,7 +75,11 @@ document_data AS (
         OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM profiles p
+    WHERE p.id = $1
 ),
 all_scenario_ids AS (
     SELECT DISTINCT unnest(scenario_ids) as scenario_id
@@ -295,7 +299,8 @@ SELECT
     sm.mapping as scenario_mapping,
     fm.mapping as field_mapping,
     dm.mapping as department_mapping,
-    pm.mapping as parameter_mapping
+    pm.mapping as parameter_mapping,
+    up.actor_name
 FROM document_data dd
 CROSS JOIN user_profile up
 CROSS JOIN scenario_mapping_data sm

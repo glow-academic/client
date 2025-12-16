@@ -24,7 +24,8 @@ interface EntityMetadata {
     | "chat"
     | "attempt"
     | "video"
-    | "key";
+    | "key"
+    | "eval";
 }
 
 /**

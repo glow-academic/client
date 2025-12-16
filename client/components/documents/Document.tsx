@@ -41,9 +41,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -52,7 +50,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -70,9 +67,7 @@ import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
 import {
   Building2,
   Check,
-  FileCode,
   Plus,
-  Power,
   Tag,
   UploadCloud,
   X,
@@ -1221,7 +1216,6 @@ export default function Document({
               ? (formData.departmentIds[0] ?? null)
               : null,
           field_ids: formData.parameterItemIds,
-          parameter_ids: formData.parameterIds,
           classify_agent_id: formData.classifyAgentId ?? null,
           document_agent_id: formData.documentAgentId ?? null,
           templateUploadId:

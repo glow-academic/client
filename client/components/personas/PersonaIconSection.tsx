@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
-  getPersonaIconComponent,
   PERSONA_ICON_MAP,
 } from "@/utils/persona-icons";
 

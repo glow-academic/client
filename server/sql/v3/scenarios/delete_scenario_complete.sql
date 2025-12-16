@@ -1,7 +1,15 @@
 -- Delete scenario with existence and usage checks in a single transaction
--- Parameters: $1=scenarioId
--- Returns: scenario_id, name if deleted, or no rows if scenario doesn't exist or is in use
-WITH scenario_info AS (
+-- Parameters: $1=scenarioId, $2=profile_id (uuid, required)
+-- Returns: scenario_id, name, usage_count, deleted (boolean), actor_name
+-- profile_id is always a UUID (required in request body)
+actor_profile AS (
+    SELECT 
+        $2::uuid as resolved_profile_id,
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+scenario_info AS (
     -- Check if scenario exists and get name
     SELECT 
         s.id,
@@ -23,7 +31,9 @@ SELECT
     si.id::text as scenario_id,
     si.name,
     si.usage_count,
-    CASE WHEN ds.scenario_id IS NOT NULL THEN true ELSE false END as deleted
+    CASE WHEN ds.scenario_id IS NOT NULL THEN true ELSE false END as deleted,
+    ap.actor_name
 FROM scenario_info si
 LEFT JOIN delete_scenario ds ON ds.scenario_id = si.id::text
+CROSS JOIN actor_profile ap
 

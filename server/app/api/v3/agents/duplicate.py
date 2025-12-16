@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -27,7 +28,15 @@ class DuplicateAgentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/duplicate", response_model=DuplicateAgentResponse)
+@router.post(
+    "/duplicate",
+    response_model=DuplicateAgentResponse,
+    dependencies=[
+        audit_activity(
+            "agent.duplicated", "{{ actor.name }} duplicated agent '{{ agent.name }}'"
+        )
+    ],
+)
 async def duplicate_agent(
     request: DuplicateAgentRequest,
     http_request: Request,
@@ -50,9 +59,21 @@ async def duplicate_agent(
         if not new_agent_row:
             raise HTTPException(status_code=500, detail="Failed to duplicate agent")
 
+        agent_id = new_agent_row["agent_id"]
+        actor_name = new_agent_row.get("actor_name")
+        agent_name = new_agent_row.get("agent_name")
+
+        # Set audit context with data from SQL query
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": request.profileId},
+                agent={"name": agent_name, "id": agent_id},
+            )
+
         result_data = DuplicateAgentResponse(
             success=True,
-            agentId=new_agent_row["agent_id"],
+            agentId=agent_id,
             message="Agent duplicated successfully",
         )
 

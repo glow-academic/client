@@ -2990,7 +2990,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EvalDetailResponse"
+                  "$ref": "#/components/schemas/app__api__v3__evals__detail__EvalDetailResponse"
                 }
               }
             }
@@ -3037,7 +3037,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EvalDetailResponse"
+                  "$ref": "#/components/schemas/app__api__v3__evals__new__EvalDetailResponse"
                 }
               }
             }
@@ -15078,11 +15078,16 @@
             "type": "array",
             "title": "Simulation Ids",
             "default": []
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "title"
+          "title",
+          "profileId"
         ],
         "title": "CreateCohortRequest",
         "description": "Request for creating a cohort."
@@ -15135,13 +15140,18 @@
               }
             ],
             "title": "Settingsid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
           "title",
           "description",
-          "active"
+          "active",
+          "profileId"
         ],
         "title": "CreateDepartmentRequest",
         "description": "Request for creating a department."
@@ -16663,6 +16673,10 @@
               }
             ],
             "title": "Question Timestamps"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -16674,7 +16688,8 @@
           "persona_ids",
           "document_ids",
           "objective_ids",
-          "parameters"
+          "parameters",
+          "profileId"
         ],
         "title": "CreateScenarioRequest",
         "description": "Request to create a scenario."
@@ -16799,6 +16814,10 @@
               }
             ],
             "title": "Content Items"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -16808,7 +16827,8 @@
           "department_ids",
           "active",
           "practice_simulation",
-          "simulation_text_agent_id"
+          "simulation_text_agent_id",
+          "profileId"
         ],
         "title": "CreateSimulationRequest",
         "description": "Request to create a simulation."
@@ -18256,11 +18276,16 @@
           "scenarioId": {
             "type": "string",
             "title": "Scenarioid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "scenarioId"
+          "scenarioId",
+          "profileId"
         ],
         "title": "DeleteScenarioRequest",
         "description": "Request to delete a scenario."
@@ -19544,11 +19569,16 @@
           "scenarioId": {
             "type": "string",
             "title": "Scenarioid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "scenarioId"
+          "scenarioId",
+          "profileId"
         ],
         "title": "DuplicateScenarioRequest",
         "description": "Request to duplicate a scenario."
@@ -19801,242 +19831,6 @@
         ],
         "title": "EvalDetailRequest",
         "description": "Request to get eval details."
-      },
-      "EvalDetailResponse": {
-        "properties": {
-          "eval_id": {
-            "type": "string",
-            "title": "Eval Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "rubric_id": {
-            "type": "string",
-            "title": "Rubric Id"
-          },
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "eval_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Agent Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "rubric_name": {
-            "type": "string",
-            "title": "Rubric Name"
-          },
-          "rubric_description": {
-            "type": "string",
-            "title": "Rubric Description"
-          },
-          "rubric_points": {
-            "type": "integer",
-            "title": "Rubric Points"
-          },
-          "rubric_pass_points": {
-            "type": "integer",
-            "title": "Rubric Pass Points"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "total_runs": {
-            "type": "integer",
-            "title": "Total Runs"
-          },
-          "completed_runs": {
-            "type": "integer",
-            "title": "Completed Runs"
-          },
-          "pending_runs": {
-            "type": "integer",
-            "title": "Pending Runs"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "model_runs": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__evals__detail__ModelRunItem"
-            },
-            "type": "array",
-            "title": "Model Runs"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__evals__detail__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "eval_agent_mapping": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "additionalProperties": true,
-                  "type": "object"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Agent Mapping"
-          },
-          "valid_eval_agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Eval Agent Ids"
-          },
-          "agent_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Agent Mapping"
-          },
-          "valid_agent_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Agent Ids"
-          },
-          "rubric_mapping": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "additionalProperties": true,
-                  "type": "object"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Mapping"
-          },
-          "valid_rubric_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Rubric Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "eval_id",
-          "name",
-          "description",
-          "rubric_id",
-          "agent_id",
-          "eval_agent_id",
-          "active",
-          "rubric_name",
-          "rubric_description",
-          "rubric_points",
-          "rubric_pass_points",
-          "created_at",
-          "updated_at",
-          "department_ids",
-          "total_runs",
-          "completed_runs",
-          "pending_runs",
-          "status",
-          "model_runs",
-          "department_mapping",
-          "valid_department_ids",
-          "eval_agent_mapping",
-          "valid_eval_agent_ids",
-          "agent_mapping",
-          "valid_agent_ids",
-          "rubric_mapping",
-          "valid_rubric_ids",
-          "can_edit",
-          "can_delete"
-        ],
-        "title": "EvalDetailResponse",
-        "description": "Detailed eval response with all fields and metadata."
       },
       "EvalItem": {
         "properties": {
@@ -24589,8 +24383,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/app__api__v3__parameters__list__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -34617,6 +34410,10 @@
               }
             ],
             "title": "Question Timestamps"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -34629,7 +34426,8 @@
           "persona_ids",
           "document_ids",
           "objective_ids",
-          "parameters"
+          "parameters",
+          "profileId"
         ],
         "title": "UpdateScenarioRequest",
         "description": "Request to update a scenario."
@@ -38348,6 +38146,33 @@
         "title": "ScenarioMappingItem",
         "description": "Scenario mapping item with extended fields for nested data."
       },
+      "app__api__v3__evals__detail__AgentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "AgentMappingItem",
+        "description": "Agent mapping item with role information."
+      },
       "app__api__v3__evals__detail__DepartmentMappingItem": {
         "properties": {
           "name": {
@@ -38366,6 +38191,239 @@
         ],
         "title": "DepartmentMappingItem",
         "description": "Department mapping item."
+      },
+      "app__api__v3__evals__detail__EvalDetailResponse": {
+        "properties": {
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "eval_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Agent Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "rubric_name": {
+            "type": "string",
+            "title": "Rubric Name"
+          },
+          "rubric_description": {
+            "type": "string",
+            "title": "Rubric Description"
+          },
+          "rubric_points": {
+            "type": "integer",
+            "title": "Rubric Points"
+          },
+          "rubric_pass_points": {
+            "type": "integer",
+            "title": "Rubric Pass Points"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs"
+          },
+          "completed_runs": {
+            "type": "integer",
+            "title": "Completed Runs"
+          },
+          "pending_runs": {
+            "type": "integer",
+            "title": "Pending Runs"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "model_runs": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__evals__detail__ModelRunItem"
+            },
+            "type": "array",
+            "title": "Model Runs"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__evals__detail__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "eval_agent_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/app__api__v3__evals__detail__AgentMappingItem"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Agent Mapping"
+          },
+          "valid_eval_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Eval Agent Ids"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__evals__detail__AgentMappingItem"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "valid_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Agent Ids"
+          },
+          "rubric_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/RubricMappingItem"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Mapping"
+          },
+          "valid_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Rubric Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eval_id",
+          "name",
+          "description",
+          "rubric_id",
+          "agent_id",
+          "eval_agent_id",
+          "active",
+          "rubric_name",
+          "rubric_description",
+          "rubric_points",
+          "rubric_pass_points",
+          "created_at",
+          "updated_at",
+          "department_ids",
+          "total_runs",
+          "completed_runs",
+          "pending_runs",
+          "status",
+          "model_runs",
+          "department_mapping",
+          "valid_department_ids",
+          "eval_agent_mapping",
+          "valid_eval_agent_ids",
+          "agent_mapping",
+          "valid_agent_ids",
+          "rubric_mapping",
+          "valid_rubric_ids",
+          "can_edit",
+          "can_delete"
+        ],
+        "title": "EvalDetailResponse",
+        "description": "Detailed eval response with all fields and metadata."
       },
       "app__api__v3__evals__detail__ModelRunItem": {
         "properties": {
@@ -38556,6 +38614,456 @@
         ],
         "title": "DepartmentMappingItem",
         "description": "Department mapping item."
+      },
+      "app__api__v3__evals__new__AgentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "AgentMappingItem",
+        "description": "Agent mapping item with role information."
+      },
+      "app__api__v3__evals__new__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
+      "app__api__v3__evals__new__EvalDetailResponse": {
+        "properties": {
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "eval_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Agent Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "rubric_name": {
+            "type": "string",
+            "title": "Rubric Name"
+          },
+          "rubric_description": {
+            "type": "string",
+            "title": "Rubric Description"
+          },
+          "rubric_points": {
+            "type": "integer",
+            "title": "Rubric Points"
+          },
+          "rubric_pass_points": {
+            "type": "integer",
+            "title": "Rubric Pass Points"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs"
+          },
+          "completed_runs": {
+            "type": "integer",
+            "title": "Completed Runs"
+          },
+          "pending_runs": {
+            "type": "integer",
+            "title": "Pending Runs"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "model_runs": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__evals__new__ModelRunItem"
+            },
+            "type": "array",
+            "title": "Model Runs"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__evals__new__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "eval_agent_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/app__api__v3__evals__new__AgentMappingItem"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Agent Mapping"
+          },
+          "valid_eval_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Eval Agent Ids"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__evals__new__AgentMappingItem"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "valid_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Agent Ids"
+          },
+          "rubric_mapping": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/RubricMappingItem"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Mapping"
+          },
+          "valid_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Rubric Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eval_id",
+          "name",
+          "description",
+          "rubric_id",
+          "agent_id",
+          "eval_agent_id",
+          "active",
+          "rubric_name",
+          "rubric_description",
+          "rubric_points",
+          "rubric_pass_points",
+          "created_at",
+          "updated_at",
+          "department_ids",
+          "total_runs",
+          "completed_runs",
+          "pending_runs",
+          "status",
+          "model_runs",
+          "department_mapping",
+          "valid_department_ids",
+          "eval_agent_mapping",
+          "valid_eval_agent_ids",
+          "agent_mapping",
+          "valid_agent_ids",
+          "rubric_mapping",
+          "valid_rubric_ids",
+          "can_edit",
+          "can_delete"
+        ],
+        "title": "EvalDetailResponse",
+        "description": "Detailed eval response with all fields and metadata."
+      },
+      "app__api__v3__evals__new__ModelRunItem": {
+        "properties": {
+          "model_run_id": {
+            "type": "string",
+            "title": "Model Run Id"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          },
+          "assigned_at": {
+            "type": "string",
+            "title": "Assigned At"
+          },
+          "status_updated_at": {
+            "type": "string",
+            "title": "Status Updated At"
+          },
+          "model_run_created_at": {
+            "type": "string",
+            "title": "Model Run Created At"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "agent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Name"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "has_grade": {
+            "type": "boolean",
+            "title": "Has Grade"
+          },
+          "grade_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Score"
+          },
+          "grade_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Passed"
+          },
+          "grade_created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_run_id",
+          "completed",
+          "assigned_at",
+          "status_updated_at",
+          "model_run_created_at",
+          "model_id",
+          "model_name",
+          "agent_id",
+          "agent_name",
+          "persona_id",
+          "persona_name",
+          "profile_id",
+          "profile_name",
+          "has_grade",
+          "grade_score",
+          "grade_passed",
+          "grade_created_at"
+        ],
+        "title": "ModelRunItem",
+        "description": "Model run item in eval detail."
       },
       "app__api__v3__evals__runs__ModelRunItem": {
         "properties": {
@@ -39473,6 +39981,25 @@
           "department_ids"
         ],
         "title": "ParameterItemDetail"
+      },
+      "app__api__v3__parameters__list__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
       },
       "app__api__v3__parameters__list__DocumentMappingItem": {
         "properties": {
@@ -45379,6 +45906,33 @@
         "title": "SimulationItem",
         "description": "Simulation item in list response."
       },
+      "app__api__v3__simulations__new__AgentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "AgentMappingItem",
+        "description": "Agent mapping item with role information."
+      },
       "app__api__v3__simulations__new__DepartmentMappingItem": {
         "properties": {
           "name": {
@@ -46052,8 +46606,7 @@
           },
           "agent_mapping": {
             "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/app__api__v3__simulations__new__AgentMappingItem"
             },
             "type": "object",
             "title": "Agent Mapping"

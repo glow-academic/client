@@ -83,6 +83,14 @@ class ScenarioMappingItem(BaseModel):
     document_ids: list[str]
 
 
+class AgentMappingItem(BaseModel):
+    """Agent mapping item with role information."""
+
+    name: str
+    description: str
+    roles: list[str] = []
+
+
 # Type aliases for Dict mappings
 DepartmentMapping = dict[str, DepartmentMappingItem]
 FieldMapping = dict[str, FieldMappingItem]
@@ -91,6 +99,7 @@ RubricMapping = dict[str, RubricMappingItem]
 PersonaMapping = dict[str, PersonaMappingItem]
 DocumentMapping = dict[str, DocumentMappingItem]
 ScenarioMapping = dict[str, ScenarioMappingItem]
+AgentMapping = dict[str, AgentMappingItem]
 
 
 # Inline schemas
@@ -192,12 +201,12 @@ class SimulationDetailResponse(BaseModel):
     parameter_mapping: ParameterMapping
 
     # Top-level mappings
-    scenario_mapping: ScenarioMapping
+    scenario_mapping: dict[str, ScenarioMappingItem]
     video_mapping: dict[str, dict[str, Any]]  # Video mapping
-    rubric_mapping: RubricMapping
-    department_mapping: DepartmentMapping
-    field_mapping: FieldMapping
-    agent_mapping: dict[str, dict[str, Any]]  # Agent mapping
+    rubric_mapping: dict[str, RubricMappingItem]
+    department_mapping: dict[str, DepartmentMappingItem]
+    field_mapping: dict[str, FieldMappingItem]
+    agent_mapping: dict[str, AgentMappingItem]  # Agent mapping
     valid_agent_ids: list[str]  # Valid agent IDs for pickers
 
 
@@ -475,10 +484,24 @@ async def get_simulation_new(
                     )
 
         # Parse agent_mapping
-        agent_mapping: dict[str, dict[str, Any]] = {}
+        agent_mapping: AgentMapping = {}
         agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
         if isinstance(agent_mapping_data, dict):
-            agent_mapping = agent_mapping_data
+            for agent_id, adata in agent_mapping_data.items():
+                if isinstance(adata, dict):
+                    roles = adata.get("roles", [])
+                    if isinstance(roles, str):
+                        try:
+                            roles = json.loads(roles)
+                        except json.JSONDecodeError:
+                            roles = []
+                    if not isinstance(roles, list):
+                        roles = []
+                    agent_mapping[agent_id] = AgentMappingItem(
+                        name=adata.get("name", ""),
+                        description=adata.get("description", ""),
+                        roles=[str(r) for r in roles],
+                    )
 
         valid_agent_ids_raw = result.get("valid_agent_ids") or []
         valid_agent_ids = (

@@ -108,7 +108,11 @@ department_profiles_would_orphan AS (
     GROUP BY pd.department_id
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $1
 ),
 all_cohort_ids AS (
     SELECT DISTINCT unnest(cohort_ids)::uuid as cohort_id
@@ -173,7 +177,8 @@ SELECT
         ELSE false
     END as can_duplicate,
     cmd.mapping as cohort_mapping,
-    pmd.mapping as profile_mapping
+    pmd.mapping as profile_mapping,
+    up.actor_name
 FROM departments d
 JOIN user_departments ud ON ud.department_id = d.id
 LEFT JOIN department_price_spent dps ON dps.department_id = d.id

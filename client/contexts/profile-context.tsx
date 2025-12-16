@@ -13,6 +13,7 @@ import type {
   SafeSessionSnapshot,
 } from "@/app/(main)/layout-server";
 import { createSocketClient } from "@/lib/ws/socket";
+import type { ServerToClientEvents } from "@/lib/ws/types";
 import {
   getFirstAvailableSectionForRole,
   getSectionRoute,
@@ -232,9 +233,12 @@ export function ProfileProviderClient({
       });
 
       // Set up event handlers for simulation tracking
+      // Note: Socket.IO server-to-client events use requestBody as payload
       socket.on(
         "simulations_text_started",
-        (data: { success: boolean; message: string; attempt_id: string }) => {
+        (
+          data: Parameters<ServerToClientEvents["simulations_text_started"]>[0]
+        ) => {
           setStartingSimulationId(null);
           if (data.success) {
             toast.success(data.message);
@@ -251,7 +255,11 @@ export function ProfileProviderClient({
 
       socket.on(
         "simulations_text_practice_error",
-        (data: { success: boolean; message: string }) => {
+        (
+          data: Parameters<
+            ServerToClientEvents["simulations_text_practice_error"]
+          >[0]
+        ) => {
           setStartingSimulationId(null);
           toast.error(data.message);
           window.dispatchEvent(new CustomEvent("simulationError"));

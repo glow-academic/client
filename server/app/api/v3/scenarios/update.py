@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -42,6 +43,7 @@ class UpdateScenarioRequest(BaseModel):
     active_video_id: str | None = None
     question_ids: list[str] | None = None
     question_timestamps: dict[str, dict[str, list[int]]] | None = None
+    profileId: str  # Required for auditing/access control
 
 
 class UpdateScenarioResponse(BaseModel):
@@ -54,7 +56,15 @@ class UpdateScenarioResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateScenarioResponse)
+@router.post(
+    "/update",
+    response_model=UpdateScenarioResponse,
+    dependencies=[
+        audit_activity(
+            "scenario.updated", "{{ actor.name }} updated scenario '{{ scenario.name }}'"
+        )
+    ],
+)
 async def update_scenario(
     request: UpdateScenarioRequest,
     http_request: Request,
@@ -164,6 +174,9 @@ async def update_scenario(
         if request.video_enabled and not request.video_agent_id:
             raise ValueError("video_agent_id is required when video_enabled is true")
 
+        # Require profileId in request body (already required by Pydantic model)
+        profile_id = request.profileId
+
         # Update scenario with all relationships in a single SQL file
         sql_query = load_sql("sql/v3/scenarios/update_scenario_complete.sql")
         sql_params = (
@@ -192,6 +205,7 @@ async def update_scenario(
             request.scenario_agent_id,
             request.image_agent_id,
             parameter_ids if parameter_ids else None,
+            profile_id,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 
@@ -200,9 +214,21 @@ async def update_scenario(
                 status_code=404, detail=f"Scenario not found: {request.scenarioId}"
             )
 
+        scenario_id = result["scenario_id"]
+        scenario_name = result["name"]
+        actor_name = result.get("actor_name")
+
+        # Set audit context with data from SQL query
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                scenario={"name": scenario_name, "id": scenario_id},
+            )
+
         result_data = UpdateScenarioResponse(
             success=True,
-            message=f"Scenario '{result['name']}' updated successfully",
+            message=f"Scenario '{scenario_name}' updated successfully",
         )
 
         # Invalidate cache after mutation

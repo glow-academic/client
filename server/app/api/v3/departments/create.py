@@ -20,6 +20,7 @@ class CreateDepartmentRequest(BaseModel):
     description: str
     active: bool
     settingsId: str | None = None
+    profileId: str  # Required for auditing/access control
 
 
 class CreateDepartmentResponse(BaseModel):
@@ -57,8 +58,8 @@ async def create_department(
 
     try:
         async with transaction(conn):
-            # Get profile_id from headers (middleware resolves it)
-            profile_id = http_request.headers.get("X-Profile-Id") or "guest-profile-id"
+            # Require profileId in request body (already required by Pydantic model)
+            profile_id = request.profileId
 
             # Single consolidated query: creates department and settings relationship
             sql_query = load_sql("sql/v3/departments/create_department_complete.sql")

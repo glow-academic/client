@@ -432,7 +432,6 @@ export function ContentSection({
   onImageSelect,
   onImageUpload,
   onImageRemove: _onImageRemove,
-  onUseVideoChange,
   onVideoSelect,
   onUseQuestionsChange,
   onQuestionsChange,

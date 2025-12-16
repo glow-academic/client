@@ -38,8 +38,15 @@ type SocketInputPayload<P extends SocketPath> =
     ? B
     : never;
 
-// Helper to get payload type from OutputOf (for server-to-client events)
-type SocketOutputPayload<P extends SocketPath> = OutputOf<P, "post">;
+// Helper to get payload type from requestBody (for server-to-client events)
+// Socket.IO server-to-client events send payload in requestBody, not response
+// The response is just a confirmation { [key: string]: boolean }
+type SocketOutputPayload<P extends SocketPath> =
+  InputOf<P, "post"> extends {
+    body: infer B;
+  }
+    ? B
+    : never;
 
 // Note: The OpenAPI paths use /socket/v3/client/ for client-to-server events
 // and /socket/v3/server/ for server-to-client events, so we can use the path prefix

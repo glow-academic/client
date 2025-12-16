@@ -649,33 +649,6 @@ export default function Rubric({
     });
   };
 
-  // Get unique standards grouped by name (for columns) sorted by points descending (most to least)
-  // This avoids duplicate columns when multiple rubrics have standards with the same name
-  const _uniqueStandardsByName = useMemo(() => {
-    const standardsByName = new Map<string, Standard>();
-    // Group by name, keeping the standard with highest points (or first encountered if tie)
-    standards.forEach((s) => {
-      const existing = standardsByName.get(s.name);
-      if (!existing || s.points > existing.points) {
-        standardsByName.set(s.name, s);
-      }
-    });
-    // Convert to array and sort by points descending
-    return Array.from(standardsByName.values()).sort(
-      (a, b) => b.points - a.points
-    );
-  }, [standards]);
-
-  // Helper function to find the standard ID for a given group and standard name
-  const _findStandardIdForGroup = useCallback(
-    (groupId: string, standardName: string): string | null => {
-      const standard = standards.find(
-        (s) => s.standardGroupId === groupId && s.name === standardName
-      );
-      return standard?.id || null;
-    },
-    [standards]
-  );
 
   // Group level names by uniqueness for column headers
   const levelNameGroups = useMemo(() => {

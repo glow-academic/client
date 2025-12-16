@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -158,7 +159,13 @@ def disambiguate_scenarios(
     return out
 
 
-@router.post("/list", response_model=DocumentsListResponse)
+@router.post(
+    "/list",
+    response_model=DocumentsListResponse,
+    dependencies=[
+        audit_activity("documents.list", "{{ actor.name }} visited the Documents page")
+    ],
+)
 async def get_documents_list(
     filters: DocumentsListRequest,
     request: Request,
@@ -186,6 +193,13 @@ async def get_documents_list(
         sql_query = load_sql("sql/v3/documents/list_documents.sql")
         sql_params = (filters.profileId,)
         rows = await conn.fetch(sql_query, filters.profileId)
+
+        # Get actor name from first row (same for all rows)
+        actor_name = rows[0]["actor_name"] if rows else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": filters.profileId})
 
         documents: list[DocumentItem] = []
         scenario_mapping: dict[str, ScenarioMappingItem] = {}

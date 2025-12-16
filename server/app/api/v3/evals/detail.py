@@ -4,15 +4,15 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -23,8 +23,25 @@ class DepartmentMappingItem(BaseModel):
     description: str
 
 
+class AgentMappingItem(BaseModel):
+    """Agent mapping item with role information."""
+
+    name: str
+    description: str
+    roles: list[str] = []
+
+
+class RubricMappingItem(BaseModel):
+    """Rubric mapping item."""
+
+    name: str
+    description: str
+
+
 # Type aliases for Dict mappings
 DepartmentMapping = dict[str, DepartmentMappingItem]
+AgentMapping = dict[str, AgentMappingItem]
+RubricMapping = dict[str, RubricMappingItem]
 
 
 # Inline request/response schemas
@@ -86,19 +103,13 @@ class EvalDetailResponse(BaseModel):
     model_runs: list[ModelRunItem]
 
     # Mappings
-    department_mapping: DepartmentMapping
+    department_mapping: dict[str, DepartmentMappingItem]
     valid_department_ids: list[str]
-    eval_agent_mapping: (
-        dict[str, dict[str, Any]] | None
-    )  # Eval agent mapping (agents with 'eval' role)
+    eval_agent_mapping: dict[str, AgentMappingItem] | None  # Eval agent mapping (agents with 'eval' role)
     valid_eval_agent_ids: list[str] | None
-    agent_mapping: dict[
-        str, dict[str, Any]
-    ]  # AgentMapping format (agents being evaluated)
+    agent_mapping: dict[str, AgentMappingItem]  # AgentMapping format (agents being evaluated)
     valid_agent_ids: list[str]
-    rubric_mapping: (
-        dict[str, dict[str, Any]] | None
-    )  # Rubric mapping (filtered by agent role)
+    rubric_mapping: dict[str, RubricMappingItem] | None  # Rubric mapping (filtered by agent role)
     valid_rubric_ids: list[str] | None
 
     # Permissions
@@ -124,7 +135,13 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:  # noqa: ANN401
     return None
 
 
-@router.post("/detail", response_model=EvalDetailResponse)
+@router.post(
+    "/detail",
+    response_model=EvalDetailResponse,
+    dependencies=[
+        audit_activity("eval.viewed", "{{ actor.name }} viewed eval '{{ eval.name }}'")
+    ],
+)
 async def get_eval_detail(
     request: EvalDetailRequest,
     http_request: Request,
@@ -171,6 +188,16 @@ async def get_eval_detail(
                 status_code=404, detail=f"Eval not found: {request.evalId}"
             )
 
+        # Set audit context with data from SQL query
+        actor_name = result.get("actor_name")
+        eval_name = result.get("name")
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": request.profileId},
+                eval={"name": eval_name, "id": request.evalId},
+            )
+
         # Parse department_ids
         raw_department_ids = result.get("department_ids")
         department_ids: list[str] | None = None
@@ -189,7 +216,7 @@ async def get_eval_detail(
                     )
 
         # Parse eval_agent_mapping (agents with 'eval' role)
-        eval_agent_mapping: dict[str, dict[str, Any]] = {}
+        eval_agent_mapping: AgentMapping = {}
         eval_agent_mapping_data = parse_jsonb(result.get("eval_agent_mapping"))
         if isinstance(eval_agent_mapping_data, dict):
             for agent_id, adata in eval_agent_mapping_data.items():
@@ -202,18 +229,18 @@ async def get_eval_detail(
                             roles = []
                     if not isinstance(roles, list):
                         roles = []
-                    eval_agent_mapping[agent_id] = {
-                        "name": adata.get("name", ""),
-                        "description": adata.get("description", ""),
-                        "roles": [str(r) for r in roles],
-                    }
+                    eval_agent_mapping[agent_id] = AgentMappingItem(
+                        name=adata.get("name", ""),
+                        description=adata.get("description", ""),
+                        roles=[str(r) for r in roles],
+                    )
 
         valid_eval_agent_ids = [
             str(aid) for aid in (result.get("valid_eval_agent_ids") or [])
         ]
 
         # Parse agent_mapping (agents being evaluated)
-        agent_mapping: dict[str, dict[str, Any]] = {}
+        agent_mapping: AgentMapping = {}
         agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
         if isinstance(agent_mapping_data, dict):
             for agent_id, adata in agent_mapping_data.items():
@@ -226,11 +253,11 @@ async def get_eval_detail(
                             roles = []
                     if not isinstance(roles, list):
                         roles = []
-                    agent_mapping[agent_id] = {
-                        "name": adata.get("name", ""),
-                        "description": adata.get("description", ""),
-                        "roles": [str(r) for r in roles],
-                    }
+                    agent_mapping[agent_id] = AgentMappingItem(
+                        name=adata.get("name", ""),
+                        description=adata.get("description", ""),
+                        roles=[str(r) for r in roles],
+                    )
 
         valid_agent_ids = [str(aid) for aid in (result.get("valid_agent_ids") or [])]
         valid_department_ids = [
@@ -238,10 +265,15 @@ async def get_eval_detail(
         ]
 
         # Parse rubric mapping
-        rubric_mapping: dict[str, dict[str, Any]] = {}
+        rubric_mapping: RubricMapping = {}
         rubric_mapping_data = parse_jsonb(result.get("rubric_mapping"))
         if isinstance(rubric_mapping_data, dict):
-            rubric_mapping = rubric_mapping_data
+            for rubric_id, rdata in rubric_mapping_data.items():
+                if isinstance(rdata, dict):
+                    rubric_mapping[rubric_id] = RubricMappingItem(
+                        name=rdata.get("name", ""),
+                        description=rdata.get("description", ""),
+                    )
 
         valid_rubric_ids = [str(rid) for rid in (result.get("valid_rubric_ids") or [])]
 

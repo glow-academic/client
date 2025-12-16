@@ -189,9 +189,9 @@ export default function Eval({
     return () => clearEntityMetadata();
   }, [evalDetail, evalId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
-  // Extract body types for type safety
-  type CreateEvalBody = CreateEvalIn extends { body: infer B } ? B : never;
-  type UpdateEvalBody = UpdateEvalIn extends { body: infer B } ? B : never;
+  // Extract body types for type safety using InputOf directly
+  type CreateEvalBody = CreateEvalIn["body"];
+  type UpdateEvalBody = UpdateEvalIn["body"];
 
   // Server action handlers
   const handleCreateEval = async (body: CreateEvalBody) => {
@@ -213,12 +213,6 @@ export default function Eval({
     if (!isEditMode || !evalData) return false;
     return !evalData.can_edit;
   }, [isEditMode, evalData]);
-
-  // Filter valid IDs based on selected departments
-  const departmentMapping = useMemo(
-    () => evalData?.department_mapping || {},
-    [evalData?.department_mapping]
-  );
 
   // Get valid agent IDs (agents being evaluated) - filtered by departments
   const validAgentIds = useMemo(() => {
@@ -665,6 +659,14 @@ export default function Eval({
       );
 
       const targetEvalId = evalId || editingEvalId;
+      // profileId is added by server action, but we need it for type checking
+      const profileId = effectiveProfile?.profileId;
+      if (!profileId) {
+        toast.error("Profile ID is required");
+        setIsSubmitting(false);
+        return;
+      }
+
       if (targetEvalId) {
         // UPDATE mode
         const updateRequest: UpdateEvalBody = {
@@ -677,6 +679,7 @@ export default function Eval({
           department_ids: finalDepartmentIds || [],
           active: formData.active ?? true,
           model_run_ids: currentModelRunIds,
+          profileId, // Required by server
         };
         await handleUpdateEval(updateRequest);
 
@@ -692,6 +695,8 @@ export default function Eval({
           department_ids: finalDepartmentIds || [],
           active: formData.active || true,
           model_run_ids: currentModelRunIds,
+          profileId, // Required by server
+          run: false, // Default to false, user can run manually later
         };
         await handleCreateEval(createRequest);
 
@@ -880,17 +885,17 @@ export default function Eval({
                       handleInputChange("eval_agent_id", ids[0] || null)
                     }
                     getId={(item) => (item as unknown as { id: string }).id}
-                    getLabel={(item) => item.name || ""}
+                    getLabel={(item) => item["name"] || ""}
                     getSearchText={(item) =>
-                      `${item.name} ${item.description || ""}`
+                      `${item["name"]} ${item["description"] || ""}`
                     }
                     renderPreview={(item) => (
                       <div className="grid gap-2">
                         <h4 className="font-medium leading-none">
-                          {item.name || "No agent selected"}
+                          {item["name"] || "No agent selected"}
                         </h4>
                         <div className="text-sm text-muted-foreground">
-                          {item.description || "No description available"}
+                          {item["description"] || "No description available"}
                         </div>
                       </div>
                     )}
@@ -898,10 +903,10 @@ export default function Eval({
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <div className="flex-1 min-w-0">
-                            <div className="truncate">{item.name}</div>
-                            {item.description && (
+                            <div className="truncate">{item["name"]}</div>
+                            {item["description"] && (
                               <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                {item.description}
+                                {item["description"]}
                               </div>
                             )}
                           </div>

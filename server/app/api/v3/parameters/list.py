@@ -17,6 +17,13 @@ from app.utils.sql_helper import load_sql
 
 
 # Inline mapping types (DHH style - no shared types)
+class DepartmentMappingItem(BaseModel):
+    """Department mapping item."""
+
+    name: str
+    description: str
+
+
 class DocumentMappingItem(BaseModel):
     """Document mapping item."""
 
@@ -48,6 +55,7 @@ class ScenarioMappingItem(BaseModel):
 
 
 # Type aliases for Dict mappings
+DepartmentMapping = dict[str, DepartmentMappingItem]
 DocumentMapping = dict[str, DocumentMappingItem]
 ScenarioMapping = dict[str, ScenarioMappingItem]
 
@@ -80,9 +88,9 @@ class ParameterItem(BaseModel):
 
 class ParametersListResponse(BaseModel):
     parameters: list[ParameterItem]
-    scenario_mapping: ScenarioMapping
-    department_mapping: dict[str, dict[str, Any]]
-    document_mapping: DocumentMapping
+    scenario_mapping: dict[str, ScenarioMappingItem]
+    department_mapping: dict[str, DepartmentMappingItem]
+    document_mapping: dict[str, DocumentMappingItem]
     # UI-ready facet options (precomputed on server)
     scenario_options: list[dict[str, str]]  # Array of {value, label}
     document_options: list[dict[str, str]]  # Array of {value, label}
@@ -148,7 +156,7 @@ async def get_parameters_list(
 
         parameters = []
         scenario_mapping: ScenarioMapping = {}
-        department_mapping: dict[str, dict[str, Any]] = {}
+        department_mapping: DepartmentMapping = {}
         document_mapping: DocumentMapping = {}
 
         # Parse mappings from first row (same across all rows)
@@ -180,7 +188,12 @@ async def get_parameters_list(
             if isinstance(department_mapping_data, str):
                 department_mapping_data = json.loads(department_mapping_data)
             if department_mapping_data and isinstance(department_mapping_data, dict):
-                department_mapping = department_mapping_data
+                for dept_id, ddata in department_mapping_data.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[dept_id] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
 
             # Parse document_mapping from JSONB
             document_mapping_data = first_row.get("document_mapping")

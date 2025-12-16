@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -115,7 +116,15 @@ class CohortDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail", response_model=CohortDetailResponse)
+@router.post(
+    "/detail",
+    response_model=CohortDetailResponse,
+    dependencies=[
+        audit_activity(
+            "cohort.viewed", "{{ actor.name }} viewed cohort '{{ cohort.name }}'"
+        )
+    ],
+)
 async def get_cohort_detail(
     request_body: CohortDetailRequest,
     request: Request,
@@ -158,6 +167,16 @@ async def get_cohort_detail(
                     detail="You don't have access to this cohort. It may be restricted to other departments.",
                 )
             raise HTTPException(status_code=404, detail="Cohort not found")
+
+        # Set audit context with data from SQL query
+        actor_name = row.get("actor_name")
+        cohort_name = row.get("title")
+        if actor_name:
+            audit_set(
+                request,
+                actor={"name": actor_name, "id": request_body.profileId},
+                cohort={"name": cohort_name, "id": request_body.cohortId},
+            )
 
         # Parse simulations list from JSONB
         simulations: list[SimulationInCohort] = []

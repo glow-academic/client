@@ -160,7 +160,11 @@ department_mapping_data AS (
     LEFT JOIN department_simulation_ids_with_cross dsic ON dsic.department_id = vd.id
 ),
 user_profile_for_cohort AS (
-    SELECT role FROM profiles WHERE id = $2
+    SELECT 
+        role,
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM profiles p
+    WHERE p.id = $2
 )
 SELECT 
     cd.title,
@@ -238,6 +242,7 @@ SELECT
         dmd.dept_data
      ), '{}'::jsonb)
      FROM department_mapping_data dmd
-    ) as department_mapping
+    ) as department_mapping,
+    upc.actor_name
 FROM cohort_data cd
 CROSS JOIN user_profile_for_cohort upc

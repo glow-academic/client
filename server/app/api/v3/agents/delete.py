@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -26,7 +27,15 @@ class DeleteAgentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeleteAgentResponse)
+@router.post(
+    "/delete",
+    response_model=DeleteAgentResponse,
+    dependencies=[
+        audit_activity(
+            "agent.deleted", "{{ actor.name }} deleted agent '{{ agent.name }}'"
+        )
+    ],
+)
 async def delete_agent(
     request: DeleteAgentRequest,
     http_request: Request,
@@ -48,6 +57,16 @@ async def delete_agent(
         if result and result["usage_count"] > 0:
             raise HTTPException(
                 status_code=400, detail="Cannot delete agent: agent is in use"
+            )
+
+        # Set audit context with data from SQL query
+        actor_name = result.get("actor_name") if result else None
+        agent_name = result.get("name", "Unknown") if result else "Unknown"
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": request.profileId},
+                agent={"name": agent_name, "id": request.agentId},
             )
 
         # Note: DELETE is idempotent - deleting non-existent entity is considered success

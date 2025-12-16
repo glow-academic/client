@@ -632,7 +632,16 @@ export default function Simulation({
     const mapping = isEditMode && simulationDetail && "rubric_mapping" in simulationDetail
       ? simulationDetail.rubric_mapping || {}
       : simulationData?.rubric_mapping || {};
-    const mapped: Record<string, { id: string; name: string; description?: string }> = { ...mapping };
+    const mapped: Record<string, { id: string; name: string; description?: string }> = {};
+    
+    // Map rubric_mapping items to include id field
+    Object.entries(mapping).forEach(([id, item]) => {
+      mapped[id] = {
+        id,
+        name: item["name"],
+        description: item["description"],
+      };
+    });
     
     // Add selected rubrics from content items that aren't in the mapping
     contentItems.forEach((item) => {

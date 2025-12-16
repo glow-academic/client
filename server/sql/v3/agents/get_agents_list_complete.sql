@@ -4,7 +4,11 @@ WITH user_departments AS (
     WHERE profile_id = $1 AND active = true
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $1::uuid
+    SELECT 
+        role,
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+    FROM profiles 
+    WHERE id = $1::uuid
 ),
 agent_department_links AS (
     SELECT 
@@ -62,7 +66,8 @@ SELECT
     END as can_delete,
     m.name as model_name,
     COALESCE(m.description, '') as model_description,
-    dmd.mapping as department_mapping
+    dmd.mapping as department_mapping,
+    up.actor_name
 FROM agents a
 CROSS JOIN user_profile up
 LEFT JOIN agent_department_links adl ON adl.agent_id = a.id

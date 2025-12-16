@@ -77,16 +77,31 @@ export default function Reports({
   const searchParams = useSearchParams();
 
   // Extract data from API response
-  const profiles = useMemo(() => reportsData?.data || [], [reportsData?.data]);
-  const simulationMapping = useMemo(
-    () => reportsData?.simulation_mapping || {},
-    [reportsData?.simulation_mapping],
-  );
+  // Type guard to ensure reportsData has expected structure
+  const profiles = useMemo(() => {
+    if (reportsData && typeof reportsData === "object" && "data" in reportsData) {
+      return (reportsData as { data: unknown[] }).data || [];
+    }
+    return [];
+  }, [reportsData]);
+  
+  const simulationMapping = useMemo(() => {
+    if (reportsData && typeof reportsData === "object" && "simulation_mapping" in reportsData) {
+      return (reportsData as { simulation_mapping: Record<string, unknown> }).simulation_mapping || {};
+    }
+    return {};
+  }, [reportsData]);
 
   // Extract pagination metadata from server response
-  const page = reportsData?.page || 0;
-  const pageSize = reportsData?.pageSize || 100;
-  const totalPages = reportsData?.totalPages || 0;
+  const page = reportsData && typeof reportsData === "object" && "page" in reportsData 
+    ? (reportsData as { page: number }).page || 0 
+    : 0;
+  const pageSize = reportsData && typeof reportsData === "object" && "pageSize" in reportsData
+    ? (reportsData as { pageSize: number }).pageSize || 100
+    : 100;
+  const totalPages = reportsData && typeof reportsData === "object" && "totalPages" in reportsData
+    ? (reportsData as { totalPages: number }).totalPages || 0
+    : 0;
 
   // Export state
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
@@ -266,7 +281,7 @@ export default function Reports({
     () =>
       Object.entries(simulationMapping).map(([id, simulation]) => ({
         id,
-        title: simulation.name,
+        title: (simulation && typeof simulation === "object" && "name" in simulation) ? (simulation as { name: string }).name : "Unknown",
       })),
     [simulationMapping],
   );

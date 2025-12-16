@@ -13,12 +13,10 @@ import {
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { components } from "@/lib/api/schema";
 
-export interface AgentMappingItem {
-  name: string;
-  description?: string;
-  roles?: string[];
-}
+// Extract AgentMappingItem type from schema
+type AgentMappingItem = components["schemas"]["app__api__v3__evals__detail__AgentMappingItem"];
 
 export interface AgentCardGridProps {
   agentMapping: Record<string, AgentMappingItem>;

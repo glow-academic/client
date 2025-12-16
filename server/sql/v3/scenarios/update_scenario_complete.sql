@@ -6,11 +6,19 @@
 --            $14=document_ids (text array), $15=template_document_ids (text array, nullable), $16=objective_ids (text array),
 --            $17=parameter_item_ids (text array, flattened from parameters dict),
 --            $18=upload_images_json (JSONB string with upload images array), $19=scenario_agent_id (nullable uuid), $20=image_agent_id (nullable uuid),
---            $21=parameter_ids (text array, nullable)
+--            $21=parameter_ids (text array, nullable), $22=profile_id (uuid, required)
 -- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
--- Returns: scenario_id, name if updated, or no rows if scenario doesn't exist
+-- Returns: scenario_id, name, actor_name if updated, or no rows if scenario doesn't exist
 -- Note: objective_ids should only contain new objective text (composite IDs filtered in Python)
-WITH scenario_exists AS (
+-- profile_id is always a UUID (required in request body)
+actor_profile AS (
+    SELECT 
+        $22::uuid as resolved_profile_id,
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM profiles p
+    WHERE p.id = $22::uuid
+),
+scenario_exists AS (
     -- Check if scenario exists
     SELECT id, name
     FROM scenarios
@@ -338,5 +346,10 @@ upsert_field_ranges AS (
     ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
         updated_at = NOW()
 )
-SELECT scenario_id, name FROM update_scenario
+SELECT 
+    us.scenario_id,
+    us.name,
+    ap.actor_name
+FROM update_scenario us
+CROSS JOIN actor_profile ap
 

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -17,6 +18,7 @@ class DeleteScenarioRequest(BaseModel):
     """Request to delete a scenario."""
 
     scenarioId: str
+    profileId: str  # Required for auditing/access control
 
 
 class DeleteScenarioResponse(BaseModel):
@@ -29,7 +31,15 @@ class DeleteScenarioResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeleteScenarioResponse)
+@router.post(
+    "/delete",
+    response_model=DeleteScenarioResponse,
+    dependencies=[
+        audit_activity(
+            "scenario.deleted", "{{ actor.name }} deleted scenario '{{ scenario.name }}'"
+        )
+    ],
+)
 async def delete_scenario(
     request: DeleteScenarioRequest,
     http_request: Request,
@@ -43,10 +53,13 @@ async def delete_scenario(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Require profileId in request body (already required by Pydantic model)
+        profile_id = request.profileId
+
         # Delete scenario with existence and usage checks in a single SQL file
         sql_query = load_sql("sql/v3/scenarios/delete_scenario_complete.sql")
-        sql_params = (request.scenarioId,)
-        result = await conn.fetchrow(sql_query, request.scenarioId)
+        sql_params = (request.scenarioId, profile_id)
+        result = await conn.fetchrow(sql_query, request.scenarioId, profile_id)
 
         if not result:
             # Scenario doesn't exist
@@ -63,9 +76,20 @@ async def delete_scenario(
                 detail=f"Cannot delete scenario that is in use by {usage_count} simulation(s)",
             )
 
+        scenario_name = result["name"]
+        actor_name = result.get("actor_name")
+
+        # Set audit context with data from SQL query
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                scenario={"name": scenario_name, "id": request.scenarioId},
+            )
+
         result_data = DeleteScenarioResponse(
             success=True,
-            message=f"Scenario '{result['name']}' deleted successfully",
+            message=f"Scenario '{scenario_name}' deleted successfully",
         )
 
         # Invalidate cache after mutation

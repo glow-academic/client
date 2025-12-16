@@ -53,7 +53,11 @@ scenario_personas_agg AS (
     GROUP BY sp.scenario_id
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+    FROM profiles 
+    WHERE id = $1
 ),
 scenario_departments_data AS (
     SELECT 
@@ -266,7 +270,8 @@ SELECT
     cm.mapping as cohort_mapping,
     pm.mapping as persona_mapping,
     sm.mapping as simulation_mapping,
-    dm.mapping as department_mapping
+    dm.mapping as department_mapping,
+    up.actor_name
 FROM scenario_data sd
 CROSS JOIN objective_mapping_data om
 CROSS JOIN field_mapping_data fm
@@ -274,5 +279,6 @@ CROSS JOIN cohort_mapping_data cm
 CROSS JOIN persona_mapping_data pm
 CROSS JOIN simulation_mapping_data sm
 CROSS JOIN department_mapping_data dm
+CROSS JOIN user_profile up
 ORDER BY sd.updated_at DESC NULLS LAST
 

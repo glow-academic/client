@@ -1,9 +1,13 @@
 -- Get scenario detail with departments, problem statements, and access control
 -- Parameters: $1 = scenario_id (uuid), $2 = profile_id (uuid), $3 = use_image (bool, nullable), $4 = use_objectives (bool, nullable), $5 = document_ids (uuid[], nullable), $6 = problem_statement_ids (uuid[], nullable), $7 = template_document_ids (uuid[], nullable)
 
-WITH user_profile AS (
-    SELECT role FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+-- profile_id is always a UUID (required in request body)
+user_profile AS (
+    SELECT 
+        role,
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
 ),
 user_departments AS (
     SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
@@ -1190,6 +1194,7 @@ SELECT
     (SELECT dept_ids FROM user_departments) as valid_department_ids,
     COALESCE(ssa.active_usage_count, 0) as active_usage_count,
     up.role as user_role,
+    up.actor_name,
     sod.objective_mapping,
     vpd2.persona_mapping,
     COALESCE(edmd.document_mapping, vdd.document_mapping) as document_mapping,

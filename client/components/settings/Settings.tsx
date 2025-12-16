@@ -201,7 +201,7 @@ export default function Settings({
       ),
     [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
-  const [selectedDepartmentIds, setSelectedDepartmentIds] =
+  const [selectedDepartmentIds] =
     useState<string[]>(defaultDepartmentIds);
 
   // Key mappings state
@@ -605,33 +605,6 @@ export default function Settings({
       };
     });
   }, [settingsDetail, providerKeyMapping, providerEnabled]);
-
-  // Handle provider enable/disable
-  const handleProviderEnabledChange = (
-    providerId: string,
-    enabled: boolean
-  ) => {
-    setProviderEnabled((prev) => ({
-      ...prev,
-      [providerId]: enabled,
-    }));
-    // Auto-select provider when enabled
-    if (enabled) {
-      setSelectedProviderIds((prev) => new Set(prev).add(providerId));
-    }
-  };
-
-  // Handle auth enable/disable
-  const handleAuthEnabledChange = (authId: string, enabled: boolean) => {
-    setAuthEnabled((prev) => ({
-      ...prev,
-      [authId]: enabled,
-    }));
-    // Auto-select auth method when enabled
-    if (enabled) {
-      setSelectedAuthMethodIds((prev) => new Set(prev).add(authId));
-    }
-  };
 
   // Handle auth method click - enable and expand config section
   const handleAuthMethodClick = (authId: string) => {
@@ -1528,7 +1501,7 @@ export default function Settings({
                 )}
 
                 {/* Individual Auth Method Configurations */}
-                {Array.from(selectedAuthMethodIds).map((authId, index) => {
+                {Array.from(selectedAuthMethodIds).map((authId) => {
                   const auth = authMethodsList.find(
                     (a) => a.auth_id === authId
                   );

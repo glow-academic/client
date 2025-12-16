@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -922,7 +923,15 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
     return preserve_order_union_selected_first(selected_field_ids, filtered_result)
 
 
-@router.post("/detail", response_model=ScenarioDetailResponse)
+@router.post(
+    "/detail",
+    response_model=ScenarioDetailResponse,
+    dependencies=[
+        audit_activity(
+            "scenario.viewed", "{{ actor.name }} viewed scenario '{{ scenario.name }}'"
+        )
+    ],
+)
 async def get_scenario_detail(
     request_data: ScenarioDetailRequest,
     request: Request,
@@ -1848,6 +1857,16 @@ async def get_scenario_detail(
                 documentIds=randomized_document_ids,
                 parameterIds=randomized_parameter_ids,
                 fieldIds=randomized_field_ids,  # Renamed from parameterItemIds
+            )
+
+        # Set audit context with data from SQL query
+        actor_name = scenario.get("actor_name")
+        scenario_name = scenario.get("name")
+        if actor_name:
+            audit_set(
+                request,
+                actor={"name": actor_name, "id": request_data.profileId},
+                scenario={"name": scenario_name, "id": request_data.scenarioId},
             )
 
         # Apply randomized values to main fields (DHH-style: server applies directly)

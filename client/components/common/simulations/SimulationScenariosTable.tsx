@@ -3,7 +3,6 @@
 import {
   ColumnDef,
   ColumnFiltersState,
-  Row,
   SortingState,
   VisibilityState,
   flexRender,
@@ -44,7 +43,6 @@ import {
   Layers,
   Lightbulb,
   Mic,
-  Target,
   Text,
 } from "lucide-react";
 import type { ContentItem } from "./SimulationContentTable";
@@ -98,7 +96,6 @@ export function SimulationScenariosTable({
   rubricMapping = {},
   validRubricIds = [],
   agentMapping = {},
-  validAgentIds = [],
   scenarioMapping = {},
   validScenarioIds = [],
   selectedScenarioIds = [],

@@ -658,10 +658,10 @@ class DashboardBundleResponse(BaseModel):
     thresholds: Thresholds
 
     # Normalized entity mappings (from base.py)
-    simulation_mapping: SimulationMapping
-    rubric_mapping: RubricMapping
-    parameter_mapping: ParameterMapping
-    field_mapping: FieldMapping
+    simulation_mapping: dict[str, SimulationMappingItem]
+    rubric_mapping: dict[str, RubricMappingItem]
+    parameter_mapping: dict[str, ParameterMappingItem]
+    field_mapping: dict[str, FieldMappingItem]
 
 
 # ==============================================================

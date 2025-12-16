@@ -116,7 +116,11 @@ runs_json AS (
     FROM runs_list
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = (SELECT resolved_profile_id FROM resolve_profile_id)
+    SELECT 
+        role,
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
 ),
 eval_department_mapping_data AS (
     SELECT COALESCE(
@@ -301,7 +305,8 @@ SELECT
     CASE 
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
-    END as can_delete
+    END as can_delete,
+    up.actor_name
 FROM eval_data ed
 LEFT JOIN eval_departments_data edd ON edd.eval_id = ed.eval_id
 LEFT JOIN eval_status_summary ess ON ess.eval_id = ed.eval_id

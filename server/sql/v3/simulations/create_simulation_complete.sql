@@ -1,41 +1,15 @@
 -- Create simulation with departments and scenarios in a single transaction
--- Parameters: $1=title, $2=description, $3=active, $4=practice_simulation, $5=department_ids (nullable text array), $6=scenario_ids (text array), $7=scenario_active_flags (bool array), $8=scenario_hints_enabled (bool array), $9=scenario_rubric_ids (text array, nullable), $10=scenario_time_limit_seconds (int array, nullable), $11=scenario_audio_enabled (bool array), $12=scenario_text_enabled (bool array), $13=simulation_text_agent_id (text), $14=simulation_voice_agent_id (text, nullable), $15=profile_id (uuid or "guest-profile-id")
+-- Parameters: $1=title, $2=description, $3=active, $4=practice_simulation, $5=department_ids (nullable text array), $6=scenario_ids (text array), $7=scenario_active_flags (bool array), $8=scenario_hints_enabled (bool array), $9=scenario_rubric_ids (text array, nullable), $10=scenario_time_limit_seconds (int array, nullable), $11=scenario_audio_enabled (bool array), $12=scenario_text_enabled (bool array), $13=simulation_text_agent_id (text), $14=simulation_voice_agent_id (text, nullable), $15=profile_id (uuid, required)
 -- Note: scenario_ids/scenario_active_flags must be same length and order
 -- Note: rubric_id and time_limit are now per-scenario, not simulation-level
 -- Returns: simulation_id, actor_name
-WITH resolve_guest_profile AS (
-    -- Resolve guest-profile-id using settings system (department-specific or default)
-    SELECT 
-        COALESCE(
-            -- Department-specific settings guest profile (if user has departments)
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             JOIN department_settings sd ON sd.settings_id = s.id AND sd.active = true
-             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
-             WHERE pd.profile_id = $15::uuid AND sdg.active = true
-             LIMIT 1),
-            -- Fallback to default (active) settings guest profile
-            (SELECT sdg.profile_id FROM settings_default_guest sdg
-             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-             WHERE sdg.active = true
-             LIMIT 1)
-        ) as guest_profile_id
-),
-resolve_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $15::text = 'guest-profile-id' THEN
-                (SELECT guest_profile_id FROM resolve_guest_profile)
-            WHEN $15::text IS NULL OR $15::text = '' THEN NULL::uuid
-            ELSE $15::uuid
-        END as resolved_profile_id
-),
+-- profile_id is always a UUID (required in request body)
 actor_profile AS (
     SELECT 
-        rpi.resolved_profile_id,
+        $15::uuid as resolved_profile_id,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    FROM profiles p
+    WHERE p.id = $15::uuid
 ),
 new_simulation AS (
     INSERT INTO simulations (

@@ -161,7 +161,10 @@ all_models_with_modalities AS (
     LEFT JOIN model_modalities_data mmod ON mmod.model_id = am.model_id
 ),
 user_profile AS (
-    SELECT role FROM profiles p
+    SELECT 
+        role,
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+    FROM profiles p
     WHERE p.id = $2::uuid
 ),
 user_departments AS (
@@ -397,7 +400,8 @@ SELECT
         FROM model_voices_data mv
         WHERE mv.model_id = ai.model_id),
         '[]'::jsonb
-    ) as available_voices
+    ) as available_voices,
+    up.actor_name
 FROM agent_info ai
 LEFT JOIN agent_active_prompt aap ON aap.agent_id = ai.agent_id
 LEFT JOIN agent_departments_data add ON add.agent_id = ai.agent_id

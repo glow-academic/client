@@ -41,6 +41,7 @@ class CreateScenarioRequest(BaseModel):
     active_video_id: str | None = None
     question_ids: list[str] | None = None
     question_timestamps: dict[str, dict[str, list[int]]] | None = None
+    profileId: str  # Required for auditing/access control
 
 
 class CreateScenarioResponse(BaseModel):
@@ -192,8 +193,8 @@ async def create_scenario(
         if request.video_enabled and not request.video_agent_id:
             raise ValueError("video_agent_id is required when video_enabled is true")
 
-        # Get profile_id from headers (middleware resolves it)
-        profile_id = http_request.headers.get("X-Profile-Id") or "guest-profile-id"
+        # Require profileId in request body (already required by Pydantic model)
+        profile_id = request.profileId
 
         # Create scenario with all relationships in a single SQL file
         sql_query = load_sql("sql/v3/scenarios/create_scenario_complete.sql")

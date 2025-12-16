@@ -22,6 +22,7 @@ class CreateCohortRequest(BaseModel):
     department_ids: list[str] = []
     profile_ids: list[str] = []
     simulation_ids: list[str] = []
+    profileId: str  # Required for auditing/access control
 
 
 class CreateCohortResponse(BaseModel):
@@ -60,8 +61,8 @@ async def create_cohort(
         # Handle None description (cohorts.description is NOT NULL, so use empty string)
         description = request.description if request.description is not None else ""
 
-        # Get profile_id from headers (middleware resolves it)
-        profile_id = http_request.headers.get("X-Profile-Id") or "guest-profile-id"
+        # Require profileId in request body (already required by Pydantic model)
+        profile_id = request.profileId
 
         # Single consolidated query: creates cohort and all relationships using arrays
         sql_query = load_sql("sql/v3/cohorts/create_cohort_complete.sql")

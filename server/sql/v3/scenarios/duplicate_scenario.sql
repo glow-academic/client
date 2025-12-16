@@ -1,4 +1,14 @@
-WITH source_scenario AS (
+-- Duplicate scenario with profile_id for auditing
+-- Parameters: $1 = scenario_id (uuid), $2 = profile_id (uuid, required)
+-- profile_id is always a UUID (required in request body)
+actor_profile AS (
+    SELECT 
+        $2::uuid as resolved_profile_id,
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+source_scenario AS (
     SELECT 
         s.id as source_id,
         s.name,
@@ -159,5 +169,11 @@ copy_departments AS (
     JOIN scenario_departments sd ON sd.scenario_id = ss.source_id AND sd.active = true
     CROSS JOIN new_scenario ns
 )
-SELECT scenario_id FROM new_scenario
+SELECT 
+    ns.scenario_id,
+    ss.name as scenario_name,
+    ap.actor_name
+FROM new_scenario ns
+CROSS JOIN source_scenario ss
+CROSS JOIN actor_profile ap
 

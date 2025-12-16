@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import UPLOAD_FOLDER, get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -134,7 +135,15 @@ class DocumentDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail", response_model=DocumentDetailResponse)
+@router.post(
+    "/detail",
+    response_model=DocumentDetailResponse,
+    dependencies=[
+        audit_activity(
+            "document.viewed", "{{ actor.name }} viewed document '{{ document.name }}'"
+        )
+    ],
+)
 async def get_document_detail(
     request_body: DocumentDetailRequest,
     request: Request,
@@ -172,6 +181,16 @@ async def get_document_detail(
 
         if not row:
             raise HTTPException(status_code=404, detail="Document not found")
+
+        # Set audit context with data from SQL query
+        actor_name = row.get("actor_name")
+        document_name = row.get("name")
+        if actor_name:
+            audit_set(
+                request,
+                actor={"name": actor_name, "id": request_body.profileId},
+                document={"name": document_name, "id": request_body.documentId},
+            )
 
         # Parse mappings
         department_mapping: dict[str, DepartmentMappingItem] = {}

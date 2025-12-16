@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -37,7 +38,13 @@ class SettingsListResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/list", response_model=SettingsListResponse)
+@router.post(
+    "/list",
+    response_model=SettingsListResponse,
+    dependencies=[
+        audit_activity("settings.list", "{{ actor.name }} visited the Settings page")
+    ],
+)
 async def list_settings(
     request: SettingsListRequest,
     http_request: Request,
@@ -63,8 +70,15 @@ async def list_settings(
 
     try:
         sql_query = load_sql("sql/v3/settings/list_settings.sql")
-        sql_params = ()  # No parameters for this query
-        rows = await conn.fetch(sql_query)
+        sql_params = (request.profileId,)
+        rows = await conn.fetch(sql_query, request.profileId)
+
+        # Get actor_name from first row (same for all rows)
+        actor_name = rows[0]["actor_name"] if rows else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": request.profileId})
 
         settings_items: list[SettingsItem] = []
         for row in rows:

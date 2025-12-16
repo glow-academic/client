@@ -70,7 +70,11 @@ template_mapping_data AS (
     FROM document_all_templates dt
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $2
+    SELECT 
+        role,
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM profiles p
+    WHERE p.id = $2
 ),
 user_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
@@ -245,7 +249,8 @@ SELECT
         WHEN doc.total_scenario_links > 0 THEN false
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
-    END as can_delete
+    END as can_delete,
+    up.actor_name
 FROM document_data doc
 CROSS JOIN user_profile up
 CROSS JOIN valid_depts vd

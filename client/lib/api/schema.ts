@@ -5992,6 +5992,8 @@ export interface components {
              * @default []
              */
             simulation_ids: string[];
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CreateCohortResponse
@@ -6018,6 +6020,8 @@ export interface components {
             active: boolean;
             /** Settingsid */
             settingsId?: string | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CreateDepartmentResponse
@@ -6603,6 +6607,8 @@ export interface components {
                     [key: string]: number[];
                 };
             } | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CreateScenarioResponse
@@ -6646,6 +6652,8 @@ export interface components {
             scenario_ids?: string[] | components["schemas"]["ScenarioInRequest"][] | null;
             /** Content Items */
             content_items?: components["schemas"]["app__api__v3__simulations__create__ContentItemInRequest"][] | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CreateSimulationResponse
@@ -7228,6 +7236,8 @@ export interface components {
         DeleteScenarioRequest: {
             /** Scenarioid */
             scenarioId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DeleteScenarioResponse
@@ -7778,6 +7788,8 @@ export interface components {
         DuplicateScenarioRequest: {
             /** Scenarioid */
             scenarioId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DuplicateScenarioResponse
@@ -7881,84 +7893,6 @@ export interface components {
             evalId: string;
             /** Profileid */
             profileId: string;
-        };
-        /**
-         * EvalDetailResponse
-         * @description Detailed eval response with all fields and metadata.
-         */
-        EvalDetailResponse: {
-            /** Eval Id */
-            eval_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Eval Agent Id */
-            eval_agent_id: string | null;
-            /** Active */
-            active: boolean;
-            /** Rubric Name */
-            rubric_name: string;
-            /** Rubric Description */
-            rubric_description: string;
-            /** Rubric Points */
-            rubric_points: number;
-            /** Rubric Pass Points */
-            rubric_pass_points: number;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Total Runs */
-            total_runs: number;
-            /** Completed Runs */
-            completed_runs: number;
-            /** Pending Runs */
-            pending_runs: number;
-            /** Status */
-            status: string;
-            /** Model Runs */
-            model_runs: components["schemas"]["app__api__v3__evals__detail__ModelRunItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__evals__detail__DepartmentMappingItem"];
-            };
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Eval Agent Mapping */
-            eval_agent_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            } | null;
-            /** Valid Eval Agent Ids */
-            valid_eval_agent_ids: string[] | null;
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Valid Agent Ids */
-            valid_agent_ids: string[];
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            } | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
         };
         /**
          * EvalItem
@@ -9626,9 +9560,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["app__api__v3__parameters__list__DepartmentMappingItem"];
             };
             /** Document Mapping */
             document_mapping: {
@@ -13308,6 +13240,8 @@ export interface components {
                     [key: string]: number[];
                 };
             } | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * UpdateScenarioResponse
@@ -14665,6 +14599,21 @@ export interface components {
             document_ids: string[];
         };
         /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__evals__detail__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Roles
+             * @default []
+             */
+            roles: string[];
+        };
+        /**
          * DepartmentMappingItem
          * @description Department mapping item.
          */
@@ -14673,6 +14622,78 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+        };
+        /**
+         * EvalDetailResponse
+         * @description Detailed eval response with all fields and metadata.
+         */
+        app__api__v3__evals__detail__EvalDetailResponse: {
+            /** Eval Id */
+            eval_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Eval Agent Id */
+            eval_agent_id: string | null;
+            /** Active */
+            active: boolean;
+            /** Rubric Name */
+            rubric_name: string;
+            /** Rubric Description */
+            rubric_description: string;
+            /** Rubric Points */
+            rubric_points: number;
+            /** Rubric Pass Points */
+            rubric_pass_points: number;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Total Runs */
+            total_runs: number;
+            /** Completed Runs */
+            completed_runs: number;
+            /** Pending Runs */
+            pending_runs: number;
+            /** Status */
+            status: string;
+            /** Model Runs */
+            model_runs: components["schemas"]["app__api__v3__evals__detail__ModelRunItem"][];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__evals__detail__DepartmentMappingItem"];
+            };
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Eval Agent Mapping */
+            eval_agent_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__evals__detail__AgentMappingItem"];
+            } | null;
+            /** Valid Eval Agent Ids */
+            valid_eval_agent_ids: string[] | null;
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__evals__detail__AgentMappingItem"];
+            };
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
+            /** Rubric Mapping */
+            rubric_mapping: {
+                [key: string]: components["schemas"]["RubricMappingItem"];
+            } | null;
+            /** Valid Rubric Ids */
+            valid_rubric_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
         };
         /**
          * ModelRunItem
@@ -14723,6 +14744,143 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+        };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__evals__new__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Roles
+             * @default []
+             */
+            roles: string[];
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__evals__new__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * EvalDetailResponse
+         * @description Detailed eval response with all fields and metadata.
+         */
+        app__api__v3__evals__new__EvalDetailResponse: {
+            /** Eval Id */
+            eval_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Eval Agent Id */
+            eval_agent_id: string | null;
+            /** Active */
+            active: boolean;
+            /** Rubric Name */
+            rubric_name: string;
+            /** Rubric Description */
+            rubric_description: string;
+            /** Rubric Points */
+            rubric_points: number;
+            /** Rubric Pass Points */
+            rubric_pass_points: number;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Total Runs */
+            total_runs: number;
+            /** Completed Runs */
+            completed_runs: number;
+            /** Pending Runs */
+            pending_runs: number;
+            /** Status */
+            status: string;
+            /** Model Runs */
+            model_runs: components["schemas"]["app__api__v3__evals__new__ModelRunItem"][];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__evals__new__DepartmentMappingItem"];
+            };
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Eval Agent Mapping */
+            eval_agent_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__evals__new__AgentMappingItem"];
+            } | null;
+            /** Valid Eval Agent Ids */
+            valid_eval_agent_ids: string[] | null;
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__evals__new__AgentMappingItem"];
+            };
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
+            /** Rubric Mapping */
+            rubric_mapping: {
+                [key: string]: components["schemas"]["RubricMappingItem"];
+            } | null;
+            /** Valid Rubric Ids */
+            valid_rubric_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+        };
+        /**
+         * ModelRunItem
+         * @description Model run item in eval detail.
+         */
+        app__api__v3__evals__new__ModelRunItem: {
+            /** Model Run Id */
+            model_run_id: string;
+            /** Completed */
+            completed: boolean;
+            /** Assigned At */
+            assigned_at: string;
+            /** Status Updated At */
+            status_updated_at: string;
+            /** Model Run Created At */
+            model_run_created_at: string;
+            /** Model Id */
+            model_id: string | null;
+            /** Model Name */
+            model_name: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Agent Name */
+            agent_name: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Profile Name */
+            profile_name: string | null;
+            /** Has Grade */
+            has_grade: boolean;
+            /** Grade Score */
+            grade_score: number | null;
+            /** Grade Passed */
+            grade_passed: boolean | null;
+            /** Grade Created At */
+            grade_created_at: string | null;
         };
         /**
          * ModelRunItem
@@ -15043,6 +15201,16 @@ export interface components {
             usage_count: number;
             /** Department Ids */
             department_ids: string[] | null;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        app__api__v3__parameters__list__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * DocumentMappingItem
@@ -17193,6 +17361,21 @@ export interface components {
             updated_at: string;
         };
         /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__simulations__new__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Roles
+             * @default []
+             */
+            roles: string[];
+        };
+        /**
          * DepartmentMappingItem
          * @description Department mapping item.
          */
@@ -17447,9 +17630,7 @@ export interface components {
             };
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["app__api__v3__simulations__new__AgentMappingItem"];
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
@@ -19630,7 +19811,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EvalDetailResponse"];
+                    "application/json": components["schemas"]["app__api__v3__evals__detail__EvalDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -19663,7 +19844,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EvalDetailResponse"];
+                    "application/json": components["schemas"]["app__api__v3__evals__new__EvalDetailResponse"];
                 };
             };
             /** @description Validation Error */

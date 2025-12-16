@@ -3529,7 +3529,7 @@ export default function Scenario({
         question_timestamps?: Record<string, Record<string, number[]>> | null;
       } = {
         name: formData.name?.trim() || "",
-        description: scenarioData?.description || null,
+        description: scenarioData && typeof scenarioData === "object" && "description" in scenarioData ? (scenarioData as { description?: string | null }).description ?? null : null,
         problem_statement: formData.problemStatement?.trim() || "",
         department_ids: finalDepartmentIds,
         active: formData.active ?? true,

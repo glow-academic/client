@@ -5,18 +5,19 @@
  * 06/08/2025
  */
 
+import { getSession } from "@/auth";
 import Reports from "@/components/reports/Reports";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type ReportsIn = InputOf<"/api/v3/reports", "post">;
-type ReportsOut = OutputOf<"/api/v3/reports", "post">;
+// Using reports/overview endpoint for now - may need to check actual endpoint
+type ReportsIn = InputOf<"/api/v3/reports/overview", "post">;
+type ReportsOut = OutputOf<"/api/v3/reports/overview", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
@@ -26,7 +27,7 @@ type ReportsOut = OutputOf<"/api/v3/reports", "post">;
 const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/reports", input, {
+  return api.post("/reports/overview", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -175,7 +176,7 @@ export default async function ReportsFullPage({
   // Get filters from search params or defaults
   const filters = await getReportsFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined,
-    { effectiveProfileId, actualProfileId },
+    { effectiveProfileId, actualProfileId }
   );
 
   // Extract pagination and filter params from search params for reports table
@@ -331,7 +332,7 @@ async function ReportsSection({
       value: opt.value,
       label: opt.label,
       count: opt.count,
-    }),
+    })
   );
 
   const scenarioOptions = (reportsData?.scenarioOptions || []).map((opt) => ({

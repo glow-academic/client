@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -115,7 +116,15 @@ class AgentDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail", response_model=AgentDetailResponse)
+@router.post(
+    "/detail",
+    response_model=AgentDetailResponse,
+    dependencies=[
+        audit_activity(
+            "agent.viewed", "{{ actor.name }} viewed agent '{{ agent.name }}'"
+        )
+    ],
+)
 async def get_agent_detail(
     request: AgentDetailRequest,
     http_request: Request,
@@ -447,6 +456,16 @@ async def get_agent_detail(
 
         # Get can_edit from SQL result
         can_edit = result.get("can_edit", False)
+
+        # Set audit context with data from SQL query
+        actor_name = result.get("actor_name")
+        agent_name = result.get("name")
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": request.profileId},
+                agent={"name": agent_name, "id": request.agentId},
+            )
 
         response_data = AgentDetailResponse(
             name=result["name"],
