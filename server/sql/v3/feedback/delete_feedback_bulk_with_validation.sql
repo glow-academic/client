@@ -1,7 +1,7 @@
 -- Delete feedback with role validation in single transaction
 -- Parameters:
 --   $1 = profile_id (uuid) - profile ID to check role
---   $2 = feedback_ids (int[]) - array of feedback IDs to delete
+--   $2 = feedback_ids (uuid[]) - array of feedback IDs to delete
 -- Returns: deleted_count (integer), profile_role (text)
 
 WITH profile_role_check AS (
@@ -10,8 +10,8 @@ WITH profile_role_check AS (
 ),
 authorized_delete AS (
     -- Only delete if user is superadmin
-    DELETE FROM app_feedback
-    WHERE id = ANY($2::int[])
+    DELETE FROM feedback
+    WHERE id = ANY($2::uuid[])
       AND EXISTS (
           SELECT 1 FROM profile_role_check WHERE role = 'superadmin'
       )

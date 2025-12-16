@@ -20,7 +20,7 @@ class CreateFeedbackRequest(BaseModel):
 
 
 class CreateFeedbackResponse(BaseModel):
-    feedback_id: int
+    feedback_id: str  # UUID
     success: bool
     message: str
 
@@ -66,7 +66,7 @@ async def create_feedback(
             raise HTTPException(status_code=500, detail="Failed to create feedback")
 
         result_data = CreateFeedbackResponse(
-            feedback_id=result["feedback_id"],
+            feedback_id=str(result["feedback_id"]),  # Convert UUID to string
             success=True,
             message="Feedback created successfully",
         )

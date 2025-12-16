@@ -1,10 +1,5 @@
-WITH new_feedback AS (
-    INSERT INTO app_feedback (type, message, created_at)
-    VALUES ($1, $2, NOW())
-    RETURNING id
-)
-INSERT INTO app_feedback_profiles (app_feedback_id, profile_id, role)
-SELECT nf.id, $3::uuid, 'author'
-FROM new_feedback nf
-RETURNING (SELECT id FROM new_feedback) as feedback_id
+-- Parameters: $1=type, $2=message, $3=profile_id
+INSERT INTO feedback (type, message, profile_id, created_at)
+VALUES ($1, $2, $3::uuid, NOW())
+RETURNING id as feedback_id
 

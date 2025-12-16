@@ -20,7 +20,7 @@ class FeedbackListRequest(BaseModel):
 
 
 class FeedbackItem(BaseModel):
-    feedback_id: int
+    feedback_id: str  # UUID
     type: str
     message: str
     created_at: str
@@ -69,7 +69,7 @@ async def list_feedback(
         for row in rows:
             feedback_items.append(
                 FeedbackItem(
-                    feedback_id=row["feedback_id"],
+                    feedback_id=str(row["feedback_id"]),  # Convert UUID to string
                     type=row["type"],
                     message=row["message"],
                     created_at=row["created_at"].isoformat()

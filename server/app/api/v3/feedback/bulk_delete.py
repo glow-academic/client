@@ -15,7 +15,7 @@ from app.utils.sql_helper import load_sql
 # Inline request/response schemas
 class BulkDeleteFeedbackRequest(BaseModel):
     profileId: str
-    ids: list[int]
+    ids: list[str]  # UUIDs
 
 
 class BulkDeleteFeedbackResponse(BaseModel):

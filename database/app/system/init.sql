@@ -39,26 +39,19 @@ CREATE TABLE service_health (
 
 CREATE INDEX ON service_health (service, ts);
 
-CREATE TABLE app_feedback (
-  id           SERIAL PRIMARY KEY,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  type         feedback_type NOT NULL,
-  message      TEXT NOT NULL DEFAULT 'No message provided'
+-- Feedback table (Chris Date: No Nulls, BCNF)
+-- Application feedback with direct profile_id reference
+CREATE TABLE feedback (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  type        feedback_type NOT NULL,
+  message     TEXT NOT NULL DEFAULT 'No message provided',
+  profile_id  UUID NOT NULL REFERENCES profiles(id)
 );
 
--- App feedback ↔ Profiles junction table (BCNF normalization - replaces app_feedback.profile_id)
-CREATE TABLE app_feedback_profiles (
-  app_feedback_id INT  NOT NULL REFERENCES app_feedback(id) ON DELETE CASCADE,
-  profile_id      UUID NOT NULL REFERENCES profiles(id)     ON DELETE CASCADE,
-  role            TEXT NOT NULL DEFAULT 'author',
-  active          BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (app_feedback_id, profile_id, role)
-);
-
-CREATE INDEX ON app_feedback_profiles (profile_id);
-CREATE INDEX ON app_feedback_profiles (app_feedback_id);
+CREATE INDEX ON feedback (created_at);
+CREATE INDEX ON feedback (profile_id);
+CREATE INDEX ON feedback (type);
 
 
 -- ============================================================================
