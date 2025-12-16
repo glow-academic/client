@@ -4,7 +4,6 @@ from typing import Any
 
 from agents.items import TResponseInputItem
 
-from app.utils.scenario import format_parameter_item_info
 
 
 def format_document_template_context(
@@ -49,7 +48,19 @@ def format_document_template_context(
 
     # Add fields information if provided
     if fields:
-        fields_info = format_parameter_item_info(fields)
+        formatted_items = []
+        for row in fields:
+            formatted_item = (
+                f"This is the {row['param_name']} ({row.get('param_description', '')}) for this chat: {row['item_name']}. "
+                f"Description: {row.get('item_description', '')}."
+            )
+            formatted_items.append(formatted_item)
+
+        content = "The following is the parameter item information:\n" + "\n".join(formatted_items)
+        fields_info = {
+            "role": "user",
+            "content": content,
+        }
         input_items.append(fields_info)
 
     return input_items

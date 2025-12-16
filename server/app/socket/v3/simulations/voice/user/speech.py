@@ -3,13 +3,16 @@
 import uuid
 from typing import Any
 
-from app.main import _voice_message_ids, get_internal_sio, get_pool, sio
-from app.socket.v3.simulations.text.send import (SimulationRunCompletePayload,
-                                                 simulation_run_complete)
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
+
+from app.main import _voice_message_ids, get_internal_sio, get_pool, sio
+from app.socket.v3.simulations.text.send import (
+    SimulationRunCompletePayload,
+    simulation_run_complete,
+)
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -288,13 +291,43 @@ async def _simulation_voice_user_speech_impl(
                     else None
                 )
 
-                input_text_tokens = (input_token_details.text_tokens or 0) if input_token_details.text_tokens is not None else 0
-                input_audio_tokens = (input_token_details.audio_tokens or 0) if input_token_details.audio_tokens is not None else 0
-                input_image_tokens = (input_token_details.image_tokens or 0) if input_token_details.image_tokens is not None else 0
-                output_text_tokens = (output_token_details.text_tokens or 0) if output_token_details.text_tokens is not None else 0
-                output_audio_tokens = (output_token_details.audio_tokens or 0) if output_token_details.audio_tokens is not None else 0
-                cached_text_tokens = (cached_token_details.text_tokens or 0) if cached_token_details and cached_token_details.text_tokens is not None else 0
-                cached_audio_tokens = (cached_token_details.audio_tokens or 0) if cached_token_details and cached_token_details.audio_tokens is not None else 0
+                input_text_tokens = (
+                    (input_token_details.text_tokens or 0)
+                    if input_token_details.text_tokens is not None
+                    else 0
+                )
+                input_audio_tokens = (
+                    (input_token_details.audio_tokens or 0)
+                    if input_token_details.audio_tokens is not None
+                    else 0
+                )
+                input_image_tokens = (
+                    (input_token_details.image_tokens or 0)
+                    if input_token_details.image_tokens is not None
+                    else 0
+                )
+                output_text_tokens = (
+                    (output_token_details.text_tokens or 0)
+                    if output_token_details.text_tokens is not None
+                    else 0
+                )
+                output_audio_tokens = (
+                    (output_token_details.audio_tokens or 0)
+                    if output_token_details.audio_tokens is not None
+                    else 0
+                )
+                cached_text_tokens = (
+                    (cached_token_details.text_tokens or 0)
+                    if cached_token_details
+                    and cached_token_details.text_tokens is not None
+                    else 0
+                )
+                cached_audio_tokens = (
+                    (cached_token_details.audio_tokens or 0)
+                    if cached_token_details
+                    and cached_token_details.audio_tokens is not None
+                    else 0
+                )
 
                 # Create a run for each message ID
                 sql_create_run = load_sql(
@@ -452,6 +485,8 @@ async def simulation_voice_user_speech(sid: str, data: dict[str, Any]) -> None:
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/speech", response_model=dict[str, bool])
-async def simulation_voice_user_speech_api(request: VoiceUserSpeechPayload) -> dict[str, bool]:
+async def simulation_voice_user_speech_api(
+    request: VoiceUserSpeechPayload,
+) -> dict[str, bool]:
     """Client-to-server event: Send user speech audio in voice simulation."""
     return {"success": True}

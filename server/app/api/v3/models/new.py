@@ -1,7 +1,7 @@
 """Model new endpoint for create page."""
 
-from typing import Annotated, Any
 import json
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response

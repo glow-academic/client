@@ -27,6 +27,7 @@ def audit_activity(event_key: str, template: str) -> Any:
     Returns:
         FastAPI dependency that sets audit_intent and initializes audit_ctx
     """
+
     async def _audit(request: Request) -> None:
         request.state.audit_intent = AuditIntent(event_key=event_key, template=template)
         request.state.audit_ctx = {}  # endpoint will add safe fields here
@@ -44,4 +45,3 @@ def audit_set(request: Request, **kwargs: Any) -> None:
     if not hasattr(request.state, "audit_ctx"):
         request.state.audit_ctx = {}
     request.state.audit_ctx.update(kwargs)
-

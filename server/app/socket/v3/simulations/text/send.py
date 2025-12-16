@@ -8,23 +8,32 @@ from typing import Any
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.main import (get_hint_storage, get_internal_sio, get_pool,
-                      get_simulation_tool_calls_dict, sio)
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
+from app.main import (
+    get_hint_storage,
+    get_internal_sio,
+    get_pool,
+    get_simulation_tool_calls_dict,
+    sio,
+)
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
-from app.utils.agents.tools.create_persona_tools import (create_persona_tools,
-                                                         find_persona_by_name)
+from app.utils.agents.tools.create_persona_tools import (
+    create_persona_tools,
+    find_persona_by_name,
+)
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
+from app.utils.chat.get_simulation_conversation_history import (
+    get_simulation_conversation_history,
+)
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -238,7 +247,9 @@ async def hint_generation_progress(
     payload: HintGenerationProgressPayload, room: str
 ) -> None:
     await sio.emit(
-        "simulations_text_hint_generation_progress", payload.model_dump(exclude_none=True), room=room
+        "simulations_text_hint_generation_progress",
+        payload.model_dump(exclude_none=True),
+        room=room,
     )
 
 
@@ -269,7 +280,9 @@ async def simulation_message_error(
 async def simulation_message_cancelled(
     payload: SimulationMessageCancelledPayload, room: str
 ) -> None:
-    await sio.emit("simulations_text_message_cancelled", payload.model_dump(), room=room)
+    await sio.emit(
+        "simulations_text_message_cancelled", payload.model_dump(), room=room
+    )
 
 
 async def simulation_run_complete(
@@ -793,8 +806,7 @@ async def _simulation_text_send_impl(
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.utils.websocket.store_active_run import \
-                        store_active_run
+                    from app.utils.websocket.store_active_run import store_active_run
 
                     # Fetch context for the chat
                     sql_context = load_sql(
@@ -2514,8 +2526,9 @@ Tool Usage Instructions:
                             del tool_calls_dict[chat_id_str]
 
                         # Clean up active run
-                        from app.utils.websocket.remove_active_run import \
-                            remove_active_run
+                        from app.utils.websocket.remove_active_run import (
+                            remove_active_run,
+                        )
 
                         await remove_active_run(chat_id_str)
 
@@ -2736,49 +2749,65 @@ async def simulation_text_send(sid: str, data: dict[str, Any]) -> None:
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/send", response_model=dict[str, bool])
-async def simulation_text_send_api(request: SendSimulationMessagePayload) -> dict[str, bool]:
+async def simulation_text_send_api(
+    request: SendSimulationMessagePayload,
+) -> dict[str, bool]:
     """Client-to-server event: Send a message in a text simulation."""
     return {"success": True}
 
 
 @server_router.post("/send_error", response_model=dict[str, bool])
-async def simulation_text_send_error_api(request: SendSimulationMessageErrorPayload) -> dict[str, bool]:
+async def simulation_text_send_error_api(
+    request: SendSimulationMessageErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred while sending simulation message."""
     return {"success": True}
 
 
 @server_router.post("/hint_generation_progress", response_model=dict[str, bool])
-async def hint_generation_progress_api(request: HintGenerationProgressPayload) -> dict[str, bool]:
+async def hint_generation_progress_api(
+    request: HintGenerationProgressPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Hint generation progress update."""
     return {"success": True}
 
 
 @server_router.post("/new_message", response_model=dict[str, bool])
-async def simulation_new_message_api(request: SimulationNewMessagePayload) -> dict[str, bool]:
+async def simulation_new_message_api(
+    request: SimulationNewMessagePayload,
+) -> dict[str, bool]:
     """Server-to-client event: New simulation message created."""
     return {"success": True}
 
 
 @server_router.post("/message_token", response_model=dict[str, bool])
-async def simulation_message_token_api(request: SimulationMessageTokenPayload) -> dict[str, bool]:
+async def simulation_message_token_api(
+    request: SimulationMessageTokenPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Simulation message token update."""
     return {"success": True}
 
 
 @server_router.post("/message_complete", response_model=dict[str, bool])
-async def simulation_message_complete_api(request: SimulationMessageCompletePayload) -> dict[str, bool]:
+async def simulation_message_complete_api(
+    request: SimulationMessageCompletePayload,
+) -> dict[str, bool]:
     """Server-to-client event: Simulation message completed."""
     return {"success": True}
 
 
 @server_router.post("/message_error", response_model=dict[str, bool])
-async def simulation_message_error_api(request: SimulationMessageErrorPayload) -> dict[str, bool]:
+async def simulation_message_error_api(
+    request: SimulationMessageErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred in simulation message."""
     return {"success": True}
 
 
 @server_router.post("/message_cancelled", response_model=dict[str, bool])
-async def simulation_message_cancelled_api(request: SimulationMessageCancelledPayload) -> dict[str, bool]:
+async def simulation_message_cancelled_api(
+    request: SimulationMessageCancelledPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Simulation message was cancelled."""
     return {"success": True}
 

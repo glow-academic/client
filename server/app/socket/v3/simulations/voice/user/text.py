@@ -3,11 +3,12 @@
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -161,8 +162,11 @@ async def _simulation_voice_user_text_impl(
 
             # Emit user message to connected clients (same pattern as send_message.py)
             from app.socket.v3.simulations.text.send import (
-                MessageSentPayload, SimulationNewMessagePayload, message_sent,
-                simulation_new_message)
+                MessageSentPayload,
+                SimulationNewMessagePayload,
+                message_sent,
+                simulation_new_message,
+            )
 
             logger.info(f"Emitting user message to room simulation_{chat_id_uuid}")
             await simulation_new_message(
@@ -229,12 +233,16 @@ async def simulation_voice_user_text(sid: str, data: dict[str, Any]) -> None:
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/text", response_model=dict[str, bool])
-async def simulation_voice_user_text_api(request: VoiceUserMessagePayload) -> dict[str, bool]:
+async def simulation_voice_user_text_api(
+    request: VoiceUserMessagePayload,
+) -> dict[str, bool]:
     """Client-to-server event: Send a text message in voice simulation."""
     return {"success": True}
 
 
 @server_router.post("/text_error", response_model=dict[str, bool])
-async def simulation_voice_user_text_error_api(request: VoiceUserMessageErrorPayload) -> dict[str, bool]:
+async def simulation_voice_user_text_error_api(
+    request: VoiceUserMessageErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred while processing user text in voice simulation."""
     return {"success": True}

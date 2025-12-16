@@ -1,17 +1,16 @@
 """Handler for disconnect WebSocket event."""
 
+from fastapi import APIRouter
+
 from app.main import sio
 from app.utils.logging.db_logger import get_logger
-from app.utils.websocket.cleanup_profile_connection import \
-    cleanup_profile_connection
+from app.utils.websocket.cleanup_profile_connection import cleanup_profile_connection
 from app.utils.websocket.decrement_guest_count import decrement_guest_count
 from app.utils.websocket.find_chats_by_socket import find_chats_by_socket
 from app.utils.websocket.find_profile_by_socket import find_profile_by_socket
 from app.utils.websocket.is_guest_socket import is_guest_socket
-from app.utils.websocket.remove_active_connection import \
-    remove_active_connection
+from app.utils.websocket.remove_active_connection import remove_active_connection
 from app.utils.websocket.remove_guest_socket import remove_guest_socket
-from fastapi import APIRouter
 
 logger = get_logger(__name__)
 
@@ -73,4 +72,3 @@ async def disconnect(sid: str) -> None:
 async def disconnect_api() -> dict[str, bool]:
     """Client-to-server lifecycle event: Close WebSocket connection."""
     return {"success": True}
-

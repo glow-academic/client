@@ -156,4 +156,3 @@ async def create_or_update_profile(
             sql_params=sql_params,
             request=http_request,
         )
-

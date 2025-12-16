@@ -130,12 +130,16 @@ async def simulation_voice_debug_info(sid: str, data: dict[str, Any]) -> None:
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/debug", response_model=dict[str, bool])
-async def simulation_voice_debug_info_api(request: VoiceDebugInfoPayload) -> dict[str, bool]:
+async def simulation_voice_debug_info_api(
+    request: VoiceDebugInfoPayload,
+) -> dict[str, bool]:
     """Client-to-server event: Send debug information from voice simulation."""
     return {"success": True}
 
 
 @server_router.post("/debug_error", response_model=dict[str, bool])
-async def simulation_voice_debug_info_error_api(request: VoiceDebugInfoErrorPayload) -> dict[str, bool]:
+async def simulation_voice_debug_info_error_api(
+    request: VoiceDebugInfoErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred while processing debug info in voice simulation."""
     return {"success": True}

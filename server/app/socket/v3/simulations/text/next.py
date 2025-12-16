@@ -20,7 +20,6 @@ from app.utils.chat.get_simulation_conversation_history import \
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
-from app.utils.rubric import get_dynamic_rubric
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
 from fastapi import APIRouter
@@ -124,7 +123,9 @@ async def simulation_grading_progress(
     payload: SimulationGradingProgressPayload, room: str
 ) -> None:
     await sio.emit(
-        "simulations_text_grading_progress", payload.model_dump(exclude_none=True), room=room
+        "simulations_text_grading_progress",
+        payload.model_dump(exclude_none=True),
+        room=room,
     )
 
 
@@ -137,7 +138,9 @@ async def end_chat_started(payload: EndChatStartedPayload, room: str) -> None:
 
 
 async def end_all_completed(payload: EndAllCompletedPayload, room: str) -> None:
-    await sio.emit("simulations_text_end_all_completed", payload.model_dump(), room=room)
+    await sio.emit(
+        "simulations_text_end_all_completed", payload.model_dump(), room=room
+    )
 
 
 async def simulation_continued(payload: SimulationContinuedPayload, room: str) -> None:
@@ -401,8 +404,53 @@ async def _run_grade_agent_inline(
         )
         logger.info(f"Emitted grading start event for chat {simulation_chat_id}")
 
-        # Build dynamic rubric using utility function
-        rubric_input = get_dynamic_rubric(rubric, standard_groups, standards)
+        # Build dynamic rubric
+        rubric_lines = [
+            f"RUBRIC: {rubric['name']}",
+            f"Description: {rubric.get('description', '')}",
+            f"Total Points: {rubric['points']}",
+            f"Pass Points: {rubric['pass_points']}",
+            "",
+            "EVALUATION CRITERIA:",
+            "",
+        ]
+
+        # Group standards by standard_group_id
+        standards_by_group: dict[Any, list[dict[str, Any]]] = {}
+        for standard in standards:
+            group_id = standard["standard_group_id"]
+            if group_id not in standards_by_group:
+                standards_by_group[group_id] = []
+            standards_by_group[group_id].append(standard)
+
+        # Build criteria sections
+        for group in standard_groups:
+            rubric_lines.extend(
+                [
+                    f"CRITERION: {group['name']} ({group['short_name']})",
+                    f"Description: {group.get('description', '')}",
+                    f"Points: {group['points']} (Pass: {group['pass_points']})",
+                    "Rating Scale:",
+                ]
+            )
+
+            # Sort standards by points (descending - 5 to 1)
+            group_standards = standards_by_group.get(group["id"], [])
+            group_standards.sort(key=lambda x: x["points"], reverse=True)
+
+            for standard in group_standards:
+                rubric_lines.append(
+                    f"  {standard['points']} - {standard['name']}: {standard.get('description', '')}"
+                )
+
+            rubric_lines.append("")  # Empty line between criteria
+
+        rubric_string = "\n".join(rubric_lines)
+
+        rubric_input = {
+            "role": "developer",
+            "content": f"You are evaluating a conversation based on the following rubric. Please provide scores (1-5) and feedback for each criterion.\n\n{rubric_string}",
+        }
 
         # get the time limit from the simulation
         time_limit = simulation["time_limit"] or -1
@@ -1511,25 +1559,33 @@ async def simulation_text_next(sid: str, data: dict[str, Any]) -> None:
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/next", response_model=dict[str, bool])
-async def simulation_text_next_api(request: ContinueSimulationPayload) -> dict[str, bool]:
+async def simulation_text_next_api(
+    request: ContinueSimulationPayload,
+) -> dict[str, bool]:
     """Client-to-server event: Continue to next scenario in simulation attempt."""
     return {"success": True}
 
 
 @server_router.post("/next_error", response_model=dict[str, bool])
-async def simulation_text_next_error_api(request: ContinueSimulationErrorPayload) -> dict[str, bool]:
+async def simulation_text_next_error_api(
+    request: ContinueSimulationErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred while continuing simulation."""
     return {"success": True}
 
 
 @server_router.post("/grading_progress", response_model=dict[str, bool])
-async def simulation_grading_progress_api(request: SimulationGradingProgressPayload) -> dict[str, bool]:
+async def simulation_grading_progress_api(
+    request: SimulationGradingProgressPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Simulation grading progress update."""
     return {"success": True}
 
 
 @server_router.post("/continued", response_model=dict[str, bool])
-async def simulation_continued_api(request: SimulationContinuedPayload) -> dict[str, bool]:
+async def simulation_continued_api(
+    request: SimulationContinuedPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Simulation continued to next scenario."""
     return {"success": True}
 

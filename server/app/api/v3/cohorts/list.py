@@ -148,7 +148,9 @@ def disambiguate_simulations(
 @router.post(
     "/list",
     response_model=CohortsListResponse,
-    dependencies=[audit_activity("cohorts.list", "{{ actor.name }} visited the Cohorts page")],
+    dependencies=[
+        audit_activity("cohorts.list", "{{ actor.name }} visited the Cohorts page")
+    ],
 )
 async def get_cohorts_list(
     filters: CohortsListRequest,

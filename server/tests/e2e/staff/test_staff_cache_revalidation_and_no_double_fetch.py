@@ -88,9 +88,7 @@ def test_staff_cache_revalidation_after_edit(page: Page, base_url: str) -> None:
         )
 
         # Set up request counter
-        list_counter, stop_counter = _set_request_counter(
-            page, "/api/v3/staff/list"
-        )
+        list_counter, stop_counter = _set_request_counter(page, "/api/v3/staff/list")
 
         page.goto(f"{base_url}/management/staff")
         page.wait_for_load_state("networkidle")
@@ -179,9 +177,7 @@ def test_staff_cache_revalidation_after_delete(page: Page, base_url: str) -> Non
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        list_counter, stop_counter = _set_request_counter(
-            page, "/api/v3/staff/list"
-        )
+        list_counter, stop_counter = _set_request_counter(page, "/api/v3/staff/list")
 
         page.goto(f"{base_url}/management/staff")
         page.wait_for_load_state("networkidle")
@@ -296,9 +292,7 @@ def test_staff_refresh_button(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        list_counter, stop_counter = _set_request_counter(
-            page, "/api/v3/staff/list"
-        )
+        list_counter, stop_counter = _set_request_counter(page, "/api/v3/staff/list")
 
         page.goto(f"{base_url}/management/staff")
         page.wait_for_load_state("networkidle")

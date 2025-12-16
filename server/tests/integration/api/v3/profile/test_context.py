@@ -68,7 +68,7 @@ async def test_get_profile_context_guest_profile_id(
         "VALUES('Guest', 'User', 'guest', true) "
         "RETURNING id"
     )
-    
+
     response = await client.post(
         "/api/v3/profile/context",
         json={

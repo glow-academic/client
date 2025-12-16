@@ -4,6 +4,7 @@ import asyncio
 import uuid
 from typing import Any, Literal
 
+from fastapi import APIRouter
 from openai import OpenAI
 from pydantic import BaseModel, ValidationError
 
@@ -11,7 +12,6 @@ from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -423,18 +423,24 @@ async def video_generate_api(request: GenerateVideoPayload) -> dict[str, bool]:
 
 
 @server_router.post("/generation_progress", response_model=dict[str, bool])
-async def video_generation_progress_api(request: VideoGenerationProgressPayload) -> dict[str, bool]:
+async def video_generation_progress_api(
+    request: VideoGenerationProgressPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Progress update for video generation."""
     return {"success": True}
 
 
 @server_router.post("/generation_complete", response_model=dict[str, bool])
-async def video_generation_complete_api(request: VideoGenerationCompletePayload) -> dict[str, bool]:
+async def video_generation_complete_api(
+    request: VideoGenerationCompletePayload,
+) -> dict[str, bool]:
     """Server-to-client event: Video generation completed successfully."""
     return {"success": True}
 
 
 @server_router.post("/generation_error", response_model=dict[str, bool])
-async def video_generation_error_api(request: VideoGenerationErrorPayload) -> dict[str, bool]:
+async def video_generation_error_api(
+    request: VideoGenerationErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred during video generation."""
     return {"success": True}

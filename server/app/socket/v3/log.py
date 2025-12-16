@@ -4,11 +4,12 @@ import json
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -22,7 +23,9 @@ class ResponseInputItem(BaseModel):
     """Input item for agent conversation (TResponseInputItem format)."""
 
     role: str  # "user" | "developer" | "assistant" | etc.
-    content: str | list[dict[str, Any]]  # Content can be string or list of content items
+    content: (
+        str | list[dict[str, Any]]
+    )  # Content can be string or list of content items
 
 
 class LogRunPayload(BaseModel):

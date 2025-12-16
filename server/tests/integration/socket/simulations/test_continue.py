@@ -42,10 +42,13 @@ This test file covers the core business logic for continuing simulation attempts
 
 import asyncpg  # type: ignore
 import pytest
-from app.socket.v3.simulations.continue_chat import continue_simulation
 from tests.integration.socket.conftest import MockSocketIO
-from tests.seed_helpers import get_cs_dept_id  # type: ignore
-from tests.seed_helpers import get_superadmin_alias
+from tests.seed_helpers import (
+    get_cs_dept_id,  # type: ignore
+    get_superadmin_alias,
+)
+
+from app.socket.v3.simulations.continue_chat import continue_simulation
 
 pytestmark = pytest.mark.asyncio
 

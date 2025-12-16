@@ -20,9 +20,7 @@ from app.utils.theme.oklch_to_hex import hex_to_oklch
 class SettingsActiveRequest(BaseModel):
     """Request to get active settings."""
 
-    profileId: str | None = (
-        None  # Can be null, empty string, or UUID
-    )
+    profileId: str | None = None  # Can be null, empty string, or UUID
     departmentId: str | None = (
         None  # Optional department ID for department-specific settings lookup
     )

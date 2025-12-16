@@ -30,7 +30,9 @@ class UpdateProfileRequest(BaseModel):
     # Comprehensive fields (for staff management)
     first_name: str | None = None
     last_name: str | None = None
-    emails: list[str] | None = None  # List of emails (first one will be set as primary if primary_email_index not specified)
+    emails: list[str] | None = (
+        None  # List of emails (first one will be set as primary if primary_email_index not specified)
+    )
     primary_email_index: int | None = (
         None  # Index in emails array for primary (defaults to 0)
     )

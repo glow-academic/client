@@ -146,7 +146,9 @@ class TestSetProfileId:
         ) as mock_write:
             handler.emit(record)
             # Handler should skip DB write when profile_id is None
-            assert not mock_write.called, "DB write should be skipped when profile_id is None"
+            assert not mock_write.called, (
+                "DB write should be skipped when profile_id is None"
+            )
 
 
 class TestDBLogHandler:

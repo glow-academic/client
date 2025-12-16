@@ -2,8 +2,16 @@
 
 from fastapi import APIRouter
 
-from . import connect, disconnect, log
-from . import documents, images, scenarios, simulations, videos
+from . import (
+    connect,
+    disconnect,
+    documents,
+    images,
+    log,
+    scenarios,
+    simulations,
+    videos,
+)
 
 # Create main router
 router = APIRouter(prefix="/socket/v3", tags=["socket"])

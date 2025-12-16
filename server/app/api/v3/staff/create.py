@@ -1,16 +1,17 @@
 """Staff bulk create endpoint - bulk create staff members."""
 
 import uuid
-from typing import Annotated, Any, cast
+from typing import Annotated, Any
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.api.v3.profile.create import CreateProfileRequest
 from app.main import get_db, transaction
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -69,9 +70,8 @@ async def bulk_create_staff(
         for p in request.profiles:
             if p.department_ids and p.primary_department_index is not None:
                 primary_dept_index = p.primary_department_index
-                if (
-                    primary_dept_index >= 0
-                    and primary_dept_index < len(p.department_ids)
+                if primary_dept_index >= 0 and primary_dept_index < len(
+                    p.department_ids
                 ):
                     dept_id = p.department_ids[primary_dept_index]
                     department_ids.append(dept_id)

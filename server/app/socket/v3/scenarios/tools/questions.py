@@ -72,7 +72,9 @@ async def scenario_questions_tool_complete(
         f"room={room}, trace_id={payload.trace_id}, "
         f"question_ids={len(payload.question_ids)} questions"
     )
-    await sio.emit("scenarios_tools_questions_complete", payload.model_dump(), room=room)
+    await sio.emit(
+        "scenarios_tools_questions_complete", payload.model_dump(), room=room
+    )
     logger.info(f"[scenario_tool_questions_complete] Emitted to room={room}")
 
 
@@ -237,18 +239,24 @@ async def scenario_tool_questions_internal(data: dict[str, Any]) -> None:
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/questions", response_model=dict[str, bool])
-async def scenario_tool_questions_api(request: ScenarioQuestionsToolPayload) -> dict[str, bool]:
+async def scenario_tool_questions_api(
+    request: ScenarioQuestionsToolPayload,
+) -> dict[str, bool]:
     """Client-to-server event: Create questions from scenario generation tool."""
     return {"success": True}
 
 
 @server_router.post("/questions_complete", response_model=dict[str, bool])
-async def scenario_questions_tool_complete_api(request: ScenarioQuestionsToolCompletePayload) -> dict[str, bool]:
+async def scenario_questions_tool_complete_api(
+    request: ScenarioQuestionsToolCompletePayload,
+) -> dict[str, bool]:
     """Server-to-client event: Questions tool completed successfully."""
     return {"success": True}
 
 
 @server_router.post("/questions_error", response_model=dict[str, bool])
-async def scenario_questions_tool_error_api(request: ScenarioQuestionsToolErrorPayload) -> dict[str, bool]:
+async def scenario_questions_tool_error_api(
+    request: ScenarioQuestionsToolErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred in questions tool."""
     return {"success": True}

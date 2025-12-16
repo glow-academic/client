@@ -98,12 +98,16 @@ async def simulation_voice_user_start(sid: str, data: dict[str, Any]) -> None:
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/start", response_model=dict[str, bool])
-async def simulation_voice_user_start_api(request: VoiceUserStartPayload) -> dict[str, bool]:
+async def simulation_voice_user_start_api(
+    request: VoiceUserStartPayload,
+) -> dict[str, bool]:
     """Client-to-server event: Start user speech input in voice simulation."""
     return {"success": True}
 
 
 @server_router.post("/start", response_model=dict[str, bool])
-async def simulation_voice_user_start_server_api(request: VoiceUserStartPayload) -> dict[str, bool]:
+async def simulation_voice_user_start_server_api(
+    request: VoiceUserStartPayload,
+) -> dict[str, bool]:
     """Server-to-client event: User speech started in voice simulation."""
     return {"success": True}

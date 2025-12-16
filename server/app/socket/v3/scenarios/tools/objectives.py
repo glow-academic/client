@@ -3,11 +3,12 @@
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -49,7 +50,9 @@ async def objectives_tool_complete(
         f"room={room}, trace_id={payload.trace_id}, "
         f"objective_ids={payload.objective_ids}"
     )
-    await sio.emit("scenarios_tools_objectives_complete", payload.model_dump(), room=room)
+    await sio.emit(
+        "scenarios_tools_objectives_complete", payload.model_dump(), room=room
+    )
     logger.info(f"[scenario_tool_objectives_complete] Emitted to room={room}")
 
 
@@ -178,12 +181,16 @@ async def scenario_tool_objectives_internal(data: dict[str, Any]) -> None:
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/objectives", response_model=dict[str, bool])
-async def scenario_tool_objectives_api(request: ObjectivesToolPayload) -> dict[str, bool]:
+async def scenario_tool_objectives_api(
+    request: ObjectivesToolPayload,
+) -> dict[str, bool]:
     """Client-to-server event: Create objectives from scenario generation tool."""
     return {"success": True}
 
 
 @server_router.post("/objectives_complete", response_model=dict[str, bool])
-async def objectives_tool_complete_api(request: ObjectivesToolCompletePayload) -> dict[str, bool]:
+async def objectives_tool_complete_api(
+    request: ObjectivesToolCompletePayload,
+) -> dict[str, bool]:
     """Server-to-client event: Objectives tool completed successfully."""
     return {"success": True}

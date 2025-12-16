@@ -198,4 +198,3 @@ async def get_profile_new(
             sql_params=sql_params,
             request=http_request,
         )
-

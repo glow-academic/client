@@ -17,8 +17,6 @@ from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
 from app.utils.jinja_renderer import render_template
 from app.utils.logging.db_logger import get_logger
-from app.utils.personas import format_persona_info
-from app.utils.scenario import format_parameter_item_info
 from app.utils.scenario.image_generation import set_image_generation_context
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter
@@ -528,7 +526,11 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 persona_info = None
                 show_images = False
             else:
-                persona_info = format_persona_info(context["persona"])
+                persona_data = context["persona"]
+                persona_info = {
+                    "role": "user",
+                    "content": f"This is the profile of the student: Name: {persona_data['name']} Description: {persona_data.get('description', '')}",
+                }
                 show_images = False
 
             # Format document info if documents were provided
@@ -541,7 +543,26 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             if not field_ids or len(field_ids) == 0:
                 field_info = None
             else:
-                field_info = format_parameter_item_info(context["parameter_items"])
+                parameter_items = context["parameter_items"]
+                if not parameter_items:
+                    field_info = {
+                        "role": "user",
+                        "content": "No parameter items found.",
+                    }
+                else:
+                    formatted_items = []
+                    for row in parameter_items:
+                        formatted_item = (
+                            f"This is the {row['param_name']} ({row.get('param_description', '')}) for this chat: {row['item_name']}. "
+                            f"Description: {row.get('item_description', '')}."
+                        )
+                        formatted_items.append(formatted_item)
+
+                    content = "The following is the parameter item information:\n" + "\n".join(formatted_items)
+                    field_info = {
+                        "role": "user",
+                        "content": content,
+                    }
 
             # Determine which tools to enable based on agent role
             group_id = None
@@ -1500,18 +1521,24 @@ async def generate_scenario_api(request: GenerateScenarioAIPayload) -> dict[str,
 
 
 @server_router.post("/generation_progress", response_model=dict[str, bool])
-async def scenario_generation_progress_api(request: ScenarioGenerationProgressPayload) -> dict[str, bool]:
+async def scenario_generation_progress_api(
+    request: ScenarioGenerationProgressPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Scenario generation progress update."""
     return {"success": True}
 
 
 @server_router.post("/generation_complete", response_model=dict[str, bool])
-async def scenario_generation_complete_api(request: ScenarioGenerationCompletePayload) -> dict[str, bool]:
+async def scenario_generation_complete_api(
+    request: ScenarioGenerationCompletePayload,
+) -> dict[str, bool]:
     """Server-to-client event: Scenario generation completed successfully."""
     return {"success": True}
 
 
 @server_router.post("/generation_error", response_model=dict[str, bool])
-async def scenario_generation_error_api(request: ScenarioGenerationErrorPayload) -> dict[str, bool]:
+async def scenario_generation_error_api(
+    request: ScenarioGenerationErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred during scenario generation."""
     return {"success": True}

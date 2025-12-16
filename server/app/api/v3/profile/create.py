@@ -155,4 +155,3 @@ async def create_profile(
             sql_params=sql_params,
             request=None,
         )
-

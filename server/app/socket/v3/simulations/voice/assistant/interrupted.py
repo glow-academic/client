@@ -74,12 +74,16 @@ async def simulation_voice_assistant_interrupted(
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/interrupted", response_model=dict[str, bool])
-async def simulation_voice_assistant_interrupted_api(request: VoiceInterruptedPayload) -> dict[str, bool]:
+async def simulation_voice_assistant_interrupted_api(
+    request: VoiceInterruptedPayload,
+) -> dict[str, bool]:
     """Client-to-server event: Signal that assistant was interrupted in voice simulation."""
     return {"success": True}
 
 
 @server_router.post("/interrupted", response_model=dict[str, bool])
-async def simulation_voice_assistant_interrupted_server_api(request: VoiceInterruptedPayload) -> dict[str, bool]:
+async def simulation_voice_assistant_interrupted_server_api(
+    request: VoiceInterruptedPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Signal that assistant was interrupted in voice simulation."""
     return {"success": True}

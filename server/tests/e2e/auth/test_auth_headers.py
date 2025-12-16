@@ -81,7 +81,7 @@ def test_auth_header_with_uuid(page: Page, base_url: str) -> None:
     """Test profile context with actual UUID."""
     # Get a guest profile UUID from settings or use default test profile
     from server.tests.e2e.conftest import PROFILE_ID
-    
+
     context = fetch_profile_context(
         page.context.request,
         actual_profile_id=PROFILE_ID,

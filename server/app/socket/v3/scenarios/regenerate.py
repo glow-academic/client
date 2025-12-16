@@ -4,31 +4,23 @@ import json
 import uuid
 from typing import Any
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    gen_trace_id,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner,
+                    ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from pydantic import BaseModel, ValidationError
-
 from app.main import get_internal_sio, get_pool, get_scenario_storage, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_regeneration_messages import log_regeneration_messages
-from app.utils.scenario.image_generation import (
-    get_image_generation_results,
-    set_image_generation_context,
-)
+from app.utils.messages.log_regeneration_messages import \
+    log_regeneration_messages
+from app.utils.scenario.image_generation import (get_image_generation_results,
+                                                 set_image_generation_context)
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
 from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -54,7 +46,9 @@ class ScenarioRegenerationCompletePayload(BaseModel):
     title: str
     description: str
     objectives: list[str]
-    dynamic_document_mapping: dict[str, Any] | None = None  # Dynamic mapping of document uploads
+    dynamic_document_mapping: dict[str, Any] | None = (
+        None  # Dynamic mapping of document uploads
+    )
     generated_image_ids: list[str] | None = None
     trace_id: str | None = None
 
@@ -355,9 +349,8 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             }
 
             # Format input items (same as generation)
-            from app.utils.document.format_document_info import format_document_info
-            from app.utils.personas import format_persona_info
-            from app.utils.scenario import format_parameter_item_info
+            from app.utils.document.format_document_info import \
+                format_document_info
 
             # Format persona info if persona was provided
             if persona_id is None or context["persona"] is None:
@@ -366,7 +359,10 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             else:
                 persona_dict = context["persona"]
                 if isinstance(persona_dict, dict):
-                    persona_info = format_persona_info(persona_dict)
+                    persona_info = {
+                        "role": "user",
+                        "content": f"This is the profile of the student: Name: {persona_dict['name']} Description: {persona_dict.get('description', '')}",
+                    }
                 else:
                     persona_info = None
                 show_images = False
@@ -381,9 +377,26 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             if not parameter_item_ids or len(parameter_item_ids) == 0:
                 parameter_item_info = None
             else:
-                parameter_item_info = format_parameter_item_info(
-                    context["parameter_items"]
-                )
+                parameter_items = context["parameter_items"]
+                if not parameter_items:
+                    parameter_item_info = {
+                        "role": "user",
+                        "content": "No parameter items found.",
+                    }
+                else:
+                    formatted_items = []
+                    for row in parameter_items:
+                        formatted_item = (
+                            f"This is the {row['param_name']} ({row.get('param_description', '')}) for this chat: {row['item_name']}. "
+                            f"Description: {row.get('item_description', '')}."
+                        )
+                        formatted_items.append(formatted_item)
+
+                    content = "The following is the parameter item information:\n" + "\n".join(formatted_items)
+                    parameter_item_info = {
+                        "role": "user",
+                        "content": content,
+                    }
 
             input_items: list[TResponseInputItem | None] = [
                 persona_info,
@@ -635,6 +648,8 @@ async def regenerate_scenario(sid: str, data: dict[str, Any]) -> None:
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/regenerate", response_model=dict[str, bool])
-async def regenerate_scenario_api(request: RegenerateScenarioPayload) -> dict[str, bool]:
+async def regenerate_scenario_api(
+    request: RegenerateScenarioPayload,
+) -> dict[str, bool]:
     """Client-to-server event: Regenerate a scenario with new attributes."""
     return {"success": True}

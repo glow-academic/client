@@ -45,7 +45,8 @@ class CreateDocumentResponse(BaseModel):
     response_model=CreateDocumentResponse,
     dependencies=[
         audit_activity(
-            "document.created", "{{ actor.name }} created document '{{ document.name }}'"
+            "document.created",
+            "{{ actor.name }} created document '{{ document.name }}'",
         )
     ],
 )
@@ -100,7 +101,7 @@ async def create_document(
         )
 
         result = await conn.fetchrow(sql_query, *sql_params)
-        
+
         # Set audit context with data from SQL query
         if result:
             actor_name = result.get("actor_name")

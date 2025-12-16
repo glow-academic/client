@@ -21,8 +21,6 @@ from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
-from app.utils.personas import format_persona_info
-from app.utils.scenario import format_parameter_item_info
 from app.utils.scenario.image_generation import (
     get_image_generation_results,
     set_image_generation_context,
@@ -134,7 +132,11 @@ async def generate_scenario_problem_statement(
         persona_info = None
         show_images = False
     else:
-        persona_info = format_persona_info(context["persona"])
+        persona_data = context["persona"]
+        persona_info = {
+            "role": "user",
+            "content": f"This is the profile of the student: Name: {persona_data['name']} Description: {persona_data.get('description', '')}",
+        }
         show_images = False
 
     # Format document info if documents were provided
@@ -147,7 +149,26 @@ async def generate_scenario_problem_statement(
     if not parameter_item_ids or len(parameter_item_ids) == 0:
         parameter_item_info = None
     else:
-        parameter_item_info = format_parameter_item_info(context["parameter_items"])
+        parameter_items = context["parameter_items"]
+        if not parameter_items:
+            parameter_item_info = {
+                "role": "user",
+                "content": "No parameter items found.",
+            }
+        else:
+            formatted_items = []
+            for row in parameter_items:
+                formatted_item = (
+                    f"This is the {row['param_name']} ({row.get('param_description', '')}) for this chat: {row['item_name']}. "
+                    f"Description: {row.get('item_description', '')}."
+                )
+                formatted_items.append(formatted_item)
+
+            content = "The following is the parameter item information:\n" + "\n".join(formatted_items)
+            parameter_item_info = {
+                "role": "user",
+                "content": content,
+            }
 
     # Determine final profile ID early (use provided or default guest)
     final_profile_id: uuid.UUID | None = profile_id

@@ -4,19 +4,26 @@ import asyncio
 import uuid
 from typing import Any
 
-from app.main import (get_pool, get_simulation_tool_calls_dict,
-                      get_simulation_tool_calls_locks, sio)
-from app.socket.v3.simulations.text.send import (SimulationMessageTokenPayload,
-                                                 SimulationNewMessagePayload,
-                                                 extract_new_message_chars,
-                                                 extract_persona_from_json,
-                                                 simulation_message_token,
-                                                 simulation_new_message)
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
+from app.main import (
+    get_pool,
+    get_simulation_tool_calls_dict,
+    get_simulation_tool_calls_locks,
+    sio,
+)
+from app.socket.v3.simulations.text.send import (
+    SimulationMessageTokenPayload,
+    SimulationNewMessagePayload,
+    extract_new_message_chars,
+    extract_persona_from_json,
+    simulation_message_token,
+    simulation_new_message,
+)
 from app.utils.agents.tools.create_persona_tools import find_persona_by_name
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -44,7 +51,9 @@ class VoiceToolCallErrorPayload(BaseModel):
 
 # Emit helper functions
 async def voice_tool_call_error(payload: VoiceToolCallErrorPayload, room: str) -> None:
-    await sio.emit("simulations_voice_assistant_tool_call_error", payload.model_dump(), room=room)
+    await sio.emit(
+        "simulations_voice_assistant_tool_call_error", payload.model_dump(), room=room
+    )
 
 
 async def _simulation_voice_assistant_delta_impl(
@@ -450,12 +459,16 @@ async def simulation_voice_assistant_delta(sid: str, data: dict[str, Any]) -> No
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/delta", response_model=dict[str, bool])
-async def simulation_voice_assistant_delta_api(request: VoiceToolCallDeltaPayload) -> dict[str, bool]:
+async def simulation_voice_assistant_delta_api(
+    request: VoiceToolCallDeltaPayload,
+) -> dict[str, bool]:
     """Client-to-server event: Send incremental assistant tool call delta in voice simulation."""
     return {"success": True}
 
 
 @server_router.post("/tool_call_error", response_model=dict[str, bool])
-async def voice_tool_call_error_api(request: VoiceToolCallErrorPayload) -> dict[str, bool]:
+async def voice_tool_call_error_api(
+    request: VoiceToolCallErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred in voice tool call."""
     return {"success": True}

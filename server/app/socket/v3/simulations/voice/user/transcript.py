@@ -4,11 +4,11 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, get_voice_speech_timestamps, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -191,8 +191,11 @@ async def _simulation_voice_user_transcript_impl(
 
             # Emit user message to connected clients (same pattern as voice_user_message.py)
             from app.socket.v3.simulations.text.send import (
-                MessageSentPayload, SimulationNewMessagePayload, message_sent,
-                simulation_new_message)
+                MessageSentPayload,
+                SimulationNewMessagePayload,
+                message_sent,
+                simulation_new_message,
+            )
 
             logger.info(f"Emitting user message to room simulation_{chat_id_uuid}")
             await simulation_new_message(
@@ -246,12 +249,16 @@ async def simulation_voice_user_transcript(sid: str, data: dict[str, Any]) -> No
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/transcript", response_model=dict[str, bool])
-async def simulation_voice_user_transcript_api(request: VoiceUserTranscriptPayload) -> dict[str, bool]:
+async def simulation_voice_user_transcript_api(
+    request: VoiceUserTranscriptPayload,
+) -> dict[str, bool]:
     """Client-to-server event: Send user transcript from voice simulation."""
     return {"success": True}
 
 
 @server_router.post("/transcript", response_model=dict[str, bool])
-async def simulation_voice_user_transcript_server_api(request: VoiceUserTranscriptPayload) -> dict[str, bool]:
+async def simulation_voice_user_transcript_server_api(
+    request: VoiceUserTranscriptPayload,
+) -> dict[str, bool]:
     """Server-to-client event: User transcript from voice simulation."""
     return {"success": True}

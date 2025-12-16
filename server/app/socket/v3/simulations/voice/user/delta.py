@@ -76,12 +76,16 @@ async def simulation_voice_user_delta(sid: str, data: dict[str, Any]) -> None:
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/delta", response_model=dict[str, bool])
-async def simulation_voice_user_delta_api(request: VoiceUserDeltaPayload) -> dict[str, bool]:
+async def simulation_voice_user_delta_api(
+    request: VoiceUserDeltaPayload,
+) -> dict[str, bool]:
     """Client-to-server event: Send incremental user speech delta in voice simulation."""
     return {"success": True}
 
 
 @server_router.post("/delta", response_model=dict[str, bool])
-async def simulation_voice_user_delta_server_api(request: VoiceUserDeltaPayload) -> dict[str, bool]:
+async def simulation_voice_user_delta_server_api(
+    request: VoiceUserDeltaPayload,
+) -> dict[str, bool]:
     """Server-to-client event: User speech delta from voice simulation."""
     return {"success": True}

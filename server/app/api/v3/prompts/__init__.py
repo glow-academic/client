@@ -8,4 +8,3 @@ router = APIRouter(prefix="/prompts", tags=["prompts"])
 
 # Include endpoint routers
 router.include_router(delete_router)
-

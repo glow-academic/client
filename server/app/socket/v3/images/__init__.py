@@ -12,4 +12,3 @@ client_router.include_router(complete_client_router)
 client_router.include_router(generate_client_router)
 
 # Images only has client events, no server events
-

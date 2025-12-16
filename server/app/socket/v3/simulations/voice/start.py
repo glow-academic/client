@@ -7,14 +7,15 @@ import uuid
 from typing import Any, get_type_hints
 
 import httpx
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import _voice_sessions, get_pool, sio
 from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.agents.tools.create_persona_tools import create_persona_tools
 from app.utils.chat.get_realtime_history import get_realtime_history
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -433,9 +434,12 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             # Import emit functions from send_message
             from app.socket.v3.simulations.text.send import (
                 SimulationMessageCompletePayload,
-                SimulationMessageTokenPayload, SimulationNewMessagePayload,
-                simulation_message_complete, simulation_message_token,
-                simulation_new_message)
+                SimulationMessageTokenPayload,
+                SimulationNewMessagePayload,
+                simulation_message_complete,
+                simulation_message_token,
+                simulation_new_message,
+            )
 
             # Create emit wrapper functions for persona tools
             async def emit_new_message_wrapper(event_data: dict[str, Any]) -> None:
@@ -750,9 +754,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             # Convert messages to RealtimeItem format
             realtime_history_dicts = get_realtime_history(messages)
             # Convert dicts to RealtimeItem Pydantic models
-            realtime_history = [
-                RealtimeItem(**item) for item in realtime_history_dicts
-            ]
+            realtime_history = [RealtimeItem(**item) for item in realtime_history_dicts]
 
             logger.info(
                 f"Started voice session for chat {chat_id} with {len(persona_tools)} persona tools and {len(realtime_history)} history items"
@@ -806,12 +808,16 @@ async def simulation_voice_start_api(request: StartVoicePayload) -> dict[str, bo
 
 
 @server_router.post("/start_response", response_model=dict[str, bool])
-async def simulation_voice_start_response_api(request: StartVoiceResponsePayload) -> dict[str, bool]:
+async def simulation_voice_start_response_api(
+    request: StartVoiceResponsePayload,
+) -> dict[str, bool]:
     """Server-to-client event: Voice simulation start response."""
     return {"success": True}
 
 
 @server_router.post("/start_error", response_model=dict[str, bool])
-async def simulation_voice_start_error_api(request: StartVoiceErrorPayload) -> dict[str, bool]:
+async def simulation_voice_start_error_api(
+    request: StartVoiceErrorPayload,
+) -> dict[str, bool]:
     """Server-to-client event: Error occurred while starting voice simulation."""
     return {"success": True}
