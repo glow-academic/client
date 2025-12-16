@@ -127,14 +127,6 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createScenario(
-  input: CreateScenarioIn
-): Promise<CreateScenarioOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/scenarios/create", input);
-}
-
 async function updateScenario(
   input: UpdateScenarioIn
 ): Promise<UpdateScenarioOut> {
@@ -334,7 +326,6 @@ export default async function EditScenarioPage({
           scenarioId={scenarioId}
           mode="edit"
           scenarioDetail={scenarioDetail}
-          createScenarioAction={createScenario}
           updateScenarioAction={updateScenario}
         />
       </div>

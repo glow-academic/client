@@ -10,6 +10,8 @@ from typing import Dict, List, Set, Tuple
 SERVER_API_DIR = Path("server/app/api/v3")
 CLIENT_DIR = Path("client")
 SQL_DIR = Path("server/sql/v3")
+BFF_DIR = Path("client/app/api")
+SCHEMA_FILE = Path("client/lib/api/schema.ts")
 
 
 def extract_route_paths_from_file(file_path: Path) -> List[str]:
@@ -91,25 +93,37 @@ def extract_registered_routes() -> List[Tuple[str, str, Path]]:
     return all_routes
 
 
-def find_client_references() -> Set[str]:
-    """Find all API route references in client code."""
-    references = set()
+def find_client_references() -> Tuple[Set[str], Dict[str, List[str]]]:
+    """
+    Find all API route references in client code.
+    Returns: (references_set, bff_references_dict) where bff_references_dict maps
+             route paths to list of BFF files that reference them.
+    """
+    references: Set[str] = set()
+    bff_references: Dict[str, List[str]] = {}  # Map route path -> list of BFF files
     
     # Patterns to search for:
     # 1. api.get("/resource/operation", ...) or api.post("/resource/operation", ...)
     # 2. InputOf<"/api/v3/resource/operation", "post">
     # 3. OutputOf<"/api/v3/resource/operation", "post">
-    # 4. "/api/v3/resource/operation" in schema.ts
+    # 4. Direct fetch calls to "/api/v3/..." in BFF routes
     
     for file_path in CLIENT_DIR.rglob("*"):
         if "node_modules" in str(file_path) or not file_path.is_file():
             continue
         if file_path.suffix not in (".ts", ".tsx"):
             continue
+        
+        # Skip schema.ts as it's auto-generated and contains all routes
+        if file_path == SCHEMA_FILE:
+            continue
             
         try:
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
+            
+            is_bff_file = BFF_DIR in file_path.parents or str(file_path).startswith(str(BFF_DIR))
+            found_routes_in_file = set()
                 
             # Pattern 1: api.method("/path")
             matches = re.findall(r'api\.(get|post|put|patch|delete)\(["\']([^"\']+)["\']', content)
@@ -120,57 +134,167 @@ def find_client_references() -> Set[str]:
                 else:
                     full_path = path
                 references.add(full_path)
+                found_routes_in_file.add(full_path)
             
             # Pattern 2: InputOf/OutputOf types
             matches = re.findall(r'(InputOf|OutputOf)<["\'](/api/v3/[^"\']+)["\']', content)
             for _, path in matches:
                 references.add(path)
+                found_routes_in_file.add(path)
             
-            # Pattern 3: Direct "/api/v3/..." strings (for schema.ts)
-            matches = re.findall(r'["\'](/api/v3/[^"\']+)["\']', content)
-            for path in matches:
-                # Only add if it looks like a route path (not part of a longer string)
-                if re.match(r'^/api/v3/[^/]+/[^"\']+$', path):
+            # Pattern 3: Direct "/api/v3/..." strings in fetch calls or URL construction
+            # Check for fetch calls with INTERNAL_HTTP_BASE or direct URLs
+            # Pattern: fetch(`${INTERNAL_HTTP_BASE}/api/v3/...`)
+            fetch_matches = re.findall(
+                r'fetch\([^)]*[`"\'](/api/v3/[^`"\']+)[`"\']', 
+                content
+            )
+            for path in fetch_matches:
+                # Normalize path (remove query params, fragments, etc.)
+                normalized_path = path.split('?')[0].split('#')[0].rstrip('/')
+                if re.match(r'^/api/v3/[^/]+/.+', normalized_path):  # Must have resource and operation
+                    references.add(normalized_path)
+                    found_routes_in_file.add(normalized_path)
+            
+            # Pattern 4: Template literals with /api/v3/ (e.g., `${INTERNAL_HTTP_BASE}/api/v3/...`)
+            template_matches = re.findall(
+                r'`[^`]*\/api\/v3\/([^`\?]+)', 
+                content
+            )
+            for match in template_matches:
+                path = f"/api/v3/{match.rstrip('/')}"
+                if re.match(r'^/api/v3/[^/]+/.+', path):
                     references.add(path)
+                    found_routes_in_file.add(path)
+            
+            # Pattern 5: toFull() calls with short paths (e.g., toFull(API_VERSION, "/resource/operation"))
+            tofull_matches = re.findall(
+                r'toFull\([^,]+,\s*["\']([^"\']+)["\']', 
+                content
+            )
+            for path in tofull_matches:
+                if path.startswith("/") and not path.startswith("/api/"):
+                    full_path = f"/api/v3{path}"
+                    references.add(full_path)
+                    found_routes_in_file.add(full_path)
+            
+            # Pattern 6: Direct "/api/v3/..." string references (but exclude schema-like patterns)
+            # Only match if it looks like a route path (has resource and operation)
+            direct_matches = re.findall(r'["\'](/api/v3/[^"\']+)["\']', content)
+            for path in direct_matches:
+                # Normalize and validate
+                normalized_path = path.split('?')[0].split('#')[0].rstrip('/')
+                # Must have at least resource/operation structure
+                if re.match(r'^/api/v3/[^/]+/[^"\']+$', normalized_path):
+                    references.add(normalized_path)
+                    found_routes_in_file.add(normalized_path)
+            
+            # Track BFF file references
+            if is_bff_file and found_routes_in_file:
+                for route in found_routes_in_file:
+                    if route not in bff_references:
+                        bff_references[route] = []
+                    bff_references[route].append(str(file_path.relative_to(CLIENT_DIR)))
                 
         except Exception as e:
             pass  # Skip files that can't be read
     
-    return references
+    return references, bff_references
 
 
 def find_sql_files(resource: str, route_path: str) -> List[Path]:
     """Find corresponding SQL files for a route."""
-    sql_files = []
+    sql_files: List[Path] = []
     
     # Extract operation from route path (e.g., "/api/v3/personas/create" -> "create")
     parts = route_path.split("/")
-    if len(parts) >= 4:
-        operation = parts[-1]
-        
-        # Common SQL file patterns
-        sql_dir = SQL_DIR / resource
-        if sql_dir.exists():
-            # Try various naming patterns
-            patterns = [
-                f"{operation}_complete.sql",
-                f"{operation}_{resource}_complete.sql",
-                f"get_{operation}_complete.sql",
-                f"create_{operation}_complete.sql",
-                f"update_{operation}_complete.sql",
-                f"delete_{operation}_complete.sql",
-                f"{operation}.sql",
-            ]
-            
-            # Also check for files that contain the operation name
-            for sql_file in sql_dir.glob("*.sql"):
-                if operation in sql_file.name.lower():
-                    sql_files.append(sql_file)
+    if len(parts) < 4:
+        return sql_files
     
-    return list(set(sql_files))  # Remove duplicates
+    operation = parts[-1]
+    
+    # Handle nested routes (e.g., "/api/v3/uploads/upload/{upload_id}/finalize" -> "finalize")
+    # But also check parent operation (e.g., "upload" for uploads routes)
+    operations_to_check = [operation]
+    
+    # For nested routes, also check parent operation
+    if len(parts) > 4:
+        parent_operation = parts[-2]
+        operations_to_check.append(parent_operation)
+    
+    # Common SQL file patterns
+    sql_dir = SQL_DIR / resource
+    if not sql_dir.exists():
+        return sql_files
+    
+    # Try various naming patterns for each operation
+    for op in operations_to_check:
+        patterns = [
+            f"{op}_complete.sql",
+            f"{op}_{resource}_complete.sql",
+            f"get_{op}_complete.sql",
+            f"create_{op}_complete.sql",
+            f"update_{op}_complete.sql",
+            f"delete_{op}_complete.sql",
+            f"{op}.sql",
+        ]
+        
+        for pattern in patterns:
+            sql_file = sql_dir / pattern
+            if sql_file.exists() and sql_file not in sql_files:
+                sql_files.append(sql_file)
+    
+    # Also check for files that contain the operation name (but be more selective)
+    for sql_file in sql_dir.glob("*.sql"):
+        file_lower = sql_file.name.lower()
+        # Only add if operation appears as a whole word or at start/end
+        for op in operations_to_check:
+            op_lower = op.lower()
+            if (op_lower in file_lower and 
+                (file_lower.startswith(op_lower) or 
+                 file_lower.endswith(op_lower) or
+                 f"_{op_lower}_" in file_lower or
+                 f"_{op_lower}." in file_lower) and
+                sql_file not in sql_files):
+                sql_files.append(sql_file)
+    
+    return sql_files
 
 
-def main():
+def normalize_route_path(path: str) -> str:
+    """Normalize route path for comparison (remove trailing slash, handle path params)."""
+    # Remove trailing slash
+    normalized = path.rstrip("/")
+    # Handle path parameters - normalize {param} and :param to a generic pattern
+    # But keep the structure for matching
+    return normalized
+
+
+def check_route_match(route_path: str, reference: str) -> bool:
+    """
+    Check if a reference matches a route path.
+    Handles path parameters and normalization.
+    """
+    route_norm = normalize_route_path(route_path)
+    ref_norm = normalize_route_path(reference)
+    
+    # Exact match
+    if route_norm == ref_norm:
+        return True
+    
+    # Handle path parameters: /api/v3/resource/{id} should match /api/v3/resource/123
+    # Replace {param} and :param with regex pattern
+    route_pattern = re.escape(route_norm)
+    route_pattern = re.sub(r'\\\{[^}]+\}', r'[^/]+', route_pattern)  # {param} -> [^/]+
+    route_pattern = re.sub(r'\\:[^/]+', r'[^/]+', route_pattern)  # :param -> [^/]+
+    
+    if re.match(f'^{route_pattern}$', ref_norm):
+        return True
+    
+    return False
+
+
+def main() -> None:
     print("Finding unused API routes...")
     print("=" * 60)
     
@@ -181,24 +305,50 @@ def main():
     
     # Find client references
     print("\n2. Scanning client codebase for references...")
-    client_refs = find_client_references()
+    print("   (Excluding lib/api/schema.ts as it's auto-generated)")
+    client_refs, bff_references = find_client_references()
     print(f"   Found {len(client_refs)} unique route references in client")
+    print(f"   Found {len(bff_references)} routes referenced in BFF files")
     
     # Find unused routes
     print("\n3. Identifying unused routes...")
     unused_routes = []
     
     for resource, route_path, file_path in all_routes:
-        # Normalize route path for comparison
-        normalized = route_path.rstrip("/")
-        
         # Check if route is referenced
         is_used = False
+        matching_refs = []
+        
         for ref in client_refs:
-            ref_normalized = ref.rstrip("/")
-            if normalized == ref_normalized:
+            if check_route_match(route_path, ref):
                 is_used = True
+                matching_refs.append(ref)
                 break
+        
+        # Determine confidence level
+        confidence = "high"
+        bff_files = []
+        
+        if not is_used:
+            # Check if it's only in schema.ts (would be medium confidence)
+            # But we already excluded schema.ts, so if not found, it's high confidence
+            confidence = "high"
+            
+            # Check BFF references
+            normalized_route = normalize_route_path(route_path)
+            for bff_route, files in bff_references.items():
+                if check_route_match(route_path, bff_route):
+                    bff_files.extend(files)
+                    # If found in BFF, it's actually used
+                    is_used = True
+                    confidence = "high"
+                    break
+        else:
+            # Check if also referenced in BFF
+            normalized_route = normalize_route_path(route_path)
+            for bff_route, files in bff_references.items():
+                if check_route_match(route_path, bff_route):
+                    bff_files.extend(files)
         
         if not is_used:
             sql_files = find_sql_files(resource, route_path)
@@ -207,6 +357,8 @@ def main():
                 "route_path": route_path,
                 "file_path": file_path,
                 "sql_files": sql_files,
+                "confidence": confidence,
+                "bff_files": bff_files,
             })
     
     # Print results
@@ -218,12 +370,19 @@ def main():
         for route in unused_routes:
             print(f"Route: {route['route_path']}")
             print(f"  File: {route['file_path']}")
-            if route['sql_files']:
+            print(f"  Confidence: {route['confidence']}")
+            sql_files_list = route['sql_files']
+            if sql_files_list:
                 print(f"  SQL files:")
-                for sql_file in route['sql_files']:
+                for sql_file in sql_files_list:  # type: ignore[attr-defined]
                     print(f"    - {sql_file}")
             else:
                 print(f"  SQL files: (none found)")
+            bff_files_list = route.get('bff_files')
+            if bff_files_list:
+                print(f"  Note: Found in BFF files (but marked unused - may need review):")
+                for bff_file in bff_files_list:  # type: ignore[attr-defined]
+                    print(f"    - {bff_file}")
             print()
     else:
         print("No unused routes found!")
@@ -254,11 +413,20 @@ def main():
                     # Try to construct full path
                     # Need to find the resource prefix
                     full_path = f"/api/v3/{resource}{route_path}"
-                    normalized = full_path.rstrip("/")
+                    # Check client references
                     for ref in client_refs:
-                        if normalized == ref.rstrip("/"):
+                        if check_route_match(full_path, ref):
                             is_referenced = True
                             break
+                    if is_referenced:
+                        break
+                    # Check BFF references
+                    for bff_route in bff_references.keys():
+                        if check_route_match(full_path, bff_route):
+                            is_referenced = True
+                            break
+                    if is_referenced:
+                        break
                 
                 if not is_referenced:
                     orphaned_files.append({
@@ -287,13 +455,28 @@ def main():
     with open(output_file, "w") as f:
         f.write("UNUSED API ROUTES\n")
         f.write("=" * 60 + "\n\n")
+        f.write(f"Total registered routes: {len(all_routes)}\n")
+        f.write(f"Unused routes: {len(unused_routes)}\n")
+        f.write(f"Orphaned files: {len(orphaned_files)}\n")
+        f.write("\n")
+        f.write("=" * 60 + "\n\n")
+        
         for route in unused_routes:
             f.write(f"Route: {route['route_path']}\n")
             f.write(f"  File: {route['file_path']}\n")
-            if route['sql_files']:
+            f.write(f"  Confidence: {route['confidence']}\n")
+            sql_files_list = route['sql_files']
+            if sql_files_list:
                 f.write(f"  SQL files:\n")
-                for sql_file in route['sql_files']:
+                for sql_file in sql_files_list:  # type: ignore[attr-defined]
                     f.write(f"    - {sql_file}\n")
+            else:
+                f.write(f"  SQL files: (none found)\n")
+            bff_files_list = route.get('bff_files')
+            if bff_files_list:
+                f.write(f"  Note: Found in BFF files (but marked unused - may need review):\n")
+                for bff_file in bff_files_list:  # type: ignore[attr-defined]
+                    f.write(f"    - {bff_file}\n")
             f.write("\n")
         
         if orphaned_files:

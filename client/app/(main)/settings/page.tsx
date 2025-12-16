@@ -3,10 +3,10 @@
  * Settings page
  */
 
+import { getSession } from "@/auth";
 import Settings from "@/components/settings/Settings";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 
 /** ---- Strong types from OpenAPI ---- */
 type SettingsListOut = OutputOf<"/api/v3/settings/list", "post">;
@@ -126,13 +126,6 @@ async function getStaffListAction(profileId: string): Promise<StaffListOut> {
   return getStaffList(profileId);
 }
 
-async function getDepartmentsListAction(
-  profileId: string
-): Promise<DepartmentsListOut> {
-  "use server";
-  return getDepartmentsList(profileId);
-}
-
 export default async function SettingsPage() {
   // Access control is handled server-side in layout
   // Get profileId from session
@@ -148,7 +141,7 @@ export default async function SettingsPage() {
   const settingsListResponse = await getSettingsList(profileId);
   const keysList = await getKeysList(profileId);
   const staffList = await getStaffListAction(profileId);
-  const departmentsList = await getDepartmentsListAction(profileId);
+  const departmentsList = await getDepartmentsList(profileId);
 
   return (
     <div className="space-y-6" data-page="settings-index">

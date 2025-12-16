@@ -73,14 +73,6 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createSimulation(
-  input: CreateSimulationIn,
-): Promise<CreateSimulationOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/simulations/create", input);
-}
-
 async function updateSimulation(
   input: UpdateSimulationIn,
 ): Promise<UpdateSimulationOut> {
@@ -119,7 +111,6 @@ export default async function EditSimulationPage({
         <Simulation
           simulationId={simulationId}
           simulationDetail={simulationDetail}
-          createSimulationAction={createSimulation}
           updateSimulationAction={updateSimulation}
         />
       </div>

@@ -47,14 +47,6 @@ async function createScenario(
   return api.post("/scenarios/create", input);
 }
 
-async function updateScenario(
-  input: UpdateScenarioIn
-): Promise<UpdateScenarioOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/scenarios/update", input);
-}
-
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Scenario",
@@ -221,7 +213,6 @@ export default async function NewScenarioPage({
         mode="create"
         scenarioDetailDefault={scenarioDetailDefault}
         createScenarioAction={createScenario}
-        updateScenarioAction={updateScenario}
       />
     </div>
   );

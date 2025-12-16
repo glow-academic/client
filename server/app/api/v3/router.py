@@ -43,12 +43,9 @@ from app.api.v3.pricing import router as pricing_router
 # Batch B: Profile Routes
 # ============================================================================
 from app.api.v3.profile import router as profile_router
-from app.api.v3.prompts import router as prompts_router
 from app.api.v3.providers import router as providers_router
-from app.api.v3.realtime import router as realtime_router
 from app.api.v3.reports import router as reports_router
 from app.api.v3.rubrics import router as rubrics_router
-from app.api.v3.runs import router as runs_router
 
 # ============================================================================
 # Batch C: Core Content Resources (Complete CRUD)
@@ -56,7 +53,6 @@ from app.api.v3.runs import router as runs_router
 from app.api.v3.scenarios import router as scenarios_router
 from app.api.v3.settings import router as settings_router
 from app.api.v3.simulations import router as simulations_router
-from app.api.v3.units import router as units_router
 from app.api.v3.uploads import router as uploads_router
 
 # ============================================================================
@@ -93,17 +89,13 @@ router.include_router(keys_router)
 router.include_router(models_router)
 router.include_router(providers_router)
 router.include_router(parameters_router)
-router.include_router(prompts_router)
 router.include_router(fields_router)
-router.include_router(units_router)
 router.include_router(feedback_router)
 router.include_router(logs_router)
 router.include_router(attempts_router)
-router.include_router(runs_router)
 
 # Batch G: Utility Routes
 router.include_router(home_router)
 router.include_router(practice_router)
 router.include_router(pricing_router)
-router.include_router(realtime_router)
 router.include_router(uploads_router)
