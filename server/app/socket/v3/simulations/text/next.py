@@ -6,24 +6,30 @@ from datetime import UTC, datetime
 from typing import Any
 
 import asyncpg  # type: ignore
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    trace,
+)
 from agents.items import TResponseInputItem
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_grading_storage, get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
-from app.utils.agents.tools.create_safe_field_name import \
-    create_safe_field_name
+from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
+from app.utils.chat.get_simulation_conversation_history import (
+    get_simulation_conversation_history,
+)
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -169,8 +175,7 @@ async def _create_chat_for_scenario_inline(
         return None
 
     # Use randomization function to select attributes and create child scenario
-    from app.utils.scenario.randomize_attributes import \
-        randomize_scenario_attributes
+    from app.utils.scenario.randomize_attributes import randomize_scenario_attributes
 
     # Convert asyncpg UUID to Python UUID
     parent_scenario_id_uuid = uuid.UUID(str(parent_scenario["id"]))

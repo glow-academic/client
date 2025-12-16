@@ -5,7 +5,6 @@ from typing import Any
 from agents.items import TResponseInputItem
 
 
-
 def format_document_template_context(
     document_name: str | None = None,
     document_description: str | None = None,
@@ -56,7 +55,9 @@ def format_document_template_context(
             )
             formatted_items.append(formatted_item)
 
-        content = "The following is the parameter item information:\n" + "\n".join(formatted_items)
+        content = "The following is the parameter item information:\n" + "\n".join(
+            formatted_items
+        )
         fields_info = {
             "role": "user",
             "content": content,

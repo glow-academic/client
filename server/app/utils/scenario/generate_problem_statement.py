@@ -164,7 +164,9 @@ async def generate_scenario_problem_statement(
                 )
                 formatted_items.append(formatted_item)
 
-            content = "The following is the parameter item information:\n" + "\n".join(formatted_items)
+            content = "The following is the parameter item information:\n" + "\n".join(
+                formatted_items
+            )
             parameter_item_info = {
                 "role": "user",
                 "content": content,

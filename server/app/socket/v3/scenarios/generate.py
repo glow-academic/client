@@ -5,10 +5,20 @@ import os
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
-                    ToolsToFinalOutputResult, function_tool, gen_trace_id,
-                    trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    function_tool,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
+from fastapi import APIRouter
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
+
 from app.api.v3.settings.active import ThemePrimitives, derive_theme_tokens
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
@@ -19,9 +29,6 @@ from app.utils.jinja_renderer import render_template
 from app.utils.logging.db_logger import get_logger
 from app.utils.scenario.image_generation import set_image_generation_context
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
-                      create_model)
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -558,7 +565,10 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         )
                         formatted_items.append(formatted_item)
 
-                    content = "The following is the parameter item information:\n" + "\n".join(formatted_items)
+                    content = (
+                        "The following is the parameter item information:\n"
+                        + "\n".join(formatted_items)
+                    )
                     field_info = {
                         "role": "user",
                         "content": content,

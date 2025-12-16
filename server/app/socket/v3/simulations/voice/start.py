@@ -13,7 +13,7 @@ from pydantic import BaseModel, ValidationError
 from app.main import _voice_sessions, get_pool, sio
 from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.agents.tools.create_persona_tools import create_persona_tools
-from app.utils.chat.get_realtime_history import get_realtime_history
+from datetime import datetime
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
@@ -751,8 +751,78 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             message_rows = await conn.fetch(sql_messages, str(chat_id_uuid))
             messages = [dict(row) for row in message_rows]
 
-            # Convert messages to RealtimeItem format
-            realtime_history_dicts = get_realtime_history(messages)
+            # Convert messages to RealtimeItem format (inlined from get_realtime_history)
+            # Filter out error messages and make a list of all items
+            items = [msg for msg in messages if not msg.get("content", "").startswith("Error:")]
+            
+            # Sort items by created_at
+            items = sorted(items, key=lambda x: x.get("created_at", datetime.min))
+            
+            # Group messages by type to handle consecutive responses
+            current_response_messages: list[dict[str, Any]] = []
+            realtime_history_dicts: list[dict[str, Any]] = []
+            
+            for item in items:
+                msg_type = item.get("type", "")
+                msg_content = item.get("content", "")
+                msg_role = item.get("role", "")
+                
+                # Determine if this is a user message (query type or user role)
+                is_user_message = (msg_type == "query") or (msg_role == "user")
+                # Determine if this is an assistant message (response type or assistant role)
+                is_assistant_message = (msg_type == "response") or (msg_role == "assistant")
+                
+                if is_user_message and msg_content != "":
+                    # If we have pending response messages, add the latest one
+                    if current_response_messages:
+                        latest_response = current_response_messages[-1]
+                        assistant_realtime_item: dict[str, Any] = {
+                            "type": "message",
+                            "role": "assistant",
+                            "content": [
+                                {
+                                    "type": "output_text",
+                                    "text": latest_response.get("content", ""),
+                                }
+                            ],
+                            "status": "completed",
+                        }
+                        realtime_history_dicts.append(assistant_realtime_item)
+                        current_response_messages = []
+                    
+                    # Add the user message
+                    user_realtime_item: dict[str, Any] = {
+                        "type": "message",
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "input_text",
+                                "text": msg_content,
+                            }
+                        ],
+                        "status": "completed",
+                    }
+                    realtime_history_dicts.append(user_realtime_item)
+                elif is_assistant_message and msg_content != "":
+                    # Collect response messages to find the latest one
+                    current_response_messages.append(item)
+            
+            # Handle any remaining response messages at the end
+            if current_response_messages:
+                latest_response = current_response_messages[-1]
+                final_assistant_item: dict[str, Any] = {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": latest_response.get("content", ""),
+                        }
+                    ],
+                    "status": "completed",
+                }
+                realtime_history_dicts.append(final_assistant_item)
+            
             # Convert dicts to RealtimeItem Pydantic models
             realtime_history = [RealtimeItem(**item) for item in realtime_history_dicts]
 

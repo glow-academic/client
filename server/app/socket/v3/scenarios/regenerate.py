@@ -4,23 +4,31 @@ import json
 import uuid
 from typing import Any
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, gen_trace_id, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_internal_sio, get_pool, get_scenario_storage, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_regeneration_messages import \
-    log_regeneration_messages
-from app.utils.scenario.image_generation import (get_image_generation_results,
-                                                 set_image_generation_context)
+from app.utils.messages.log_regeneration_messages import log_regeneration_messages
+from app.utils.scenario.image_generation import (
+    get_image_generation_results,
+    set_image_generation_context,
+)
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -349,8 +357,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             }
 
             # Format input items (same as generation)
-            from app.utils.document.format_document_info import \
-                format_document_info
+            from app.utils.document.format_document_info import format_document_info
 
             # Format persona info if persona was provided
             if persona_id is None or context["persona"] is None:
@@ -392,7 +399,10 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                         )
                         formatted_items.append(formatted_item)
 
-                    content = "The following is the parameter item information:\n" + "\n".join(formatted_items)
+                    content = (
+                        "The following is the parameter item information:\n"
+                        + "\n".join(formatted_items)
+                    )
                     parameter_item_info = {
                         "role": "user",
                         "content": content,
