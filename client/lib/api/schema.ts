@@ -17752,7 +17752,9 @@ export interface operations {
     get_profile_detail_api_v3_profile_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -17785,7 +17787,9 @@ export interface operations {
     update_profile_api_v3_profile_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -17818,7 +17822,9 @@ export interface operations {
     create_profile_api_v3_profile_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -17851,7 +17857,9 @@ export interface operations {
     delete_profile_api_v3_profile_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -17884,7 +17892,9 @@ export interface operations {
     create_or_update_profile_api_v3_profile_upsert_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -17917,7 +17927,9 @@ export interface operations {
     get_profile_new_api_v3_profile_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -17950,7 +17962,9 @@ export interface operations {
     get_profile_by_email_api_v3_profile_email_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -17983,7 +17997,9 @@ export interface operations {
     get_profile_context_api_v3_profile_context_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18016,7 +18032,9 @@ export interface operations {
     authorize_emulation_api_v3_profile_emulate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18049,7 +18067,9 @@ export interface operations {
     search_simulatable_profiles_api_v3_profile_simulatable_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18082,7 +18102,9 @@ export interface operations {
     get_scenarios_list_api_v3_scenarios_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18115,7 +18137,9 @@ export interface operations {
     get_scenario_detail_api_v3_scenarios_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18148,7 +18172,9 @@ export interface operations {
     get_scenario_new_api_v3_scenarios_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18181,7 +18207,9 @@ export interface operations {
     create_scenario_api_v3_scenarios_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18214,7 +18242,9 @@ export interface operations {
     update_scenario_api_v3_scenarios_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18247,7 +18277,9 @@ export interface operations {
     duplicate_scenario_api_v3_scenarios_duplicate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18280,7 +18312,9 @@ export interface operations {
     delete_scenario_api_v3_scenarios_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18313,7 +18347,9 @@ export interface operations {
     get_simulations_list_api_v3_simulations_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18346,7 +18382,9 @@ export interface operations {
     get_simulation_detail_api_v3_simulations_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18379,7 +18417,9 @@ export interface operations {
     get_simulation_new_api_v3_simulations_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18412,7 +18452,9 @@ export interface operations {
     create_simulation_api_v3_simulations_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18445,7 +18487,9 @@ export interface operations {
     update_simulation_api_v3_simulations_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18478,7 +18522,9 @@ export interface operations {
     duplicate_simulation_api_v3_simulations_duplicate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18511,7 +18557,9 @@ export interface operations {
     delete_simulation_api_v3_simulations_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18544,7 +18592,9 @@ export interface operations {
     get_personas_list_api_v3_personas_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18577,7 +18627,9 @@ export interface operations {
     get_persona_detail_api_v3_personas_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18610,7 +18662,9 @@ export interface operations {
     get_persona_new_api_v3_personas_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18643,7 +18697,9 @@ export interface operations {
     create_persona_api_v3_personas_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18676,7 +18732,9 @@ export interface operations {
     update_persona_api_v3_personas_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18709,7 +18767,9 @@ export interface operations {
     duplicate_persona_api_v3_personas_duplicate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18742,7 +18802,9 @@ export interface operations {
     delete_persona_api_v3_personas_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18775,7 +18837,9 @@ export interface operations {
     get_auth_list_api_v3_auth_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18808,7 +18872,9 @@ export interface operations {
     get_auth_detail_api_v3_auth_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18841,7 +18907,9 @@ export interface operations {
     get_auth_new_api_v3_auth_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18874,7 +18942,9 @@ export interface operations {
     create_auth_api_v3_auth_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18907,7 +18977,9 @@ export interface operations {
     update_auth_api_v3_auth_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18940,7 +19012,9 @@ export interface operations {
     duplicate_auth_api_v3_auth_duplicate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18973,7 +19047,9 @@ export interface operations {
     delete_auth_api_v3_auth_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19006,7 +19082,9 @@ export interface operations {
     get_login_providers_api_v3_auth_login_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19039,7 +19117,9 @@ export interface operations {
     get_departments_list_api_v3_departments_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19072,7 +19152,9 @@ export interface operations {
     get_department_detail_api_v3_departments_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19105,7 +19187,9 @@ export interface operations {
     get_department_new_api_v3_departments_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19138,7 +19222,9 @@ export interface operations {
     create_department_api_v3_departments_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19171,7 +19257,9 @@ export interface operations {
     update_department_api_v3_departments_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19204,7 +19292,9 @@ export interface operations {
     duplicate_department_api_v3_departments_duplicate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19237,7 +19327,9 @@ export interface operations {
     delete_department_api_v3_departments_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19270,7 +19362,9 @@ export interface operations {
     get_cohorts_list_api_v3_cohorts_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19303,7 +19397,9 @@ export interface operations {
     get_cohort_detail_api_v3_cohorts_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19336,7 +19432,9 @@ export interface operations {
     get_cohort_new_api_v3_cohorts_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19369,7 +19467,9 @@ export interface operations {
     duplicate_cohort_api_v3_cohorts_duplicate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19402,7 +19502,9 @@ export interface operations {
     leave_cohort_api_v3_cohorts_leave_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19435,7 +19537,9 @@ export interface operations {
     create_cohort_api_v3_cohorts_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19468,7 +19572,9 @@ export interface operations {
     update_cohort_api_v3_cohorts_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19501,7 +19607,9 @@ export interface operations {
     delete_cohort_api_v3_cohorts_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19534,7 +19642,9 @@ export interface operations {
     cohort_search_profile_api_v3_cohorts_search_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19567,7 +19677,9 @@ export interface operations {
     get_documents_list_api_v3_documents_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19600,7 +19712,9 @@ export interface operations {
     get_document_detail_api_v3_documents_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19633,7 +19747,9 @@ export interface operations {
     create_document_api_v3_documents_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19666,7 +19782,9 @@ export interface operations {
     delete_document_api_v3_documents_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19699,7 +19817,9 @@ export interface operations {
     update_document_api_v3_documents_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19732,7 +19852,9 @@ export interface operations {
     generate_certificate_api_v3_documents_certificate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19765,7 +19887,9 @@ export interface operations {
     render_document_template_api_v3_documents_render_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19798,7 +19922,9 @@ export interface operations {
     get_evals_list_api_v3_evals_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19831,7 +19957,9 @@ export interface operations {
     get_eval_detail_api_v3_evals_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19864,7 +19992,9 @@ export interface operations {
     get_eval_new_api_v3_evals_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19897,7 +20027,9 @@ export interface operations {
     create_eval_api_v3_evals_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19930,7 +20062,9 @@ export interface operations {
     update_eval_api_v3_evals_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19963,7 +20097,9 @@ export interface operations {
     delete_eval_api_v3_evals_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19996,7 +20132,9 @@ export interface operations {
     get_model_runs_api_v3_evals_runs_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20029,7 +20167,9 @@ export interface operations {
     run_eval_api_v3_evals_run_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20062,7 +20202,9 @@ export interface operations {
     stop_eval_api_v3_evals_stop_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20095,7 +20237,9 @@ export interface operations {
     get_rubrics_list_api_v3_rubrics_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20128,7 +20272,9 @@ export interface operations {
     get_rubric_detail_api_v3_rubrics_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20161,7 +20307,9 @@ export interface operations {
     get_rubric_new_api_v3_rubrics_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20194,7 +20342,9 @@ export interface operations {
     duplicate_rubric_api_v3_rubrics_duplicate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20227,7 +20377,9 @@ export interface operations {
     create_rubric_api_v3_rubrics_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20260,7 +20412,9 @@ export interface operations {
     update_rubric_api_v3_rubrics_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20293,7 +20447,9 @@ export interface operations {
     delete_rubric_api_v3_rubrics_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20326,7 +20482,9 @@ export interface operations {
     list_settings_api_v3_settings_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20359,7 +20517,9 @@ export interface operations {
     get_settings_detail_api_v3_settings_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20392,7 +20552,9 @@ export interface operations {
     update_settings_api_v3_settings_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20425,7 +20587,9 @@ export interface operations {
     get_active_settings_api_v3_settings_active_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20458,7 +20622,9 @@ export interface operations {
     refresh_analytics_api_v3_analytics_refresh_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20491,7 +20657,9 @@ export interface operations {
     get_dashboard_api_v3_dashboard_overview_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20524,7 +20692,9 @@ export interface operations {
     get_dashboard_history_api_v3_dashboard_history_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20557,7 +20727,9 @@ export interface operations {
     get_reports_overview_api_v3_reports_overview_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20590,7 +20762,9 @@ export interface operations {
     get_reports_history_api_v3_reports_history_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20623,7 +20797,9 @@ export interface operations {
     get_leaderboard_api_v3_leaderboard_bundle_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20656,7 +20832,9 @@ export interface operations {
     list_agents_api_v3_agents_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20689,7 +20867,9 @@ export interface operations {
     get_agent_detail_api_v3_agents_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20722,7 +20902,9 @@ export interface operations {
     get_agent_new_api_v3_agents_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20755,7 +20937,9 @@ export interface operations {
     create_agent_api_v3_agents_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20788,7 +20972,9 @@ export interface operations {
     update_agent_api_v3_agents_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20821,7 +21007,9 @@ export interface operations {
     duplicate_agent_api_v3_agents_duplicate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20854,7 +21042,9 @@ export interface operations {
     delete_agent_api_v3_agents_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20887,7 +21077,9 @@ export interface operations {
     get_keys_list_api_v3_keys_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20920,7 +21112,9 @@ export interface operations {
     get_key_detail_api_v3_keys_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20953,7 +21147,9 @@ export interface operations {
     get_key_new_api_v3_keys_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20986,7 +21182,9 @@ export interface operations {
     create_key_api_v3_keys_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21019,7 +21217,9 @@ export interface operations {
     update_key_api_v3_keys_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21052,7 +21252,9 @@ export interface operations {
     delete_key_api_v3_keys_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21085,7 +21287,9 @@ export interface operations {
     decrypt_key_api_v3_keys_decrypt_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21118,7 +21322,9 @@ export interface operations {
     get_models_list_api_v3_models_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21151,7 +21357,9 @@ export interface operations {
     get_model_detail_api_v3_models_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21184,7 +21392,9 @@ export interface operations {
     get_model_new_api_v3_models_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21217,7 +21427,9 @@ export interface operations {
     create_model_api_v3_models_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21250,7 +21462,9 @@ export interface operations {
     update_model_api_v3_models_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21283,7 +21497,9 @@ export interface operations {
     delete_model_api_v3_models_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21316,7 +21532,9 @@ export interface operations {
     duplicate_model_api_v3_models_duplicate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21349,7 +21567,9 @@ export interface operations {
     get_providers_list_api_v3_providers_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21382,7 +21602,9 @@ export interface operations {
     get_provider_detail_api_v3_providers_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21415,7 +21637,9 @@ export interface operations {
     get_provider_new_api_v3_providers_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21448,7 +21672,9 @@ export interface operations {
     create_provider_api_v3_providers_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21481,7 +21707,9 @@ export interface operations {
     update_provider_api_v3_providers_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21514,7 +21742,9 @@ export interface operations {
     delete_provider_api_v3_providers_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21547,7 +21777,9 @@ export interface operations {
     get_parameters_list_api_v3_parameters_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21580,7 +21812,9 @@ export interface operations {
     get_parameter_detail_api_v3_parameters_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21613,7 +21847,9 @@ export interface operations {
     get_parameter_new_api_v3_parameters_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21646,7 +21882,9 @@ export interface operations {
     create_parameter_api_v3_parameters_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21679,7 +21917,9 @@ export interface operations {
     update_parameter_api_v3_parameters_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21712,7 +21952,9 @@ export interface operations {
     duplicate_parameter_api_v3_parameters_duplicate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21745,7 +21987,9 @@ export interface operations {
     delete_parameter_api_v3_parameters_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21778,7 +22022,9 @@ export interface operations {
     get_fields_list_api_v3_fields_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21811,7 +22057,9 @@ export interface operations {
     get_field_detail_api_v3_fields_detail_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21844,7 +22092,9 @@ export interface operations {
     get_field_new_api_v3_fields_new_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21877,7 +22127,9 @@ export interface operations {
     create_field_api_v3_fields_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21910,7 +22162,9 @@ export interface operations {
     update_field_api_v3_fields_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21943,7 +22197,9 @@ export interface operations {
     duplicate_field_api_v3_fields_duplicate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21976,7 +22232,9 @@ export interface operations {
     delete_field_api_v3_fields_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22009,7 +22267,9 @@ export interface operations {
     create_feedback_api_v3_feedback_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22042,7 +22302,9 @@ export interface operations {
     get_logs_bundle_api_v3_logs_bundle_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22075,7 +22337,9 @@ export interface operations {
     bulk_archive_attempts_api_v3_attempts_archive_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22108,7 +22372,9 @@ export interface operations {
     get_attempt_full_api_v3_attempts_full_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22141,7 +22407,9 @@ export interface operations {
     delete_agent_prompt_api_v3_prompts_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22174,7 +22442,9 @@ export interface operations {
     get_profile_list_api_v3_staff_list_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22207,7 +22477,9 @@ export interface operations {
     search_staff_api_v3_staff_search_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22240,7 +22512,9 @@ export interface operations {
     process_csv_api_v3_staff_csv_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22273,7 +22547,9 @@ export interface operations {
     get_create_staff_data_api_v3_staff_data_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22306,7 +22582,9 @@ export interface operations {
     bulk_create_staff_api_v3_staff_create_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22339,7 +22617,9 @@ export interface operations {
     bulk_update_staff_api_v3_staff_update_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22372,7 +22652,9 @@ export interface operations {
     bulk_delete_staff_api_v3_staff_delete_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22405,7 +22687,9 @@ export interface operations {
     bulk_create_or_update_staff_api_v3_staff_upsert_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22438,7 +22722,9 @@ export interface operations {
     get_home_overview_api_v3_home_overview_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22471,7 +22757,9 @@ export interface operations {
     get_home_history_api_v3_home_history_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22504,7 +22792,9 @@ export interface operations {
     get_practice_overview_api_v3_practice_overview_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22537,7 +22827,9 @@ export interface operations {
     get_practice_history_api_v3_practice_history_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22570,7 +22862,9 @@ export interface operations {
     get_pricing_api_v3_pricing_analytics_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22603,7 +22897,9 @@ export interface operations {
     get_pricing_runs_api_v3_pricing_runs_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22636,7 +22932,9 @@ export interface operations {
     tus_creation_api_v3_uploads_upload_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22649,6 +22947,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -22656,7 +22963,9 @@ export interface operations {
     tus_options_api_v3_uploads_upload_options: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22671,12 +22980,23 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     tus_options_upload_id_api_v3_uploads_upload__upload_id__options: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path: {
                 upload_id: string;
             };
@@ -22707,7 +23027,9 @@ export interface operations {
     tus_head_api_v3_uploads_upload__upload_id__head: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path: {
                 upload_id: string;
             };
@@ -22738,7 +23060,9 @@ export interface operations {
     tus_patch_api_v3_uploads_upload__upload_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path: {
                 upload_id: string;
             };
@@ -22769,7 +23093,9 @@ export interface operations {
     tus_finalize_api_v3_uploads_upload__upload_id__finalize_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path: {
                 upload_id: string;
             };
@@ -22800,7 +23126,9 @@ export interface operations {
     classify_upload_api_v3_uploads_upload__upload_id__classify_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path: {
                 upload_id: string;
             };
@@ -22838,7 +23166,9 @@ export interface operations {
                 /** @description Return preview image for PDFs */
                 preview?: boolean;
             };
-            header?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+            };
             path: {
                 upload_id: string;
             };

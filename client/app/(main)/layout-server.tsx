@@ -86,6 +86,67 @@ const getAttemptFull = async (
 /** ---- Export type for client (type-only imports) ---- */
 export type LayoutContextResponse = LayoutContextOut;
 
+/** ---- Helper to get validated profile ID (reusable for API calls) ----
+ * Gets the effective profile ID from validated profile context.
+ * Reuses getLayoutContext for consistency and caching.
+ */
+export async function getValidatedProfileId(): Promise<string | null> {
+  const session = await getSession();
+
+  // Extract profile IDs from session (works for both real and pseudo-sessions)
+  const effectiveProfileId = session?.effectiveProfileId || null;
+  const actualProfileId = session?.user?.profileId || null;
+
+  // If no session IDs but we have cookies (guest/default-account), resolve from cookies
+  if (!effectiveProfileId || !actualProfileId) {
+    try {
+      const cookieStore = await cookies();
+      const authMode = cookieStore.get("auth-mode")?.value;
+
+      // If we have auth-mode cookie, try to resolve profile from cookies
+      if (
+        authMode &&
+        (authMode === "default-guest" || authMode === "default-account")
+      ) {
+        // Call profile context endpoint with null profile IDs
+        // Server will read cookies and resolve profile from department settings
+        const initial = await getLayoutContext({
+          body: {
+            actualProfileId: null as unknown as string,
+            effectiveProfileId: null as unknown as string,
+            pathname: "/",
+          },
+        });
+
+        if (initial?.effectiveProfile?.id) {
+          return initial.effectiveProfile.id;
+        }
+      }
+    } catch {
+      // If profile context fetch fails, return null
+      return null;
+    }
+  } else {
+    // Authenticated user: fetch profile context with session profile IDs
+    try {
+      const initial = await getLayoutContext({
+        body: {
+          actualProfileId,
+          effectiveProfileId,
+          pathname: "/",
+        },
+      });
+
+      return initial?.effectiveProfile?.id || null;
+    } catch {
+      // If context fetch fails, return null
+      return null;
+    }
+  }
+
+  return null;
+}
+
 // Export ProfileItem type derived from server response
 export type ProfileItem = LayoutContextResponse["actualProfile"];
 
@@ -512,8 +573,6 @@ export type {
   SearchSimulatableProfilesOut,
   SearchStaffIn,
   SearchStaffOut,
-  SettingsActiveIn,
-  SettingsActiveOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 };

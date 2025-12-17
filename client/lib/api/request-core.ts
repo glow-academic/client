@@ -1,10 +1,15 @@
 // lib/api/request-core.ts
+import { getValidatedProfileId } from "@/app/(main)/layout-server";
+
+// Guard against circular calls - if we're already fetching profile context, skip header injection
+let isFetchingProfileContext = false;
+
 function encodePath(
   path: string,
-  params: Record<string, string | number | boolean> = {},
+  params: Record<string, string | number | boolean> = {}
 ) {
   return path.replace(/\{(\w+)\}/g, (_, k) =>
-    encodeURIComponent(String(params[k])),
+    encodeURIComponent(String(params[k]))
   );
 }
 
@@ -20,7 +25,7 @@ export async function doRequest<T>(
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
   args?: unknown,
-  init?: RequestInit,
+  init?: RequestInit
 ): Promise<T> {
   const bag = (args ?? {}) as ArgBag;
 
@@ -45,12 +50,36 @@ export async function doRequest<T>(
   let body: BodyInit | null = null;
   let headers: HeadersInit = init?.headers ?? {};
 
+  // Automatically inject X-Profile-Id header when running server-side
+  // Skip if this is a call to /profile/context to avoid circular dependency
+  if (
+    typeof window === "undefined" &&
+    !path.includes("/profile/context") &&
+    !isFetchingProfileContext
+  ) {
+    try {
+      isFetchingProfileContext = true;
+      const profileId = await getValidatedProfileId();
+      isFetchingProfileContext = false;
+      if (profileId) {
+        headers = {
+          ...headers,
+          "X-Profile-Id": profileId,
+        };
+      }
+    } catch {
+      isFetchingProfileContext = false;
+      // If profile ID resolution fails, continue without header
+      // Endpoints can handle missing profile_id appropriately
+    }
+  }
+
   if (bag.formData instanceof FormData) {
     body = bag.formData;
   } else if (bag.formData && typeof bag.formData === "object") {
     const fd = new FormData();
     for (const [k, v] of Object.entries(
-      bag.formData as Record<string, unknown>,
+      bag.formData as Record<string, unknown>
     )) {
       if (v == null) continue;
       // @ts-expect-error: FormData accepts various runtime types
