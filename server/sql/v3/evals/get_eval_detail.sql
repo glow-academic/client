@@ -2,7 +2,15 @@
 -- Parameters: $1 = eval_id (uuid), $2 = profile_id (uuid)
 -- Returns: eval details with status breakdown and runs
 
-WITH user_departments AS (
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+user_departments AS (
     SELECT department_id
     FROM profile_departments
     WHERE profile_id = (SELECT resolved_profile_id FROM resolve_profile_id) AND active = true

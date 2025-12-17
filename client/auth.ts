@@ -41,6 +41,8 @@ async function createGuestProfile(
         lastName,
         emails: [email],
         role: "guest",
+        cohort_ids: [],
+        department_ids: [],
       },
     });
   } catch (error) {
@@ -143,7 +145,7 @@ export const {
           // V3 API - fetch profile by email
           let existingProfile = null;
           try {
-            const profileResponse = await api.post("/profile/by-email", {
+            const profileResponse = await api.post("/profile/email", {
               body: { email: user.email },
             });
             existingProfile = profileResponse.profile;
@@ -190,7 +192,7 @@ export const {
         // V3 API - fetch profile by email
         let profile = null;
         try {
-          const profileResponse = await api.post("/profile/by-email", {
+          const profileResponse = await api.post("/profile/email", {
             body: { email: user.email },
           });
           profile = profileResponse.profile;
@@ -201,7 +203,7 @@ export const {
             await createGuestProfile(user.email, user.name);
             // Retry fetching the profile after creation
             try {
-              const profileResponse = await api.post("/profile/by-email", {
+              const profileResponse = await api.post("/profile/email", {
                 body: { email: user.email },
               });
               profile = profileResponse.profile;

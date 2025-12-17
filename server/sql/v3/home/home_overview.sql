@@ -13,7 +13,14 @@
 --
 -- The WHERE clause for 'filt' CTE is inserted at the marked location below
 
-WITH 
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $3::text IS NULL OR $3::text = '' THEN NULL::uuid
+            ELSE $3::uuid
+        END as resolved_profile_id
+),
 -- Filter simulations by cohorts (new filtering order: cohorts → simulations)
 -- Gets simulations linked to cohorts + practice simulations without cohorts
 filtered_simulation_ids AS (

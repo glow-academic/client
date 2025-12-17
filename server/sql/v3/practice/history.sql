@@ -12,7 +12,14 @@
 -- $10: pageSize (int, LIMIT)
 -- $11: offset (int, OFFSET)
 
-WITH 
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
 -- Filter attempts by profile and departments (practice simulations only)
 history_attempts AS (
     SELECT DISTINCT

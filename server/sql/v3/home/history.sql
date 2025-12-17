@@ -17,7 +17,14 @@
 -- $15: pageSize (int, LIMIT)
 -- $16: offset (int, OFFSET)
 
-WITH 
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $3::text IS NULL OR $3::text = '' THEN NULL::uuid
+            ELSE $3::uuid
+        END as resolved_profile_id
+),
 -- Cast roles parameter to help PostgreSQL determine type
 roles_param AS (
     SELECT $6::profile_role[] as roles_array

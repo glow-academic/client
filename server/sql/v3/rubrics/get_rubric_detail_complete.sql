@@ -1,7 +1,15 @@
 -- Get rubric detail with departments, standard groups, and access control
 -- Parameters: $1 = rubric_id (uuid), $2 = profile_id (uuid)
 
-WITH rubric_data AS (
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+rubric_data AS (
     SELECT 
         name,
         description,

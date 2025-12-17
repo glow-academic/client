@@ -2,7 +2,14 @@
 -- Parameters: $1 = profile_id (uuid), $2 = department_ids (uuid[])
 -- Note: profile_id serves as historyProfileId for practice (same person)
 
-WITH
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
 -- 1) Simulation meta (practice only)
 sim_meta AS (
     SELECT

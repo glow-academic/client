@@ -3,7 +3,14 @@
 -- Assumes profile_id ($6) uuid which needs resolution
 -- Parameters: $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id (required, uuid), $7: department_ids
 -- =====================================================
-WITH
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $6::text IS NULL OR $6::text = '' THEN NULL::uuid
+            ELSE $6::uuid
+        END as resolved_profile_id
+),
 -- Get thresholds from active settings (defaults if no settings found)
 settings_thresholds AS (
     SELECT 
