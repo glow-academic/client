@@ -7,12 +7,7 @@
 import { getSession } from "@/auth";
 
 import Info from "@/components/home/Info";
-import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
-import { api } from "@/lib/api/client";
-import type { OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-
-type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -22,40 +17,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-async function getActiveSettings(): Promise<SettingsActiveOut | null> {
-  try {
-    return (await api.post(
-      "/settings/active",
-      {
-        body: {
-          profileId: null,
-        },
-      },
-      {
-        cache: "no-store",
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
-      }
-    )) as SettingsActiveOut;
-  } catch {
-    // If settings fetch fails, return null - theme will use defaults
-    return null;
-  }
-}
-
 export default async function InfoPage() {
   const session = await getSession();
   // Check if user is logged in: effectiveProfileId exists
   const isLoggedIn = !!session?.effectiveProfileId;
 
-  // Fetch default settings for guest/unauthenticated users
-  const activeSettings = await getActiveSettings();
-
-  return (
-    <>
-      <ThemeHydrator activeSettings={activeSettings} />
-      <Info isLoggedIn={isLoggedIn} activeSettings={activeSettings} />
-    </>
-  );
+  return <Info isLoggedIn={isLoggedIn} />;
 }

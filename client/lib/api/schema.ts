@@ -10194,6 +10194,7 @@ export interface components {
             redirectPath: string;
             /** Scopedroles */
             scopedRoles: string[];
+            settings: components["schemas"]["SettingsData"];
         };
         /**
          * ProfileDetailRequest
@@ -11508,6 +11509,41 @@ export interface components {
          * @description Active settings response.
          */
         SettingsActiveResponse: {
+            /** Settings Id */
+            settings_id: string;
+            /** Created At */
+            created_at: string;
+            /** Active */
+            active: boolean;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Mode
+             * @default light
+             * @enum {string}
+             */
+            mode: "light" | "dark" | "system";
+            tokens: components["schemas"]["ThemeTokens"];
+            /** Guest Login Enabled */
+            guest_login_enabled: boolean;
+            /** Success Threshold */
+            success_threshold: number;
+            /** Warning Threshold */
+            warning_threshold: number;
+            /** Danger Threshold */
+            danger_threshold: number;
+            /** Guestprofileid */
+            guestProfileId?: string | null;
+            /** Defaultaccountprofileid */
+            defaultAccountProfileId?: string | null;
+        };
+        /**
+         * SettingsData
+         * @description Settings data included in profile context.
+         */
+        SettingsData: {
             /** Settings Id */
             settings_id: string;
             /** Created At */

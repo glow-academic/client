@@ -1256,36 +1256,13 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
             profile_id = request.headers.get("X-Profile-Id")
 
         # Set profile_id if found, otherwise skip DB logging
+        # Note: We do NOT resolve from department-id/auth-mode cookies here
+        # Only /api/v3/profile/context resolves from cookies (single source of truth)
         if profile_id:
             set_profile_id(profile_id)
         else:
-            # If no profile_id found, try to resolve from department cookies
-            from app.utils.logging.db_logger import (
-                resolve_profile_from_department_cookies,
-            )
-
-            department_id_cookie = request.cookies.get("department-id")
-            auth_mode_cookie = request.cookies.get("auth-mode")
-
-            if department_id_cookie and auth_mode_cookie:
-                try:
-                    resolved_id = await resolve_profile_from_department_cookies(
-                        department_id_cookie, auth_mode_cookie
-                    )
-                    if resolved_id:
-                        set_profile_id(resolved_id)
-                    else:
-                        # No profile_id available, skip DB logging
-                        set_profile_id(None)
-                except Exception as e:
-                    logger.warning(
-                        f"Error resolving profile from department cookies: {e}"
-                    )
-                    # No profile_id available, skip DB logging
-                    set_profile_id(None)
-            else:
-                # No profile_id available, skip DB logging
-                set_profile_id(None)
+            # No profile_id available, skip DB logging
+            set_profile_id(None)
 
         # Process request
         status_code = 500

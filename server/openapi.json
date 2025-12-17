@@ -26173,6 +26173,9 @@
             },
             "type": "array",
             "title": "Scopedroles"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/SettingsData"
           }
         },
         "type": "object",
@@ -26188,7 +26191,8 @@
           "earliestAttemptDate",
           "availableSections",
           "redirectPath",
-          "scopedRoles"
+          "scopedRoles",
+          "settings"
         ],
         "title": "ProfileContextResponse",
         "description": "Response with consolidated profile context data."
@@ -29924,6 +29928,96 @@
         ],
         "title": "SettingsActiveResponse",
         "description": "Active settings response."
+      },
+      "SettingsData": {
+        "properties": {
+          "settings_id": {
+            "type": "string",
+            "title": "Settings Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ],
+            "title": "Mode",
+            "default": "light"
+          },
+          "tokens": {
+            "$ref": "#/components/schemas/ThemeTokens"
+          },
+          "guest_login_enabled": {
+            "type": "boolean",
+            "title": "Guest Login Enabled"
+          },
+          "success_threshold": {
+            "type": "integer",
+            "title": "Success Threshold"
+          },
+          "warning_threshold": {
+            "type": "integer",
+            "title": "Warning Threshold"
+          },
+          "danger_threshold": {
+            "type": "integer",
+            "title": "Danger Threshold"
+          },
+          "guestProfileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guestprofileid"
+          },
+          "defaultAccountProfileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defaultaccountprofileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings_id",
+          "created_at",
+          "active",
+          "name",
+          "description",
+          "tokens",
+          "guest_login_enabled",
+          "success_threshold",
+          "warning_threshold",
+          "danger_threshold"
+        ],
+        "title": "SettingsData",
+        "description": "Settings data included in profile context."
       },
       "SettingsDetailRequest": {
         "properties": {

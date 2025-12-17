@@ -51,7 +51,9 @@ router = APIRouter()
     "/create",
     response_model=CreateAuthResponse,
     dependencies=[
-        audit_activity("auth.created", "{{ actor.name }} created auth '{{ auth.name }}'")
+        audit_activity(
+            "auth.created", "{{ actor.name }} created auth '{{ auth.name }}'"
+        )
     ],
 )
 async def create_auth(

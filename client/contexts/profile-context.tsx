@@ -88,6 +88,9 @@ interface ProfileContextType {
   redirectPath: string;
   scopedRoles: string[]; // Roles that the effective profile has scope to see
 
+  // Settings data (from server)
+  settings: LayoutContextResponse["settings"] | null;
+
   // WebSocket connection (tied to profile)
   socket: Socket | null;
   isConnected: boolean;
@@ -469,6 +472,9 @@ export function ProfileProviderClient({
     availableSections: initial?.availableSections ?? [],
     redirectPath: initial?.redirectPath ?? "/home",
     scopedRoles: initial?.scopedRoles ?? [],
+
+    // Settings data (from server) - handle null initial gracefully
+    settings: initial?.settings ?? null,
 
     // WebSocket connection (tied to profile)
     socket: socketRef.current,

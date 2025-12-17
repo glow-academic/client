@@ -4,14 +4,15 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -96,11 +97,17 @@ class EvalDetailResponse(BaseModel):
     # Mappings
     department_mapping: dict[str, DepartmentMappingItem]
     valid_department_ids: list[str]
-    eval_agent_mapping: dict[str, AgentMappingItem] | None  # Eval agent mapping (agents with 'eval' role)
+    eval_agent_mapping: (
+        dict[str, AgentMappingItem] | None
+    )  # Eval agent mapping (agents with 'eval' role)
     valid_eval_agent_ids: list[str] | None
-    agent_mapping: dict[str, AgentMappingItem]  # AgentMapping format (agents being evaluated)
+    agent_mapping: dict[
+        str, AgentMappingItem
+    ]  # AgentMapping format (agents being evaluated)
     valid_agent_ids: list[str]
-    rubric_mapping: dict[str, RubricMappingItem] | None  # Rubric mapping (filtered by agent role)
+    rubric_mapping: (
+        dict[str, RubricMappingItem] | None
+    )  # Rubric mapping (filtered by agent role)
     valid_rubric_ids: list[str] | None
 
     # Permissions

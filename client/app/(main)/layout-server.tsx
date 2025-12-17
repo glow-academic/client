@@ -35,13 +35,13 @@ type ProcessCSVIn = InputOf<"/api/v3/staff/csv", "post">;
 type ProcessCSVOut = OutputOf<"/api/v3/staff/csv", "post">;
 type BulkCreateOrUpdateStaffIn = InputOf<"/api/v3/staff/upsert", "post">;
 type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v3/staff/upsert", "post">;
-type SettingsActiveIn = InputOf<"/api/v3/settings/active", "post">;
-type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
-
 /** ---- Client-side settings type (excludes guestProfileId) ----
  * guestProfileId is server-side only and should not be exposed to client components
  */
-export type SettingsActiveClient = Omit<SettingsActiveOut, "guestProfileId">;
+export type SettingsActiveClient = Omit<
+  LayoutContextOut["settings"],
+  "guestProfileId"
+>;
 
 /** ---- Cached fetch ---- */
 const getLayoutContext = cache(
@@ -65,12 +65,6 @@ const getLayoutContext = cache(
     );
 
     return result;
-  }
-);
-
-const getActiveSettings = cache(
-  async (input: SettingsActiveIn): Promise<SettingsActiveOut> => {
-    return api.post("/settings/active", input);
   }
 );
 
@@ -125,22 +119,6 @@ export async function getLayoutContextData() {
     // Guest/default account users have pseudo-sessions without id_token
     isAuthenticated: !!session?.id_token,
   };
-
-  // CRITICAL: Fetch settings FIRST to get guest profile ID
-  // This ensures we always have a valid UUID before making other API calls
-  let activeSettings: SettingsActiveOut | null = null;
-
-  try {
-    // Empty string is preferred to avoid type ambiguity in SQL
-    const settingsProfileId = session?.effectiveProfileId || null;
-    activeSettings = await getActiveSettings({
-      body: { profileId: settingsProfileId },
-    });
-  } catch {
-    // If settings fetch fails, just continue without settings data
-    // This can happen if no active settings exist
-    activeSettings = null;
-  }
 
   // Extract profile IDs from session (works for both real and pseudo-sessions)
   // For authenticated users: profile IDs come from session
@@ -253,13 +231,11 @@ export async function getLayoutContextData() {
       initialEffectiveId: initial?.effectiveProfile?.id,
       initialActualId: initial?.actualProfile?.id,
     });
-    // Extract guestProfileId before passing to client (server-side only)
-    const { guestProfileId: _, ...settingsWithoutGuest } = activeSettings || {};
     return {
       initial: null,
       snapshot,
       attemptData: null,
-      activeSettings: settingsWithoutGuest as SettingsActiveClient | null,
+      activeSettings: null,
     };
   }
 
@@ -287,9 +263,10 @@ export async function getLayoutContextData() {
     }
   }
 
+  // Extract settings from profile context response
   // Extract guestProfileId before passing to client (server-side only)
-  const { guestProfileId: _, ...settingsWithoutGuest } = activeSettings || {};
-  const activeSettingsClient: SettingsActiveClient | null = activeSettings
+  const { guestProfileId: _, ...settingsWithoutGuest } = initial.settings || {};
+  const activeSettingsClient: SettingsActiveClient | null = initial.settings
     ? (settingsWithoutGuest as SettingsActiveClient)
     : null;
 

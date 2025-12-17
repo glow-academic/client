@@ -36,7 +36,8 @@ router = APIRouter()
     response_model=DeleteScenarioResponse,
     dependencies=[
         audit_activity(
-            "scenario.deleted", "{{ actor.name }} deleted scenario '{{ scenario.name }}'"
+            "scenario.deleted",
+            "{{ actor.name }} deleted scenario '{{ scenario.name }}'",
         )
     ],
 )

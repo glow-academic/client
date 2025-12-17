@@ -61,7 +61,8 @@ router = APIRouter()
     response_model=UpdateScenarioResponse,
     dependencies=[
         audit_activity(
-            "scenario.updated", "{{ actor.name }} updated scenario '{{ scenario.name }}'"
+            "scenario.updated",
+            "{{ actor.name }} updated scenario '{{ scenario.name }}'",
         )
     ],
 )

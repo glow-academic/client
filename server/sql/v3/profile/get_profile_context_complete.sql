@@ -256,6 +256,152 @@ earliest_attempt AS (
     JOIN simulation_attempts sa ON sa.id = ap.attempt_id
     WHERE pd_effective.profile_id = (SELECT effective_profile_id FROM resolved_profile_ids)
       AND pd_effective.active = true
+),
+settings_resolution AS (
+    -- Resolve settings based on effective profile's department
+    -- Logic: department-specific → default → any active
+    WITH default_settings AS (
+        -- Get settings with no department links (cross-department/default)
+        SELECT s.id as settings_id
+        FROM settings s
+        WHERE s.active = true
+          AND NOT EXISTS (
+              SELECT 1 FROM department_settings sd 
+              WHERE sd.settings_id = s.id AND sd.active = true
+          )
+        LIMIT 1
+    ),
+    effective_profile_department AS (
+        -- Get effective profile's primary department
+        SELECT pd.department_id
+        FROM resolved_profile_ids rpi
+        JOIN profile_departments pd ON pd.profile_id = rpi.effective_profile_id
+        WHERE pd.is_primary = TRUE 
+          AND pd.active = true
+        LIMIT 1
+    ),
+    dept_specific_settings AS (
+        -- Get department-specific settings (if effective profile has a department)
+        SELECT s.id as settings_id
+        FROM settings s
+        JOIN department_settings sd ON sd.settings_id = s.id
+        JOIN effective_profile_department epd ON sd.department_id = epd.department_id
+        WHERE s.active = true 
+          AND sd.active = true
+        LIMIT 1
+    ),
+    selected_settings AS (
+        -- Priority: department-specific settings, then default, then any active
+        SELECT 
+            COALESCE(
+                (SELECT settings_id FROM dept_specific_settings),
+                (SELECT settings_id FROM default_settings),
+                (SELECT id FROM settings WHERE active = true LIMIT 1)
+            ) as settings_id
+    ),
+    settings_auths_data AS (
+        -- Get linked auths for this settings
+        SELECT 
+            ARRAY_AGG(a.id::text ORDER BY a.name) as auth_ids,
+            COALESCE(
+                jsonb_object_agg(
+                    a.id::text,
+                    jsonb_build_object(
+                        'name', a.name,
+                        'description', COALESCE(a.description, ''),
+                        'slug', a.slug
+                    )
+                ),
+                '{}'::jsonb
+            ) as auth_mapping
+        FROM selected_settings ss
+        JOIN setting_auths sa ON sa.settings_id = ss.settings_id AND sa.active = true
+        JOIN auth a ON a.id = sa.auth_id AND a.active = true
+    ),
+    settings_providers_data AS (
+        -- Get linked providers for this settings
+        SELECT 
+            ARRAY_AGG(p.id::text ORDER BY p.name) as provider_ids,
+            COALESCE(
+                jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object(
+                        'name', p.name,
+                        'description', COALESCE(p.description, ''),
+                        'value', p.value
+                    )
+                ),
+                '{}'::jsonb
+            ) as provider_mapping
+        FROM selected_settings ss
+        JOIN setting_providers sp ON sp.settings_id = ss.settings_id AND sp.active = true
+        JOIN providers p ON p.id = sp.provider_id AND p.active = true
+    ),
+    settings_default_guest_data AS (
+        -- Get default guest account: try selected settings first, fall back to default settings
+        SELECT 
+            COALESCE(
+                (SELECT sdg.profile_id::text
+                 FROM selected_settings ss
+                 JOIN settings_default_guest sdg ON sdg.settings_id = ss.settings_id AND sdg.active = true
+                 LIMIT 1),
+                (SELECT sdg.profile_id::text
+                 FROM default_settings ds
+                 JOIN settings_default_guest sdg ON sdg.settings_id = ds.settings_id AND sdg.active = true
+                 LIMIT 1)
+            ) as default_guest_profile_id
+    ),
+    settings_default_account_data AS (
+        -- Get default account: try selected settings first, fall back to default settings
+        SELECT 
+            COALESCE(
+                (SELECT sda.profile_id::text
+                 FROM selected_settings ss
+                 JOIN settings_default_account sda ON sda.settings_id = ss.settings_id AND sda.active = true
+                 LIMIT 1),
+                (SELECT sda.profile_id::text
+                 FROM default_settings ds
+                 JOIN settings_default_account sda ON sda.settings_id = ds.settings_id AND sda.active = true
+                 LIMIT 1)
+            ) as default_account_profile_id
+    )
+    SELECT 
+        s.id::text as settings_id,
+        s.created_at as settings_created_at,
+        s.active as settings_active,
+        s.name as settings_name,
+        s.description as settings_description,
+        s.primary_color,
+        s.accent,
+        s.background,
+        s.surface,
+        s.success,
+        s.warning,
+        s.error,
+        s.sidebar_background,
+        s.sidebar_primary,
+        s.chart1,
+        s.chart2,
+        s.chart3,
+        s.chart4,
+        s.chart5,
+        s.guest_login_enabled,
+        s.success_threshold,
+        s.warning_threshold,
+        s.danger_threshold,
+        COALESCE(sad.auth_ids, ARRAY[]::text[]) as settings_auth_ids,
+        COALESCE(sad.auth_mapping, '{}'::jsonb) as settings_auth_mapping,
+        COALESCE(spd.provider_ids, ARRAY[]::text[]) as settings_provider_ids,
+        COALESCE(spd.provider_mapping, '{}'::jsonb) as settings_provider_mapping,
+        sdgd.default_guest_profile_id,
+        sdad.default_account_profile_id
+    FROM selected_settings ss
+    JOIN settings s ON s.id = ss.settings_id
+    LEFT JOIN settings_auths_data sad ON true
+    LEFT JOIN settings_providers_data spd ON true
+    LEFT JOIN settings_default_guest_data sdgd ON true
+    LEFT JOIN settings_default_account_data sdad ON true
+    LIMIT 1
 )
 SELECT 
     -- Emulation authorization flag
@@ -325,12 +471,43 @@ SELECT
         '[]'::jsonb
     ) as simulations,
     (SELECT earliest FROM earliest_attempt) as earliest_attempt_date,
-    (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles
+    (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles,
+    -- Settings data (all fields prefixed with settings_)
+    (SELECT settings_id FROM settings_resolution) as settings_id,
+    (SELECT settings_created_at FROM settings_resolution) as settings_created_at,
+    (SELECT settings_active FROM settings_resolution) as settings_active,
+    (SELECT settings_name FROM settings_resolution) as settings_name,
+    (SELECT settings_description FROM settings_resolution) as settings_description,
+    (SELECT primary_color FROM settings_resolution) as settings_primary_color,
+    (SELECT accent FROM settings_resolution) as settings_accent,
+    (SELECT background FROM settings_resolution) as settings_background,
+    (SELECT surface FROM settings_resolution) as settings_surface,
+    (SELECT success FROM settings_resolution) as settings_success,
+    (SELECT warning FROM settings_resolution) as settings_warning,
+    (SELECT error FROM settings_resolution) as settings_error,
+    (SELECT sidebar_background FROM settings_resolution) as settings_sidebar_background,
+    (SELECT sidebar_primary FROM settings_resolution) as settings_sidebar_primary,
+    (SELECT chart1 FROM settings_resolution) as settings_chart1,
+    (SELECT chart2 FROM settings_resolution) as settings_chart2,
+    (SELECT chart3 FROM settings_resolution) as settings_chart3,
+    (SELECT chart4 FROM settings_resolution) as settings_chart4,
+    (SELECT chart5 FROM settings_resolution) as settings_chart5,
+    (SELECT guest_login_enabled FROM settings_resolution) as settings_guest_login_enabled,
+    (SELECT success_threshold FROM settings_resolution) as settings_success_threshold,
+    (SELECT warning_threshold FROM settings_resolution) as settings_warning_threshold,
+    (SELECT danger_threshold FROM settings_resolution) as settings_danger_threshold,
+    (SELECT settings_auth_ids FROM settings_resolution) as settings_auth_ids,
+    (SELECT settings_auth_mapping FROM settings_resolution) as settings_auth_mapping,
+    (SELECT settings_provider_ids FROM settings_resolution) as settings_provider_ids,
+    (SELECT settings_provider_mapping FROM settings_resolution) as settings_provider_mapping,
+    (SELECT default_guest_profile_id FROM settings_resolution) as settings_default_guest_profile_id,
+    (SELECT default_account_profile_id FROM settings_resolution) as settings_default_account_profile_id
 FROM emulation_validation ev
 CROSS JOIN resolved_profile_ids rpi
 CROSS JOIN actual_profile_data apd
 CROSS JOIN effective_profile_data epd
 CROSS JOIN scoped_roles_computed src
+CROSS JOIN settings_resolution sr
 WHERE ev.is_authorized = true  -- Only return data if emulation is authorized
   AND rpi.actual_profile_id IS NOT NULL  -- Ensure we have valid profile IDs
   AND rpi.effective_profile_id IS NOT NULL

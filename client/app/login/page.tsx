@@ -9,6 +9,7 @@ import Login from "@/components/auth/Login";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -21,6 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strong types from OpenAPI ---- */
 type LoginDataIn = InputOf<"/api/v3/auth/login", "post">;
 type LoginDataOut = OutputOf<"/api/v3/auth/login", "post">;
+type ProfileContextOut = OutputOf<"/api/v3/profile/context", "post">;
 type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
 
 interface LoginPageProps {
@@ -50,29 +52,66 @@ async function getLoginData(departmentId?: string): Promise<LoginDataOut> {
   }
 }
 
-/** ---- Direct fetch for settings (separate call, like settings page pattern) ---- */
-/** ---- Now supports department-specific settings via departmentId parameter ---- */
-async function getActiveSettings(
-  departmentId?: string | null
-): Promise<SettingsActiveOut | null> {
+/** ---- Fetch settings via profile context endpoint ----
+ * Uses department-id and auth-mode cookies for profile resolution
+ * This is the single source of truth for settings (consistent with rest of app)
+ * NOTE: Only profile/context endpoint reads these cookies - all other endpoints
+ * receive profileId in request body (validated via profile context)
+ * This enables future redirect logic if user is already logged in
+ * 
+ * Logic:
+ * - If department-id query param provided: use it (overrides cookie)
+ * - If no department-id: use default settings (no department-specific)
+ * - If no auth-mode: defaults to "default-account" on server
+ */
+async function getProfileContext(
+  departmentIdFromQuery?: string
+): Promise<ProfileContextOut | null> {
   try {
+    // Forward cookies from server component context to API request
+    // This is needed because server components run server-side and cookies aren't automatically forwarded
+    const cookieStore = await cookies();
+    
+    // Use department-id from query parameter if provided, otherwise use cookie
+    // Query parameter takes precedence for dynamic settings changes
+    const departmentIdToUse =
+      departmentIdFromQuery || cookieStore.get("department-id")?.value;
+    const authMode = cookieStore.get("auth-mode")?.value;
+    
+    // Build cookie header - server will default auth-mode to "default-account" if not provided
+    const cookieHeader = [
+      departmentIdToUse && `department-id=${departmentIdToUse}`,
+      authMode && `auth-mode=${authMode}`,
+    ]
+      .filter(Boolean)
+      .join("; ");
+
     return (await api.post(
-      "/settings/active",
+      "/profile/context",
       {
         body: {
-          profileId: null,
-          departmentId: departmentId || null, // Optional department ID for department-specific settings
+          actualProfileId: null as unknown as string,
+          effectiveProfileId: null as unknown as string,
+          pathname: "/",
         },
       },
-      {
-        cache: "no-store",
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
-      }
-    )) as SettingsActiveOut;
+      cookieHeader
+        ? {
+            cache: "no-store",
+            headers: {
+              "X-Bypass-Cache": "1",
+              Cookie: cookieHeader,
+            },
+          }
+        : {
+            cache: "no-store",
+            headers: {
+              "X-Bypass-Cache": "1",
+            },
+          }
+    )) as ProfileContextOut;
   } catch {
-    // If settings fetch fails, return null - theme will use defaults
+    // If profile context fetch fails, return null - theme will use defaults
     return null;
   }
 }
@@ -106,14 +145,17 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   // This ensures we always filter providers by department, even if default (not in URL)
   const loginData: LoginDataOut = await getLoginData(departmentIdForApi);
 
-  // Fetch settings separately (like settings page pattern)
-  // Now supports department-specific settings based on selected department
-  // Priority: 1) Query param department, 2) Default department, 3) First department, 4) Default settings
-  const departmentIdForSettings =
-    departmentIdFromQuery ||
-    loginData.default_department_id ||
-    (loginData.departments.length > 0 ? loginData.departments[0]?.id : null);
-  const activeSettings = await getActiveSettings(departmentIdForSettings);
+  // Fetch settings via profile context endpoint
+  // Uses department-id query parameter (if provided) for dynamic settings changes
+  // Server logic:
+  // - If no department-id: uses default settings (no department-specific)
+  // - If no auth-mode: defaults to "default-account" on server
+  // - If department-id provided: tries department-specific settings first, then falls back to default
+  const profileContext = await getProfileContext(departmentIdFromQuery);
+  // Extract settings from profile context (SettingsData is compatible with SettingsActiveOut)
+  const activeSettings: SettingsActiveOut | null = profileContext?.settings
+    ? (profileContext.settings as SettingsActiveOut)
+    : null;
 
   // Business logic: Validate department_id from query param exists in departments list
   const validDepartmentId =
@@ -143,7 +185,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       initialDepartmentId={initialDepartmentId}
       activeSettings={activeSettings}
       defaultDepartmentId={loginData.default_department_id || null}
-      redirectPath={redirectPath}
+      {...(redirectPath && { redirectPath })}
     />
   );
 }

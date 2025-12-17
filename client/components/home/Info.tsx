@@ -19,13 +19,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-import type { OutputOf } from "@/lib/api/types";
-
-type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
-
 interface InfoProps {
   isLoggedIn?: boolean;
-  activeSettings?: SettingsActiveOut | null;
 }
 
 export default function Info({ isLoggedIn = false }: InfoProps) {
@@ -148,7 +143,7 @@ export default function Info({ isLoggedIn = false }: InfoProps) {
             className="bg-transparent"
           >
             <Link
-              href={isLoggedIn ? "/home" : "/login"}
+              href="/login"
               className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 border-2 ${
                 isOverBlueSection
                   ? "bg-white/10 backdrop-blur-sm border-white text-white hover:bg-white/20 shadow-lg"
@@ -179,7 +174,7 @@ export default function Info({ isLoggedIn = false }: InfoProps) {
                 }
               }}
             >
-              {isLoggedIn ? "Home" : "Login"}
+              Login
             </Link>
           </motion.div>
         </div>

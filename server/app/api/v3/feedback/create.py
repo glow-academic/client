@@ -34,7 +34,8 @@ router = APIRouter()
     response_model=CreateFeedbackResponse,
     dependencies=[
         audit_activity(
-            "feedback.created", "{{ actor.name }} submitted {{ feedback.type }} feedback"
+            "feedback.created",
+            "{{ actor.name }} submitted {{ feedback.type }} feedback",
         )
     ],
 )

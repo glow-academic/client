@@ -62,7 +62,9 @@ async def duplicate_scenario(
             # Use single comprehensive SQL file (DHH style)
             sql_query = load_sql("sql/v3/scenarios/duplicate_scenario.sql")
             sql_params = (request.scenarioId, profile_id)
-            new_scenario_row = await conn.fetchrow(sql_query, request.scenarioId, profile_id)
+            new_scenario_row = await conn.fetchrow(
+                sql_query, request.scenarioId, profile_id
+            )
 
             if not new_scenario_row:
                 raise ValueError(f"Scenario not found: {request.scenarioId}")

@@ -74,7 +74,9 @@ router = APIRouter()
     "/list",
     response_model=DepartmentsListResponse,
     dependencies=[
-        audit_activity("departments.list", "{{ actor.name }} visited the Departments page")
+        audit_activity(
+            "departments.list", "{{ actor.name }} visited the Departments page"
+        )
     ],
 )
 async def get_departments_list(

@@ -4,6 +4,7 @@ import inspect
 import json
 import os
 import uuid
+from datetime import datetime
 from typing import Any, get_type_hints
 
 import httpx
@@ -13,7 +14,6 @@ from pydantic import BaseModel, ValidationError
 from app.main import _voice_sessions, get_pool, sio
 from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.agents.tools.create_persona_tools import create_persona_tools
-from datetime import datetime
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
@@ -753,25 +753,31 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
             # Convert messages to RealtimeItem format (inlined from get_realtime_history)
             # Filter out error messages and make a list of all items
-            items = [msg for msg in messages if not msg.get("content", "").startswith("Error:")]
-            
+            items = [
+                msg
+                for msg in messages
+                if not msg.get("content", "").startswith("Error:")
+            ]
+
             # Sort items by created_at
             items = sorted(items, key=lambda x: x.get("created_at", datetime.min))
-            
+
             # Group messages by type to handle consecutive responses
             current_response_messages: list[dict[str, Any]] = []
             realtime_history_dicts: list[dict[str, Any]] = []
-            
+
             for item in items:
                 msg_type = item.get("type", "")
                 msg_content = item.get("content", "")
                 msg_role = item.get("role", "")
-                
+
                 # Determine if this is a user message (query type or user role)
                 is_user_message = (msg_type == "query") or (msg_role == "user")
                 # Determine if this is an assistant message (response type or assistant role)
-                is_assistant_message = (msg_type == "response") or (msg_role == "assistant")
-                
+                is_assistant_message = (msg_type == "response") or (
+                    msg_role == "assistant"
+                )
+
                 if is_user_message and msg_content != "":
                     # If we have pending response messages, add the latest one
                     if current_response_messages:
@@ -789,7 +795,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                         }
                         realtime_history_dicts.append(assistant_realtime_item)
                         current_response_messages = []
-                    
+
                     # Add the user message
                     user_realtime_item: dict[str, Any] = {
                         "type": "message",
@@ -806,7 +812,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 elif is_assistant_message and msg_content != "":
                     # Collect response messages to find the latest one
                     current_response_messages.append(item)
-            
+
             # Handle any remaining response messages at the end
             if current_response_messages:
                 latest_response = current_response_messages[-1]
@@ -822,7 +828,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                     "status": "completed",
                 }
                 realtime_history_dicts.append(final_assistant_item)
-            
+
             # Convert dicts to RealtimeItem Pydantic models
             realtime_history = [RealtimeItem(**item) for item in realtime_history_dicts]
 

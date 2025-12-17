@@ -1,15 +1,17 @@
 """Profile context endpoint - get consolidated profile context."""
 
 import json
-from typing import Annotated, Any, cast
+from typing import Annotated, Any, Literal, cast
 
 import asyncpg
 from app.api.v3.profile.detail import ProfileItem
 from app.main import get_db
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.permissions import (ROUTE_PERMISSIONS, ProfileRole,
+from app.utils.permissions import (ProfileRole,
                                    get_available_subsections_for_role)
 from app.utils.sql_helper import load_sql
+from app.utils.theme.color_utils import ensure_contrast, shade, tint
+from app.utils.theme.oklch_to_hex import hex_to_oklch
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
@@ -76,6 +78,109 @@ class SimulationsData(BaseModel):
     items: list[SimulationContextItem]
 
 
+class ThemePrimitives(BaseModel):
+    """
+    High-level theme primitives that users can configure.
+    These are stored in the database and edited in the admin UI.
+    Following BCNF principles: no nulls (using defaults), minimal redundancy.
+    """
+
+    # Core brand
+    primary: str  # Main brand/action color
+    accent: str  # Secondary brand color (derived if not provided)
+
+    # Layout
+    background: str  # Page background
+    surface: str  # Cards/panels (derived from background if not provided)
+
+    # Status colors
+    success: str
+    warning: str
+    error: str
+
+    # Sidebar (derived from background/primary if not provided)
+    sidebarBackground: str
+    sidebarPrimary: str
+
+    # Data/charts colors (normalized to 5 separate attributes)
+    chart1: str
+    chart2: str
+    chart3: str
+    chart4: str
+    chart5: str
+
+
+class ThemeTokens(BaseModel):
+    """
+    Full internal design tokens derived from ThemePrimitives.
+    This is what components consume via CSS variables.
+    Users do not edit this directly.
+    """
+
+    background: str
+    foreground: str
+    card: str
+    cardForeground: str
+    popover: str
+    popoverForeground: str
+    primary: str
+    primaryForeground: str
+    secondary: str
+    secondaryForeground: str
+    muted: str
+    mutedForeground: str
+    accent: str
+    accentForeground: str
+    destructive: str
+    border: str
+    input: str
+    ring: str
+    # Status tokens
+    success: str
+    successForeground: str
+    warning: str
+    warningForeground: str
+    info: str
+    infoForeground: str
+    # Chart tokens
+    chart1: str
+    chart2: str
+    chart3: str
+    chart4: str
+    chart5: str
+    # Sidebar tokens
+    sidebar: str
+    sidebarForeground: str
+    sidebarPrimary: str
+    sidebarPrimaryForeground: str
+    sidebarAccent: str
+    sidebarAccentForeground: str
+    sidebarBorder: str
+    sidebarRing: str
+
+
+class SettingsData(BaseModel):
+    """Settings data included in profile context."""
+
+    settings_id: str
+    created_at: str
+    active: bool
+    name: str
+    description: str
+    mode: Literal["light", "dark", "system"] = "light"
+    tokens: ThemeTokens
+    guest_login_enabled: bool
+    success_threshold: int
+    warning_threshold: int
+    danger_threshold: int
+    guestProfileId: str | None = (
+        None  # Guest profile ID from settings_default_guest table
+    )
+    defaultAccountProfileId: str | None = (
+        None  # Default account profile ID from settings_default_account table
+    )
+
+
 class ProfileContextResponse(BaseModel):
     """Response with consolidated profile context data."""
 
@@ -91,6 +196,7 @@ class ProfileContextResponse(BaseModel):
     availableSections: list[str]  # Sections available to the effective profile's role
     redirectPath: str  # Default redirect path for the effective profile's role
     scopedRoles: list[str]  # Roles that the effective profile has scope to see
+    settings: SettingsData  # Active settings for the effective profile
 
 
 @router.post("/context", response_model=ProfileContextResponse)
@@ -111,29 +217,125 @@ async def get_profile_context(
 
         # Read department-id and auth-mode cookies for profile resolution
         # These are used when actualProfileId/effectiveProfileId are null
-        # department-id can be null (for default settings), but auth-mode is required
+        # department-id can be null (for default settings)
+        # auth-mode defaults to "default-account" if not provided
+        # NOTE: This is the ONLY endpoint that reads these cookies (single source of truth)
+        # All other endpoints receive profileId in request body (validated via profile context)
         department_id_cookie = http_request.cookies.get("department-id")
         auth_mode_cookie = http_request.cookies.get("auth-mode")
 
-        # Validate: if profile IDs are null, we must have auth-mode cookie
-        # department-id can be null (will resolve to default settings)
-        if (not request.actualProfileId or not request.effectiveProfileId) and (
-            not auth_mode_cookie
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail="Either actualProfileId/effectiveProfileId must be provided, or auth-mode cookie must be present (department-id is optional for default settings)",
-            )
+        # Default auth-mode to "default-account" if not provided
+        # Logic: If no auth-mode, default to default-account settings within department
+        # (or default department if department-specific doesn't exist)
+        if not auth_mode_cookie:
+            auth_mode_cookie = "default-account"
 
-        # Validate auth_mode is valid
-        if auth_mode_cookie and auth_mode_cookie not in (
-            "default-guest",
-            "default-account",
-        ):
+        # Validate auth_mode is valid (should always be valid after default)
+        if auth_mode_cookie not in ("default-guest", "default-account"):
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid auth-mode: {auth_mode_cookie}. Must be 'default-guest' or 'default-account'",
             )
+
+        # Authorization checks for default-account and guest login
+        # Only check when profile IDs are null (resolving from cookies)
+        #
+        # SECURITY: These checks prevent unauthorized access via default-account/guest login
+        # when authentication providers are configured. This ensures users must use proper
+        # authentication when it's available.
+        #
+        # Default-Account Login Authorization Rules:
+        # 1. Zero active departments → Allow (initial setup before any departments exist)
+        # 2. Department provided + department exists + no auth providers → Allow
+        #    (New department without auth configured yet)
+        # 3. No department + default settings have no auth + at least one dept without auth → Allow
+        #    (Valid use case: new department being created)
+        # 4. No department + default settings have auth providers → Block
+        #    (Must use auth provider or select specific department)
+        # 5. No department + all departments have auth providers → Block
+        #    (Prevents bypass - must use auth provider)
+        # 6. Department provided + department doesn't exist → Block (400 Bad Request)
+        # 7. Department provided + department has auth providers → Block
+        #    (Must use auth provider for that department)
+        #
+        # Guest Login Authorization Rules:
+        # 1. guest_login_enabled = true → Allow
+        # 2. guest_login_enabled = false → Block
+        #
+        # Edge Cases Handled:
+        # - Invalid/non-existent department IDs: Validated before auth check
+        # - Department exists but has no settings: Treated as "no auth providers" (intentional)
+        # - Default settings don't exist: guest_login_enabled defaults to false (blocks guest)
+        # - Inactive departments: Excluded from counts (department_exists checks active=true)
+        if (
+            not request.actualProfileId
+            and not request.effectiveProfileId
+            and auth_mode_cookie in ("default-account", "default-guest")
+        ):
+            auth_check_sql = load_sql("sql/v3/profile/check_login_authorization.sql")
+            auth_result = await conn.fetchrow(auth_check_sql, department_id_cookie)
+
+            if not auth_result:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Unable to verify login authorization",
+                )
+
+            guest_login_enabled = auth_result.get("guest_login_enabled", False)
+            active_dept_count = auth_result.get("active_departments_count", 0)
+            dept_auth_count = auth_result.get("department_auth_providers_count", 0)
+            default_auth_count = auth_result.get("default_settings_auth_providers_count", 0)
+            depts_without_auth_count = auth_result.get("departments_without_auth_providers_count", 0)
+            department_exists = auth_result.get("department_exists", False)
+
+            # Check authorization based on auth_mode
+            if auth_mode_cookie == "default-account":
+                # Case 1: Zero active departments - allow (initial setup)
+                if active_dept_count == 0:
+                    # No departments exist yet, allow default-account login
+                    pass
+                # Case 2-7: Active departments exist - apply restrictions
+                elif active_dept_count > 0:
+                    if not department_id_cookie:
+                        # No department specified - check if default settings allow it
+                        # Case 4: Default settings have auth providers - block
+                        if default_auth_count > 0:
+                            raise HTTPException(
+                                status_code=401,
+                                detail="Default account login not available. Please select a department or use an authentication provider.",
+                            )
+                        # Case 5: All departments have auth providers - block (prevents bypass)
+                        # Case 3: At least one department without auth - allow (valid use case)
+                        if depts_without_auth_count == 0:
+                            raise HTTPException(
+                                status_code=401,
+                                detail="Default account login not available. Please select a department or use an authentication provider.",
+                            )
+                    else:
+                        # Department specified - validate it exists first
+                        # Case 6: Department doesn't exist - block (400 Bad Request)
+                        if not department_exists:
+                            raise HTTPException(
+                                status_code=400,
+                                detail="Invalid department specified.",
+                            )
+                        # Case 7: Department has auth providers - block
+                        # Case 2: Department exists and has no auth providers - allow
+                        if dept_auth_count > 0:
+                            raise HTTPException(
+                                status_code=401,
+                                detail="Default account login not available for this department. Please use an authentication provider.",
+                            )
+
+            elif auth_mode_cookie == "default-guest":
+                # Guest login authorization: only allow if guest_login_enabled is true
+                # Case 1: guest_login_enabled = true → Allow (no exception raised)
+                # Case 2: guest_login_enabled = false → Block
+                if not guest_login_enabled:
+                    raise HTTPException(
+                        status_code=401,
+                        detail="Guest login is not enabled for this configuration.",
+                    )
 
         # Get all context data with emulation validation in single query
         # Pass profile IDs (can be null) and cookie values (can be null) to SQL
@@ -325,7 +527,7 @@ async def get_profile_context(
         # (based on effective profile's role)
         role = cast(ProfileRole, effective_profile.role)
         available_sections = get_available_subsections_for_role(role)
-        
+
         # Get redirect path for role (inlined from permissions.py)
         redirect_map = {
             "guest": "/practice",  # Guest users start at practice
@@ -349,6 +551,148 @@ async def get_profile_context(
                     role.strip() for role in scoped_roles_raw.strip("{}").split(",")
                 ]
 
+        # Parse settings from SQL result
+        # Import theme derivation functions
+        def normalize_color_to_oklch(color: str) -> str:
+            """Normalize color input to oklch format."""
+            color_trimmed = color.strip()
+            if color_trimmed.startswith("oklch("):
+                return color_trimmed
+            hex_clean = color_trimmed.lstrip("#")
+            if len(hex_clean) != 6 or not all(
+                c in "0123456789ABCDEFabcdef" for c in hex_clean
+            ):
+                raise ValueError(
+                    f"Invalid color format: {color}. Expected hex (e.g., '#ffffff') or oklch (e.g., 'oklch(1 0 0)')"
+                )
+            return hex_to_oklch(f"#{hex_clean}")
+
+        def derive_theme_tokens(primitives: ThemePrimitives) -> ThemeTokens:
+            """Derive full ThemeTokens from user-editable ThemePrimitives."""
+            # Normalize all color inputs to oklch format
+            background = normalize_color_to_oklch(primitives.background)
+            surface = normalize_color_to_oklch(primitives.surface)
+            primary = normalize_color_to_oklch(primitives.primary)
+            accent = normalize_color_to_oklch(primitives.accent)
+            sidebar_bg = normalize_color_to_oklch(primitives.sidebarBackground)
+            sidebar_primary = normalize_color_to_oklch(primitives.sidebarPrimary)
+            success = normalize_color_to_oklch(primitives.success)
+            warning = normalize_color_to_oklch(primitives.warning)
+            error = normalize_color_to_oklch(primitives.error)
+
+            # Foregrounds based on contrast
+            foreground = ensure_contrast(background, "oklch(0.145 0 0)")
+            primary_fg = ensure_contrast(primary, "oklch(0.985 0 0)")
+            accent_fg = ensure_contrast(accent, "oklch(0.205 0 0)")
+            surface_fg = ensure_contrast(surface, foreground)
+
+            # Status foregrounds
+            success_fg = ensure_contrast(success, "oklch(0.985 0 0)")
+            warning_fg = ensure_contrast(warning, "oklch(0.145 0 0)")
+            error_fg = ensure_contrast(error, "oklch(0.985 0 0)")
+
+            # Info derived from primary
+            info_color = tint(primary, 0.05)
+            info_fg = ensure_contrast(info_color, foreground)
+
+            # Derived colors
+            muted_color = shade(background, 0.03)
+            muted_fg = shade(foreground, 0.2)
+            border_color = shade(background, 0.078)
+            input_color = shade(background, 0.078)
+            ring_color = shade(primary, 0.05)
+
+            # Sidebar derived colors
+            sidebar_fg = ensure_contrast(sidebar_bg, surface_fg)
+            sidebar_primary_fg = ensure_contrast(sidebar_primary, surface_fg)
+            sidebar_accent = shade(sidebar_bg, 0.015)
+            sidebar_accent_fg = ensure_contrast(sidebar_accent, surface_fg)
+            sidebar_border = shade(sidebar_bg, 0.064)
+            sidebar_ring = shade(sidebar_primary, 0.05)
+
+            return ThemeTokens(
+                background=background,
+                foreground=foreground,
+                card=surface,
+                cardForeground=surface_fg,
+                popover=surface,
+                popoverForeground=surface_fg,
+                primary=primary,
+                primaryForeground=primary_fg,
+                secondary=accent,
+                secondaryForeground=accent_fg,
+                muted=muted_color,
+                mutedForeground=muted_fg,
+                accent=accent,
+                accentForeground=accent_fg,
+                destructive=error,
+                border=border_color,
+                input=input_color,
+                ring=ring_color,
+                success=success,
+                successForeground=success_fg,
+                warning=warning,
+                warningForeground=warning_fg,
+                info=info_color,
+                infoForeground=info_fg,
+                chart1=normalize_color_to_oklch(primitives.chart1),
+                chart2=normalize_color_to_oklch(primitives.chart2),
+                chart3=normalize_color_to_oklch(primitives.chart3),
+                chart4=normalize_color_to_oklch(primitives.chart4),
+                chart5=normalize_color_to_oklch(primitives.chart5),
+                sidebar=sidebar_bg,
+                sidebarForeground=sidebar_fg,
+                sidebarPrimary=sidebar_primary,
+                sidebarPrimaryForeground=sidebar_primary_fg,
+                sidebarAccent=sidebar_accent,
+                sidebarAccentForeground=sidebar_accent_fg,
+                sidebarBorder=sidebar_border,
+                sidebarRing=sidebar_ring,
+            )
+
+        # Parse settings from SQL result
+        if not result.get("settings_id"):
+            raise HTTPException(
+                status_code=500, detail="Settings not found in profile context"
+            )
+
+        theme_primitives = ThemePrimitives(
+            primary=result["settings_primary_color"],
+            accent=result["settings_accent"],
+            background=result["settings_background"],
+            surface=result["settings_surface"],
+            success=result["settings_success"],
+            warning=result["settings_warning"],
+            error=result["settings_error"],
+            sidebarBackground=result["settings_sidebar_background"],
+            sidebarPrimary=result["settings_sidebar_primary"],
+            chart1=result["settings_chart1"],
+            chart2=result["settings_chart2"],
+            chart3=result["settings_chart3"],
+            chart4=result["settings_chart4"],
+            chart5=result["settings_chart5"],
+        )
+
+        theme_tokens = derive_theme_tokens(theme_primitives)
+
+        settings_data = SettingsData(
+            settings_id=result["settings_id"],
+            created_at=result["settings_created_at"].isoformat()
+            if result["settings_created_at"]
+            else "",
+            active=result["settings_active"],
+            name=result["settings_name"],
+            description=result["settings_description"] or "",
+            mode="light",
+            tokens=theme_tokens,
+            guest_login_enabled=result["settings_guest_login_enabled"],
+            success_threshold=result["settings_success_threshold"],
+            warning_threshold=result["settings_warning_threshold"],
+            danger_threshold=result["settings_danger_threshold"],
+            guestProfileId=result.get("settings_default_guest_profile_id"),
+            defaultAccountProfileId=result.get("settings_default_account_profile_id"),
+        )
+
         return ProfileContextResponse(
             actualProfile=actual_profile,
             effectiveProfile=effective_profile,
@@ -362,6 +706,7 @@ async def get_profile_context(
             availableSections=available_sections,
             redirectPath=redirect_path,
             scopedRoles=scoped_roles_list,
+            settings=settings_data,
         )
     except HTTPException:
         raise
