@@ -113,7 +113,7 @@ AttemptHistoryResponse = list[AttemptHistoryRow]
 class HomeOverviewResponse(BaseModel):
     """Home overview response with mappings and history."""
 
-    mode: Literal["ta", "instructional", "empty"]
+    mode: Literal["member", "instructional", "empty"]
     hasData: bool
     items: list[HomeSimulationItem]
     history: AttemptHistoryResponse

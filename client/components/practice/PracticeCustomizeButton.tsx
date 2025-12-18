@@ -21,14 +21,14 @@ export function PracticeCustomizeButton() {
   if (role === "guest") {
     return null;
   }
-  if (role === "ta") {
-    // Show button for all TAs
+  if (role === "member") {
+    // Show button for all members
   }
   const privilegedRoles: Array<ProfileItem["role"]> = [
     "instructional",
     "admin",
     "superadmin",
-    "ta",
+    "member",
   ];
   if (!role || !privilegedRoles.includes(role as ProfileItem["role"])) {
     return null;

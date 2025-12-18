@@ -15,9 +15,8 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
-// Using reports/overview endpoint for now - may need to check actual endpoint
-type ReportsIn = InputOf<"/api/v3/reports/overview", "post">;
-type ReportsOut = OutputOf<"/api/v3/reports/overview", "post">;
+type ReportsIn = InputOf<"/api/v3/reports", "post">;
+type ReportsOut = OutputOf<"/api/v3/reports", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
@@ -27,7 +26,7 @@ type ReportsOut = OutputOf<"/api/v3/reports/overview", "post">;
 const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/reports/overview", input, {
+  return api.post("/reports", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -447,14 +446,46 @@ async function ReportsSection({
     body: reportsFilters,
   });
 
+  // Extract filter options from API response
+  const profileOptions =
+    reportsData && "profileOptions" in reportsData
+      ? (reportsData.profileOptions || []).map(
+          (opt: Record<string, string | number>) => ({
+            value: String(opt["value"] || ""),
+            label: String(opt["label"] || ""),
+            count: typeof opt["count"] === "number" ? opt["count"] : 0,
+          })
+        )
+      : [];
+  const simulationOptions =
+    reportsData && "simulationOptions" in reportsData
+      ? (reportsData.simulationOptions || []).map(
+          (opt: Record<string, string | number>) => ({
+            value: String(opt["value"] || ""),
+            label: String(opt["label"] || ""),
+            count: typeof opt["count"] === "number" ? opt["count"] : 0,
+          })
+        )
+      : [];
+  const scenarioOptions =
+    reportsData && "scenarioOptions" in reportsData
+      ? (reportsData.scenarioOptions || []).map(
+          (opt: Record<string, string | number>) => ({
+            value: String(opt["value"] || ""),
+            label: String(opt["label"] || ""),
+            count: typeof opt["count"] === "number" ? opt["count"] : 0,
+          })
+        )
+      : [];
+
   return (
     <Reports
       reportsData={reportsData}
       filters={filters}
       isLoading={false}
-      profileOptions={[]}
-      simulationOptions={[]}
-      scenarioOptions={[]}
+      profileOptions={profileOptions}
+      simulationOptions={simulationOptions}
+      scenarioOptions={scenarioOptions}
     />
   );
 }

@@ -78,7 +78,6 @@ export default function Reports({
 
   // Extract data from API response
   // Type guard to ensure reportsData has expected structure
-  // ReportsOut is DashboardBundleResponse, but the page passes data with a 'data' property
   const profiles = useMemo(() => {
     if (
       reportsData &&
@@ -86,7 +85,23 @@ export default function Reports({
       "data" in reportsData &&
       Array.isArray(reportsData.data)
     ) {
-      return reportsData.data as ProfileRow[];
+      // Transform API response to match ProfileRow type
+      return reportsData.data.map((row: unknown) => {
+        if (typeof row === "object" && row !== null) {
+          const rowObj = row as Record<string, unknown>;
+          const primaryEmail = rowObj["primaryEmail"] as
+            | string
+            | null
+            | undefined;
+          const emails = rowObj["emails"] as string[] | undefined;
+          return {
+            ...rowObj,
+            email:
+              primaryEmail || (emails && emails.length > 0 ? emails[0] : ""),
+          } as ProfileRow;
+        }
+        return row as ProfileRow;
+      });
     }
     return [];
   }, [reportsData]);

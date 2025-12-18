@@ -93,7 +93,7 @@ async def test_get_profile_context_emulation_authorized(
     # Create a target profile (TA role - superadmin can emulate)
     target_id = await db.fetchval(
         "INSERT INTO profiles(first_name, last_name, role) "
-        "VALUES('Target', 'User', 'ta') "
+        "VALUES('Target', 'User', 'member') "
         "RETURNING id"
     )
     await db.execute(
@@ -125,7 +125,7 @@ async def test_get_profile_context_emulation_unauthorized(
     # Create a TA profile (cannot emulate)
     ta_id = await db.fetchval(
         "INSERT INTO profiles(first_name, last_name, role) "
-        "VALUES('TA', 'User', 'ta') "
+        "VALUES('Member', 'User', 'member') "
         "RETURNING id"
     )
     await db.execute(

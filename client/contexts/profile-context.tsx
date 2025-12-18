@@ -94,6 +94,8 @@ interface ProfileContextType {
   socket: Socket | null;
   isConnected: boolean;
   startingSimulationId: string | null;
+  startingEvalId: string | null;
+  setStartingEvalId: ((evalId: string | null) => void) | null;
 
   // WebSocket helper methods
   emitStartSimulation: (data: {
@@ -154,6 +156,7 @@ export function ProfileProviderClient({
   const [startingSimulationId, setStartingSimulationId] = useState<
     string | null
   >(null);
+  const [startingEvalId, setStartingEvalId] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const connectionAttempts = useRef(0);
   const maxConnectionAttempts = 5;
@@ -460,6 +463,8 @@ export function ProfileProviderClient({
     socket: socketRef.current,
     isConnected,
     startingSimulationId,
+    startingEvalId,
+    setStartingEvalId,
     emitStartSimulation,
     emitCreatePracticeScenario,
   };

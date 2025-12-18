@@ -58,8 +58,8 @@ export const STAFF_ROLES = [
     color: "#8b5cf6", // purple
   },
   {
-    id: "ta",
-    name: "Teaching Assistant",
+    id: "member",
+    name: "Member",
     description: "Graduate Teaching Assistant (GTA) trainee role",
     icon: BookOpen,
     color: "#10b981", // green
@@ -70,13 +70,6 @@ export const STAFF_ROLES = [
     description: "Limited access, not logged in or not registered",
     icon: User,
     color: "#6b7280", // gray
-  },
-  {
-    id: "member",
-    name: "Member",
-    description: "Standard member access",
-    icon: Users,
-    color: "#6366f1", // indigo
   },
 ] as const;
 

@@ -411,7 +411,7 @@ export default function Home({ homeData }: HomeProps) {
                       effectiveProfile={{
                         ...effectiveProfile,
                         role: effectiveProfile.role as
-                          | "ta"
+                          | "member"
                           | "instructional"
                           | "superadmin"
                           | "admin"

@@ -75,7 +75,7 @@ def test_staff_bulk_edit_role(page: Page, base_url: str) -> None:
         role_picker.click()
         page.wait_for_timeout(250)
 
-        # Select "ta" role (should be available for admin)
+        # Select "member" role (should be available for admin)
         role_option = page.get_by_role("option").filter(has_text="Teaching Assistant")
         if role_option.count() > 0:
             role_option.first.click()
@@ -223,7 +223,7 @@ def test_staff_bulk_edit_keep_current(page: Page, base_url: str) -> None:
         department_id = department_ids[0] if department_ids else None
 
         # Create staff with different roles
-        roles = ["guest", "ta"]
+        roles = ["guest", "member"]
         for i, role in enumerate(roles):
             staff_name = generate_unique_staff_name(f"Keep Current Staff {i}")
             parts = staff_name.split()

@@ -95,7 +95,7 @@ async def test_middleware_logs_with_profile_id(
     profile_id = await db.fetchval(
         """
         INSERT INTO profiles (role, first_name, last_name, email)
-        VALUES ('ta', 'Test', 'User', 'test@example.com')
+        VALUES ('member', 'Test', 'User', 'test@example.com')
         RETURNING id
         """
     )
@@ -155,7 +155,7 @@ async def test_middleware_logs_post_with_body_profile_id(
     profile_id = await db.fetchval(
         """
         INSERT INTO profiles (role, first_name, last_name, email)
-        VALUES ('ta', 'Test', 'User', 'test@example.com')
+        VALUES ('member', 'Test', 'User', 'test@example.com')
         RETURNING id
         """
     )

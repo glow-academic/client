@@ -46,7 +46,7 @@ class ProfileItem(BaseModel):
     lastName: str
     emails: list[str]  # List of all active emails
     primaryEmail: str | None  # Primary email (first in emails array if exists)
-    role: str  # 'superadmin' | 'admin' | 'instructional' | 'ta' | 'guest'
+    role: str  # 'superadmin' | 'admin' | 'instructional' | 'member' | 'guest'
     active: bool
     reqPerDay: int | None
     lastLogin: str  # ISO datetime

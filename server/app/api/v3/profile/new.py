@@ -159,7 +159,7 @@ async def get_profile_new(
                     )
 
         # Role options
-        role_options = ["superadmin", "admin", "instructional", "ta", "guest"]
+        role_options = ["superadmin", "admin", "instructional", "member", "guest"]
 
         # Default values for new profile
         response_data = ProfileNewResponse(

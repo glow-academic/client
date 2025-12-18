@@ -2,7 +2,15 @@
 -- Parameters: $1 = profile_id (uuid)
 -- Returns: evals with derived status, rubric mapping, department mapping
 
-WITH user_departments AS (
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
+user_departments AS (
     SELECT department_id
     FROM profile_departments
     WHERE profile_id = (SELECT resolved_profile_id FROM resolve_profile_id) AND active = true

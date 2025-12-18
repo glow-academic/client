@@ -28,7 +28,7 @@ const getRoleBadgeVariant = (role: string) => {
       return "destructive";
     case "instructor":
       return "default";
-    case "ta":
+    case "member":
       return "secondary";
     default:
       return "outline";
@@ -42,8 +42,8 @@ const getRoleDisplayName = (role: string) => {
       return "Administrator";
     case "instructor":
       return "Instructor";
-    case "ta":
-      return "Teaching Assistant";
+    case "member":
+      return "Member";
     default:
       return role;
   }

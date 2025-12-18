@@ -29,7 +29,7 @@ pytestmark = pytest.mark.asyncio
 
 async def _create_test_profile(
     db: asyncpg.Connection,
-    role: str = "ta",
+    role: str = "member",
     first_name: str = "Test",
     last_name: str = "User",
     email: str | None = None,
@@ -232,7 +232,7 @@ async def test_history_with_user_provided_filters(
             "startDate": "2025-08-01T00:00:00Z",
             "endDate": "2025-11-01T23:59:59Z",
             "cohortIds": [cohort_id],
-            "roles": ["guest", "ta", "instructional", "admin", "superadmin"],
+            "roles": ["guest", "member", "instructional", "admin", "superadmin"],
             "simulationFilters": ["general", "practice", "archived"],
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -305,7 +305,7 @@ async def test_history_default_simulation_filters_matches_old_behavior(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             # simulationFilters omitted - should default to ["general"]
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -359,7 +359,7 @@ async def test_history_explicit_general_filter(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general"],  # Explicit general filter
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -417,7 +417,7 @@ async def test_history_practice_filter(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["practice"],
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -463,7 +463,7 @@ async def test_history_archived_filter(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["archived"],
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -518,7 +518,7 @@ async def test_history_combined_simulation_filters(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general", "practice", "archived"],
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -541,10 +541,10 @@ async def test_history_search_filter(
 ) -> None:
     """Test search functionality (searches profile name, simulation name, persona names)."""
     profile1_id = await _create_test_profile(
-        db, role="ta", first_name="John", last_name="Doe"
+        db, role="member", first_name="John", last_name="Doe"
     )
     profile2_id = await _create_test_profile(
-        db, role="ta", first_name="Jane", last_name="Smith"
+        db, role="member", first_name="Jane", last_name="Smith"
     )
     dept_id = await get_cs_dept_id(db)
 
@@ -584,7 +584,7 @@ async def test_history_search_filter(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [cohort1_id, cohort2_id],  # Include both cohorts
-            "roles": ["instructional", "ta"],  # Instructional to see all
+            "roles": ["instructional", "member"],  # Instructional to see all
             "simulationFilters": ["general"],
             "profileId": None,  # Don't filter by profileId to see both
             "departmentIds": [dept_id],
@@ -610,7 +610,7 @@ async def test_history_search_filter(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general"],
             "profileId": None,
             "departmentIds": [dept_id],
@@ -666,7 +666,7 @@ async def test_history_profile_ids_filter(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [cohort1_id, cohort2_id],  # Include both cohorts
-            "roles": ["instructional", "ta"],  # Instructional to see all
+            "roles": ["instructional", "member"],  # Instructional to see all
             "simulationFilters": ["general"],
             "profileId": None,  # Don't filter by profileId
             "departmentIds": [dept_id],
@@ -716,7 +716,7 @@ async def test_history_simulation_ids_filter(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general"],
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -763,7 +763,7 @@ async def test_history_infinite_mode_filter(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general"],
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -819,7 +819,7 @@ async def test_history_sorting(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general"],
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -847,7 +847,7 @@ async def test_history_sorting(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general"],
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -901,7 +901,7 @@ async def test_history_pagination(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general"],
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -927,7 +927,7 @@ async def test_history_pagination(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general"],
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -974,7 +974,7 @@ async def test_history_empty_cohort_ids(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],  # Empty array - should expand to profile's cohorts
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general"],
             "profileId": profile_id,
             "departmentIds": [dept_id],
@@ -1017,7 +1017,7 @@ async def test_history_empty_department_ids(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general"],
             "profileId": profile_id,
             "departmentIds": [],  # Empty array - should not filter by department
@@ -1038,9 +1038,9 @@ async def test_history_empty_department_ids(
 async def test_history_role_based_filtering_ta(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test that TA role only sees their own attempts."""
-    ta_profile_id = await _create_test_profile(db, role="ta")
-    other_ta_profile_id = await _create_test_profile(db, role="ta")
+    """Test that member role only sees their own attempts."""
+    member_profile_id = await _create_test_profile(db, role="member")
+    other_member_profile_id = await _create_test_profile(db, role="member")
     dept_id = await get_cs_dept_id(db)
 
     sim_id = await _create_test_simulation(db, "Test Simulation", department_id=dept_id)
@@ -1066,7 +1066,7 @@ async def test_history_role_based_filtering_ta(
             "startDate": start_date,
             "endDate": end_date,
             "cohortIds": [],
-            "roles": ["ta"],
+            "roles": ["member"],
             "simulationFilters": ["general"],
             "profileId": ta_profile_id,  # TA profileId
             "departmentIds": [dept_id],
@@ -1088,7 +1088,7 @@ async def test_history_role_based_filtering_instructional(
 ) -> None:
     """Test that instructional role sees all attempts (profileId ignored)."""
     instructional_profile_id = await _create_test_profile(db, role="instructional")
-    ta_profile_id = await _create_test_profile(db, role="ta")
+    member_profile_id = await _create_test_profile(db, role="member")
     dept_id = await get_cs_dept_id(db)
 
     sim_id = await _create_test_simulation(db, "Test Simulation", department_id=dept_id)

@@ -890,7 +890,7 @@ export default function Staff({
 
     const invalidRoles = validRows
       .map((row, idx) => {
-        const role = row.role || "ta";
+        const role = row.role || "member";
         if (!validRoles.includes(role)) {
           return { index: idx, role };
         }
@@ -977,7 +977,7 @@ export default function Staff({
             row.primary_email_index < emails.length
               ? row.primary_email_index
               : 0,
-          role: row.role || "ta",
+          role: row.role || "member",
           department_ids: deptIds,
           cohort_ids: cohortIds,
         };

@@ -90,7 +90,7 @@ async def test_pricing_analytics_profile_filter_non_admin(
 
     # Get a TA or student profile (non-admin)
     ta_id = await db.fetchval(
-        "SELECT id FROM profiles WHERE role = 'ta' AND active = true LIMIT 1"
+        "SELECT id FROM profiles WHERE role = 'member' AND active = true LIMIT 1"
     )
 
     if ta_id:
@@ -219,7 +219,7 @@ async def test_pricing_analytics_role_filter(
             "startDate": "2020-01-01T00:00:00Z",
             "endDate": "2030-12-31T23:59:59Z",
             "departmentIds": [dept_id],
-            "roles": ["ta"],
+            "roles": ["member"],
             "profileId": admin_id,
         },
     )

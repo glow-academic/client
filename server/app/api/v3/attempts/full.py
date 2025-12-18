@@ -440,12 +440,12 @@ async def get_attempt_full(
                     attempt_role = attempt_profile_role_row["role"]
                     current_role = current_user_role_row["role"]
 
-                    # Role hierarchy: superadmin > admin > instructional > ta > guest
+                    # Role hierarchy: superadmin > admin > instructional > member > guest
                     role_hierarchy = {
                         "superadmin": 5,
                         "admin": 4,
                         "instructional": 3,
-                        "ta": 2,
+                        "member": 2,
                         "guest": 1,
                     }
 

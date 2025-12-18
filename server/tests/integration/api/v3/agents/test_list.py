@@ -90,7 +90,7 @@ async def test_list_agents_permissions_non_superadmin(
     # Create a non-superadmin profile
     ta_id = await db.fetchval(
         "INSERT INTO profiles(first_name, last_name, role) "
-        "VALUES('Test', 'TA', 'ta') RETURNING id"
+        "VALUES('Test', 'Member', 'member') RETURNING id"
     )
     await db.execute(
         "INSERT INTO profile_emails(profile_id, email, is_primary, active) "

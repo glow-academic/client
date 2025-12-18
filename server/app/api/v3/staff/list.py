@@ -80,7 +80,7 @@ class StaffListResponse(BaseModel):
     valid_department_ids: list[str]  # All valid department IDs (for editing)
     trend_data: dict[
         str, list[TrendData]
-    ]  # Keys: active, admin, instructional, ta, total_requests
+    ]  # Keys: active, admin, instructional, member, total_requests
     # UI-ready facet options (precomputed on server)
     role_options: list[dict[str, str]]  # Array of {value, label}
     cohort_options: list[dict[str, str]]  # Array of {value, label}
@@ -140,7 +140,7 @@ async def get_profile_list(
             "active": [],
             "admin": [],
             "instructional": [],
-            "ta": [],
+            "member": [],
             "total_requests": [],
         }
 
@@ -223,7 +223,7 @@ async def get_profile_list(
             if isinstance(trend_data_raw, str):
                 trend_data_raw = json.loads(trend_data_raw)
             if trend_data_raw and isinstance(trend_data_raw, dict):
-                for key in ["active", "admin", "instructional", "ta", "total_requests"]:
+                for key in ["active", "admin", "instructional", "member", "total_requests"]:
                     trend_array = trend_data_raw.get(key, [])
                     if isinstance(trend_array, list):
                         trend_data[key] = [
@@ -244,20 +244,20 @@ async def get_profile_list(
                 {"value": "superadmin", "label": "Super Administrator"},
                 {"value": "admin", "label": "Administrator"},
                 {"value": "instructional", "label": "Instructional Staff"},
-                {"value": "ta", "label": "Teaching Assistant"},
+                {"value": "member", "label": "Member"},
                 {"value": "guest", "label": "Guest"},
             ]
         elif current_user_role == "admin":
             role_options = [
                 {"value": "admin", "label": "Administrator"},
                 {"value": "instructional", "label": "Instructional Staff"},
-                {"value": "ta", "label": "Teaching Assistant"},
+                {"value": "member", "label": "Member"},
                 {"value": "guest", "label": "Guest"},
             ]
         else:
             role_options = [
                 {"value": "instructional", "label": "Instructional Staff"},
-                {"value": "ta", "label": "Teaching Assistant"},
+                {"value": "member", "label": "Member"},
                 {"value": "guest", "label": "Guest"},
             ]
 

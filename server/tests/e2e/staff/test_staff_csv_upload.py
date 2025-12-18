@@ -26,7 +26,7 @@ def _create_test_csv(rows: list[dict[str, str]], filename: str | None = None) ->
                 "firstName": "John",
                 "lastName": "Doe",
                 "email": "redacted@purdue.edu",
-                "role": "ta",
+                "role": "member",
             },
             {
                 "firstName": "Jane",

@@ -294,7 +294,7 @@ export default function Practice({
           profile={{
             ...effectiveProfile,
             role: effectiveProfile.role as
-              | "ta"
+              | "member"
               | "instructional"
               | "superadmin"
               | "admin"

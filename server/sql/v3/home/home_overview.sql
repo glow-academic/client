@@ -238,7 +238,7 @@ ta_sim_space AS (
 ta_rows AS (
     SELECT
         json_build_object(
-            'viewMode', 'ta',
+            'viewMode', 'member',
             'id', s.simulation_id::text,
             'simulationTitle', s.title,
             'simulationDescription', s.description,

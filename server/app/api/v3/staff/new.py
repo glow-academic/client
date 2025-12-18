@@ -160,7 +160,7 @@ async def get_staff_new(
                     )
 
         # Role options
-        role_options = ["superadmin", "admin", "instructional", "ta", "guest"]
+        role_options = ["superadmin", "admin", "instructional", "member", "guest"]
 
         # Default values for new staff
         response_data = StaffNewResponse(

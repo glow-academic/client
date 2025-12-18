@@ -5755,6 +5755,91 @@
         ]
       }
     },
+    "/api/v3/evals/attempt/full": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals",
+          "evals",
+          "attempts"
+        ],
+        "summary": "Get Eval Attempt Full",
+        "description": "Get complete eval attempt data with all runs and status.",
+        "operationId": "get_eval_attempt_full_api_v3_evals_attempt_full_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalAttemptFullRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalAttemptFullResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals",
+          "evals",
+          "attempts"
+        ]
+      }
+    },
     "/api/v3/rubrics/list": {
       "post": {
         "tags": [
@@ -6886,6 +6971,168 @@
         "x-cache-tags": [
           "v3",
           "dashboard"
+        ]
+      }
+    },
+    "/api/v3/reports/export": {
+      "post": {
+        "tags": [
+          "v3",
+          "reports",
+          "reports"
+        ],
+        "summary": "Export Reports",
+        "description": "Export reports data as CSV or ZIP file.",
+        "operationId": "export_reports_api_v3_reports_export_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports",
+          "reports"
+        ]
+      }
+    },
+    "/api/v3/reports": {
+      "post": {
+        "tags": [
+          "v3",
+          "reports"
+        ],
+        "summary": "Get Reports",
+        "description": "Get reports bundle with aggregated metrics per profile and entity mappings.",
+        "operationId": "get_reports_api_v3_reports_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportsBundleFilters"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportsBundleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports"
         ]
       }
     },
@@ -14489,6 +14736,271 @@
         ]
       }
     },
+    "/socket/v3/client/evals/enter": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Eval Enter Api",
+        "description": "Client-to-server event: Update test created_at timestamp when entering a test.",
+        "operationId": "eval_enter_api_socket_v3_client_evals_enter_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalEnterPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Enter Api Socket V3 Client Evals Enter Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/evals/join": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Eval Join Api",
+        "description": "Client-to-server event: Join an eval room for real-time updates.",
+        "operationId": "eval_join_api_socket_v3_client_evals_join_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalJoinPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Join Api Socket V3 Client Evals Join Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/evals/leave": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Eval Leave Api",
+        "description": "Client-to-server event: Leave an eval room.",
+        "operationId": "eval_leave_api_socket_v3_client_evals_leave_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalLeavePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Leave Api Socket V3 Client Evals Leave Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/evals/start": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Eval Start Api",
+        "description": "Client-to-server event: Start an eval attempt.",
+        "operationId": "eval_start_api_socket_v3_client_evals_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalStartPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Start Api Socket V3 Client Evals Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/evals/stop": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Eval Stop Api",
+        "description": "Client-to-server event: Stop an active eval attempt.",
+        "operationId": "eval_stop_api_socket_v3_client_evals_stop_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalStopPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Stop Api Socket V3 Client Evals Stop Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
     "/socket/v3/server/connection_confirmed": {
       "post": {
         "tags": [
@@ -17606,6 +18118,695 @@
         ]
       }
     },
+    "/socket/v3/server/evals/enter_response": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Enter Response Api",
+        "description": "Server-to-client event: Successfully updated test created_at timestamp.",
+        "operationId": "eval_enter_response_api_socket_v3_server_evals_enter_response_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalEnterResponsePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Enter Response Api Socket V3 Server Evals Enter Response Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/enter_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Enter Error Api",
+        "description": "Server-to-client event: Error occurred while updating test created_at timestamp.",
+        "operationId": "eval_enter_error_api_socket_v3_server_evals_enter_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalEnterErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Enter Error Api Socket V3 Server Evals Enter Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/joined": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Joined Api",
+        "description": "Server-to-client event: Successfully joined eval room.",
+        "operationId": "eval_joined_api_socket_v3_server_evals_joined_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalJoinedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Joined Api Socket V3 Server Evals Joined Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/join_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Join Error Api",
+        "description": "Server-to-client event: Error occurred while joining eval room.",
+        "operationId": "eval_join_error_api_socket_v3_server_evals_join_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalJoinErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Join Error Api Socket V3 Server Evals Join Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/leave_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Leave Error Api",
+        "description": "Server-to-client event: Error occurred while leaving eval room.",
+        "operationId": "eval_leave_error_api_socket_v3_server_evals_leave_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalLeaveErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Leave Error Api Socket V3 Server Evals Leave Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/started": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Started Api",
+        "description": "Server-to-client event: Eval started successfully.",
+        "operationId": "eval_started_api_socket_v3_server_evals_started_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalStartedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Started Api Socket V3 Server Evals Started Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/start_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Start Error Api",
+        "description": "Server-to-client event: Error occurred while starting eval.",
+        "operationId": "eval_start_error_api_socket_v3_server_evals_start_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalStartErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Start Error Api Socket V3 Server Evals Start Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/process_next": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Process Next Api",
+        "description": "Server-to-server event: Process next pending run in eval attempt.",
+        "operationId": "eval_process_next_api_socket_v3_server_evals_process_next_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalProcessNextPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Process Next Api Socket V3 Server Evals Process Next Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/run_completed": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Run Completed Api",
+        "description": "Server-to-client event: Single run evaluation completed.",
+        "operationId": "eval_run_completed_api_socket_v3_server_evals_run_completed_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalRunCompletedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Run Completed Api Socket V3 Server Evals Run Completed Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/completed": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Completed Api",
+        "description": "Server-to-client event: All runs in eval completed.",
+        "operationId": "eval_completed_api_socket_v3_server_evals_completed_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalCompletedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Completed Api Socket V3 Server Evals Completed Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/process_next_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Process Next Error Api",
+        "description": "Server-to-client event: Error occurred while processing next run.",
+        "operationId": "eval_process_next_error_api_socket_v3_server_evals_process_next_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalProcessNextErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Process Next Error Api Socket V3 Server Evals Process Next Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/stopped": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Stopped Api",
+        "description": "Server-to-client event: Eval stopped successfully.",
+        "operationId": "eval_stopped_api_socket_v3_server_evals_stopped_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalStoppedPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Stopped Api Socket V3 Server Evals Stopped Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/evals/stop_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Eval Stop Error Api",
+        "description": "Server-to-client event: Error occurred while stopping eval.",
+        "operationId": "eval_stop_error_api_socket_v3_server_evals_stop_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalStopErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Eval Stop Error Api Socket V3 Server Evals Stop Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
     "/": {
       "get": {
         "summary": "Root Info",
@@ -17965,7 +19166,7 @@
       "AttemptFullResponse": {
         "properties": {
           "attempt": {
-            "$ref": "#/components/schemas/AttemptItem"
+            "$ref": "#/components/schemas/app__api__v3__attempts__full__AttemptItem"
           },
           "simulation": {
             "$ref": "#/components/schemas/app__api__v3__attempts__full__SimulationItem"
@@ -18201,50 +19402,6 @@
         ],
         "title": "AttemptImprovementResponse",
         "description": "Attempt improvement response."
-      },
-      "AttemptItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "simulationId": {
-            "type": "string",
-            "title": "Simulationid"
-          },
-          "infiniteMode": {
-            "type": "boolean",
-            "title": "Infinitemode"
-          },
-          "archived": {
-            "type": "boolean",
-            "title": "Archived"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "simulationId",
-          "infiniteMode",
-          "archived"
-        ],
-        "title": "AttemptItem"
       },
       "AttemptProfileItem": {
         "properties": {
@@ -19935,7 +21092,7 @@
           },
           "simulation_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/SimulationMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__cohorts__list__SimulationMappingItem"
             },
             "type": "object",
             "title": "Simulation Mapping"
@@ -22331,7 +23488,7 @@
           },
           "simulation_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/SimulationMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__SimulationMappingItem"
             },
             "type": "object",
             "title": "Simulation Mapping"
@@ -24956,6 +26113,73 @@
         "title": "EndChatStartedPayload",
         "description": "Response indicating end chat operation started."
       },
+      "EvalAttemptFullRequest": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId"
+        ],
+        "title": "EvalAttemptFullRequest",
+        "description": "Request to get eval attempt full details."
+      },
+      "EvalAttemptFullResponse": {
+        "properties": {
+          "attempt": {
+            "$ref": "#/components/schemas/app__api__v3__evals__attempt__full__AttemptItem"
+          },
+          "eval": {
+            "$ref": "#/components/schemas/app__api__v3__evals__attempt__full__EvalItem"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/RunItem"
+            },
+            "type": "array",
+            "title": "Runs"
+          },
+          "status_summary": {
+            "$ref": "#/components/schemas/StatusSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt",
+          "eval",
+          "runs",
+          "status_summary"
+        ],
+        "title": "EvalAttemptFullResponse",
+        "description": "Response for eval attempt full endpoint."
+      },
+      "EvalCompletedPayload": {
+        "properties": {
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eval_id",
+          "attempt_id",
+          "message"
+        ],
+        "title": "EvalCompletedPayload",
+        "description": "Response indicating all runs in eval are completed."
+      },
       "EvalDetailRequest": {
         "properties": {
           "evalId": {
@@ -24970,110 +26194,414 @@
         "title": "EvalDetailRequest",
         "description": "Request to get eval details."
       },
-      "EvalItem": {
+      "EvalEnterErrorPayload": {
         "properties": {
-          "eval_id": {
-            "type": "string",
-            "title": "Eval Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "rubric_id": {
-            "type": "string",
-            "title": "Rubric Id"
-          },
-          "agent_id": {
-            "type": "string",
-            "title": "Agent Id"
-          },
-          "rubric_name": {
-            "type": "string",
-            "title": "Rubric Name"
-          },
-          "rubric_description": {
-            "type": "string",
-            "title": "Rubric Description"
-          },
-          "total_runs": {
-            "type": "integer",
-            "title": "Total Runs"
-          },
-          "completed_runs": {
-            "type": "integer",
-            "title": "Completed Runs"
-          },
-          "pending_runs": {
-            "type": "integer",
-            "title": "Pending Runs"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "can_edit": {
+          "success": {
             "type": "boolean",
-            "title": "Can Edit"
+            "title": "Success"
           },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
+          "message": {
+            "type": "string",
+            "title": "Message"
           }
         },
         "type": "object",
         "required": [
-          "eval_id",
-          "name",
-          "description",
-          "rubric_id",
-          "agent_id",
-          "rubric_name",
-          "rubric_description",
-          "total_runs",
-          "completed_runs",
-          "pending_runs",
-          "status",
-          "created_at",
-          "updated_at",
-          "department_ids",
-          "can_edit",
-          "can_delete"
+          "success",
+          "message"
         ],
-        "title": "EvalItem",
-        "description": "Individual eval item in the response."
+        "title": "EvalEnterErrorPayload",
+        "description": "Response indicating an error occurred while updating test created_at timestamp."
+      },
+      "EvalEnterPayload": {
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "title": "Test Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "test_id",
+          "created_at"
+        ],
+        "title": "EvalEnterPayload",
+        "description": "Request to update test created_at timestamp when entering a test."
+      },
+      "EvalEnterResponsePayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "test_id": {
+            "type": "string",
+            "title": "Test Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "test_id"
+        ],
+        "title": "EvalEnterResponsePayload",
+        "description": "Response indicating successfully updated test created_at timestamp."
+      },
+      "EvalJoinErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "EvalJoinErrorPayload",
+        "description": "Response indicating an error occurred while joining eval room."
+      },
+      "EvalJoinPayload": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "EvalJoinPayload",
+        "description": "Request to join an eval room for real-time updates."
+      },
+      "EvalJoinedPayload": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "EvalJoinedPayload",
+        "description": "Response indicating successfully joined eval room."
+      },
+      "EvalLeaveErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "EvalLeaveErrorPayload",
+        "description": "Response indicating an error occurred while leaving eval room."
+      },
+      "EvalLeavePayload": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "EvalLeavePayload",
+        "description": "Request to leave an eval room."
       },
       "EvalNewRequest": {
         "properties": {},
         "type": "object",
         "title": "EvalNewRequest",
         "description": "Request for default eval detail."
+      },
+      "EvalProcessNextErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "eval_id"
+        ],
+        "title": "EvalProcessNextErrorPayload",
+        "description": "Response indicating an error occurred while processing next run."
+      },
+      "EvalProcessNextPayload": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "current_run_id": {
+            "type": "string",
+            "title": "Current Run Id"
+          },
+          "eval_agent_id": {
+            "type": "string",
+            "title": "Eval Agent Id"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "eval_id",
+          "current_run_id",
+          "eval_agent_id",
+          "rubric_id"
+        ],
+        "title": "EvalProcessNextPayload",
+        "description": "Request to process next pending run in eval attempt."
+      },
+      "EvalRunCompletedPayload": {
+        "properties": {
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "test_id": {
+            "type": "string",
+            "title": "Test Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "grade_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eval_id",
+          "run_id",
+          "test_id",
+          "status",
+          "message"
+        ],
+        "title": "EvalRunCompletedPayload",
+        "description": "Response indicating a single run evaluation completed."
+      },
+      "EvalStartErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "EvalStartErrorPayload",
+        "description": "Response indicating an error occurred while starting eval."
+      },
+      "EvalStartPayload": {
+        "properties": {
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eval_id"
+        ],
+        "title": "EvalStartPayload",
+        "description": "Request to start an eval attempt."
+      },
+      "EvalStartedPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "attempt_id"
+        ],
+        "title": "EvalStartedPayload",
+        "description": "Response indicating eval started successfully."
+      },
+      "EvalStopErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "EvalStopErrorPayload",
+        "description": "Response indicating an error occurred while stopping eval."
+      },
+      "EvalStopPayload": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "EvalStopPayload",
+        "description": "Request to stop an active eval attempt."
+      },
+      "EvalStoppedPayload": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "success",
+          "message"
+        ],
+        "title": "EvalStoppedPayload",
+        "description": "Response indicating eval was stopped successfully."
       },
       "EvalsFilters": {
         "properties": {},
@@ -25085,7 +26613,7 @@
         "properties": {
           "evals": {
             "items": {
-              "$ref": "#/components/schemas/EvalItem"
+              "$ref": "#/components/schemas/app__api__v3__evals__list__EvalItem"
             },
             "type": "array",
             "title": "Evals"
@@ -25203,6 +26731,80 @@
         ],
         "title": "ExampleWithDepartments",
         "description": "Example with department associations for history."
+      },
+      "ExportRequest": {
+        "properties": {
+          "filters": {
+            "$ref": "#/components/schemas/ReportsExportFilters"
+          },
+          "profileIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileids"
+          },
+          "simulationIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationids"
+          },
+          "scenarioIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarioids"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metrics"
+          },
+          "brightspaceFormat": {
+            "type": "boolean",
+            "title": "Brightspaceformat",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "filters"
+        ],
+        "title": "ExportRequest",
+        "description": "Request to export reports data."
       },
       "FieldConnection": {
         "properties": {
@@ -26757,7 +28359,7 @@
           "mode": {
             "type": "string",
             "enum": [
-              "ta",
+              "member",
               "instructional",
               "empty"
             ],
@@ -26797,7 +28399,7 @@
           },
           "simulation_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/SimulationMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__home__overview__SimulationMappingItem"
             },
             "type": "object",
             "title": "Simulation Mapping"
@@ -27592,7 +29194,7 @@
           },
           "simulation_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/SimulationMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__leaderboard__bundle__SimulationMappingItem"
             },
             "type": "object",
             "title": "Simulation Mapping",
@@ -29972,7 +31574,7 @@
           },
           "simulation_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/SimulationMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__practice__overview__SimulationMappingItem"
             },
             "type": "object",
             "title": "Simulation Mapping"
@@ -31141,6 +32743,75 @@
         "title": "ProfileContextResponse",
         "description": "Response with consolidated profile context data."
       },
+      "ProfileDataEnhanced": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "firstName": {
+            "type": "string",
+            "title": "Firstname"
+          },
+          "lastName": {
+            "type": "string",
+            "title": "Lastname"
+          },
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails",
+            "default": []
+          },
+          "primaryEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primaryemail"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "simulationIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simulationids",
+            "default": []
+          },
+          "scenarioIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenarioids",
+            "default": []
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/ProfileMetrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId",
+          "firstName",
+          "lastName",
+          "primaryEmail",
+          "role",
+          "metrics"
+        ],
+        "title": "ProfileDataEnhanced",
+        "description": "Enhanced profile data row."
+      },
       "ProfileDetailRequest": {
         "properties": {
           "profileId": {
@@ -31427,6 +33098,55 @@
         ],
         "title": "ProfileMappingItem",
         "description": "Profile mapping item."
+      },
+      "ProfileMetrics": {
+        "properties": {
+          "averageScore": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "completionPercentage": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "firstAttemptPassRate": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "highestScore": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "messagesPerSession": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "personaResponseTimes": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "sessionEfficiency": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "stagnationRate": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "timeSpent": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "totalAttempts": {
+            "$ref": "#/components/schemas/MetricResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "averageScore",
+          "completionPercentage",
+          "firstAttemptPassRate",
+          "highestScore",
+          "messagesPerSession",
+          "personaResponseTimes",
+          "sessionEfficiency",
+          "stagnationRate",
+          "timeSpent",
+          "totalAttempts"
+        ],
+        "title": "ProfileMetrics",
+        "description": "Profile metrics - each metric is a full MetricResponse object."
       },
       "ProfileNewRequest": {
         "properties": {},
@@ -32299,6 +34019,427 @@
         "title": "RenderTemplateResponse",
         "description": "Response from template rendering."
       },
+      "ReportsBundleFilters": {
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "title": "Startdate"
+          },
+          "endDate": {
+            "type": "string",
+            "title": "Enddate"
+          },
+          "cohortIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohortids"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulationFilters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationfilters"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "pageSize": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pagesize"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "sortBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sortby"
+          },
+          "sortOrder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sortorder"
+          },
+          "profileIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileids"
+          },
+          "simulationIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationids"
+          },
+          "scenarioIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarioids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "startDate",
+          "endDate"
+        ],
+        "title": "ReportsBundleFilters",
+        "description": "Reports bundle filter request schema."
+      },
+      "ReportsBundleResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileDataEnhanced"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "totalCount": {
+            "type": "integer",
+            "title": "Totalcount"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize"
+          },
+          "totalPages": {
+            "type": "integer",
+            "title": "Totalpages"
+          },
+          "profileOptions": {
+            "items": {
+              "$ref": "#/components/schemas/FilterOption"
+            },
+            "type": "array",
+            "title": "Profileoptions",
+            "default": []
+          },
+          "simulationOptions": {
+            "items": {
+              "$ref": "#/components/schemas/FilterOption"
+            },
+            "type": "array",
+            "title": "Simulationoptions",
+            "default": []
+          },
+          "scenarioOptions": {
+            "items": {
+              "$ref": "#/components/schemas/FilterOption"
+            },
+            "type": "array",
+            "title": "Scenariooptions",
+            "default": []
+          },
+          "scenario_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__reports__bundle__ScenarioMappingItem"
+            },
+            "type": "object",
+            "title": "Scenario Mapping"
+          },
+          "simulation_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__reports__bundle__SimulationMappingItem"
+            },
+            "type": "object",
+            "title": "Simulation Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "totalCount",
+          "page",
+          "pageSize",
+          "totalPages",
+          "scenario_mapping",
+          "simulation_mapping"
+        ],
+        "title": "ReportsBundleResponse",
+        "description": "Reports bundle response with entity mappings."
+      },
+      "ReportsExportFilters": {
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "title": "Startdate"
+          },
+          "endDate": {
+            "type": "string",
+            "title": "Enddate"
+          },
+          "cohortIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohortids"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulationFilters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SimulationFilter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationfilters"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "pageSize": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pagesize"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "sortBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sortby"
+          },
+          "sortOrder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sortorder"
+          },
+          "profileIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileids"
+          },
+          "simulationIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationids"
+          },
+          "scenarioIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarioids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "startDate",
+          "endDate"
+        ],
+        "title": "ReportsExportFilters",
+        "description": "Reports export filter request schema."
+      },
       "ReportsHistoryFilters": {
         "properties": {
           "startDate": {
@@ -33019,7 +35160,7 @@
           },
           "simulation_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/SimulationMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__rubrics__list__SimulationMappingItem"
             },
             "type": "object",
             "title": "Simulation Mapping"
@@ -33089,6 +35230,177 @@
         ],
         "title": "RunEvalResponse",
         "description": "Response from run eval."
+      },
+      "RunItem": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "test_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Id"
+          },
+          "eval_run_completed": {
+            "type": "boolean",
+            "title": "Eval Run Completed"
+          },
+          "eval_run_assigned_at": {
+            "type": "string",
+            "title": "Eval Run Assigned At"
+          },
+          "eval_run_updated_at": {
+            "type": "string",
+            "title": "Eval Run Updated At"
+          },
+          "run_created_at": {
+            "type": "string",
+            "title": "Run Created At"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "agent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Name"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "grade_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Score"
+          },
+          "grade_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Passed"
+          },
+          "grade_created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "status",
+          "eval_run_completed",
+          "eval_run_assigned_at",
+          "eval_run_updated_at",
+          "run_created_at"
+        ],
+        "title": "RunItem",
+        "description": "Run item in eval attempt."
       },
       "ScenarioAttributeAttemptFact": {
         "properties": {
@@ -34413,7 +36725,7 @@
           },
           "simulation_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/SimulationMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__list__SimulationMappingItem"
             },
             "type": "object",
             "title": "Simulation Mapping"
@@ -35956,50 +38268,6 @@
         "title": "SimulationLeavePayload",
         "description": "Request to leave a simulation chat room."
       },
-      "SimulationMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "SimulationMappingItem",
-        "description": "Simulation mapping item."
-      },
       "SimulationMessageCancelledPayload": {
         "properties": {
           "message_id": {
@@ -37103,6 +39371,35 @@
         ],
         "title": "StartVoiceResponsePayload",
         "description": "Response from starting a voice simulation session."
+      },
+      "StatusSummary": {
+        "properties": {
+          "not_started": {
+            "type": "integer",
+            "title": "Not Started"
+          },
+          "in_progress": {
+            "type": "integer",
+            "title": "In Progress"
+          },
+          "completed": {
+            "type": "integer",
+            "title": "Completed"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "not_started",
+          "in_progress",
+          "completed",
+          "total"
+        ],
+        "title": "StatusSummary",
+        "description": "Status summary for eval attempt."
       },
       "StopEvalRequest": {
         "properties": {
@@ -41119,6 +43416,50 @@
         "title": "ModelMappingItem",
         "description": "Model mapping item."
       },
+      "app__api__v3__attempts__full__AttemptItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "simulationId": {
+            "type": "string",
+            "title": "Simulationid"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "createdAt",
+          "simulationId",
+          "infiniteMode",
+          "archived"
+        ],
+        "title": "AttemptItem"
+      },
       "app__api__v3__attempts__full__PersonaItem": {
         "properties": {
           "id": {
@@ -41641,6 +43982,50 @@
         "title": "ScenarioMappingItem",
         "description": "Scenario mapping item with extended fields for nested data."
       },
+      "app__api__v3__cohorts__list__SimulationMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "SimulationMappingItem",
+        "description": "Simulation mapping item."
+      },
       "app__api__v3__cohorts__search__DepartmentMappingItem": {
         "properties": {
           "name": {
@@ -41911,6 +44296,50 @@
         ],
         "title": "ParameterMappingItem",
         "description": "Parameter mapping item."
+      },
+      "app__api__v3__dashboard__bundle__SimulationMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "SimulationMappingItem",
+        "description": "Simulation mapping item."
       },
       "app__api__v3__dashboard__bundle__TrendData": {
         "properties": {
@@ -43019,6 +45448,84 @@
         "title": "ScenarioMappingItem",
         "description": "Scenario mapping item with extended fields for nested data."
       },
+      "app__api__v3__evals__attempt__full__AttemptItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "eval_id",
+          "archived"
+        ],
+        "title": "AttemptItem",
+        "description": "Eval attempt item."
+      },
+      "app__api__v3__evals__attempt__full__EvalItem": {
+        "properties": {
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "eval_agent_id": {
+            "type": "string",
+            "title": "Eval Agent Id"
+          },
+          "rubric_name": {
+            "type": "string",
+            "title": "Rubric Name"
+          },
+          "rubric_description": {
+            "type": "string",
+            "title": "Rubric Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eval_id",
+          "name",
+          "description",
+          "rubric_id",
+          "agent_id",
+          "eval_agent_id",
+          "rubric_name",
+          "rubric_description"
+        ],
+        "title": "EvalItem",
+        "description": "Eval item in attempt response."
+      },
       "app__api__v3__evals__detail__AgentMappingItem": {
         "properties": {
           "name": {
@@ -43487,6 +45994,105 @@
         ],
         "title": "DepartmentMappingItem",
         "description": "Department mapping item."
+      },
+      "app__api__v3__evals__list__EvalItem": {
+        "properties": {
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "rubric_name": {
+            "type": "string",
+            "title": "Rubric Name"
+          },
+          "rubric_description": {
+            "type": "string",
+            "title": "Rubric Description"
+          },
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs"
+          },
+          "completed_runs": {
+            "type": "integer",
+            "title": "Completed Runs"
+          },
+          "pending_runs": {
+            "type": "integer",
+            "title": "Pending Runs"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eval_id",
+          "name",
+          "description",
+          "rubric_id",
+          "agent_id",
+          "rubric_name",
+          "rubric_description",
+          "total_runs",
+          "completed_runs",
+          "pending_runs",
+          "status",
+          "created_at",
+          "updated_at",
+          "department_ids",
+          "can_edit",
+          "can_delete"
+        ],
+        "title": "EvalItem",
+        "description": "Individual eval item in the response."
       },
       "app__api__v3__evals__new__AgentMappingItem": {
         "properties": {
@@ -44487,6 +47093,50 @@
         "title": "AttemptHistoryRow",
         "description": "Attempt history row."
       },
+      "app__api__v3__home__overview__SimulationMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "SimulationMappingItem",
+        "description": "Simulation mapping item."
+      },
       "app__api__v3__home__overview__StandardGroupMappingItem": {
         "properties": {
           "name": {
@@ -44637,6 +47287,50 @@
         ],
         "title": "ScenarioMappingItem",
         "description": "Scenario mapping item with extended fields for nested data."
+      },
+      "app__api__v3__leaderboard__bundle__SimulationMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "SimulationMappingItem",
+        "description": "Simulation mapping item."
       },
       "app__api__v3__logs__bundle__TrendData": {
         "properties": {
@@ -46649,6 +49343,50 @@
         "title": "ScenarioMappingItem",
         "description": "Scenario mapping item with extended fields for nested data."
       },
+      "app__api__v3__practice__overview__SimulationMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "SimulationMappingItem",
+        "description": "Simulation mapping item."
+      },
       "app__api__v3__practice__overview__StandardGroupMappingItem": {
         "properties": {
           "name": {
@@ -47042,6 +49780,44 @@
         "title": "DepartmentMappingItem",
         "description": "Department mapping item."
       },
+      "app__api__v3__reports__bundle__ScenarioMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ScenarioMappingItem",
+        "description": "Scenario mapping item."
+      },
+      "app__api__v3__reports__bundle__SimulationMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "SimulationMappingItem",
+        "description": "Simulation mapping item."
+      },
       "app__api__v3__rubrics__create__StandardGroupItem": {
         "properties": {
           "name": {
@@ -47179,6 +49955,50 @@
         ],
         "title": "DepartmentMappingItem",
         "description": "Department mapping item."
+      },
+      "app__api__v3__rubrics__list__SimulationMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "SimulationMappingItem",
+        "description": "Simulation mapping item."
       },
       "app__api__v3__rubrics__list__StandardGroupMappingItem": {
         "properties": {
@@ -48139,7 +50959,7 @@
           },
           "simulation_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/SimulationMappingItem"
+              "$ref": "#/components/schemas/app__api__v3__scenarios__detail__SimulationMappingItem"
             },
             "type": "object",
             "title": "Simulation Mapping"
@@ -48326,6 +51146,50 @@
         ],
         "title": "ScenarioDetailResponse",
         "description": "Detailed scenario response with all fields and metadata."
+      },
+      "app__api__v3__scenarios__detail__SimulationMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "SimulationMappingItem",
+        "description": "Simulation mapping item."
       },
       "app__api__v3__scenarios__list__DepartmentMappingItem": {
         "properties": {
@@ -48548,6 +51412,50 @@
         ],
         "title": "ScenarioItem",
         "description": "Individual scenario item in the response."
+      },
+      "app__api__v3__scenarios__list__SimulationMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "SimulationMappingItem",
+        "description": "Simulation mapping item."
       },
       "app__api__v3__scenarios__new__AgentMappingItem": {
         "properties": {

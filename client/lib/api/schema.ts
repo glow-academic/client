@@ -1424,6 +1424,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/evals/attempt/full": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Eval Attempt Full
+         * @description Get complete eval attempt data with all runs and status.
+         */
+        post: operations["get_eval_attempt_full_api_v3_evals_attempt_full_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/rubrics/list": {
         parameters: {
             query?: never;
@@ -1698,6 +1718,46 @@ export interface paths {
          * @description Get paginated dashboard history with search, filters, sorting, and pagination.
          */
         post: operations["get_dashboard_history_api_v3_dashboard_history_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/reports/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Reports
+         * @description Export reports data as CSV or ZIP file.
+         */
+        post: operations["export_reports_api_v3_reports_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Reports
+         * @description Get reports bundle with aggregated metrics per profile and entity mappings.
+         */
+        post: operations["get_reports_api_v3_reports_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3781,6 +3841,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/client/evals/enter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Enter Api
+         * @description Client-to-server event: Update test created_at timestamp when entering a test.
+         */
+        post: operations["eval_enter_api_socket_v3_client_evals_enter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/evals/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Join Api
+         * @description Client-to-server event: Join an eval room for real-time updates.
+         */
+        post: operations["eval_join_api_socket_v3_client_evals_join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/evals/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Leave Api
+         * @description Client-to-server event: Leave an eval room.
+         */
+        post: operations["eval_leave_api_socket_v3_client_evals_leave_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/evals/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Start Api
+         * @description Client-to-server event: Start an eval attempt.
+         */
+        post: operations["eval_start_api_socket_v3_client_evals_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/evals/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Stop Api
+         * @description Client-to-server event: Stop an active eval attempt.
+         */
+        post: operations["eval_stop_api_socket_v3_client_evals_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/server/connection_confirmed": {
         parameters: {
             query?: never;
@@ -4921,6 +5081,266 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/server/evals/enter_response": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Enter Response Api
+         * @description Server-to-client event: Successfully updated test created_at timestamp.
+         */
+        post: operations["eval_enter_response_api_socket_v3_server_evals_enter_response_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/enter_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Enter Error Api
+         * @description Server-to-client event: Error occurred while updating test created_at timestamp.
+         */
+        post: operations["eval_enter_error_api_socket_v3_server_evals_enter_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/joined": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Joined Api
+         * @description Server-to-client event: Successfully joined eval room.
+         */
+        post: operations["eval_joined_api_socket_v3_server_evals_joined_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/join_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Join Error Api
+         * @description Server-to-client event: Error occurred while joining eval room.
+         */
+        post: operations["eval_join_error_api_socket_v3_server_evals_join_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/leave_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Leave Error Api
+         * @description Server-to-client event: Error occurred while leaving eval room.
+         */
+        post: operations["eval_leave_error_api_socket_v3_server_evals_leave_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Started Api
+         * @description Server-to-client event: Eval started successfully.
+         */
+        post: operations["eval_started_api_socket_v3_server_evals_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/start_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Start Error Api
+         * @description Server-to-client event: Error occurred while starting eval.
+         */
+        post: operations["eval_start_error_api_socket_v3_server_evals_start_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/process_next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Process Next Api
+         * @description Server-to-server event: Process next pending run in eval attempt.
+         */
+        post: operations["eval_process_next_api_socket_v3_server_evals_process_next_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/run_completed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Run Completed Api
+         * @description Server-to-client event: Single run evaluation completed.
+         */
+        post: operations["eval_run_completed_api_socket_v3_server_evals_run_completed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/completed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Completed Api
+         * @description Server-to-client event: All runs in eval completed.
+         */
+        post: operations["eval_completed_api_socket_v3_server_evals_completed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/process_next_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Process Next Error Api
+         * @description Server-to-client event: Error occurred while processing next run.
+         */
+        post: operations["eval_process_next_error_api_socket_v3_server_evals_process_next_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/stopped": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Stopped Api
+         * @description Server-to-client event: Eval stopped successfully.
+         */
+        post: operations["eval_stopped_api_socket_v3_server_evals_stopped_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/stop_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Stop Error Api
+         * @description Server-to-client event: Error occurred while stopping eval.
+         */
+        post: operations["eval_stop_error_api_socket_v3_server_evals_stop_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -5086,7 +5506,7 @@ export interface components {
          * @description Response containing complete attempt data with all nested structures.
          */
         AttemptFullResponse: {
-            attempt: components["schemas"]["AttemptItem"];
+            attempt: components["schemas"]["app__api__v3__attempts__full__AttemptItem"];
             simulation: components["schemas"]["app__api__v3__attempts__full__SimulationItem"];
             /** Attemptprofiles */
             attemptProfiles: components["schemas"]["AttemptProfileItem"][];
@@ -5176,21 +5596,6 @@ export interface components {
              * @enum {string}
              */
             status: "success" | "warning" | "danger" | "neutral";
-        };
-        /** AttemptItem */
-        AttemptItem: {
-            /** Id */
-            id: string;
-            /** Createdat */
-            createdAt: string;
-            /** Simulationid */
-            simulationId: string;
-            /** Infinitemode */
-            infiniteMode: boolean;
-            /** Archived */
-            archived: boolean;
-            /** Profileid */
-            profileId?: string | null;
         };
         /** AttemptProfileItem */
         AttemptProfileItem: {
@@ -5829,7 +6234,7 @@ export interface components {
             };
             /** Simulation Mapping */
             simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__cohorts__list__SimulationMappingItem"];
             };
             /** Scenario Mapping */
             scenario_mapping: {
@@ -6730,7 +7135,7 @@ export interface components {
             thresholds: components["schemas"]["Thresholds"];
             /** Simulation Mapping */
             simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__dashboard__bundle__SimulationMappingItem"];
             };
             /** Rubric Mapping */
             rubric_mapping: {
@@ -7822,6 +8227,37 @@ export interface components {
             attempt_id: string;
         };
         /**
+         * EvalAttemptFullRequest
+         * @description Request to get eval attempt full details.
+         */
+        EvalAttemptFullRequest: {
+            /** Attemptid */
+            attemptId: string;
+        };
+        /**
+         * EvalAttemptFullResponse
+         * @description Response for eval attempt full endpoint.
+         */
+        EvalAttemptFullResponse: {
+            attempt: components["schemas"]["app__api__v3__evals__attempt__full__AttemptItem"];
+            eval: components["schemas"]["app__api__v3__evals__attempt__full__EvalItem"];
+            /** Runs */
+            runs: components["schemas"]["RunItem"][];
+            status_summary: components["schemas"]["StatusSummary"];
+        };
+        /**
+         * EvalCompletedPayload
+         * @description Response indicating all runs in eval are completed.
+         */
+        EvalCompletedPayload: {
+            /** Eval Id */
+            eval_id: string;
+            /** Attempt Id */
+            attempt_id: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * EvalDetailRequest
          * @description Request to get eval details.
          */
@@ -7830,48 +8266,200 @@ export interface components {
             evalId: string;
         };
         /**
-         * EvalItem
-         * @description Individual eval item in the response.
+         * EvalEnterErrorPayload
+         * @description Response indicating an error occurred while updating test created_at timestamp.
          */
-        EvalItem: {
-            /** Eval Id */
-            eval_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Agent Id */
-            agent_id: string;
-            /** Rubric Name */
-            rubric_name: string;
-            /** Rubric Description */
-            rubric_description: string;
-            /** Total Runs */
-            total_runs: number;
-            /** Completed Runs */
-            completed_runs: number;
-            /** Pending Runs */
-            pending_runs: number;
-            /** Status */
-            status: string;
+        EvalEnterErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * EvalEnterPayload
+         * @description Request to update test created_at timestamp when entering a test.
+         */
+        EvalEnterPayload: {
+            /** Test Id */
+            test_id: string;
             /** Created At */
             created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
+        };
+        /**
+         * EvalEnterResponsePayload
+         * @description Response indicating successfully updated test created_at timestamp.
+         */
+        EvalEnterResponsePayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Test Id */
+            test_id: string;
+        };
+        /**
+         * EvalJoinErrorPayload
+         * @description Response indicating an error occurred while joining eval room.
+         */
+        EvalJoinErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * EvalJoinPayload
+         * @description Request to join an eval room for real-time updates.
+         */
+        EvalJoinPayload: {
+            /** Attempt Id */
+            attempt_id: string;
+        };
+        /**
+         * EvalJoinedPayload
+         * @description Response indicating successfully joined eval room.
+         */
+        EvalJoinedPayload: {
+            /** Attempt Id */
+            attempt_id: string;
+        };
+        /**
+         * EvalLeaveErrorPayload
+         * @description Response indicating an error occurred while leaving eval room.
+         */
+        EvalLeaveErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * EvalLeavePayload
+         * @description Request to leave an eval room.
+         */
+        EvalLeavePayload: {
+            /** Attempt Id */
+            attempt_id: string;
         };
         /**
          * EvalNewRequest
          * @description Request for default eval detail.
          */
         EvalNewRequest: Record<string, never>;
+        /**
+         * EvalProcessNextErrorPayload
+         * @description Response indicating an error occurred while processing next run.
+         */
+        EvalProcessNextErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Eval Id */
+            eval_id: string;
+            /** Run Id */
+            run_id?: string | null;
+        };
+        /**
+         * EvalProcessNextPayload
+         * @description Request to process next pending run in eval attempt.
+         */
+        EvalProcessNextPayload: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Eval Id */
+            eval_id: string;
+            /** Current Run Id */
+            current_run_id: string;
+            /** Eval Agent Id */
+            eval_agent_id: string;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Department Id */
+            department_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
+        /**
+         * EvalRunCompletedPayload
+         * @description Response indicating a single run evaluation completed.
+         */
+        EvalRunCompletedPayload: {
+            /** Eval Id */
+            eval_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Test Id */
+            test_id: string;
+            /** Status */
+            status: string;
+            /** Message */
+            message: string;
+            /** Grade Id */
+            grade_id?: string | null;
+        };
+        /**
+         * EvalStartErrorPayload
+         * @description Response indicating an error occurred while starting eval.
+         */
+        EvalStartErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * EvalStartPayload
+         * @description Request to start an eval attempt.
+         */
+        EvalStartPayload: {
+            /** Eval Id */
+            eval_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
+        /**
+         * EvalStartedPayload
+         * @description Response indicating eval started successfully.
+         */
+        EvalStartedPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Attempt Id */
+            attempt_id: string;
+        };
+        /**
+         * EvalStopErrorPayload
+         * @description Response indicating an error occurred while stopping eval.
+         */
+        EvalStopErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * EvalStopPayload
+         * @description Request to stop an active eval attempt.
+         */
+        EvalStopPayload: {
+            /** Attempt Id */
+            attempt_id: string;
+        };
+        /**
+         * EvalStoppedPayload
+         * @description Response indicating eval was stopped successfully.
+         */
+        EvalStoppedPayload: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
         /**
          * EvalsFilters
          * @description Filters for evals list request.
@@ -7883,7 +8471,7 @@ export interface components {
          */
         EvalsListResponse: {
             /** Evals */
-            evals: components["schemas"]["EvalItem"][];
+            evals: components["schemas"]["app__api__v3__evals__list__EvalItem"][];
             /** Rubric Mapping */
             rubric_mapping: {
                 [key: string]: {
@@ -7932,6 +8520,26 @@ export interface components {
             example: string;
             /** Department Ids */
             department_ids?: string[] | null;
+        };
+        /**
+         * ExportRequest
+         * @description Request to export reports data.
+         */
+        ExportRequest: {
+            filters: components["schemas"]["ReportsExportFilters"];
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
+            /** Metrics */
+            metrics?: string[] | null;
+            /**
+             * Brightspaceformat
+             * @default false
+             */
+            brightspaceFormat: boolean;
         };
         /** FieldConnection */
         FieldConnection: {
@@ -8485,7 +9093,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "ta" | "instructional" | "empty";
+            mode: "member" | "instructional" | "empty";
             /** Hasdata */
             hasData: boolean;
             /** Items */
@@ -8502,7 +9110,7 @@ export interface components {
             };
             /** Simulation Mapping */
             simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__home__overview__SimulationMappingItem"];
             };
         };
         /**
@@ -8771,7 +9379,7 @@ export interface components {
              * @default {}
              */
             simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__leaderboard__bundle__SimulationMappingItem"];
             };
             /**
              * Scenario Mapping
@@ -9689,7 +10297,7 @@ export interface components {
             };
             /** Simulation Mapping */
             simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__practice__overview__SimulationMappingItem"];
             };
             /** Scenario Mapping */
             scenario_mapping: {
@@ -10071,6 +10679,38 @@ export interface components {
             settings: components["schemas"]["SettingsData"];
         };
         /**
+         * ProfileDataEnhanced
+         * @description Enhanced profile data row.
+         */
+        ProfileDataEnhanced: {
+            /** Profileid */
+            profileId: string;
+            /** Firstname */
+            firstName: string;
+            /** Lastname */
+            lastName: string;
+            /**
+             * Emails
+             * @default []
+             */
+            emails: string[];
+            /** Primaryemail */
+            primaryEmail: string | null;
+            /** Role */
+            role: string;
+            /**
+             * Simulationids
+             * @default []
+             */
+            simulationIds: string[];
+            /**
+             * Scenarioids
+             * @default []
+             */
+            scenarioIds: string[];
+            metrics: components["schemas"]["ProfileMetrics"];
+        };
+        /**
          * ProfileDetailRequest
          * @description Request for profile detail.
          */
@@ -10170,6 +10810,22 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+        };
+        /**
+         * ProfileMetrics
+         * @description Profile metrics - each metric is a full MetricResponse object.
+         */
+        ProfileMetrics: {
+            averageScore: components["schemas"]["MetricResponse"];
+            completionPercentage: components["schemas"]["MetricResponse"];
+            firstAttemptPassRate: components["schemas"]["MetricResponse"];
+            highestScore: components["schemas"]["MetricResponse"];
+            messagesPerSession: components["schemas"]["MetricResponse"];
+            personaResponseTimes: components["schemas"]["MetricResponse"];
+            sessionEfficiency: components["schemas"]["MetricResponse"];
+            stagnationRate: components["schemas"]["MetricResponse"];
+            timeSpent: components["schemas"]["MetricResponse"];
+            totalAttempts: components["schemas"]["MetricResponse"];
         };
         /**
          * ProfileNewRequest
@@ -10525,6 +11181,113 @@ export interface components {
             rendered_html: string;
         };
         /**
+         * ReportsBundleFilters
+         * @description Reports bundle filter request schema.
+         */
+        ReportsBundleFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: string[] | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Page */
+            page?: number | null;
+            /** Pagesize */
+            pageSize?: number | null;
+            /** Search */
+            search?: string | null;
+            /** Sortby */
+            sortBy?: string | null;
+            /** Sortorder */
+            sortOrder?: string | null;
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
+        };
+        /**
+         * ReportsBundleResponse
+         * @description Reports bundle response with entity mappings.
+         */
+        ReportsBundleResponse: {
+            /** Data */
+            data: components["schemas"]["ProfileDataEnhanced"][];
+            /** Totalcount */
+            totalCount: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Totalpages */
+            totalPages: number;
+            /**
+             * Profileoptions
+             * @default []
+             */
+            profileOptions: components["schemas"]["FilterOption"][];
+            /**
+             * Simulationoptions
+             * @default []
+             */
+            simulationOptions: components["schemas"]["FilterOption"][];
+            /**
+             * Scenariooptions
+             * @default []
+             */
+            scenarioOptions: components["schemas"]["FilterOption"][];
+            /** Scenario Mapping */
+            scenario_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__reports__bundle__ScenarioMappingItem"];
+            };
+            /** Simulation Mapping */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__reports__bundle__SimulationMappingItem"];
+            };
+        };
+        /**
+         * ReportsExportFilters
+         * @description Reports export filter request schema.
+         */
+        ReportsExportFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Page */
+            page?: number | null;
+            /** Pagesize */
+            pageSize?: number | null;
+            /** Search */
+            search?: string | null;
+            /** Sortby */
+            sortBy?: string | null;
+            /** Sortorder */
+            sortOrder?: string | null;
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
+        };
+        /**
          * ReportsHistoryFilters
          * @description Reports history filter request schema - requires profileId for individual reports.
          */
@@ -10797,7 +11560,7 @@ export interface components {
             };
             /** Simulation Mapping */
             simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__rubrics__list__SimulationMappingItem"];
             };
             /** Simulation Options */
             simulation_options: {
@@ -10825,6 +11588,48 @@ export interface components {
             queued_count: number;
             /** Message */
             message: string;
+        };
+        /**
+         * RunItem
+         * @description Run item in eval attempt.
+         */
+        RunItem: {
+            /** Run Id */
+            run_id: string;
+            /** Status */
+            status: string;
+            /** Test Id */
+            test_id?: string | null;
+            /** Eval Run Completed */
+            eval_run_completed: boolean;
+            /** Eval Run Assigned At */
+            eval_run_assigned_at: string;
+            /** Eval Run Updated At */
+            eval_run_updated_at: string;
+            /** Run Created At */
+            run_created_at: string;
+            /** Model Id */
+            model_id?: string | null;
+            /** Model Name */
+            model_name?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Agent Name */
+            agent_name?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Persona Name */
+            persona_name?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Grade Score */
+            grade_score?: number | null;
+            /** Grade Passed */
+            grade_passed?: boolean | null;
+            /** Grade Created At */
+            grade_created_at?: string | null;
         };
         /**
          * ScenarioAttributeAttemptFact
@@ -11230,7 +12035,7 @@ export interface components {
             };
             /** Simulation Mapping */
             simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__list__SimulationMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -11819,20 +12624,6 @@ export interface components {
             chat_type: string;
         };
         /**
-         * SimulationMappingItem
-         * @description Simulation mapping item.
-         */
-        SimulationMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /**
          * SimulationMessageCancelledPayload
          * @description Response indicating a simulation message was cancelled.
          */
@@ -12309,6 +13100,20 @@ export interface components {
              * @default []
              */
             history: components["schemas"]["RealtimeItem"][];
+        };
+        /**
+         * StatusSummary
+         * @description Status summary for eval attempt.
+         */
+        StatusSummary: {
+            /** Not Started */
+            not_started: number;
+            /** In Progress */
+            in_progress: number;
+            /** Completed */
+            completed: number;
+            /** Total */
+            total: number;
         };
         /**
          * StopEvalRequest
@@ -13740,6 +14545,21 @@ export interface components {
                 [key: string]: string;
             }[] | null;
         };
+        /** AttemptItem */
+        app__api__v3__attempts__full__AttemptItem: {
+            /** Id */
+            id: string;
+            /** Createdat */
+            createdAt: string;
+            /** Simulationid */
+            simulationId: string;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Archived */
+            archived: boolean;
+            /** Profileid */
+            profileId?: string | null;
+        };
         /** PersonaItem */
         app__api__v3__attempts__full__PersonaItem: {
             /** Id */
@@ -13939,6 +14759,20 @@ export interface components {
             document_ids: string[];
         };
         /**
+         * SimulationMappingItem
+         * @description Simulation mapping item.
+         */
+        app__api__v3__cohorts__list__SimulationMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+        };
+        /**
          * DepartmentMappingItem
          * @description Department mapping item.
          */
@@ -14031,6 +14865,20 @@ export interface components {
             document_parameter: boolean;
             /** Persona Parameter */
             persona_parameter: boolean;
+        };
+        /**
+         * SimulationMappingItem
+         * @description Simulation mapping item.
+         */
+        app__api__v3__dashboard__bundle__SimulationMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * TrendData
@@ -14457,6 +15305,42 @@ export interface components {
             document_ids: string[];
         };
         /**
+         * AttemptItem
+         * @description Eval attempt item.
+         */
+        app__api__v3__evals__attempt__full__AttemptItem: {
+            /** Id */
+            id: string;
+            /** Created At */
+            created_at: string;
+            /** Eval Id */
+            eval_id: string;
+            /** Archived */
+            archived: boolean;
+        };
+        /**
+         * EvalItem
+         * @description Eval item in attempt response.
+         */
+        app__api__v3__evals__attempt__full__EvalItem: {
+            /** Eval Id */
+            eval_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Agent Id */
+            agent_id: string;
+            /** Eval Agent Id */
+            eval_agent_id: string;
+            /** Rubric Name */
+            rubric_name: string;
+            /** Rubric Description */
+            rubric_description: string;
+        };
+        /**
          * AgentMappingItem
          * @description Agent mapping item with role information.
          */
@@ -14602,6 +15486,44 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+        };
+        /**
+         * EvalItem
+         * @description Individual eval item in the response.
+         */
+        app__api__v3__evals__list__EvalItem: {
+            /** Eval Id */
+            eval_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Agent Id */
+            agent_id: string;
+            /** Rubric Name */
+            rubric_name: string;
+            /** Rubric Description */
+            rubric_description: string;
+            /** Total Runs */
+            total_runs: number;
+            /** Completed Runs */
+            completed_runs: number;
+            /** Pending Runs */
+            pending_runs: number;
+            /** Status */
+            status: string;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
         };
         /**
          * AgentMappingItem
@@ -14899,6 +15821,20 @@ export interface components {
             practiceScenarioId?: string | null;
         };
         /**
+         * SimulationMappingItem
+         * @description Simulation mapping item.
+         */
+        app__api__v3__home__overview__SimulationMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+        };
+        /**
          * StandardGroupMappingItem
          * @description Standard group mapping item with rubric context.
          */
@@ -14983,6 +15919,20 @@ export interface components {
              * @default []
              */
             document_ids: string[];
+        };
+        /**
+         * SimulationMappingItem
+         * @description Simulation mapping item.
+         */
+        app__api__v3__leaderboard__bundle__SimulationMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * TrendData
@@ -15792,6 +16742,20 @@ export interface components {
             document_ids: string[];
         };
         /**
+         * SimulationMappingItem
+         * @description Simulation mapping item.
+         */
+        app__api__v3__practice__overview__SimulationMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+        };
+        /**
          * StandardGroupMappingItem
          * @description Standard group mapping item with rubric context.
          */
@@ -15936,6 +16900,26 @@ export interface components {
             description: string;
         };
         /**
+         * ScenarioMappingItem
+         * @description Scenario mapping item.
+         */
+        app__api__v3__reports__bundle__ScenarioMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * SimulationMappingItem
+         * @description Simulation mapping item.
+         */
+        app__api__v3__reports__bundle__SimulationMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
          * StandardGroupItem
          * @description Standard group item for create.
          */
@@ -15994,6 +16978,20 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+        };
+        /**
+         * SimulationMappingItem
+         * @description Simulation mapping item.
+         */
+        app__api__v3__rubrics__list__SimulationMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * StandardGroupMappingItem
@@ -16330,7 +17328,7 @@ export interface components {
             };
             /** Simulation Mapping */
             simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__detail__SimulationMappingItem"];
             };
             /** Persona Mapping */
             persona_mapping: {
@@ -16380,6 +17378,20 @@ export interface components {
              * @default false
              */
             randomized: boolean;
+        };
+        /**
+         * SimulationMappingItem
+         * @description Simulation mapping item.
+         */
+        app__api__v3__scenarios__detail__SimulationMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * DepartmentMappingItem
@@ -16462,6 +17474,20 @@ export interface components {
             cohort_ids: string[];
             /** Updated At */
             updated_at: string;
+        };
+        /**
+         * SimulationMappingItem
+         * @description Simulation mapping item.
+         */
+        app__api__v3__scenarios__list__SimulationMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * AgentMappingItem
@@ -20127,6 +21153,42 @@ export interface operations {
             };
         };
     };
+    get_eval_attempt_full_api_v3_evals_attempt_full_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalAttemptFullRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalAttemptFullResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_rubrics_list_api_v3_rubrics_list_post: {
         parameters: {
             query?: never;
@@ -20618,6 +21680,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardHistoryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_reports_api_v3_reports_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reports_api_v3_reports_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportsBundleFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportsBundleResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24373,6 +25507,181 @@ export interface operations {
             };
         };
     };
+    eval_enter_api_socket_v3_client_evals_enter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalEnterPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_join_api_socket_v3_client_evals_join_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalJoinPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_leave_api_socket_v3_client_evals_leave_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalLeavePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_start_api_socket_v3_client_evals_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_stop_api_socket_v3_client_evals_stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalStopPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     connection_confirmed_api_socket_v3_server_connection_confirmed_post: {
         parameters: {
             query?: never;
@@ -26343,6 +27652,461 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["VideoGenerationErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_enter_response_api_socket_v3_server_evals_enter_response_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalEnterResponsePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_enter_error_api_socket_v3_server_evals_enter_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalEnterErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_joined_api_socket_v3_server_evals_joined_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalJoinedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_join_error_api_socket_v3_server_evals_join_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalJoinErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_leave_error_api_socket_v3_server_evals_leave_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalLeaveErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_started_api_socket_v3_server_evals_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalStartedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_start_error_api_socket_v3_server_evals_start_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalStartErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_process_next_api_socket_v3_server_evals_process_next_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalProcessNextPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_run_completed_api_socket_v3_server_evals_run_completed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunCompletedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_completed_api_socket_v3_server_evals_completed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalCompletedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_process_next_error_api_socket_v3_server_evals_process_next_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalProcessNextErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_stopped_api_socket_v3_server_evals_stopped_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalStoppedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_stop_error_api_socket_v3_server_evals_stop_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalStopErrorPayload"];
             };
         };
         responses: {

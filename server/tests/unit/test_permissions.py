@@ -19,8 +19,8 @@ class TestGet_Available_Subsections_For_Role:
         assert "practice" in result
 
     def test_get_available_subsections_for_role_ta(self) -> None:
-        """Test get_available_subsections_for_role with ta role."""
-        result = get_available_subsections_for_role("ta")
+        """Test get_available_subsections_for_role with member role."""
+        result = get_available_subsections_for_role("member")
         assert isinstance(result, list)
         assert "home" in result
         assert "practice" in result
@@ -55,8 +55,8 @@ class TestGet_Redirect_Path_For_Role:
         assert result == "/home"
 
     def test_get_redirect_path_for_role_ta(self) -> None:
-        """Test get_redirect_path_for_role with ta role."""
-        result = get_redirect_path_for_role("ta")
+        """Test get_redirect_path_for_role with member role."""
+        result = get_redirect_path_for_role("member")
         assert result == "/home"
 
     def test_get_redirect_path_for_role_instructional(self) -> None:

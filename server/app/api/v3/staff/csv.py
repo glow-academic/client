@@ -165,9 +165,9 @@ async def process_csv(
                     )
                 )
 
-            # Default role to 'ta' if not provided
+            # Default role to 'member' if not provided
             if not role:
-                role = "ta"
+                role = "member"
 
             rows.append(
                 ProcessedCSVRow(

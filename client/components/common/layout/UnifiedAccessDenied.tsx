@@ -46,7 +46,8 @@ interface UnifiedAccessDeniedProps {
     | "parameter"
     | "key"
     | "prompt"
-    | "video";
+    | "video"
+    | "eval";
   fullWidth?: boolean; // If true, use full-width container (for not-logged-in state)
 }
 

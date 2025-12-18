@@ -1,0 +1,74 @@
+"""Handler for eval_leave WebSocket event."""
+
+from typing import Any
+
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
+from app.main import sio
+from app.utils.logging.db_logger import get_logger
+
+logger = get_logger(__name__)
+
+client_router = APIRouter()
+server_router = APIRouter()
+
+
+# Pydantic models for server-to-client events
+class EvalLeaveErrorPayload(BaseModel):
+    """Response indicating an error occurred while leaving eval room."""
+
+    success: bool
+    message: str
+
+
+# Pydantic model for client-to-server event
+class EvalLeavePayload(BaseModel):
+    """Request to leave an eval room."""
+
+    attempt_id: str
+
+
+# Emit helper functions
+async def eval_leave_error(payload: EvalLeaveErrorPayload, room: str) -> None:
+    await sio.emit("evals_leave_error", payload.model_dump(), room=room)
+
+
+async def _eval_leave_impl(sid: str, data: EvalLeavePayload) -> None:
+    """Leave a specific eval room"""
+    attempt_id = data.attempt_id
+
+    if attempt_id:
+        room_name = f"eval_{attempt_id}"
+        await sio.leave_room(sid, room_name)
+        logger.info(f"Client {sid} left eval attempt {attempt_id}")
+
+
+@sio.event  # type: ignore
+async def eval_leave(sid: str, data: dict[str, Any]) -> None:
+    """Wrapper that validates payload before calling actual handler"""
+    try:
+        validated = EvalLeavePayload(**data)
+        await _eval_leave_impl(sid, validated)
+    except ValidationError as e:
+        logger.error(f"Validation error in eval_leave for {sid}: {e}")
+        await eval_leave_error(
+            EvalLeaveErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
+            room=sid,
+        )
+
+
+# FastAPI endpoint for OpenAPI documentation
+@client_router.post("/leave", response_model=dict[str, bool])
+async def eval_leave_api(request: EvalLeavePayload) -> dict[str, bool]:
+    """Client-to-server event: Leave an eval room."""
+    return {"success": True}
+
+
+@server_router.post("/leave_error", response_model=dict[str, bool])
+async def eval_leave_error_api(request: EvalLeaveErrorPayload) -> dict[str, bool]:
+    """Server-to-client event: Error occurred while leaving eval room."""
+    return {"success": True}
+
