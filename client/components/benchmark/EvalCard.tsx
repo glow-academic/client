@@ -34,6 +34,7 @@ import {
   Play,
   Table,
   User,
+  MessageSquare,
 } from "lucide-react";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
@@ -48,6 +49,7 @@ export interface EvalCardProps {
   pendingRuns: number;
   rubricName: string;
   onStartEval: (evalId: string) => void;
+  onStartConversationMode?: (evalId: string) => void;
   loadingEval: string | null;
   effectiveProfile: ProfileItem;
   // Rubric data for dialog
@@ -72,6 +74,7 @@ export default function EvalCard({
   pendingRuns,
   rubricName,
   onStartEval,
+  onStartConversationMode,
   loadingEval,
   effectiveProfile,
   standard_groups,
@@ -229,24 +232,45 @@ export default function EvalCard({
               </TooltipContent>
             </Tooltip>
           ) : (
-            <Button
-              onClick={() => onStartEval(evalId)}
-              disabled={isDisabled}
-              className="w-full font-medium text-sm hover:shadow-lg transition-all duration-300"
-              variant="default"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Starting...
-                </>
-              ) : (
-                <>
-                  <Play className="h-4 w-4 mr-2" />
-                  Start Eval
-                </>
+            <div className="flex items-center gap-2 w-full">
+              <Button
+                onClick={() => onStartEval(evalId)}
+                disabled={isDisabled}
+                className="flex-1 font-medium text-sm hover:shadow-lg transition-all duration-300"
+                variant="default"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Starting...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Start Eval
+                  </>
+                )}
+              </Button>
+              {onStartConversationMode && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => onStartConversationMode(evalId)}
+                      disabled={isDisabled}
+                      variant="default"
+                      size="icon"
+                      className="flex-shrink-0 hover:scale-105 transition-all duration-300"
+                      data-testid={`start-conversation-${evalId}`}
+                    >
+                      <MessageSquare className="h-4 w-4 text-white" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Conversation Mode</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
-            </Button>
+            </div>
           )}
         </CardFooter>
       </Card>

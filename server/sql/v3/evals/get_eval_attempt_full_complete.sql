@@ -14,9 +14,30 @@ attempt_data AS (
         ea.id as attempt_id,
         ea.created_at as attempt_created_at,
         ea.eval_id,
-        ea.archived
+        ea.archived,
+        ea.conversation_mode,
+        ea.conversation_agent_id,
+        ea.conversation_max_turns
     FROM eval_attempts ea
     WHERE ea.id = $1::uuid
+),
+-- Get conversation agent name
+conversation_agent_info AS (
+    SELECT 
+        a.id::text as agent_id,
+        a.name as agent_name
+    FROM attempt_data ad
+    LEFT JOIN agents a ON a.id = ad.conversation_agent_id
+),
+-- Get system prompt from eval's agent_id (default active prompt)
+agent_system_prompt AS (
+    SELECT 
+        COALESCE(pr.system_prompt, '') as system_prompt
+    FROM attempt_data ad
+    JOIN evals e ON e.id = ad.eval_id
+    LEFT JOIN agent_prompts ap ON ap.agent_id = e.agent_id AND ap.active = true
+    LEFT JOIN prompts pr ON pr.id = ap.prompt_id
+    LIMIT 1
 ),
 eval_info AS (
     SELECT 
@@ -26,6 +47,7 @@ eval_info AS (
         e.rubric_id::text,
         e.agent_id::text,
         e.eval_agent_id::text,
+        e.dynamic,
         r.name as rubric_name,
         r.description as rubric_description
     FROM attempt_data ad
@@ -210,7 +232,10 @@ SELECT
         'id', ad.attempt_id::text,
         'created_at', ad.attempt_created_at,
         'eval_id', ad.eval_id::text,
-        'archived', ad.archived
+        'archived', ad.archived,
+        'conversation_mode', ad.conversation_mode,
+        'conversation_agent_id', ad.conversation_agent_id::text,
+        'conversation_max_turns', ad.conversation_max_turns
     ) as attempt,
     jsonb_build_object(
         'eval_id', ei.eval_id::text,
@@ -219,8 +244,11 @@ SELECT
         'rubric_id', ei.rubric_id,
         'agent_id', ei.agent_id,
         'eval_agent_id', ei.eval_agent_id,
+        'dynamic', ei.dynamic,
         'rubric_name', ei.rubric_name,
-        'rubric_description', ei.rubric_description
+        'rubric_description', ei.rubric_description,
+        'system_prompt', COALESCE(asp.system_prompt, ''),
+        'conversation_agent_name', cai.agent_name
     ) as eval,
     rj.runs,
     jsonb_build_object(
@@ -235,4 +263,6 @@ CROSS JOIN eval_info ei
 CROSS JOIN runs_json rj
 CROSS JOIN status_summary ss
 CROSS JOIN actor_profile ap
+CROSS JOIN agent_system_prompt asp
+LEFT JOIN conversation_agent_info cai ON cai.agent_id = ad.conversation_agent_id::text
 

@@ -5840,6 +5840,91 @@
         ]
       }
     },
+    "/api/v3/evals/attempt/update": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals",
+          "evals",
+          "attempts"
+        ],
+        "summary": "Update Eval Attempt",
+        "description": "Update eval attempt conversation settings.",
+        "operationId": "update_eval_attempt_api_v3_evals_attempt_update_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEvalAttemptRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateEvalAttemptResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals",
+          "evals",
+          "attempts"
+        ]
+      }
+    },
     "/api/v3/evals/attempts/list": {
       "post": {
         "tags": [
@@ -28086,6 +28171,33 @@
               }
             ],
             "title": "Profile Id"
+          },
+          "conversation_mode": {
+            "type": "boolean",
+            "title": "Conversation Mode",
+            "default": false
+          },
+          "conversation_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Agent Id"
+          },
+          "conversation_max_turns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Max Turns"
           }
         },
         "type": "object",
@@ -42393,6 +42505,77 @@
         "title": "UpdateDocumentResponse",
         "description": "Response for updating a document."
       },
+      "UpdateEvalAttemptRequest": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "conversation_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Mode"
+          },
+          "conversation_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Agent Id"
+          },
+          "conversation_max_turns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Max Turns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId"
+        ],
+        "title": "UpdateEvalAttemptRequest",
+        "description": "Request to update an eval attempt."
+      },
+      "UpdateEvalAttemptResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "attemptId",
+          "message"
+        ],
+        "title": "UpdateEvalAttemptResponse",
+        "description": "Response from update eval attempt."
+      },
       "UpdateEvalRequest": {
         "properties": {
           "evalId": {
@@ -47576,6 +47759,33 @@
           "archived": {
             "type": "boolean",
             "title": "Archived"
+          },
+          "conversation_mode": {
+            "type": "boolean",
+            "title": "Conversation Mode",
+            "default": false
+          },
+          "conversation_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Agent Id"
+          },
+          "conversation_max_turns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Max Turns"
           }
         },
         "type": "object",
@@ -47614,6 +47824,11 @@
             "type": "string",
             "title": "Eval Agent Id"
           },
+          "dynamic": {
+            "type": "boolean",
+            "title": "Dynamic",
+            "default": false
+          },
           "rubric_name": {
             "type": "string",
             "title": "Rubric Name"
@@ -47621,6 +47836,22 @@
           "rubric_description": {
             "type": "string",
             "title": "Rubric Description"
+          },
+          "system_prompt": {
+            "type": "string",
+            "title": "System Prompt",
+            "default": ""
+          },
+          "conversation_agent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Agent Name"
           }
         },
         "type": "object",

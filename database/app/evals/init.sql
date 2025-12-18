@@ -60,11 +60,15 @@ CREATE TABLE eval_attempts (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   eval_id    UUID        NOT NULL REFERENCES evals(id) ON DELETE CASCADE,
-  archived   BOOLEAN    NOT NULL DEFAULT FALSE
+  archived   BOOLEAN    NOT NULL DEFAULT FALSE,
+  conversation_mode BOOLEAN NOT NULL DEFAULT FALSE,
+  conversation_agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+  conversation_max_turns INTEGER CHECK (conversation_max_turns > 0)
 );
 
 CREATE INDEX ON eval_attempts (eval_id);
 CREATE INDEX ON eval_attempts (archived);
+CREATE INDEX ON eval_attempts (conversation_mode);
 
 CREATE TABLE tests (
   id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),

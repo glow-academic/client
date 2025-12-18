@@ -17,27 +17,80 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import GenericPicker from "@/components/common/forms/GenericPicker";
 import { useProfile } from "@/contexts/profile-context";
 import type { OutputOf } from "@/lib/api/types";
-import { AlertCircle, CheckCircle2, Clock, Play, Square, PlaySquare } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Play, Square, PlaySquare, Check } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type {
+  AgentsListOut,
+  UpdateEvalAttemptIn,
+  UpdateEvalAttemptOut,
+} from "@/app/(main)/benchmark/a/[attemptId]/page";
 
 type EvalAttemptFullOut = OutputOf<"/api/v3/evals/attempt/full", "post">;
 
 export interface EvalAttemptStatusProps {
   attemptId: string;
   attemptData: EvalAttemptFullOut;
+  agentsList: AgentsListOut;
+  updateEvalAttemptSettings: (input: UpdateEvalAttemptIn) => Promise<UpdateEvalAttemptOut>;
 }
 
 export default function EvalAttemptStatus({
   attemptId,
   attemptData,
+  agentsList,
+  updateEvalAttemptSettings,
 }: EvalAttemptStatusProps) {
   const { socket, isConnected, effectiveProfile, activeProfile } = useProfile();
   const [runs, setRuns] = useState(attemptData.runs || []);
   const [startingRunIds, setStartingRunIds] = useState<Set<string>>(new Set());
   const [stoppingRunIds, setStoppingRunIds] = useState<Set<string>>(new Set());
+  
+  // Conversation settings state
+  const attempt = attemptData.attempt;
+  const evalInfo = attemptData.eval;
+  const [conversationMode, setConversationMode] = useState(attempt.conversation_mode || false);
+  const [conversationAgentId, setConversationAgentId] = useState<string | null>(
+    attempt.conversation_agent_id || null
+  );
+  const [conversationMaxTurns, setConversationMaxTurns] = useState<number | null>(
+    attempt.conversation_max_turns || null
+  );
+  const [systemPrompt, setSystemPrompt] = useState(evalInfo.system_prompt || "");
+  const [applySystemPromptToAll, setApplySystemPromptToAll] = useState(false);
+  const [applyConversationSettingsToAll, setApplyConversationSettingsToAll] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Build agent mapping for picker
+  const agentMapping = useMemo(() => {
+    const mapping: Record<string, { id: string; name: string; description?: string }> = {};
+    agentsList.agents.forEach((agent) => {
+      mapping[agent.agent_id] = {
+        id: agent.agent_id,
+        name: agent.name,
+        description: agent.description || undefined,
+      };
+    });
+    return mapping;
+  }, [agentsList.agents]);
+  
+  const validAgentIds = useMemo(
+    () => agentsList.agents.map((a) => a.agent_id).filter(Boolean),
+    [agentsList.agents]
+  );
 
   // Join eval room on mount for real-time updates
   useEffect(() => {
@@ -306,12 +359,48 @@ export default function EvalAttemptStatus({
     }
   };
 
-  const evalInfo = attemptData.eval;
   const statusSummary = attemptData.status_summary;
   const notStartedRuns = useMemo(
     () => runs.filter((run) => run.status === "not_started"),
     [runs]
   );
+
+  // Handle updating eval attempt settings
+  const handleUpdateSettings = useCallback(async () => {
+    if (isUpdating) return;
+    
+    setIsUpdating(true);
+    try {
+      await updateEvalAttemptSettings({
+        body: {
+          attemptId,
+          conversation_mode: conversationMode,
+          conversation_agent_id: conversationAgentId || undefined,
+          conversation_max_turns: conversationMaxTurns || undefined,
+        },
+      });
+      toast.success("Settings updated successfully");
+    } catch (error) {
+      toast.error("Failed to update settings");
+      console.error(error);
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [
+    isUpdating,
+    attemptId,
+    conversationMode,
+    conversationAgentId,
+    conversationMaxTurns,
+    updateEvalAttemptSettings,
+  ]);
+
+  // Update conversation settings when they change (if apply to all is checked)
+  useEffect(() => {
+    if (applyConversationSettingsToAll && (conversationAgentId || conversationMaxTurns)) {
+      handleUpdateSettings();
+    }
+  }, [applyConversationSettingsToAll, conversationAgentId, conversationMaxTurns, handleUpdateSettings]);
 
   return (
     <div className="space-y-6">
@@ -351,7 +440,147 @@ export default function EvalAttemptStatus({
                 {statusSummary.not_started}
               </span>
             </div>
+            {conversationMode && (
+              <div>
+                <span className="text-muted-foreground">Conversation Mode: </span>
+                <Badge variant="secondary">Enabled</Badge>
+              </div>
+            )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Settings Accordion */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Settings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Accordion type="multiple" className="w-full">
+            {/* System Prompt Accordion */}
+            <AccordionItem value="system-prompt">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <span>System Prompt</span>
+                  {applySystemPromptToAll && (
+                    <Check className="h-4 w-4 text-green-600" />
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="system-prompt">Agent System Prompt</Label>
+                    <Textarea
+                      id="system-prompt"
+                      value={systemPrompt}
+                      onChange={(e) => setSystemPrompt(e.target.value)}
+                      disabled={!evalInfo.dynamic || isUpdating}
+                      className="min-h-[200px] font-mono text-sm"
+                      placeholder="System prompt for the agent being evaluated..."
+                    />
+                    {!evalInfo.dynamic && (
+                      <p className="text-sm text-muted-foreground">
+                        System prompt editing is only available when eval.dynamic is true.
+                      </p>
+                    )}
+                  </div>
+                  {evalInfo.dynamic && (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="apply-system-prompt-all"
+                        checked={applySystemPromptToAll}
+                        onCheckedChange={(checked) =>
+                          setApplySystemPromptToAll(checked === true)
+                        }
+                      />
+                      <Label
+                        htmlFor="apply-system-prompt-all"
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        Apply to all runs
+                      </Label>
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Conversation Settings Accordion */}
+            {conversationMode && (
+              <AccordionItem value="conversation-settings">
+                <AccordionTrigger>
+                  <div className="flex items-center gap-2">
+                    <span>Conversation Settings</span>
+                    {applyConversationSettingsToAll && (
+                      <Check className="h-4 w-4 text-green-600" />
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="conversation-agent">Conversation Agent</Label>
+                      <GenericPicker
+                        items={agentMapping}
+                        itemIds={validAgentIds}
+                        selectedIds={conversationAgentId ? [conversationAgentId] : []}
+                        onSelect={(ids) => setConversationAgentId(ids[0] || null)}
+                        getId={(item) => (item as { id: string }).id}
+                        getLabel={(item) => (item as { name: string }).name}
+                        getSearchText={(item) =>
+                          `${(item as { name: string }).name} ${(item as { description?: string }).description || ""}`
+                        }
+                        placeholder="Select conversation agent..."
+                        disabled={isUpdating}
+                        multiSelect={false}
+                        hideSelectedChips={true}
+                        buttonClassName="w-full"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="max-turns">Max Turns</Label>
+                      <Input
+                        id="max-turns"
+                        type="number"
+                        min="1"
+                        value={conversationMaxTurns || ""}
+                        onChange={(e) =>
+                          setConversationMaxTurns(
+                            e.target.value ? parseInt(e.target.value, 10) : null
+                          )
+                        }
+                        disabled={isUpdating}
+                        placeholder="Enter max conversation turns..."
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="apply-conversation-all"
+                        checked={applyConversationSettingsToAll}
+                        onCheckedChange={(checked) =>
+                          setApplyConversationSettingsToAll(checked === true)
+                        }
+                      />
+                      <Label
+                        htmlFor="apply-conversation-all"
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        Apply to all runs
+                      </Label>
+                    </div>
+                    <Button
+                      onClick={handleUpdateSettings}
+                      disabled={isUpdating}
+                      size="sm"
+                    >
+                      {isUpdating ? "Updating..." : "Save Settings"}
+                    </Button>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+          </Accordion>
         </CardContent>
       </Card>
 

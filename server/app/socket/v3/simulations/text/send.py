@@ -1517,11 +1517,38 @@ Tool Usage Instructions:
                                                         "message_so_far": "",
                                                         "persona_so_far": None,
                                                         "db_message_id": None,
+                                                        "db_tool_call_id": None,  # Database tool call ID
                                                         "last_processed_index": 0,
                                                         "in_message": False,
                                                         "parent_message_id": parent_message_id_for_branching,
                                                         "completed": False,
                                                     }
+                                                    
+                                                    # Create tool call in database
+                                                    try:
+                                                        sql_create_tool_call = load_sql(
+                                                            "sql/v3/tool_calls/create_tool_call.sql"
+                                                        )
+                                                        tool_call_row = await conn.fetchrow(
+                                                            sql_create_tool_call,
+                                                            call_id or real_item_id,
+                                                            tool_name,
+                                                        )
+                                                        if tool_call_row:
+                                                            tool_calls_dict[chat_id_str][real_item_id]["db_tool_call_id"] = tool_call_row["id"]
+                                                            # Link tool call to run
+                                                            sql_link_tool_call = load_sql(
+                                                                "sql/v3/tool_calls/link_tool_call_to_run.sql"
+                                                            )
+                                                            await conn.execute(
+                                                                sql_link_tool_call,
+                                                                str(tool_call_row["id"]),
+                                                                str(model_run_id),
+                                                            )
+                                                    except Exception as e:
+                                                        logger.warning(
+                                                            f"Failed to create tool call in database: {e}"
+                                                        )
                                             else:
                                                 logger.warning(
                                                     f"output_item.added: missing tool_name: call_id={call_id}, item_id={fake_item_id}"
@@ -1577,10 +1604,12 @@ Tool Usage Instructions:
                                         tool_calls_dict[chat_id_str][tool_call_id] = {
                                             "name": None,  # Will be set when we get tool name from output_item.added
                                             "response_id": str(tool_call_id),
+                                            "call_id": call_id,  # Store call_id if available
                                             "arguments_raw": "",
                                             "message_so_far": "",
                                             "persona_so_far": None,
                                             "db_message_id": None,
+                                            "db_tool_call_id": None,  # Database tool call ID
                                             "last_processed_index": 0,
                                             "in_message": False,
                                             "parent_message_id": parent_message_id_for_branching,
@@ -1607,6 +1636,22 @@ Tool Usage Instructions:
                                     prev_raw = tool_call_state["arguments_raw"]
                                     tool_call_state["arguments_raw"] += arguments_delta
                                     new_raw = tool_call_state["arguments_raw"]
+                                    
+                                    # Update tool call arguments in database
+                                    if tool_call_state.get("db_tool_call_id"):
+                                        try:
+                                            sql_update_args = load_sql(
+                                                "sql/v3/tool_calls/update_tool_call_arguments.sql"
+                                            )
+                                            await conn.execute(
+                                                sql_update_args,
+                                                str(tool_call_state["db_tool_call_id"]),
+                                                new_raw,
+                                            )
+                                        except Exception as e:
+                                            logger.warning(
+                                                f"Failed to update tool call arguments in database: {e}"
+                                            )
 
                                     # Extract persona if available
                                     if not tool_call_state["persona_so_far"]:
@@ -1812,6 +1857,22 @@ Tool Usage Instructions:
                                                 continue
 
                                             tool_call_state["completed"] = True
+
+                                            # Finalize tool call in database
+                                            if tool_call_state.get("db_tool_call_id"):
+                                                try:
+                                                    sql_finalize = load_sql(
+                                                        "sql/v3/tool_calls/finalize_tool_call.sql"
+                                                    )
+                                                    await conn.execute(
+                                                        sql_finalize,
+                                                        str(tool_call_state["db_tool_call_id"]),
+                                                        tool_call_state["arguments_raw"],
+                                                    )
+                                                except Exception as e:
+                                                    logger.warning(
+                                                        f"Failed to finalize tool call in database: {e}"
+                                                    )
 
                                             # Parse final JSON arguments and complete
                                             try:
@@ -2025,6 +2086,22 @@ Tool Usage Instructions:
                                                 continue
 
                                             tool_call_state["completed"] = True
+
+                                            # Finalize tool call in database
+                                            if tool_call_state.get("db_tool_call_id"):
+                                                try:
+                                                    sql_finalize = load_sql(
+                                                        "sql/v3/tool_calls/finalize_tool_call.sql"
+                                                    )
+                                                    await conn.execute(
+                                                        sql_finalize,
+                                                        str(tool_call_state["db_tool_call_id"]),
+                                                        tool_call_state["arguments_raw"],
+                                                    )
+                                                except Exception as e:
+                                                    logger.warning(
+                                                        f"Failed to finalize tool call in database: {e}"
+                                                    )
 
                                             # Parse final JSON arguments and complete
                                             try:

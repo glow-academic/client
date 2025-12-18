@@ -1444,6 +1444,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/evals/attempt/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Eval Attempt
+         * @description Update eval attempt conversation settings.
+         */
+        post: operations["update_eval_attempt_api_v3_evals_attempt_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/evals/attempts/list": {
         parameters: {
             query?: never;
@@ -8994,6 +9014,15 @@ export interface components {
             eval_id: string;
             /** Profile Id */
             profile_id?: string | null;
+            /**
+             * Conversation Mode
+             * @default false
+             */
+            conversation_mode: boolean;
+            /** Conversation Agent Id */
+            conversation_agent_id?: string | null;
+            /** Conversation Max Turns */
+            conversation_max_turns?: number | null;
         };
         /**
          * EvalStartedPayload
@@ -14271,6 +14300,32 @@ export interface components {
             message: string;
         };
         /**
+         * UpdateEvalAttemptRequest
+         * @description Request to update an eval attempt.
+         */
+        UpdateEvalAttemptRequest: {
+            /** Attemptid */
+            attemptId: string;
+            /** Conversation Mode */
+            conversation_mode?: boolean | null;
+            /** Conversation Agent Id */
+            conversation_agent_id?: string | null;
+            /** Conversation Max Turns */
+            conversation_max_turns?: number | null;
+        };
+        /**
+         * UpdateEvalAttemptResponse
+         * @description Response from update eval attempt.
+         */
+        UpdateEvalAttemptResponse: {
+            /** Success */
+            success: boolean;
+            /** Attemptid */
+            attemptId: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * UpdateEvalRequest
          * @description Request to update an eval.
          */
@@ -16109,6 +16164,15 @@ export interface components {
             eval_id: string;
             /** Archived */
             archived: boolean;
+            /**
+             * Conversation Mode
+             * @default false
+             */
+            conversation_mode: boolean;
+            /** Conversation Agent Id */
+            conversation_agent_id?: string | null;
+            /** Conversation Max Turns */
+            conversation_max_turns?: number | null;
         };
         /**
          * EvalItem
@@ -16127,10 +16191,22 @@ export interface components {
             agent_id: string;
             /** Eval Agent Id */
             eval_agent_id: string;
+            /**
+             * Dynamic
+             * @default false
+             */
+            dynamic: boolean;
             /** Rubric Name */
             rubric_name: string;
             /** Rubric Description */
             rubric_description: string;
+            /**
+             * System Prompt
+             * @default
+             */
+            system_prompt: string;
+            /** Conversation Agent Name */
+            conversation_agent_name?: string | null;
         };
         /**
          * AgentMappingItem
@@ -21986,6 +22062,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvalAttemptFullResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_eval_attempt_api_v3_evals_attempt_update_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEvalAttemptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateEvalAttemptResponse"];
                 };
             };
             /** @description Validation Error */

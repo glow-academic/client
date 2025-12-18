@@ -212,6 +212,7 @@ async def _simulation_voice_assistant_delta_impl(
                         "message_so_far": "",
                         "persona_so_far": None,
                         "db_message_id": None,
+                        "db_tool_call_id": None,  # Database tool call ID
                         "last_processed_index": 0,
                         "in_message": False,
                         "parent_message_id": parent_message_id,
@@ -219,6 +220,33 @@ async def _simulation_voice_assistant_delta_impl(
                         "personas": personas,  # Cache personas
                         "completed": False,
                     }
+                    
+                    # Create tool call in database
+                    if run_id:
+                        try:
+                            sql_create_tool_call = load_sql(
+                                "sql/v3/tool_calls/create_tool_call.sql"
+                            )
+                            tool_call_row = await conn.fetchrow(
+                                sql_create_tool_call,
+                                call_id,
+                                "speak",
+                            )
+                            if tool_call_row:
+                                tool_calls_dict[chat_id_str][call_id]["db_tool_call_id"] = tool_call_row["id"]
+                                # Link tool call to run
+                                sql_link_tool_call = load_sql(
+                                    "sql/v3/tool_calls/link_tool_call_to_run.sql"
+                                )
+                                await conn.execute(
+                                    sql_link_tool_call,
+                                    str(tool_call_row["id"]),
+                                    run_id,
+                                )
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to create tool call in database: {e}"
+                            )
 
                 tool_call_state = tool_calls_dict[chat_id_str][call_id]
 
@@ -230,6 +258,22 @@ async def _simulation_voice_assistant_delta_impl(
                 prev_raw = tool_call_state["arguments_raw"]
                 tool_call_state["arguments_raw"] += delta
                 new_raw = tool_call_state["arguments_raw"]
+                
+                # Update tool call arguments in database
+                if tool_call_state.get("db_tool_call_id"):
+                    try:
+                        sql_update_args = load_sql(
+                            "sql/v3/tool_calls/update_tool_call_arguments.sql"
+                        )
+                        await conn.execute(
+                            sql_update_args,
+                            str(tool_call_state["db_tool_call_id"]),
+                            new_raw,
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to update tool call arguments in database: {e}"
+                        )
 
                 # Extract persona if available
                 if not tool_call_state["persona_so_far"]:

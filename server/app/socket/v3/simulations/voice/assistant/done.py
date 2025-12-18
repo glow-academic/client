@@ -167,6 +167,22 @@ async def _simulation_voice_assistant_done_impl(
                 # Mark as completed FIRST to prevent late deltas from interfering
                 tool_call_state["completed"] = True
 
+                # Finalize tool call in database
+                if tool_call_state.get("db_tool_call_id"):
+                    try:
+                        sql_finalize = load_sql(
+                            "sql/v3/tool_calls/finalize_tool_call.sql"
+                        )
+                        await conn.execute(
+                            sql_finalize,
+                            str(tool_call_state["db_tool_call_id"]),
+                            data.arguments,  # Final complete JSON string
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to finalize tool call in database: {e}"
+                        )
+
                 # Parse final arguments to extract persona and message
                 try:
                     final_args = json.loads(data.arguments)

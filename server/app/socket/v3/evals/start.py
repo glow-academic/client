@@ -40,6 +40,9 @@ class EvalStartPayload(BaseModel):
 
     eval_id: str
     profile_id: str | None = None
+    conversation_mode: bool = False
+    conversation_agent_id: str | None = None
+    conversation_max_turns: int | None = None
 
 
 # Emit helper functions
@@ -92,7 +95,13 @@ async def _eval_start_impl(sid: str, data: EvalStartPayload) -> None:
         async with pool.acquire() as conn:
             # Create eval_attempt and get eval data + pending runs
             sql = load_sql("sql/v3/evals/start_eval_attempt_complete.sql")
-            row = await conn.fetchrow(sql, eval_id)
+            row = await conn.fetchrow(
+                sql,
+                eval_id,
+                data.conversation_mode,
+                data.conversation_agent_id if data.conversation_agent_id else None,
+                data.conversation_max_turns,
+            )
 
             if not row:
                 await eval_start_error(

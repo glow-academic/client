@@ -54,6 +54,9 @@ class AttemptItem(BaseModel):
     created_at: str
     eval_id: str
     archived: bool
+    conversation_mode: bool = False
+    conversation_agent_id: str | None = None
+    conversation_max_turns: int | None = None
 
 
 class EvalItem(BaseModel):
@@ -65,8 +68,11 @@ class EvalItem(BaseModel):
     rubric_id: str
     agent_id: str
     eval_agent_id: str
+    dynamic: bool = False
     rubric_name: str
     rubric_description: str
+    system_prompt: str = ""
+    conversation_agent_name: str | None = None
 
 
 class StatusSummary(BaseModel):
@@ -155,6 +161,19 @@ async def get_eval_attempt_full(
                 return json.loads(data)
             return data
 
+        def safe_int_convert(value: Any) -> int | None:  # noqa: ANN401
+            """Safely convert value to int, returning None if conversion fails."""
+            if value is None:
+                return None
+            if isinstance(value, int):
+                return value
+            if isinstance(value, (str, float)):
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return None
+            return None
+
         attempt_data = parse_jsonb(result.get("attempt"))
         eval_data = parse_jsonb(result.get("eval"))
         runs_data = parse_jsonb(result.get("runs"))
@@ -166,11 +185,25 @@ async def get_eval_attempt_full(
             )
 
         # Build response
+        conversation_max_turns_value = attempt_data.get("conversation_max_turns")
+        conversation_max_turns_int: int | None = None
+        if conversation_max_turns_value is not None:
+            if isinstance(conversation_max_turns_value, int):
+                conversation_max_turns_int = conversation_max_turns_value
+            elif isinstance(conversation_max_turns_value, str):
+                try:
+                    conversation_max_turns_int = int(conversation_max_turns_value)
+                except (ValueError, TypeError):
+                    conversation_max_turns_int = None
+        
         attempt_item = AttemptItem(
             id=str(attempt_data.get("id", "")),
             created_at=str(attempt_data.get("created_at", "")),
             eval_id=str(attempt_data.get("eval_id", "")),
             archived=bool(attempt_data.get("archived", False)),
+            conversation_mode=bool(attempt_data.get("conversation_mode", False)),
+            conversation_agent_id=str(attempt_data.get("conversation_agent_id")) if attempt_data.get("conversation_agent_id") else None,
+            conversation_max_turns=conversation_max_turns_int,
         )
 
         eval_item = EvalItem(
@@ -180,8 +213,11 @@ async def get_eval_attempt_full(
             rubric_id=str(eval_data.get("rubric_id", "")),
             agent_id=str(eval_data.get("agent_id", "")),
             eval_agent_id=str(eval_data.get("eval_agent_id", "")),
+            dynamic=bool(eval_data.get("dynamic", False)),
             rubric_name=str(eval_data.get("rubric_name", "")),
             rubric_description=str(eval_data.get("rubric_description", "")),
+            system_prompt=str(eval_data.get("system_prompt", "")),
+            conversation_agent_name=str(eval_data.get("conversation_agent_name")) if eval_data.get("conversation_agent_name") else None,
         )
 
         runs_list: list[RunItem] = []
@@ -205,17 +241,29 @@ async def get_eval_attempt_full(
                             persona_name=str(run.get("persona_name")) if run.get("persona_name") else None,
                             profile_id=str(run.get("profile_id")) if run.get("profile_id") else None,
                             profile_name=str(run.get("profile_name")) if run.get("profile_name") else None,
-                            grade_score=int(run.get("grade_score")) if run.get("grade_score") is not None else None,
+                            grade_score=safe_int_convert(run.get("grade_score")),
                             grade_passed=bool(run.get("grade_passed")) if run.get("grade_passed") is not None else None,
                             grade_created_at=str(run.get("grade_created_at")) if run.get("grade_created_at") else None,
                         )
                     )
 
+        def safe_int(value: Any, default: int = 0) -> int:  # noqa: ANN401
+            if value is None:
+                return default
+            if isinstance(value, int):
+                return value
+            if isinstance(value, (str, float)):
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+            return default
+
         status_summary_item = StatusSummary(
-            not_started=int(status_summary_data.get("not_started", 0)) if status_summary_data else 0,
-            in_progress=int(status_summary_data.get("in_progress", 0)) if status_summary_data else 0,
-            completed=int(status_summary_data.get("completed", 0)) if status_summary_data else 0,
-            total=int(status_summary_data.get("total", 0)) if status_summary_data else 0,
+            not_started=safe_int(status_summary_data.get("not_started", 0) if status_summary_data else 0),
+            in_progress=safe_int(status_summary_data.get("in_progress", 0) if status_summary_data else 0),
+            completed=safe_int(status_summary_data.get("completed", 0) if status_summary_data else 0),
+            total=safe_int(status_summary_data.get("total", 0) if status_summary_data else 0),
         )
 
         response_data = EvalAttemptFullResponse(

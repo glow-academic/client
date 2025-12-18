@@ -14,6 +14,9 @@ import type { Metadata, ResolvingMetadata } from "next";
 /** ---- Strong types from OpenAPI ---- */
 type EvalAttemptFullIn = InputOf<"/api/v3/evals/attempt/full", "post">;
 type EvalAttemptFullOut = OutputOf<"/api/v3/evals/attempt/full", "post">;
+type AgentsListOut = OutputOf<"/api/v3/agents/list", "post">;
+type UpdateEvalAttemptIn = InputOf<"/api/v3/evals/attempt/update", "post">;
+type UpdateEvalAttemptOut = OutputOf<"/api/v3/evals/attempt/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
@@ -28,6 +31,18 @@ const getEvalAttemptFull = async (
       "X-Bypass-Cache": "1",
     },
   });
+};
+
+const getAgentsList = async (): Promise<AgentsListOut> => {
+  "use server";
+  return api.post("/agents/list", { body: {} }, { cache: "no-store" });
+};
+
+const updateEvalAttemptSettings = async (
+  input: UpdateEvalAttemptIn,
+): Promise<UpdateEvalAttemptOut> => {
+  "use server";
+  return api.post("/evals/attempt/update", input, { cache: "no-store" });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -72,12 +87,15 @@ export default async function BenchmarkAttemptPage({
     const attemptData = await getEvalAttemptFull(attemptId, {
       body: { attemptId },
     });
+    const agentsList = await getAgentsList();
 
     return (
       <div className="space-y-6">
         <EvalAttemptStatus
           attemptId={attemptId}
           attemptData={attemptData}
+          agentsList={agentsList}
+          updateEvalAttemptSettings={updateEvalAttemptSettings}
         />
       </div>
     );
@@ -106,5 +124,8 @@ export default async function BenchmarkAttemptPage({
 export type {
   EvalAttemptFullIn,
   EvalAttemptFullOut,
+  AgentsListOut,
+  UpdateEvalAttemptIn,
+  UpdateEvalAttemptOut,
 };
 
