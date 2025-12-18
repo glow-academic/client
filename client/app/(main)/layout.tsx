@@ -58,7 +58,7 @@ export default async function MainLayout({
     // Otherwise (route-denied or department), user is logged in (including guests)
     // Fetch layout data and show access denied inside sidebar
     const { initial, snapshot, attemptData, activeSettings } =
-      await getLayoutContextData();
+      await getLayoutContextData(session);
 
     return (
       <div
@@ -90,7 +90,7 @@ export default async function MainLayout({
 
   // User has access, proceed with layout data fetching
   const { initial, snapshot, attemptData, activeSettings } =
-    await getLayoutContextData();
+    await getLayoutContextData(session);
 
   // If profile resolution failed, show access denied
   // This can happen if:

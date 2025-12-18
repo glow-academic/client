@@ -5,6 +5,7 @@
 import { getSession, update } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { Session } from "next-auth";
 import { cookies, headers } from "next/headers";
 import { cache } from "react";
 
@@ -89,13 +90,17 @@ export type LayoutContextResponse = LayoutContextOut;
 /** ---- Helper to get validated profile ID (reusable for API calls) ----
  * Gets the effective profile ID from validated profile context.
  * Reuses getLayoutContext for consistency and caching.
+ *
+ * @param session - Optional session to reuse. If not provided, will fetch session.
  */
-export async function getValidatedProfileId(): Promise<string | null> {
-  const session = await getSession();
+export async function getValidatedProfileId(
+  session?: Session | null
+): Promise<string | null> {
+  const resolvedSession = session ?? (await getSession());
 
   // Extract profile IDs from session (works for both real and pseudo-sessions)
-  const effectiveProfileId = session?.effectiveProfileId || null;
-  const actualProfileId = session?.user?.profileId || null;
+  const effectiveProfileId = resolvedSession?.effectiveProfileId || null;
+  const actualProfileId = resolvedSession?.user?.profileId || null;
 
   // If no session IDs but we have cookies (guest/default-account), resolve from cookies
   if (!effectiveProfileId || !actualProfileId) {
@@ -166,26 +171,28 @@ export type SafeSessionSnapshot = {
  *
  * Returns null initial if user doesn't have valid session or access,
  * which triggers access denied UI in the layout.
+ *
+ * @param session - Optional session to reuse. If not provided, will fetch session.
  */
-export async function getLayoutContextData() {
-  const session = await getSession();
+export async function getLayoutContextData(session?: Session | null) {
+  const resolvedSession = session ?? (await getSession());
 
   // Create session snapshot with authentication status
   // isAuthenticated distinguishes real sessions (has id_token) from pseudo-sessions (no id_token)
   const snapshot: SafeSessionSnapshot = {
-    effectiveProfileId: session?.effectiveProfileId ?? null,
-    fullEmulation: !!session?.fullEmulation,
-    emulationTTL: session?.emulationTTL ?? null,
+    effectiveProfileId: resolvedSession?.effectiveProfileId ?? null,
+    fullEmulation: !!resolvedSession?.fullEmulation,
+    emulationTTL: resolvedSession?.emulationTTL ?? null,
     // Only authenticated users have id_token (from Keycloak)
     // Guest/default account users have pseudo-sessions without id_token
-    isAuthenticated: !!session?.id_token,
+    isAuthenticated: !!resolvedSession?.id_token,
   };
 
   // Extract profile IDs from session (works for both real and pseudo-sessions)
   // For authenticated users: profile IDs come from session
   // For guest/default-account users: profile IDs are null, will resolve from cookies
-  let effectiveProfileId = session?.effectiveProfileId || null;
-  let actualProfileId = session?.user?.profileId || null;
+  let effectiveProfileId = resolvedSession?.effectiveProfileId || null;
+  let actualProfileId = resolvedSession?.user?.profileId || null;
   let initial: LayoutContextOut | null = null;
 
   // If no session IDs but we have cookies (guest/default-account), resolve from cookies

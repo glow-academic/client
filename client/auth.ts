@@ -4,6 +4,7 @@ import { createTestSession, validateTestHeaders } from "@/lib/auth-helpers";
 import NextAuth from "next-auth";
 import Keycloak from "next-auth/providers/keycloak";
 import { headers } from "next/headers";
+import { cache } from "react";
 
 const appPrefix = process.env["APP_PREFIX"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
@@ -31,7 +32,7 @@ function parseName(name: string | null | undefined): {
 // Helper function to create a profile with guest role
 async function createGuestProfile(
   email: string,
-  name: string | null | undefined,
+  name: string | null | undefined
 ): Promise<void> {
   const { firstName, lastName } = parseName(name);
   try {
@@ -54,7 +55,7 @@ async function createGuestProfile(
       // eslint-disable-next-line no-console
       console.error(
         `Failed to create guest profile for ${email}:`,
-        errorMessage,
+        errorMessage
       );
     }
   }
@@ -113,7 +114,7 @@ export const {
             // eslint-disable-next-line no-console
             console.error(
               `Failed to update lastLogin for profile ${existingProfile.id}:`,
-              error instanceof Error ? error.message : String(error),
+              error instanceof Error ? error.message : String(error)
             );
           }
         } else {
@@ -125,7 +126,7 @@ export const {
         // eslint-disable-next-line no-console
         console.error(
           `Error in createUser event for ${user.email}:`,
-          error instanceof Error ? error.message : String(error),
+          error instanceof Error ? error.message : String(error)
         );
       }
     },
@@ -169,7 +170,7 @@ export const {
               // eslint-disable-next-line no-console
               console.error(
                 `Failed to update profile ${existingProfile.id}:`,
-                error instanceof Error ? error.message : String(error),
+                error instanceof Error ? error.message : String(error)
               );
             }
           }
@@ -213,7 +214,7 @@ export const {
                 `Failed to fetch profile after creation for ${user.email}:`,
                 retryError instanceof Error
                   ? retryError.message
-                  : String(retryError),
+                  : String(retryError)
               );
             }
           } catch (createError) {
@@ -224,7 +225,7 @@ export const {
               `Failed to create profile in jwt callback for ${user.email}:`,
               createError instanceof Error
                 ? createError.message
-                : String(createError),
+                : String(createError)
             );
           }
         }
@@ -320,8 +321,10 @@ export const {
  *
  * Note: Guest/default account users are handled by the JWT callback which resolves
  * profile from department cookies. NextAuth creates a real session (just without id_token).
+ *
+ * Wrapped with React cache() to deduplicate calls within the same request.
  */
-export async function getSession() {
+export const getSession = cache(async () => {
   // Step 1: Check for test headers (E2E testing override)
   try {
     const headerList = await headers();
@@ -335,4 +338,4 @@ export async function getSession() {
 
   // Step 2: Get NextAuth session (JWT callback handles guest/default account cookies)
   return await auth();
-}
+});
