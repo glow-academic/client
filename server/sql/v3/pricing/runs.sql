@@ -6,10 +6,11 @@
 --   $4 = profile_id (uuid | NULL) - raw profile ID (role check happens in SQL)
 --   $5 = roles (text[] | NULL) - only used if profile_id is NULL or role is admin/superadmin/instructional
 --   $6 = cohort_ids (uuid[] | NULL)
---   $7 = search (text | NULL) - text search across model name, agent name, persona name, profile name, debug info
---   $8 = model_ids (uuid[] | NULL) - filter by model IDs
---   $9 = profile_ids (uuid[] | NULL) - filter by profile IDs
---   $10 = actor_ids (uuid[] | NULL) - filter by agent/persona IDs (combined)
+--   $7 = simulation_filters (text[] | NULL) - ["general", "practice", "archived"]
+--   $8 = search (text | NULL) - text search across model name, agent name, persona name, profile name, debug info
+--   $9 = model_ids (uuid[] | NULL) - filter by model IDs
+--   $10 = profile_ids (uuid[] | NULL) - filter by profile IDs
+--   $11 = actor_ids (uuid[] | NULL) - filter by agent/persona IDs (combined)
 -- Returns: JSONB object with data (paginated runs), totalCount, page, pageSize, totalPages, filter options, mappings
 
 WITH resolve_profile_id AS (
@@ -38,11 +39,19 @@ runs_base AS (
         mrm.model_id,
         mrp.profile_id,
         mr.agent_id,
-        mrper.persona_id
+        mrper.persona_id,
+        sim.practice_simulation,
+        sa.archived
     FROM runs mr
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
     LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
+    -- Join to simulations via chat_runs → chats → attempt_chats → simulation_attempts → simulations
+    LEFT JOIN chat_runs cr ON cr.run_id = mr.id
+    LEFT JOIN chats c ON c.id = cr.chat_id
+    LEFT JOIN attempt_chats ac ON ac.chat_id = c.id
+    LEFT JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+    LEFT JOIN simulations sim ON sim.id = sa.simulation_id
     WHERE 
         -- Date filters (always required)
         mr.created_at >= $1
@@ -80,6 +89,26 @@ runs_base AS (
                 SELECT profile_id FROM cohort_profiles
                 WHERE cohort_id = ANY($6::uuid[]) AND active = true
             )
+        )
+        -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
+        -- If no filters provided (NULL or empty), include all runs (runs not linked to simulations are included)
+        -- If filters provided, only include runs that match the filter OR runs not linked to simulations (treat as "general")
+        AND (
+            $7::text[] IS NULL 
+            OR COALESCE(array_length($7::text[], 1), 0) = 0
+            OR sim.id IS NULL  -- Runs not linked to simulations are always included
+            OR (
+                ('general' = ANY($7::text[]) AND sim.practice_simulation = FALSE AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('practice' = ANY($7::text[]) AND sim.practice_simulation = TRUE AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('archived' = ANY($7::text[]) AND COALESCE(sa.archived, FALSE) = TRUE)
+            )
+        )
+        -- Exclude archived attempts unless 'archived' is explicitly in the filter list
+        AND (
+            $7::text[] IS NULL 
+            OR COALESCE(array_length($7::text[], 1), 0) = 0 
+            OR 'archived' = ANY($7::text[]) 
+            OR COALESCE(sa.archived, FALSE) = FALSE
         )
 ),
 runs_with_debug AS (
@@ -136,15 +165,15 @@ runs_with_search AS (
     SELECT *
     FROM runs_with_names
     WHERE (
-        $7::text IS NULL
-        OR $7::text = ''
-        OR LOWER(model_name) LIKE '%' || LOWER($7::text) || '%'
-        OR LOWER(agent_name) LIKE '%' || LOWER($7::text) || '%'
-        OR LOWER(persona_name) LIKE '%' || LOWER($7::text) || '%'
-        OR LOWER(profile_name) LIKE '%' || LOWER($7::text) || '%'
+        $8::text IS NULL
+        OR $8::text = ''
+        OR LOWER(model_name) LIKE '%' || LOWER($8::text) || '%'
+        OR LOWER(agent_name) LIKE '%' || LOWER($8::text) || '%'
+        OR LOWER(persona_name) LIKE '%' || LOWER($8::text) || '%'
+        OR LOWER(profile_name) LIKE '%' || LOWER($8::text) || '%'
         OR EXISTS (
             SELECT 1 FROM jsonb_array_elements(debug_info) AS di
-            WHERE LOWER(di->>'content') LIKE '%' || LOWER($7::text) || '%'
+            WHERE LOWER(di->>'content') LIKE '%' || LOWER($8::text) || '%'
         )
     )
 ),
@@ -154,15 +183,15 @@ runs_filtered AS (
     FROM runs_with_search
     WHERE (
         -- Model filter
-        ($8::uuid[] IS NULL OR COALESCE(array_length($8::uuid[], 1), 0) = 0 OR model_id = ANY($8::uuid[]))
+        ($9::uuid[] IS NULL OR COALESCE(array_length($9::uuid[], 1), 0) = 0 OR model_id = ANY($9::uuid[]))
         -- Profile filter
-        AND ($9::uuid[] IS NULL OR COALESCE(array_length($9::uuid[], 1), 0) = 0 OR profile_id = ANY($9::uuid[]))
+        AND ($10::uuid[] IS NULL OR COALESCE(array_length($10::uuid[], 1), 0) = 0 OR profile_id = ANY($10::uuid[]))
         -- Actor filter (agent or persona)
         AND (
-            $10::uuid[] IS NULL 
-            OR COALESCE(array_length($10::uuid[], 1), 0) = 0 
-            OR agent_id = ANY($10::uuid[])
-            OR persona_id = ANY($10::uuid[])
+            $11::uuid[] IS NULL 
+            OR COALESCE(array_length($11::uuid[], 1), 0) = 0 
+            OR agent_id = ANY($11::uuid[])
+            OR persona_id = ANY($11::uuid[])
         )
     )
 ),

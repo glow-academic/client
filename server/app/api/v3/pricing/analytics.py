@@ -151,9 +151,14 @@ async def get_pricing(
 
         roles = filters.roles or None
 
+        # Convert simulationFilters to list of strings for SQL
+        simulation_filters = None
+        if filters.simulationFilters:
+            simulation_filters = [f.value for f in filters.simulationFilters]
+
         # Execute consolidated SQL query with all filter logic (including role check)
         sql_query = load_sql("sql/v3/pricing/get_pricing_analytics_complete.sql")
-        sql_params = (start_dt, end_dt, department_ids, profile_uuid, roles, cohort_ids)
+        sql_params = (start_dt, end_dt, department_ids, profile_uuid, roles, cohort_ids, simulation_filters)
         # Disable JIT compilation for this complex query to avoid re-compilation overhead
         async with conn.transaction():
             await conn.execute("SET LOCAL jit = off;")
@@ -164,7 +169,7 @@ async def get_pricing(
 
         # Build model runs list
         model_runs = []
-        for run_data in parsed_result.get("model_runs", []):
+        for run_data in parsed_result.get("runs", []):
             debug_info = []
             if isinstance(run_data.get("debug_info"), list):
                 for debug in run_data["debug_info"]:

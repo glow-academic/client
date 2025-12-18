@@ -6,6 +6,7 @@
 --   $4 = profile_id (uuid | NULL) - raw profile ID (role check happens in SQL)
 --   $5 = roles (text[] | NULL) - only used if profile_id is NULL or role is admin/superadmin/instructional
 --   $6 = cohort_ids (uuid[] | NULL)
+--   $7 = simulation_filters (text[] | NULL) - ["general", "practice", "archived"]
 -- Returns: JSONB object with runs, model_mapping, profile_mapping, agent_mapping, persona_mapping
 
 WITH profile_role_check AS (
@@ -27,11 +28,19 @@ runs_base AS (
         mrm.model_id,
         mrp.profile_id,
         mr.agent_id,
-        mrper.persona_id
+        mrper.persona_id,
+        sim.practice_simulation,
+        sa.archived
     FROM runs mr
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
     LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
+    -- Join to simulations via chat_runs → chats → attempt_chats → simulation_attempts → simulations
+    LEFT JOIN chat_runs cr ON cr.run_id = mr.id
+    LEFT JOIN chats c ON c.id = cr.chat_id
+    LEFT JOIN attempt_chats ac ON ac.chat_id = c.id
+    LEFT JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+    LEFT JOIN simulations sim ON sim.id = sa.simulation_id
     WHERE 
         -- Date filters (always required)
         mr.created_at >= $1
@@ -69,6 +78,26 @@ runs_base AS (
                 SELECT profile_id FROM cohort_profiles
                 WHERE cohort_id = ANY($6::uuid[]) AND active = true
             )
+        )
+        -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
+        -- If no filters provided (NULL or empty), include all runs (runs not linked to simulations are included)
+        -- If filters provided, only include runs that match the filter OR runs not linked to simulations (treat as "general")
+        AND (
+            $7::text[] IS NULL 
+            OR COALESCE(array_length($7::text[], 1), 0) = 0
+            OR sim.id IS NULL  -- Runs not linked to simulations are always included
+            OR (
+                ('general' = ANY($7::text[]) AND sim.practice_simulation = FALSE AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('practice' = ANY($7::text[]) AND sim.practice_simulation = TRUE AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('archived' = ANY($7::text[]) AND COALESCE(sa.archived, FALSE) = TRUE)
+            )
+        )
+        -- Exclude archived attempts unless 'archived' is explicitly in the filter list
+        AND (
+            $7::text[] IS NULL 
+            OR COALESCE(array_length($7::text[], 1), 0) = 0 
+            OR 'archived' = ANY($7::text[]) 
+            OR COALESCE(sa.archived, FALSE) = FALSE
         )
 ),
 runs_with_debug AS (

@@ -186,6 +186,11 @@ async def get_pricing_runs(
 
         roles = filters.roles or None
 
+        # Convert simulationFilters to list of strings for SQL
+        simulation_filters = None
+        if filters.simulationFilters:
+            simulation_filters = [f.value for f in filters.simulationFilters]
+
         # Search parameter
         search = filters.search or None
 
@@ -244,6 +249,7 @@ async def get_pricing_runs(
             profile_uuid,
             roles,
             cohort_ids,
+            simulation_filters,
             search,
             model_ids,
             profile_ids,
