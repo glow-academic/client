@@ -62,17 +62,10 @@ const getPricingRuns = async (
 /** ---- Inline filters function for pricing page ---- */
 async function getPricingFilters(
   searchParams?: URLSearchParams,
-  profileIds?: { effectiveProfileId: string; actualProfileId: string }
 ) {
-  if (!profileIds) {
-    throw new Error("Profile IDs required");
-  }
-
   // Use cached layout context (reuses data already fetched by layout)
   const profileContext = await getLayoutContext({
     body: {
-      actualProfileId: profileIds.actualProfileId,
-      effectiveProfileId: profileIds.effectiveProfileId,
       pathname: "/",
     },
   });

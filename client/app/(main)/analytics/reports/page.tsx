@@ -43,8 +43,6 @@ async function getReportsFilters(searchParams?: URLSearchParams) {
   // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
   const profileContext = await getLayoutContext({
     body: {
-      actualProfileId: null as unknown as string,
-      effectiveProfileId: null as unknown as string,
       pathname: "/",
     },
   });

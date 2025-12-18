@@ -97,8 +97,6 @@ export default async function PracticePage({
   try {
     profileContext = await getLayoutContext({
       body: {
-        actualProfileId: null as unknown as string,
-        effectiveProfileId: null as unknown as string,
         pathname: "/practice",
       },
     });
@@ -263,7 +261,6 @@ async function PracticeHistorySection({
   historyInfiniteMode,
   historySortBy,
   historySortOrder,
-  effectiveProfileId,
   departmentIds,
 }: {
   historyPage: number;

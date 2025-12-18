@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema",
+    "description": "Auto-generated OpenAPI schema from FastAPI v3 API",
     "version": "0.1.0"
   },
   "paths": {
@@ -30,6 +30,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -64,7 +80,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/update": {
@@ -91,6 +111,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -125,7 +161,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/create": {
@@ -152,6 +192,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -186,7 +242,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/delete": {
@@ -213,6 +273,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -247,7 +323,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/upsert": {
@@ -274,6 +354,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -308,7 +404,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/new": {
@@ -335,6 +435,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -369,7 +485,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/email": {
@@ -396,6 +516,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -430,7 +566,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/context": {
@@ -457,6 +597,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -491,7 +647,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/emulate": {
@@ -518,6 +678,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -552,7 +728,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/simulatable": {
@@ -579,6 +759,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -613,7 +809,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/scenarios/list": {
@@ -640,6 +840,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -674,7 +890,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/detail": {
@@ -701,6 +921,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -735,7 +971,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/new": {
@@ -762,6 +1002,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -796,7 +1052,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/create": {
@@ -823,6 +1083,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -857,7 +1133,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/update": {
@@ -884,6 +1164,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -918,7 +1214,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/duplicate": {
@@ -945,6 +1245,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -979,7 +1295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/delete": {
@@ -1006,6 +1326,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1040,7 +1376,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/simulations/list": {
@@ -1067,6 +1407,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1101,7 +1457,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/detail": {
@@ -1128,6 +1488,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1162,7 +1538,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/new": {
@@ -1189,6 +1569,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1223,7 +1619,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/create": {
@@ -1250,6 +1650,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1284,7 +1700,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/update": {
@@ -1311,6 +1731,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1345,7 +1781,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/duplicate": {
@@ -1372,6 +1812,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1406,7 +1862,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/delete": {
@@ -1433,6 +1893,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1467,7 +1943,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/personas/list": {
@@ -1494,6 +1974,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1528,7 +2024,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/detail": {
@@ -1555,6 +2055,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1589,7 +2105,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/new": {
@@ -1616,6 +2136,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1650,7 +2186,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/create": {
@@ -1677,6 +2217,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1711,7 +2267,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/update": {
@@ -1738,6 +2298,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1772,7 +2348,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/duplicate": {
@@ -1799,6 +2379,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1833,7 +2429,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/delete": {
@@ -1860,6 +2460,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1894,7 +2510,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/auth/list": {
@@ -1921,6 +2541,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -1955,7 +2591,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/detail": {
@@ -1982,6 +2622,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2016,7 +2672,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/new": {
@@ -2043,6 +2703,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2077,7 +2753,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/create": {
@@ -2104,6 +2784,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2138,7 +2834,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/update": {
@@ -2165,6 +2865,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2199,7 +2915,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/duplicate": {
@@ -2226,6 +2946,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2260,7 +2996,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/delete": {
@@ -2287,6 +3027,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2321,7 +3077,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/auth/login": {
@@ -2348,6 +3108,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2382,7 +3158,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
       }
     },
     "/api/v3/departments/list": {
@@ -2409,6 +3189,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2443,7 +3239,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/detail": {
@@ -2470,6 +3270,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2504,7 +3320,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/new": {
@@ -2531,6 +3351,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2565,7 +3401,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/create": {
@@ -2592,6 +3432,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2626,7 +3482,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/update": {
@@ -2653,6 +3513,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2687,7 +3563,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/duplicate": {
@@ -2714,6 +3594,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2748,7 +3644,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/delete": {
@@ -2775,6 +3675,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2809,7 +3725,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/cohorts/list": {
@@ -2836,6 +3756,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2870,7 +3806,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/detail": {
@@ -2897,6 +3837,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2931,7 +3887,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/new": {
@@ -2958,6 +3918,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -2992,7 +3968,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/duplicate": {
@@ -3019,6 +3999,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3053,7 +4049,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/leave": {
@@ -3080,6 +4080,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3114,7 +4130,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/create": {
@@ -3141,6 +4161,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3175,7 +4211,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/update": {
@@ -3202,6 +4242,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3236,7 +4292,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/delete": {
@@ -3263,6 +4323,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3297,7 +4373,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/search": {
@@ -3324,6 +4404,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3358,7 +4454,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/documents/list": {
@@ -3385,6 +4485,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3419,7 +4535,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/detail": {
@@ -3446,6 +4566,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3480,7 +4616,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/create": {
@@ -3507,6 +4647,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3541,7 +4697,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/delete": {
@@ -3568,6 +4728,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3602,7 +4778,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/update": {
@@ -3629,6 +4809,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3663,7 +4859,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/certificate": {
@@ -3690,6 +4890,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3722,7 +4938,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/render": {
@@ -3749,6 +4969,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3783,7 +5019,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/evals/list": {
@@ -3810,6 +5050,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3844,7 +5100,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/detail": {
@@ -3871,6 +5131,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3905,7 +5181,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/new": {
@@ -3932,6 +5212,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -3966,7 +5262,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/create": {
@@ -3993,6 +5293,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4027,7 +5343,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/update": {
@@ -4054,6 +5374,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4088,7 +5424,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/delete": {
@@ -4115,6 +5455,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4149,7 +5505,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/runs": {
@@ -4176,6 +5536,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4210,7 +5586,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/run": {
@@ -4237,6 +5617,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4271,7 +5667,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/evals/stop": {
@@ -4298,6 +5698,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4332,7 +5748,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
       }
     },
     "/api/v3/rubrics/list": {
@@ -4359,6 +5779,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4393,7 +5829,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/detail": {
@@ -4420,6 +5860,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4454,7 +5910,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/new": {
@@ -4481,6 +5941,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4515,7 +5991,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/duplicate": {
@@ -4542,6 +6022,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4576,7 +6072,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/create": {
@@ -4603,6 +6103,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4637,7 +6153,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/update": {
@@ -4664,6 +6184,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4698,7 +6234,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/delete": {
@@ -4725,6 +6265,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4759,7 +6315,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/settings/list": {
@@ -4786,6 +6346,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4820,7 +6396,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "settings"
+        ]
       }
     },
     "/api/v3/settings/detail": {
@@ -4847,6 +6427,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4881,7 +6477,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "settings"
+        ]
       }
     },
     "/api/v3/settings/update": {
@@ -4908,6 +6508,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -4942,7 +6558,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "settings"
+        ]
       }
     },
     "/api/v3/settings/active": {
@@ -4969,6 +6589,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5003,7 +6639,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "settings"
+        ]
       }
     },
     "/api/v3/analytics/refresh": {
@@ -5030,6 +6670,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5064,7 +6720,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "analytics"
+        ]
       }
     },
     "/api/v3/dashboard/overview": {
@@ -5091,6 +6751,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5125,7 +6801,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "dashboard"
+        ]
       }
     },
     "/api/v3/dashboard/history": {
@@ -5152,6 +6832,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5186,7 +6882,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "dashboard"
+        ]
       }
     },
     "/api/v3/reports/overview": {
@@ -5213,6 +6913,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5247,7 +6963,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports"
+        ]
       }
     },
     "/api/v3/reports/history": {
@@ -5274,6 +6994,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5308,7 +7044,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports"
+        ]
       }
     },
     "/api/v3/leaderboard/bundle": {
@@ -5335,6 +7075,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5369,7 +7125,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "leaderboard"
+        ]
       }
     },
     "/api/v3/agents/list": {
@@ -5396,6 +7156,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5430,7 +7206,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/detail": {
@@ -5457,6 +7237,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5491,7 +7287,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/new": {
@@ -5518,6 +7318,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5552,7 +7368,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/create": {
@@ -5579,6 +7399,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5613,7 +7449,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/update": {
@@ -5640,6 +7480,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5674,7 +7530,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/duplicate": {
@@ -5701,6 +7561,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5735,7 +7611,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/delete": {
@@ -5762,6 +7642,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5796,7 +7692,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/keys/list": {
@@ -5823,6 +7723,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5857,7 +7773,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/detail": {
@@ -5884,6 +7804,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5918,7 +7854,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/new": {
@@ -5945,6 +7885,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -5979,7 +7935,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/create": {
@@ -6006,6 +7966,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6040,7 +8016,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/update": {
@@ -6067,6 +8047,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6101,7 +8097,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/delete": {
@@ -6128,6 +8128,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6162,7 +8178,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/keys/decrypt": {
@@ -6189,6 +8209,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6223,7 +8259,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
       }
     },
     "/api/v3/models/list": {
@@ -6250,6 +8290,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6284,7 +8340,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/detail": {
@@ -6311,6 +8371,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6345,7 +8421,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/new": {
@@ -6372,6 +8452,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6406,7 +8502,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/create": {
@@ -6433,6 +8533,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6467,7 +8583,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/update": {
@@ -6494,6 +8614,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6528,7 +8664,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/delete": {
@@ -6555,6 +8695,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6589,7 +8745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/models/duplicate": {
@@ -6616,6 +8776,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6650,7 +8826,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
       }
     },
     "/api/v3/providers/list": {
@@ -6677,6 +8857,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6711,7 +8907,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/detail": {
@@ -6738,6 +8938,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6772,7 +8988,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/new": {
@@ -6799,6 +9019,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6833,7 +9069,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/create": {
@@ -6860,6 +9100,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6894,7 +9150,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/update": {
@@ -6921,6 +9181,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -6955,7 +9231,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/delete": {
@@ -6982,6 +9262,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7016,7 +9312,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/parameters/list": {
@@ -7043,6 +9343,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7077,7 +9393,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/detail": {
@@ -7104,6 +9424,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7138,7 +9474,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/new": {
@@ -7165,6 +9505,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7199,7 +9555,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/create": {
@@ -7226,6 +9586,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7260,7 +9636,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/update": {
@@ -7287,6 +9667,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7321,7 +9717,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/duplicate": {
@@ -7348,6 +9748,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7382,7 +9798,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/delete": {
@@ -7409,6 +9829,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7443,7 +9879,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/fields/list": {
@@ -7470,6 +9910,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7504,7 +9960,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/detail": {
@@ -7531,6 +9991,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7565,7 +10041,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/new": {
@@ -7592,6 +10072,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7626,7 +10122,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/create": {
@@ -7653,6 +10153,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7687,7 +10203,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/update": {
@@ -7714,6 +10234,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7748,7 +10284,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/duplicate": {
@@ -7775,6 +10315,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7809,7 +10365,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/fields/delete": {
@@ -7836,6 +10396,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7870,7 +10446,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "fields"
+        ]
       }
     },
     "/api/v3/feedback/create": {
@@ -7897,6 +10477,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7931,7 +10527,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "feedback"
+        ]
       }
     },
     "/api/v3/logs/bundle": {
@@ -7958,6 +10558,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -7992,7 +10608,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
       }
     },
     "/api/v3/attempts/archive": {
@@ -8019,6 +10639,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8053,7 +10689,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts"
+        ]
       }
     },
     "/api/v3/attempts/full": {
@@ -8080,6 +10720,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8114,7 +10770,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts"
+        ]
       }
     },
     "/api/v3/prompts/delete": {
@@ -8141,6 +10801,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8175,7 +10851,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
       }
     },
     "/api/v3/staff/list": {
@@ -8202,6 +10882,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8236,7 +10932,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "staff"
+        ]
       }
     },
     "/api/v3/staff/search": {
@@ -8263,6 +10963,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8297,7 +11013,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "staff"
+        ]
       }
     },
     "/api/v3/staff/csv": {
@@ -8324,6 +11044,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8358,7 +11094,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "staff"
+        ]
       }
     },
     "/api/v3/staff/data/create": {
@@ -8385,6 +11125,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8419,7 +11175,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "staff"
+        ]
       }
     },
     "/api/v3/staff/create": {
@@ -8446,6 +11206,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8480,7 +11256,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "staff"
+        ]
       }
     },
     "/api/v3/staff/update": {
@@ -8507,6 +11287,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8541,7 +11337,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "staff"
+        ]
       }
     },
     "/api/v3/staff/delete": {
@@ -8568,6 +11368,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8602,7 +11418,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "staff"
+        ]
       }
     },
     "/api/v3/staff/upsert": {
@@ -8629,6 +11449,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8663,7 +11499,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "staff"
+        ]
       }
     },
     "/api/v3/home/overview": {
@@ -8690,6 +11530,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8724,7 +11580,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "home"
+        ]
       }
     },
     "/api/v3/home/history": {
@@ -8751,6 +11611,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8785,7 +11661,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "home"
+        ]
       }
     },
     "/api/v3/practice/overview": {
@@ -8812,6 +11692,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8846,7 +11742,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "practice"
+        ]
       }
     },
     "/api/v3/practice/history": {
@@ -8873,6 +11773,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8907,7 +11823,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "practice"
+        ]
       }
     },
     "/api/v3/pricing/analytics": {
@@ -8934,6 +11854,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -8968,7 +11904,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "pricing"
+        ]
       }
     },
     "/api/v3/pricing/runs": {
@@ -8995,6 +11935,22 @@
                 }
               ],
               "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
             }
           }
         ],
@@ -9029,7 +11985,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "pricing"
+        ]
       }
     },
     "/api/v3/uploads/upload": {
@@ -9057,6 +12017,22 @@
               ],
               "title": "X-Profile-Id"
             }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
           }
         ],
         "responses": {
@@ -9078,7 +12054,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       },
       "post": {
         "tags": [
@@ -9104,6 +12084,22 @@
               ],
               "title": "X-Profile-Id"
             }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
           }
         ],
         "responses": {
@@ -9125,7 +12121,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       }
     },
     "/api/v3/uploads/upload/{upload_id}": {
@@ -9162,6 +12162,22 @@
               ],
               "title": "X-Profile-Id"
             }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
           }
         ],
         "responses": {
@@ -9183,7 +12199,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       },
       "head": {
         "tags": [
@@ -9218,6 +12238,22 @@
               ],
               "title": "X-Profile-Id"
             }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
           }
         ],
         "responses": {
@@ -9239,7 +12275,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       },
       "patch": {
         "tags": [
@@ -9274,6 +12314,22 @@
               ],
               "title": "X-Profile-Id"
             }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
           }
         ],
         "responses": {
@@ -9295,7 +12351,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       }
     },
     "/api/v3/uploads/upload/{upload_id}/finalize": {
@@ -9332,6 +12392,22 @@
               ],
               "title": "X-Profile-Id"
             }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
           }
         ],
         "responses": {
@@ -9355,7 +12431,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       }
     },
     "/api/v3/uploads/upload/{upload_id}/classify": {
@@ -9392,6 +12472,22 @@
               ],
               "title": "X-Profile-Id"
             }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
           }
         ],
         "requestBody": {
@@ -9425,7 +12521,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       }
     },
     "/api/v3/uploads/download/{upload_id}": {
@@ -9474,6 +12574,22 @@
               ],
               "title": "X-Profile-Id"
             }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
           }
         ],
         "responses": {
@@ -9495,7 +12611,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
       }
     },
     "/socket/v3/client/connect": {
@@ -9522,7 +12642,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/disconnect": {
@@ -9549,7 +12673,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/log": {
@@ -9596,7 +12724,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/join": {
@@ -9644,7 +12776,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/leave": {
@@ -9692,7 +12829,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/end": {
@@ -9741,7 +12883,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/next": {
@@ -9790,7 +12938,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/practice": {
@@ -9839,7 +12993,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/send": {
@@ -9888,7 +13048,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/start": {
@@ -9937,7 +13103,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/text/stop": {
@@ -9986,7 +13158,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/start": {
@@ -10035,7 +13213,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/stop": {
@@ -10084,7 +13268,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/debug": {
@@ -10133,7 +13323,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/user/start": {
@@ -10183,7 +13379,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/user/delta": {
@@ -10233,7 +13436,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/user/transcript": {
@@ -10283,7 +13493,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/user/text": {
@@ -10333,7 +13550,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/user/speech": {
@@ -10383,7 +13607,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/assistant/delta": {
@@ -10433,7 +13664,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/assistant/done": {
@@ -10483,7 +13721,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/simulations/voice/assistant/interrupted": {
@@ -10533,7 +13778,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/generate": {
@@ -10581,7 +13833,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/regenerate": {
@@ -10629,7 +13886,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/document": {
@@ -10678,7 +13940,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/statement": {
@@ -10727,7 +13995,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/objectives": {
@@ -10776,7 +14050,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/image": {
@@ -10825,7 +14105,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/video": {
@@ -10874,7 +14160,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/scenarios/tools/questions": {
@@ -10923,7 +14215,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/documents/generate": {
@@ -10971,7 +14269,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/videos/generate": {
@@ -11019,7 +14322,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/images/complete": {
@@ -11067,7 +14375,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/client/images/generate": {
@@ -11115,7 +14428,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
       }
     },
     "/socket/v3/server/connection_confirmed": {
@@ -11162,7 +14480,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/joined": {
@@ -11210,7 +14532,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/join_error": {
@@ -11258,7 +14585,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/leave_error": {
@@ -11306,7 +14638,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/ended": {
@@ -11355,7 +14692,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/end_error": {
@@ -11404,7 +14747,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/next_error": {
@@ -11453,7 +14802,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/grading_progress": {
@@ -11502,7 +14857,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/continued": {
@@ -11551,7 +14912,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/end_all_started": {
@@ -11600,7 +14967,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/end_chat_started": {
@@ -11649,7 +15022,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/end_all_completed": {
@@ -11698,7 +15077,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/practice_error": {
@@ -11747,7 +15132,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/send_error": {
@@ -11796,7 +15187,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/hint_generation_progress": {
@@ -11845,7 +15242,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/new_message": {
@@ -11894,7 +15297,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/message_token": {
@@ -11943,7 +15352,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/message_complete": {
@@ -11992,7 +15407,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/message_error": {
@@ -12041,7 +15462,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/message_cancelled": {
@@ -12090,7 +15517,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/message_sent": {
@@ -12139,7 +15572,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/started": {
@@ -12188,7 +15627,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/start_error": {
@@ -12237,7 +15682,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/stopped": {
@@ -12286,7 +15737,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/text/stop_error": {
@@ -12335,7 +15792,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/start_response": {
@@ -12384,7 +15847,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/start_error": {
@@ -12433,7 +15902,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/stop_response": {
@@ -12482,7 +15957,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/stop_error": {
@@ -12531,7 +16012,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/debug_error": {
@@ -12580,7 +16067,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/user/start": {
@@ -12630,7 +16123,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/user/delta": {
@@ -12680,7 +16180,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/user/transcript": {
@@ -12730,7 +16237,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/user/text_error": {
@@ -12780,7 +16294,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/assistant/tool_call_error": {
@@ -12830,7 +16351,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/assistant/done": {
@@ -12880,7 +16408,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/simulations/voice/assistant/interrupted": {
@@ -12930,7 +16465,14 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/generation_progress": {
@@ -12978,7 +16520,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/generation_complete": {
@@ -13026,7 +16573,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/generation_error": {
@@ -13074,7 +16626,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/document_complete": {
@@ -13123,7 +16680,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/document_error": {
@@ -13172,7 +16735,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/statement_complete": {
@@ -13221,7 +16790,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/objectives_complete": {
@@ -13270,7 +16845,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/image_complete": {
@@ -13319,7 +16900,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/video_complete": {
@@ -13368,7 +16955,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/video_error": {
@@ -13417,7 +17010,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/questions_complete": {
@@ -13466,7 +17065,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/scenarios/tools/questions_error": {
@@ -13515,7 +17120,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/documents/generation_progress": {
@@ -13563,7 +17174,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/documents/generation_complete": {
@@ -13611,7 +17227,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/documents/generation_error": {
@@ -13659,7 +17280,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/videos/generation_progress": {
@@ -13707,7 +17333,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/videos/generation_complete": {
@@ -13755,7 +17386,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/socket/v3/server/videos/generation_error": {
@@ -13803,7 +17439,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
       }
     },
     "/": {
@@ -27235,28 +30876,6 @@
       },
       "ProfileContextRequest": {
         "properties": {
-          "actualProfileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actualprofileid"
-          },
-          "effectiveProfileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Effectiveprofileid"
-          },
           "pathname": {
             "type": "string",
             "title": "Pathname"
@@ -27267,7 +30886,7 @@
           "pathname"
         ],
         "title": "ProfileContextRequest",
-        "description": "Request to get consolidated profile context."
+        "description": "Request to get consolidated profile context.\n\nNote: actualProfileId and effectiveProfileId are now read from headers\n(X-Profile-Id and X-Effective-Profile-Id) instead of request body.\nThese fields are kept for backward compatibility but are ignored."
       },
       "ProfileContextResponse": {
         "properties": {

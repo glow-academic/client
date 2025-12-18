@@ -31,7 +31,6 @@ import React, {
 } from "react";
 import { Socket } from "socket.io-client";
 import { toast } from "sonner";
-import { v4 as uuidv4 } from "uuid";
 
 type ProfileRole =
   | "superadmin"
@@ -141,7 +140,7 @@ export function ProfileProviderClient({
 
   // Department filter state
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    [],
+    []
   );
 
   // Handle null initial (access denied case) - with server-side access control,
@@ -160,27 +159,11 @@ export function ProfileProviderClient({
   const maxConnectionAttempts = 5;
   const currentRoomsRef = useRef<Set<string>>(new Set());
 
-  /**
-   * Stable guest id (per tab) used when profileId === null.
-   * Using sessionStorage lets us survive re-renders & soft navigations.
-   */
-  const guestIdRef = useRef<string | null>(null);
-  if (guestIdRef.current === null) {
-    if (typeof window !== "undefined") {
-      const existing = sessionStorage.getItem("guest-id");
-      guestIdRef.current = existing ?? uuidv4();
-      if (!existing) sessionStorage.setItem("guest-id", guestIdRef.current);
-    } else {
-      guestIdRef.current = uuidv4();
-    }
-  }
-
   // Get profile ID for socket connection
   const profileId = effectiveProfile?.id ?? null;
 
   // Initialize WebSocket connection when profileId is resolved
   // Note: profileId may be null for legitimate guest connections (e.g., practice page with guest role)
-  // WebSocket handles this by using guestIdRef for guest connections
   useEffect(() => {
     // Capture current rooms at effect creation time for cleanup
     const roomsToCleanup = currentRoomsRef.current;
@@ -206,9 +189,6 @@ export function ProfileProviderClient({
       };
       if (profileId) {
         query["profileId"] = profileId;
-      } else {
-        // guest mode
-        query["guestId"] = guestIdRef.current!;
       }
 
       const socket = await createSocketClient(query);
@@ -230,7 +210,7 @@ export function ProfileProviderClient({
 
         if (connectionAttempts.current >= maxConnectionAttempts) {
           toast.error(
-            "Unable to connect to real-time updates. Some features may be limited.",
+            "Unable to connect to real-time updates. Some features may be limited."
           );
         }
       });
@@ -240,7 +220,7 @@ export function ProfileProviderClient({
       socket.on(
         "simulations_text_started",
         (
-          data: Parameters<ServerToClientEvents["simulations_text_started"]>[0],
+          data: Parameters<ServerToClientEvents["simulations_text_started"]>[0]
         ) => {
           setStartingSimulationId(null);
           if (data.success) {
@@ -248,12 +228,12 @@ export function ProfileProviderClient({
             window.dispatchEvent(
               new CustomEvent("simulationStarted", {
                 detail: { attemptId: data.attempt_id },
-              }),
+              })
             );
           } else {
             toast.error(data.message);
           }
-        },
+        }
       );
 
       socket.on(
@@ -261,12 +241,12 @@ export function ProfileProviderClient({
         (
           data: Parameters<
             ServerToClientEvents["simulations_text_practice_error"]
-          >[0],
+          >[0]
         ) => {
           setStartingSimulationId(null);
           toast.error(data.message);
           window.dispatchEvent(new CustomEvent("simulationError"));
-        },
+        }
       );
     };
 
@@ -305,7 +285,7 @@ export function ProfileProviderClient({
         effectiveProfile &&
         effectiveProfile.id !== bootstrapProfile.id &&
         sessionSnapshot.emulationTTL &&
-        sessionSnapshot.fullEmulation,
+        sessionSnapshot.fullEmulation
     );
   }, [
     bootstrapProfile,
@@ -346,7 +326,7 @@ export function ProfileProviderClient({
       const route = getSectionRoute(defaultSection, pathname);
       router.push(route);
     },
-    [router, pathname],
+    [router, pathname]
   );
 
   const isSectionAvailable = useCallback(
@@ -356,7 +336,7 @@ export function ProfileProviderClient({
         "guest") as ProfileRole;
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile?.role],
+    [effectiveProfile?.role]
   );
 
   // WebSocket helper methods
@@ -387,7 +367,7 @@ export function ProfileProviderClient({
       setStartingSimulationId(data.simulation_id);
       socketRef.current.emit("simulation_text_start", payload);
     },
-    [isConnected],
+    [isConnected]
   );
 
   const emitCreatePracticeScenario = useCallback(
@@ -434,7 +414,7 @@ export function ProfileProviderClient({
       }
       socketRef.current.emit("simulation_text_practice", payload);
     },
-    [isConnected],
+    [isConnected]
   );
 
   const value: ProfileContextType = {

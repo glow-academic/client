@@ -61,12 +61,25 @@ const getHomeHistory = async (
 
 /** ---- Inline filters function for home page ---- */
 async function getHomeFilters(searchParams: URLSearchParams | undefined) {
+  // #region agent log
+  fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      location: "home/page.tsx:63",
+      message: "getHomeFilters entry",
+      data: {},
+      timestamp: Date.now(),
+      sessionId: "debug-session",
+      runId: "run1",
+      hypothesisId: "D",
+    }),
+  }).catch(() => {});
+  // #endregion
   // Use cached layout context (reuses data already fetched by layout)
   // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
   const profileContext = await getLayoutContext({
     body: {
-      actualProfileId: null as unknown as string,
-      effectiveProfileId: null as unknown as string,
       pathname: "/",
     },
   });
@@ -278,7 +291,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             historyInfiniteMode={historyInfiniteMode}
             historySortBy={historySortBy}
             historySortOrder={historySortOrder}
-            effectiveProfileId={effectiveProfileId}
           />
         </Suspense>
       </div>
@@ -298,7 +310,6 @@ async function HomeHistorySection({
   historyInfiniteMode,
   historySortBy,
   historySortOrder,
-  effectiveProfileId,
 }: {
   defaultFilters: {
     startDate: string;
@@ -316,7 +327,6 @@ async function HomeHistorySection({
   historyInfiniteMode?: boolean | undefined;
   historySortBy: string;
   historySortOrder: string;
-  effectiveProfileId: string;
 }) {
   // Build history filters matching logic from page.tsx
   // profileId removed - comes from X-Profile-Id header automatically

@@ -40,11 +40,9 @@ const getLeaderboard = async (
 /** ---- Inline filters function for leaderboard page ---- */
 async function getLeaderboardFilters(searchParams?: URLSearchParams) {
   // Use cached layout context (reuses data already fetched by layout)
-  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
+  // profileId come from X-Profile-Id header (auto-injected by request-core.ts)
   const profileContext = await getLayoutContext({
     body: {
-      actualProfileId: null as unknown as string,
-      effectiveProfileId: null as unknown as string,
       pathname: "/",
     },
   });

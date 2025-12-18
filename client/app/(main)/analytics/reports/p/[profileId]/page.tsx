@@ -81,17 +81,10 @@ const getReportsHistory = async (
 /** ---- Inline filters function for profile reports page ---- */
 async function getProfileReportsFilters(
   searchParams?: URLSearchParams,
-  profileIds?: { effectiveProfileId: string; actualProfileId: string },
 ) {
-  if (!profileIds) {
-    throw new Error("Profile IDs required");
-  }
-
   // Use cached layout context (reuses data already fetched by layout)
   const profileContext = await getLayoutContext({
     body: {
-      actualProfileId: profileIds.actualProfileId,
-      effectiveProfileId: profileIds.effectiveProfileId,
       pathname: "/",
     },
   });
@@ -195,7 +188,8 @@ export default async function ReportsPage({
   searchParams,
 }: ProfileReportsPageProps) {
   const { profileId } = await params;
-  // Access control is handled server-side in layout
+  // Access control handled server-side in layout
+  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
 
   // Parse search params
   const paramsObj = await searchParams;

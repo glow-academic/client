@@ -90,8 +90,6 @@ async function getProfileContext(
       "/profile/context",
       {
         body: {
-          actualProfileId: null as unknown as string,
-          effectiveProfileId: null as unknown as string,
           pathname: "/",
         },
       },

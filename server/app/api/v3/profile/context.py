@@ -4,29 +4,27 @@ import json
 from typing import Annotated, Any, Literal, cast
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
-
 from app.api.v3.profile.detail import ProfileItem
 from app.main import get_db
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.permissions import ProfileRole, get_available_subsections_for_role
+from app.utils.permissions import (ProfileRole,
+                                   get_available_subsections_for_role)
 from app.utils.sql_helper import load_sql
 from app.utils.theme.color_utils import ensure_contrast, shade, tint
 from app.utils.theme.oklch_to_hex import hex_to_oklch
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
 
 router = APIRouter()
 
 
 class ProfileContextRequest(BaseModel):
-    """Request to get consolidated profile context."""
-
-    actualProfileId: str | None = (
-        None  # The logged-in user's profile ID (null if resolving from cookies)
-    )
-    effectiveProfileId: str | None = (
-        None  # Could be same as actual, or emulated profile ID (null if resolving from cookies)
-    )
+    """Request to get consolidated profile context.
+    
+    Note: actualProfileId and effectiveProfileId are now read from headers
+    (X-Profile-Id and X-Effective-Profile-Id) instead of request body.
+    These fields are kept for backward compatibility but are ignored.
+    """
     pathname: str  # Current path for breadcrumb generation
 
 
@@ -213,21 +211,52 @@ async def get_profile_context(
         from app.utils.logging.db_logger import get_logger
 
         logger = get_logger(__name__)
-        logger.info(f"Request: {request}")
+
+        # Read profile IDs from request.state (set by router-level dependencies)
+        # request.state.profile_id = actualProfileId (logged-in user's profile ID)
+        # request.state.effective_profile_id = effectiveProfileId (could be same as actual, or emulated)
+        actual_profile_id = getattr(http_request.state, "profile_id", None)
+        effective_profile_id = getattr(http_request.state, "effective_profile_id", None)
+
+        logger.info(f"Request: pathname={request.pathname}, actualProfileId={actual_profile_id}, effectiveProfileId={effective_profile_id}")
 
         # Read department-id and auth-mode cookies for profile resolution
-        # These are used when actualProfileId/effectiveProfileId are null
+        # These are used when actualProfileId/effectiveProfileId are null (cookie-based auth)
         # department-id can be null (for default settings)
         # auth-mode defaults to "default-account" if not provided
         # NOTE: This is the ONLY endpoint that reads these cookies (single source of truth)
-        # All other endpoints receive profileId in request body (validated via profile context)
         department_id_cookie = http_request.cookies.get("department-id")
         auth_mode_cookie = http_request.cookies.get("auth-mode")
+        
+        # #region agent log
+        import asyncio
+        import json
 
-        # Default auth-mode to "default-account" if not provided
-        # Logic: If no auth-mode, default to default-account settings within department
-        # (or default department if department-specific doesn't exist)
-        if not auth_mode_cookie:
+        log_data = {
+            "location": "context.py:224",
+            "message": "Backend received request",
+            "data": {
+                "actualProfileId": actual_profile_id,
+                "effectiveProfileId": effective_profile_id,
+                "department_id_cookie": department_id_cookie,
+                "auth_mode_cookie": auth_mode_cookie,
+            },
+            "timestamp": int(__import__("time").time() * 1000),
+            "sessionId": "debug-session",
+            "runId": "run1",
+            "hypothesisId": "E"
+        }
+        try:
+            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                f.write(json.dumps(log_data) + "\n")
+        except:
+            pass
+        # #endregion
+
+        # Default auth-mode to "default-account" ONLY when resolving from cookies (profile IDs are null)
+        # For authenticated users (with profile IDs), auth-mode cookie should be None/absent
+        # Logic: Only default to default-account when we're actually using cookie-based auth
+        if not auth_mode_cookie and not actual_profile_id and not effective_profile_id:
             auth_mode_cookie = "default-account"
 
         # Validate auth_mode is valid (should always be valid after default)
@@ -267,11 +296,33 @@ async def get_profile_context(
         # - Department exists but has no settings: Treated as "no auth providers" (intentional)
         # - Default settings don't exist: guest_login_enabled defaults to false (blocks guest)
         # - Inactive departments: Excluded from counts (department_exists checks active=true)
-        if (
-            not request.actualProfileId
-            and not request.effectiveProfileId
+        # #region agent log
+        should_check_auth = (
+            not actual_profile_id
+            and not effective_profile_id
             and auth_mode_cookie in ("default-account", "default-guest")
-        ):
+        )
+        log_data = {
+            "location": "context.py:270",
+            "message": "Authorization check decision",
+            "data": {
+                "should_check_auth": should_check_auth,
+                "actualProfileId": actual_profile_id,
+                "effectiveProfileId": effective_profile_id,
+                "auth_mode_cookie": auth_mode_cookie,
+            },
+            "timestamp": int(__import__("time").time() * 1000),
+            "sessionId": "debug-session",
+            "runId": "run1",
+            "hypothesisId": "E"
+        }
+        try:
+            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                f.write(json.dumps(log_data) + "\n")
+        except:
+            pass
+        # #endregion
+        if should_check_auth:
             auth_check_sql = load_sql("sql/v3/profile/check_login_authorization.sql")
             auth_result = await conn.fetchrow(auth_check_sql, department_id_cookie)
 
@@ -345,45 +396,45 @@ async def get_profile_context(
         # Pass profile IDs (can be null) and cookie values (can be null) to SQL
         sql_query = load_sql("sql/v3/profile/get_profile_context_complete.sql")
         sql_params = (
-            request.actualProfileId,
-            request.effectiveProfileId,
+            actual_profile_id,
+            effective_profile_id,
             department_id_cookie,
             auth_mode_cookie,
         )
 
         # Check if profiles exist before running the main query
         # This prevents unnecessary SQL execution and provides clearer error messages
-        if request.actualProfileId:
+        if actual_profile_id:
             profile_check_sql = "SELECT id FROM profiles WHERE id = $1::uuid"
             actual_exists = await conn.fetchrow(
-                profile_check_sql, request.actualProfileId
+                profile_check_sql, actual_profile_id
             )
             if not actual_exists:
                 raise HTTPException(
                     status_code=401,
-                    detail=f"Session invalid: Profile {request.actualProfileId} not found. Please sign in again.",
+                    detail=f"Session invalid: Profile {actual_profile_id} not found. Please sign in again.",
                 )
 
         if (
-            request.effectiveProfileId
-            and request.effectiveProfileId != request.actualProfileId
+            effective_profile_id
+            and effective_profile_id != actual_profile_id
         ):
             profile_check_sql = "SELECT id FROM profiles WHERE id = $1::uuid"
             effective_exists = await conn.fetchrow(
-                profile_check_sql, request.effectiveProfileId
+                profile_check_sql, effective_profile_id
             )
             if not effective_exists:
                 raise HTTPException(
                     status_code=401,
-                    detail=f"Session invalid: Effective profile {request.effectiveProfileId} not found. Please sign in again.",
+                    detail=f"Session invalid: Effective profile {effective_profile_id} not found. Please sign in again.",
                 )
 
         result = await conn.fetchrow(sql_query, *sql_params)
 
         if not result:
             # Check if it's an authorization failure (profiles differ) or not found
-            resolved_actual = request.actualProfileId
-            resolved_effective = request.effectiveProfileId
+            resolved_actual = actual_profile_id
+            resolved_effective = effective_profile_id
 
             # If we resolved from cookies, we need to check the result to see what was resolved
             # But if result is None, resolution failed
