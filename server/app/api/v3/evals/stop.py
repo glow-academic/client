@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.evals.run_eval_worker import cancel_eval_tasks
@@ -33,7 +34,13 @@ class StopEvalResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/stop", response_model=StopEvalResponse)
+@router.post(
+    "/stop",
+    response_model=StopEvalResponse,
+    dependencies=[
+        audit_activity("eval.stopped", "{{ actor.name }} stopped eval '{{ eval.name }}'")
+    ],
+)
 async def stop_eval(
     request: StopEvalRequest,
     http_request: Request,
@@ -47,6 +54,7 @@ async def stop_eval(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        profile_id = http_request.state.profile_id
         async with transaction(conn):
             # Check if eval exists
             eval_check = await conn.fetchrow(
@@ -61,13 +69,21 @@ async def stop_eval(
 
             # Mark pending runs as completed
             sql_query = load_sql("sql/v3/evals/stop_eval.sql")
-            sql_params = (request.evalId,)
-            result = await conn.fetchrow(sql_query, request.evalId)
+            sql_params = (request.evalId, profile_id)
+            result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
                 raise ValueError("Failed to stop eval")
 
             stopped_count = result["stopped_count"]
+            eval_name = result["eval_name"]
+            actor_name = result["actor_name"]
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    eval={"name": eval_name, "id": request.evalId},
+                )
 
         result_data = StopEvalResponse(
             success=True,

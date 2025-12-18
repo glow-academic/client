@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -40,7 +41,16 @@ class UpdateDocumentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateDocumentResponse)
+@router.post(
+    "/update",
+    response_model=UpdateDocumentResponse,
+    dependencies=[
+        audit_activity(
+            "document.updated",
+            "{{ actor.name }} updated document '{{ document.name }}'",
+        )
+    ],
+)
 async def update_document(
     request: UpdateDocumentRequest,
     http_request: Request,
@@ -54,6 +64,14 @@ async def update_document(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Prepare template args (schema) as JSONB
             template_args_jsonb = None
@@ -82,8 +100,21 @@ async def update_document(
                 if request.templateUploadId
                 else None,
                 template_args_jsonb,
+                uuid.UUID(profile_id),
             )
-            await conn.execute(sql_query, *sql_params)
+            result_row = await conn.fetchrow(sql_query, *sql_params)
+
+            if result_row:
+                document_name = result_row.get("document_name", request.name or "Unknown")
+                actor_name = result_row.get("actor_name")
+
+                # Set audit context with data from SQL query
+                if actor_name:
+                    audit_set(
+                        http_request,
+                        actor={"name": actor_name, "id": profile_id},
+                        document={"name": document_name, "id": request.documentId},
+                    )
 
         result = UpdateDocumentResponse(
             success=True,

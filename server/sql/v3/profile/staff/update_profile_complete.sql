@@ -1,11 +1,17 @@
 -- Update staff profile with lookup, update, department, cohorts, and request limit in single query (DHH style)
 -- Parameters: $1=profile_id (uuid), $2=first_name, $3=last_name, $4=email, $5=role, $6=active, 
 --             $7=cohort_ids (uuid[]), $8=department_ids (uuid[]), $9=primary_department_index (int, nullable),
---             $10=requests_per_day (int, nullable)
+--             $10=requests_per_day (int, nullable), $11=current_profile_id (uuid)
 -- Note: $4=email is now the primary email to update (replaces existing primary email)
--- Returns: id, first_name, last_name, name (concatenated)
+-- Returns: id, first_name, last_name, name (concatenated), actor_name
 
-WITH profile_check AS (
+WITH actor_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $11::uuid
+),
+profile_check AS (
     -- Check if profile exists and get name
     SELECT 
         id,
@@ -132,7 +138,9 @@ SELECT
     pc.id,
     pc.first_name,
     pc.last_name,
-    pc.name
+    pc.name,
+    ap.actor_name
 FROM profile_check pc
+CROSS JOIN actor_profile ap
 LIMIT 1
 

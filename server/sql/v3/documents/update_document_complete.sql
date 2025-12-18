@@ -1,7 +1,15 @@
 -- Update document with department links and parameter items in a single transaction
--- Parameters: $1=documentId, $2=name (nullable text), $3=description (nullable text), $4=active (nullable boolean), $5=template (nullable boolean), $6=department_id (nullable uuid), $7=field_ids (nullable text array), $8=classify_agent_id (nullable uuid), $9=document_agent_id (nullable uuid), $10=template_upload_id (nullable uuid), $11=template_args (nullable jsonb)
+-- Parameters: $1=documentId, $2=name (nullable text), $3=description (nullable text), $4=active (nullable boolean), $5=template (nullable boolean), $6=department_id (nullable uuid), $7=field_ids (nullable text array), $8=classify_agent_id (nullable uuid), $9=document_agent_id (nullable uuid), $10=template_upload_id (nullable uuid), $11=template_args (nullable jsonb), $12=profile_id (uuid)
 -- Note: Parameters are linked via document_fields (field_ids), not via parameter_documents junction table
-WITH update_document AS (
+-- Returns: document_id, document_name, actor_name
+WITH actor_profile AS (
+    SELECT 
+        $12::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $12::uuid
+),
+update_document AS (
     UPDATE documents
     SET 
         name = COALESCE($2, name),
@@ -108,4 +116,9 @@ link_fields AS (
 )
 -- Note: Parameters are now linked automatically via document_fields (handled by link_fields CTE above)
 -- The parameter_documents junction table was removed in migration 91
-SELECT document_id FROM update_document
+SELECT 
+    ud.document_id,
+    COALESCE((SELECT name FROM documents WHERE id = ud.document_id::uuid), 'Unknown') as document_name,
+    ap.actor_name
+FROM update_document ud
+CROSS JOIN actor_profile ap

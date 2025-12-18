@@ -1,8 +1,18 @@
 -- Get simulation detail with departments, scenarios, and access control
 -- Parameters: $1 = simulation_id (uuid), $2 = profile_id (uuid)
 
-WITH user_context AS (
-    SELECT role FROM resolve_profile_id rpi
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+user_context AS (
+    SELECT 
+        role,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
         simulation_departments_data AS (
@@ -623,7 +633,9 @@ WITH user_context AS (
             pild.parameter_items_list,
             -- Agent mapping
             COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
-            COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids
+            COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
+            -- Actor name
+            uc.actor_name
         FROM simulation_base sb
         CROSS JOIN user_context uc
         LEFT JOIN cohort_usage cu ON true

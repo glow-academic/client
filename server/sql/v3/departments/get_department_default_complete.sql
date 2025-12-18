@@ -2,7 +2,10 @@
 -- Parameters: $1=profileId
 -- Returns: profile_role, settings_mapping
 WITH user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        first_name || ' ' || last_name as actor_name
+    FROM profiles WHERE id = $1
 ),
 settings_departments_data AS (
     -- Get department_ids for each setting
@@ -32,7 +35,8 @@ settings_mapping_data AS (
 )
 SELECT 
     up.role as profile_role,
-    COALESCE(smd.settings_mapping, '{}'::jsonb) as settings_mapping
+    COALESCE(smd.settings_mapping, '{}'::jsonb) as settings_mapping,
+    up.actor_name
 FROM user_profile up
 CROSS JOIN settings_mapping_data smd
 

@@ -145,6 +145,7 @@ SELECT
         )
         FROM cohort_data cd),
         '[]'::json
-    ) AS cohort_data
+    ) AS cohort_data,
+    pi.profile_name as actor_name
 FROM profile_info pi;
 

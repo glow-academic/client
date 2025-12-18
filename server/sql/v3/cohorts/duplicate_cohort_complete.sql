@@ -1,8 +1,15 @@
 -- Duplicate cohort with relationships in single query (DHH style)
--- Parameters: $1=original_cohort_id (uuid)
--- Returns: id, title, description
+-- Parameters: $1=original_cohort_id (uuid), $2=profile_id (uuid)
+-- Returns: id, title, description, actor_name
 
-WITH original_cohort AS (
+WITH actor_profile AS (
+    SELECT 
+        $2::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+original_cohort AS (
     -- Get original cohort data
     SELECT 
         id,
@@ -52,8 +59,10 @@ SELECT
     nc.id,
     oc.title as original_title,
     nc.title,
-    nc.description
+    nc.description,
+    ap.actor_name
 FROM new_cohort nc
 CROSS JOIN original_cohort oc
+CROSS JOIN actor_profile ap
 LIMIT 1
 

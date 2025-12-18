@@ -4,10 +4,11 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -40,9 +41,19 @@ class CreateProfileResponse(BaseModel):
     message: str
 
 
-@router.post("/create", response_model=CreateProfileResponse)
+@router.post(
+    "/create",
+    response_model=CreateProfileResponse,
+    dependencies=[
+        audit_activity(
+            "profile.created",
+            "{{ actor.name }} created profile '{{ profile.name }}'",
+        )
+    ],
+)
 async def create_profile(
     request: CreateProfileRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateProfileResponse:
@@ -51,6 +62,14 @@ async def create_profile(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        current_profile_id = http_request.state.profile_id
+        if not current_profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Generate new profile ID
         profile_id = str(uuid.uuid4())
 
@@ -100,6 +119,7 @@ async def create_profile(
             request.cohort_ids,
             request.department_ids,
             primary_dept_index,
+            current_profile_id,  # For actor_name
         )
 
         async with transaction(conn):
@@ -117,6 +137,16 @@ async def create_profile(
             # Verify profile was created
             if not result["id"]:
                 raise HTTPException(status_code=500, detail="Failed to create profile")
+
+            # Set audit context with data from SQL query
+            actor_name = result.get("actor_name")
+            profile_name = f"{request.firstName} {request.lastName}"
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": current_profile_id},
+                    profile={"name": profile_name, "id": str(result["id"])},
+                )
 
             # Insert additional emails (if any)
             if len(request.emails) > 1:

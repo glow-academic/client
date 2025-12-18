@@ -1,9 +1,16 @@
 -- Update simulation with departments, scenarios, and videos in a single transaction
--- Parameters: $1=simulationId, $2=title, $3=description, $4=active, $5=practice_simulation, $6=department_ids (nullable text array), $7=scenario_ids (text array), $8=scenario_active_flags (bool array), $9=video_ids (text array), $10=video_active_flags (bool array), $11=scenario_hints_enabled (bool array), $12=scenario_rubric_ids (text array, nullable), $13=scenario_time_limit_seconds (int array, nullable), $14=scenario_audio_enabled (bool array), $15=scenario_text_enabled (bool array), $19=video_show_problem_statement (bool array), $20=video_show_objectives (bool array), $21=video_show_image (bool array), $22=hint_agent_id (text, nullable), $23=grade_text_agent_id (text, nullable), $24=grade_voice_agent_id (text, nullable), $25=simulation_text_agent_id (text, nullable), $26=simulation_voice_agent_id (text, nullable)
+-- Parameters: $1=simulationId, $2=title, $3=description, $4=active, $5=practice_simulation, $6=department_ids (nullable text array), $7=scenario_ids (text array), $8=scenario_active_flags (bool array), $9=video_ids (text array), $10=video_active_flags (bool array), $11=scenario_hints_enabled (bool array), $12=scenario_rubric_ids (text array, nullable), $13=scenario_time_limit_seconds (int array, nullable), $14=scenario_audio_enabled (bool array), $15=scenario_text_enabled (bool array), $19=video_show_problem_statement (bool array), $20=video_show_objectives (bool array), $21=video_show_image (bool array), $22=hint_agent_id (text, nullable), $23=grade_text_agent_id (text, nullable), $24=grade_voice_agent_id (text, nullable), $25=simulation_text_agent_id (text, nullable), $26=simulation_voice_agent_id (text, nullable), $27=profile_id (uuid)
 -- Note: scenario_ids/scenario_active_flags and video_ids/video_active_flags must be same length and order within each type
 -- Positions are unified: scenarios get positions 1..N, videos get positions N+1..M
 -- Note: rubric_id and time_limit are now per-scenario, not simulation-level
-WITH update_simulation AS (
+WITH actor_profile AS (
+    SELECT 
+        $27::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $27::uuid
+),
+update_simulation AS (
     UPDATE simulations SET
         title = $2,
         description = $3,
@@ -199,5 +206,9 @@ link_videos AS (
         show_image = EXCLUDED.show_image,
         updated_at = NOW()
 )
-SELECT simulation_id FROM update_simulation
+SELECT 
+    us.simulation_id,
+    ap.actor_name
+FROM update_simulation us
+CROSS JOIN actor_profile ap
 

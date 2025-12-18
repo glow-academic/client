@@ -1,6 +1,6 @@
 /**
- * TotalFeedbackCount.tsx
- * Fast and dumb UI component for displaying total feedback count metric with modal.
+ * ActiveProfilesMetric.tsx
+ * Fast and dumb UI component for displaying active profiles metric with modal.
  * All data processing is handled externally via props.
  */
 "use client";
@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useStatusColor } from "@/lib/utils/chartColors";
-import { MessageSquare } from "lucide-react";
+import { Users } from "lucide-react";
 import { useState } from "react";
 import {
   Area,
@@ -32,19 +32,19 @@ type TrendData = {
   count: number;
 };
 
-export interface TotalFeedbackCountProps {
-  totalFeedbackCount: number;
+export interface ActiveProfilesMetricProps {
+  activeProfilesCount: number;
   trendData: TrendData[];
   hasDataAvailable: boolean;
   status: "success" | "warning" | "danger" | "neutral";
 }
 
-export default function TotalFeedbackCount({
-  totalFeedbackCount,
+export default function ActiveProfilesMetric({
+  activeProfilesCount,
   trendData,
   hasDataAvailable,
   status,
-}: TotalFeedbackCountProps) {
+}: ActiveProfilesMetricProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Use status from server
@@ -88,12 +88,12 @@ export default function TotalFeedbackCount({
         onClick={() => setIsDialogOpen(true)}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Feedback</CardTitle>
-          <MessageSquare className={`h-4 w-4 ${iconClasses}`} />
+          <CardTitle className="text-sm font-medium">Active Profiles</CardTitle>
+          <Users className={`h-4 w-4 ${iconClasses}`} />
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${textClasses}`}>
-            {hasDataAvailable ? `${totalFeedbackCount}` : "0"}
+            {hasDataAvailable ? `${activeProfilesCount}` : "0"}
           </div>
         </CardContent>
       </Card>
@@ -101,9 +101,9 @@ export default function TotalFeedbackCount({
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Total Feedback Trend</DialogTitle>
+            <DialogTitle>Active Profiles Trend</DialogTitle>
             <DialogDescription hidden>
-              This chart shows the total feedback count over time.
+              This chart shows the active profiles count over time.
             </DialogDescription>
           </DialogHeader>
 
@@ -130,7 +130,7 @@ export default function TotalFeedbackCount({
                     }
                     return label;
                   }}
-                  formatter={(value: number) => [value, "Feedback Entries"]}
+                  formatter={(value: number) => [value, "Active Profiles"]}
                 />
                 <Area
                   type="monotone"

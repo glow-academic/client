@@ -21,7 +21,10 @@ WITH user_departments AS (
                 0 as time_limit
         ),
         user_context AS (
-            SELECT role FROM profiles WHERE id = $1
+            SELECT 
+                role,
+                first_name || ' ' || last_name as actor_name
+            FROM profiles WHERE id = $1
         ),
         primary_department_id AS (
             SELECT department_id::text
@@ -489,7 +492,8 @@ WITH user_departments AS (
             pdi.department_id as primary_department_id,
             -- Agent mapping
             COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
-            COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids
+            COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
+            uc.actor_name
         FROM simulation_base sb
         CROSS JOIN user_context uc
         LEFT JOIN primary_department_id pdi ON true

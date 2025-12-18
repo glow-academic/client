@@ -13,7 +13,21 @@
 --   $11 = page_size (int, default 50)
 -- Returns: JSONB object with paginated runs and mappings
 
-WITH profile_role_check AS (
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
+user_profile_for_actor AS (
+    SELECT
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $1::uuid
+),
+profile_role_check AS (
     SELECT 
         (SELECT resolved_profile_id FROM resolve_profile_id) as raw_profile_id,
         CASE 
@@ -188,6 +202,8 @@ SELECT
     CEIL(COALESCE((SELECT total_count FROM paginated_runs LIMIT 1), 0)::float / (SELECT page_size FROM page_size_val)) as total_pages,
     (SELECT mapping FROM model_mapping_data) as model_mapping,
     (SELECT mapping FROM agent_mapping_data) as agent_mapping,
-    (SELECT mapping FROM persona_mapping_data) as persona_mapping
+    (SELECT mapping FROM persona_mapping_data) as persona_mapping,
+    (SELECT actor_name FROM user_profile_for_actor) as actor_name
 FROM paginated_runs
+CROSS JOIN user_profile_for_actor
 

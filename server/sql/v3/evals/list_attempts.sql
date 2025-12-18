@@ -23,7 +23,11 @@ user_departments AS (
     WHERE profile_id = (SELECT resolved_profile_id FROM resolve_profile_id) AND active = true
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = (SELECT resolved_profile_id FROM resolve_profile_id)
+    SELECT 
+        role,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = (SELECT resolved_profile_id FROM resolve_profile_id)
 ),
 -- Get eval attempts with eval info
 attempts_with_eval AS (
@@ -168,6 +172,8 @@ SELECT
     CASE 
         WHEN $7 > 0 THEN CEIL(COALESCE((SELECT count FROM total_count), 0)::float / $7)
         ELSE 0
-    END as total_pages
+    END as total_pages,
+    up.actor_name
 FROM paginated_attempts
+CROSS JOIN user_profile up
 

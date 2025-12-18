@@ -14,6 +14,7 @@ from app.api.v3.settings.active import (
     get_active_settings,
 )
 from app.main import UPLOAD_FOLDER, get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.jinja_renderer import render_template
 from app.utils.logging.db_logger import get_logger
@@ -44,7 +45,16 @@ router = APIRouter()
 logger = get_logger(__name__)
 
 
-@router.post("/render", response_model=RenderTemplateResponse)
+@router.post(
+    "/render",
+    response_model=RenderTemplateResponse,
+    dependencies=[
+        audit_activity(
+            "document.rendered",
+            "{{ actor.name }} rendered document '{{ document.name }}'",
+        )
+    ],
+)
 async def render_document_template(
     request: RenderTemplateRequest,
     http_request: Request,
@@ -70,13 +80,24 @@ async def render_document_template(
         # Get template upload info and template args
         # SQL uses INNER JOIN so it only returns rows if document exists and has active template
         sql_query = load_sql("sql/v3/documents/render_template_complete.sql")
-        sql_params = (str(document_id),)
-        template_row = await conn.fetchrow(sql_query, *sql_params)
+        sql_params = (str(document_id), str(profile_id))
+        template_row = await conn.fetchrow(sql_query, str(document_id), str(profile_id))
 
         if not template_row:
             raise HTTPException(
                 status_code=404,
                 detail=f"Document {request.documentId} not found or has no active template",
+            )
+
+        document_name = template_row.get("document_name", "Unknown")
+        actor_name = template_row.get("actor_name")
+
+        # Set audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id_str},
+                document={"name": document_name, "id": request.documentId},
             )
 
         file_path = template_row.get("file_path")

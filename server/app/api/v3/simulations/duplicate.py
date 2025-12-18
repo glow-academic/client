@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -30,7 +31,16 @@ class DuplicateSimulationResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/duplicate", response_model=DuplicateSimulationResponse)
+@router.post(
+    "/duplicate",
+    response_model=DuplicateSimulationResponse,
+    dependencies=[
+        audit_activity(
+            "simulation.duplicated",
+            "{{ actor.name }} duplicated simulation '{{ simulation.name }}'",
+        )
+    ],
+)
 async def duplicate_simulation(
     request: DuplicateSimulationRequest,
     http_request: Request,
@@ -44,10 +54,18 @@ async def duplicate_simulation(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Use single comprehensive SQL file (DHH style)
         sql_query = load_sql("sql/v3/simulations/duplicate_simulation.sql")
-        sql_params = (request.simulationId,)
-        new_simulation_row = await conn.fetchrow(sql_query, request.simulationId)
+        sql_params = (request.simulationId, profile_id)
+        new_simulation_row = await conn.fetchrow(sql_query, request.simulationId, profile_id)
 
         if not new_simulation_row:
             raise HTTPException(
@@ -55,16 +73,21 @@ async def duplicate_simulation(
             )
 
         new_simulation_id = new_simulation_row["simulation_id"]
+        simulation_name = new_simulation_row.get("scenario_name", "Unknown")
+        actor_name = new_simulation_row.get("actor_name")
 
-        # Get original title for message
-        original_title = await conn.fetchval(
-            "SELECT title FROM simulations WHERE id = $1", request.simulationId
-        )
+        # Set audit context with data from SQL query
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                simulation={"name": simulation_name, "id": new_simulation_id},
+            )
 
         result_data = DuplicateSimulationResponse(
             success=True,
             simulationId=new_simulation_id,
-            message=f"Simulation '{original_title}' duplicated successfully",
+            message=f"Simulation '{simulation_name}' duplicated successfully",
         )
 
         # Invalidate cache after mutation

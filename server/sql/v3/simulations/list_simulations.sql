@@ -94,7 +94,10 @@ simulation_data AS (
         OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        first_name || ' ' || last_name as actor_name
+    FROM profiles WHERE id = $1
 ),
 all_scenario_ids AS (
     SELECT DISTINCT unnest(scenario_ids) as scenario_id
@@ -239,7 +242,8 @@ SELECT
     sm.mapping as scenario_mapping,
     rm.mapping as rubric_mapping,
     dm.mapping as department_mapping,
-    cm.mapping as cohort_mapping
+    cm.mapping as cohort_mapping,
+    (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
 FROM simulation_data sd
 CROSS JOIN user_profile up
 CROSS JOIN scenario_mapping_data sm

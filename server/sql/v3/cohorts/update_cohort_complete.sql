@@ -1,9 +1,16 @@
 -- Update cohort with department, profile, and simulation relationships in single query (DHH style)
 -- Parameters: $1=cohort_id (uuid), $2=title, $3=description, $4=active, $5=department_ids (text[]),
---             $6=profile_ids (text[]), $7=simulation_ids (text[])
--- Returns: id, title
+--             $6=profile_ids (text[]), $7=simulation_ids (text[]), $8=profile_id (uuid)
+-- Returns: id, title, actor_name
 
-WITH cohort_update AS (
+WITH actor_profile AS (
+    SELECT 
+        $8::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $8::uuid
+),
+cohort_update AS (
     -- Update cohort
     UPDATE cohorts SET
         title = $2,
@@ -84,5 +91,10 @@ link_simulations AS (
     WHERE COALESCE(array_length($7::text[], 1), 0) > 0
 )
 -- Return updated cohort info
-SELECT id, title FROM cohort_update
+SELECT 
+    cu.id,
+    cu.title,
+    ap.actor_name
+FROM cohort_update cu
+CROSS JOIN actor_profile ap
 

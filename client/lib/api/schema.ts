@@ -5497,10 +5497,10 @@ export interface components {
          * @description Header metrics for activity page.
          */
         ActivityBundleMetrics: {
-            total_activity_entries: components["schemas"]["MetricResponse"];
-            recent_activity_24h: components["schemas"]["MetricResponse"];
-            unresolved_feedback_count: components["schemas"]["MetricResponse"];
+            active_profiles_count: components["schemas"]["MetricResponse"];
             total_feedback_count: components["schemas"]["MetricResponse"];
+            total_activity_entries: components["schemas"]["MetricResponse"];
+            total_errors_count: components["schemas"]["MetricResponse"];
         };
         /**
          * ActivityBundleResponse
@@ -5508,6 +5508,24 @@ export interface components {
          */
         ActivityBundleResponse: {
             metrics: components["schemas"]["ActivityBundleMetrics"];
+            /** Chartdata */
+            chartData: components["schemas"]["ActivityChartDataPoint"][];
+        };
+        /**
+         * ActivityChartDataPoint
+         * @description Activity chart data point.
+         */
+        ActivityChartDataPoint: {
+            /** Date */
+            date: string;
+            /** Activeprofiles */
+            activeProfiles: number;
+            /** Feedbackentries */
+            feedbackEntries: number;
+            /** Activityentries */
+            activityEntries: number;
+            /** Errors */
+            errors: number;
         };
         /**
          * ActivityItem
@@ -8730,6 +8748,20 @@ export interface components {
             agent_mapping: {
                 [key: string]: {
                     [key: string]: unknown;
+                };
+            };
+            /** Standard Groups Mapping */
+            standard_groups_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__evals__list__StandardGroupMappingItem"];
+            };
+            /** Standards Mapping */
+            standards_mapping: {
+                [key: string]: components["schemas"]["StandardMappingItem"];
+            };
+            /** Rubric Standard Groups Mapping */
+            rubric_standard_groups_mapping: {
+                [key: string]: {
+                    [key: string]: string[];
                 };
             };
             /** Rubric Options */
@@ -15829,6 +15861,20 @@ export interface components {
             can_edit: boolean;
             /** Can Delete */
             can_delete: boolean;
+        };
+        /**
+         * StandardGroupMappingItem
+         * @description Standard group mapping item with rubric context.
+         */
+        app__api__v3__evals__list__StandardGroupMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+            /** Passpoints */
+            passPoints: number;
         };
         /**
          * AgentMappingItem

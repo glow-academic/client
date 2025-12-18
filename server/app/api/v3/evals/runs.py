@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -65,7 +66,15 @@ class ModelRunsResponse(BaseModel):
     persona_mapping: dict[str, str]
 
 
-@router.post("/runs", response_model=ModelRunsResponse)
+@router.post(
+    "/runs",
+    response_model=ModelRunsResponse,
+    dependencies=[
+        audit_activity(
+            "eval.runs_queried", "{{ actor.name }} queried model runs for eval selection"
+        )
+    ],
+)
 async def get_model_runs(
     filters: ModelRunsFilters,
     request: Request,
@@ -155,6 +164,10 @@ async def get_model_runs(
 
         if not result:
             raise HTTPException(status_code=500, detail="Failed to query model_runs")
+
+        actor_name = result.get("actor_name")
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Parse model_runs list
         model_runs: list[ModelRunItem] = []

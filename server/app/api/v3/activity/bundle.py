@@ -1,5 +1,6 @@
 """Activity bundle endpoint for header metrics."""
 
+import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -24,19 +25,30 @@ class ActivityBundleFilters(BaseModel):
     # No filters needed for header metrics
 
 
+class ActivityChartDataPoint(BaseModel):
+    """Activity chart data point."""
+
+    date: str
+    activeProfiles: int
+    feedbackEntries: int
+    activityEntries: int
+    errors: int
+
+
 class ActivityBundleMetrics(BaseModel):
     """Header metrics for activity page."""
 
-    total_activity_entries: MetricResponse
-    recent_activity_24h: MetricResponse
-    unresolved_feedback_count: MetricResponse
+    active_profiles_count: MetricResponse
     total_feedback_count: MetricResponse
+    total_activity_entries: MetricResponse
+    total_errors_count: MetricResponse
 
 
 class ActivityBundleResponse(BaseModel):
     """Response for activity bundle endpoint."""
 
     metrics: ActivityBundleMetrics
+    chartData: list[ActivityChartDataPoint]
 
 
 router = APIRouter()
@@ -97,45 +109,56 @@ async def get_activity_bundle(
         if not result:
             raise HTTPException(status_code=500, detail="Failed to fetch activity metrics")
 
-        total_activity = result["total_activity_entries"] or 0
-        recent_24h = result["recent_activity_24h"] or 0
-        unresolved_feedback = result["unresolved_feedback_count"] or 0
+        # Extract header metrics
+        active_profiles = result["active_profiles_count"] or 0
         total_feedback = result["total_feedback_count"] or 0
+        total_activity = result["total_activity_entries"] or 0
+        total_errors = result["total_errors_count"] or 0
 
-        # Calculate growth rate (7d vs 30d)
-        recent_7d = result["recent_activity_7d"] or 0
-        recent_30d = result["recent_activity_30d"] or 0
-        growth_rate = 0.0
-        if recent_30d > 0:
-            growth_rate = ((recent_7d - (recent_30d - recent_7d)) / recent_30d) * 100
+        # Parse chart data
+        chart_data_raw = result.get("chart_data")
+        chart_data: list[ActivityChartDataPoint] = []
+        if chart_data_raw:
+            if isinstance(chart_data_raw, str):
+                chart_data_json = json.loads(chart_data_raw)
+            else:
+                chart_data_json = chart_data_raw
+            
+            if isinstance(chart_data_json, list):
+                chart_data = [
+                    ActivityChartDataPoint(**item) for item in chart_data_json
+                ]
 
-        # Build metrics with all required fields
+        # Calculate trend data for each metric (last 30 days for modal charts)
+        def calculate_trend_data(metric_key: str) -> list[TrendData]:
+            """Calculate trend data for a metric from chart data."""
+            if not chart_data:
+                return []
+            
+            # Get last 30 days of data
+            recent_data = chart_data[-30:] if len(chart_data) > 30 else chart_data
+            
+            trend_data = []
+            for point in recent_data:
+                value = getattr(point, metric_key, 0)
+                trend_data.append(
+                    TrendData(
+                        date=point.date,
+                        value=float(value),
+                        count=1,
+                    )
+                )
+            return trend_data
+
+        # Build metrics with trend data
         metrics = ActivityBundleMetrics(
-            total_activity_entries=MetricResponse(
-                hasData=total_activity > 0,
+            active_profiles_count=MetricResponse(
+                hasData=active_profiles > 0,
                 method=Method.COUNT_DISTINCT,
-                currentValue=total_activity,
-                status=compute_status(total_activity),
+                currentValue=active_profiles,
+                status=compute_status(active_profiles),
                 trendAnalysis=None,
-                trendData=[],
-                dataPoints=[],
-            ),
-            recent_activity_24h=MetricResponse(
-                hasData=recent_24h > 0,
-                method=Method.COUNT_DISTINCT,
-                currentValue=recent_24h,
-                status=compute_status(recent_24h),
-                trendAnalysis=None,
-                trendData=[],
-                dataPoints=[],
-            ),
-            unresolved_feedback_count=MetricResponse(
-                hasData=unresolved_feedback > 0,
-                method=Method.COUNT_DISTINCT,
-                currentValue=unresolved_feedback,
-                status=compute_status(unresolved_feedback, threshold_warning=5, threshold_danger=10),
-                trendAnalysis=None,
-                trendData=[],
+                trendData=calculate_trend_data("activeProfiles"),
                 dataPoints=[],
             ),
             total_feedback_count=MetricResponse(
@@ -144,12 +167,30 @@ async def get_activity_bundle(
                 currentValue=total_feedback,
                 status=compute_status(total_feedback),
                 trendAnalysis=None,
-                trendData=[],
+                trendData=calculate_trend_data("feedbackEntries"),
+                dataPoints=[],
+            ),
+            total_activity_entries=MetricResponse(
+                hasData=total_activity > 0,
+                method=Method.COUNT_DISTINCT,
+                currentValue=total_activity,
+                status=compute_status(total_activity),
+                trendAnalysis=None,
+                trendData=calculate_trend_data("activityEntries"),
+                dataPoints=[],
+            ),
+            total_errors_count=MetricResponse(
+                hasData=total_errors > 0,
+                method=Method.COUNT_DISTINCT,
+                currentValue=total_errors,
+                status=compute_status(total_errors, threshold_warning=10, threshold_danger=50),
+                trendAnalysis=None,
+                trendData=calculate_trend_data("errors"),
                 dataPoints=[],
             ),
         )
 
-        result_data = ActivityBundleResponse(metrics=metrics)
+        result_data = ActivityBundleResponse(metrics=metrics, chartData=chart_data)
 
         # Cache response
         await set_cached(

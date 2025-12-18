@@ -14,8 +14,6 @@ import type { Metadata } from "next";
 /** ---- Strong types from OpenAPI ---- */
 type EvalsListIn = InputOf<"/api/v3/evals/list", "post">;
 type EvalsListOut = OutputOf<"/api/v3/evals/list", "post">;
-type RubricDetailIn = InputOf<"/api/v3/rubrics/detail", "post">;
-type RubricDetailOut = OutputOf<"/api/v3/rubrics/detail", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Eval list responses can get large. Using cache: 'no-store' to disable Next.js default fetch caching.
@@ -35,22 +33,6 @@ const getEvalsList = async (input: EvalsListIn): Promise<EvalsListOut> => {
   });
 };
 
-/** ---- Fetch rubric detail ---- */
-const getRubricDetail = async (
-  input: RubricDetailIn
-): Promise<RubricDetailOut> => {
-  "use server";
-  const bypassCache = await isHardRefresh();
-
-  return api.post("/rubrics/detail", input, {
-    cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
-  });
-};
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -66,15 +48,11 @@ export default async function BenchmarkPage() {
     body: {},
   };
 
-  // Fetch evals list server-side
+  // Fetch evals list server-side (now includes rubric mappings)
   const evalsData = await getEvalsList(evalsFilters);
 
-  // Extract unique rubric IDs from evals
-  const uniqueRubricIds = Array.from(
-    new Set(evalsData.evals.map((evalItem) => evalItem.rubric_id))
-  );
-
-  // Fetch rubric details for all unique rubric IDs
+  // Build rubric mappings from evals list response (similar to practice page)
+  // Transform standard_groups_mapping and standards_mapping into rubric-specific mappings
   const rubricMappings: Record<
     string,
     {
@@ -95,56 +73,56 @@ export default async function BenchmarkPage() {
     }
   > = {};
 
-  // Fetch rubric details in parallel
-  await Promise.all(
-    uniqueRubricIds.map(async (rubricId) => {
-      try {
-        const rubricDetail = await getRubricDetail({
-          body: { rubricId },
-        });
-
-        // Transform rubric detail to match TableRubric format
-        const standard_groups: Record<string, string[]> = {};
-        rubricDetail.standard_group_ids.forEach((groupId) => {
-          const groupDetail = rubricDetail.standard_groups_detail[groupId];
-          if (groupDetail) {
-            standard_groups[groupId] = groupDetail.standard_ids;
-          }
-        });
-
-        // Transform standardGroupsMapping
-        const standardGroupsMapping: Record<
-          string,
-          {
-            name: string;
-            description: string;
-            points: number;
-            passPoints: number;
-          }
-        > = {};
-        Object.entries(rubricDetail.standard_groups_mapping).forEach(
-          ([groupId, mapping]) => {
-            const groupDetail = rubricDetail.standard_groups_detail[groupId];
-            standardGroupsMapping[groupId] = {
-              name: mapping["name"] || "",
-              description: mapping["description"] || "",
-              points: groupDetail?.points || 0,
-              passPoints: groupDetail?.passPoints || 0,
-            };
-          }
-        );
-
-        rubricMappings[rubricId] = {
-          standard_groups,
-          standardGroupsMapping,
-          standardsMapping: rubricDetail.standards_mapping,
-        };
-      } catch {
-        // Silently fail for individual rubric fetches - card will just not show rubric dialog
-        // console.error(`Failed to fetch rubric ${rubricId}:`, error);
-      }
-    })
+  // Build rubric mappings for each unique rubric_id
+  const uniqueRubricIds = Array.from(
+    new Set(evalsData.evals.map((evalItem) => evalItem.rubric_id))
   );
+
+  for (const rubricId of uniqueRubricIds) {
+    // Get standard_group_ids map for this rubric (groupId -> standard_ids[])
+    const rubricStandardGroupsMap =
+      evalsData.rubric_standard_groups_mapping?.[rubricId] || {};
+
+    // Build standard_groups mapping (groupId -> standard_ids[])
+    // The map already contains standard_ids arrays per group
+    const standard_groups: Record<string, string[]> = {};
+    for (const [groupId, standardIds] of Object.entries(
+      rubricStandardGroupsMap
+    )) {
+      // standardIds is already an array from the SQL query
+      if (Array.isArray(standardIds)) {
+        standard_groups[groupId] = standardIds;
+      }
+    }
+
+    // Build standardGroupsMapping from standard_groups_mapping
+    const standardGroupsMapping: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        points: number;
+        passPoints: number;
+      }
+    > = {};
+    for (const groupId of Object.keys(standard_groups)) {
+      const groupData = evalsData.standard_groups_mapping?.[groupId];
+      if (groupData) {
+        standardGroupsMapping[groupId] = {
+          name: groupData.name || "",
+          description: groupData.description || "",
+          points: groupData.points || 0,
+          passPoints: groupData.passPoints || 0,
+        };
+      }
+    }
+
+    rubricMappings[rubricId] = {
+      standard_groups,
+      standardGroupsMapping,
+      standardsMapping: evalsData.standards_mapping || {},
+    };
+  }
 
   return (
     <div className="space-y-6">

@@ -14,6 +14,13 @@ current_user_role AS (
     SELECT role FROM resolve_current_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
+actor_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_current_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    WHERE rpi.resolved_profile_id IS NOT NULL
+),
 target_profile AS (
     SELECT 
         p.id,
@@ -142,11 +149,13 @@ SELECT
     COALESCE(vd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
     COALESCE(vd.dept_mapping, '{}'::jsonb) as department_mapping,
     COALESCE(cmd.cohort_mapping, '{}'::jsonb) as cohort_mapping,
-    COALESCE(cmd.valid_cohort_ids, ARRAY[]::text[]) as valid_cohort_ids
+    COALESCE(cmd.valid_cohort_ids, ARRAY[]::text[]) as valid_cohort_ids,
+    ap.actor_name
 FROM visible_profile vp
 CROSS JOIN valid_depts vd
 CROSS JOIN can_edit_check cec
 CROSS JOIN cohort_mapping_data cmd
+CROSS JOIN actor_profile ap
 LEFT JOIN target_profile_cohorts tpc ON true
 LEFT JOIN target_profile_departments tpd ON true
 

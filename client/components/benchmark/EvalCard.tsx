@@ -6,7 +6,6 @@
  */
 
 import TableRubric from "@/components/common/rubric/TableRubric";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,9 +30,6 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
 import {
-  AlertCircle,
-  CheckCircle2,
-  Clock,
   Loader2,
   Play,
   Table,
@@ -97,32 +93,6 @@ export default function EvalCard({
 
   // Default gradient for eval cards (purple theme)
   const backgroundGradient = "from-gray-900 to-gray-600";
-
-  const getStatusBadge = () => {
-    switch (status) {
-      case "completed":
-        return (
-          <Badge variant="default" className="bg-green-500">
-            <CheckCircle2 className="h-3 w-3 mr-1" />
-            Completed
-          </Badge>
-        );
-      case "running":
-        return (
-          <Badge variant="secondary">
-            <Clock className="h-3 w-3 mr-1" />
-            Running
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            Pending
-          </Badge>
-        );
-    }
-  };
 
   return (
     <div className="relative h-full">
@@ -229,16 +199,6 @@ export default function EvalCard({
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
               {description}
             </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            {getStatusBadge()}
-            <Badge variant="outline" className="text-xs">
-              {totalRuns} {totalRuns === 1 ? "run" : "runs"}
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              {rubricName}
-            </Badge>
           </div>
         </CardContent>
 

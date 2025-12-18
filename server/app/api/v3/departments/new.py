@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -66,7 +67,15 @@ class DepartmentDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/new", response_model=DepartmentDetailResponse)
+@router.post(
+    "/new",
+    response_model=DepartmentDetailResponse,
+    dependencies=[
+        audit_activity(
+            "department.new", "{{ actor.name }} opened new department form"
+        )
+    ],
+)
 async def get_department_new(
     request_body: DepartmentNewRequest,
     request: Request,
@@ -109,6 +118,11 @@ async def get_department_new(
             )
 
         is_superadmin = result["profile_role"] == "superadmin"
+
+        # Set audit context
+        actor_name = result.get("actor_name")
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Parse settings mapping from JSONB
         settings_mapping: dict[str, SettingsMappingItem] = {}

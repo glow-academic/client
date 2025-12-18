@@ -14,6 +14,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
@@ -30,7 +31,15 @@ class GenerateCertificateRequest(BaseModel):
 router = APIRouter()
 
 
-@router.post("/certificate")
+@router.post(
+    "/certificate",
+    dependencies=[
+        audit_activity(
+            "document.certificate",
+            "{{ actor.name }} generated certificate for document '{{ document.name }}'",
+        )
+    ],
+)
 async def generate_certificate(
     request: GenerateCertificateRequest,
     http_request: Request,
@@ -57,6 +66,15 @@ async def generate_certificate(
 
         # Parse JSON response
         profile_name = result["profile_name"]
+        actor_name = result.get("actor_name")
+
+        # Set audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                document={"name": "Certificate", "id": ""},
+            )
         # asyncpg returns JSON as string, need to parse it
         cohort_data_raw = result["cohort_data"]
         if isinstance(cohort_data_raw, str):

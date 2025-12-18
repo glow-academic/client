@@ -1,8 +1,15 @@
 -- Get eval attempt full details with runs and status
--- Parameters: $1 = attempt_id (uuid)
--- Returns: attempt details, eval info, runs list with status (not_started, in_progress, completed)
+-- Parameters: $1 = attempt_id (uuid), $2 = profile_id (uuid)
+-- Returns: attempt details, eval info, runs list with status (not_started, in_progress, completed), actor_name
 
-WITH attempt_data AS (
+WITH actor_profile AS (
+    SELECT
+        $2::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+attempt_data AS (
     SELECT 
         ea.id as attempt_id,
         ea.created_at as attempt_created_at,
@@ -221,9 +228,11 @@ SELECT
         'in_progress', COALESCE(ss.in_progress_count, 0),
         'completed', COALESCE(ss.completed_count, 0),
         'total', COALESCE(ss.total_runs, 0)
-    ) as status_summary
+    ) as status_summary,
+    ap.actor_name
 FROM attempt_data ad
 CROSS JOIN eval_info ei
 CROSS JOIN runs_json rj
 CROSS JOIN status_summary ss
+CROSS JOIN actor_profile ap
 

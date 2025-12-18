@@ -2,8 +2,19 @@
 -- Parameters: $1 = profile_id (uuid)
 -- Returns: default eval structure with mappings for departments, agents, rubrics
 
-WITH user_profile AS (
-    SELECT role FROM resolve_profile_id rpi
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
+user_profile AS (
+    SELECT 
+        role,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 primary_department_id AS (
@@ -175,7 +186,8 @@ SELECT
     CASE 
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
-    END as can_delete
+    END as can_delete,
+    up.actor_name
 FROM user_profile up
 CROSS JOIN valid_dept_ids vdi
 CROSS JOIN department_mapping_data dmd

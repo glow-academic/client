@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -30,7 +31,13 @@ class DeleteEvalResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeleteEvalResponse)
+@router.post(
+    "/delete",
+    response_model=DeleteEvalResponse,
+    dependencies=[
+        audit_activity("eval.deleted", "{{ actor.name }} deleted eval '{{ eval.name }}'")
+    ],
+)
 async def delete_eval(
     request: DeleteEvalRequest,
     http_request: Request,
@@ -44,6 +51,7 @@ async def delete_eval(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        profile_id = http_request.state.profile_id
         async with transaction(conn):
             # Check if eval exists
             eval_check = await conn.fetchrow(
@@ -53,15 +61,22 @@ async def delete_eval(
             if not eval_check:
                 raise ValueError(f"Eval not found: {request.evalId}")
 
-            eval_name = eval_check["name"]
-
             # Delete eval (cascades via FK)
             sql_query = load_sql("sql/v3/evals/delete_eval.sql")
-            sql_params = (request.evalId,)
-            result = await conn.fetchrow(sql_query, request.evalId)
+            sql_params = (request.evalId, profile_id)
+            result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
                 raise ValueError("Failed to delete eval")
+
+            eval_name = result["eval_name"]
+            actor_name = result["actor_name"]
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    eval={"name": eval_name, "id": request.evalId},
+                )
 
         result_data = DeleteEvalResponse(
             success=True,

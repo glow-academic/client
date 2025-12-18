@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -91,7 +92,16 @@ class DepartmentDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail", response_model=DepartmentDetailResponse)
+@router.post(
+    "/detail",
+    response_model=DepartmentDetailResponse,
+    dependencies=[
+        audit_activity(
+            "department.viewed",
+            "{{ actor.name }} viewed department '{{ department.title }}'",
+        )
+    ],
+)
 async def get_department_detail(
     request_body: DepartmentDetailRequest,
     request: Request,
@@ -247,6 +257,16 @@ async def get_department_detail(
         # Ensure can_delete is stricter than can_edit
         can_edit = dept_row["can_edit"]
         can_delete = dept_row["can_delete"] and can_edit
+
+        # Set audit context with data from SQL query
+        actor_name = dept_row.get("actor_name")
+        department_title = dept_row.get("title")
+        if actor_name:
+            audit_set(
+                request,
+                actor={"name": actor_name, "id": profile_id},
+                department={"title": department_title, "id": request_body.departmentId},
+            )
 
         response_data = DepartmentDetailResponse(
             title=dept_row["title"],

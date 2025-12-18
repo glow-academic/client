@@ -3,13 +3,13 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class DuplicateDepartmentRequest(BaseModel):
@@ -29,7 +29,16 @@ class DuplicateDepartmentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/duplicate", response_model=DuplicateDepartmentResponse)
+@router.post(
+    "/duplicate",
+    response_model=DuplicateDepartmentResponse,
+    dependencies=[
+        audit_activity(
+            "department.duplicated",
+            "{{ actor.name }} duplicated department '{{ department.title }}'",
+        )
+    ],
+)
 async def duplicate_department(
     request: DuplicateDepartmentRequest,
     http_request: Request,
@@ -43,11 +52,19 @@ async def duplicate_department(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Duplicate department (fetch and duplicate in single query)
             sql_query = load_sql("sql/v3/departments/duplicate_department_complete.sql")
-            sql_params = (request.departmentId,)
-            result = await conn.fetchrow(sql_query, request.departmentId)
+            sql_params = (request.departmentId, profile_id)
+            result = await conn.fetchrow(sql_query, request.departmentId, profile_id)
 
             if not result or not result.get("new_department_id"):
                 raise HTTPException(
@@ -56,6 +73,16 @@ async def duplicate_department(
                 )
 
             new_department_id = result["new_department_id"]
+            original_title = result.get("original_title", "Unknown")
+            actor_name = result.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    department={"title": original_title, "id": request.departmentId},
+                )
 
         result = DuplicateDepartmentResponse(
             success=True,

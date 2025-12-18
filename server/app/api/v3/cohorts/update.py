@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -35,7 +36,15 @@ class UpdateCohortResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateCohortResponse)
+@router.post(
+    "/update",
+    response_model=UpdateCohortResponse,
+    dependencies=[
+        audit_activity(
+            "cohort.updated", "{{ actor.name }} updated cohort '{{ cohort.name }}'"
+        )
+    ],
+)
 async def update_cohort(
     request: UpdateCohortRequest,
     http_request: Request,
@@ -49,6 +58,14 @@ async def update_cohort(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Handle None description (cohorts.description is NOT NULL, so use empty string)
         description = request.description if request.description is not None else ""
 
@@ -62,6 +79,7 @@ async def update_cohort(
             request.department_ids if request.department_ids else [],
             request.profile_ids if request.profile_ids else [],
             request.simulation_ids if request.simulation_ids else [],
+            uuid.UUID(profile_id),
         )
 
         async with transaction(conn):
@@ -69,6 +87,16 @@ async def update_cohort(
 
             if not result:
                 raise HTTPException(status_code=404, detail="Cohort not found")
+
+            actor_name = result.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    cohort={"name": request.title, "id": request.cohortId},
+                )
 
         result = UpdateCohortResponse(
             success=True,

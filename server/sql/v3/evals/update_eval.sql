@@ -1,8 +1,15 @@
 -- Update eval with optional runs and departments changes
--- Parameters: $1=eval_id, $2=name, $3=description, $4=rubric_id, $5=agent_id (nullable uuid), $6=eval_agent_id (nullable uuid), $7=run_ids (uuid[] | NULL - if provided, replaces all), $8=department_ids (uuid[] | NULL - if provided, replaces all), $9=active (boolean | NULL)
--- Returns: eval_id
+-- Parameters: $1=eval_id, $2=name, $3=description, $4=rubric_id, $5=agent_id (nullable uuid), $6=eval_agent_id (nullable uuid), $7=run_ids (uuid[] | NULL - if provided, replaces all), $8=department_ids (uuid[] | NULL - if provided, replaces all), $9=active (boolean | NULL), $10=profile_id (uuid)
+-- Returns: eval_id, eval_name, actor_name
 
-WITH update_eval AS (
+WITH actor_profile AS (
+    SELECT
+        $10::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $10::uuid
+),
+update_eval AS (
     UPDATE evals SET
         name = $2,
         description = $3,
@@ -12,7 +19,7 @@ WITH update_eval AS (
         active = COALESCE($9, active),
         updated_at = NOW()
     WHERE id = $1::uuid
-    RETURNING id::text as eval_id
+    RETURNING id::text as eval_id, name as eval_name
 ),
 -- If department_ids provided, replace all existing department links
 remove_existing_dept_links AS (
@@ -57,5 +64,7 @@ add_new_links AS (
     ON CONFLICT (eval_id, run_id) DO UPDATE SET
         updated_at = NOW()
 )
-SELECT eval_id FROM update_eval
+SELECT ue.eval_id, ue.eval_name, ap.actor_name
+FROM update_eval ue
+CROSS JOIN actor_profile ap
 

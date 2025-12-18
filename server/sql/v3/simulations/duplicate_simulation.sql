@@ -1,4 +1,14 @@
-WITH source_simulation AS (
+-- Duplicate simulation with all relationships
+-- Parameters: $1=simulationId, $2=profile_id (uuid)
+-- Returns: simulation_id, scenario_name, actor_name
+WITH actor_profile AS (
+    SELECT 
+        $2::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+source_simulation AS (
     SELECT 
         s.id as source_id,
         s.title,
@@ -51,5 +61,11 @@ copy_departments AS (
     JOIN simulation_departments sd ON sd.simulation_id = ssim.source_id AND sd.active = true
     CROSS JOIN new_simulation ns
 )
-SELECT simulation_id FROM new_simulation
+SELECT 
+    ns.simulation_id,
+    ss.title as scenario_name,
+    ap.actor_name
+FROM new_simulation ns
+CROSS JOIN source_simulation ss
+CROSS JOIN actor_profile ap
 

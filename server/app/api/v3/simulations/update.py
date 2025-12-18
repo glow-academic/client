@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -69,7 +70,16 @@ class UpdateSimulationResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateSimulationResponse)
+@router.post(
+    "/update",
+    response_model=UpdateSimulationResponse,
+    dependencies=[
+        audit_activity(
+            "simulation.updated",
+            "{{ actor.name }} updated simulation '{{ simulation.name }}'",
+        )
+    ],
+)
 async def update_simulation(
     request: UpdateSimulationRequest,
     http_request: Request,
@@ -157,6 +167,14 @@ async def update_simulation(
             scenario_time_limit_seconds_array = (
                 scenario_time_limit_seconds if scenario_time_limit_seconds else []
             )
+            # Get profile_id from header (set by router-level dependency)
+            profile_id = http_request.state.profile_id
+            if not profile_id:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Profile ID is required. Please sign in again.",
+                )
+
             # Update simulation with departments and scenarios in single SQL (DHH style)
             # Note: rubric_id and time_limit are now per-scenario, not simulation-level
             sql_query = load_sql("sql/v3/simulations/update_simulation_complete.sql")
@@ -184,11 +202,22 @@ async def update_simulation(
                 request.grade_voice_agent_id,  # $24
                 request.simulation_text_agent_id or "",  # $25
                 request.simulation_voice_agent_id or "",  # $26
+                profile_id,  # $27
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
                 raise ValueError(f"Simulation not found: {request.simulationId}")
+
+            actor_name = result.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    simulation={"name": request.title, "id": request.simulationId},
+                )
 
             result_data = UpdateSimulationResponse(
                 success=True,

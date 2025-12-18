@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -1002,7 +1003,15 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
     return preserve_order_union_selected_first(selected_field_ids, filtered_result)
 
 
-@router.post("/new", response_model=ScenarioDetailResponse)
+@router.post(
+    "/new",
+    response_model=ScenarioDetailResponse,
+    dependencies=[
+        audit_activity(
+            "scenario.new", "{{ actor.name }} viewed new scenario form"
+        )
+    ],
+)
 async def get_scenario_new(
     request_data: ScenarioNewRequest,
     request: Request,
@@ -1127,6 +1136,13 @@ async def get_scenario_new(
 
         if not result:
             raise ValueError("Failed to fetch default scenario data")
+
+        # Get actor name from SQL query
+        actor_name = result.get("actor_name")
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         dept_ids = result["department_ids"] or []
 

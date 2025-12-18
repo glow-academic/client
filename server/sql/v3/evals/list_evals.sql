@@ -10,6 +10,13 @@ WITH resolve_profile_id AS (
             ELSE $1::uuid
         END as resolved_profile_id
 ),
+actor_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    WHERE rpi.resolved_profile_id IS NOT NULL
+),
 user_departments AS (
     SELECT department_id
     FROM profile_departments
@@ -124,6 +131,71 @@ agent_mapping_data AS (
     FROM all_agent_ids aai
     LEFT JOIN agents a ON a.id = aai.agent_id
     WHERE a.active = true
+),
+-- Standard groups/standards for rubrics (similar to practice_overview.sql)
+standard_groups_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            sg.id::text,
+            jsonb_build_object(
+                'name', sg.name,
+                'description', sg.description,
+                'points', sg.points,
+                'passPoints', sg.pass_points
+            )
+        ) FILTER (WHERE sg.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM standard_groups sg
+    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+      AND sg.active = true
+),
+standards_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            st.id::text,
+            jsonb_build_object(
+                'name', st.name,
+                'description', st.description,
+                'points', st.points
+            )
+        ) FILTER (WHERE st.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM standards st
+    WHERE st.standard_group_id IN (
+        SELECT sg.id FROM standard_groups sg
+        WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+          AND sg.active = true
+    )
+),
+-- Map rubric_id to standard_group_ids with standard_ids per group
+rubric_standard_groups_data AS (
+    SELECT 
+        sg.rubric_id::text,
+        jsonb_object_agg(
+            sg.id::text,
+            COALESCE(
+                (SELECT jsonb_agg(st.id::text ORDER BY st.id)
+                 FROM standards st
+                 WHERE st.standard_group_id = sg.id),
+                '[]'::jsonb
+            )
+        ) FILTER (WHERE sg.id IS NOT NULL) as standard_group_ids_map
+    FROM standard_groups sg
+    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+      AND sg.active = true
+    GROUP BY sg.rubric_id
+),
+rubric_standard_groups_mapping AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            rubric_id,
+            standard_group_ids_map
+        ),
+        '{}'::jsonb
+    ) as mapping
+    FROM rubric_standard_groups_data
 )
 SELECT 
     ed.eval_id,
@@ -143,6 +215,9 @@ SELECT
     rm.mapping as rubric_mapping,
     dm.mapping as department_mapping,
     am.mapping as agent_mapping,
+    sgm.mapping as standard_groups_mapping,
+    sm.mapping as standards_mapping,
+    rsgm.mapping as rubric_standard_groups_mapping,
     CASE 
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
@@ -150,13 +225,18 @@ SELECT
     CASE 
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
-    END as can_delete
+    END as can_delete,
+    ap.actor_name
 FROM eval_data ed
 LEFT JOIN eval_departments edept ON edept.eval_id = ed.eval_id
 CROSS JOIN user_profile up
+CROSS JOIN actor_profile ap
 CROSS JOIN rubric_mapping_data rm
 CROSS JOIN department_mapping_data dm
 CROSS JOIN agent_mapping_data am
+CROSS JOIN standard_groups_mapping_data sgm
+CROSS JOIN standards_mapping_data sm
+CROSS JOIN rubric_standard_groups_mapping rsgm
 WHERE 
     -- Filter by department access (if rubric has departments, user must have access)
     (

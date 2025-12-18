@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -32,7 +33,16 @@ class UpdateDepartmentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateDepartmentResponse)
+@router.post(
+    "/update",
+    response_model=UpdateDepartmentResponse,
+    dependencies=[
+        audit_activity(
+            "department.updated",
+            "{{ actor.name }} updated department '{{ department.title }}'",
+        )
+    ],
+)
 async def update_department(
     request: UpdateDepartmentRequest,
     http_request: Request,
@@ -46,6 +56,14 @@ async def update_department(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Single consolidated query: updates department and settings relationship
             sql_query = load_sql("sql/v3/departments/update_department_complete.sql")
@@ -55,11 +73,22 @@ async def update_department(
                 request.description,
                 request.active,
                 request.settingsId,
+                profile_id,  # For actor_name
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
                 raise HTTPException(status_code=404, detail="Department not found")
+
+            # Set audit context with data from SQL query
+            actor_name = result.get("actor_name")
+            department_title = result.get("title") or request.title
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    department={"title": department_title, "id": request.departmentId},
+                )
 
         result = UpdateDepartmentResponse(
             success=True,

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, get_pool
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.evals.run_eval_worker import run_eval_parallel
@@ -41,7 +42,13 @@ async def _emit_eval_progress(event_data: dict[str, Any]) -> None:
     pass
 
 
-@router.post("/run", response_model=RunEvalResponse)
+@router.post(
+    "/run",
+    response_model=RunEvalResponse,
+    dependencies=[
+        audit_activity("eval.run", "{{ actor.name }} ran eval '{{ eval.name }}'")
+    ],
+)
 async def run_eval(
     request: RunEvalRequest,
     http_request: Request,
@@ -55,17 +62,26 @@ async def run_eval(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        profile_id = http_request.state.profile_id
         # Get eval and pending model_runs
         sql_query = load_sql("sql/v3/evals/run_eval.sql")
-        sql_params = (request.evalId,)
-        result = await conn.fetchrow(sql_query, request.evalId)
+        sql_params = (request.evalId, profile_id)
+        result = await conn.fetchrow(sql_query, *sql_params)
 
         if not result:
             raise ValueError(f"Eval not found: {request.evalId}")
 
         eval_id = result["eval_id"]
+        eval_name = result["eval_name"]
         rubric_id = result["rubric_id"]
         pending_model_run_ids = result.get("pending_run_ids") or []
+        actor_name = result.get("actor_name")
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                eval={"name": eval_name, "id": eval_id},
+            )
 
         if not pending_model_run_ids:
             return RunEvalResponse(

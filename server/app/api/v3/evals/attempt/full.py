@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -89,7 +90,15 @@ class EvalAttemptFullResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/full", response_model=EvalAttemptFullResponse)
+@router.post(
+    "/full",
+    response_model=EvalAttemptFullResponse,
+    dependencies=[
+        audit_activity(
+            "eval.attempt.viewed", "{{ actor.name }} viewed eval attempt details"
+        )
+    ],
+)
 async def get_eval_attempt_full(
     request: EvalAttemptFullRequest,
     http_request: Request,
@@ -128,13 +137,17 @@ async def get_eval_attempt_full(
 
         # Load SQL string
         sql_query = load_sql("sql/v3/evals/get_eval_attempt_full_complete.sql")
-        sql_params = (request.attemptId,)
+        sql_params = (request.attemptId, profile_id)
         result = await conn.fetchrow(sql_query, *sql_params)
 
         if not result:
             raise HTTPException(
                 status_code=404, detail=f"Eval attempt not found: {request.attemptId}"
             )
+
+        actor_name = result.get("actor_name")
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Parse JSONB fields from strings to Python objects
         def parse_jsonb(data: Any) -> Any:  # noqa: ANN401

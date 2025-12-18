@@ -62,7 +62,10 @@ department_usage AS (
         (SELECT COUNT(*) FROM cohort_departments WHERE department_id = $1::uuid AND active = true) as total_usage
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $2::uuid
+    SELECT 
+        role,
+        first_name || ' ' || last_name as actor_name
+    FROM profiles WHERE id = $2::uuid
 ),
 user_department_access AS (
     -- Check if user has access to this department
@@ -355,7 +358,8 @@ SELECT
     COALESCE(mmd.model_ids, ARRAY[]::text[]) as valid_model_ids,
     COALESCE(kmd.key_mapping, '{}'::jsonb) as key_mapping,
     COALESCE(kmd.key_ids, ARRAY[]::text[]) as valid_key_ids,
-    COALESCE(mkmd.model_key_mapping, '{}'::jsonb) as model_key_mapping
+    COALESCE(mkmd.model_key_mapping, '{}'::jsonb) as model_key_mapping,
+    up.actor_name
 FROM departments d
 LEFT JOIN department_price_spent dps ON dps.department_id = d.id
 LEFT JOIN department_staff_count dsc ON dsc.department_id = d.id

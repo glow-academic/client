@@ -4,17 +4,18 @@
  */
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { ColumnDef, ColumnFiltersState } from "@tanstack/react-table";
+import { CheckCircle2, MessageSquare, XCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { ActivityOut } from "@/app/(main)/analytics/activity/page";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -26,14 +27,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   flexRender,
   getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   useReactTable,
 } from "@tanstack/react-table";
+import ActiveProfilesMetric from "./header/ActiveProfilesMetric";
 import TotalActivityEntries from "./header/TotalActivityEntries";
 import TotalFeedbackCount from "./header/TotalFeedbackCount";
-import UnresolvedFeedbackCount from "./header/UnresolvedFeedbackCount";
-import RecentActivity24h from "./header/RecentActivity24h";
+import TotalErrorsMetric from "./header/TotalErrorsMetric";
+import ActivityMetricsGraph from "./ActivityMetricsGraph";
 
 interface ActivityProps {
   activityData: ActivityOut;
@@ -146,23 +155,85 @@ export default function Activity({
     async (feedbackId: string, resolved: boolean) => {
       try {
         const { api } = await import("@/lib/api/client");
-        await api.post("/feedback/resolve", {
+        const result = await api.post("/feedback/resolve", {
           body: {
             feedback_id: feedbackId,
             resolved: !resolved,
           },
         });
 
-        toast.success(
-          `Feedback ${!resolved ? "resolved" : "unresolved"} successfully`
-        );
+        if (result.success) {
+          toast.success(result.message || `Feedback ${!resolved ? "resolved" : "unresolved"} successfully`);
+        } else {
+          toast.error(result.message || "Failed to resolve feedback");
+        }
         router.refresh();
-      } catch (error) {
-        toast.error("Failed to resolve feedback");
+      } catch (error: any) {
+        const errorMessage = error?.response?.data?.detail || error?.message || "Failed to resolve feedback";
+        toast.error(errorMessage);
+        console.error("Feedback resolve error:", error);
       }
     },
     [router]
   );
+
+  // Header metrics components
+  const headerComponents = useMemo(() => {
+    if (!metrics) return [];
+
+    return [
+      <ActiveProfilesMetric
+        key="active-profiles"
+        activeProfilesCount={metrics.active_profiles_count.currentValue}
+        trendData={metrics.active_profiles_count.trendData}
+        hasDataAvailable={metrics.active_profiles_count.hasData}
+        status={metrics.active_profiles_count.status}
+      />,
+      <TotalFeedbackCount
+        key="total-feedback"
+        totalFeedbackCount={metrics.total_feedback_count.currentValue}
+        trendData={metrics.total_feedback_count.trendData}
+        hasDataAvailable={metrics.total_feedback_count.hasData}
+        status={metrics.total_feedback_count.status}
+      />,
+      <TotalActivityEntries
+        key="total-activity"
+        totalActivityEntries={metrics.total_activity_entries.currentValue}
+        trendData={metrics.total_activity_entries.trendData}
+        hasDataAvailable={metrics.total_activity_entries.hasData}
+        status={metrics.total_activity_entries.status}
+      />,
+      <TotalErrorsMetric
+        key="total-errors"
+        totalErrorsCount={metrics.total_errors_count.currentValue}
+        trendData={metrics.total_errors_count.trendData}
+        hasDataAvailable={metrics.total_errors_count.hasData}
+        status={metrics.total_errors_count.status}
+      />,
+    ];
+  }, [metrics]);
+
+  // Extract chart data from bundle
+  const chartData = activityData.bundleData?.chartData || [];
+
+  // Extract unique profiles for faceted filter
+  const profileOptions = useMemo(() => {
+    const profileMap = new Map<string, { label: string; value: string }>();
+    activityList.forEach((item) => {
+      if (item.profile_id && item.profile_name) {
+        if (!profileMap.has(item.profile_id)) {
+          profileMap.set(item.profile_id, {
+            label: item.profile_name,
+            value: item.profile_id,
+          });
+        }
+      }
+    });
+    return Array.from(profileMap.values());
+  }, [activityList]);
+
+  // Column filters state
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   // Define activity table columns
   const activityColumns: ColumnDef<ActivityRow>[] = useMemo(
@@ -195,6 +266,25 @@ export default function Activity({
         cell: ({ row }) => (
           <div className="text-sm max-w-md">{row.getValue("message")}</div>
         ),
+        filterFn: (row, id, value) => {
+          const message = String(row.getValue(id)).toLowerCase();
+          const query = String(value).toLowerCase();
+          return message.includes(query);
+        },
+      },
+      // Hidden faceting column for Profile (IDs)
+      {
+        id: "profileId",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ActivityRow) => row.profile_id || "",
+        filterFn: (row, _id, value: string[]) => {
+          if (!value || value.length === 0) return true;
+          const profileId = row.original.profile_id || "";
+          return value.includes(profileId);
+        },
       },
       {
         accessorKey: "profile_name",
@@ -214,6 +304,8 @@ export default function Activity({
     data: activityList,
     columns: activityColumns,
     getCoreRowModel: getCoreRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     manualPagination: true,
     pageCount: activityTotalPages,
     state: {
@@ -221,7 +313,9 @@ export default function Activity({
         pageIndex: activityPage,
         pageSize: activityPageSize,
       },
+      columnFilters,
     },
+    onColumnFiltersChange: setColumnFilters,
     onPaginationChange: (updater) => {
       const newPagination =
         typeof updater === "function"
@@ -234,37 +328,8 @@ export default function Activity({
     },
   });
 
-  // Header metrics components
-  const headerComponents = useMemo(() => {
-    if (!metrics) return [];
-
-    return [
-      <TotalActivityEntries
-        key="total-activity"
-        totalActivityEntries={metrics.total_activity_entries.currentValue}
-        hasDataAvailable={metrics.total_activity_entries.hasData}
-        status={metrics.total_activity_entries.status}
-      />,
-      <RecentActivity24h
-        key="recent-activity"
-        recentActivity24h={metrics.recent_activity_24h.currentValue}
-        hasDataAvailable={metrics.recent_activity_24h.hasData}
-        status={metrics.recent_activity_24h.status}
-      />,
-      <UnresolvedFeedbackCount
-        key="unresolved-feedback"
-        unresolvedFeedbackCount={metrics.unresolved_feedback_count.currentValue}
-        hasDataAvailable={metrics.unresolved_feedback_count.hasData}
-        status={metrics.unresolved_feedback_count.status}
-      />,
-      <TotalFeedbackCount
-        key="total-feedback"
-        totalFeedbackCount={metrics.total_feedback_count.currentValue}
-        hasDataAvailable={metrics.total_feedback_count.hasData}
-        status={metrics.total_feedback_count.status}
-      />,
-    ];
-  }, [metrics]);
+  // Get profile column for faceted filter
+  const profileIdColumn = activityTable.getColumn("profileId");
 
   if (isLoading) {
     return (
@@ -274,7 +339,10 @@ export default function Activity({
             <Skeleton key={i} className="h-24" />
           ))}
         </div>
-        <Skeleton className="h-64" />
+        <div className="flex gap-4 min-h-[500px] max-h-[500px]">
+          <Skeleton className="flex-[2]" />
+          <Skeleton className="flex-1" />
+        </div>
         <Skeleton className="h-96" />
       </div>
     );
@@ -289,146 +357,169 @@ export default function Activity({
         </div>
       )}
 
-      {/* Feedback Entries Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Feedback Entries</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {feedback.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                No feedback entries found.
-              </div>
-            ) : (
-              feedback.map((item: FeedbackItem) => (
-                <div
-                  key={item.feedback_id}
-                  className={`p-4 border rounded-lg ${
-                    item.resolved ? "opacity-60" : ""
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-medium">{item.type}</span>
-                        <span className="text-xs text-muted-foreground">
-                          by {item.author_name}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(item.created_at).toLocaleDateString()}
-                        </span>
-                        {item.resolved && (
-                          <span className="text-xs text-success">Resolved</span>
-                        )}
-                      </div>
-                      <p className="text-sm">{item.message}</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        handleResolveFeedback(item.feedback_id, item.resolved)
-                      }
-                    >
-                      {item.resolved ? (
-                        <>
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Unresolve
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Resolve
-                        </>
-                      )}
-                    </Button>
-                  </div>
+      {/* Main Content: Graph (2/3) + Feedback List (1/3) */}
+      <div className="flex gap-4 min-h-[500px] max-h-[500px]">
+        {/* Activity Metrics Graph - 2/3 width */}
+        <div className="flex-[2]">
+          <ActivityMetricsGraph
+            chartData={chartData}
+            hasDataAvailable={chartData.length > 0}
+          />
+        </div>
+
+        {/* Feedback List - 1/3 width */}
+        <div className="flex-1">
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                <div className="flex-1">
+                  <CardTitle>Feedback Entries</CardTitle>
+                  <CardDescription>
+                    User feedback and feature requests
+                  </CardDescription>
                 </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto">
+              <div className="space-y-4">
+                {feedback.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    No feedback entries found.
+                  </div>
+                ) : (
+                  feedback.map((item: FeedbackItem) => (
+                    <div
+                      key={item.feedback_id}
+                      className={`p-4 border rounded-lg ${
+                        item.resolved ? "opacity-60" : ""
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-medium">{item.type}</span>
+                            <span className="text-xs text-muted-foreground">
+                              by {item.author_name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(item.created_at).toLocaleDateString()}
+                            </span>
+                            {item.resolved && (
+                              <span className="text-xs text-success">Resolved</span>
+                            )}
+                          </div>
+                          <p className="text-sm">{item.message}</p>
+                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() =>
+                                handleResolveFeedback(item.feedback_id, item.resolved)
+                              }
+                            >
+                              {item.resolved ? (
+                                <XCircle className="h-4 w-4" />
+                              ) : (
+                                <CheckCircle2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{item.resolved ? "Unresolve" : "Resolve"}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Activity Table Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Activity Log</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Search */}
-            <div className="flex items-center gap-2">
-              <Input
-                ref={searchInputRef}
-                placeholder="Search activity..."
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    commitSearch(searchTerm);
-                  }
-                }}
-                className="max-w-sm"
-              />
-            </div>
+      <div className="space-y-4">
+        {/* Search and Filters */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Input
+            ref={searchInputRef}
+            placeholder="Search activity..."
+            value={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                commitSearch(searchTerm);
+              }
+            }}
+            className="max-w-sm"
+          />
+          {profileIdColumn && profileOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={profileIdColumn}
+              title="Profile"
+              options={profileOptions}
+            />
+          )}
+        </div>
 
-            {/* Table */}
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  {activityTable.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <TableHead key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </TableHead>
-                      ))}
-                    </TableRow>
+        {/* Table */}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {activityTable.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
                   ))}
-                </TableHeader>
-                <TableBody>
-                  {activityTable.getRowModel().rows?.length ? (
-                    activityTable.getRowModel().rows.map((row) => (
-                      <TableRow
-                        key={row.id}
-                        data-state={row.getIsSelected() && "selected"}
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={activityColumns.length}
-                        className="h-24 text-center"
-                      >
-                        No activity entries found.
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {activityTable.getRowModel().rows?.length ? (
+                activityTable.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
                       </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={activityColumns.length}
+                    className="h-24 text-center"
+                  >
+                    No activity entries found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-            {/* Pagination */}
-            <DataTablePagination table={activityTable} />
-          </div>
-        </CardContent>
-      </Card>
+        {/* Pagination */}
+        <DataTablePagination table={activityTable} />
+      </div>
     </div>
   );
 }

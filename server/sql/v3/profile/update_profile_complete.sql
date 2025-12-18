@@ -1,9 +1,15 @@
 -- Update profile with optional fields and activity tracking in a single transaction
--- Parameters: $1=profileId (uuid), $2=first_name (nullable text), $3=last_name (nullable text), $4=last_login (nullable timestamp with time zone), $5=role (nullable profile_role), $6=active (nullable bool), $7=unused (placeholder, req_per_day stored in separate table), $8=last_active (nullable timestamp with time zone)
--- Returns: Updated profile with all fields
+-- Parameters: $1=profileId (uuid), $2=first_name (nullable text), $3=last_name (nullable text), $4=last_login (nullable timestamp with time zone), $5=role (nullable profile_role), $6=active (nullable bool), $7=unused (placeholder, req_per_day stored in separate table), $8=last_active (nullable timestamp with time zone), $9=current_profile_id (uuid)
+-- Returns: Updated profile with all fields, actor_name
 -- Note: NULL parameters mean "don't update this field" (use COALESCE to keep existing value)
 -- last_active is handled separately via profile_activity table
-WITH resolve_profile_id AS (
+WITH actor_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $9::uuid
+),
+resolve_profile_id AS (
     SELECT $1::uuid as resolved_profile_id
 ),
 profile_exists AS (
@@ -68,5 +74,9 @@ get_updated_profile AS (
     GROUP BY up.id, up.first_name, up.last_name, up.role, up.active, 
              up.last_login, up.created_at, up.updated_at
 )
-SELECT * FROM get_updated_profile
+SELECT 
+    gup.*,
+    ap.actor_name
+FROM get_updated_profile gup
+CROSS JOIN actor_profile ap
 

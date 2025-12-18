@@ -1,8 +1,14 @@
 -- Duplicate department - fetches original and creates copy in single query
--- Parameters: $1 = department_id (uuid)
--- Returns: new_department_id (text), original_title (text)
+-- Parameters: $1 = department_id (uuid), $2 = current_profile_id (uuid)
+-- Returns: new_department_id (text), original_title (text), actor_name
 
-WITH original_dept AS (
+WITH actor_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+original_dept AS (
     SELECT 
         id,
         title,
@@ -24,5 +30,7 @@ new_dept AS (
 )
 SELECT 
     (SELECT department_id FROM new_dept) as new_department_id,
-    (SELECT title FROM original_dept) as original_title
+    (SELECT title FROM original_dept) as original_title,
+    ap.actor_name
+FROM actor_profile ap
 

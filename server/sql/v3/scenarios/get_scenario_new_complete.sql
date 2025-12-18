@@ -13,6 +13,11 @@ WITH params AS (
         $7::uuid[] as objective_ids,
         $8::uuid[] as image_ids
 ),
+user_profile AS (
+    SELECT 
+        first_name || ' ' || last_name as actor_name
+    FROM profiles WHERE id = $1
+),
 user_departments AS (
     SELECT DISTINCT d.id
     FROM departments d
@@ -876,7 +881,8 @@ SELECT
     3 as document_range_max,
     0 as parameter_range_min,
     3 as parameter_range_max,
-    '{}'::jsonb as field_ranges_json
+    '{}'::jsonb as field_ranges_json,
+    (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
 FROM params
 WHERE ($2::boolean IS NOT NULL OR TRUE) AND ($3::boolean IS NOT NULL OR TRUE)
 

@@ -5,6 +5,7 @@ from typing import Annotated, Any
 
 import asyncpg
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -51,7 +52,15 @@ class UpdateProfileResponse(BaseModel):
     message: str
 
 
-@router.post("/update", response_model=UpdateProfileResponse)
+@router.post(
+    "/update",
+    response_model=UpdateProfileResponse,
+    dependencies=[
+        audit_activity(
+            "profile.updated", "{{ actor.name }} updated profile '{{ profile.name }}'"
+        )
+    ],
+)
 async def update_profile(
     request: UpdateProfileRequest,
     http_request: Request,
@@ -65,6 +74,14 @@ async def update_profile(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        current_profile_id = http_request.state.profile_id
+        if not current_profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Determine if this is a comprehensive update (has emails, cohorts, departments)
         is_comprehensive = (
             request.emails is not None
@@ -132,6 +149,7 @@ async def update_profile(
                 request.department_ids or [],
                 primary_dept_index,
                 request.requests_per_day or request.reqPerDay,
+                current_profile_id,  # For actor_name
             )
 
             async with transaction(conn):
@@ -168,6 +186,16 @@ async def update_profile(
                             email,
                             is_primary,
                         )
+
+            # Set audit context with data from SQL query
+            actor_name = result.get("actor_name")
+            profile_name = result.get("name")
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": current_profile_id},
+                    profile={"name": profile_name, "id": request.profileId},
+                )
 
             result_data = UpdateProfileResponse(
                 success=True,
@@ -212,6 +240,7 @@ async def update_profile(
                 request.active,  # $6
                 None,  # $7 - req_per_day (not used, stored in separate table)
                 last_active_dt,  # $8
+                current_profile_id,  # $9 - For actor_name
             )
             row = await conn.fetchrow(
                 sql_query,
@@ -223,10 +252,21 @@ async def update_profile(
                 request.active,  # $6
                 None,  # $7 - req_per_day (not used, stored in separate table)
                 last_active_dt,  # $8
+                current_profile_id,  # $9 - For actor_name
             )
 
             if not row:
                 raise HTTPException(status_code=404, detail="Profile not found")
+
+            # Set audit context with data from SQL query
+            actor_name = row.get("actor_name")
+            profile_name = f"{row.get('first_name', '')} {row.get('last_name', '')}".strip()
+            if actor_name and profile_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": current_profile_id},
+                    profile={"name": profile_name, "id": request.profileId},
+                )
 
             result_data = UpdateProfileResponse(
                 success=True, message="Profile updated successfully"

@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.api.v3.staff.list import StaffItem
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -53,7 +54,13 @@ class CohortSearchProfileResponse(BaseModel):
     department_mapping: dict[str, DepartmentMappingItem]
 
 
-@router.post("/search", response_model=CohortSearchProfileResponse)
+@router.post(
+    "/search",
+    response_model=CohortSearchProfileResponse,
+    dependencies=[
+        audit_activity("cohorts.searched", "{{ actor.name }} searched cohorts")
+    ],
+)
 async def cohort_search_profile(
     request: CohortSearchProfileRequest,
     http_request: Request,
@@ -128,7 +135,9 @@ async def cohort_search_profile(
         # Build the full SQL query dynamically
         sql_query = f"""
         WITH user_profile AS (
-            SELECT COALESCE((SELECT role FROM profiles WHERE id = $1), 'guest') as role
+            SELECT 
+                COALESCE((SELECT role FROM profiles WHERE id = $1), 'guest') as role,
+                COALESCE((SELECT first_name || ' ' || last_name FROM profiles WHERE id = $1), 'System') as actor_name
         ),
         user_departments AS (
             SELECT department_id
@@ -277,13 +286,21 @@ async def cohort_search_profile(
         SELECT
             sa.staff,
             cmd.cohort_mapping,
-            dmd.department_mapping
+            dmd.department_mapping,
+            (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
         FROM cohort_mapping_data cmd
         CROSS JOIN department_mapping_data dmd
         CROSS JOIN staff_aggregated sa
         """
 
         result = await conn.fetchrow(sql_query, *params)
+
+        # Get actor name from SQL query
+        actor_name = result.get("actor_name") if result else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         if not result:
             # Return empty mappings if no data

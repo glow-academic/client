@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -139,7 +140,13 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:  # noqa: ANN401
     return None
 
 
-@router.post("/new", response_model=EvalDetailResponse)
+@router.post(
+    "/new",
+    response_model=EvalDetailResponse,
+    dependencies=[
+        audit_activity("eval.new", "{{ actor.name }} opened new eval form")
+    ],
+)
 async def get_eval_new(
     request_body: EvalNewRequest,
     request: Request,
@@ -180,6 +187,10 @@ async def get_eval_new(
             raise HTTPException(
                 status_code=404, detail="Failed to get default eval data"
             )
+
+        actor_name = row.get("actor_name")
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Parse department_ids
         raw_department_ids = row.get("department_ids")

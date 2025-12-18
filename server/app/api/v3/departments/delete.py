@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -28,7 +29,16 @@ class DeleteDepartmentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeleteDepartmentResponse)
+@router.post(
+    "/delete",
+    response_model=DeleteDepartmentResponse,
+    dependencies=[
+        audit_activity(
+            "department.deleted",
+            "{{ actor.name }} deleted department '{{ department.title }}'",
+        )
+    ],
+)
 async def delete_department(
     request: DeleteDepartmentRequest,
     http_request: Request,
@@ -42,10 +52,18 @@ async def delete_department(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Delete department with existence and usage checks in a single SQL file
         sql_query = load_sql("sql/v3/departments/delete_department_complete.sql")
-        sql_params = (request.departmentId,)
-        result = await conn.fetchrow(sql_query, request.departmentId)
+        sql_params = (request.departmentId, profile_id)
+        result = await conn.fetchrow(sql_query, request.departmentId, profile_id)
 
         if not result:
             # Department doesn't exist
@@ -60,6 +78,16 @@ async def delete_department(
             raise HTTPException(
                 status_code=400,
                 detail=f"Cannot delete department: in use by {total_usage} entities",
+            )
+
+        # Set audit context with data from SQL query
+        actor_name = result.get("actor_name")
+        department_title = result.get("title")
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                department={"title": department_title, "id": request.departmentId},
             )
 
         result = DeleteDepartmentResponse(

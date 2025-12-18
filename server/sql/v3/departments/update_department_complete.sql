@@ -1,8 +1,14 @@
 -- Update department with settings relationship in single query (DHH style)
--- Parameters: $1=department_id (uuid), $2=title, $3=description, $4=active, $5=settings_id (text, nullable)
--- Returns: id, title
+-- Parameters: $1=department_id (uuid), $2=title, $3=description, $4=active, $5=settings_id (text, nullable), $6=current_profile_id (uuid)
+-- Returns: id, title, actor_name
 
-WITH department_update AS (
+WITH actor_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $6::uuid
+),
+department_update AS (
     -- Update department
     UPDATE departments SET
         title = $2,
@@ -34,5 +40,10 @@ link_settings AS (
         updated_at = NOW()
 )
 -- Return updated department info
-SELECT id, title FROM department_update
+SELECT 
+    du.id, 
+    du.title,
+    ap.actor_name
+FROM department_update du
+CROSS JOIN actor_profile ap
 

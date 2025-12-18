@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -55,6 +56,28 @@ class EvalItem(BaseModel):
     can_delete: bool
 
 
+class StandardGroupMappingItem(BaseModel):
+    """Standard group mapping item with rubric context."""
+
+    name: str
+    description: str
+    points: int
+    passPoints: int
+
+
+class StandardMappingItem(BaseModel):
+    """Standard mapping item with points."""
+
+    name: str
+    description: str
+    points: int
+
+
+# Type aliases for Dict mappings
+StandardGroupsMapping = dict[str, StandardGroupMappingItem]
+StandardsMapping = dict[str, StandardMappingItem]
+
+
 class EvalsListResponse(BaseModel):
     """Response for evals list endpoint."""
 
@@ -62,6 +85,9 @@ class EvalsListResponse(BaseModel):
     rubric_mapping: dict[str, dict[str, Any]]
     department_mapping: DepartmentMapping
     agent_mapping: dict[str, dict[str, Any]]
+    standard_groups_mapping: StandardGroupsMapping
+    standards_mapping: StandardsMapping
+    rubric_standard_groups_mapping: dict[str, dict[str, list[str]]]  # Maps rubric_id to {standard_group_id: [standard_ids]}
     rubric_options: list[dict[str, str]]  # Array of {value, label}
     department_options: list[dict[str, str]]  # Array of {value, label}
     agent_options: list[dict[str, str]]  # Array of {value, label}
@@ -70,7 +96,13 @@ class EvalsListResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/list", response_model=EvalsListResponse)
+@router.post(
+    "/list",
+    response_model=EvalsListResponse,
+    dependencies=[
+        audit_activity("evals.list", "{{ actor.name }} visited the Evals page")
+    ],
+)
 async def get_evals_list(
     filters: EvalsFilters,
     request: Request,
@@ -119,6 +151,16 @@ async def get_evals_list(
         rubric_mapping: dict[str, dict[str, Any]] = {}
         department_mapping: DepartmentMapping = {}
         agent_mapping: dict[str, dict[str, Any]] = {}
+        standard_groups_mapping: StandardGroupsMapping = {}
+        standards_mapping: StandardsMapping = {}
+        rubric_standard_groups_mapping: dict[str, dict[str, str]] = {}
+
+        # Get actor_name from first row (same for all rows)
+        actor_name = result[0]["actor_name"] if result else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Parse mappings from first row (same across all rows)
         if result:
@@ -149,6 +191,48 @@ async def get_evals_list(
                 agent_mapping_data = json.loads(agent_mapping_data)
             if agent_mapping_data and isinstance(agent_mapping_data, dict):
                 agent_mapping = agent_mapping_data
+
+            # Parse standard_groups_mapping from JSONB
+            standard_groups_mapping_data = first_row.get("standard_groups_mapping")
+            if isinstance(standard_groups_mapping_data, str):
+                standard_groups_mapping_data = json.loads(standard_groups_mapping_data)
+            if standard_groups_mapping_data and isinstance(
+                standard_groups_mapping_data, dict
+            ):
+                for sgid, sgdata in standard_groups_mapping_data.items():
+                    if isinstance(sgdata, dict):
+                        standard_groups_mapping[sgid] = StandardGroupMappingItem(
+                            name=sgdata.get("name", ""),
+                            description=sgdata.get("description", ""),
+                            points=int(sgdata.get("points", 0)),
+                            passPoints=int(sgdata.get("passPoints", 0)),
+                        )
+
+            # Parse standards_mapping from JSONB
+            standards_mapping_data = first_row.get("standards_mapping")
+            if isinstance(standards_mapping_data, str):
+                standards_mapping_data = json.loads(standards_mapping_data)
+            if standards_mapping_data and isinstance(standards_mapping_data, dict):
+                for sid, sdata in standards_mapping_data.items():
+                    if isinstance(sdata, dict):
+                        standards_mapping[sid] = StandardMappingItem(
+                            name=sdata.get("name", ""),
+                            description=sdata.get("description", ""),
+                            points=int(sdata.get("points", 0)),
+                        )
+
+            # Parse rubric_standard_groups_mapping from JSONB
+            rubric_standard_groups_mapping_data = first_row.get(
+                "rubric_standard_groups_mapping"
+            )
+            if isinstance(rubric_standard_groups_mapping_data, str):
+                rubric_standard_groups_mapping_data = json.loads(
+                    rubric_standard_groups_mapping_data
+                )
+            if rubric_standard_groups_mapping_data and isinstance(
+                rubric_standard_groups_mapping_data, dict
+            ):
+                rubric_standard_groups_mapping = rubric_standard_groups_mapping_data
 
         # Build eval items
         for row in result:
@@ -210,6 +294,9 @@ async def get_evals_list(
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
             agent_mapping=agent_mapping,
+            standard_groups_mapping=standard_groups_mapping,
+            standards_mapping=standards_mapping,
+            rubric_standard_groups_mapping=rubric_standard_groups_mapping,
             rubric_options=rubric_options,
             department_options=department_options,
             agent_options=agent_options,

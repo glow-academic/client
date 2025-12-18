@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -102,7 +103,15 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     return data or {}
 
 
-@router.post("/detail", response_model=ProfileDetailResponseFull)
+@router.post(
+    "/detail",
+    response_model=ProfileDetailResponseFull,
+    dependencies=[
+        audit_activity(
+            "profile.viewed", "{{ actor.name }} viewed profile '{{ profile.name }}'"
+        )
+    ],
+)
 async def get_profile_detail(
     request_body: ProfileDetailRequest,
     request: Request,
@@ -203,6 +212,16 @@ async def get_profile_detail(
         primary_department_id = row.get("primary_department_id")
         if primary_department_id is not None:
             primary_department_id = str(primary_department_id)
+
+        # Set audit context with data from SQL query
+        actor_name = row.get("actor_name")
+        profile_name = row.get("name")
+        if actor_name:
+            audit_set(
+                request,
+                actor={"name": actor_name, "id": current_profile_id},
+                profile={"name": profile_name, "id": request_body.profileId},
+            )
 
         response_data = ProfileDetailResponseFull(
             profile_id=str(row.get("profile_id", "")),

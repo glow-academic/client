@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -40,7 +41,13 @@ class UpdateEvalResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateEvalResponse)
+@router.post(
+    "/update",
+    response_model=UpdateEvalResponse,
+    dependencies=[
+        audit_activity("eval.updated", "{{ actor.name }} updated eval '{{ eval.name }}'")
+    ],
+)
 async def update_eval(
     request: UpdateEvalRequest,
     http_request: Request,
@@ -54,6 +61,7 @@ async def update_eval(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        profile_id = http_request.state.profile_id
         async with transaction(conn):
             # Validate eval exists
             eval_check = await conn.fetchrow(
@@ -99,6 +107,7 @@ async def update_eval(
                 model_run_ids_uuid,
                 department_ids_uuid,
                 request.active,
+                profile_id,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 
@@ -106,6 +115,14 @@ async def update_eval(
                 raise ValueError("Failed to update eval")
 
             eval_id = result["eval_id"]
+            eval_name = result["eval_name"]
+            actor_name = result["actor_name"]
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    eval={"name": eval_name, "id": eval_id},
+                )
 
         result_data = UpdateEvalResponse(
             success=True,

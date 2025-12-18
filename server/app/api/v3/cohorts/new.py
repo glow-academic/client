@@ -19,6 +19,7 @@ from app.api.v3.cohorts.detail import (
     StaffItem,
 )
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -35,7 +36,13 @@ class CohortNewRequest(BaseModel):
 router = APIRouter()
 
 
-@router.post("/new", response_model=CohortDetailResponse)
+@router.post(
+    "/new",
+    response_model=CohortDetailResponse,
+    dependencies=[
+        audit_activity("cohort.new", "{{ actor.name }} viewed new cohort form")
+    ],
+)
 async def get_cohort_new(
     request_body: CohortNewRequest,
     request: Request,
@@ -76,6 +83,13 @@ async def get_cohort_new(
             raise HTTPException(
                 status_code=404, detail="No cohort found for user's departments"
             )
+
+        # Get actor name from SQL query
+        actor_name = row.get("actor_name")
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Parse simulations list from JSONB (same as detail.py)
         simulations: list[SimulationInCohort] = []

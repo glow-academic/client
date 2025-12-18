@@ -1,9 +1,15 @@
 -- Create staff profile with validation, cohort, and department insert in single query (DHH style)
 -- Parameters: $1=profile_id (uuid), $2=first_name, $3=last_name, $4=email, $5=role, 
---             $6=active, $7=cohort_ids (uuid[]), $8=department_ids (uuid[]), $9=primary_department_index (int, nullable)
--- Returns: id, first_name, last_name, email_exists (boolean)
+--             $6=active, $7=cohort_ids (uuid[]), $8=department_ids (uuid[]), $9=primary_department_index (int, nullable), $10=current_profile_id (uuid)
+-- Returns: id, first_name, last_name, email_exists (boolean), actor_name
 
-WITH email_check AS (
+WITH actor_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $10::uuid
+),
+email_check AS (
     -- Check if email already exists in profile_emails
     SELECT EXISTS(SELECT 1 FROM profile_emails WHERE email = $4 AND active = true) as email_exists
 ),
@@ -57,8 +63,10 @@ SELECT
     pi.id,
     pi.first_name,
     pi.last_name,
-    ec.email_exists
+    ec.email_exists,
+    ap.actor_name
 FROM email_check ec
+CROSS JOIN actor_profile ap
 LEFT JOIN profile_insert pi ON true
 LIMIT 1
 

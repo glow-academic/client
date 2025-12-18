@@ -261,7 +261,10 @@ user_profile_for_staff AS (
     SELECT role FROM profiles WHERE id = $1
 ),
 user_profile_for_cohort AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        first_name || ' ' || last_name as actor_name
+    FROM profiles WHERE id = $1
 ),
 primary_department_id AS (
     SELECT department_id::text
@@ -450,7 +453,8 @@ SELECT
      ), '{}'::jsonb)
      FROM department_mapping_data dmd
     ) as department_mapping,
-    pdi.department_id as primary_department_id
+    pdi.department_id as primary_department_id,
+    upc.actor_name
 FROM cohort_data cd
 CROSS JOIN user_profile_for_cohort upc
 LEFT JOIN primary_department_id pdi ON true

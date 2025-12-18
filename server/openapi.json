@@ -19261,25 +19261,25 @@
       },
       "ActivityBundleMetrics": {
         "properties": {
-          "total_activity_entries": {
-            "$ref": "#/components/schemas/MetricResponse"
-          },
-          "recent_activity_24h": {
-            "$ref": "#/components/schemas/MetricResponse"
-          },
-          "unresolved_feedback_count": {
+          "active_profiles_count": {
             "$ref": "#/components/schemas/MetricResponse"
           },
           "total_feedback_count": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "total_activity_entries": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "total_errors_count": {
             "$ref": "#/components/schemas/MetricResponse"
           }
         },
         "type": "object",
         "required": [
+          "active_profiles_count",
+          "total_feedback_count",
           "total_activity_entries",
-          "recent_activity_24h",
-          "unresolved_feedback_count",
-          "total_feedback_count"
+          "total_errors_count"
         ],
         "title": "ActivityBundleMetrics",
         "description": "Header metrics for activity page."
@@ -19288,14 +19288,56 @@
         "properties": {
           "metrics": {
             "$ref": "#/components/schemas/ActivityBundleMetrics"
+          },
+          "chartData": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityChartDataPoint"
+            },
+            "type": "array",
+            "title": "Chartdata"
           }
         },
         "type": "object",
         "required": [
-          "metrics"
+          "metrics",
+          "chartData"
         ],
         "title": "ActivityBundleResponse",
         "description": "Response for activity bundle endpoint."
+      },
+      "ActivityChartDataPoint": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "activeProfiles": {
+            "type": "integer",
+            "title": "Activeprofiles"
+          },
+          "feedbackEntries": {
+            "type": "integer",
+            "title": "Feedbackentries"
+          },
+          "activityEntries": {
+            "type": "integer",
+            "title": "Activityentries"
+          },
+          "errors": {
+            "type": "integer",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "activeProfiles",
+          "feedbackEntries",
+          "activityEntries",
+          "errors"
+        ],
+        "title": "ActivityChartDataPoint",
+        "description": "Activity chart data point."
       },
       "ActivityItem": {
         "properties": {
@@ -27368,6 +27410,33 @@
             "type": "object",
             "title": "Agent Mapping"
           },
+          "standard_groups_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__evals__list__StandardGroupMappingItem"
+            },
+            "type": "object",
+            "title": "Standard Groups Mapping"
+          },
+          "standards_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StandardMappingItem"
+            },
+            "type": "object",
+            "title": "Standards Mapping"
+          },
+          "rubric_standard_groups_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Rubric Standard Groups Mapping"
+          },
           "rubric_options": {
             "items": {
               "additionalProperties": {
@@ -27405,6 +27474,9 @@
           "rubric_mapping",
           "department_mapping",
           "agent_mapping",
+          "standard_groups_mapping",
+          "standards_mapping",
+          "rubric_standard_groups_mapping",
           "rubric_options",
           "department_options",
           "agent_options"
@@ -46948,6 +47020,35 @@
         ],
         "title": "EvalItem",
         "description": "Individual eval item in the response."
+      },
+      "app__api__v3__evals__list__StandardGroupMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "passPoints": {
+            "type": "integer",
+            "title": "Passpoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "points",
+          "passPoints"
+        ],
+        "title": "StandardGroupMappingItem",
+        "description": "Standard group mapping item with rubric context."
       },
       "app__api__v3__evals__new__AgentMappingItem": {
         "properties": {
