@@ -12,7 +12,7 @@ WITH RECURSIVE scenario_ancestors AS (
         0 as depth
     FROM attempt_chats ac
     JOIN chats sc ON sc.id = ac.chat_id
-    JOIN grades scg ON scg.eval = false
+    JOIN grades scg ON EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
     JOIN runs r_scen1 ON r_scen1.id = scg.run_id
     JOIN chat_runs rc_scen1 ON rc_scen1.run_id = r_scen1.id AND rc_scen1.chat_id = sc.id
     WHERE ac.attempt_id = $1::uuid

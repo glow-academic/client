@@ -210,7 +210,7 @@
                 JOIN chat_runs rc_stag ON rc_stag.run_id = r_stag.id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = rc_stag.chat_id
                 JOIN rubrics r ON r.id = sg.rubric_id
-                WHERE sg.eval = false
+                WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = sg.run_id)
             ),
             ordered_grades AS (
                 SELECT *,
@@ -706,7 +706,7 @@
                 JOIN runs r ON r.id = scg.run_id
                 JOIN chat_runs rc ON rc.run_id = r.id
                 JOIN filtered_chats fc ON fc.chat_id = rc.chat_id
-                WHERE scg.eval = false
+                WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
                 ORDER BY rc.chat_id, scg.created_at DESC
             ),
             per_grade_group AS (
@@ -1070,7 +1070,7 @@
                 FROM grades scg
                 JOIN runs r ON r.id = scg.run_id
                 JOIN chat_runs rc ON rc.run_id = r.id
-                WHERE scg.eval = false
+                WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
                 ORDER BY rc.chat_id, scg.rubric_id, scg.created_at DESC
             ),
             per_grade_group_skills AS (

@@ -90,7 +90,8 @@ cohort_simulation_stats AS (
     LEFT JOIN chats sc ON sc.id = ac.chat_id
     LEFT JOIN chat_runs rc ON rc.chat_id = sc.id
     LEFT JOIN runs r ON r.id = rc.run_id
-    LEFT JOIN grades scg ON scg.run_id = r.id AND scg.eval = false
+    LEFT JOIN grades scg ON scg.run_id = r.id 
+        AND EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
     GROUP BY cs.simulation_id, cs.active, cs.position, s.title, s.description
 ),
 valid_departments AS (

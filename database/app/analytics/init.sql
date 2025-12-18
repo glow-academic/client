@@ -27,7 +27,7 @@ latest_grade AS (
   FROM grades g
   JOIN runs r ON r.id = g.run_id
   JOIN chat_runs rc ON rc.run_id = r.id
-  WHERE g.eval = false
+  WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = g.run_id)  -- Simulation grades only (derive from relationship)
   ORDER BY rc.chat_id, g.created_at DESC
 ),
 -- only ACTIVE simulations
@@ -308,8 +308,9 @@ CREATE INDEX IF NOT EXISTS analytics_attempt_created_at_idx
 
 -- Performance indexes for analytics functions
 -- Latest grade per chat fast path (via chat_runs join)
+-- Note: eval column removed - derive from relationships (chat_runs for simulation grades)
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
-  ON grades (run_id, eval, created_at DESC);
+  ON grades (run_id, created_at DESC);
 
 -- Feedback lookup by grade
 CREATE INDEX IF NOT EXISTS feedbacks_grade_idx
@@ -343,8 +344,9 @@ CREATE INDEX IF NOT EXISTS analytics_profile_cohorts_gin
 
 -- Additional indexes for skill performance optimization
 -- Latest grade per (run, rubric) fast path
+-- Note: eval column removed - derive from relationships (chat_runs for simulation grades)
 CREATE INDEX IF NOT EXISTS grades_run_rubric_created_idx
-  ON grades (run_id, rubric_id, eval, created_at DESC);
+  ON grades (run_id, rubric_id, created_at DESC);
 
 -- Group id + rubric (we filter sg.rubric_id = lg.rubric_id)
 CREATE INDEX IF NOT EXISTS standard_groups_id_rubric_idx
@@ -369,8 +371,9 @@ CREATE INDEX IF NOT EXISTS analytics_is_archived_true_idx
   ON analytics (attempt_created_at) WHERE is_archived = true;
 
 -- Supporting table indexes for analytics functions
+-- Note: eval column removed - derive from relationships (chat_runs for simulation grades)
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
-  ON grades (run_id, eval, created_at DESC);
+  ON grades (run_id, created_at DESC);
 
 -- Index for message_runs (replaces old messages.run_id index)
 CREATE INDEX IF NOT EXISTS message_runs_run_created_idx

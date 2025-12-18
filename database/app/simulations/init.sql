@@ -216,6 +216,9 @@ CREATE TABLE simulation_hints (
 CREATE INDEX ON simulation_hints (simulation_message_id);
 
 -- Unified grades table - all grades link to runs
+-- Note: eval and eval_id removed - derive from relationships:
+--   - Eval grades: run_id exists in test_runs → tests → attempt_tests → eval_attempts → evals
+--   - Simulation grades: run_id exists in chat_runs → chats → attempt_chats → simulation_attempts
 CREATE TABLE grades (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -224,15 +227,11 @@ CREATE TABLE grades (
     score      INTEGER     NOT NULL,
     time_taken INTEGER     NOT NULL, -- in seconds
     rubric_id   UUID        NOT NULL REFERENCES rubrics(id)  ON DELETE CASCADE,
-    run_id      UUID        NOT NULL REFERENCES runs(id)  ON DELETE CASCADE,
-    eval        BOOLEAN     NOT NULL, -- true=eval grade, false=simulation grade
-    eval_id     UUID        REFERENCES evals(id)  ON DELETE CASCADE, -- nullable, only when eval=true
-    CHECK (eval = false OR eval_id IS NOT NULL)
+    run_id      UUID        NOT NULL REFERENCES runs(id)  ON DELETE CASCADE
 );
 
 CREATE INDEX ON grades (run_id);
-CREATE INDEX ON grades (eval_id);
-CREATE INDEX ON grades (run_id, eval, created_at DESC);
+CREATE INDEX ON grades (run_id, created_at DESC);
 
 -- Unified feedbacks table
 CREATE TABLE feedbacks (

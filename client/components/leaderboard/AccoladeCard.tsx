@@ -52,7 +52,7 @@ export default function AccoladeCard({
     <Card
       data-testid={dataTestId}
       className={clsx(
-        "h-full flex flex-col border-2 border-primary py-0",
+        "h-full flex flex-col border-2 border-border py-0",
         asButton && "cursor-pointer hover:shadow-md transition-shadow",
       )}
       onClick={asButton ? onClick : undefined}

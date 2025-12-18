@@ -92,7 +92,14 @@ runs_list AS (
     LEFT JOIN personas per ON per.id = rper.persona_id
     LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
     LEFT JOIN profiles p ON p.id = rp.profile_id
-    LEFT JOIN grades g ON g.run_id = er.run_id AND g.eval_id = er.eval_id AND g.eval = true
+    LEFT JOIN grades g ON g.run_id = er.run_id 
+        AND EXISTS (
+            SELECT 1 FROM test_runs tr
+            JOIN tests t ON t.id = tr.test_id
+            JOIN attempt_tests at ON at.test_id = t.id
+            JOIN eval_attempts ea ON ea.id = at.attempt_id
+            WHERE tr.run_id = g.run_id AND ea.eval_id = er.eval_id
+        )
     WHERE er.eval_id = $1
     ORDER BY er.created_at DESC
 ),

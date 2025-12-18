@@ -148,7 +148,7 @@ history_chat_grades AS (
     FROM grades scg
     JOIN runs r ON r.id = scg.run_id
     JOIN chat_runs rc ON rc.run_id = r.id
-    WHERE scg.eval = false
+    WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
       AND rc.chat_id IN (
         SELECT sc.id FROM attempt_chats ac
         JOIN chats sc ON sc.id = ac.chat_id
@@ -183,7 +183,7 @@ history_elapsed_time AS (
                          JOIN runs r ON r.id = scg.run_id
                          JOIN chat_runs rc ON rc.run_id = r.id
                          WHERE rc.chat_id = sc.id 
-                           AND scg.eval = false
+                           AND EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
                          ORDER BY scg.created_at DESC LIMIT 1)
                     WHEN sc.completed THEN
                         EXTRACT(EPOCH FROM (
@@ -191,7 +191,7 @@ history_elapsed_time AS (
                              JOIN runs r ON r.id = scg.run_id
                              JOIN chat_runs rc ON rc.run_id = r.id
                              WHERE rc.chat_id = sc.id 
-                               AND scg.eval = false
+                               AND EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
                              ORDER BY scg.created_at DESC LIMIT 1) - sc.created_at
                         ))::integer
                     ELSE

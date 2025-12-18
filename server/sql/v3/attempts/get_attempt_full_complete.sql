@@ -248,7 +248,8 @@
                       SELECT 1 FROM grades scg 
                       JOIN runs r ON r.id = scg.run_id
                       JOIN chat_runs rc ON rc.run_id = r.id
-                      WHERE rc.chat_id = sc.id AND scg.eval = false
+                      WHERE rc.chat_id = sc.id 
+                        AND EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
                   )
                   AND ac2.attempt_id != $1
                 
@@ -314,7 +315,7 @@
             CROSS JOIN current_attempt_profile cap
             CROSS JOIN simulation_scenarios_list ssl
             CROSS JOIN attempt_base ab
-            LEFT JOIN grades scg ON scg.eval = false
+            LEFT JOIN grades scg ON EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
             LEFT JOIN runs r_prev ON r_prev.id = scg.run_id
             LEFT JOIN chat_runs rc_prev ON rc_prev.run_id = r_prev.id AND rc_prev.chat_id = sc.id
             WHERE ap2.profile_id = cap.profile_id
@@ -679,7 +680,7 @@
             JOIN runs r ON r.id = scg.run_id
             JOIN chat_runs rc ON rc.run_id = r.id
             CROSS JOIN chat_ids_list cil
-            WHERE scg.eval = false
+            WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
               AND rc.chat_id = ANY(cil.chat_ids)
             ORDER BY rc.chat_id, scg.created_at DESC
         ),
@@ -1163,7 +1164,7 @@
             CROSS JOIN attempt_base ab
             JOIN attempt_chats ac ON ac.attempt_id = ab.id
             JOIN chats sc ON sc.id = ac.chat_id
-            JOIN grades scg ON scg.eval = false
+            JOIN grades scg ON EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
             JOIN runs r_scen ON r_scen.id = scg.run_id
             JOIN chat_runs rc_scen ON rc_scen.run_id = r_scen.id AND rc_scen.chat_id = sc.id
             WHERE ss.simulation_id = ab.simulation_id

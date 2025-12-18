@@ -154,7 +154,7 @@
                 JOIN chat_runs rc_bundle ON rc_bundle.run_id = r_bundle.id
                 JOIN profile_chats pc ON pc.chat_id = rc_bundle.chat_id
                 JOIN rubrics r ON r.id = sg.rubric_id
-                WHERE sg.eval = false
+                WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = sg.run_id)
             ),
             ordered_grades_per_profile AS (
                 SELECT *,

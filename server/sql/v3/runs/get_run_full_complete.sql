@@ -154,7 +154,7 @@ grades_data AS (
     CROSS JOIN chat_ids_list cil
     CROSS JOIN run_base rb
     WHERE g.run_id = rb.id
-      AND g.eval = true  -- Only eval grades for runs
+      AND EXISTS (SELECT 1 FROM test_runs tr WHERE tr.run_id = g.run_id)  -- Only eval grades for runs
       AND cr.chat_id = ANY(cil.chat_ids)
     ORDER BY cr.chat_id, g.created_at DESC
 ),

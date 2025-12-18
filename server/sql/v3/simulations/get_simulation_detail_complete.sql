@@ -146,7 +146,7 @@ WITH user_context AS (
                 )
                 OR sc.scenario_id = ss.scenario_id
             )
-            LEFT JOIN grades scg ON scg.eval = false
+            LEFT JOIN grades scg ON EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
             LEFT JOIN runs r_detail ON r_detail.id = scg.run_id
             LEFT JOIN chat_runs rc_detail ON rc_detail.run_id = r_detail.id AND rc_detail.chat_id = sc.id
             WHERE ss.simulation_id = $1
