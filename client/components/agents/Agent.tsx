@@ -868,7 +868,6 @@ export default function Agent({
             formData.model_voice_ids && formData.model_voice_ids.length > 0
               ? formData.model_voice_ids
               : null,
-          profileId: effectiveProfile.id,
         });
         toast.success("Agent updated successfully!");
         resetFormAndState();
@@ -900,7 +899,6 @@ export default function Agent({
             formData.model_voice_ids && formData.model_voice_ids.length > 0
               ? formData.model_voice_ids
               : null,
-          profileId: effectiveProfile.id,
         });
         toast.success("Agent created successfully!");
         resetFormAndState();

@@ -61,7 +61,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfile } from "@/contexts/profile-context";
 
 export interface CohortsProps {
   // Server-provided data (for server-side rendering)
@@ -81,7 +80,8 @@ export default function Cohorts({
   leaveCohortAction,
 }: CohortsProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  // effectiveProfile not used in this component
+  // const { effectiveProfile } = useProfile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -320,7 +320,7 @@ export default function Cohorts({
     setIsLeaving(true);
     try {
       await leaveCohortAction({
-        body: { cohortId: leaveItem.id, profileId: effectiveProfile?.id || "" },
+        body: { cohortId: leaveItem.id },
       });
       toast.success("Left cohort successfully");
       router.refresh();

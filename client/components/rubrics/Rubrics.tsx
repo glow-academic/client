@@ -302,7 +302,6 @@ export default function Rubrics({
       await deleteRubricAction({
         body: {
           rubricId: deleteItem.id,
-          profileId: effectiveProfile.id,
         },
       });
       toast.success("Rubric deleted successfully");
@@ -333,7 +332,6 @@ export default function Rubrics({
       await duplicateRubricAction({
         body: {
           rubricId: rubric.rubric_id,
-          profileId: effectiveProfile.id,
         },
       });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);

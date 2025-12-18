@@ -537,16 +537,17 @@ export function UnifiedSidebar({
   );
 
   // Wrapper function that closes mobile sidebar on section change
-  const _handleSectionChangeWithClose = useCallback(
-    (section: string) => {
-      handleSectionChange(section);
-      // Close mobile sidebar after navigation
-      if (isMobile) {
-        setOpenMobile(false);
-      }
-    },
-    [handleSectionChange, isMobile, setOpenMobile],
-  );
+  // Unused function - keeping for potential future use
+  // const _handleSectionChangeWithClose = useCallback(
+  //   (section: string) => {
+  //     handleSectionChange(section);
+  //     // Close mobile sidebar after navigation
+  //     if (isMobile) {
+  //       setOpenMobile(false);
+  //     }
+  //   },
+  //   [handleSectionChange, isMobile, setOpenMobile],
+  // );
 
   const handleItemClick = useCallback(
     (item: MenuItem) => {

@@ -55,7 +55,7 @@ async function deleteAgentPrompt(
 ): Promise<DeleteAgentPromptOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/delete-prompt", input);
+  return api.post("/prompts/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

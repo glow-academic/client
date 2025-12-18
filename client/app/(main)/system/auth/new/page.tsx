@@ -2,17 +2,10 @@
  * app/(main)/system/auth/new/page.tsx
  * Auth create page
  */
-
 import Auth from "@/components/auth/Auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import type {
-  CreateKeyIn,
-  CreateKeyOut,
-  UpdateKeyIn,
-  UpdateKeyOut,
-} from "@/app/(main)/system/auth/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type AuthNewIn = InputOf<"/api/v3/auth/new", "post">;
@@ -33,7 +26,7 @@ const getAuthDefault = async (): Promise<AuthNewOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
@@ -53,20 +46,6 @@ async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
   return api.post("/auth/create", input);
 }
 
-async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/create", input);
-}
-
-async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/update", input);
-}
-
 /** ---- Server renders client with typed data and actions ---- */
 export default async function AuthCreatePage() {
   // Access control handled server-side in layout
@@ -80,8 +59,6 @@ export default async function AuthCreatePage() {
         mode="create"
         authDetailDefault={authDetailDefault}
         createAuthAction={createAuth}
-        createKeyAction={createKey}
-        updateKeyAction={updateKey}
       />
     </div>
   );

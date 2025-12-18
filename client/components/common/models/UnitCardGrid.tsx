@@ -37,7 +37,6 @@ export function UnitCardGrid({
   selectedIds,
   onSelect,
   label = "Units",
-  description = "Select units",
   readonly = false,
   prices = {},
   onPriceChange,

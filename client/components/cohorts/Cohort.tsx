@@ -245,8 +245,8 @@ export default function Cohort({
     const deptSimulationIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
       const deptData = departmentMapping[deptId];
-      if (deptData?.simulation_ids && Array.isArray(deptData.simulation_ids)) {
-        deptData.simulation_ids.forEach((id) => deptSimulationIds.add(id));
+      if (deptData?.['simulation_ids'] && Array.isArray(deptData['simulation_ids'])) {
+        deptData['simulation_ids'].forEach((id) => deptSimulationIds.add(id));
       }
     });
 
@@ -302,10 +302,11 @@ export default function Cohort({
 
       // Swap with previous item
       const reorderedIds = [...orderedIds];
-      [reorderedIds[index - 1], reorderedIds[index]] = [
-        reorderedIds[index],
-        reorderedIds[index - 1],
-      ];
+      const prev = reorderedIds[index - 1];
+      const curr = reorderedIds[index];
+      if (prev === undefined || curr === undefined) return;
+      reorderedIds[index - 1] = curr;
+      reorderedIds[index] = prev;
 
       // Update state and URL params (URL params are source of truth)
       setCurrentSimulationIds(reorderedIds);
@@ -313,7 +314,7 @@ export default function Cohort({
         simulationIds: reorderedIds.length > 0 ? reorderedIds : null,
       });
     },
-    [currentSimulationIds, isEditMode, searchParams, updateUrlParams],
+    [currentSimulationIds, searchParams, updateUrlParams],
   );
 
   const handleSimulationMoveDown = useCallback(
@@ -329,10 +330,11 @@ export default function Cohort({
 
       // Swap with next item
       const reorderedIds = [...orderedIds];
-      [reorderedIds[index], reorderedIds[index + 1]] = [
-        reorderedIds[index + 1],
-        reorderedIds[index],
-      ];
+      const curr = reorderedIds[index];
+      const next = reorderedIds[index + 1];
+      if (curr === undefined || next === undefined) return;
+      reorderedIds[index] = next;
+      reorderedIds[index + 1] = curr;
 
       // Update state and URL params (URL params are source of truth)
       setCurrentSimulationIds(reorderedIds);
@@ -340,7 +342,7 @@ export default function Cohort({
         simulationIds: reorderedIds.length > 0 ? reorderedIds : null,
       });
     },
-    [currentSimulationIds, isEditMode, searchParams, updateUrlParams],
+    [currentSimulationIds, searchParams, updateUrlParams],
   );
 
   // Handle simulation active toggle
@@ -539,8 +541,8 @@ export default function Cohort({
 
       return {
         simulationId,
-        simulationName: simulation?.name || "Unnamed Simulation",
-        simulationDescription: simulation?.description || "",
+        simulationName: simulation?.['name'] || "Unnamed Simulation",
+        simulationDescription: simulation?.['description'] || "",
         position: index + 1,
         active:
           simulationActiveStates[simulationId] ??
@@ -790,9 +792,9 @@ export default function Cohort({
                         handleInputChange("departmentIds", ids)
                       }
                       getId={(dept) => (dept as unknown as { id: string }).id}
-                      getLabel={(dept) => dept.name || ""}
+                      getLabel={(dept) => String(dept['name'] || "")}
                       getSearchText={(dept) =>
-                        `${dept.name} ${dept.description || ""}`
+                        `${dept['name']} ${dept['description'] || ""}`
                       }
                       placeholder="All Departments"
                       disabled={isReadonly}
@@ -876,7 +878,17 @@ export default function Cohort({
           </CardHeader>
           <CardContent className="space-y-3 px-6">
             <SimulationCardGrid
-              simulationMapping={cohortData?.simulation_mapping || {}}
+              simulationMapping={useMemo(() => {
+                const mapping = cohortData?.simulation_mapping || {};
+                return Object.fromEntries(
+                  Object.entries(mapping).map(([key, value]) => [
+                    key,
+                    typeof value === 'object' && value !== null && 'name' in value
+                      ? { name: String(value['name']), description: value['description'] ? String(value['description']) : undefined }
+                      : { name: String(value || key), description: undefined }
+                  ])
+                ) as Record<string, { name: string; description?: string }>;
+              }, [cohortData?.simulation_mapping])}
               validSimulationIds={validSimulationIds}
               selectedSimulationIds={
                 // Use searchParams as source of truth for ordering (like Simulation.tsx)
@@ -895,7 +907,7 @@ export default function Cohort({
           <Accordion
             type="single"
             collapsible
-            value={openAccordionItem || undefined}
+            value={openAccordionItem ?? ""}
             onValueChange={(value) => setOpenAccordionItem(value || null)}
             className="space-y-4"
           >
@@ -906,8 +918,8 @@ export default function Cohort({
                 <CohortSimulationSection
                   key={item.simulationId}
                   simulationId={item.simulationId}
-                  simulationName={item.simulationName}
-                  simulationDescription={item.simulationDescription}
+                  simulationName={String(item.simulationName || "")}
+                  simulationDescription={String(item.simulationDescription || "")}
                   position={item.position}
                   totalItems={orderedSimulationItems.length}
                   active={item.active}
@@ -979,7 +991,7 @@ export default function Cohort({
                   const sim = cohortData?.simulation_mapping[simId];
                   return (
                     <li key={simId} className="text-sm">
-                      {sim?.name || "Unknown Simulation"}
+                      {String(sim?.['name'] || "Unknown Simulation")}
                     </li>
                   );
                 })}

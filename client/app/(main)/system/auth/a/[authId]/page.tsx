@@ -3,14 +3,6 @@
  * Auth edit page
  */
 
-import type {
-  CreateKeyIn,
-  CreateKeyOut,
-  DecryptKeyIn,
-  DecryptKeyOut,
-  UpdateKeyIn,
-  UpdateKeyOut,
-} from "@/app/(main)/system/auth/page";
 import Auth from "@/components/auth/Auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
@@ -31,9 +23,7 @@ type AuthNewOut = OutputOf<"/api/v3/auth/new", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getAuth = async (
-  authId: string,
-): Promise<AuthDetailOut> => {
+const getAuth = async (authId: string): Promise<AuthDetailOut> => {
   return api.post(
     "/auth/detail",
     { body: { authId } },
@@ -42,26 +32,25 @@ const getAuth = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ authId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { authId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
     const auth = await getAuth(authId);
-      return {
-        title: `${auth?.name || "Auth"} Auth`,
-        description: `${auth?.name ? `${auth.name} - ` : ""}Authentication method configuration for teaching assistant training platform.${auth?.description ? ` ${auth.description}` : ""} Manage identity providers and secure access mechanisms for educational institutions and L&D programs.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+    return {
+      title: `${auth?.name || "Auth"} Auth`,
+      description: `${auth?.name ? `${auth.name} - ` : ""}Authentication method configuration for teaching assistant training platform.${auth?.description ? ` ${auth.description}` : ""} Manage identity providers and secure access mechanisms for educational institutions and L&D programs.`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {
@@ -86,26 +75,6 @@ async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
   return api.post("/auth/update", input);
 }
 
-async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/create", input);
-}
-
-async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
-  "use server";
-  // decrypt-key doesn't need profileId
-  return api.post("/keys/decrypt-key", input);
-}
-
-async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/update", input);
-}
-
 /** ---- Server renders client with typed data and actions ---- */
 export default async function AuthEditPage({
   params,
@@ -127,9 +96,6 @@ export default async function AuthEditPage({
           authDetail={authDetail}
           createAuthAction={createAuth}
           updateAuthAction={updateAuth}
-          createKeyAction={createKey}
-          decryptKeyAction={decryptKey}
-          updateKeyAction={updateKey}
         />
       </div>
     );

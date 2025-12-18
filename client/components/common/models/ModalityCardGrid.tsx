@@ -22,7 +22,6 @@ export function ModalityCardGrid({
   selectedIds,
   onSelect,
   label = "Modalities",
-  description = "Select modalities",
   readonly = false,
 }: ModalityCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");

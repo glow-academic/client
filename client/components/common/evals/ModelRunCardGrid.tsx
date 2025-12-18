@@ -42,7 +42,6 @@ export function ModelRunCardGrid({
       setLoading(true);
       try {
         const requestBody: ModelRunsFilters["body"] = {
-          profileId,
           search: searchTerm || null,
           page: 1,
           pageSize: 50,
@@ -51,10 +50,12 @@ export function ModelRunCardGrid({
           agentIds: agentIds && agentIds.length > 0 ? agentIds : null,
           eval: true,
         };
-        const response = await api.post("/evals/model_runs", {
+        // profileId comes from X-Profile-Id header automatically
+        const response = await api.post("/evals/runs", {
           body: requestBody,
         });
-        setModelRuns(response.model_runs || []);
+        const typedResponse = response as ModelRunsResponse;
+        setModelRuns(typedResponse.model_runs || []);
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error("Failed to fetch model runs:", error);

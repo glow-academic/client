@@ -98,7 +98,7 @@ export function SimulationScenariosTable({
   onTimeLimitChange,
   rubricMapping = {},
   validRubricIds = [],
-  agentMapping = {},
+  agentMapping: _agentMapping = {},
   scenarioMapping = {},
   validScenarioIds = [],
   selectedScenarioIds = [],
@@ -383,7 +383,6 @@ export function SimulationScenariosTable({
       onTimeLimitChange,
       rubricMapping,
       validRubricIds,
-      agentMapping,
     ],
   );
 

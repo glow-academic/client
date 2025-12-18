@@ -5,17 +5,17 @@
  */
 "use client";
 
-import React from "react";
-import { ArrowDown, ArrowUp, Check, RotateCcw } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { ArrowDown, ArrowUp, Check, RotateCcw } from "lucide-react";
+import React from "react";
 
 export interface ThemePreviewProps {
   primary_color: string;
@@ -103,8 +103,8 @@ export function ThemePreview({
   const primaryIsLight = isLightColor(primary_color);
 
   const handleScrollTo = (
-    ref?: React.RefObject<HTMLDivElement>,
-    accordionValue?: string,
+    ref?: React.RefObject<HTMLDivElement | null>,
+    accordionValue?: string
   ) => {
     if (ref?.current) {
       // Open accordion FIRST, then scroll after layout adjusts
@@ -154,7 +154,7 @@ export function ThemePreview({
                 ? ""
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted",
+                  : "bg-muted"
             )}
             style={
               stepStatus === "completed"
@@ -242,7 +242,7 @@ export function ThemePreview({
               onClick={() =>
                 handleScrollTo(
                   scrollRefs?.sidebarBackgroundRef,
-                  "sidebar-background",
+                  "sidebar-background"
                 )
               }
             >
@@ -255,7 +255,7 @@ export function ThemePreview({
                     e.stopPropagation();
                     handleScrollTo(
                       scrollRefs?.sidebarPrimaryRef,
-                      "sidebar-primary",
+                      "sidebar-primary"
                     );
                   }}
                 />
@@ -292,7 +292,7 @@ export function ThemePreview({
                       e.stopPropagation();
                       handleScrollTo(
                         scrollRefs?.primaryColorRef,
-                        "primary-color",
+                        "primary-color"
                       );
                     }}
                   >

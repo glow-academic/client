@@ -75,7 +75,6 @@ export default function Auths({
       await duplicateAuthAction({
         body: {
           authId: auth.auth_id,
-          profileId: effectiveProfile.id,
         },
       });
       toast.success(`Auth "${auth.name}" duplicated successfully`);
@@ -104,7 +103,6 @@ export default function Auths({
       await deleteAuthAction({
         body: {
           authId: deleteItem.id,
-          profileId: effectiveProfile.id,
         },
       });
       toast.success(`Auth "${deleteItem.name}" deleted successfully`);

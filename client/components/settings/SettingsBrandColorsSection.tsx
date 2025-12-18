@@ -337,7 +337,7 @@ export interface SettingsBrandColorsSectionProps {
   colors: BrandColors;
   originalColors: BrandColors;
   onColorChange: (fieldName: keyof BrandColors, value: string) => void;
-  onResetColor: (fieldName: keyof typeof colors) => void;
+  onResetColor: (fieldName: keyof BrandColors) => void;
   stepStatus: "pending" | "active" | "completed";
   stepNumber: number;
   isReadonly: boolean;

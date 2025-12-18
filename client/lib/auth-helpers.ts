@@ -134,8 +134,6 @@ export async function checkRouteAccess(
             "/profile/context",
             {
               body: {
-                actualProfileId: null as unknown as string,
-                effectiveProfileId: null as unknown as string,
                 pathname: "/",
               },
             },

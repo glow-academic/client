@@ -57,7 +57,6 @@ export interface SettingsAuthMethodConfigSectionProps {
 export function SettingsAuthMethodConfigSection({
   authId,
   authName,
-  authDescription,
   data,
   keyMapping,
   validKeyIds,

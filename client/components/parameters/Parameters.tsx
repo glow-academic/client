@@ -276,9 +276,9 @@ export default function Parameters({
       await duplicateParameterAction({
         body: {
           parameterId: parameter.parameter_id,
-          profileId: effectiveProfile.id,
         },
       });
+      // profileId comes from X-Profile-Id header automatically
       toast.success(`Parameter "${parameter.name}" duplicated successfully`);
       router.refresh();
     } catch (error) {
@@ -305,9 +305,9 @@ export default function Parameters({
       await deleteParameterAction({
         body: {
           parameterId: deleteItem.id,
-          profileId: effectiveProfile.id,
         },
       });
+      // profileId comes from X-Profile-Id header automatically
       toast.success(`Parameter "${deleteItem.name}" deleted successfully`);
       router.refresh();
     } catch (error) {

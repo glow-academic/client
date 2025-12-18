@@ -239,9 +239,9 @@ export default function Models({
       await deleteModelAction({
         body: {
           modelId: deleteItem.id,
-          profileId: effectiveProfile.id,
         },
       });
+      // profileId comes from X-Profile-Id header automatically
       toast.success("Model deleted successfully");
       router.refresh();
     } catch {
@@ -276,9 +276,9 @@ export default function Models({
       await duplicateModelAction({
         body: {
           modelId: model.model_id,
-          profileId: effectiveProfile.id,
         },
       });
+      // profileId comes from X-Profile-Id header automatically
       toast.success(`Model '${model.name}' duplicated successfully`);
       router.refresh();
     } catch {

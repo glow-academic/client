@@ -51,8 +51,6 @@ export interface SettingsAIProviderConfigSectionProps {
 
 export function SettingsAIProviderConfigSection({
   providerId,
-  providerName,
-  providerDescription,
   data,
   keyMapping,
   validKeyIds,
@@ -66,7 +64,6 @@ export function SettingsAIProviderConfigSection({
   // Filter data to only show items for this provider
   const filteredData = data.filter((item) => item.provider_id === providerId);
   const provider = filteredData[0];
-  const enabled = provider?.enabled ?? false;
   const selectedKeyId = provider?.selected_key_id ?? null;
 
   return (
@@ -74,7 +71,7 @@ export function SettingsAIProviderConfigSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50",
+        stepStatus === "pending" && "opacity-50"
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
@@ -86,7 +83,7 @@ export function SettingsAIProviderConfigSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted",
+                  : "bg-muted"
             )}
           >
             {stepStatus === "completed" ? (

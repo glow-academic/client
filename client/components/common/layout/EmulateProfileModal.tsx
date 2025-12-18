@@ -74,9 +74,9 @@ export function EmulateProfileModal({
           body: {
             query: query || null,
             limit: 200,
-            profileId: activeProfile.id,
           },
         });
+        // profileId comes from X-Profile-Id header automatically
         setSearchData(data);
       } catch {
         toast.error("Failed to search profiles");

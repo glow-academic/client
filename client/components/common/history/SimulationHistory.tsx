@@ -1313,7 +1313,6 @@ export default function SimulationHistory({
               departmentIds: _initialFilters.departmentIds,
               roles: _initialFilters.roles,
               simulationFilters,
-              profileId: null, // Not used for filtering in history context
               search: historySearch || null,
               profileIds: historyProfileIds || null,
               simulationIds: historySimulationIds || null,

@@ -22,7 +22,6 @@ export function VoiceCardGrid({
   selectedIds,
   onSelect,
   label = "Voices",
-  description = "Select voices",
   readonly = false,
 }: VoiceCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");

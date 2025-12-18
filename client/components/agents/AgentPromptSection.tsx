@@ -73,8 +73,6 @@ export function AgentPromptSection({
   promptMapping,
   filteredPromptMapping,
   hasPromptChanges,
-  resolvedPrompt,
-  resolvedPromptContent,
   editorMode,
   isEditMode,
   agentDetail,

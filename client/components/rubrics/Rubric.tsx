@@ -365,7 +365,6 @@ export default function Rubric({
           passPoints: totalPassPoints,
           department_ids: updates.department_ids || [],
           standard_groups: allGroups,
-          profileId: effectiveProfile.id,
         },
       });
     },
@@ -446,7 +445,6 @@ export default function Rubric({
                   };
                 }),
             })),
-            profileId: effectiveProfile.id,
           },
         });
 

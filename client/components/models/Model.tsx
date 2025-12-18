@@ -810,8 +810,8 @@ export default function Model({
             formData.qualities.length > 0
               ? formData.qualities
               : null,
-          profileId: effectiveProfile.id,
         });
+        // profileId comes from X-Profile-Id header automatically
         resetFormAndState();
         toast.success("Model updated successfully!");
         router.push(`/engine/models`);
@@ -840,8 +840,8 @@ export default function Model({
             formData.qualities.length > 0
               ? formData.qualities
               : null,
-          profileId: effectiveProfile.id,
         });
+        // profileId comes from X-Profile-Id header automatically
         resetFormAndState();
         toast.success("Model created successfully!");
         router.push(`/engine/models`);

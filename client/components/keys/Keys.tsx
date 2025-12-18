@@ -44,7 +44,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfile } from "@/contexts/profile-context";
 
 export interface KeysProps {
   // Server-provided data (for server-side rendering)
@@ -58,7 +57,8 @@ export default function Keys({
   deleteKeyAction,
 }: KeysProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  // effectiveProfile not used in this component
+  // const { effectiveProfile } = useProfile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -262,7 +262,7 @@ export default function Keys({
     setIsDeleting(true);
     try {
       await deleteKeyAction({
-        body: { keyId: deleteItem.id, profileId: effectiveProfile?.id || "" },
+        body: { keyId: deleteItem.id },
       });
       toast.success("Key deleted successfully");
       router.refresh();

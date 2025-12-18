@@ -249,7 +249,7 @@ export default function Agents({
 
     try {
       await duplicateAgentAction({
-        body: { agentId: id, profileId: effectiveProfile.id },
+        body: { agentId: id },
       });
       toast.success("Agent duplicated successfully");
       router.refresh();
@@ -264,7 +264,7 @@ export default function Agents({
     setIsDeleting(true);
     try {
       await deleteAgentAction({
-        body: { agentId: deleteItem.id, profileId: effectiveProfile.id },
+        body: { agentId: deleteItem.id },
       });
       toast.success("Agent deleted successfully");
       router.refresh();

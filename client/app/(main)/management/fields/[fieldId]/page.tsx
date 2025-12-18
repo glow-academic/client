@@ -18,9 +18,7 @@ type UpdateFieldIn = InputOf<"/api/v3/fields/update", "post">;
 type UpdateFieldOut = OutputOf<"/api/v3/fields/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getField = async (
-  fieldId: string,
-): Promise<FieldDetailOut> => {
+const getField = async (fieldId: string): Promise<FieldDetailOut> => {
   return api.post(
     "/fields/detail",
     { body: { fieldId } },
@@ -29,28 +27,27 @@ const getField = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ fieldId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { fieldId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
     const field = await getField(fieldId);
-      return {
-        title: `${field?.name || "Field"}`,
-        description:
-          field?.description ||
-          `${field?.name ? `${field.name} - ` : ""}Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+    return {
+      title: `${field?.name || "Field"}`,
+      description:
+        field?.description ||
+        `${field?.name ? `${field.name} - ` : ""}Custom field configuration for teaching assistant training platform. Manage field definitions to track additional educational data, assessment criteria, and learning metrics.`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {

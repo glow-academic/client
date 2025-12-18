@@ -25,9 +25,7 @@ type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getDocument = async (
-  documentId: string,
-): Promise<DocumentDetailOut> => {
+const getDocument = async (documentId: string): Promise<DocumentDetailOut> => {
   return api.post(
     "/documents/detail",
     { body: { documentId } },
@@ -36,26 +34,25 @@ const getDocument = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ documentId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { documentId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
     const document = await getDocument(documentId);
-      return {
-        title: `${document?.name || "Document"}`,
-        description: `${document?.name ? `${document.name} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+    return {
+      title: `${document?.name || "Document"}`,
+      description: `${document?.name ? `${document.name} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {
@@ -67,7 +64,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateDocument(
-  input: UpdateDocumentIn,
+  input: UpdateDocumentIn
 ): Promise<UpdateDocumentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -75,7 +72,7 @@ async function updateDocument(
 }
 
 async function renderTemplate(
-  input: RenderTemplateIn,
+  input: RenderTemplateIn
 ): Promise<RenderTemplateOut> {
   "use server";
   return api.post("/documents/render", input);
@@ -123,7 +120,7 @@ export default async function DocumentEditPage({
           // Extract template args from search params
           const templateArgs = searchParamsToTemplateArgs(
             searchParamsObj,
-            templateSchema,
+            templateSchema
           );
 
           // Call render endpoint server-side
@@ -139,7 +136,6 @@ export default async function DocumentEditPage({
               body: {
                 documentId,
                 templateArgs,
-                profileId,
                 ...(departmentIds !== undefined && {
                   departmentIds: departmentIds || null,
                 }),

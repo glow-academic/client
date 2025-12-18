@@ -10,10 +10,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { ParameterBasicInfoSection } from "@/components/parameters/ParameterBasicInfoSection";
-import { ParameterConfigurationSection } from "@/components/parameters/ParameterConfigurationSection";
 import { ParameterFieldCardGrid } from "@/components/common/parameters/ParameterFieldCardGrid";
 import { ParameterFieldSection } from "@/components/common/parameters/ParameterFieldSection";
+import { ParameterBasicInfoSection } from "@/components/parameters/ParameterBasicInfoSection";
+import { ParameterConfigurationSection } from "@/components/parameters/ParameterConfigurationSection";
+import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,7 +23,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Accordion } from "@/components/ui/accordion";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
@@ -79,10 +79,10 @@ export interface ParameterProps {
   parameterDetail?: ParameterDetailOut;
   parameterDetailDefault?: ParameterNewOut;
   createParameterAction?: (
-    input: CreateParameterIn,
+    input: CreateParameterIn
   ) => Promise<CreateParameterOut>;
   updateParameterAction?: (
-    input: UpdateParameterIn,
+    input: UpdateParameterIn
   ) => Promise<UpdateParameterOut>;
 }
 
@@ -105,9 +105,9 @@ export default function Parameter({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null,
+        effectiveProfile?.primaryDepartmentId || null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   // Helper function to update URL with query parameters
@@ -129,7 +129,7 @@ export default function Parameter({
       const newParamsString = params.toString();
       router.replace(`${pathname}?${newParamsString}`, { scroll: false });
     },
-    [searchParams, pathname, router],
+    [searchParams, pathname, router]
   );
 
   const initialFormData: FormData = useMemo(
@@ -145,7 +145,7 @@ export default function Parameter({
       departmentIds:
         defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
     }),
-    [defaultDepartmentIds],
+    [defaultDepartmentIds]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -164,7 +164,7 @@ export default function Parameter({
 
   // State for accordion (only one section open at a time)
   const [openAccordionItem, setOpenAccordionItem] = useState<string | null>(
-    null,
+    null
   );
 
   // Track if we've initialized URL params from server data to prevent infinite loops
@@ -220,12 +220,12 @@ export default function Parameter({
   const departmentMapping = useMemo(
     () =>
       (parameterData?.department_mapping || {}) as Record<string, MappingItem>,
-    [parameterData],
+    [parameterData]
   );
 
   const validDepartmentIds = useMemo(
     () => parameterData?.valid_department_ids || [],
-    [parameterData],
+    [parameterData]
   );
 
   const fieldMapping = useMemo(
@@ -239,12 +239,12 @@ export default function Parameter({
           department_ids?: string[] | null;
         }
       >,
-    [parameterData],
+    [parameterData]
   );
 
   const validFieldIds = useMemo(
     () => parameterData?.valid_field_ids || [],
-    [parameterData],
+    [parameterData]
   );
 
   // Initialize form data from v3 response
@@ -382,7 +382,7 @@ export default function Parameter({
         return updated;
       });
     },
-    [updateUrlParams],
+    [updateUrlParams]
   );
 
   const handleDefaultToggle = useCallback(
@@ -401,7 +401,7 @@ export default function Parameter({
         return updated;
       });
     },
-    [],
+    []
   );
 
   const handleActiveToggle = useCallback(
@@ -412,7 +412,7 @@ export default function Parameter({
         return updated;
       });
     },
-    [],
+    []
   );
 
   // Position handlers for fields
@@ -429,10 +429,11 @@ export default function Parameter({
 
       // Swap with previous item
       const reorderedIds = [...orderedIds];
-      [reorderedIds[index - 1], reorderedIds[index]] = [
-        reorderedIds[index],
-        reorderedIds[index - 1],
-      ];
+      const prev = reorderedIds[index - 1];
+      const curr = reorderedIds[index];
+      if (prev === undefined || curr === undefined) return;
+      reorderedIds[index - 1] = curr;
+      reorderedIds[index] = prev;
 
       // Update state and URL params (URL params are source of truth)
       setCurrentFieldIds(reorderedIds);
@@ -440,7 +441,7 @@ export default function Parameter({
         fieldIds: reorderedIds.length > 0 ? reorderedIds : null,
       });
     },
-    [currentFieldIds, searchParams, updateUrlParams],
+    [currentFieldIds, searchParams, updateUrlParams]
   );
 
   const handleFieldMoveDown = useCallback(
@@ -456,10 +457,11 @@ export default function Parameter({
 
       // Swap with next item
       const reorderedIds = [...orderedIds];
-      [reorderedIds[index], reorderedIds[index + 1]] = [
-        reorderedIds[index + 1],
-        reorderedIds[index],
-      ];
+      const curr = reorderedIds[index];
+      const next = reorderedIds[index + 1];
+      if (curr === undefined || next === undefined) return;
+      reorderedIds[index] = next;
+      reorderedIds[index + 1] = curr;
 
       // Update state and URL params (URL params are source of truth)
       setCurrentFieldIds(reorderedIds);
@@ -467,13 +469,13 @@ export default function Parameter({
         fieldIds: reorderedIds.length > 0 ? reorderedIds : null,
       });
     },
-    [currentFieldIds, searchParams, updateUrlParams],
+    [currentFieldIds, searchParams, updateUrlParams]
   );
 
   // Check if any field is marked as default
   const hasDefaultField = useMemo(() => {
     return Object.values(fieldConnections).some(
-      (conn) => conn.default === true,
+      (conn) => conn.default === true
     );
   }, [fieldConnections]);
 
@@ -486,7 +488,7 @@ export default function Parameter({
 
     // Track which field IDs are in saved parameter data
     const savedFieldIds = new Set(
-      parameterData?.field_connections?.map((conn) => conn.field_id) || [],
+      parameterData?.field_connections?.map((conn) => conn.field_id) || []
     );
 
     return orderedIds.map((fieldId, index) => {
@@ -560,7 +562,7 @@ export default function Parameter({
           return "pending";
       }
     },
-    [formData?.name, currentFieldIds.length],
+    [formData?.name, currentFieldIds.length]
   );
 
   // Steps array
@@ -617,17 +619,20 @@ export default function Parameter({
         .filter(([_, conn]) => conn); // Only include fields with connections
 
       const defaultCount = connectionEntries.filter(
-        ([_, conn]) => conn.default,
+        ([_, conn]) => conn && conn.default
       ).length;
 
       // Ensure exactly one default
       let fieldConnectionsToSubmit = connectionEntries.map(
-        ([fieldId, conn], index) => ({
-          field_id: fieldId,
-          default: defaultCount === 0 ? index === 0 : conn.default,
-          active: conn.active,
-        }),
-      );
+        ([fieldId, conn], index) => {
+          if (!conn) return null;
+          return {
+            field_id: fieldId,
+            default: defaultCount === 0 ? index === 0 : conn.default,
+            active: conn.active,
+          };
+        }
+      ).filter((item): item is NonNullable<typeof item> => item !== null);
 
       if (defaultCount === 0 && fieldConnectionsToSubmit.length > 0) {
         fieldConnectionsToSubmit[0]!.default = true;
@@ -645,13 +650,6 @@ export default function Parameter({
 
       // With server-side access control, effectiveProfile should always exist
       // But handle null gracefully for edge cases
-      if (!effectiveProfile?.id) {
-        toast.error("Profile not loaded. Please refresh the page.");
-        return;
-      }
-
-      const profileId = effectiveProfile.id;
-
       if (isEditMode) {
         // V3 API: Single atomic update with field connections
         await handleUpdateParameter({
@@ -666,7 +664,6 @@ export default function Parameter({
           video_parameter: formData.video_parameter || false,
           department_ids: formData.departmentIds ?? null,
           field_connections: fieldConnectionsToSubmit,
-          profileId,
         });
 
         toast.success("Parameter updated successfully!");
@@ -683,7 +680,6 @@ export default function Parameter({
           video_parameter: formData.video_parameter || false,
           department_ids: formData.departmentIds ?? null,
           field_connections: fieldConnectionsToSubmit,
-          profileId,
         });
 
         toast.success("Parameter created successfully!");
@@ -692,7 +688,7 @@ export default function Parameter({
       router.push("/management/parameters");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`
       );
     } finally {
       setIsSubmitting(false);
@@ -715,12 +711,12 @@ export default function Parameter({
       .map((fieldId) => [fieldId, fieldConnections[fieldId]] as const)
       .filter(([_, conn]) => conn);
     const activeConnections = connectionEntries.filter(
-      ([_, conn]) => conn.active,
+      ([_, conn]) => conn && conn.active
     );
 
     // Ensure exactly one default field connection
     const defaultCount = activeConnections.filter(
-      ([_, conn]) => conn.default,
+      ([_, conn]) => conn && conn.default
     ).length;
     if (activeConnections.length > 0 && defaultCount !== 1) {
       errors.push("Exactly one field connection must be marked as default");
@@ -808,7 +804,7 @@ export default function Parameter({
           <ParameterBasicInfoSection
             name={formData.name || ""}
             description={formData.description || ""}
-            departmentIds={formData.departmentIds}
+            departmentIds={formData.departmentIds ?? null}
             validDepartmentIds={validDepartmentIds}
             departmentMapping={departmentMapping}
             active={formData.active || false}
@@ -897,7 +893,7 @@ export default function Parameter({
               !isEditMode &&
                 steps[2]?.status === "active" &&
                 "ring-2 ring-primary",
-              !isEditMode && steps[2]?.status === "pending" && "opacity-50",
+              !isEditMode && steps[2]?.status === "pending" && "opacity-50"
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -909,7 +905,7 @@ export default function Parameter({
                       ? "bg-green-500 text-white"
                       : steps[2]?.status === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted",
+                        : "bg-muted"
                   )}
                 >
                   {steps[2]?.status === "completed" ? (
@@ -950,7 +946,7 @@ export default function Parameter({
           <Accordion
             type="single"
             collapsible
-            value={openAccordionItem || undefined}
+            value={openAccordionItem ?? ""}
             onValueChange={(value) => setOpenAccordionItem(value || null)}
             className="space-y-4"
           >

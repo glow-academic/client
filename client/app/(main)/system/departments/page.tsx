@@ -38,7 +38,7 @@ const getDepartmentsList = async (): Promise<DepartmentsListOut> => {
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function duplicateDepartment(
+async function duplicateDepartment(
   input: DuplicateDepartmentIn,
 ): Promise<DuplicateDepartmentOut> {
   "use server";
@@ -46,7 +46,7 @@ export async function duplicateDepartment(
   return api.post("/departments/duplicate", input);
 }
 
-export async function deleteDepartment(
+async function deleteDepartment(
   input: DeleteDepartmentIn,
 ): Promise<DeleteDepartmentOut> {
   "use server";

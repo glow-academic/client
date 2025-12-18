@@ -60,9 +60,9 @@ interface ReportsProps {
   reportsData: ReportsOut;
   filters: AnalyticsFilters;
   isLoading?: boolean;
-  profileOptions: Array<{ value: string; label: string; count?: number }>;
-  simulationOptions: Array<{ value: string; label: string; count?: number }>;
-  scenarioOptions: Array<{ value: string; label: string; count?: number }>;
+  profileOptions?: Array<{ value: string; label: string; count?: number }>;
+  simulationOptions?: Array<{ value: string; label: string; count?: number }>;
+  scenarioOptions?: Array<{ value: string; label: string; count?: number }>;
 }
 
 export default function Reports({
@@ -78,13 +78,15 @@ export default function Reports({
 
   // Extract data from API response
   // Type guard to ensure reportsData has expected structure
+  // ReportsOut is DashboardBundleResponse, but the page passes data with a 'data' property
   const profiles = useMemo(() => {
     if (
       reportsData &&
       typeof reportsData === "object" &&
-      "data" in reportsData
+      "data" in reportsData &&
+      Array.isArray(reportsData.data)
     ) {
-      return (reportsData as { data: unknown[] }).data || [];
+      return reportsData.data as ProfileRow[];
     }
     return [];
   }, [reportsData]);
@@ -140,7 +142,7 @@ export default function Reports({
   const sortOrder = searchParams.get("reportsSortOrder") || "desc";
   const sorting: SortingState = useMemo(
     () => [{ id: sortBy, desc: sortOrder === "desc" }],
-    [sortBy, sortOrder],
+    [sortBy, sortOrder]
   );
 
   // Ref for the search input
@@ -148,7 +150,7 @@ export default function Reports({
 
   // Local search state, initialized from URL
   const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("reportsSearch") || "",
+    searchParams.get("reportsSearch") || ""
   );
 
   // Ref to track debounce timeout for search
@@ -196,21 +198,21 @@ export default function Reports({
       reportsProfileIdsParam
         ? reportsProfileIdsParam.split(",").filter(Boolean)
         : [],
-    [reportsProfileIdsParam],
+    [reportsProfileIdsParam]
   );
   const reportsSimulationIds = useMemo(
     () =>
       reportsSimulationIdsParam
         ? reportsSimulationIdsParam.split(",").filter(Boolean)
         : [],
-    [reportsSimulationIdsParam],
+    [reportsSimulationIdsParam]
   );
   const reportsScenarioIds = useMemo(
     () =>
       reportsScenarioIdsParam
         ? reportsScenarioIdsParam.split(",").filter(Boolean)
         : [],
-    [reportsScenarioIdsParam],
+    [reportsScenarioIdsParam]
   );
 
   // Sync column filters with URL params (for DataTableFacetedFilter compatibility)
@@ -252,7 +254,7 @@ export default function Reports({
       });
       router.push(`?${params.toString()}`, { scroll: false });
     },
-    [router, searchParams],
+    [router, searchParams]
   );
 
   // Commit search to URL (called on Enter or blur, or after debounce)
@@ -263,7 +265,7 @@ export default function Reports({
         reportsSearch: value.trim() || null,
       });
     },
-    [updateURLParams],
+    [updateURLParams]
   );
 
   // Handle search input change with debounce
@@ -288,7 +290,7 @@ export default function Reports({
         commitSearch(value);
       }, 500);
     },
-    [commitSearch],
+    [commitSearch]
   );
 
   // Options are now provided as props from server
@@ -302,17 +304,45 @@ export default function Reports({
             ? (simulation as { name: string }).name
             : "Unknown",
       })),
-    [simulationMapping],
+    [simulationMapping]
   );
 
+  // Define ProfileRow type from reports data structure
+  type ProfileRow = {
+    profileId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    emails?: string[];
+    primaryEmail?: string | null;
+    role: string;
+    scenarioIds?: string[];
+    simulationIds?: string[];
+    metrics: Record<
+      string,
+      {
+        hasData: boolean;
+        method: string;
+        currentValue: number;
+        status: string;
+        valueField?: string | null;
+        hover?: Record<string, unknown> | null;
+      }
+    >;
+  };
+
   // Define columns using typeof pattern
-  const columns: ColumnDef<(typeof profiles)[number]>[] = useMemo(() => {
+  const columns: ColumnDef<ProfileRow>[] = useMemo(() => {
     const formatValue = (
-      metric: (typeof profiles)[number]["metrics"][keyof (typeof profiles)[number]["metrics"]],
+      metric: ProfileRow["metrics"][keyof ProfileRow["metrics"]]
     ): string => {
-      if (!metric.hasData) return "N/A";
+      if (!metric?.hasData) return "N/A";
       if (metric.currentValue == null) return "N/A";
-      return `${metric.currentValue}${metric.valueField === "percent" ? "%" : metric.valueField === "seconds" ? "s" : metric.valueField === "minutes" ? "m" : ""}`;
+      const valueField = metric.valueField;
+      if (valueField === "percent") return `${metric.currentValue}%`;
+      if (valueField === "seconds") return `${metric.currentValue}s`;
+      if (valueField === "minutes") return `${metric.currentValue}m`;
+      return String(metric.currentValue);
     };
 
     const getGradientClasses = (status: string | undefined): string => {
@@ -334,7 +364,7 @@ export default function Reports({
 
     const getHoverBullets = (
       metricKey: string,
-      profile: (typeof profiles)[number],
+      profile: ProfileRow
     ): string[] => {
       const metric = profile.metrics[metricKey as keyof typeof profile.metrics];
       if (!metric?.hover) return [];
@@ -352,14 +382,16 @@ export default function Reports({
             bullets.push(
               `Mean: ${hover["mean"]}%`,
               `Median: ${hover["median"]}%`,
-              `Mode: ${hover["mode"]}%`,
+              `Mode: ${hover["mode"]}%`
             );
           }
           break;
         case "highestScore":
           if (Array.isArray(hover["top"])) {
             bullets.push(
-              ...hover["top"].map((v, i) => `${i + 1}. ${v}%`).slice(0, 3),
+              ...hover["top"]
+                .map((v: number, i: number) => `${i + 1}. ${v}%`)
+                .slice(0, 3)
             );
           }
           break;
@@ -371,7 +403,7 @@ export default function Reports({
           ) {
             bullets.push(
               `Completed: ${hover["completed"]}/${hover["total"]}`,
-              `Rate: ${hover["percent"]}%`,
+              `Rate: ${hover["percent"]}%`
             );
           }
           break;
@@ -383,7 +415,7 @@ export default function Reports({
           ) {
             bullets.push(
               `First-pass: ${hover["passed"]}/${hover["total"]}`,
-              `Rate: ${hover["percent"]}%`,
+              `Rate: ${hover["percent"]}%`
             );
           }
           break;
@@ -396,7 +428,7 @@ export default function Reports({
             bullets.push(
               `Mean msgs/chat: ${hover["mean"]}`,
               `Median msgs/chat: ${hover["median"]}`,
-              `Chats counted: ${hover["count"]}`,
+              `Chats counted: ${hover["count"]}`
             );
           }
           break;
@@ -409,7 +441,7 @@ export default function Reports({
             bullets.push(
               `Mean: ${hover["meanSeconds"]}s`,
               `Median: ${hover["medianSeconds"]}s`,
-              `Samples: ${hover["samples"]}`,
+              `Samples: ${hover["samples"]}`
             );
           }
           break;
@@ -422,7 +454,7 @@ export default function Reports({
             bullets.push(
               `Avg score: ${hover["avgScorePercent"]}%`,
               `Avg time: ${hover["avgMinutes"]}m`,
-              `Efficiency: ${hover["efficiency"]}`,
+              `Efficiency: ${hover["efficiency"]}`
             );
           }
           break;
@@ -435,7 +467,7 @@ export default function Reports({
             bullets.push(
               `Tracked: ${hover["tracked"]}`,
               `Stagnant: ${hover["stagnant"]}`,
-              `Rate: ${hover["ratePercent"]}%`,
+              `Rate: ${hover["ratePercent"]}%`
             );
           }
           break;
@@ -448,7 +480,7 @@ export default function Reports({
             bullets.push(
               `Avg session: ${hover["avgSessionMinutes"]}m`,
               `Avg chat: ${hover["avgChatMinutes"]}m`,
-              `Avg time spent: ${hover["avgOverallMinutes"]}m`,
+              `Avg time spent: ${hover["avgOverallMinutes"]}m`
             );
           }
           break;
@@ -472,11 +504,7 @@ export default function Reports({
       // Select column
       {
         id: "select",
-        header: ({
-          table,
-        }: {
-          table: TableType<(typeof profiles)[number]>;
-        }) => (
+        header: ({ table }: { table: TableType<ProfileRow> }) => (
           <Checkbox
             checked={
               table.getIsAllPageRowsSelected() ||
@@ -490,7 +518,7 @@ export default function Reports({
             onClick={(e) => e.stopPropagation()}
           />
         ),
-        cell: ({ row }: { row: Row<(typeof profiles)[number]> }) => (
+        cell: ({ row }: { row: Row<ProfileRow> }) => (
           <Checkbox
             checked={row.getIsSelected()}
             onCheckedChange={(value: boolean | "indeterminate") =>
@@ -556,13 +584,19 @@ export default function Reports({
       // Average Score column
       {
         id: "averageScore",
-        accessorFn: (row) => row.metrics.averageScore.currentValue,
+        accessorFn: (row) => row.metrics["averageScore"]?.currentValue ?? 0,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Avg Score" />
         ),
         cell: ({ row }) => {
           const profile = row.original;
-          const metric = profile.metrics.averageScore;
+          const metric = profile.metrics["averageScore"];
+          if (!metric)
+            return (
+              <div className="text-center px-1 py-0.5 rounded text-xs font-medium text-muted-foreground">
+                N/A
+              </div>
+            );
           const gradientClasses = getGradientClasses(metric.status);
           const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("averageScore", profile);
@@ -599,13 +633,19 @@ export default function Reports({
       // Highest Score column
       {
         id: "highestScore",
-        accessorFn: (row) => row.metrics.highestScore.currentValue,
+        accessorFn: (row) => row.metrics["highestScore"]?.currentValue ?? 0,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Highest" />
         ),
         cell: ({ row }) => {
           const profile = row.original;
-          const metric = profile.metrics.highestScore;
+          const metric = profile.metrics["highestScore"];
+          if (!metric)
+            return (
+              <div className="text-center px-1 py-0.5 rounded text-xs font-medium text-muted-foreground">
+                N/A
+              </div>
+            );
           const gradientClasses = getGradientClasses(metric.status);
           const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("highestScore", profile);
@@ -642,13 +682,20 @@ export default function Reports({
       // Completion Percentage column
       {
         id: "completionPercentage",
-        accessorFn: (row) => row.metrics.completionPercentage.currentValue,
+        accessorFn: (row) =>
+          row.metrics["completionPercentage"]?.currentValue ?? 0,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Completion" />
         ),
         cell: ({ row }) => {
           const profile = row.original;
-          const metric = profile.metrics.completionPercentage;
+          const metric = profile.metrics["completionPercentage"];
+          if (!metric)
+            return (
+              <div className="text-center px-1 py-0.5 rounded text-xs font-medium text-muted-foreground">
+                N/A
+              </div>
+            );
           const gradientClasses = getGradientClasses(metric.status);
           const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("completionPercentage", profile);
@@ -685,13 +732,20 @@ export default function Reports({
       // First Attempt Pass Rate column
       {
         id: "firstAttemptPassRate",
-        accessorFn: (row) => row.metrics.firstAttemptPassRate.currentValue,
+        accessorFn: (row) =>
+          row.metrics["firstAttemptPassRate"]?.currentValue ?? 0,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="First Pass" />
         ),
         cell: ({ row }) => {
           const profile = row.original;
-          const metric = profile.metrics.firstAttemptPassRate;
+          const metric = profile.metrics["firstAttemptPassRate"];
+          if (!metric)
+            return (
+              <div className="text-center px-1 py-0.5 rounded text-xs font-medium text-muted-foreground">
+                N/A
+              </div>
+            );
           const gradientClasses = getGradientClasses(metric.status);
           const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("firstAttemptPassRate", profile);
@@ -728,13 +782,20 @@ export default function Reports({
       // Messages Per Session column
       {
         id: "messagesPerSession",
-        accessorFn: (row) => row.metrics.messagesPerSession.currentValue,
+        accessorFn: (row) =>
+          row.metrics["messagesPerSession"]?.currentValue ?? 0,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Msgs/Sess" />
         ),
         cell: ({ row }) => {
           const profile = row.original;
-          const metric = profile.metrics.messagesPerSession;
+          const metric = profile.metrics["messagesPerSession"];
+          if (!metric)
+            return (
+              <div className="text-center px-1 py-0.5 rounded text-xs font-medium text-muted-foreground">
+                N/A
+              </div>
+            );
           const gradientClasses = getGradientClasses(metric.status);
           const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("messagesPerSession", profile);
@@ -772,13 +833,20 @@ export default function Reports({
       // Persona Response Times column
       {
         id: "personaResponseTimes",
-        accessorFn: (row) => row.metrics.personaResponseTimes.currentValue,
+        accessorFn: (row) =>
+          row.metrics["personaResponseTimes"]?.currentValue ?? 0,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Response Time" />
         ),
         cell: ({ row }) => {
           const profile = row.original;
-          const metric = profile.metrics.personaResponseTimes;
+          const metric = profile.metrics["personaResponseTimes"];
+          if (!metric)
+            return (
+              <div className="text-center px-1 py-0.5 rounded text-xs font-medium text-muted-foreground">
+                N/A
+              </div>
+            );
           const gradientClasses = getGradientClasses(metric.status);
           const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("personaResponseTimes", profile);
@@ -816,13 +884,20 @@ export default function Reports({
       // Session Efficiency column
       {
         id: "sessionEfficiency",
-        accessorFn: (row) => row.metrics.sessionEfficiency.currentValue,
+        accessorFn: (row) =>
+          row.metrics["sessionEfficiency"]?.currentValue ?? 0,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Efficiency" />
         ),
         cell: ({ row }) => {
           const profile = row.original;
-          const metric = profile.metrics.sessionEfficiency;
+          const metric = profile.metrics["sessionEfficiency"];
+          if (!metric)
+            return (
+              <div className="text-center px-1 py-0.5 rounded text-xs font-medium text-muted-foreground">
+                N/A
+              </div>
+            );
           const gradientClasses = getGradientClasses(metric.status);
           const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("sessionEfficiency", profile);
@@ -859,13 +934,19 @@ export default function Reports({
       // Stagnation Rate column
       {
         id: "stagnationRate",
-        accessorFn: (row) => row.metrics.stagnationRate.currentValue,
+        accessorFn: (row) => row.metrics["stagnationRate"]?.currentValue ?? 0,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Stagnation" />
         ),
         cell: ({ row }) => {
           const profile = row.original;
-          const metric = profile.metrics.stagnationRate;
+          const metric = profile.metrics["stagnationRate"];
+          if (!metric)
+            return (
+              <div className="text-center px-1 py-0.5 rounded text-xs font-medium text-muted-foreground">
+                N/A
+              </div>
+            );
           const gradientClasses = getGradientClasses(metric.status);
           const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("stagnationRate", profile);
@@ -902,13 +983,19 @@ export default function Reports({
       // Time Spent column
       {
         id: "timeSpent",
-        accessorFn: (row) => row.metrics.timeSpent.currentValue,
+        accessorFn: (row) => row.metrics["timeSpent"]?.currentValue ?? 0,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Time Spent" />
         ),
         cell: ({ row }) => {
           const profile = row.original;
-          const metric = profile.metrics.timeSpent;
+          const metric = profile.metrics["timeSpent"];
+          if (!metric)
+            return (
+              <div className="text-center px-1 py-0.5 rounded text-xs font-medium text-muted-foreground">
+                N/A
+              </div>
+            );
           const gradientClasses = getGradientClasses(metric.status);
           const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("timeSpent", profile);
@@ -946,13 +1033,19 @@ export default function Reports({
       // Total Attempts column
       {
         id: "totalAttempts",
-        accessorFn: (row) => row.metrics.totalAttempts.currentValue,
+        accessorFn: (row) => row.metrics["totalAttempts"]?.currentValue ?? 0,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Attempts" />
         ),
         cell: ({ row }) => {
           const profile = row.original;
-          const metric = profile.metrics.totalAttempts;
+          const metric = profile.metrics["totalAttempts"];
+          if (!metric)
+            return (
+              <div className="text-center px-1 py-0.5 rounded text-xs font-medium text-muted-foreground">
+                N/A
+              </div>
+            );
           const gradientClasses = getGradientClasses(metric.status);
           const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("totalAttempts", profile);
@@ -1032,7 +1125,7 @@ export default function Reports({
   }, [router]);
 
   // Create table instance (server-driven, no client-side filtering/sorting/pagination)
-  const table = useReactTable({
+  const table = useReactTable<ProfileRow>({
     data: profiles,
     columns,
     state: {
@@ -1197,7 +1290,7 @@ export default function Reports({
           error: "Failed to export data",
         }));
         throw new Error(
-          errorData.message || errorData.error || "Failed to export data",
+          errorData.message || errorData.error || "Failed to export data"
         );
       }
 
@@ -1233,12 +1326,12 @@ export default function Reports({
       window.URL.revokeObjectURL(url);
 
       toast.success(
-        `Exported ${profileIds.length} ${profileIds.length === 1 ? "row" : "rows"} successfully`,
+        `Exported ${profileIds.length} ${profileIds.length === 1 ? "row" : "rows"} successfully`
       );
       setExportPopoverOpen(false);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to export data",
+        error instanceof Error ? error.message : "Failed to export data"
       );
     } finally {
       setIsExporting(false);
@@ -1325,34 +1418,40 @@ export default function Reports({
                 ) : (
                   <>
                     {/* Name Filter */}
-                    {profileIdColumn && profileOptions.length > 0 && (
-                      <DataTableFacetedFilter
-                        column={profileIdColumn}
-                        title="Name"
-                        options={profileOptions}
-                        isServerDriven={true}
-                      />
-                    )}
+                    {profileIdColumn &&
+                      profileOptions &&
+                      profileOptions.length > 0 && (
+                        <DataTableFacetedFilter
+                          column={profileIdColumn}
+                          title="Name"
+                          options={profileOptions}
+                          isServerDriven={true}
+                        />
+                      )}
 
                     {/* Scenario Filter */}
-                    {scenariosColumn && scenarioOptions.length > 0 && (
-                      <DataTableFacetedFilter
-                        column={scenariosColumn}
-                        title="Scenario"
-                        options={scenarioOptions}
-                        isServerDriven={true}
-                      />
-                    )}
+                    {scenariosColumn &&
+                      scenarioOptions &&
+                      scenarioOptions.length > 0 && (
+                        <DataTableFacetedFilter
+                          column={scenariosColumn}
+                          title="Scenario"
+                          options={scenarioOptions}
+                          isServerDriven={true}
+                        />
+                      )}
 
                     {/* Simulation Filter */}
-                    {simulationsColumn && simulationOptions.length > 0 && (
-                      <DataTableFacetedFilter
-                        column={simulationsColumn}
-                        title="Simulation"
-                        options={simulationOptions}
-                        isServerDriven={true}
-                      />
-                    )}
+                    {simulationsColumn &&
+                      simulationOptions &&
+                      simulationOptions.length > 0 && (
+                        <DataTableFacetedFilter
+                          column={simulationsColumn}
+                          title="Simulation"
+                          options={simulationOptions}
+                          isServerDriven={true}
+                        />
+                      )}
                   </>
                 )}
 
@@ -1590,7 +1689,7 @@ export default function Reports({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -1648,7 +1747,7 @@ export default function Reports({
                   className="h-6 hover:bg-muted/30 transition-colors cursor-pointer"
                   onClick={() =>
                     router.push(
-                      `/analytics/reports/p/${row.original.profileId}`,
+                      `/analytics/reports/p/${row.original.profileId}`
                     )
                   }
                 >
@@ -1664,7 +1763,7 @@ export default function Reports({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext(),
+                          cell.getContext()
                         )}
                       </TableCell>
                     );

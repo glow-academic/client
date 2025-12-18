@@ -343,7 +343,7 @@ export interface SettingsSidebarColorsSectionProps {
   colors: SidebarColors;
   originalColors: SidebarColors;
   onColorChange: (fieldName: keyof SidebarColors, value: string) => void;
-  onResetColor: (fieldName: keyof typeof colors) => void;
+  onResetColor: (fieldName: keyof SidebarColors) => void;
   stepStatus: "pending" | "active" | "completed";
   stepNumber: number;
   isReadonly: boolean;

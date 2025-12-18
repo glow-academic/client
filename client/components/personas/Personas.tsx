@@ -338,9 +338,9 @@ export default function Personas({
       await deletePersonaAction({
         body: {
           personaId: deleteItem.id,
-          profileId: effectiveProfile.id,
         },
       });
+      // profileId comes from X-Profile-Id header automatically
       toast.success("Persona deleted successfully");
       // Refresh page to get updated data
       router.refresh();
@@ -367,9 +367,9 @@ export default function Personas({
       await duplicatePersonaAction({
         body: {
           personaId,
-          profileId: effectiveProfile.id,
         },
       });
+      // profileId comes from X-Profile-Id header automatically
       toast.success(`Persona "${personaName}" duplicated successfully`);
       // Refresh page to get updated data
       router.refresh();

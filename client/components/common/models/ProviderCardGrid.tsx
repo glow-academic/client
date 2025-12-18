@@ -25,7 +25,6 @@ export function ProviderCardGrid({
   selectedProviderId,
   onSelect,
   label = "Providers",
-  description = "Select a provider",
   readonly = false,
 }: ProviderCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");

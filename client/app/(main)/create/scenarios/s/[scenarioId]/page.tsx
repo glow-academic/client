@@ -76,7 +76,7 @@ const getScenario = async (
     imageIds?: string[];
     objectiveIds?: string[];
     problemStatementIds?: string[];
-  },
+  }
 ): Promise<ScenarioDetailOut> => {
   return api.post(
     "/scenarios/detail",
@@ -91,26 +91,25 @@ const getScenario = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ scenarioId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { scenarioId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
     const scenario = await getScenario(scenarioId);
-      return {
-        title: `${scenario?.name || "Scenario"}`,
-        description: `${scenario?.name ? `${scenario.name} - ` : ""}Problem-based learning scenario for teaching assistant training. Practice pedagogical problem-solving and instructional design through realistic educational challenges.${scenario?.problem_statement ? ` ${scenario.problem_statement}` : ""}`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+    return {
+      title: `${scenario?.name || "Scenario"}`,
+      description: `${scenario?.name ? `${scenario.name} - ` : ""}Problem-based learning scenario for teaching assistant training. Practice pedagogical problem-solving and instructional design through realistic educational challenges.${scenario?.problem_statement ? ` ${scenario.problem_statement}` : ""}`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {
@@ -122,7 +121,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateScenario(
-  input: UpdateScenarioIn,
+  input: UpdateScenarioIn
 ): Promise<UpdateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -262,7 +261,33 @@ export default async function EditScenarioPage({
 
   // Fetch scenario detail (always fresh - source of truth) with filter params
   try {
-    const filterParams: Parameters<typeof getScenario>[2] = {};
+    type FilterParams = {
+      departmentIds?: string[];
+      personaIds?: string[];
+      documentIds?: string[];
+      templateDocumentIds?: string[];
+      parameterIds?: string[];
+      parameterItemIds?: string[];
+      personaSearch?: string;
+      documentSearch?: string;
+      parameterSearch?: string;
+      personaMin?: number;
+      personaMax?: number;
+      documentMin?: number;
+      documentMax?: number;
+      parameterSelectionMin?: number;
+      parameterSelectionMax?: number;
+      parameterItemRanges?: Record<string, { min: number; max: number }>;
+      randomizePersonas?: string;
+      randomizeDocuments?: string;
+      randomizeParameters?: string;
+      randomizeParameterItems?: Record<string, string>;
+      useImage?: boolean;
+      imageIds?: string[];
+      objectiveIds?: string[];
+      problemStatementIds?: string[];
+    };
+    const filterParams: FilterParams = {};
     if (departmentIds) filterParams.departmentIds = departmentIds;
     if (personaIds) filterParams.personaIds = personaIds;
     if (documentIds) filterParams.documentIds = documentIds;
@@ -298,7 +323,7 @@ export default async function EditScenarioPage({
 
     const scenarioDetail = await getScenario(
       scenarioId,
-      Object.keys(filterParams).length > 0 ? filterParams : undefined,
+      Object.keys(filterParams).length > 0 ? filterParams : undefined
     );
 
     return (

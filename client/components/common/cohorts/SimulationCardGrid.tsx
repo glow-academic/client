@@ -26,8 +26,6 @@ export function SimulationCardGrid({
   validSimulationIds,
   selectedSimulationIds,
   onSelect,
-  label = "Simulations",
-  description = "Select simulations to add to the cohort",
   readonly = false,
   canRemoveMap = {},
 }: SimulationCardGridProps) {

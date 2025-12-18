@@ -32,8 +32,6 @@ export function ParameterFieldCardGrid({
   validFieldIds,
   selectedFieldIds,
   onSelect,
-  label = "Fields",
-  description = "Select fields to add to the parameter",
   readonly = false,
 }: ParameterFieldCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");

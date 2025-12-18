@@ -56,7 +56,6 @@ export async function generateMetadata(
     } catch {
       // Fall through to default metadata
     }
-  }
 
   return {
     title: "Agent",
@@ -85,7 +84,7 @@ async function deleteAgentPrompt(
 ): Promise<DeleteAgentPromptOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/delete-prompt", input);
+  return api.post("/prompts/delete", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */

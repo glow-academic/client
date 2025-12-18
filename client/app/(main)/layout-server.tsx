@@ -103,114 +103,33 @@ export async function getValidatedProfileId(session?: Session | null): Promise<{
   actualProfileId: string | null;
   effectiveProfileId: string | null;
 }> {
-  // #region agent log
-  fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      location: "layout-server.tsx:96",
-      message: "getValidatedProfileId entry",
-      data: { hasSession: !!session },
-      timestamp: Date.now(),
-      sessionId: "debug-session",
-      runId: "run1",
-      hypothesisId: "A",
-    }),
-  }).catch(() => {});
-  // #endregion
   const resolvedSession = session ?? (await getSession());
 
   // Extract profile IDs from session (works for both real and pseudo-sessions)
   const effectiveProfileId = resolvedSession?.effectiveProfileId || null;
   const actualProfileId = resolvedSession?.user?.profileId || null;
-  // #region agent log
-  fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      location: "layout-server.tsx:103",
-      message: "Session profile IDs extracted",
-      data: {
-        effectiveProfileId,
-        actualProfileId,
-        hasIdToken: !!resolvedSession?.id_token,
-        isAuthenticated: !!resolvedSession?.id_token,
-      },
-      timestamp: Date.now(),
-      sessionId: "debug-session",
-      runId: "run1",
-      hypothesisId: "A",
-    }),
-  }).catch(() => {});
-  // #endregion
+
+  // If we have session profile IDs, return them directly
+  // No need to call getLayoutContext - headers will be injected automatically by request-core.ts
+  if (effectiveProfileId && actualProfileId) {
+    return {
+      actualProfileId,
+      effectiveProfileId,
+    };
+  }
 
   // If no session IDs but we have cookies (guest/default-account), resolve from cookies
-  if (!effectiveProfileId || !actualProfileId) {
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "layout-server.tsx:106",
-        message: "No session profile IDs, checking cookies",
-        data: { effectiveProfileId, actualProfileId },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "B",
-      }),
-    }).catch(() => {});
-    // #endregion
-    try {
-      const cookieStore = await cookies();
-      const authMode = cookieStore.get("auth-mode")?.value;
-      const departmentId = cookieStore.get("department-id")?.value;
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "layout-server.tsx:110",
-            message: "Cookies found",
-            data: { authMode, departmentId },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "C",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
+  try {
+    const cookieStore = await cookies();
+    const authMode = cookieStore.get("auth-mode")?.value;
 
-      // If we have auth-mode cookie, try to resolve profile from cookies
-      if (
-        authMode &&
-        (authMode === "default-guest" || authMode === "default-account")
-      ) {
-        // Call profile context endpoint with null profile IDs
-        // Server will read cookies and resolve profile from department settings
-        const initial = await getLayoutContext({
-          body: {
-            pathname: "/",
-          },
-        });
-
-        if (initial?.effectiveProfile?.id && initial?.actualProfile?.id) {
-          return {
-            actualProfileId: initial.actualProfile.id,
-            effectiveProfileId: initial.effectiveProfile.id,
-          };
-        }
-      }
-    } catch {
-      // If profile context fetch fails, return nulls
-      return { actualProfileId: null, effectiveProfileId: null };
-    }
-  } else {
-    // Authenticated user: fetch profile context with session profile IDs
-    try {
+    // If we have auth-mode cookie, try to resolve profile from cookies
+    if (
+      authMode &&
+      (authMode === "default-guest" || authMode === "default-account")
+    ) {
+      // Call profile context endpoint - headers will be null (cookie-based auth)
+      // Server will read cookies and resolve profile from department settings
       const initial = await getLayoutContext({
         body: {
           pathname: "/",
@@ -223,10 +142,10 @@ export async function getValidatedProfileId(session?: Session | null): Promise<{
           effectiveProfileId: initial.effectiveProfile.id,
         };
       }
-    } catch {
-      // If context fetch fails, return nulls
-      return { actualProfileId: null, effectiveProfileId: null };
     }
+  } catch {
+    // If profile context fetch fails, return nulls
+    return { actualProfileId: null, effectiveProfileId: null };
   }
 
   return { actualProfileId: null, effectiveProfileId: null };

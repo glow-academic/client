@@ -248,9 +248,9 @@ export default function Fields({
       await deleteFieldAction({
         body: {
           fieldId: deleteItem.id,
-          profileId: "", // Will be set from session in server action
         },
       });
+      // profileId comes from X-Profile-Id header automatically
       toast.success(`Field '${deleteItem.name}' deleted successfully`);
       setShowDeleteDialog(false);
       setDeleteItem(null);
@@ -277,9 +277,9 @@ export default function Fields({
       await duplicateFieldAction({
         body: {
           fieldId,
-          profileId: "", // Will be set from session in server action
         },
       });
+      // profileId comes from X-Profile-Id header automatically
       toast.success(`Field '${name}' duplicated successfully`);
       router.refresh();
     } catch (error) {

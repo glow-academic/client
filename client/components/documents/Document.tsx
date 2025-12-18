@@ -453,7 +453,7 @@ export default function Document({
         const renderBody: RenderTemplateIn["body"] = {
           documentId,
           templateArgs,
-          profileId: effectiveProfile?.id || "",
+          // profileId comes from X-Profile-Id header automatically
         };
         if (departmentIds) {
           renderBody.departmentIds = departmentIds;

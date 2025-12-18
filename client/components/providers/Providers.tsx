@@ -44,7 +44,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfile } from "@/contexts/profile-context";
 
 export interface ProvidersProps {
   // Server-provided data (for server-side rendering)
@@ -60,7 +59,6 @@ export default function Providers({
   deleteProviderAction,
 }: ProvidersProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -275,9 +273,9 @@ export default function Providers({
       await deleteProviderAction({
         body: {
           providerId: deleteItem.id,
-          profileId: effectiveProfile?.id || "",
         },
       });
+      // profileId comes from X-Profile-Id header automatically
       toast.success("Provider deleted successfully");
       router.refresh();
     } catch {

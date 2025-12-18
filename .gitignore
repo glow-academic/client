@@ -1,4 +1,7 @@
 .env
+.env.prod
+.env.beta
+.env.alpha
 .cursorignore
 
 history/*.sql

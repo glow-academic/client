@@ -51,7 +51,6 @@ export async function generateMetadata(
     } catch {
       // Fall through to default metadata
     }
-  }
 
   return {
     title: "Edit Staff",

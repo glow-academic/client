@@ -796,8 +796,9 @@ export default function Simulation({
     isEditMode,
     initialFormData,
     simulationDetail,
-    // Remove searchParams from dependencies to prevent loops - we only read it on initial load
-    // searchParams,
+    currentScenarioIds.length,
+    searchParams,
+    // Note: searchParams is included but effect uses hasInitializedRef to prevent loops
   ]);
 
   const handleInputChange = (
@@ -1478,6 +1479,7 @@ export default function Simulation({
 
             // Check if current scenario is completed
             const currentScenario = scenarioItems[scenarioIndex];
+            if (!currentScenario) return "pending";
             const currentKey = `scenario:${currentScenario.id}`;
             const currentSwitchState = contentSwitchStates[currentKey];
             const currentTextEnabled =
@@ -1623,7 +1625,7 @@ export default function Simulation({
   const handleContentMoveUp = useCallback(
     (contentId: string) => {
       const [type, id] = contentId.split(":");
-      if (type !== "scenario") return;
+      if (type !== "scenario" || !id) return;
 
       // Get ordered scenario IDs from searchParams (source of truth)
       const orderedIds = isEditMode
@@ -1637,9 +1639,12 @@ export default function Simulation({
 
       // Swap with previous item
       const reorderedIds = [...orderedIds];
+      const prevId = reorderedIds[index - 1];
+      const currentId = reorderedIds[index];
+      if (!prevId || !currentId) return;
       [reorderedIds[index - 1], reorderedIds[index]] = [
-        reorderedIds[index],
-        reorderedIds[index - 1],
+        currentId,
+        prevId,
       ];
 
       // Update state and URL params (URL params are source of truth)
@@ -1648,19 +1653,13 @@ export default function Simulation({
         scenarioIds: reorderedIds.length > 0 ? reorderedIds : null,
       });
     },
-    [
-      contentItems,
-      currentScenarioIds,
-      isEditMode,
-      searchParams,
-      updateUrlParams,
-    ],
+    [currentScenarioIds, isEditMode, searchParams, updateUrlParams],
   );
 
   const handleContentMoveDown = useCallback(
     (contentId: string) => {
       const [type, id] = contentId.split(":");
-      if (type !== "scenario") return;
+      if (type !== "scenario" || !id) return;
 
       // Get ordered scenario IDs from searchParams (source of truth)
       const orderedIds = isEditMode
@@ -1674,9 +1673,12 @@ export default function Simulation({
 
       // Swap with next item
       const reorderedIds = [...orderedIds];
+      const currentId = reorderedIds[index];
+      const nextId = reorderedIds[index + 1];
+      if (!currentId || !nextId) return;
       [reorderedIds[index], reorderedIds[index + 1]] = [
-        reorderedIds[index + 1],
-        reorderedIds[index],
+        nextId,
+        currentId,
       ];
 
       // Update state and URL params (URL params are source of truth)
@@ -1685,13 +1687,7 @@ export default function Simulation({
         scenarioIds: reorderedIds.length > 0 ? reorderedIds : null,
       });
     },
-    [
-      contentItems,
-      currentScenarioIds,
-      isEditMode,
-      searchParams,
-      updateUrlParams,
-    ],
+    [currentScenarioIds, isEditMode, searchParams, updateUrlParams],
   );
 
   const handleContentRemove = useCallback(
@@ -2489,7 +2485,7 @@ export default function Simulation({
         <Accordion
           type="single"
           collapsible
-          value={openAccordionItem || undefined}
+          value={openAccordionItem ?? ""}
           onValueChange={(value) => setOpenAccordionItem(value || null)}
           className="space-y-4"
         >

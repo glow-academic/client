@@ -35,8 +35,6 @@ export function ScenarioCardGrid<
   validScenarioIds,
   selectedScenarioIds,
   onSelect,
-  label = "Scenarios",
-  description = "Select scenarios to add to the simulation",
   readonly = false,
   canRemoveMap = {},
 }: ScenarioCardGridProps<T>) {

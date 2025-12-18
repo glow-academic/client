@@ -12731,6 +12731,59 @@
         ]
       }
     },
+    "/socket/v3/client/simulations/enter": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Simulation Enter Api",
+        "description": "Client-to-server event: Update chat created_at timestamp when entering a chat.",
+        "operationId": "simulation_enter_api_socket_v3_client_simulations_enter_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationEnterPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Enter Api Socket V3 Client Simulations Enter Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
     "/socket/v3/client/simulations/join": {
       "post": {
         "tags": [
@@ -14483,6 +14536,112 @@
         },
         "x-cache-tags": [
           "socket",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/enter_response": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Simulation Enter Response Api",
+        "description": "Server-to-client event: Successfully updated chat created_at timestamp.",
+        "operationId": "simulation_enter_response_api_socket_v3_server_simulations_enter_response_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationEnterResponsePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Enter Response Api Socket V3 Server Simulations Enter Response Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/enter_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Simulation Enter Error Api",
+        "description": "Server-to-client event: Error occurred while updating chat created_at timestamp.",
+        "operationId": "simulation_enter_error_api_socket_v3_server_simulations_enter_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationEnterErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Enter Error Api Socket V3 Server Simulations Enter Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
           "socket-server"
         ]
       }
@@ -35311,6 +35470,68 @@
         ],
         "title": "SimulationDetailRequest",
         "description": "Request to get simulation details."
+      },
+      "SimulationEnterErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "SimulationEnterErrorPayload",
+        "description": "Response indicating an error occurred while updating chat created_at timestamp."
+      },
+      "SimulationEnterPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "created_at"
+        ],
+        "title": "SimulationEnterPayload",
+        "description": "Request to update chat created_at timestamp when entering a chat."
+      },
+      "SimulationEnterResponsePayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "chat_id"
+        ],
+        "title": "SimulationEnterResponsePayload",
+        "description": "Response indicating successfully updated chat created_at timestamp."
       },
       "SimulationFact": {
         "properties": {

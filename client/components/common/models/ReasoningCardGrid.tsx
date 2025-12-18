@@ -22,7 +22,6 @@ export function ReasoningCardGrid({
   selectedIds,
   onSelect,
   label = "Reasoning Levels",
-  description = "Select reasoning levels",
   readonly = false,
 }: ReasoningCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");

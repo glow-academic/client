@@ -92,6 +92,7 @@ export function AgentRoleSection({
     // If a model is selected, filter roles based on model capabilities
     if (selectedModelId && modelMapping && selectedModelId in modelMapping) {
       const modelInfo = modelMapping[selectedModelId];
+      if (!modelInfo) return roles; // Early return if undefined
       const modelInputMods = modelInfo.input_modalities || [];
       const modelOutputMods = modelInfo.output_modalities || [];
 

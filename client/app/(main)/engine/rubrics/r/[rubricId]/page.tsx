@@ -23,9 +23,7 @@ type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getRubric = async (
-  rubricId: string,
-): Promise<RubricDetailOut> => {
+const getRubric = async (rubricId: string): Promise<RubricDetailOut> => {
   return api.post(
     "/rubrics/detail",
     { body: { rubricId } },
@@ -34,7 +32,7 @@ const getRubric = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
@@ -47,26 +45,25 @@ const getRubricDefault = async (): Promise<RubricNewOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ rubricId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { rubricId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
     const rubric = await getRubric(rubricId);
-      return {
-        title: `${rubric?.name || "Rubric"}`,
-        description: `${rubric?.name ? `${rubric.name} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubric?.description ? ` ${rubric.description}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+    return {
+      title: `${rubric?.name || "Rubric"}`,
+      description: `${rubric?.name ? `${rubric.name} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubric?.description ? ` ${rubric.description}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {
@@ -88,12 +85,8 @@ export default async function EditRubricPage({
   // Fetch data based on mode (edit vs create)
   try {
     const [rubricDetail, rubricNew] = await Promise.all([
-      rubricId
-        ? getRubric(rubricId).catch(() => null)
-        : Promise.resolve(null),
-      !rubricId
-        ? getRubricDefault().catch(() => null)
-        : Promise.resolve(null),
+      rubricId ? getRubric(rubricId).catch(() => null) : Promise.resolve(null),
+      !rubricId ? getRubricDefault().catch(() => null) : Promise.resolve(null),
     ]);
 
     return (

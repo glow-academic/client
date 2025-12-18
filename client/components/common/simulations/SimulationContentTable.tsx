@@ -661,7 +661,7 @@ export function SimulationContentTable({
 
   const tableRows = React.useMemo(() => {
     return table.getRowModel().rows;
-  }, [table, data]); // CRITICAL: 'data' must be in dependency array so tableRows recomputes when data prop changes
+  }, [table]); // table already depends on data, so data is unnecessary here
 
   return (
     <TooltipProvider>

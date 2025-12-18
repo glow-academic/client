@@ -22,7 +22,6 @@ export function QualityCardGrid({
   selectedIds,
   onSelect,
   label = "Qualities",
-  description = "Select qualities",
   readonly = false,
 }: QualityCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");

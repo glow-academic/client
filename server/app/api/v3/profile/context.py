@@ -227,31 +227,6 @@ async def get_profile_context(
         # NOTE: This is the ONLY endpoint that reads these cookies (single source of truth)
         department_id_cookie = http_request.cookies.get("department-id")
         auth_mode_cookie = http_request.cookies.get("auth-mode")
-        
-        # #region agent log
-        import asyncio
-        import json
-
-        log_data = {
-            "location": "context.py:224",
-            "message": "Backend received request",
-            "data": {
-                "actualProfileId": actual_profile_id,
-                "effectiveProfileId": effective_profile_id,
-                "department_id_cookie": department_id_cookie,
-                "auth_mode_cookie": auth_mode_cookie,
-            },
-            "timestamp": int(__import__("time").time() * 1000),
-            "sessionId": "debug-session",
-            "runId": "run1",
-            "hypothesisId": "E"
-        }
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps(log_data) + "\n")
-        except:
-            pass
-        # #endregion
 
         # Default auth-mode to "default-account" ONLY when resolving from cookies (profile IDs are null)
         # For authenticated users (with profile IDs), auth-mode cookie should be None/absent
@@ -259,8 +234,9 @@ async def get_profile_context(
         if not auth_mode_cookie and not actual_profile_id and not effective_profile_id:
             auth_mode_cookie = "default-account"
 
-        # Validate auth_mode is valid (should always be valid after default)
-        if auth_mode_cookie not in ("default-guest", "default-account"):
+        # Validate auth_mode is valid ONLY if it's set (not None)
+        # Authenticated users (with profile IDs) don't need auth-mode cookie
+        if auth_mode_cookie is not None and auth_mode_cookie not in ("default-guest", "default-account"):
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid auth-mode: {auth_mode_cookie}. Must be 'default-guest' or 'default-account'",
@@ -296,33 +272,11 @@ async def get_profile_context(
         # - Department exists but has no settings: Treated as "no auth providers" (intentional)
         # - Default settings don't exist: guest_login_enabled defaults to false (blocks guest)
         # - Inactive departments: Excluded from counts (department_exists checks active=true)
-        # #region agent log
-        should_check_auth = (
+        if (
             not actual_profile_id
             and not effective_profile_id
             and auth_mode_cookie in ("default-account", "default-guest")
-        )
-        log_data = {
-            "location": "context.py:270",
-            "message": "Authorization check decision",
-            "data": {
-                "should_check_auth": should_check_auth,
-                "actualProfileId": actual_profile_id,
-                "effectiveProfileId": effective_profile_id,
-                "auth_mode_cookie": auth_mode_cookie,
-            },
-            "timestamp": int(__import__("time").time() * 1000),
-            "sessionId": "debug-session",
-            "runId": "run1",
-            "hypothesisId": "E"
-        }
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps(log_data) + "\n")
-        except:
-            pass
-        # #endregion
-        if should_check_auth:
+        ):
             auth_check_sql = load_sql("sql/v3/profile/check_login_authorization.sql")
             auth_result = await conn.fetchrow(auth_check_sql, department_id_cookie)
 

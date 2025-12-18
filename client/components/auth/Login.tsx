@@ -5,7 +5,7 @@
  * 06/18/2025
  */
 "use client";
-import type { SettingsActiveOut } from "@/app/(main)/layout-server";
+import { SettingsActiveClient } from "@/app/(main)/layout-server";
 import { GlowIconComponent } from "@/components/common/GlowIconComponent";
 import { Button } from "@/components/ui/button";
 import {
@@ -136,7 +136,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 3,
         animationDuration: Math.random() * 3 + 2,
-      })),
+      }))
     );
 
     setMovingSparkles(
@@ -146,7 +146,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 2,
         animationDuration: Math.random() * 2 + 3,
-      })),
+      }))
     );
 
     setFloatingSparkles(
@@ -156,7 +156,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 4,
         animationDuration: Math.random() * 3 + 4,
-      })),
+      }))
     );
 
     setMounted(true);
@@ -243,7 +243,7 @@ interface LoginProps {
   show_default_account?: boolean; // Whether to show "continue as default account" button
   departments?: DepartmentOption[]; // List of departments for picker
   initialDepartmentId?: string | undefined; // Initial department ID from query parameter
-  activeSettings?: SettingsActiveOut | null; // Active settings for theme application
+  activeSettings?: SettingsActiveClient | null; // Active settings for theme application
   defaultDepartmentId?: string | null; // Default department ID from settings_default_department table
   redirectPath?: string; // Redirect path after login
 }
@@ -264,7 +264,7 @@ export default function Login({
     string | null
   >(
     initialDepartmentId ||
-      (departments.length > 0 ? (departments[0]?.id ?? null) : null),
+      (departments.length > 0 ? (departments[0]?.id ?? null) : null)
   );
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -342,7 +342,7 @@ export default function Login({
         },
         {
           kc_idp_hint: provider.id,
-        },
+        }
       );
 
       // Note: signIn redirects immediately on success, so we don't need toast.success here
@@ -359,11 +359,6 @@ export default function Login({
   const handleGuestAccess = async () => {
     try {
       setLoadingGuest(true);
-
-      if (!activeSettings?.guestProfileId) {
-        toast.error("Guest login not configured");
-        return;
-      }
 
       // Import server action dynamically to avoid SSR issues
       const { setGuestSession } = await import("@/app/(main)/layout-server");

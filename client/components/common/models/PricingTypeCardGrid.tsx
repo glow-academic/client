@@ -46,7 +46,6 @@ export function PricingTypeCardGrid({
   selectedIds,
   onSelect,
   label = "Pricing Types",
-  description = "Select pricing types",
   readonly = false,
 }: PricingTypeCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");

@@ -659,13 +659,6 @@ export default function Eval({
       );
 
       const targetEvalId = evalId || editingEvalId;
-      // profileId is added by server action, but we need it for type checking
-      const profileId = effectiveProfile?.profileId;
-      if (!profileId) {
-        toast.error("Profile ID is required");
-        setIsSubmitting(false);
-        return;
-      }
 
       if (targetEvalId) {
         // UPDATE mode
@@ -679,7 +672,6 @@ export default function Eval({
           department_ids: finalDepartmentIds || [],
           active: formData.active ?? true,
           model_run_ids: currentModelRunIds,
-          profileId, // Required by server
         };
         await handleUpdateEval(updateRequest);
 
@@ -695,7 +687,6 @@ export default function Eval({
           department_ids: finalDepartmentIds || [],
           active: formData.active || true,
           model_run_ids: currentModelRunIds,
-          profileId, // Required by server
           run: false, // Default to false, user can run manually later
         };
         await handleCreateEval(createRequest);

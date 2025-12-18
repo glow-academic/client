@@ -381,7 +381,7 @@ export default function Persona({
             department_ids: finalDepartmentIds,
             parameter_ids: formData.parameterIds || [],
             example_ids: [],
-            profileId: effectiveProfile.id,
+            // profileId comes from X-Profile-Id header automatically
           },
           {
             onSuccess: () => {
@@ -406,7 +406,7 @@ export default function Persona({
             department_ids: finalDepartmentIds,
             parameter_ids: formData.parameterIds || [],
             example_ids: currentExamples.filter((ex) => ex.trim()),
-            profileId: effectiveProfile.id,
+            // profileId comes from X-Profile-Id header automatically
           },
           {
             onSuccess: () => {

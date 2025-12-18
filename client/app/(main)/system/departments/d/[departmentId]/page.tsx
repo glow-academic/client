@@ -11,8 +11,6 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
-import { deleteDepartment } from "@/app/(main)/system/departments/page";
-
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentDetailOut = OutputOf<"/api/v3/departments/detail", "post">;
 type UpdateDepartmentIn = InputOf<"/api/v3/departments/update", "post">;
@@ -31,7 +29,7 @@ type SettingsDetailOut = OutputOf<"/api/v3/settings/detail", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getDepartment = async (
-  departmentId: string,
+  departmentId: string
 ): Promise<DepartmentDetailOut> => {
   return api.post(
     "/departments/detail",
@@ -41,54 +39,25 @@ const getDepartment = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
-  );
-};
-
-const getKeysList = async (): Promise<KeysListOut> => {
-  return api.post(
-    "/keys/list",
-    { body: {} },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    },
-  );
-};
-
-const getSettingsDetail = async (
-  settingsId: string,
-): Promise<SettingsDetailOut> => {
-  return api.post(
-    "/settings/detail",
-    { body: { settingsId } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ departmentId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { departmentId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
     const department = await getDepartment(departmentId);
-      return {
-        title: `${department?.title || "Department"} Department`,
-        description: `${department?.title ? `${department.title} - ` : ""}Academic department for teaching assistant training programs.${department?.description ? ` ${department.description}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+    return {
+      title: `${department?.title || "Department"} Department`,
+      description: `${department?.title ? `${department.title} - ` : ""}Academic department for teaching assistant training programs.${department?.description ? ` ${department.description}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {
@@ -100,40 +69,11 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions ---- */
 async function updateDepartment(
-  input: UpdateDepartmentIn,
+  input: UpdateDepartmentIn
 ): Promise<UpdateDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/departments/update", input);
-}
-
-async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
-  "use server";
-  return api.post("/keys/create", input);
-}
-
-async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
-  "use server";
-  return api.post("/keys/decrypt-key", input);
-}
-
-async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
-  "use server";
-  return api.post("/keys/update", input);
-}
-
-async function getKeysListAction(): Promise<KeysListOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return getKeysList();
-}
-
-async function getSettingsDetailAction(
-  settingsId: string,
-): Promise<SettingsDetailOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return getSettingsDetail(settingsId);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -150,21 +90,6 @@ export default async function DepartmentEditPage({
   try {
     const departmentDetail = await getDepartment(departmentId);
 
-    // Fetch keys list
-    const keysList = await getKeysList();
-
-    // Fetch settings detail if department has linked settings
-    let settingsDetail: SettingsDetailOut | null = null;
-    if (departmentDetail.settings_id) {
-      try {
-        settingsDetail = await getSettingsDetail(
-          departmentDetail.settings_id,
-        );
-      } catch {
-        // Settings might not exist, continue without it
-      }
-    }
-
     return (
       <div
         className="space-y-6"
@@ -174,15 +99,7 @@ export default async function DepartmentEditPage({
         <Department
           departmentId={departmentId}
           departmentDetail={departmentDetail}
-          keysList={keysList}
-          settingsDetail={settingsDetail}
           updateDepartmentAction={updateDepartment}
-          deleteDepartmentAction={deleteDepartment}
-          createKeyAction={createKey}
-          decryptKeyAction={decryptKey}
-          updateKeyAction={updateKey}
-          getKeysListAction={getKeysListAction}
-          getSettingsDetailAction={getSettingsDetailAction}
         />
       </div>
     );

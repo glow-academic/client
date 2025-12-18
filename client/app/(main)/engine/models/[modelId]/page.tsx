@@ -20,9 +20,7 @@ type UpdateModelOut = OutputOf<"/api/v3/models/update", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getModel = async (
-  modelId: string,
-): Promise<ModelDetailOut> => {
+const getModel = async (modelId: string): Promise<ModelDetailOut> => {
   return api.post(
     "/models/detail",
     { body: { modelId } },
@@ -31,28 +29,27 @@ const getModel = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ modelId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { modelId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
     const model = await getModel(modelId);
-      return {
-        title: `${model?.name || "Model"}`,
-        description:
-          model?.description ||
-          `${model?.name ? `${model.name} - ` : ""}AI language model configuration for teaching assistant training simulations. Customize model settings to power realistic student personas and enhance simulation-based learning experiences.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+    return {
+      title: `${model?.name || "Model"}`,
+      description:
+        model?.description ||
+        `${model?.name ? `${model.name} - ` : ""}AI language model configuration for teaching assistant training simulations. Customize model settings to power realistic student personas and enhance simulation-based learning experiences.`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {

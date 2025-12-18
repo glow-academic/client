@@ -343,7 +343,7 @@ export interface SettingsChartColorsSectionProps {
   colors: ChartColors;
   originalColors: ChartColors;
   onColorChange: (fieldName: keyof ChartColors, value: string) => void;
-  onResetColor: (fieldName: keyof typeof colors) => void;
+  onResetColor: (fieldName: keyof ChartColors) => void;
   stepStatus: "pending" | "active" | "completed";
   stepNumber: number;
   isReadonly: boolean;

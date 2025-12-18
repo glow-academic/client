@@ -642,7 +642,6 @@ export default function Auth({
           description: formData.description!,
           active: formData.active || false,
           auth_items,
-          profileId: effectiveProfile.id,
         });
 
         toast.success("Auth updated successfully!");
@@ -652,7 +651,6 @@ export default function Auth({
           description: formData.description!,
           active: formData.active || false,
           auth_items,
-          profileId: effectiveProfile.id,
         });
 
         toast.success("Auth created successfully!");

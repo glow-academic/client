@@ -55,6 +55,7 @@ import type {
   DepartmentsListOut,
   KeysListOut,
   SettingsDetailOut,
+  SettingsListOut,
   StaffListOut,
   UpdateSettingsIn,
   UpdateSettingsOut,
@@ -69,21 +70,17 @@ export interface ProfileMappingItem {
 }
 
 export interface SettingsProps {
-  settingsList: SettingsDetailOut[];
+  settingsList: SettingsListOut["settings"];
   settingsDetail: SettingsDetailOut | null;
   selectedSettingsId: string | null;
-  profileId: string;
   keysList: KeysListOut;
   staffList: StaffListOut;
   departmentsList: DepartmentsListOut;
-  getSettingsDetailAction: (
-    settingsId: string,
-    profileId: string,
-  ) => Promise<SettingsDetailOut>;
-  getKeysListAction: (profileId: string) => Promise<KeysListOut>;
-  getStaffListAction?: (profileId: string) => Promise<StaffListOut>;
+  getSettingsDetailAction: (settingsId: string) => Promise<SettingsDetailOut>;
+  getKeysListAction: () => Promise<KeysListOut>;
+  getStaffListAction?: () => Promise<StaffListOut>;
   updateSettingsAction?: (
-    input: UpdateSettingsIn,
+    input: UpdateSettingsIn
   ) => Promise<UpdateSettingsOut>;
 }
 
@@ -112,7 +109,6 @@ export default function Settings({
   settingsList,
   settingsDetail: initialSettingsDetail,
   selectedSettingsId: initialSelectedSettingsId,
-  profileId,
   keysList: initialKeysList,
   staffList: initialStaffList,
   departmentsList,
@@ -143,15 +139,15 @@ export default function Settings({
 
   // Accordion state
   const [openAccordionItem, setOpenAccordionItem] = useState<string | null>(
-    null,
+    null
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittingSection, setSubmittingSection] = useState<string | null>(
-    null,
+    null
   );
   const [selectedSettingsId, setSelectedSettingsId] = useState<string | null>(
-    initialSelectedSettingsId,
+    initialSelectedSettingsId
   );
   const [settingsDetail, setSettingsDetail] =
     useState<SettingsDetailOut | null>(initialSettingsDetail);
@@ -181,7 +177,7 @@ export default function Settings({
     Record<string, Record<string, string>>
   >({});
   const [originalDepartmentIds, setOriginalDepartmentIds] = useState<string[]>(
-    [],
+    []
   );
 
   // Track which auth methods and providers are selected/expanded
@@ -189,7 +185,7 @@ export default function Settings({
     Set<string>
   >(new Set());
   const [selectedProviderIds, setSelectedProviderIds] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
 
   // Department filter state (for filtering settings list)
@@ -197,9 +193,9 @@ export default function Settings({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null,
+        effectiveProfile?.primaryDepartmentId ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
   const [selectedDepartmentIds] = useState<string[]>(defaultDepartmentIds);
 
@@ -233,14 +229,14 @@ export default function Settings({
         return true;
       }
       return setting.department_ids.some((deptId: string) =>
-        selectedDepartmentIds.includes(deptId),
+        selectedDepartmentIds.includes(deptId)
       );
     });
   }, [settingsList, selectedDepartmentIds]);
 
   // Build settings mapping for picker (using filtered list)
   const settingsMapping = useMemo(() => {
-    const mapping: Record<string, SettingsDetailOut> = {};
+    const mapping: Record<string, SettingsListOut["settings"][number]> = {};
     filteredSettingsList.forEach((setting) => {
       mapping[setting.settings_id] = setting;
     });
@@ -394,19 +390,19 @@ export default function Settings({
       // Auto-select enabled auth methods and providers
       const enabledAuthIds = new Set(
         settingsDetail.all_auth_ids?.filter(
-          (authId) => authEnabledState[authId],
-        ) || [],
+          (authId) => authEnabledState[authId]
+        ) || []
       );
       setSelectedAuthMethodIds(enabledAuthIds);
 
       const enabledProviderIds = new Set(
         settingsDetail.all_provider_ids.filter(
-          (providerId) => enabled[providerId],
-        ),
+          (providerId) => enabled[providerId]
+        )
       );
       setSelectedProviderIds(enabledProviderIds);
     }
-  }, [settingsDetail]);
+  }, [settingsDetail, originalFormData, originalSelectedSettingsId, selectedSettingsId]);
 
   // Sync originalSelectedSettingsId when selectedSettingsId changes from null to a value
   // This handles the case where auto-select sets selectedSettingsId after settingsDetail loads
@@ -637,13 +633,13 @@ export default function Settings({
 
     setSelectedSettingsId(settingsId);
     try {
-      const detailResult = await getSettingsDetailAction(settingsId, profileId);
+      const detailResult = await getSettingsDetailAction(settingsId);
       setSettingsDetail(detailResult);
       // Refresh keys list and staff list
-      const freshKeysList = await getKeysListAction(profileId);
+      const freshKeysList = await getKeysListAction();
       setKeysList(freshKeysList);
       if (getStaffListAction) {
-        const freshStaffList = await getStaffListAction(profileId);
+        const freshStaffList = await getStaffListAction();
         setStaffList(freshStaffList);
       }
     } catch {
@@ -659,7 +655,7 @@ export default function Settings({
 
     if (selectedDepartmentIds.length === 0) {
       activeSettings = filteredSettingsList.find(
-        (s) => !s.department_ids || s.department_ids.length === 0,
+        (s) => !s.department_ids || s.department_ids.length === 0
       );
     } else {
       activeSettings =
@@ -668,11 +664,11 @@ export default function Settings({
             return false;
           }
           return s.department_ids.some((id: string) =>
-            selectedDepartmentIds.includes(id),
+            selectedDepartmentIds.includes(id)
           );
         }) ||
         filteredSettingsList.find(
-          (s) => !s.department_ids || s.department_ids.length === 0,
+          (s) => !s.department_ids || s.department_ids.length === 0
         );
     }
 
@@ -720,6 +716,7 @@ export default function Settings({
         JSON.stringify(originalAuthValueMapping)
     );
   }, [
+    originalFormData,
     authEnabled,
     originalAuthEnabled,
     authKeyMapping,
@@ -737,6 +734,7 @@ export default function Settings({
         JSON.stringify(originalProviderKeyMapping)
     );
   }, [
+    originalFormData,
     providerEnabled,
     originalProviderEnabled,
     providerKeyMapping,
@@ -799,7 +797,6 @@ export default function Settings({
           success_threshold: originalFormData.success_threshold,
           warning_threshold: originalFormData.warning_threshold,
           danger_threshold: originalFormData.danger_threshold,
-          profileId,
           provider_key_mapping:
             Object.keys(originalProviderKeyMapping).length > 0
               ? originalProviderKeyMapping
@@ -843,7 +840,7 @@ export default function Settings({
       toast.error(
         `Failed to update general settings: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     } finally {
       setIsSubmitting(false);
@@ -883,7 +880,6 @@ export default function Settings({
           success_threshold: originalFormData.success_threshold,
           warning_threshold: originalFormData.warning_threshold,
           danger_threshold: originalFormData.danger_threshold,
-          profileId,
           provider_key_mapping:
             Object.keys(originalProviderKeyMapping).length > 0
               ? originalProviderKeyMapping
@@ -913,7 +909,7 @@ export default function Settings({
         setOriginalAuthEnabled(JSON.parse(JSON.stringify(authEnabled)));
         setOriginalAuthKeyMapping(JSON.parse(JSON.stringify(authKeyMapping)));
         setOriginalAuthValueMapping(
-          JSON.parse(JSON.stringify(authValueMapping)),
+          JSON.parse(JSON.stringify(authValueMapping))
         );
         router.refresh();
       } else {
@@ -923,7 +919,7 @@ export default function Settings({
       toast.error(
         `Failed to update auth settings: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     } finally {
       setIsSubmitting(false);
@@ -963,7 +959,6 @@ export default function Settings({
           success_threshold: originalFormData.success_threshold,
           warning_threshold: originalFormData.warning_threshold,
           danger_threshold: originalFormData.danger_threshold,
-          profileId,
           provider_key_mapping:
             Object.keys(providerKeyMapping).length > 0
               ? providerKeyMapping
@@ -996,7 +991,7 @@ export default function Settings({
         // Update original state
         setOriginalProviderEnabled(JSON.parse(JSON.stringify(providerEnabled)));
         setOriginalProviderKeyMapping(
-          JSON.parse(JSON.stringify(providerKeyMapping)),
+          JSON.parse(JSON.stringify(providerKeyMapping))
         );
         router.refresh();
       } else {
@@ -1006,7 +1001,7 @@ export default function Settings({
       toast.error(
         `Failed to update provider settings: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     } finally {
       setIsSubmitting(false);
@@ -1046,7 +1041,6 @@ export default function Settings({
           success_threshold: formData.success_threshold,
           warning_threshold: formData.warning_threshold,
           danger_threshold: formData.danger_threshold,
-          profileId,
           provider_key_mapping:
             Object.keys(originalProviderKeyMapping).length > 0
               ? originalProviderKeyMapping
@@ -1107,7 +1101,7 @@ export default function Settings({
       toast.error(
         `Failed to update theme settings: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     } finally {
       setIsSubmitting(false);
@@ -1201,19 +1195,19 @@ export default function Settings({
       | "error"
       | "success_threshold"
       | "warning_threshold"
-      | "danger_threshold",
+      | "danger_threshold"
   ) => {
     handleResetColor(fieldName);
   };
 
   const handleResetSidebarColor = (
-    fieldName: "sidebar_background" | "sidebar_primary",
+    fieldName: "sidebar_background" | "sidebar_primary"
   ) => {
     handleResetColor(fieldName);
   };
 
   const handleResetChartColor = (
-    fieldName: "chart1" | "chart2" | "chart3" | "chart4" | "chart5",
+    fieldName: "chart1" | "chart2" | "chart3" | "chart4" | "chart5"
   ) => {
     handleResetColor(fieldName);
   };
@@ -1278,10 +1272,10 @@ export default function Settings({
             if (!enabled) return "pending";
             // Check if configured (has items and at least one has key/value)
             const authData = authTableData.filter(
-              (item) => item.auth_id === authId,
+              (item) => item.auth_id === authId
             );
             const hasConfig = authData.some(
-              (item) => item.selected_key_id || item.value,
+              (item) => item.selected_key_id || item.value
             );
             return hasConfig ? "completed" : "active";
           }
@@ -1291,7 +1285,7 @@ export default function Settings({
             const enabled = providerEnabled[providerId] ?? false;
             if (!enabled) return "pending";
             const provider = providerTableData.find(
-              (p) => p.provider_id === providerId,
+              (p) => p.provider_id === providerId
             );
             return provider?.selected_key_id ? "completed" : "active";
           }
@@ -1303,7 +1297,6 @@ export default function Settings({
       formData.default_guest_profile_id,
       formData.default_admin_profile_id,
       authMethodsList.length,
-      providerTableData.length,
       authEnabled,
       authTableData,
       providerEnabled,
@@ -1322,7 +1315,7 @@ export default function Settings({
       formData.chart3,
       formData.chart4,
       formData.chart5,
-    ],
+    ]
   );
 
   // Handler to open accordion when theme preview item is clicked
@@ -1502,7 +1495,7 @@ export default function Settings({
                 {/* Individual Auth Method Configurations */}
                 {Array.from(selectedAuthMethodIds).map((authId) => {
                   const auth = authMethodsList.find(
-                    (a) => a.auth_id === authId,
+                    (a) => a.auth_id === authId
                   );
                   if (!auth) return null;
                   return (
@@ -1577,7 +1570,7 @@ export default function Settings({
                 {/* Individual AI Provider Configurations */}
                 {Array.from(selectedProviderIds).map((providerId, index) => {
                   const provider = providerTableData.find(
-                    (p) => p.provider_id === providerId,
+                    (p) => p.provider_id === providerId
                   );
                   if (!provider) return null;
                   return (
@@ -1695,7 +1688,7 @@ export default function Settings({
                         getStepStatus("primary-color") === "active" &&
                           "ring-2 ring-primary",
                         getStepStatus("primary-color") === "pending" &&
-                          "opacity-50",
+                          "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1708,14 +1701,14 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("primary-color") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("primary-color") === "completed"
                                   ? {
                                       backgroundColor: formData.primary_color,
                                       color: isLightColor(
-                                        formData.primary_color,
+                                        formData.primary_color
                                       )
                                         ? "#000000"
                                         : "#ffffff",
@@ -1751,7 +1744,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "primary-color"
                                         ? null
-                                        : "primary-color",
+                                        : "primary-color"
                                     );
                                   }}
                                 >
@@ -1875,7 +1868,7 @@ export default function Settings({
                         "transition-all",
                         getStepStatus("accent") === "active" &&
                           "ring-2 ring-primary",
-                        getStepStatus("accent") === "pending" && "opacity-50",
+                        getStepStatus("accent") === "pending" && "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1888,7 +1881,7 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("accent") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("accent") === "completed"
@@ -1926,7 +1919,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "accent"
                                         ? null
-                                        : "accent",
+                                        : "accent"
                                     );
                                   }}
                                 >
@@ -2048,7 +2041,7 @@ export default function Settings({
                         getStepStatus("background") === "active" &&
                           "ring-2 ring-primary",
                         getStepStatus("background") === "pending" &&
-                          "opacity-50",
+                          "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -2061,7 +2054,7 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("background") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("background") === "completed"
@@ -2101,7 +2094,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "background"
                                         ? null
-                                        : "background",
+                                        : "background"
                                     );
                                   }}
                                 >
@@ -2223,7 +2216,7 @@ export default function Settings({
                         "transition-all",
                         getStepStatus("surface") === "active" &&
                           "ring-2 ring-primary",
-                        getStepStatus("surface") === "pending" && "opacity-50",
+                        getStepStatus("surface") === "pending" && "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -2236,7 +2229,7 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("surface") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("surface") === "completed"
@@ -2274,7 +2267,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "surface"
                                         ? null
-                                        : "surface",
+                                        : "surface"
                                     );
                                   }}
                                 >
@@ -2395,7 +2388,7 @@ export default function Settings({
                         "transition-all",
                         getStepStatus("success") === "active" &&
                           "ring-2 ring-primary",
-                        getStepStatus("success") === "pending" && "opacity-50",
+                        getStepStatus("success") === "pending" && "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -2408,7 +2401,7 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("success") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("success") === "completed"
@@ -2446,7 +2439,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "success"
                                         ? null
-                                        : "success",
+                                        : "success"
                                     );
                                   }}
                                 >
@@ -2556,7 +2549,7 @@ export default function Settings({
                               onValueChange: (value) => {
                                 const newValue = Math.max(
                                   value,
-                                  formData.warning_threshold + 1,
+                                  formData.warning_threshold + 1
                                 );
                                 setFormData((prev) => ({
                                   ...prev,
@@ -2585,7 +2578,7 @@ export default function Settings({
                         "transition-all",
                         getStepStatus("warning") === "active" &&
                           "ring-2 ring-primary",
-                        getStepStatus("warning") === "pending" && "opacity-50",
+                        getStepStatus("warning") === "pending" && "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -2598,7 +2591,7 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("warning") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("warning") === "completed"
@@ -2636,7 +2629,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "warning"
                                         ? null
-                                        : "warning",
+                                        : "warning"
                                     );
                                   }}
                                 >
@@ -2748,8 +2741,8 @@ export default function Settings({
                                   formData.danger_threshold + 1,
                                   Math.min(
                                     value,
-                                    formData.success_threshold - 1,
-                                  ),
+                                    formData.success_threshold - 1
+                                  )
                                 );
                                 setFormData((prev) => ({
                                   ...prev,
@@ -2778,7 +2771,7 @@ export default function Settings({
                         "transition-all",
                         getStepStatus("error") === "active" &&
                           "ring-2 ring-primary",
-                        getStepStatus("error") === "pending" && "opacity-50",
+                        getStepStatus("error") === "pending" && "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -2791,7 +2784,7 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("error") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("error") === "completed"
@@ -2829,7 +2822,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "error"
                                         ? null
-                                        : "error",
+                                        : "error"
                                     );
                                   }}
                                 >
@@ -2937,7 +2930,7 @@ export default function Settings({
                               onValueChange: (value) => {
                                 const newValue = Math.min(
                                   value,
-                                  formData.warning_threshold - 1,
+                                  formData.warning_threshold - 1
                                 );
                                 setFormData((prev) => ({
                                   ...prev,
@@ -2970,7 +2963,7 @@ export default function Settings({
                         getStepStatus("sidebar-background") === "active" &&
                           "ring-2 ring-primary",
                         getStepStatus("sidebar-background") === "pending" &&
-                          "opacity-50",
+                          "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -2985,7 +2978,7 @@ export default function Settings({
                                   : getStepStatus("sidebar-background") ===
                                       "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("sidebar-background") ===
@@ -2994,7 +2987,7 @@ export default function Settings({
                                       backgroundColor:
                                         formData.sidebar_background,
                                       color: isLightColor(
-                                        formData.sidebar_background,
+                                        formData.sidebar_background
                                       )
                                         ? "#000000"
                                         : "#ffffff",
@@ -3030,7 +3023,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "sidebar-background"
                                         ? null
-                                        : "sidebar-background",
+                                        : "sidebar-background"
                                     );
                                   }}
                                 >
@@ -3098,7 +3091,7 @@ export default function Settings({
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleResetSidebarColor(
-                                      "sidebar_background",
+                                      "sidebar_background"
                                     );
                                   }}
                                   disabled={
@@ -3161,7 +3154,7 @@ export default function Settings({
                         getStepStatus("sidebar-primary") === "active" &&
                           "ring-2 ring-primary",
                         getStepStatus("sidebar-primary") === "pending" &&
-                          "opacity-50",
+                          "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -3175,14 +3168,14 @@ export default function Settings({
                                   : getStepStatus("sidebar-primary") ===
                                       "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("sidebar-primary") === "completed"
                                   ? {
                                       backgroundColor: formData.sidebar_primary,
                                       color: isLightColor(
-                                        formData.sidebar_primary,
+                                        formData.sidebar_primary
                                       )
                                         ? "#000000"
                                         : "#ffffff",
@@ -3218,7 +3211,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "sidebar-primary"
                                         ? null
-                                        : "sidebar-primary",
+                                        : "sidebar-primary"
                                     );
                                   }}
                                 >
@@ -3342,7 +3335,7 @@ export default function Settings({
                         "transition-all",
                         getStepStatus("chart1") === "active" &&
                           "ring-2 ring-primary",
-                        getStepStatus("chart1") === "pending" && "opacity-50",
+                        getStepStatus("chart1") === "pending" && "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -3355,7 +3348,7 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("chart1") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("chart1") === "completed"
@@ -3393,7 +3386,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "chart1"
                                         ? null
-                                        : "chart1",
+                                        : "chart1"
                                     );
                                   }}
                                 >
@@ -3514,7 +3507,7 @@ export default function Settings({
                         "transition-all",
                         getStepStatus("chart2") === "active" &&
                           "ring-2 ring-primary",
-                        getStepStatus("chart2") === "pending" && "opacity-50",
+                        getStepStatus("chart2") === "pending" && "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -3527,7 +3520,7 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("chart2") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("chart2") === "completed"
@@ -3565,7 +3558,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "chart2"
                                         ? null
-                                        : "chart2",
+                                        : "chart2"
                                     );
                                   }}
                                 >
@@ -3686,7 +3679,7 @@ export default function Settings({
                         "transition-all",
                         getStepStatus("chart3") === "active" &&
                           "ring-2 ring-primary",
-                        getStepStatus("chart3") === "pending" && "opacity-50",
+                        getStepStatus("chart3") === "pending" && "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -3699,7 +3692,7 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("chart3") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("chart3") === "completed"
@@ -3737,7 +3730,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "chart3"
                                         ? null
-                                        : "chart3",
+                                        : "chart3"
                                     );
                                   }}
                                 >
@@ -3858,7 +3851,7 @@ export default function Settings({
                         "transition-all",
                         getStepStatus("chart4") === "active" &&
                           "ring-2 ring-primary",
-                        getStepStatus("chart4") === "pending" && "opacity-50",
+                        getStepStatus("chart4") === "pending" && "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -3871,7 +3864,7 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("chart4") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("chart4") === "completed"
@@ -3909,7 +3902,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "chart4"
                                         ? null
-                                        : "chart4",
+                                        : "chart4"
                                     );
                                   }}
                                 >
@@ -4030,7 +4023,7 @@ export default function Settings({
                         "transition-all",
                         getStepStatus("chart5") === "active" &&
                           "ring-2 ring-primary",
-                        getStepStatus("chart5") === "pending" && "opacity-50",
+                        getStepStatus("chart5") === "pending" && "opacity-50"
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -4043,7 +4036,7 @@ export default function Settings({
                                   ? ""
                                   : getStepStatus("chart5") === "active"
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted",
+                                    : "bg-muted"
                               )}
                               style={
                                 getStepStatus("chart5") === "completed"
@@ -4081,7 +4074,7 @@ export default function Settings({
                                     setOpenAccordionItem(
                                       openAccordionItem === "chart5"
                                         ? null
-                                        : "chart5",
+                                        : "chart5"
                                     );
                                   }}
                                 >

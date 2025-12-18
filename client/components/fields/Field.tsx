@@ -24,8 +24,8 @@ import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { ParameterCardGrid } from "@/components/common/parameters/ParameterCardGrid";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import { cn } from "@/lib/utils";
+import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import { Check, Loader2, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -92,9 +92,9 @@ export default function Field({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null,
+        effectiveProfile?.primaryDepartmentId || null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   const initialFormData: FormData = useMemo(
@@ -105,7 +105,7 @@ export default function Field({
       departmentIds: defaultDepartmentIds,
       conditionalParameterIds: [],
     }),
-    [defaultDepartmentIds],
+    [defaultDepartmentIds]
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -146,11 +146,17 @@ export default function Field({
   ]);
 
   const parameterMapping = useMemo(() => {
-    return (
-      fieldDetail?.parameter_mapping ||
+    const mapping = fieldDetail?.parameter_mapping ||
       fieldDetailDefault?.parameter_mapping ||
-      {}
-    );
+      {};
+    return Object.fromEntries(
+      Object.entries(mapping).map(([key, value]) => [
+        key,
+        typeof value === 'object' && value !== null && 'name' in value
+          ? { name: String(value['name']), description: value['description'] ? String(value['description']) : undefined }
+          : { name: String(value || key), description: undefined }
+      ])
+    ) as Record<string, { name: string; description?: string }>;
   }, [fieldDetail?.parameter_mapping, fieldDetailDefault?.parameter_mapping]);
 
   // Single consolidated useEffect to handle all form state scenarios
@@ -229,7 +235,7 @@ export default function Field({
           return "pending";
       }
     },
-    [formData],
+    [formData]
   );
 
   // Steps array
@@ -254,7 +260,7 @@ export default function Field({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | string[] | null | undefined,
+    value: string | boolean | string[] | null | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -295,7 +301,6 @@ export default function Field({
             active: formData.active ?? true,
             department_ids: formData.departmentIds || null,
             conditional_parameter_ids: formData.conditionalParameterIds || null,
-            profileId: effectiveProfile.id,
           },
         });
         resetFormAndState();
@@ -309,7 +314,6 @@ export default function Field({
             active: formData.active ?? true,
             department_ids: formData.departmentIds || null,
             conditional_parameter_ids: formData.conditionalParameterIds || null,
-            profileId: effectiveProfile.id,
           },
         });
         resetFormAndState();
@@ -318,7 +322,7 @@ export default function Field({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && fieldId ? "update" : "create"} field: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode && fieldId ? "update" : "create"} field: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       setIsSubmitting(false);
     }
@@ -373,7 +377,7 @@ export default function Field({
                     ? "bg-green-500 text-white"
                     : steps[0]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted",
+                      : "bg-muted"
                 )}
               >
                 {steps[0]?.status === "completed" ? (
@@ -403,7 +407,7 @@ export default function Field({
                     }}
                     className={cn(
                       "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      errors.name && "border-destructive",
+                      errors.name && "border-destructive"
                     )}
                     placeholder="New Field"
                     disabled={isReadonly}
@@ -458,7 +462,7 @@ export default function Field({
                     onSelect={(ids) => handleInputChange("departmentIds", ids)}
                     getId={(dept) => {
                       const entry = Object.entries(departmentMapping).find(
-                        ([, v]) => v === dept,
+                        ([, v]) => v === dept
                       );
                       return entry ? entry[0] : "";
                     }}
@@ -517,7 +521,7 @@ export default function Field({
               !isEditMode &&
                 steps[1]?.status === "active" &&
                 "ring-2 ring-primary",
-              !isEditMode && steps[1]?.status === "pending" && "opacity-50",
+              !isEditMode && steps[1]?.status === "pending" && "opacity-50"
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -529,7 +533,7 @@ export default function Field({
                       ? "bg-green-500 text-white"
                       : steps[1]?.status === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted",
+                        : "bg-muted"
                   )}
                 >
                   {steps[1]?.status === "completed" ? (

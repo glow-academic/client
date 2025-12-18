@@ -25,7 +25,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
 import { Check, Edit, Eye, EyeOff, Power, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -78,7 +77,6 @@ export default function Key({
 }: KeyProps) {
   const router = useRouter();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { effectiveProfile } = useProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDecrypting, setIsDecrypting] = useState(false);
@@ -128,7 +126,7 @@ export default function Key({
   const handleTogglePreview = async () => {
     if (!isPreviewMode) {
       // Turning preview on - need to decrypt
-      if (!keyId || !decryptKeyAction || !effectiveProfile?.id) {
+      if (!keyId || !decryptKeyAction) {
         toast.error("Cannot decrypt key: missing required information");
         return;
       }
@@ -140,7 +138,6 @@ export default function Key({
         const result = await decryptKeyAction({
           body: {
             keyId,
-            profileId: effectiveProfile.id,
           },
         });
         setDecryptedKey(result.key);
@@ -290,12 +287,6 @@ export default function Key({
       // The API handles this case
     }
 
-    // Ensure profileId exists - required for API calls
-    if (!effectiveProfile?.id) {
-      toast.error("Profile not loaded. Please refresh the page.");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -307,7 +298,6 @@ export default function Key({
           description: formData.description || "",
           active: formData.active ?? true,
           department_ids: null, // Department picker removed
-          profileId: effectiveProfile.id,
         });
         resetFormAndState();
         toast.success("Key updated successfully!");
@@ -319,7 +309,6 @@ export default function Key({
           description: formData.description || "",
           active: formData.active ?? true,
           department_ids: null, // Department picker removed
-          profileId: effectiveProfile.id,
         });
         resetFormAndState();
         toast.success("Key created successfully!");

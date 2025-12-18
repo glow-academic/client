@@ -16,11 +16,6 @@ type DuplicateParameterIn = InputOf<"/api/v3/parameters/duplicate", "post">;
 type DuplicateParameterOut = OutputOf<"/api/v3/parameters/duplicate", "post">;
 type DeleteParameterIn = InputOf<"/api/v3/parameters/delete", "post">;
 type DeleteParameterOut = OutputOf<"/api/v3/parameters/delete", "post">;
-type CreateParameterItemIn = InputOf<"/api/v3/parameters/items/create", "post">;
-type CreateParameterItemOut = OutputOf<
-  "/api/v3/parameters/items/create",
-  "post"
->;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -88,8 +83,6 @@ export default async function ContextPage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateParameterItemIn,
-  CreateParameterItemOut,
   DeleteParameterIn,
   DeleteParameterOut,
   DuplicateParameterIn,

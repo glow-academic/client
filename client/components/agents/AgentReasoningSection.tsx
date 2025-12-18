@@ -87,15 +87,15 @@ export function AgentReasoningSection({
     ? getReasoningLevelFromId(model_reasoning_level_id)
     : reasoning || "none";
 
-  const availableReasoningLevels =
-    reasoningOptions &&
-    Array.isArray(reasoningOptions) &&
-    reasoningOptions.length > 0
-      ? reasoningOptions.map((opt) => opt.reasoning_level)
-      : ["none", "minimal", "low", "medium", "high"];
-
   // Filter reasoning levels based on search term
   const filteredReasoningLevels = useMemo(() => {
+    const availableReasoningLevels =
+      reasoningOptions &&
+      Array.isArray(reasoningOptions) &&
+      reasoningOptions.length > 0
+        ? reasoningOptions.map((opt) => opt.reasoning_level)
+        : ["none", "minimal", "low", "medium", "high"];
+
     if (!searchTerm.trim()) {
       return availableReasoningLevels;
     }
@@ -107,7 +107,7 @@ export function AgentReasoningSection({
         `${mappingItem.name} ${mappingItem.description || ""}`.toLowerCase();
       return searchText.includes(searchLower);
     });
-  }, [availableReasoningLevels, reasoningMapping, searchTerm]);
+  }, [reasoningOptions, reasoningMapping, searchTerm]);
 
   const handleReasoningSelect = (reasoningLevel: string) => {
     if (isReadonly) return;

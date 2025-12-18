@@ -14,16 +14,6 @@ import type { Metadata, ResolvingMetadata } from "next";
 /** ---- Strong types from OpenAPI ---- */
 type AttemptFullIn = InputOf<"/api/v3/attempts/full", "post">;
 type AttemptFullOut = OutputOf<"/api/v3/attempts/full", "post">;
-type UpdateChatCreatedAtIn = InputOf<
-  "/api/v3/attempts/chats/update-created-at",
-  "post"
->;
-type UpdateChatCreatedAtOut = OutputOf<
-  "/api/v3/attempts/chats/update-created-at",
-  "post"
->;
-// Quiz operations are now handled via WebSocket events
-// See client/lib/ws/types.ts for WebSocket types
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
@@ -67,13 +57,7 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateChatCreatedAt(
-  input: UpdateChatCreatedAtIn,
-): Promise<UpdateChatCreatedAtOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/attempts/chats/update-created-at", input);
-}
+
 
 /** ---- Page component ---- */
 export default async function AttemptPage({
@@ -96,7 +80,6 @@ export default async function AttemptPage({
         <AttemptChat
           attemptId={attemptId}
           attemptData={attemptData}
-          updateChatCreatedAtAction={updateChatCreatedAt}
         />
       </div>
     );
@@ -125,6 +108,4 @@ export default async function AttemptPage({
 export type {
   AttemptFullIn,
   AttemptFullOut,
-  UpdateChatCreatedAtIn,
-  UpdateChatCreatedAtOut,
 };

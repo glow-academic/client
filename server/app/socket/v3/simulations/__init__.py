@@ -2,6 +2,12 @@
 
 from fastapi import APIRouter
 
+from .enter import (
+    client_router as enter_client_router,
+)
+from .enter import (
+    server_router as enter_server_router,
+)
 from .join import (
     client_router as join_client_router,
 )
@@ -30,11 +36,13 @@ from .voice import (
 client_router = APIRouter(prefix="/simulations", tags=["socket-client"])
 server_router = APIRouter(prefix="/simulations", tags=["socket-server"])
 
+client_router.include_router(enter_client_router)
 client_router.include_router(join_client_router)
 client_router.include_router(leave_client_router)
 client_router.include_router(text_client_router)
 client_router.include_router(voice_client_router)
 
+server_router.include_router(enter_server_router)
 server_router.include_router(join_server_router)
 server_router.include_router(leave_server_router)
 server_router.include_router(text_server_router)

@@ -3141,6 +3141,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/client/simulations/enter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Enter Api
+         * @description Client-to-server event: Update chat created_at timestamp when entering a chat.
+         */
+        post: operations["simulation_enter_api_socket_v3_client_simulations_enter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/client/simulations/join": {
         parameters: {
             query?: never;
@@ -3775,6 +3795,46 @@ export interface paths {
          * @description Server-to-client event: Connection confirmed after WebSocket establishment.
          */
         post: operations["connection_confirmed_api_socket_v3_server_connection_confirmed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/enter_response": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Enter Response Api
+         * @description Server-to-client event: Successfully updated chat created_at timestamp.
+         */
+        post: operations["simulation_enter_response_api_socket_v3_server_simulations_enter_response_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/enter_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Enter Error Api
+         * @description Server-to-client event: Error occurred while updating chat created_at timestamp.
+         */
+        post: operations["simulation_enter_error_api_socket_v3_server_simulations_enter_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11575,6 +11635,38 @@ export interface components {
         SimulationDetailRequest: {
             /** Simulationid */
             simulationId: string;
+        };
+        /**
+         * SimulationEnterErrorPayload
+         * @description Response indicating an error occurred while updating chat created_at timestamp.
+         */
+        SimulationEnterErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * SimulationEnterPayload
+         * @description Request to update chat created_at timestamp when entering a chat.
+         */
+        SimulationEnterPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Created At */
+            created_at: string;
+        };
+        /**
+         * SimulationEnterResponsePayload
+         * @description Response indicating successfully updated chat created_at timestamp.
+         */
+        SimulationEnterResponsePayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Chat Id */
+            chat_id: string;
         };
         /**
          * SimulationFact
@@ -23161,6 +23253,41 @@ export interface operations {
             };
         };
     };
+    simulation_enter_api_socket_v3_client_simulations_enter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationEnterPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     simulation_join_api_socket_v3_client_simulations_join_post: {
         parameters: {
             query?: never;
@@ -24256,6 +24383,76 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ConnectionConfirmedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_enter_response_api_socket_v3_server_simulations_enter_response_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationEnterResponsePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_enter_error_api_socket_v3_server_simulations_enter_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationEnterErrorPayload"];
             };
         };
         responses: {

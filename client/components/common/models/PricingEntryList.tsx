@@ -38,6 +38,7 @@ export function PricingEntryList({
     const newEntries = [...entries];
     newEntries[index] = {
       ...newEntries[index],
+      unit_id: newEntries[index]?.unit_id || "",
       price: Math.max(0, price), // Ensure price is not negative
     };
     onEntriesChange(newEntries);
@@ -57,7 +58,9 @@ export function PricingEntryList({
       onEntriesChange([...entries, { unit_id: availableUnit.id, price: 0.0 }]);
     } else {
       // If all units are already added, just add the first unit again
-      onEntriesChange([...entries, { unit_id: units[0].id, price: 0.0 }]);
+      if (units[0]) {
+        onEntriesChange([...entries, { unit_id: units[0].id, price: 0.0 }]);
+      }
     }
   };
 

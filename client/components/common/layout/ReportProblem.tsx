@@ -27,9 +27,8 @@ import type {
   CreateFeedbackIn,
   CreateFeedbackOut,
 } from "@/app/(main)/layout-server";
-import { ProfileContext } from "@/contexts/profile-context";
 import { AlertCircle } from "lucide-react";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface FormData {
@@ -59,9 +58,6 @@ export default function ReportProblem({
 }: ReportProblemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // Handle missing ProfileProvider gracefully (e.g., in not-found page)
-  const profileContext = useContext(ProfileContext);
-  const activeProfile = profileContext?.activeProfile ?? null;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
@@ -156,9 +152,9 @@ export default function ReportProblem({
         body: {
           type: formData.type as "feature" | "bug" | "question" | "other",
           message: formData.message,
-          profileId: activeProfile?.id || "",
         },
       });
+      // profileId comes from X-Profile-Id header automatically
 
       if (result.success) {
         await handleSuccess();

@@ -148,7 +148,7 @@ function ObjectiveInputWithAutocomplete({
     <div
       className={cn(
         "flex flex-col gap-2",
-        draggedObjectiveIndex === index && "opacity-50",
+        draggedObjectiveIndex === index && "opacity-50"
       )}
       onDragOver={onDragOver}
       onDrop={onDrop}
@@ -303,13 +303,13 @@ export interface ContentSectionProps {
       id: string;
       name: string;
       upload_id: string;
-    } | null,
+    } | null
   ) => void;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageRemove: () => void;
   onUseVideoChange: (enabled: boolean) => void;
   onVideoSelect: (
-    video: { id: string; name: string; length_seconds: number } | null,
+    video: { id: string; name: string; length_seconds: number } | null
   ) => void;
   onUseQuestionsChange: (enabled: boolean) => void;
   onQuestionsChange: (
@@ -324,7 +324,7 @@ export interface ContentSectionProps {
         is_correct: boolean;
       }>;
       times?: number[];
-    }>,
+    }>
   ) => void;
   onDragStartQuestion?: (e: React.DragEvent, index: number) => void;
   onDragOverQuestion?: (e: React.DragEvent) => void;
@@ -332,13 +332,13 @@ export interface ContentSectionProps {
   onDragStartOption?: (
     e: React.DragEvent,
     questionIndex: number,
-    optionIndex: number,
+    optionIndex: number
   ) => void;
   onDragOverOption?: (e: React.DragEvent) => void;
   onDropOption?: (
     e: React.DragEvent,
     questionIndex: number,
-    targetOptionIndex: number,
+    targetOptionIndex: number
   ) => void;
   onUpdateQuestion?: (
     index: number,
@@ -353,7 +353,7 @@ export interface ContentSectionProps {
         is_correct: boolean;
       }>;
       times?: number[];
-    },
+    }
   ) => void;
   onQuestionTimesChange?: (index: number, times: number[]) => void;
   onAddOption?: (questionIndex: number) => void;
@@ -366,7 +366,7 @@ export interface ContentSectionProps {
       option_text: string;
       type?: "discrete" | "freeform";
       is_correct: boolean;
-    },
+    }
   ) => void;
   onToggleOptionCorrect?: (questionIndex: number, optionIndex: number) => void;
   onScenarioPreviewDocumentChange: (docId: string | null) => void;
@@ -466,12 +466,12 @@ export function ContentSection({
 }: ContentSectionProps) {
   // State for document preview dialog
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
-    null,
+    null
   );
 
   // State for expanded questions (which questions have their options visible)
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(
-    new Set(),
+    new Set()
   );
 
   // Helper function to toggle question expansion
@@ -505,9 +505,14 @@ export function ContentSection({
     if (!onUpdateQuestion) {
       // Fallback to updating entire questions array
       const updatedQuestions = [...questions];
+      const currentQuestion = updatedQuestions[index];
+      if (!currentQuestion) return;
       updatedQuestions[index] = {
-        ...updatedQuestions[index],
+        id: currentQuestion.id,
         question_text: text,
+        allow_multiple: currentQuestion.allow_multiple,
+        options: currentQuestion.options,
+        ...(currentQuestion.times && { times: currentQuestion.times }),
       };
       onQuestionsChange(updatedQuestions);
       return;
@@ -578,7 +583,7 @@ export function ContentSection({
       className={cn(
         "transition-all",
         !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-        !isEditMode && stepStatus === "pending" && "opacity-50",
+        !isEditMode && stepStatus === "pending" && "opacity-50"
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
@@ -590,7 +595,7 @@ export function ContentSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted",
+                  : "bg-muted"
             )}
           >
             {stepStatus === "completed" ? (
@@ -670,7 +675,7 @@ export function ContentSection({
                     const id = ids[0] || null;
                     if (id && problemStatementMapping[id]) {
                       onProblemStatementChange(
-                        problemStatementMapping[id].problem_statement,
+                        problemStatementMapping[id].problem_statement
                       );
                     } else if (!id) {
                       // Clear selection - show blank problem statement
@@ -707,7 +712,7 @@ export function ContentSection({
                             <Check
                               className={cn(
                                 "h-4 w-4",
-                                isSelected ? "opacity-100" : "opacity-0",
+                                isSelected ? "opacity-100" : "opacity-0"
                               )}
                             />
                             <span className="font-medium">
@@ -781,7 +786,7 @@ export function ContentSection({
                 onCheckedChange={(checked) => {
                   onUseObjectivesChange(checked);
                   if (!checked) {
-                    onObjectivesChange([]);
+                    _onObjectivesChange([]);
                   }
                 }}
                 disabled={isReadonly}
@@ -824,11 +829,9 @@ export function ContentSection({
                 onDragStart={(e) => onDragStartObjective(e, index)}
                 onDragOver={onDragOverObjective}
                 onDrop={(e) => onDropObjective(e, index)}
-                onRemove={
-                  objectives.length > 1
-                    ? () => onRemoveObjective(index)
-                    : undefined
-                }
+                {...(objectives.length > 1 && {
+                  onRemove: () => onRemoveObjective(index),
+                })}
                 totalObjectives={objectives.length}
                 maxObjectives={3}
               />
@@ -906,7 +909,7 @@ export function ContentSection({
                             <Check
                               className={cn(
                                 "h-4 w-4",
-                                isSelected ? "opacity-100" : "opacity-0",
+                                isSelected ? "opacity-100" : "opacity-0"
                               )}
                             />
                             <span className="font-medium">{imgItem.name}</span>
@@ -1039,7 +1042,7 @@ export function ContentSection({
                                 <Check
                                   className={cn(
                                     "h-4 w-4",
-                                    isSelected ? "opacity-100" : "opacity-0",
+                                    isSelected ? "opacity-100" : "opacity-0"
                                   )}
                                 />
                                 <span className="font-medium">
@@ -1050,7 +1053,7 @@ export function ContentSection({
                                 {Math.floor(vidItem.length_seconds / 60)}:
                                 {String(vidItem.length_seconds % 60).padStart(
                                   2,
-                                  "0",
+                                  "0"
                                 )}
                               </span>
                             </div>
@@ -1130,7 +1133,7 @@ export function ContentSection({
                                 <Check
                                   className={cn(
                                     "h-4 w-4",
-                                    isSelected ? "opacity-100" : "opacity-0",
+                                    isSelected ? "opacity-100" : "opacity-0"
                                   )}
                                 />
                                 <span className="font-medium">
@@ -1326,7 +1329,7 @@ export function ContentSection({
                   // But add defensive check: if it's still a parent template, find its child
                   let previewDocId = scenarioPreviewDocumentId;
                   const previewDoc = documentDetails?.find(
-                    (d) => d.document_id === previewDocId,
+                    (d) => d.document_id === previewDocId
                   );
 
                   // If preview doc is a template, check if we have a child for it
@@ -1334,7 +1337,7 @@ export function ContentSection({
                     const childDoc = documentDetails?.find(
                       (d) =>
                         (d as { parent_document_id?: string })
-                          ?.parent_document_id === previewDocId,
+                          ?.parent_document_id === previewDocId
                     );
                     if (childDoc) {
                       // Use child instead of parent template
@@ -1344,7 +1347,7 @@ export function ContentSection({
 
                   const docId = previewDocId;
                   const fullDoc = documentDetails?.find(
-                    (d) => d.document_id === docId,
+                    (d) => d.document_id === docId
                   );
                   // Check if this is a child document (dynamic document created from template)
                   const parentDocumentId = (
@@ -1427,7 +1430,7 @@ export function ContentSection({
                         <div
                           className={cn(
                             "h-full overflow-auto flex items-center justify-center [&>div]:!min-h-0 [&_iframe]:!min-h-0",
-                            isTemplateDocument && "opacity-20",
+                            isTemplateDocument && "opacity-20"
                           )}
                           style={{
                             // Allow horizontal scrolling for HTML documents that exceed container width
@@ -1608,7 +1611,7 @@ export function ContentSection({
                     key={question.id || index}
                     className={cn(
                       "space-y-2",
-                      draggedQuestionIndex === index && "opacity-50",
+                      draggedQuestionIndex === index && "opacity-50"
                     )}
                     onDragOver={onDragOverQuestion}
                     onDrop={(e) => onDropQuestion?.(e, index)}
@@ -1680,7 +1683,7 @@ export function ContentSection({
                         size="icon"
                         onClick={() => {
                           onQuestionsChange(
-                            questions.filter((_, i) => i !== index),
+                            questions.filter((_, i) => i !== index)
                           );
                         }}
                         className="h-8 w-8 shrink-0"
@@ -1702,7 +1705,7 @@ export function ContentSection({
                                 draggedOptionIndex?.questionIndex === index &&
                                   draggedOptionIndex?.optionIndex ===
                                     optIndex &&
-                                  "opacity-50",
+                                  "opacity-50"
                               )}
                               onDragOver={onDragOverOption}
                               onDrop={(e) => onDropOption?.(e, index, optIndex)}
@@ -1732,16 +1735,33 @@ export function ContentSection({
                                   } else {
                                     // Fallback: update entire questions array
                                     const updatedQuestions = [...questions];
+                                    const currentQuestion =
+                                      updatedQuestions[index];
+                                    if (!currentQuestion) return;
                                     const updatedOptions = [
-                                      ...updatedQuestions[index].options,
+                                      ...currentQuestion.options,
                                     ];
+                                    const currentOption =
+                                      updatedOptions[optIndex];
+                                    if (!currentOption) return;
                                     updatedOptions[optIndex] = {
-                                      ...updatedOptions[optIndex],
+                                      id: currentOption.id,
                                       option_text: e.target.value,
+                                      ...(currentOption.type && {
+                                        type: currentOption.type,
+                                      }),
+                                      is_correct: currentOption.is_correct,
                                     };
                                     updatedQuestions[index] = {
-                                      ...updatedQuestions[index],
+                                      id: currentQuestion.id,
+                                      question_text:
+                                        currentQuestion.question_text,
+                                      allow_multiple:
+                                        currentQuestion.allow_multiple,
                                       options: updatedOptions,
+                                      ...(currentQuestion.times && {
+                                        times: currentQuestion.times,
+                                      }),
                                     };
                                     onQuestionsChange(updatedQuestions);
                                   }
@@ -1768,25 +1788,42 @@ export function ContentSection({
                                         if (onToggleOptionCorrect) {
                                           onToggleOptionCorrect(
                                             index,
-                                            optIndex,
+                                            optIndex
                                           );
                                         } else {
                                           // Fallback: update entire questions array
                                           const updatedQuestions = [
                                             ...questions,
                                           ];
+                                          const currentQuestion =
+                                            updatedQuestions[index];
+                                          if (!currentQuestion) return;
                                           const updatedOptions = [
-                                            ...updatedQuestions[index].options,
+                                            ...currentQuestion.options,
                                           ];
+                                          const currentOption =
+                                            updatedOptions[optIndex];
+                                          if (!currentOption) return;
                                           updatedOptions[optIndex] = {
-                                            ...updatedOptions[optIndex],
+                                            id: currentOption.id,
+                                            option_text:
+                                              currentOption.option_text,
+                                            ...(currentOption.type && {
+                                              type: currentOption.type,
+                                            }),
                                             is_correct:
-                                              !updatedOptions[optIndex]
-                                                .is_correct,
+                                              !currentOption.is_correct,
                                           };
                                           updatedQuestions[index] = {
-                                            ...updatedQuestions[index],
+                                            id: currentQuestion.id,
+                                            question_text:
+                                              currentQuestion.question_text,
+                                            allow_multiple:
+                                              currentQuestion.allow_multiple,
                                             options: updatedOptions,
+                                            ...(currentQuestion.times && {
+                                              times: currentQuestion.times,
+                                            }),
                                           };
                                           onQuestionsChange(updatedQuestions);
                                         }
@@ -1817,13 +1854,21 @@ export function ContentSection({
                                     } else {
                                       // Fallback: update entire questions array
                                       const updatedQuestions = [...questions];
+                                      const currentQuestion =
+                                        updatedQuestions[index];
+                                      if (!currentQuestion) return;
                                       updatedQuestions[index] = {
-                                        ...updatedQuestions[index],
-                                        options: updatedQuestions[
-                                          index
-                                        ].options.filter(
-                                          (_, i) => i !== optIndex,
+                                        id: currentQuestion.id,
+                                        question_text:
+                                          currentQuestion.question_text,
+                                        allow_multiple:
+                                          currentQuestion.allow_multiple,
+                                        options: currentQuestion.options.filter(
+                                          (_, i) => i !== optIndex
                                         ),
+                                        ...(currentQuestion.times && {
+                                          times: currentQuestion.times,
+                                        }),
                                       };
                                       onQuestionsChange(updatedQuestions);
                                     }
@@ -1847,10 +1892,17 @@ export function ContentSection({
                                 } else {
                                   // Fallback: update entire questions array
                                   const updatedQuestions = [...questions];
+                                  const currentQuestion =
+                                    updatedQuestions[index];
+                                  if (!currentQuestion) return;
                                   updatedQuestions[index] = {
-                                    ...updatedQuestions[index],
+                                    id: currentQuestion.id,
+                                    question_text:
+                                      currentQuestion.question_text,
+                                    allow_multiple:
+                                      currentQuestion.allow_multiple,
                                     options: [
-                                      ...updatedQuestions[index].options,
+                                      ...currentQuestion.options,
                                       {
                                         id: "",
                                         option_text: "",
@@ -1967,7 +2019,7 @@ export function ContentSection({
                   ? documentMapping[previewDocumentId]?.name ||
                     (
                       documentDetails?.find(
-                        (d) => d.document_id === previewDocumentId,
+                        (d) => d.document_id === previewDocumentId
                       ) as { name?: string } | undefined
                     )?.name ||
                     "Document Preview"
@@ -1979,7 +2031,7 @@ export function ContentSection({
               (() => {
                 const docId = previewDocumentId;
                 const fullDoc = documentDetails?.find(
-                  (d) => d.document_id === docId,
+                  (d) => d.document_id === docId
                 );
 
                 const docForViewer: DocumentItem = fullDoc

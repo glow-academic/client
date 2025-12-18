@@ -185,18 +185,181 @@ export default async function ReportsFullPage({
   ].join("|");
 
   // Create empty reports data for loading state
-  const emptyReportsData: ReportsOut = {
-    data: [],
-    totalCount: 0,
-    page: reportsPage,
-    pageSize: reportsPageSize,
-    totalPages: 0,
-    profileOptions: [],
-    simulationOptions: [],
-    scenarioOptions: [],
-    scenario_mapping: {},
+  const emptyReportsData = {
+    header: {
+      firstAttemptPassRate: {
+        hasData: false,
+        method: "rate",
+        currentValue: 0,
+        status: "neutral",
+        trendData: [],
+        dataPoints: [],
+      },
+      messagesPerSession: {
+        hasData: false,
+        method: "avg",
+        currentValue: 0,
+        status: "neutral",
+        trendData: [],
+        dataPoints: [],
+      },
+      averageScore: {
+        hasData: false,
+        method: "avg",
+        currentValue: 0,
+        status: "neutral",
+        trendData: [],
+        dataPoints: [],
+      },
+      highestScore: {
+        hasData: false,
+        method: "max",
+        currentValue: 0,
+        status: "neutral",
+        trendData: [],
+        dataPoints: [],
+      },
+      completionPercentage: {
+        hasData: false,
+        method: "avg",
+        currentValue: 0,
+        status: "neutral",
+        trendData: [],
+        dataPoints: [],
+      },
+      sessionEfficiency: {
+        hasData: false,
+        method: "avg",
+        currentValue: 0,
+        status: "neutral",
+        trendData: [],
+        dataPoints: [],
+      },
+      timeSpent: {
+        hasData: false,
+        method: "avg",
+        currentValue: 0,
+        status: "neutral",
+        trendData: [],
+        dataPoints: [],
+      },
+      totalAttempts: {
+        hasData: false,
+        method: "countDistinct" as const,
+        currentValue: 0,
+        status: "neutral" as const,
+        trendData: [],
+        dataPoints: [],
+      },
+      personaResponseTimes: {
+        hasData: false,
+        method: "avg" as const,
+        currentValue: 0,
+        status: "neutral" as const,
+        trendData: [],
+        dataPoints: [],
+      },
+      stagnationRate: {
+        hasData: false,
+        method: "rate" as const,
+        currentValue: 0,
+        status: "neutral" as const,
+        trendData: [],
+        dataPoints: [],
+      },
+    },
+    primary: {
+      growthData: {
+        chartData: [],
+        availableMetrics: [],
+        windowAverages: {
+          averageScore: { n: 7, last: null, prev: null },
+        },
+        status: "neutral" as const,
+      },
+      personaPerformance: {
+        chartData: [],
+        validSimulationIds: [],
+        personaColors: {},
+      },
+      rubricHeatmap: {
+        matrices: [],
+        validRubricIds: [],
+        status: "neutral" as const,
+      },
+    },
+    secondary: {
+      attemptImprovement: {
+        chartData: [],
+        facts: [],
+        validSimulationIds: [],
+        status: "neutral" as const,
+      },
+      cohortPerformance: {
+        cohortData: [],
+        dailyData: [],
+        cohortFacts: [],
+        dailyFacts: [],
+        validSimulationIds: [],
+        status: "neutral" as const,
+      },
+      skillPerformance: {
+        packages: [],
+        validRubricIds: [],
+        status: "neutral" as const,
+      },
+    },
+    footer: {
+      scenarioPerformance: {
+        validParameterIds: [],
+        attributeAttemptFacts: [],
+        attributeScenarioFacts: [],
+        status: "neutral" as const,
+      },
+      scenarioStats: {
+        numericAttemptFacts: [],
+        numericScenarioFacts: [],
+        validParameterIds: [],
+        validNumericParameterIds: [],
+        status: "neutral" as const,
+      },
+      simulationPerformance: {
+        validSimulationIds: [],
+        scenarioFacts: [],
+        status: "neutral" as const,
+      },
+      simulationComposition: {
+        simulationFacts: [],
+        validSimulationIds: [],
+        simulationParameterFactsCategorical: [],
+        simulationParameterFactsNumeric: [],
+        hasData: false,
+        status: "neutral" as const,
+      },
+    },
+    history: [],
+    insights: {
+      growth: null,
+      persona: {},
+      rubric_heatmap: null,
+      attempt_improvement: null,
+      cohort: {},
+      skill_performance: null,
+      scenario_performance: null,
+      scenario_stats: null,
+      simulation_performance: null,
+      simulation_composition: null,
+    },
+    thresholds: {
+      danger: 70,
+      warning: 80,
+      success: 85,
+    },
     simulation_mapping: {},
-  };
+    rubric_mapping: {},
+    parameter_mapping: {},
+    field_mapping: {},
+  } as unknown as ReportsOut;
 
   return (
     <div className="space-y-6" data-page="reports-index">
@@ -284,35 +447,14 @@ async function ReportsSection({
     body: reportsFilters,
   });
 
-  // Extract and map filter options from API response
-  const profileOptions = (reportsData?.profileOptions || []).map((opt) => ({
-    value: opt.value,
-    label: opt.label,
-    count: opt.count,
-  }));
-
-  const simulationOptions = (reportsData?.simulationOptions || []).map(
-    (opt) => ({
-      value: opt.value,
-      label: opt.label,
-      count: opt.count,
-    })
-  );
-
-  const scenarioOptions = (reportsData?.scenarioOptions || []).map((opt) => ({
-    value: opt.value,
-    label: opt.label,
-    count: opt.count,
-  }));
-
   return (
     <Reports
       reportsData={reportsData}
       filters={filters}
       isLoading={false}
-      profileOptions={profileOptions}
-      simulationOptions={simulationOptions}
-      scenarioOptions={scenarioOptions}
+      profileOptions={[]}
+      simulationOptions={[]}
+      scenarioOptions={[]}
     />
   );
 }

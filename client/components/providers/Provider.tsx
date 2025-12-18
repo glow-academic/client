@@ -215,7 +215,7 @@ export default function Provider({
           description: formData.description || "",
           value: formData.value!,
           active: formData.active ?? true,
-          profileId: effectiveProfile.id,
+          // profileId comes from X-Profile-Id header automatically
         });
         resetFormAndState();
         toast.success("Provider updated successfully!");
@@ -226,7 +226,7 @@ export default function Provider({
           description: formData.description || "",
           value: formData.value!,
           active: formData.active ?? true,
-          profileId: effectiveProfile.id,
+          // profileId comes from X-Profile-Id header automatically
         });
         resetFormAndState();
         toast.success("Provider created successfully!");

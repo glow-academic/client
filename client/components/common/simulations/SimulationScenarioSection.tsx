@@ -92,8 +92,6 @@ export function SimulationScenarioSection({
   onActiveToggle,
   onMoveUp,
   onMoveDown,
-  onRemove,
-  onEditScenario,
   onHintsToggle,
   onCopyPasteToggle,
   onAudioToggle,
@@ -149,7 +147,9 @@ export function SimulationScenarioSection({
       onRubricChange
     ) {
       hasAutoSelectedRef.current = contentId; // Track that we've auto-selected for this contentId
-      onRubricChange(contentId, validRubricIds[0]);
+      if (contentId && validRubricIds[0]) {
+        onRubricChange(contentId, validRubricIds[0]);
+      }
     }
   }, [validRubricIds, item.rubric_id, contentId, readonly, onRubricChange]);
 

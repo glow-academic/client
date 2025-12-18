@@ -409,7 +409,7 @@ export interface SettingsStatusColorsSectionProps {
     fieldName: "success_threshold" | "warning_threshold" | "danger_threshold",
     value: number,
   ) => void;
-  onResetColor: (fieldName: keyof typeof colors) => void;
+  onResetColor: (fieldName: keyof StatusColors) => void;
   stepStatus: "pending" | "active" | "completed";
   stepNumber: number;
   isReadonly: boolean;

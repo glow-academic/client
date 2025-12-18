@@ -144,9 +144,9 @@ export default function Evals({
       await deleteEvalAction({
         body: {
           evalId: deleteItem.id,
-          profileId: "", // Will be filled by server action
         },
       });
+      // profileId comes from X-Profile-Id header automatically
       toast.success(`Eval "${deleteItem.name}" deleted successfully`);
       setShowDeleteDialog(false);
       setDeleteItem(null);

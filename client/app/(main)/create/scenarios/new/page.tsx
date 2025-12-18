@@ -17,11 +17,6 @@ type CreateScenarioIn = InputOf<"/api/v3/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/api/v3/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/api/v3/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/api/v3/scenarios/update", "post">;
-// GenerateAIScenario types removed - now using WebSocket
-type GenerateAIScenarioIn = never;
-type GenerateAIScenarioOut = never;
-type RandomizeScenarioIn = InputOf<"/api/v3/scenarios/randomize", "post">;
-type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -212,10 +207,6 @@ export default async function NewScenarioPage({
 export type {
   CreateScenarioIn,
   CreateScenarioOut,
-  GenerateAIScenarioIn,
-  GenerateAIScenarioOut,
-  RandomizeScenarioIn,
-  RandomizeScenarioOut,
   ScenarioNewIn,
   ScenarioNewOut,
   UpdateScenarioIn,

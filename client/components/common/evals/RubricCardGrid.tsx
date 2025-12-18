@@ -30,8 +30,6 @@ export function RubricCardGrid({
   validRubricIds,
   selectedRubricId,
   onSelect,
-  label = "Rubrics",
-  description = "Select a rubric",
   readonly = false,
 }: RubricCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");

@@ -337,7 +337,7 @@ export interface SettingsLayoutColorsSectionProps {
   colors: LayoutColors;
   originalColors: LayoutColors;
   onColorChange: (fieldName: keyof LayoutColors, value: string) => void;
-  onResetColor: (fieldName: keyof typeof colors) => void;
+  onResetColor: (fieldName: keyof LayoutColors) => void;
   stepStatus: "pending" | "active" | "completed";
   stepNumber: number;
   isReadonly: boolean;

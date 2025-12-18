@@ -10,7 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { SettingsDetailOut } from "@/app/(main)/settings/page";
+import type {
+  SettingsListOut,
+} from "@/app/(main)/settings/page";
 
 export interface SettingsBasicInfoSectionProps {
   // Data
@@ -21,9 +23,9 @@ export interface SettingsBasicInfoSectionProps {
   departmentMapping: Record<string, { name: string; description: string }>;
   active: boolean;
   guestLoginEnabled: boolean;
-  settingsList: SettingsDetailOut[];
+  settingsList: SettingsListOut["settings"];
   selectedSettingsId: string | null;
-  settingsMapping: Record<string, SettingsDetailOut>;
+  settingsMapping: Record<string, SettingsListOut["settings"][number]>;
 
   // Callbacks
   onNameChange: (name: string) => void;
@@ -58,10 +60,6 @@ export function SettingsBasicInfoSection({
   isReadonly,
   defaultName = "Settings",
 }: SettingsBasicInfoSectionProps) {
-  const currentSetting = selectedSettingsId
-    ? settingsMapping[selectedSettingsId]
-    : null;
-
   return (
     <Card className="transition-all">
       <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">

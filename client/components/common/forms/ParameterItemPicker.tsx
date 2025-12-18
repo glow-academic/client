@@ -11,10 +11,6 @@ import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import type {
-  CreateParameterItemIn,
-  CreateParameterItemOut,
-} from "@/app/(main)/management/parameters/page";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
@@ -84,6 +80,10 @@ export interface ParameterItemPickerProps<
     input: CreateParameterItemIn,
   ) => Promise<CreateParameterItemOut>;
 }
+
+// Define types locally - create parameter item may not have API endpoint yet
+type CreateParameterItemIn = { body: { parameterId: string; name: string; description: string; default: boolean } };
+type CreateParameterItemOut = { success: boolean; parameterItemId: string; message: string };
 
 export function ParameterItemPicker<
   T extends ParameterItemMappingItem = ParameterItemMappingItem,

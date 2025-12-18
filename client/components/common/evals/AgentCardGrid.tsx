@@ -29,8 +29,6 @@ export function AgentCardGrid({
   validAgentIds,
   selectedAgentIds,
   onSelect,
-  label = "Agents",
-  description = "Select agents to evaluate",
   readonly = false,
 }: AgentCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");

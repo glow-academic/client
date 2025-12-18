@@ -7,9 +7,7 @@
 
 import type {
   AttemptFullIn,
-  AttemptFullOut,
-  UpdateChatCreatedAtIn,
-  UpdateChatCreatedAtOut,
+  AttemptFullOut, 
 } from "@/app/(main)/home/a/[attemptId]/page";
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
@@ -50,22 +48,12 @@ export async function generateMetadata(
     } catch {
       // Fall through to default metadata
     }
-  }
 
   return {
     title: `Practice Attempt ${attemptId.substring(0, 8)}...`,
     description:
       "Teaching practice session for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic simulation-based learning scenarios.",
   };
-}
-
-/** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateChatCreatedAt(
-  input: UpdateChatCreatedAtIn,
-): Promise<UpdateChatCreatedAtOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/attempts/chats/update-created-at", input);
 }
 
 /** ---- Page component ---- */
@@ -89,7 +77,6 @@ export default async function PracticeAttemptPage({
         <AttemptChat
           attemptId={attemptId}
           attemptData={attemptData}
-          updateChatCreatedAtAction={updateChatCreatedAt}
         />
       </div>
     );
@@ -118,6 +105,4 @@ export default async function PracticeAttemptPage({
 export type {
   AttemptFullIn,
   AttemptFullOut,
-  UpdateChatCreatedAtIn,
-  UpdateChatCreatedAtOut,
 };

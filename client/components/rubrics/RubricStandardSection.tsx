@@ -71,7 +71,6 @@ export interface RubricStandardSectionProps {
 export function RubricStandardSection({
   group,
   standards,
-  gridCells,
   position,
   onGroupChange,
   onStandardsChange,
