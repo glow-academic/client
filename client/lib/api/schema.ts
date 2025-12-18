@@ -4061,6 +4061,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/client/evals/run_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Run Start Api
+         * @description Client-to-server event: Start a single eval run.
+         */
+        post: operations["eval_run_start_api_socket_v3_client_evals_run_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/evals/runs_start_all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Runs Start All Api
+         * @description Client-to-server event: Start all pending eval runs.
+         */
+        post: operations["eval_runs_start_all_api_socket_v3_client_evals_runs_start_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/evals/run_stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Run Stop Api
+         * @description Client-to-server event: Stop a single eval run.
+         */
+        post: operations["eval_run_stop_api_socket_v3_client_evals_run_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/server/connection_confirmed": {
         parameters: {
             query?: never;
@@ -5455,6 +5515,126 @@ export interface paths {
          * @description Server-to-client event: Error occurred while stopping eval.
          */
         post: operations["eval_stop_error_api_socket_v3_server_evals_stop_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/run_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Run Started Api
+         * @description Server-to-client event: Eval run started successfully.
+         */
+        post: operations["eval_run_started_api_socket_v3_server_evals_run_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/run_start_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Run Start Error Api
+         * @description Server-to-client event: Error occurred while starting eval run.
+         */
+        post: operations["eval_run_start_error_api_socket_v3_server_evals_run_start_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/runs_start_all_started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Runs Start All Started Api
+         * @description Server-to-client event: All eval runs started successfully.
+         */
+        post: operations["eval_runs_start_all_started_api_socket_v3_server_evals_runs_start_all_started_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/runs_start_all_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Runs Start All Error Api
+         * @description Server-to-client event: Error occurred while starting all eval runs.
+         */
+        post: operations["eval_runs_start_all_error_api_socket_v3_server_evals_runs_start_all_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/run_stopped": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Run Stopped Api
+         * @description Server-to-client event: Eval run stopped successfully.
+         */
+        post: operations["eval_run_stopped_api_socket_v3_server_evals_run_stopped_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/evals/run_stop_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eval Run Stop Error Api
+         * @description Server-to-client event: Error occurred while stopping eval run.
+         */
+        post: operations["eval_run_stop_error_api_socket_v3_server_evals_run_stop_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8684,6 +8864,116 @@ export interface components {
             message: string;
             /** Grade Id */
             grade_id?: string | null;
+        };
+        /**
+         * EvalRunStartErrorPayload
+         * @description Response indicating an error occurred while starting eval run.
+         */
+        EvalRunStartErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Run Id */
+            run_id: string;
+        };
+        /**
+         * EvalRunStartPayload
+         * @description Request to start a single eval run.
+         */
+        EvalRunStartPayload: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
+        /**
+         * EvalRunStartedPayload
+         * @description Response indicating eval run started successfully.
+         */
+        EvalRunStartedPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Attempt Id */
+            attempt_id: string;
+            /** Run Id */
+            run_id: string;
+        };
+        /**
+         * EvalRunStopErrorPayload
+         * @description Response indicating an error occurred while stopping eval run.
+         */
+        EvalRunStopErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Run Id */
+            run_id: string;
+        };
+        /**
+         * EvalRunStopPayload
+         * @description Request to stop a single eval run.
+         */
+        EvalRunStopPayload: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Run Id */
+            run_id: string;
+        };
+        /**
+         * EvalRunStoppedPayload
+         * @description Response indicating eval run was stopped successfully.
+         */
+        EvalRunStoppedPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Attempt Id */
+            attempt_id: string;
+            /** Run Id */
+            run_id: string;
+        };
+        /**
+         * EvalRunsStartAllErrorPayload
+         * @description Response indicating an error occurred while starting all runs.
+         */
+        EvalRunsStartAllErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Attempt Id */
+            attempt_id: string;
+        };
+        /**
+         * EvalRunsStartAllPayload
+         * @description Request to start all pending eval runs.
+         */
+        EvalRunsStartAllPayload: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
+        /**
+         * EvalRunsStartAllStartedPayload
+         * @description Response indicating all runs started successfully.
+         */
+        EvalRunsStartAllStartedPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Attempt Id */
+            attempt_id: string;
+            /** Started Count */
+            started_count: number;
         };
         /**
          * EvalStartErrorPayload
@@ -26418,6 +26708,111 @@ export interface operations {
             };
         };
     };
+    eval_run_start_api_socket_v3_client_evals_run_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_runs_start_all_api_socket_v3_client_evals_runs_start_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunsStartAllPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_run_stop_api_socket_v3_client_evals_run_stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunStopPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     connection_confirmed_api_socket_v3_server_connection_confirmed_post: {
         parameters: {
             query?: never;
@@ -28843,6 +29238,216 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EvalStopErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_run_started_api_socket_v3_server_evals_run_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunStartedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_run_start_error_api_socket_v3_server_evals_run_start_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunStartErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_runs_start_all_started_api_socket_v3_server_evals_runs_start_all_started_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunsStartAllStartedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_runs_start_all_error_api_socket_v3_server_evals_runs_start_all_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunsStartAllErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_run_stopped_api_socket_v3_server_evals_run_stopped_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunStoppedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_run_stop_error_api_socket_v3_server_evals_run_stop_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunStopErrorPayload"];
             };
         };
         responses: {

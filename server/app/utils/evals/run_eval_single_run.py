@@ -54,6 +54,65 @@ async def run_eval_single_run(
         dict with test_id, eval_run_id, grade_id, success status
     """
     try:
+        # Idempotency check: If run is already completed, skip
+        completed_check = await conn.fetchrow(
+            """
+            SELECT completed
+            FROM eval_runs
+            WHERE eval_id = $1::uuid AND run_id = $2::uuid
+            """,
+            eval_id,
+            run_id,
+        )
+        if completed_check and completed_check["completed"]:
+            logger.info(
+                f"Run {run_id} already completed for eval {eval_id}, skipping (idempotent)"
+            )
+            # Return existing test_id if available
+            existing_test = await conn.fetchrow(
+                """
+                SELECT t.id::text as test_id
+                FROM tests t
+                JOIN attempt_tests at ON at.test_id = t.id
+                WHERE at.attempt_id = $1::uuid
+                  AND t.trace_id = $2
+                LIMIT 1
+                """,
+                attempt_id,
+                f"eval_{attempt_id}_{run_id}",
+            )
+            return {
+                "success": True,
+                "test_id": existing_test["test_id"] if existing_test else None,
+                "eval_run_id": None,  # Already exists
+                "grade_id": None,  # Already exists
+            }
+
+        # Idempotency check: If test exists and is in progress, skip
+        test_check = await conn.fetchrow(
+            """
+            SELECT t.id::text as test_id, t.completed
+            FROM tests t
+            JOIN attempt_tests at ON at.test_id = t.id
+            WHERE at.attempt_id = $1::uuid
+              AND t.trace_id = $2
+              AND t.completed = false
+            LIMIT 1
+            """,
+            attempt_id,
+            f"eval_{attempt_id}_{run_id}",
+        )
+        if test_check:
+            logger.info(
+                f"Run {run_id} already in progress (test {test_check['test_id']}), skipping (idempotent)"
+            )
+            return {
+                "success": True,
+                "test_id": test_check["test_id"],
+                "eval_run_id": None,  # Already exists
+                "grade_id": None,  # Will be created when completed
+            }
+
         # Emit progress event
         if emit_progress_func:
             await emit_progress_func(
@@ -312,7 +371,7 @@ async def run_eval_single_run(
             if role in ("user", "assistant", "response"):
                 # Map "response" to "assistant" for consistency
                 mapped_role = "assistant" if role == "response" else role
-                input_items.append({"role": mapped_role, "content": content})
+                input_items.append({"role": mapped_role, "content": content})  # type: ignore[list-item]
 
         # 9. Create GenericAgent with eval_agent's context
         eval_agent = GenericAgent(

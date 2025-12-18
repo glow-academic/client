@@ -8,7 +8,6 @@ from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
 from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.evals.run_eval_single_run import run_eval_single_run
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
@@ -54,7 +53,7 @@ async def eval_started(payload: EvalStartedPayload, room: str) -> None:
 async def _eval_start_impl(sid: str, data: EvalStartPayload) -> None:
     """
     Handle eval start requests via WebSocket
-    Creates eval_attempt and begins processing first run
+    Creates eval_attempt only (no runs processed - user must start runs manually)
     """
     try:
         logger.info(f"Received eval_start request from {sid} with data: {data}")
@@ -104,10 +103,6 @@ async def _eval_start_impl(sid: str, data: EvalStartPayload) -> None:
                 return
 
             attempt_id = row["attempt_id"]
-            agent_id = row["agent_id"]
-            eval_agent_id = row["eval_agent_id"]
-            rubric_id = row["rubric_id"]
-            dynamic = row.get("dynamic", False)
             pending_run_ids = row.get("pending_run_ids") or []
 
             if not pending_run_ids or len(pending_run_ids) == 0:
@@ -118,51 +113,6 @@ async def _eval_start_impl(sid: str, data: EvalStartPayload) -> None:
                     room=sid,
                 )
                 return
-
-            # Get first pending run
-            first_run_id = pending_run_ids[0]
-
-            # Get department_id from first run if not available
-            department_id = None
-            dept_row = await conn.fetchrow(
-                """
-                SELECT d.id::text as department_id
-                FROM runs r
-                JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
-                JOIN profile_departments pd ON pd.profile_id = rp.profile_id AND pd.active = true
-                JOIN departments d ON d.id = pd.department_id AND d.active = true
-                WHERE r.id = $1::uuid
-                LIMIT 1
-                """,
-                first_run_id,
-            )
-            if dept_row:
-                department_id = dept_row["department_id"]
-
-            # Define emit function for progress updates
-            async def emit_progress(event_data: dict[str, Any]) -> None:
-                await sio.emit(
-                    "evals_status_update", event_data, room=f"eval_{attempt_id}"
-                )
-
-            # Process first run
-            logger.info(
-                f"Processing first run {first_run_id} for eval attempt {attempt_id}"
-            )
-            result = await run_eval_single_run(
-                conn=conn,
-                eval_id=eval_id,
-                attempt_id=attempt_id,
-                test_id=None,  # Will be created
-                run_id=first_run_id,
-                eval_agent_id=eval_agent_id,
-                rubric_id=rubric_id,
-                department_id=department_id,
-                profile_id=profile_id,
-                dynamic=dynamic,
-                agent_id=agent_id,
-                emit_progress_func=emit_progress,
-            )
 
             # Invalidate cache after creating attempt
             try:
@@ -182,40 +132,19 @@ async def _eval_start_impl(sid: str, data: EvalStartPayload) -> None:
             await sio.enter_room(sid, eval_room)
             logger.info(f"Client {sid} joined eval room {eval_room}")
 
-            # Emit success response
+            # Emit success response (no runs processed - user must start manually)
             await eval_started(
                 EvalStartedPayload(
                     success=True,
-                    message="Eval started successfully",
+                    message=f"Eval attempt created with {len(pending_run_ids)} pending runs. Use the attempt page to start runs.",
                     attempt_id=attempt_id,
                 ),
                 room=sid,
             )
 
             logger.info(
-                f"Eval started successfully for {sid}: attempt={attempt_id}, processed first run {first_run_id}"
+                f"Eval attempt created successfully for {sid}: attempt={attempt_id}, pending_runs={len(pending_run_ids)}"
             )
-
-            # Process next run in background (recursive)
-            if len(pending_run_ids) > 1:
-                import asyncio
-                from app.socket.v3.evals.process_next import _eval_process_next_impl
-                from app.socket.v3.evals.process_next import EvalProcessNextPayload
-
-                # Create background task to process next run
-                process_next_payload = EvalProcessNextPayload(
-                    attempt_id=attempt_id,
-                    eval_id=eval_id,
-                    current_run_id=first_run_id,
-                    eval_agent_id=eval_agent_id,
-                    rubric_id=rubric_id,
-                    department_id=department_id,
-                    profile_id=profile_id,
-                )
-                # Use a dummy sid for background processing
-                asyncio.create_task(
-                    _eval_process_next_impl("background", process_next_payload)
-                )
 
     except Exception as e:
         logger.error(f"Error starting eval for {sid}: {str(e)}", exc_info=True)
