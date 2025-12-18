@@ -21,6 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
 
 from app.api.v3.settings.active import ThemePrimitives, derive_theme_tokens
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
@@ -1496,6 +1497,18 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 ),
                 room=sid,
             )
+            # Log activity
+            try:
+                await log_websocket_activity(
+                    sid=sid,
+                    event_key="scenarios.generated",
+                    template="{{ actor.name }} generated scenario",
+                    context={"trace_id": trace_id},
+                    endpoint="/socket/v3/scenarios/generate",
+                    error=False,
+                )
+            except Exception as log_error:
+                logger.warning(f"Error logging scenario generation activity: {log_error}")
 
     except Exception as e:
         logger.error(f"Error in generate_scenario for {sid}: {str(e)}", exc_info=True)
@@ -1505,6 +1518,18 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="scenarios.generated",
+                template="{{ actor.name }} failed to generate scenario",
+                context={"error": str(e)},
+                endpoint="/socket/v3/scenarios/generate",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging scenario generation error activity: {log_error}")
 
 
 @sio.event  # type: ignore

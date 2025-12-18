@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.main import sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.websocket.cleanup_profile_connection import cleanup_profile_connection
 from app.utils.websocket.decrement_guest_count import decrement_guest_count
@@ -65,6 +66,19 @@ async def disconnect(sid: str) -> None:
     chat_ids = await find_chats_by_socket(sid)
     for chat_id in chat_ids:
         await remove_active_connection(chat_id)
+
+    # Log activity (before cleanup, so find_profile_by_socket still works)
+    try:
+        await log_websocket_activity(
+            sid=sid,
+            event_key="websocket.disconnected",
+            template="{{ actor.name }} disconnected from WebSocket",
+            context={},
+            endpoint="/socket/v3/disconnect",
+            error=False,
+        )
+    except Exception as e:
+        logger.warning(f"Error logging WebSocket disconnect activity: {e}")
 
 
 # FastAPI endpoint for OpenAPI documentation (disconnect is a lifecycle event, no request payload)

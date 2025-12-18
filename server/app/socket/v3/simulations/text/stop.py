@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from app.utils.websocket.cancel_active_run import cancel_active_run
@@ -146,6 +147,18 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
                     ),
                     room=f"simulation_{chat_id}",
                 )
+                # Log activity
+                try:
+                    await log_websocket_activity(
+                        sid=sid,
+                        event_key="simulations.text.stopped",
+                        template="{{ actor.name }} stopped simulation",
+                        context={"chat_id": str(chat_id)},
+                        endpoint="/socket/v3/simulations/text/stop",
+                        error=False,
+                    )
+                except Exception as log_error:
+                    logger.warning(f"Error logging simulation stop activity: {log_error}")
 
             else:
                 logger.warning(f"No active simulation run found for chat {chat_id}")
@@ -167,6 +180,18 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
             room=sid,
         )
         logger.error(f"Emitted error to {sid}: Failed to stop simulation: {str(e)}")
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.text.stopped",
+                template="{{ actor.name }} failed to stop simulation",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/text/stop",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation stop error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -183,6 +208,18 @@ async def simulation_text_stop(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.text.stopped",
+                template="{{ actor.name }} failed to stop simulation (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/text/stop",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation stop validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

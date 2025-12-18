@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import _voice_message_ids, _voice_sessions, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -81,6 +82,18 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
             ),
             room=sid,
         )
+        # Log activity
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.voice.stopped",
+                template="{{ actor.name }} stopped voice simulation",
+                context={"chat_id": chat_id},
+                endpoint="/socket/v3/simulations/voice/stop",
+                error=False,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging voice simulation stop activity: {log_error}")
 
     except Exception as e:
         logger.error(
@@ -89,6 +102,18 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
         await simulation_voice_stop_error(
             StopVoiceErrorPayload(success=False, message=str(e)), room=sid
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.voice.stopped",
+                template="{{ actor.name }} failed to stop voice simulation",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/voice/stop",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging voice simulation stop error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -103,6 +128,18 @@ async def simulation_voice_stop(sid: str, data: dict[str, Any]) -> None:
             StopVoiceErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.voice.stopped",
+                template="{{ actor.name }} failed to stop voice simulation (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/voice/stop",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging voice simulation stop validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

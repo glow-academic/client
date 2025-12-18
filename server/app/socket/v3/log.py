@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
@@ -98,6 +99,19 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                 f"operation={data.operationType}, "
                 f"tokens={data.inputTextTokens}+{data.outputTextTokens}"
             )
+            # Log activity (only for client-to-server events, not internal)
+            if sid and sid != "" and sid != "internal":
+                try:
+                    await log_websocket_activity(
+                        sid=sid,
+                        event_key="websocket.log",
+                        template="{{ actor.name }} logged run",
+                        context={"run_id": str(run_id), "operation_type": data.operationType},
+                        endpoint="/socket/v3/log",
+                        error=False,
+                    )
+                except Exception as log_error:
+                    logger.warning(f"Error logging websocket log activity: {log_error}")
 
             # Always save OpenAI messages as JSON file
             try:

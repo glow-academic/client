@@ -9,6 +9,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -403,6 +404,19 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                 f"Simulation started successfully for {sid}: attempt={start_payload['attempt_id']}"
             )
 
+            # Log activity
+            try:
+                await log_websocket_activity(
+                    sid=sid,
+                    event_key="simulations.text.started",
+                    template="{{ actor.name }} started simulation",
+                    context={"simulation_id": simulation_id, "attempt_id": start_payload["attempt_id"]},
+                    endpoint="/socket/v3/simulations/text/start",
+                    error=False,
+                )
+            except Exception as log_error:
+                logger.warning(f"Error logging simulation start activity: {log_error}")
+
     except Exception as e:
         logger.error(f"Error starting simulation for {sid}: {str(e)}")
         await simulation_text_start_error(
@@ -412,6 +426,18 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
             room=sid,
         )
         logger.error(f"Emitted error to {sid}: Failed to start simulation: {str(e)}")
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.text.started",
+                template="{{ actor.name }} failed to start simulation",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/text/start",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation start error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -428,6 +454,18 @@ async def simulation_text_start(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.text.started",
+                template="{{ actor.name }} failed to start simulation (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/text/start",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation start validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

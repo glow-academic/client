@@ -11,6 +11,7 @@ from app.socket.v3.simulations.text.start import (
     StartSimulationPayload,
     _simulation_text_start_impl,
 )
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
@@ -269,6 +270,18 @@ async def _simulation_text_practice_impl(
         logger.error(
             f"Emitted error to {sid}: Failed to create practice scenario: {str(e)}"
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.text.practiced",
+                template="{{ actor.name }} failed to create practice scenario",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/text/practice",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging practice scenario error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -285,6 +298,18 @@ async def simulation_text_practice(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.text.practiced",
+                template="{{ actor.name }} failed to create practice scenario (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/text/practice",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging practice scenario validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

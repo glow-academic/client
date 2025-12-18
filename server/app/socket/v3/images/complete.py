@@ -10,6 +10,7 @@ from app.socket.v3.scenarios.tools.image import (
     ImageToolCompletePayload,
     image_tool_complete,
 )
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
@@ -68,6 +69,19 @@ async def _image_generation_complete_impl(
             logger.info(
                 f"✓ Image generation completed: image_id={image_id}, upload_id={upload_id}"
             )
+            # Log activity (only for client-to-server events, not internal)
+            if sid and sid != "internal":
+                try:
+                    await log_websocket_activity(
+                        sid=sid,
+                        event_key="images.completed",
+                        template="{{ actor.name }} completed image generation",
+                        context={"image_id": image_id, "upload_id": upload_id},
+                        endpoint="/socket/v3/images/complete",
+                        error=False,
+                    )
+                except Exception as log_error:
+                    logger.warning(f"Error logging image completion activity: {log_error}")
 
             # If this was triggered from scenario tool, emit completion event to client
             if room and trace_id:

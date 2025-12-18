@@ -11,6 +11,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_document_agent import build_document_agent
 from app.utils.agents.tools.create_document_tools import (
     create_document_tools,
@@ -466,6 +467,18 @@ async def _document_generate_impl(
                 ),
                 room=sid,
             )
+            # Log activity
+            try:
+                await log_websocket_activity(
+                    sid=sid,
+                    event_key="documents.generated",
+                    template="{{ actor.name }} generated document template",
+                    context={"department_id": str(department_id), "upload_id": upload_id},
+                    endpoint="/socket/v3/documents/generate",
+                    error=False,
+                )
+            except Exception as log_error:
+                logger.warning(f"Error logging document generation activity: {log_error}")
 
     except Exception as e:
         logger.error(f"Error in document_generate for {sid}: {str(e)}", exc_info=True)
@@ -475,6 +488,18 @@ async def _document_generate_impl(
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="documents.generated",
+                template="{{ actor.name }} failed to generate document template",
+                context={"error": str(e)},
+                endpoint="/socket/v3/documents/generate",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging document generation error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -491,6 +516,18 @@ async def document_generate(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="documents.generated",
+                template="{{ actor.name }} failed to generate document template (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/documents/generate",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging document generation validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

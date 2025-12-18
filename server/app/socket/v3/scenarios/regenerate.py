@@ -17,6 +17,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_internal_sio, get_pool, get_scenario_storage, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
@@ -629,6 +630,18 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 ),
                 room=sid,
             )
+            # Log activity
+            try:
+                await log_websocket_activity(
+                    sid=sid,
+                    event_key="scenarios.regenerated",
+                    template="{{ actor.name }} regenerated scenario",
+                    context={"trace_id": trace_id},
+                    endpoint="/socket/v3/scenarios/regenerate",
+                    error=False,
+                )
+            except Exception as log_error:
+                logger.warning(f"Error logging scenario regeneration activity: {log_error}")
 
     except Exception as e:
         logger.error(f"Error in regenerate_scenario for {sid}: {str(e)}", exc_info=True)
@@ -638,6 +651,18 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="scenarios.regenerated",
+                template="{{ actor.name }} failed to regenerate scenario",
+                context={"error": str(e)},
+                endpoint="/socket/v3/scenarios/regenerate",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging scenario regeneration error activity: {log_error}")
 
 
 @sio.event  # type: ignore

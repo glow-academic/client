@@ -18,6 +18,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_grading_storage, get_internal_sio, get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
 from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
@@ -1521,6 +1522,18 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 logger.info(
                     f"Simulation continued successfully: completed_chat={result['completed_chat_id']}, next_chat={result['next_chat_id']}"
                 )
+                # Log activity
+                try:
+                    await log_websocket_activity(
+                        sid=sid,
+                        event_key="simulations.text.next",
+                        template="{{ actor.name }} continued simulation",
+                        context={"chat_id": str(chat_id)},
+                        endpoint="/socket/v3/simulations/text/next",
+                        error=False,
+                    )
+                except Exception as log_error:
+                    logger.warning(f"Error logging simulation next activity: {log_error}")
 
     except Exception as e:
         logger.error(f"Error continuing simulation for {sid}: {str(e)}", exc_info=True)
@@ -1531,6 +1544,18 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
             room=sid,
         )
         logger.error(f"Emitted error to {sid}: Failed to continue simulation: {str(e)}")
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.text.next",
+                template="{{ actor.name }} failed to continue simulation",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/text/next",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation next error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -1549,6 +1574,18 @@ async def simulation_text_next(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.text.next",
+                template="{{ actor.name }} failed to continue simulation (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/text/next",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation next validation error activity: {log_error}")
     except Exception as e:
         logger.error(
             f"Unexpected error in continue_simulation wrapper for {sid}: {str(e)}",
@@ -1560,6 +1597,18 @@ async def simulation_text_next(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.text.next",
+                template="{{ actor.name }} failed to continue simulation (unexpected error)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/text/next",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation next unexpected error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

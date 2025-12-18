@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -114,6 +115,18 @@ async def _eval_enter_impl(sid: str, data: EvalEnterPayload) -> None:
                     ),
                     room=sid,
                 )
+                # Log activity
+                try:
+                    await log_websocket_activity(
+                        sid=sid,
+                        event_key="evals.entered",
+                        template="{{ actor.name }} entered eval test",
+                        context={"test_id": test_id},
+                        endpoint="/socket/v3/evals/enter",
+                        error=False,
+                    )
+                except Exception as log_error:
+                    logger.warning(f"Error logging eval enter activity: {log_error}")
             else:
                 await eval_enter_error(
                     EvalEnterErrorPayload(

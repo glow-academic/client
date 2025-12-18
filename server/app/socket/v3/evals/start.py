@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -145,6 +146,18 @@ async def _eval_start_impl(sid: str, data: EvalStartPayload) -> None:
             logger.info(
                 f"Eval attempt created successfully for {sid}: attempt={attempt_id}, pending_runs={len(pending_run_ids)}"
             )
+            # Log activity
+            try:
+                await log_websocket_activity(
+                    sid=sid,
+                    event_key="evals.started",
+                    template="{{ actor.name }} started eval",
+                    context={"eval_id": eval_id, "attempt_id": attempt_id},
+                    endpoint="/socket/v3/evals/start",
+                    error=False,
+                )
+            except Exception as log_error:
+                logger.warning(f"Error logging eval start activity: {log_error}")
 
     except Exception as e:
         logger.error(f"Error starting eval for {sid}: {str(e)}", exc_info=True)
@@ -154,6 +167,18 @@ async def _eval_start_impl(sid: str, data: EvalStartPayload) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="evals.started",
+                template="{{ actor.name }} failed to start eval",
+                context={"error": str(e)},
+                endpoint="/socket/v3/evals/start",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging eval start error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -170,6 +195,18 @@ async def eval_start(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="evals.started",
+                template="{{ actor.name }} failed to start eval (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/evals/start",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging eval start validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

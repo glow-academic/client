@@ -25,6 +25,7 @@ from app.utils.agents.tools.create_persona_tools import (
     create_persona_tools,
     find_persona_by_name,
 )
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.chat.format_chat_scenario import format_chat_scenario
 from app.utils.chat.get_simulation_conversation_history import (
     get_simulation_conversation_history,
@@ -794,6 +795,18 @@ async def _simulation_text_send_impl(
                             ),
                             room=f"simulation_{chat_id_uuid}",
                         )
+                        # Log activity
+                        try:
+                            await log_websocket_activity(
+                                sid=sid,
+                                event_key="simulations.text.message_sent",
+                                template="{{ actor.name }} sent message in simulation",
+                                context={"chat_id": str(chat_id_uuid)},
+                                endpoint="/socket/v3/simulations/text/send",
+                                error=False,
+                            )
+                        except Exception as log_error:
+                            logger.warning(f"Error logging simulation send activity: {log_error}")
                 else:
                     if is_retry:
                         logger.info(
@@ -2731,6 +2744,18 @@ Tool Usage Instructions:
         await simulation_text_send_error(
             SendSimulationMessageErrorPayload(success=False, message=str(e)), room=sid
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.text.message_sent",
+                template="{{ actor.name }} failed to send message in simulation",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/text/send",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation send error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -2747,6 +2772,18 @@ async def simulation_text_send(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.text.message_sent",
+                template="{{ actor.name }} failed to send message in simulation (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/text/send",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation send validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

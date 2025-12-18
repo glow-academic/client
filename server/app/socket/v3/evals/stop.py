@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.websocket.cancel_active_run import cancel_active_run
 
@@ -137,6 +138,18 @@ async def _eval_stop_impl(sid: str, data: EvalStopPayload) -> None:
                     ),
                     room=f"eval_{attempt_id}",
                 )
+                # Log activity
+                try:
+                    await log_websocket_activity(
+                        sid=sid,
+                        event_key="evals.stopped",
+                        template="{{ actor.name }} stopped eval",
+                        context={"attempt_id": attempt_id},
+                        endpoint="/socket/v3/evals/stop",
+                        error=False,
+                    )
+                except Exception as log_error:
+                    logger.warning(f"Error logging eval stop activity: {log_error}")
             else:
                 logger.warning(
                     f"Failed to cancel active run {run_id} for eval attempt {attempt_id}"
@@ -159,6 +172,18 @@ async def _eval_stop_impl(sid: str, data: EvalStopPayload) -> None:
             room=sid,
         )
         logger.error(f"Emitted error to {sid}: Failed to stop eval: {str(e)}")
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="evals.stopped",
+                template="{{ actor.name }} failed to stop eval",
+                context={"error": str(e)},
+                endpoint="/socket/v3/evals/stop",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging eval stop error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -175,6 +200,18 @@ async def eval_stop(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="evals.stopped",
+                template="{{ actor.name }} failed to stop eval (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/evals/stop",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging eval stop validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

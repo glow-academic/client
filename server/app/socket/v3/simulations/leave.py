@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.websocket.remove_active_connection import remove_active_connection
 
@@ -48,6 +49,18 @@ async def _simulation_leave_impl(sid: str, data: SimulationLeavePayload) -> None
         await sio.leave_room(sid, room_name)
         await remove_active_connection(chat_id)
         logger.info(f"Client {sid} left {chat_type} chat {chat_id}")
+        # Log activity
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.left",
+                template="{{ actor.name }} left simulation chat",
+                context={"chat_id": chat_id, "chat_type": chat_type},
+                endpoint="/socket/v3/simulations/leave",
+                error=False,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation leave activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -64,6 +77,18 @@ async def simulation_leave(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.left",
+                template="{{ actor.name }} failed to leave simulation chat (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/leave",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation leave validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

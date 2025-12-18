@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.websocket.set_active_connection import set_active_connection
 
@@ -62,6 +63,18 @@ async def _simulation_join_impl(sid: str, data: SimulationJoinPayload) -> None:
         await simulation_joined(
             SimulationJoinedPayload(chat_id=chat_id, chat_type=chat_type), room=sid
         )
+        # Log activity
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.joined",
+                template="{{ actor.name }} joined simulation chat",
+                context={"chat_id": chat_id, "chat_type": chat_type},
+                endpoint="/socket/v3/simulations/join",
+                error=False,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation join activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -78,6 +91,18 @@ async def simulation_join(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.joined",
+                template="{{ actor.name }} failed to join simulation chat (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/join",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation join validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

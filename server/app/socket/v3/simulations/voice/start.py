@@ -12,6 +12,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import _voice_sessions, get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.agents.tools.create_persona_tools import create_persona_tools
 from app.utils.logging.db_logger import get_logger
@@ -852,6 +853,18 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 ),
                 room=sid,
             )
+            # Log activity
+            try:
+                await log_websocket_activity(
+                    sid=sid,
+                    event_key="simulations.voice.started",
+                    template="{{ actor.name }} started voice simulation",
+                    context={"chat_id": chat_id},
+                    endpoint="/socket/v3/simulations/voice/start",
+                    error=False,
+                )
+            except Exception as log_error:
+                logger.warning(f"Error logging voice simulation start activity: {log_error}")
 
     except Exception as e:
         logger.error(
@@ -860,6 +873,18 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
         await simulation_voice_start_error(
             StartVoiceErrorPayload(success=False, message=str(e)), room=sid
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.voice.started",
+                template="{{ actor.name }} failed to start voice simulation",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/voice/start",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging voice simulation start error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -874,6 +899,18 @@ async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
             StartVoiceErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.voice.started",
+                template="{{ actor.name }} failed to start voice simulation (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/voice/start",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging voice simulation start validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
@@ -110,6 +111,18 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
                     ),
                     room=sid,
                 )
+                # Log activity
+                try:
+                    await log_websocket_activity(
+                        sid=sid,
+                        event_key="simulations.entered",
+                        template="{{ actor.name }} entered simulation chat",
+                        context={"chat_id": chat_id},
+                        endpoint="/socket/v3/simulations/enter",
+                        error=False,
+                    )
+                except Exception as log_error:
+                    logger.warning(f"Error logging simulation enter activity: {log_error}")
             else:
                 await simulation_enter_error(
                     SimulationEnterErrorPayload(
@@ -128,6 +141,18 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.entered",
+                template="{{ actor.name }} failed to enter simulation chat",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/enter",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation enter error activity: {log_error}")
 
 
 @sio.event  # type: ignore
@@ -144,6 +169,18 @@ async def simulation_enter(sid: str, data: dict[str, Any]) -> None:
             ),
             room=sid,
         )
+        # Log activity error
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="simulations.entered",
+                template="{{ actor.name }} failed to enter simulation chat (invalid payload)",
+                context={"error": str(e)},
+                endpoint="/socket/v3/simulations/enter",
+                error=True,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging simulation enter validation error activity: {log_error}")
 
 
 # FastAPI endpoint for OpenAPI documentation

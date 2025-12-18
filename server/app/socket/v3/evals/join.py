@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -55,6 +56,18 @@ async def _eval_join_impl(sid: str, data: EvalJoinPayload) -> None:
             f"Client {sid} joined eval attempt {attempt_id} (room: {room_name})"
         )
         await eval_joined(EvalJoinedPayload(attempt_id=attempt_id), room=sid)
+        # Log activity
+        try:
+            await log_websocket_activity(
+                sid=sid,
+                event_key="evals.joined",
+                template="{{ actor.name }} joined eval",
+                context={"attempt_id": attempt_id},
+                endpoint="/socket/v3/evals/join",
+                error=False,
+            )
+        except Exception as log_error:
+            logger.warning(f"Error logging eval join activity: {log_error}")
 
 
 @sio.event  # type: ignore

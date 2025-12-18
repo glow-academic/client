@@ -361,6 +361,18 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                         ),
                         room=sid,
                     )
+                    # Log activity
+                    try:
+                        await log_websocket_activity(
+                            sid=sid,
+                            event_key="videos.generated",
+                            template="{{ actor.name }} generated video",
+                            context={"video_id": str(video_id)},
+                            endpoint="/socket/v3/videos/generate",
+                            error=False,
+                        )
+                    except Exception as log_error:
+                        logger.warning(f"Error logging video generation activity: {log_error}")
                     return
 
                 elif video_status.status == "failed":

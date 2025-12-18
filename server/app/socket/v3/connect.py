@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.main import sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.websocket.add_guest_socket import add_guest_socket
 from app.utils.websocket.cleanup_profile_connection import cleanup_profile_connection
@@ -167,6 +168,20 @@ async def connect(
     logger.info(
         f"Client connected successfully: sid={sid}, profile_id={profile_id}, guest_id={guest_id}"
     )
+
+    # Log activity (after set_socket_owner so find_profile_by_socket works)
+    try:
+        await log_websocket_activity(
+            sid=sid,
+            event_key="websocket.connected",
+            template="{{ actor.name }} connected to WebSocket",
+            context={},
+            endpoint="/socket/v3/connect",
+            error=False,
+        )
+    except Exception as e:
+        logger.warning(f"Error logging WebSocket connect activity: {e}")
+
     return True
 
 

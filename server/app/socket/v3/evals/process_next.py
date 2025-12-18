@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.evals.run_eval_single_run import run_eval_single_run
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -139,6 +140,19 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
                     room=f"eval_{attempt_id}",
                 )
                 logger.info(f"All runs completed for eval {eval_id}")
+                # Log activity (skip if background processing)
+                if sid != "background":
+                    try:
+                        await log_websocket_activity(
+                            sid=sid,
+                            event_key="evals.process_next",
+                            template="{{ actor.name }} completed processing eval runs",
+                            context={"eval_id": eval_id, "attempt_id": attempt_id},
+                            endpoint="/socket/v3/evals/process_next",
+                            error=False,
+                        )
+                    except Exception as log_error:
+                        logger.warning(f"Error logging eval process_next activity: {log_error}")
                 return
 
             pending_run_ids = result.get("pending_run_ids") or []
@@ -173,6 +187,19 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
                     room=f"eval_{attempt_id}",
                 )
                 logger.info(f"All runs completed for eval {eval_id}")
+                # Log activity (skip if background processing)
+                if sid != "background":
+                    try:
+                        await log_websocket_activity(
+                            sid=sid,
+                            event_key="evals.process_next",
+                            template="{{ actor.name }} completed processing eval runs",
+                            context={"eval_id": eval_id, "attempt_id": attempt_id},
+                            endpoint="/socket/v3/evals/process_next",
+                            error=False,
+                        )
+                    except Exception as log_error:
+                        logger.warning(f"Error logging eval process_next activity: {log_error}")
                 return
 
             # Get department_id from next run if not provided
@@ -264,6 +291,19 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
             ),
             room=f"eval_{data.attempt_id}",
         )
+        # Log activity error (skip if background processing)
+        if sid != "background":
+            try:
+                await log_websocket_activity(
+                    sid=sid,
+                    event_key="evals.process_next",
+                    template="{{ actor.name }} failed to process eval runs",
+                    context={"error": str(e), "eval_id": data.eval_id},
+                    endpoint="/socket/v3/evals/process_next",
+                    error=True,
+                )
+            except Exception as log_error:
+                logger.warning(f"Error logging eval process_next error activity: {log_error}")
 
 
 @sio.event  # type: ignore
