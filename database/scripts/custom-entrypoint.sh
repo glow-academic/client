@@ -15,7 +15,7 @@ DB_USER=${POSTGRES_USER:-myuser}
 DB_PASSWORD=${POSTGRES_PASSWORD:-mypassword}
 DB_NAME=${POSTGRES_DB:-mydb}
 HISTORY_DIR=${HISTORY_DIR:-/database/history}
-CLEAN_DB=${CLEAN_DB:-false}
+DB_OPERATION=${DB_OPERATION:-RESTORE}
 
 # --- LOGGING FUNCTIONS -----------------------------------------------
 log_info() {
@@ -84,37 +84,43 @@ trap cleanup SIGTERM SIGINT SIGQUIT
 log_info "🐳 Starting Glow Database (Docker)"
 log_info "DB_USER: $DB_USER"
 log_info "DB_NAME: $DB_NAME"
-log_info "CLEAN_DB: $CLEAN_DB"
+log_info "DB_OPERATION: ${DB_OPERATION:-RESTORE}"
 
-# If CLEAN_DB is true, remove the data directory to force reinitialization
-if [ "$CLEAN_DB" = "true" ]; then
-  log_warning "🧹 CLEAN_DB is set to true. Cleaning database..."
+# Handle DB_OPERATION modes
+if [ "$DB_OPERATION" = "CLEAN" ]; then
+  log_warning "🧹 DB_OPERATION=CLEAN - Cleaning database..."
   rm -rf /var/lib/postgresql/data/*
   log_success "Database data directory cleaned."
+elif [ "$DB_OPERATION" = "" ]; then
+  log_info "⏭️  DB_OPERATION is empty - Skipping initialization, using existing database"
+  # Skip all initialization setup and go straight to starting PostgreSQL
+  # We'll handle this after the initialization directory setup
 fi
 
 # --- SETUP BASIC INITIALIZATION --------------------------------------
-log_info "Setting up database initialization..."
-
-# Create the initialization directory
-mkdir -p /docker-entrypoint-initdb.d
-
-# --- GENERATE ALL CS SEED DATA --------------------------------------
-log_info "🌱 Generating all CS seed data..."
-if [ -f "/docker-entrypoint-initdb.d/seed/init.sh" ]; then
-  cd /docker-entrypoint-initdb.d/seed
-  if ./init.sh; then
-    log_success "✅ All CS seed data generated successfully"
+# Skip initialization setup if DB_OPERATION is empty (use existing database)
+if [ "$DB_OPERATION" != "" ]; then
+  log_info "Setting up database initialization..."
+  
+  # Create the initialization directory
+  mkdir -p /docker-entrypoint-initdb.d
+  
+  # --- GENERATE ALL CS SEED DATA --------------------------------------
+  log_info "🌱 Generating all CS seed data..."
+  if [ -f "/docker-entrypoint-initdb.d/seed/init.sh" ]; then
+    cd /docker-entrypoint-initdb.d/seed
+    if ./init.sh; then
+      log_success "✅ All CS seed data generated successfully"
+    else
+      log_warning "⚠️  CS seed generation had issues, but continuing..."
+    fi
+    cd - > /dev/null
   else
-    log_warning "⚠️  CS seed generation had issues, but continuing..."
+    log_warning "⚠️  CS seed initialization script not found, using existing SQL"
   fi
-  cd - > /dev/null
-else
-  log_warning "⚠️  CS seed initialization script not found, using existing SQL"
-fi
-
-# Create the main initialization script with extensions
-cat > /docker-entrypoint-initdb.d/00-glow-init.sql << 'EOF'
+  
+  # Create the main initialization script with extensions
+  cat > /docker-entrypoint-initdb.d/00-glow-init.sql << 'EOF'
 -- Glow Database Initialization Script
 -- This script sets up the database with proper extensions
 
@@ -128,61 +134,11 @@ BEGIN
     RAISE NOTICE '🚀 Starting Glow database initialization...';
 END $$;
 EOF
+fi
 
-# Create a SQL script to restore from backup if available (only if not cleaning)
-if [ "$CLEAN_DB" != "true" ]; then
-  # Look for restore_*.sql.gz files in history volume
-  # Handles both old format (restore_TIMESTAMP.sql.gz) and new format (restore_MIGRATIONNUM_TIMESTAMP.sql.gz)
-  if ls "$HISTORY_DIR"/restore_*.sql.gz 1> /dev/null 2>&1; then
-    # Get the most recent backup by modification time (works for both formats)
-    latest_backup=$(ls -t "$HISTORY_DIR"/restore_*.sql.gz 2>/dev/null | head -1)
-  if [[ -n "$latest_backup" && -f "$latest_backup" ]]; then
-    log_info "📁 Found latest backup: $(basename "$latest_backup")"
-    log_info "🔄 Setting up backup restoration..."
-    
-      # Handle both custom format (pg_dump -F c) and plain SQL (gzipped)
-      # Try custom format first (pg_restore), then fall back to plain SQL (gunzip)
-      if pg_restore -l "$latest_backup" > /dev/null 2>&1; then
-        # Custom format backup - create a restore script that uses pg_restore
-        log_info "Detected custom format backup, creating restore script..."
-        backup_basename=$(basename "$latest_backup")
-        cat > /docker-entrypoint-initdb.d/50-restore-backup.sh << EOF
-#!/bin/bash
-set -e
-log_info() { echo -e "\${CYAN}[DOCKER-DB]\${NC} \$1"; }
-log_warning() { echo -e "\${YELLOW}[DOCKER-DB]\${NC} \$1"; }
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-log_info "🔄 Restoring from custom format backup: $backup_basename"
-# Use DB_USER instead of postgres user
-pg_restore -U "$DB_USER" -d $DB_NAME "$latest_backup" || {
-  log_warning "⚠️  Some restore warnings occurred, but continuing..."
-}
-log_info "✅ Backup restoration completed"
-EOF
-        chmod +x /docker-entrypoint-initdb.d/50-restore-backup.sh
-        log_success "Custom format restore script prepared"
-      elif gunzip -c "$latest_backup" > /docker-entrypoint-initdb.d/50-restore-backup.sql 2>/dev/null; then
-        # Plain SQL backup (gzipped)
-        log_success "Plain SQL backup decompressed and prepared for restoration"
-      else
-        log_error "Failed to process backup file: $latest_backup"
-        log_error "Backup file may be corrupted or in an unsupported format"
-        exit 1
-  fi
-else
-      log_error "❌ No backup file found in $HISTORY_DIR"
-      log_error "Backup is required when CLEAN_DB=false. Please ensure restore_*.sql.gz files exist in the history volume."
-      exit 1
-    fi
-  else
-    log_error "❌ No restore_*.sql.gz files found in $HISTORY_DIR"
-    log_error "Backup is required when CLEAN_DB=false. Please ensure restore_*.sql.gz files exist in the history volume."
-    exit 1
-  fi
-elif [ "$CLEAN_DB" = "true" ]; then
-    log_info "🧹 CLEAN_DB enabled - starting with fresh database (skipping backup restoration)"
+# Handle DB_OPERATION modes for initialization
+if [ "$DB_OPERATION" = "CLEAN" ]; then
+  log_info "🧹 DB_OPERATION=CLEAN - Starting with fresh database (skipping backup restoration)"
   
   # Copy the main initialization script for fresh database
   log_info "📋 Setting up main database schema..."
@@ -215,10 +171,68 @@ elif [ "$CLEAN_DB" = "true" ]; then
   else
     log_warning "⚠️  Main init.sql not found"
   fi
+elif [ "$DB_OPERATION" = "" ]; then
+  log_info "⏭️  DB_OPERATION is empty - Skipping all initialization scripts"
+  # Don't create any initialization scripts, just use existing database
+else
+  # DB_OPERATION=RESTORE or unset (defaults to RESTORE)
+  log_info "🔄 DB_OPERATION=RESTORE - Looking for backup files..."
+  
+  # Look for restore_*.sql.gz files in history volume
+  # Handles both old format (restore_TIMESTAMP.sql.gz) and new format (restore_MIGRATIONNUM_TIMESTAMP.sql.gz)
+  if ls "$HISTORY_DIR"/restore_*.sql.gz 1> /dev/null 2>&1; then
+    # Get the most recent backup by modification time (works for both formats)
+    latest_backup=$(ls -t "$HISTORY_DIR"/restore_*.sql.gz 2>/dev/null | head -1)
+    if [[ -n "$latest_backup" && -f "$latest_backup" ]]; then
+      log_info "📁 Found latest backup: $(basename "$latest_backup")"
+      log_info "🔄 Setting up backup restoration..."
+      
+      # Handle both custom format (pg_dump -F c) and plain SQL (gzipped)
+      # Try custom format first (pg_restore), then fall back to plain SQL (gunzip)
+      if pg_restore -l "$latest_backup" > /dev/null 2>&1; then
+        # Custom format backup - create a restore script that uses pg_restore
+        log_info "Detected custom format backup, creating restore script..."
+        backup_basename=$(basename "$latest_backup")
+        cat > /docker-entrypoint-initdb.d/50-restore-backup.sh << EOF
+#!/bin/bash
+set -e
+log_info() { echo -e "\${CYAN}[DOCKER-DB]\${NC} \$1"; }
+log_warning() { echo -e "\${YELLOW}[DOCKER-DB]\${NC} \$1"; }
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+log_info "🔄 Restoring from custom format backup: $backup_basename"
+# Use DB_USER instead of postgres user
+pg_restore -U "$DB_USER" -d $DB_NAME "$latest_backup" || {
+  log_warning "⚠️  Some restore warnings occurred, but continuing..."
+}
+log_info "✅ Backup restoration completed"
+EOF
+        chmod +x /docker-entrypoint-initdb.d/50-restore-backup.sh
+        log_success "Custom format restore script prepared"
+      elif gunzip -c "$latest_backup" > /docker-entrypoint-initdb.d/50-restore-backup.sql 2>/dev/null; then
+        # Plain SQL backup (gzipped)
+        log_success "Plain SQL backup decompressed and prepared for restoration"
+      else
+        log_error "Failed to process backup file: $latest_backup"
+        log_error "Backup file may be corrupted or in an unsupported format"
+        exit 1
+      fi
+    else
+      log_error "❌ No backup file found in $HISTORY_DIR"
+      log_error "Backup is required when DB_OPERATION=RESTORE. Please ensure restore_*.sql.gz files exist in the history volume."
+      exit 1
+    fi
+  else
+    log_error "❌ No restore_*.sql.gz files found in $HISTORY_DIR"
+    log_error "Backup is required when DB_OPERATION=RESTORE. Please ensure restore_*.sql.gz files exist in the history volume."
+    exit 1
+  fi
 fi
 
 # --- FINALIZATION SCRIPT ---------------------------------------------
-cat > /docker-entrypoint-initdb.d/99-finalize.sql << 'EOF'
+if [ "$DB_OPERATION" != "" ]; then
+  cat > /docker-entrypoint-initdb.d/99-finalize.sql << 'EOF'
 -- Finalization Script
 DO $$
 BEGIN
@@ -227,8 +241,9 @@ BEGIN
     RAISE NOTICE '💡 Use "yarn migrate" to generate migrations, then restart to apply them';
 END $$;
 EOF
-
-log_success "Database initialization scripts prepared"
+  
+  log_success "Database initialization scripts prepared"
+fi
 
 # --- START POSTGRESQL ------------------------------------------------
 log_info "🚀 Starting PostgreSQL server..."

@@ -197,8 +197,14 @@ copy_with_gitignore() {
     # Use git ls-files to get tracked files (respects .gitignore automatically)
     # This is the most reliable way to respect .gitignore
     if git rev-parse --git-dir > /dev/null 2>&1; then
-        # Get all tracked files in this directory
+        # Get all tracked files in this directory, explicitly excluding .git directory
         git ls-files "$src_dir" | while IFS= read -r file; do
+            # Skip .git directory (but keep .gitignore files as they're needed)
+            if [[ "$file" == *"/.git/"* ]] || [[ "$file" == ".git/"* ]] || \
+               [[ "$file" == *"/.git" ]] || [[ "$file" == ".git" ]]; then
+                continue
+            fi
+            
             if [ -f "$file" ]; then
                 # Calculate relative path from src_dir
                 # Remove src_dir prefix (with trailing slash if present)
@@ -222,6 +228,8 @@ copy_with_gitignore() {
         # Fallback: use rsync with common exclusions if not a git repo
         warning "Not a git repository, using rsync with common exclusions..."
         rsync -av \
+            --exclude='.git/' \
+            --exclude='.git' \
             --exclude='node_modules' \
             --exclude='.next' \
             --exclude='__pycache__' \
@@ -405,12 +413,17 @@ success "Archive transferred successfully"
 info "Extracting archive on remote machine..."
 # Verify remote path exists and create if needed, then extract directly into destination
 # Check if unzip is available on remote machine
+# Clean directories that will be updated to ensure old files are removed
+# Handle permission errors gracefully (e.g., web/generated files created by docker-gen)
 EXTRACT_CMD="cd $SCP_PATH && \
     if [ ! -d \"$SCP_PATH\" ]; then mkdir -p \"$SCP_PATH\"; fi && \
     if ! command -v unzip >/dev/null 2>&1; then \
         echo 'Error: unzip not found on remote machine'; \
         exit 1; \
     fi && \
+    rm -rf client server database 2>/dev/null || true && \
+    rm -rf web/templates web/default.conf.template 2>/dev/null || true && \
+    rm -rf web/generated 2>/dev/null || true && \
     unzip -q -o \"$ZIP_NAME\" && \
     rm \"$ZIP_NAME\" && \
     echo 'Extraction complete'"

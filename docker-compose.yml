@@ -19,6 +19,10 @@ services:
   # --------------------
   # Database Service
   # --------------------
+  # DB_OPERATION environment variable (optional, defaults to RESTORE):
+  #   - RESTORE (or unset): Restore from latest backup in history volume
+  #   - CLEAN: Clean database and start fresh from init.sql
+  #   - "" (empty string): Skip initialization, use existing database
   database:
     build:
       context: ./database
@@ -30,6 +34,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
       - HISTORY_DIR=/database/history
+      # DB_OPERATION can be set via .env file or docker run -e DB_OPERATION=...
     volumes:
       - pgdata:/var/lib/postgresql/data
       - history:/database/history 
@@ -136,10 +141,14 @@ services:
         # Create video folder in uploads if it doesn't exist
         mkdir -p /app/uploads/video
 
-        # Copy history if the volume is still empty
-        if [ -z "$$(ls -A /app/history 2>/dev/null)" ]; then
-          echo "[init] Seeding history volume…"
-          cp -a /seed/history/. /app/history/
+        # Always sync latest history file (backup files) to volume
+        # This ensures the database container always has access to the latest backup
+        if [ -d "/seed/history" ] && [ -n "$$(ls -A /seed/history 2>/dev/null)" ]; then
+          echo "[init] Syncing history volume with latest backup files…"
+          mkdir -p /app/history
+          # Copy all backup files, overwriting existing ones
+          cp -a /seed/history/restore_*.sql.gz /app/history/ 2>/dev/null || true
+          echo "[init] History volume synced"
         fi
 
         # Always ensure perms for FastAPI UID/GID 1001
