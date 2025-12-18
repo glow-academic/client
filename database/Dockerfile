@@ -4,7 +4,7 @@ FROM postgres:14-alpine
 # ──────────────────────────────────────────────────────────
 # 1️⃣  Extra packages (bash and nodejs) – put in one RUN layer
 # ──────────────────────────────────────────────────────────
-RUN apk add --no-cache bash nodejs npm
+RUN apk add --no-cache bash nodejs npm util-linux
 
 # ──────────────────────────────────────────────────────────
 # 2️⃣  Non-root user (optional, Postgres runs as postgres:999 by default)

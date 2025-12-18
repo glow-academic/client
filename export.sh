@@ -327,18 +327,33 @@ else
     warning "history directory does not exist, skipping..."
 fi
 
-# Copy root files
+# Copy root files (all tracked files at root level)
 info "Copying root files..."
-ROOT_FILES=(".gitignore" ".cursorignore" "AGENTS.md" "Makefile" "docker-compose.yml" "pyproject.toml" "README.md")
-
-for file in "${ROOT_FILES[@]}"; do
-    if [ -f "$file" ]; then
-        cp "$file" "$EXPORT_DIR/"
-        success "Copied $file"
-    else
-        warning "Root file $file does not exist, skipping..."
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    # Get all tracked files at root level
+    git ls-files | grep -E '^[^/]+$' | while IFS= read -r file; do
+        if [ -f "$file" ]; then
+            cp "$file" "$EXPORT_DIR/"
+            success "Copied $file"
+        fi
+    done
+    
+    # Also copy .cursorignore if it exists (it's gitignored but may be needed)
+    if [ -f ".cursorignore" ]; then
+        cp ".cursorignore" "$EXPORT_DIR/"
+        success "Copied .cursorignore"
     fi
-done
+else
+    # Fallback: copy common root files if not a git repo
+    warning "Not a git repository, copying common root files..."
+    ROOT_FILES=(".gitignore" ".cursorignore" "AGENTS.md" "Makefile" "docker-compose.yml" "pyproject.toml" "README.md" ".env.example")
+    for file in "${ROOT_FILES[@]}"; do
+        if [ -f "$file" ]; then
+            cp "$file" "$EXPORT_DIR/"
+            success "Copied $file"
+        fi
+    done
+fi
 
 # Create .env file from selected environment
 info "Creating .env file from $ENV_FILE..."
@@ -413,7 +428,7 @@ success "Archive transferred successfully"
 info "Extracting archive on remote machine..."
 # Verify remote path exists and create if needed, then extract directly into destination
 # Check if unzip is available on remote machine
-# Clean directories that will be updated to ensure old files are removed
+# Full rewrite: remove directories and root files that will be replaced
 # Handle permission errors gracefully (e.g., web/generated files created by docker-gen)
 EXTRACT_CMD="cd $SCP_PATH && \
     if [ ! -d \"$SCP_PATH\" ]; then mkdir -p \"$SCP_PATH\"; fi && \
@@ -421,9 +436,9 @@ EXTRACT_CMD="cd $SCP_PATH && \
         echo 'Error: unzip not found on remote machine'; \
         exit 1; \
     fi && \
-    rm -rf client server database 2>/dev/null || true && \
-    rm -rf web/templates web/default.conf.template 2>/dev/null || true && \
-    rm -rf web/generated 2>/dev/null || true && \
+    rm -rf client server database web 2>/dev/null || true && \
+    rm -rf uploads history 2>/dev/null || true && \
+    rm -f .gitignore .cursorignore AGENTS.md Makefile docker-compose.yml pyproject.toml README.md .env.example export.sh 2>/dev/null || true && \
     unzip -q -o \"$ZIP_NAME\" && \
     rm \"$ZIP_NAME\" && \
     echo 'Extraction complete'"

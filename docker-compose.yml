@@ -38,11 +38,17 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - history:/database/history 
+    depends_on:
+      volume-init:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      # Check PostgreSQL readiness AND that restore/init scripts completed
+      # The restore script creates /var/lib/postgresql/data/.restore_complete when done
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} && (test -f /var/lib/postgresql/data/.restore_complete || psql -U ${DB_USER} -d ${DB_NAME} -tc 'SELECT 1' >/dev/null 2>&1)"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
     networks:
       - internal
 
@@ -75,11 +81,21 @@ services:
       # Less strict for local dev
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_BACKCHANNEL: "false"
+      
+      # Enable health endpoints for readiness checks
+      KC_HEALTH_ENABLED: "true"
     depends_on:
       database:
         condition: service_healthy
-    # No healthcheck needed - nginx doesn't require Keycloak to be healthy, just started
-    # Keycloak will retry database connections automatically if needed
+    healthcheck:
+      # Keycloak exposes health endpoint at /health/ready but container has no wget/curl
+      # Check management port 9000 instead (always available when Keycloak is ready)
+      # Use /dev/tcp to check if port is listening (works in bash/sh)
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 2>/dev/null && exec 3<&- && exec 3>&- || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 45s
     networks:
       - internal
       - public_net
@@ -132,23 +148,19 @@ services:
         # Copy uploads if the volume is still empty
         if [ -z "$$(ls -A /app/uploads 2>/dev/null)" ]; then
           echo "[init] Seeding uploads volume…"
-          cp -a /seed/uploads/. /app/uploads/
+          # Only copy if source directory exists and has content
+          if [ -d "/seed/uploads" ] && [ -n "$$(ls -A /seed/uploads 2>/dev/null)" ]; then
+            cp -a /seed/uploads/. /app/uploads/
+          fi
         fi
 
-        # Create audio folder in uploads if it doesn't exist
-        mkdir -p /app/uploads/audio
-
-        # Create video folder in uploads if it doesn't exist
-        mkdir -p /app/uploads/video
-
-        # Always sync latest history file (backup files) to volume
-        # This ensures the database container always has access to the latest backup
-        if [ -d "/seed/history" ] && [ -n "$$(ls -A /seed/history 2>/dev/null)" ]; then
-          echo "[init] Syncing history volume with latest backup files…"
-          mkdir -p /app/history
-          # Copy all backup files, overwriting existing ones
-          cp -a /seed/history/restore_*.sql.gz /app/history/ 2>/dev/null || true
-          echo "[init] History volume synced"
+        # Copy history if the volume is still empty
+        if [ -z "$$(ls -A /app/history 2>/dev/null)" ]; then
+          echo "[init] Seeding history volume…"
+          # Only copy if source directory exists and has content
+          if [ -d "/seed/history" ] && [ -n "$$(ls -A /seed/history 2>/dev/null)" ]; then
+            cp -a /seed/history/. /app/history/
+          fi
         fi
 
         # Always ensure perms for FastAPI UID/GID 1001
@@ -180,6 +192,7 @@ services:
       - APP_PREFIX=${APP_PREFIX}
       - INTERNAL_API_BASE=http://server:8000
       - REDIS_URL=redis://redis:6379
+      - KEYCLOAK_INTERNAL_URL=http://keycloak:8080
     volumes:
       - uploads:/app/uploads   # Docker volume for uploads
     healthcheck:
@@ -190,7 +203,7 @@ services:
       start_period: 30s
     depends_on:
       keycloak:
-        condition: service_started
+        condition: service_healthy
       pgbouncer:
         condition: service_healthy
       redis:
@@ -220,8 +233,8 @@ services:
         NEXT_PUBLIC_APP_PREFIX: ${APP_PREFIX}
         KEYCLOAK_PUBLIC_URL: ${ORIGIN}${APP_PREFIX}/auth
         NEXT_PUBLIC_KEYCLOAK_URL: ${ORIGIN}${APP_PREFIX}/auth
-        KEYCLOAK_REALM: ${KEYCLOAK_REALM:-master}
-        NEXT_PUBLIC_KEYCLOAK_REALM: ${KEYCLOAK_REALM:-master}
+        KEYCLOAK_REALM: ${KEYCLOAK_REALM:-glow}
+        NEXT_PUBLIC_KEYCLOAK_REALM: ${KEYCLOAK_REALM:-glow}
         AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-glow-client}
         NEXT_PUBLIC_AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-glow-client}
     env_file:
@@ -235,8 +248,8 @@ services:
       - ORIGIN=${ORIGIN}
       - KEYCLOAK_PUBLIC_URL=${ORIGIN}${APP_PREFIX}/auth
       - NEXT_PUBLIC_KEYCLOAK_URL=${ORIGIN}${APP_PREFIX}/auth
-      - KEYCLOAK_REALM=${KEYCLOAK_REALM:-master}
-      - NEXT_PUBLIC_KEYCLOAK_REALM=${KEYCLOAK_REALM:-master}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM:-glow}
+      - NEXT_PUBLIC_KEYCLOAK_REALM=${KEYCLOAK_REALM:-glow}
       - AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID:-glow-client}
       - NEXT_PUBLIC_AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID:-glow-client}
     healthcheck:

@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import platform
+import socket
 import sys
 import time
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
@@ -692,12 +693,25 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 # otherwise, construct from APP_PREFIX to match Makefile configuration
                 app_prefix = os.getenv("APP_PREFIX", "")
                 explicit_keycloak_url = os.getenv("KEYCLOAK_URL")
+                
                 if explicit_keycloak_url:
                     keycloak_url = explicit_keycloak_url.rstrip("/")
                 else:
-                    # Match Makefile: KC_HTTP_RELATIVE_PATH=${APP_PREFIX}/auth
-                    base_url = "http://localhost:8080"
+                    # In Docker, use internal service name; otherwise use localhost for local dev
+                    docker_env = os.getenv("DOCKER_ENV")
+                    keycloak_internal_url = os.getenv("KEYCLOAK_INTERNAL_URL")
+                    
+                    if keycloak_internal_url:
+                        base_url = keycloak_internal_url.rstrip("/")
+                    elif docker_env:
+                        # Docker environment: use service name
+                        base_url = "http://keycloak:8080"
+                    else:
+                        # Local dev: use localhost
+                        base_url = "http://localhost:8080"
+                    
                     keycloak_url = f"{base_url}{app_prefix}/auth"
+                
                 keycloak_admin = os.getenv("KEYCLOAK_ADMIN", "admin")
                 keycloak_admin_password = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin")
                 keycloak_realm = os.getenv("KEYCLOAK_REALM", "glow")
@@ -799,19 +813,51 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                         )
 
                     # Ensure the target realm exists (create if it doesn't)
+                    # Get bootstrap leader identifier (hostname/container id)
+                    bootstrap_leader = socket.gethostname() or os.getenv("HOSTNAME", "unknown")
                     try:
                         realms = kc_admin.get_realms()
                         realm_exists = any(r["realm"] == keycloak_realm for r in realms)
+                        
                         if not realm_exists:
-                            logger.info(f"Creating Keycloak realm: {keycloak_realm}")
-                            kc_admin.create_realm(
-                                payload={
-                                    "realm": keycloak_realm,
-                                    "enabled": True,
-                                },
-                                skip_exists=True,
-                            )
-                            logger.info(f"✅ Realm '{keycloak_realm}' created")
+                            logger.info(f"[{bootstrap_leader}] Creating Keycloak realm: {keycloak_realm}")
+                            try:
+                                kc_admin.create_realm(
+                                    payload={
+                                        "realm": keycloak_realm,
+                                        "enabled": True,
+                                    },
+                                    skip_exists=True,
+                                )
+                                logger.info(f"✅ Realm '{keycloak_realm}' created")
+                            except Exception as e:
+                                # Race condition: another server may have created the realm
+                                # Handle KeyError (missing Location header), HTTP 409 Conflict, or duplicate key errors
+                                error_str = str(e).lower()
+                                is_conflict = (
+                                    "location" in error_str or 
+                                    "duplicate" in error_str or 
+                                    "conflict" in error_str or
+                                    "409" in error_str or
+                                    "already exists" in error_str
+                                )
+                                
+                                if is_conflict:
+                                    logger.info(
+                                        f"⚠️  [{bootstrap_leader}] Realm '{keycloak_realm}' may have been created by another server, re-checking..."
+                                    )
+                                    # Re-check if realm now exists
+                                    realms = kc_admin.get_realms()
+                                    realm_exists_now = any(r["realm"] == keycloak_realm for r in realms)
+                                    
+                                    if realm_exists_now:
+                                        logger.info(f"✅ Realm '{keycloak_realm}' now exists")
+                                    else:
+                                        logger.warning(
+                                            f"⚠️  Realm creation conflict but realm not found on re-check"
+                                        )
+                                else:
+                                    raise
                         else:
                             logger.info(f"✅ Realm '{keycloak_realm}' already exists")
                     except Exception as e:
@@ -939,33 +985,117 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                 if existing_client:
                                     client_uuid = existing_client.get("id")
                                     if client_uuid:
-                                        kc_admin.update_client(
-                                            client_id=client_uuid,
-                                            payload=client_payload,
-                                        )
-                                        logger.info(
-                                            f"✅ Client '{target_client_id}' updated"
-                                        )
+                                        try:
+                                            kc_admin.update_client(
+                                                client_id=client_uuid,
+                                                payload=client_payload,
+                                            )
+                                            logger.info(
+                                                f"✅ Client '{target_client_id}' updated"
+                                            )
+                                        except Exception as e:
+                                            # Handle race condition: another server may have updated/deleted the client
+                                            error_str = str(e).lower()
+                                            is_conflict = (
+                                                "409" in error_str or
+                                                "conflict" in error_str or
+                                                "already exists" in error_str or
+                                                "not found" in error_str
+                                            )
+                                            
+                                            if is_conflict:
+                                                logger.info(
+                                                    f"⚠️  [{bootstrap_leader}] Client '{target_client_id}' update conflict, re-checking..."
+                                                )
+                                                # Re-check if client still exists
+                                                clients = kc_admin.get_clients()
+                                                existing_client_now = next(
+                                                    (
+                                                        c
+                                                        for c in clients
+                                                        if c.get("clientId") == target_client_id
+                                                    ),
+                                                    None,
+                                                )
+                                                
+                                                if existing_client_now:
+                                                    logger.info(
+                                                        f"✅ Client '{target_client_id}' still exists, update may have been applied by another server"
+                                                    )
+                                                else:
+                                                    logger.warning(
+                                                        f"⚠️  Client '{target_client_id}' no longer exists after update conflict"
+                                                    )
+                                            else:
+                                                raise
                                     else:
                                         logger.warning(
                                             f"⚠️  Client '{target_client_id}' exists but has no ID"
                                         )
                                 else:
-                                    new_client_uuid = kc_admin.create_client(
-                                        payload=client_payload, skip_exists=True
-                                    )
-                                    logger.info(
-                                        f"✅ Client '{target_client_id}' created"
-                                    )
-
-                                    if new_client_uuid:
-                                        kc_admin.update_client(
-                                            client_id=new_client_uuid,
-                                            payload={"secret": target_secret},
+                                    try:
+                                        new_client_uuid = kc_admin.create_client(
+                                            payload=client_payload, skip_exists=True
                                         )
                                         logger.info(
-                                            f"✅ Client Secret enforced for '{target_client_id}'"
+                                            f"✅ Client '{target_client_id}' created"
                                         )
+
+                                        if new_client_uuid:
+                                            kc_admin.update_client(
+                                                client_id=new_client_uuid,
+                                                payload={"secret": target_secret},
+                                            )
+                                            logger.info(
+                                                f"✅ Client Secret enforced for '{target_client_id}'"
+                                            )
+                                    except Exception as e:
+                                        # Race condition: another server created the client between our check and create
+                                        # Handle KeyError (missing Location header), HTTP 409 Conflict, or duplicate key errors
+                                        error_str = str(e).lower()
+                                        is_conflict = (
+                                            "location" in error_str or 
+                                            "duplicate" in error_str or 
+                                            "conflict" in error_str or
+                                            "409" in error_str or
+                                            "already exists" in error_str
+                                        )
+                                        
+                                        if is_conflict:
+                                            logger.info(
+                                                f"⚠️  [{bootstrap_leader}] Client '{target_client_id}' was created by another server, re-checking..."
+                                            )
+                                            # Re-check if client now exists
+                                            clients = kc_admin.get_clients()
+                                            existing_client = next(
+                                                (
+                                                    c
+                                                    for c in clients
+                                                    if c.get("clientId") == target_client_id
+                                                ),
+                                                None,
+                                            )
+                                            
+                                            if existing_client:
+                                                client_uuid = existing_client.get("id")
+                                                if client_uuid:
+                                                    kc_admin.update_client(
+                                                        client_id=client_uuid,
+                                                        payload={"secret": target_secret},
+                                                    )
+                                                    logger.info(
+                                                        f"✅ Client '{target_client_id}' found and secret updated"
+                                                    )
+                                                else:
+                                                    logger.warning(
+                                                        f"⚠️  Client '{target_client_id}' exists but has no ID"
+                                                    )
+                                            else:
+                                                logger.warning(
+                                                    f"⚠️  Client '{target_client_id}' creation conflict but not found on re-check"
+                                                )
+                                        else:
+                                            raise
 
                             except Exception as e:
                                 logger.error(
@@ -1102,20 +1232,54 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                         f"🔍 Payload for {slug}: {payload['config']}"
                                     )
 
-                                    # Upsert the provider in Keycloak
+                                    # Upsert the provider in Keycloak (idempotent)
                                     try:
                                         kc_admin.get_idp(idp_alias=slug)
-                                        kc_admin.update_idp(
-                                            idp_alias=slug, payload=payload
-                                        )
-                                        logger.info(
-                                            f"✅ Synced Keycloak provider: {slug}"
-                                        )
-                                    except Exception:
-                                        kc_admin.create_idp(payload=payload)
-                                        logger.info(
-                                            f"✅ Created Keycloak provider: {slug}"
-                                        )
+                                        # Provider exists, update it
+                                        try:
+                                            kc_admin.update_idp(
+                                                idp_alias=slug, payload=payload
+                                            )
+                                            logger.info(
+                                                f"✅ Synced Keycloak provider: {slug}"
+                                            )
+                                        except Exception as update_e:
+                                            # Handle update conflicts (race condition)
+                                            error_str = str(update_e).lower()
+                                            if "409" in error_str or "conflict" in error_str or "already exists" in error_str:
+                                                logger.info(
+                                                    f"⚠️  [{bootstrap_leader}] Provider '{slug}' update conflict, may have been updated by another server"
+                                                )
+                                            else:
+                                                raise
+                                    except Exception as get_e:
+                                        # Provider doesn't exist, try to create it
+                                        try:
+                                            kc_admin.create_idp(payload=payload)
+                                            logger.info(
+                                                f"✅ Created Keycloak provider: {slug}"
+                                            )
+                                        except Exception as create_e:
+                                            # Handle create conflicts (race condition: another server created it)
+                                            error_str = str(create_e).lower()
+                                            if "409" in error_str or "conflict" in error_str or "already exists" in error_str:
+                                                logger.info(
+                                                    f"⚠️  [{bootstrap_leader}] Provider '{slug}' was created by another server, updating instead..."
+                                                )
+                                                # Re-check and update
+                                                try:
+                                                    kc_admin.update_idp(
+                                                        idp_alias=slug, payload=payload
+                                                    )
+                                                    logger.info(
+                                                        f"✅ Synced Keycloak provider: {slug}"
+                                                    )
+                                                except Exception as update_retry_e:
+                                                    logger.warning(
+                                                        f"⚠️  Failed to update provider '{slug}' after create conflict: {update_retry_e}"
+                                                    )
+                                            else:
+                                                raise
 
                 logger.info("Keycloak sync completed")
             except Exception as e:

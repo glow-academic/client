@@ -106,17 +106,22 @@ if [ "$DB_OPERATION" != "" ]; then
   mkdir -p /docker-entrypoint-initdb.d
   
   # --- GENERATE ALL CS SEED DATA --------------------------------------
-  log_info "🌱 Generating all CS seed data..."
-  if [ -f "/docker-entrypoint-initdb.d/seed/init.sh" ]; then
-    cd /docker-entrypoint-initdb.d/seed
-    if ./init.sh; then
-      log_success "✅ All CS seed data generated successfully"
+  # Only generate seed data when DB_OPERATION=CLEAN (not during RESTORE)
+  if [ "$DB_OPERATION" = "CLEAN" ]; then
+    log_info "🌱 Generating all CS seed data..."
+    if [ -f "/docker-entrypoint-initdb.d/seed/init.sh" ]; then
+      cd /docker-entrypoint-initdb.d/seed
+      if ./init.sh; then
+        log_success "✅ All CS seed data generated successfully"
+      else
+        log_warning "⚠️  CS seed generation had issues, but continuing..."
+      fi
+      cd - > /dev/null
     else
-      log_warning "⚠️  CS seed generation had issues, but continuing..."
+      log_warning "⚠️  CS seed initialization script not found, using existing SQL"
     fi
-    cd - > /dev/null
   else
-    log_warning "⚠️  CS seed initialization script not found, using existing SQL"
+    log_info "⏭️  Skipping seed data generation (DB_OPERATION=$DB_OPERATION)"
   fi
   
   # Create the main initialization script with extensions
@@ -201,12 +206,40 @@ log_warning() { echo -e "\${YELLOW}[DOCKER-DB]\${NC} \$1"; }
 CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
+
 log_info "🔄 Restoring from custom format backup: $backup_basename"
-# Use DB_USER instead of postgres user
-pg_restore -U "$DB_USER" -d $DB_NAME "$latest_backup" || {
-  log_warning "⚠️  Some restore warnings occurred, but continuing..."
-}
-log_info "✅ Backup restoration completed"
+
+# Use --clean --if-exists to drop objects before recreating (prevents schema conflicts)
+# This is safe for fresh database initialization (which Docker initdb provides)
+# Use --no-owner --no-privileges to avoid ownership errors
+log_info "Executing: pg_restore -U $DB_USER -d $DB_NAME --no-owner --no-privileges --clean --if-exists $latest_backup"
+log_info "Note: Using --clean --if-exists to prevent schema creation conflicts"
+
+RESTORE_EXIT=0
+pg_restore -U "$DB_USER" -d $DB_NAME --no-owner --no-privileges --clean --if-exists "$latest_backup" 2>&1 | tee /tmp/pg_restore.log || RESTORE_EXIT=\$?
+
+# Check for schema creation errors (should be eliminated with --clean --if-exists, but check anyway)
+SCHEMA_ERROR_ONLY=\$(grep -c "schema \"public\" already exists" /tmp/pg_restore.log 2>/dev/null || echo "0")
+if [ \$RESTORE_EXIT -ne 0 ] && [ "\$SCHEMA_ERROR_ONLY" -gt 0 ]; then
+  log_warning "⚠️  Schema creation error still occurred (unexpected with --clean --if-exists)"
+  # Check if there are other errors
+  OTHER_ERRORS=\$(grep -E "ERROR|FATAL" /tmp/pg_restore.log | grep -v "schema \"public\" already exists" | wc -l || echo "0")
+  if [ "\$OTHER_ERRORS" -eq 0 ]; then
+    log_info "Only schema creation error detected, treating as success..."
+    RESTORE_EXIT=0
+  fi
+fi
+
+if [ \$RESTORE_EXIT -ne 0 ]; then
+  log_warning "⚠️  pg_restore exited with code \$RESTORE_EXIT"
+  log_warning "⚠️  Check /tmp/pg_restore.log for details"
+  # Don't fail completely - some objects may have been restored
+  log_warning "⚠️  Continuing despite restore errors..."
+else
+  log_info "✅ Backup restoration completed successfully"
+fi
+# Mark restore completion (healthcheck will verify this)
+touch /var/lib/postgresql/data/.restore_complete 2>/dev/null || true
 EOF
         chmod +x /docker-entrypoint-initdb.d/50-restore-backup.sh
         log_success "Custom format restore script prepared"
@@ -241,6 +274,16 @@ BEGIN
     RAISE NOTICE '💡 Use "yarn migrate" to generate migrations, then restart to apply them';
 END $$;
 EOF
+  
+  # Create a marker file after all init scripts complete
+  # This will be created by the postgres entrypoint after init scripts run
+  cat > /docker-entrypoint-initdb.d/99-mark-ready.sh << 'EOF'
+#!/bin/bash
+# Mark that database initialization is complete
+touch /var/lib/postgresql/data/.restore_complete 2>/dev/null || true
+echo "[DB] Database initialization marked as complete at $(date)"
+EOF
+  chmod +x /docker-entrypoint-initdb.d/99-mark-ready.sh
   
   log_success "Database initialization scripts prepared"
 fi
@@ -300,6 +343,7 @@ if [ "$KEYCLOAK_CREATED" = false ]; then
 fi
 
 log_success "🎉 Database is ready! Use 'yarn migrate' for schema changes."
+
 
 # Wait for PostgreSQL process
 wait "$PG_PID"
