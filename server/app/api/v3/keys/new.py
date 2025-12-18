@@ -11,6 +11,7 @@ from pydantic import BaseModel
 # Reuse models from detail.py
 from app.api.v3.keys.detail import DepartmentMappingItem, KeyDetailResponse
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -28,7 +29,13 @@ class KeyNewRequest(BaseModel):
 router = APIRouter()
 
 
-@router.post("/new", response_model=KeyDetailResponse)
+@router.post(
+    "/new",
+    response_model=KeyDetailResponse,
+    dependencies=[
+        audit_activity("key.new", "{{ actor.name }} viewed new key form")
+    ],
+)
 async def get_key_new(
     request_body: KeyNewRequest,
     request: Request,
@@ -114,6 +121,11 @@ async def get_key_new(
             "admin",
             "superadmin",
         )
+
+        # Set audit context with data from SQL query
+        actor_name = row.get("actor_name")
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Convert arrays
         valid_department_ids = [

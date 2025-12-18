@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -215,7 +216,13 @@ def _parse_json_strings_recursive(obj: Any) -> Any:
         return obj
 
 
-@router.post("/overview", response_model=PracticeOverviewResponse)
+@router.post(
+    "/overview",
+    response_model=PracticeOverviewResponse,
+    dependencies=[
+        audit_activity("practice.overview", "{{ actor.name }} viewed practice overview")
+    ],
+)
 async def get_practice_overview(
     filters: PracticeFilters,
     request: Request,
@@ -414,6 +421,17 @@ async def get_practice_overview(
             department_mapping=department_mapping,  # type: ignore[arg-type]
             valid_department_ids=valid_department_ids,
         )
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            profile_id_final,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id_final})
 
         # Cache response
         await set_cached(

@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -73,7 +74,13 @@ def disambiguate_parameters(pmap: dict[str, dict[str, str]]) -> list[dict[str, s
     return out
 
 
-@router.post("/list", response_model=FieldsListResponse)
+@router.post(
+    "/list",
+    response_model=FieldsListResponse,
+    dependencies=[
+        audit_activity("fields.list", "{{ actor.name }} visited the Fields page")
+    ],
+)
 async def get_fields_list(
     filters: FieldsListRequest,
     request: Request,
@@ -109,6 +116,13 @@ async def get_fields_list(
         sql_query = load_sql("sql/v3/fields/list_fields.sql")
         sql_params = (profile_id,)
         rows = await conn.fetch(sql_query, profile_id)
+
+        # Get actor name from first row (same for all rows)
+        actor_name = rows[0]["actor_name"] if rows else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         fields = []
         parameter_mapping: dict[str, dict[str, str]] = {}

@@ -13,7 +13,8 @@ CREATE TABLE evals (
   agent_id   UUID        NOT NULL REFERENCES agents(id)  ON DELETE CASCADE,
   eval_agent_id UUID     NOT NULL REFERENCES agents(id)  ON DELETE RESTRICT,
   name       TEXT        NOT NULL,
-  description TEXT        NOT NULL
+  description TEXT        NOT NULL,
+  dynamic    BOOLEAN     NOT NULL           DEFAULT FALSE
 );
 
 CREATE INDEX ON evals (rubric_id);

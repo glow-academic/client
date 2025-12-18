@@ -1,9 +1,16 @@
 -- Update auth with items (encrypted items use keys, values managed separately in settings)
--- Parameters: $1=auth_id, $2=name, $3=description, $4=active, $5=items_json (jsonb array)
+-- Parameters: $1=auth_id, $2=name, $3=description, $4=active, $5=items_json (jsonb array), $6=profile_id (uuid)
 -- items_json format: [{"name": "Item 1", "description": "Desc 1", "encrypted": true, "key_id": "uuid", "position": 1, "active": true}, ...]
 -- For encrypted items: key_id can be provided to link keys
 -- Values are managed separately in settings page, not included here
-WITH auth_id_resolved AS (
+WITH actor_profile AS (
+    SELECT 
+        $6::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $6::uuid
+),
+auth_id_resolved AS (
     SELECT $1::uuid as auth_id
 ),
 delete_existing_keys AS (
@@ -89,5 +96,9 @@ link_encrypted_keys AS (
         active = true,
         updated_at = NOW()
 )
-SELECT auth_id FROM update_auth
+SELECT 
+    ua.auth_id,
+    ap.actor_name
+FROM update_auth ua
+CROSS JOIN actor_profile ap
 

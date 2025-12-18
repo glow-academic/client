@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -43,7 +44,13 @@ class FieldNewResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/new", response_model=FieldNewResponse)
+@router.post(
+    "/new",
+    response_model=FieldNewResponse,
+    dependencies=[
+        audit_activity("field.new", "{{ actor.name }} opened new field form")
+    ],
+)
 async def get_field_new(
     request: FieldNewRequest,
     http_request: Request,
@@ -82,6 +89,11 @@ async def get_field_new(
             raise HTTPException(
                 status_code=500, detail="Failed to fetch field detail data"
             )
+
+        # Set audit context
+        actor_name = result.get("actor_name")
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Parse valid_department_ids
         valid_department_ids: list[str] = []

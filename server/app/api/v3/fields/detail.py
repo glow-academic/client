@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -39,7 +40,15 @@ class FieldDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail", response_model=FieldDetailResponse)
+@router.post(
+    "/detail",
+    response_model=FieldDetailResponse,
+    dependencies=[
+        audit_activity(
+            "field.viewed", "{{ actor.name }} viewed field '{{ field.name }}'"
+        )
+    ],
+)
 async def get_field_detail(
     request: FieldDetailRequest,
     http_request: Request,
@@ -142,6 +151,16 @@ async def get_field_detail(
         cond_param_ids_raw = result.get("conditional_parameter_ids")
         if cond_param_ids_raw and isinstance(cond_param_ids_raw, (list, tuple)):
             conditional_parameter_ids = [str(pid) for pid in cond_param_ids_raw if pid]
+
+        # Set audit context with data from SQL query
+        actor_name = result.get("actor_name")
+        field_name = result.get("name")
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                field={"name": field_name, "id": request.fieldId},
+            )
 
         response_data = FieldDetailResponse(
             name=result["name"],

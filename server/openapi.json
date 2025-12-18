@@ -12655,7 +12655,7 @@
           "pricing"
         ],
         "summary": "Get Pricing Run Detail",
-        "description": "Get detailed pricing run information with all messages.",
+        "description": "Get detailed pricing run or group information with all messages.",
         "operationId": "get_pricing_run_detail_api_v3_pricing_detail_post",
         "parameters": [
           {
@@ -12707,7 +12707,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PricingRunDetailResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PricingRunDetailResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PricingGroupDetailResponse"
+                    }
+                  ],
+                  "title": "Response Get Pricing Run Detail Api V3 Pricing Detail Post"
                 }
               }
             }
@@ -22538,6 +22546,11 @@
             "title": "Active",
             "default": true
           },
+          "dynamic": {
+            "type": "boolean",
+            "title": "Dynamic",
+            "default": false
+          },
           "run": {
             "type": "boolean",
             "title": "Run",
@@ -28585,6 +28598,53 @@
         ],
         "title": "GradingState"
       },
+      "GroupRunItem": {
+        "properties": {
+          "group_id": {
+            "type": "string",
+            "title": "Group Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "run_count": {
+            "type": "integer",
+            "title": "Run Count"
+          },
+          "total_input_tokens": {
+            "type": "integer",
+            "title": "Total Input Tokens"
+          },
+          "total_output_tokens": {
+            "type": "integer",
+            "title": "Total Output Tokens"
+          },
+          "total_cost": {
+            "type": "number",
+            "title": "Total Cost"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/RunSummaryItem"
+            },
+            "type": "array",
+            "title": "Runs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id",
+          "created_at",
+          "run_count",
+          "total_input_tokens",
+          "total_output_tokens",
+          "total_cost",
+          "runs"
+        ],
+        "title": "GroupRunItem",
+        "description": "Group run item with aggregated metrics across multiple runs."
+      },
       "GrowthDataPoint": {
         "properties": {
           "date": {
@@ -33020,6 +33080,55 @@
         ],
         "title": "PricingEntry"
       },
+      "PricingGroupDetailResponse": {
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "title": "Groupid"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/RunWithMessages"
+            },
+            "type": "array",
+            "title": "Runs"
+          },
+          "modelMapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Modelmapping"
+          },
+          "agentMapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Agentmapping"
+          },
+          "profileMapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Profilemapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "groupId",
+          "runs",
+          "modelMapping",
+          "agentMapping",
+          "profileMapping"
+        ],
+        "title": "PricingGroupDetailResponse",
+        "description": "Response schema for pricing group detail (multiple runs)."
+      },
       "PricingItem": {
         "properties": {
           "type": {
@@ -33056,14 +33165,29 @@
       "PricingRunDetailRequest": {
         "properties": {
           "runId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Runid"
+          },
+          "groupRunId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grouprunid"
           }
         },
         "type": "object",
-        "required": [
-          "runId"
-        ],
         "title": "PricingRunDetailRequest",
         "description": "Request schema for pricing run detail."
       },
@@ -33113,7 +33237,7 @@
           "profileMapping"
         ],
         "title": "PricingRunDetailResponse",
-        "description": "Response schema for pricing run detail."
+        "description": "Response schema for pricing run detail (single run - backward compatible)."
       },
       "PricingRunsFilters": {
         "properties": {
@@ -33291,7 +33415,7 @@
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__pricing__runs__ModelRunItem"
+              "$ref": "#/components/schemas/GroupRunItem"
             },
             "type": "array",
             "title": "Data"
@@ -33378,7 +33502,7 @@
           "persona_mapping"
         ],
         "title": "PricingRunsResponse",
-        "description": "Response for pricing runs table."
+        "description": "Response for pricing groups table."
       },
       "ProblemStatementToolCompletePayload": {
         "properties": {
@@ -36500,6 +36624,119 @@
         ],
         "title": "RunMetadata",
         "description": "Run metadata schema."
+      },
+      "RunSummaryItem": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens"
+          },
+          "cost": {
+            "type": "number",
+            "title": "Cost"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "debug_info": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v3__pricing__runs__DebugInfoItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debug Info"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "created_at",
+          "input_tokens",
+          "output_tokens",
+          "cost"
+        ],
+        "title": "RunSummaryItem",
+        "description": "Run summary item within a group."
+      },
+      "RunWithMessages": {
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/RunMetadata"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__pricing__detail__MessageItem"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run",
+          "messages"
+        ],
+        "title": "RunWithMessages",
+        "description": "Run with messages schema."
       },
       "ScenarioAttributeAttemptFact": {
         "properties": {
@@ -41524,6 +41761,17 @@
               }
             ],
             "title": "Active"
+          },
+          "dynamic": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dynamic"
           }
         },
         "type": "object",
@@ -46769,6 +47017,10 @@
             "type": "boolean",
             "title": "Active"
           },
+          "dynamic": {
+            "type": "boolean",
+            "title": "Dynamic"
+          },
           "rubric_name": {
             "type": "string",
             "title": "Rubric Name"
@@ -46932,6 +47184,7 @@
           "agent_id",
           "eval_agent_id",
           "active",
+          "dynamic",
           "rubric_name",
           "rubric_description",
           "rubric_points",
@@ -47366,6 +47619,10 @@
             "type": "boolean",
             "title": "Active"
           },
+          "dynamic": {
+            "type": "boolean",
+            "title": "Dynamic"
+          },
           "rubric_name": {
             "type": "string",
             "title": "Rubric Name"
@@ -47529,6 +47786,7 @@
           "agent_id",
           "eval_agent_id",
           "active",
+          "dynamic",
           "rubric_name",
           "rubric_description",
           "rubric_points",
@@ -50771,93 +51029,6 @@
         ],
         "title": "DebugInfoItem",
         "description": "Debug information item."
-      },
-      "app__api__v3__pricing__runs__ModelRunItem": {
-        "properties": {
-          "model_run_id": {
-            "type": "string",
-            "title": "Model Run Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "input_tokens": {
-            "type": "integer",
-            "title": "Input Tokens"
-          },
-          "output_tokens": {
-            "type": "integer",
-            "title": "Output Tokens"
-          },
-          "model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Id"
-          },
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "debug_info": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v3__pricing__runs__DebugInfoItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Debug Info"
-          }
-        },
-        "type": "object",
-        "required": [
-          "model_run_id",
-          "created_at",
-          "input_tokens",
-          "output_tokens"
-        ],
-        "title": "ModelRunItem",
-        "description": "Model run item with aggregated metrics."
       },
       "app__api__v3__profile__context__CohortItem": {
         "properties": {

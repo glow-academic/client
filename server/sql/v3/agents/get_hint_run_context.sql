@@ -2,11 +2,10 @@
 -- Parameters: $1=message_id (uuid), $2=chat_id (uuid), $3=department_id (uuid)
 -- Returns: message, chat, attempt, scenario, agent (hint role), model, provider, documents, and profile data
 WITH target_message AS (
-    SELECT m.id, rc.chat_id, m.role, m.content, m.created_at
+    SELECT m.id, cm.chat_id, m.role, m.content, m.created_at
     FROM messages m
-    JOIN message_runs mr ON mr.message_id = m.id
-    JOIN chat_runs rc ON rc.run_id = mr.run_id
-    WHERE m.id = $1::uuid AND rc.chat_id = $2::uuid
+    JOIN chat_messages cm ON cm.message_id = m.id
+    WHERE m.id = $1::uuid AND cm.chat_id = $2::uuid
 ),
 chat_info AS (
     SELECT sc.id, ac.attempt_id, sc.scenario_id, sc.trace_id, sc.title

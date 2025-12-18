@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.api.v3.staff.list import StaffItem
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -50,7 +51,13 @@ class CreateStaffDataResponse(BaseModel):
     role_options: list[str]
 
 
-@router.post("/data/create", response_model=CreateStaffDataResponse)
+@router.post(
+    "/data/create",
+    response_model=CreateStaffDataResponse,
+    dependencies=[
+        audit_activity("staff.data", "{{ actor.name }} viewed staff create data")
+    ],
+)
 async def get_create_staff_data(
     request: CreateStaffDataRequest,
     http_request: Request,
@@ -171,6 +178,17 @@ async def get_create_staff_data(
             cohort_mapping=cohort_mapping,
             role_options=["superadmin", "admin", "instructional", "ta", "guest"],
         )
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            profile_id,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

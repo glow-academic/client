@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -27,7 +28,13 @@ class BulkDeleteStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/delete", response_model=BulkDeleteStaffResponse)
+@router.post(
+    "/delete",
+    response_model=BulkDeleteStaffResponse,
+    dependencies=[
+        audit_activity("staff.deleted", "{{ actor.name }} deleted {{ count }} staff member(s)")
+    ],
+)
 async def bulk_delete_staff(
     request: BulkDeleteStaffRequest,
     http_request: Request,
@@ -59,6 +66,24 @@ async def bulk_delete_staff(
         message = f"{deleted_count} staff members deleted successfully"
 
         result_data = BulkDeleteStaffResponse(success=True, message=message)
+
+        # Fetch actor_name separately
+        profile_id = http_request.state.profile_id
+        actor_name_row = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                count=deleted_count,
+            )
 
         # Invalidate cache after mutation
         tags = ["staff", "profile"]  # Staff operations also affect profile cache

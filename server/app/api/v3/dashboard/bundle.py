@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -1659,7 +1660,13 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
     )
 
 
-@router.post("/overview", response_model=DashboardBundleResponse)
+@router.post(
+    "/overview",
+    response_model=DashboardBundleResponse,
+    dependencies=[
+        audit_activity("dashboard.bundle", "{{ actor.name }} viewed dashboard")
+    ],
+)
 async def get_dashboard(
     filters: DashboardBundleFilters,
     request: Request,
@@ -1688,6 +1695,9 @@ async def get_dashboard(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+
         sql_query = load_sql("sql/v3/dashboard/get_dashboard_bundle.sql")
 
         # Build parameters in the same order as the query expects ($1-$6)
@@ -1741,6 +1751,19 @@ async def get_dashboard(
         # This manually parses the SQL result to match the expected response structure
         # The parsing function handles missing keys gracefully with .get() defaults
         response_data = _parse_dashboard_bundle(data)
+
+        # Fetch actor_name separately
+        actor_name = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+            actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

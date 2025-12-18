@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -44,7 +45,13 @@ class AuthDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail", response_model=AuthDetailResponse)
+@router.post(
+    "/detail",
+    response_model=AuthDetailResponse,
+    dependencies=[
+        audit_activity("auth.viewed", "{{ actor.name }} viewed auth '{{ auth.name }}'")
+    ],
+)
 async def get_auth_detail(
     request: AuthDetailRequest,
     http_request: Request,
@@ -123,6 +130,16 @@ async def get_auth_detail(
 
         # Get can_edit from SQL
         can_edit = result.get("can_edit", False)
+
+        # Set audit context with data from SQL query
+        actor_name = result.get("actor_name")
+        auth_name = result.get("name")
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                auth={"name": auth_name, "id": request.authId},
+            )
 
         response_data = AuthDetailResponse(
             name=result["name"],

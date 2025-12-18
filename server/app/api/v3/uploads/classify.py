@@ -14,10 +14,11 @@ from agents import (
     trace,
 )
 from agents.items import TResponseInputItem
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import TUS_UPLOADS_DIR, classification_results, get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_classification_tools import (
     create_classification_tools,
@@ -49,7 +50,13 @@ class ClassifyUploadResponse(BaseModel):
     newParameterItems: list[dict[str, Any]] = []  # For future use - new items to create
 
 
-@router.post("/upload/{upload_id}/classify", response_model=ClassifyUploadResponse)
+@router.post(
+    "/upload/{upload_id}/classify",
+    response_model=ClassifyUploadResponse,
+    dependencies=[
+        audit_activity("upload.classified", "{{ actor.name }} classified upload '{{ upload.id }}'")
+    ],
+)
 async def classify_upload(
     upload_id: str,
     request_body: ClassifyUploadRequest,
@@ -349,6 +356,21 @@ Use the provided classification tools to indicate which files match each paramet
             message="Classification completed successfully",
             suggestedParameterItemIds=suggested_items,
         )
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            profile_id_uuid,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                upload={"id": upload_id},
+            )
 
         # Invalidate cache after classification
         await invalidate_tags(tags)

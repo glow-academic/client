@@ -247,9 +247,14 @@
                   AND EXISTS (
                       SELECT 1 FROM grades scg 
                       JOIN runs r ON r.id = scg.run_id
-                      JOIN chat_runs rc ON rc.run_id = r.id
-                      WHERE rc.chat_id = sc.id 
-                        AND EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
+                      JOIN message_runs mr ON mr.run_id = r.id
+                      JOIN chat_messages cm ON cm.message_id = mr.message_id
+                      WHERE cm.chat_id = sc.id 
+                        AND EXISTS (
+                            SELECT 1 FROM message_runs mr_check
+                            JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+                            WHERE mr_check.run_id = scg.run_id
+                        )
                   )
                   AND ac2.attempt_id != $1
                 
@@ -315,12 +320,17 @@
             CROSS JOIN current_attempt_profile cap
             CROSS JOIN simulation_scenarios_list ssl
             CROSS JOIN attempt_base ab
-            LEFT JOIN grades scg ON EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
+            LEFT JOIN grades scg ON EXISTS (
+                SELECT 1 FROM message_runs mr_check
+                JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+                WHERE mr_check.run_id = scg.run_id
+            )
             LEFT JOIN runs r_prev ON r_prev.id = scg.run_id
-            LEFT JOIN chat_runs rc_prev ON rc_prev.run_id = r_prev.id AND rc_prev.chat_id = sc.id
+            LEFT JOIN message_runs mr_prev ON mr_prev.run_id = r_prev.id
+            LEFT JOIN chat_messages cm_prev ON cm_prev.message_id = mr_prev.message_id AND cm_prev.chat_id = sc.id
             WHERE ap2.profile_id = cap.profile_id
               AND sc.completed = true
-              AND rc_prev.chat_id IS NOT NULL
+              AND cm_prev.chat_id IS NOT NULL
               -- Match root parent scenario IDs (child scenarios are recursively mapped to their root parents)
               AND COALESCE(
                     (SELECT pcsrm.root_scenario_id 
@@ -343,10 +353,11 @@
             JOIN chats sc ON sc.id = ac.chat_id
             JOIN grades scg ON scg.eval = false
             JOIN runs r_agg ON r_agg.id = scg.run_id
-            JOIN chat_runs rc_agg ON rc_agg.run_id = r_agg.id AND rc_agg.chat_id = sc.id
+            JOIN message_runs mr_agg ON mr_agg.run_id = r_agg.id
+            JOIN chat_messages cm_agg ON cm_agg.message_id = mr_agg.message_id AND cm_agg.chat_id = sc.id
             WHERE ac.attempt_id IN (SELECT DISTINCT attempt_id FROM previous_chats_with_grades)
               AND sc.completed = true
-              AND rc_agg.chat_id IS NOT NULL
+              AND cm_agg.chat_id IS NOT NULL
             GROUP BY ac.attempt_id
         ),
         -- Get rubric total points per simulation for previous attempts
@@ -491,7 +502,7 @@
                 -- Base case: Start from latest messages (no active children in message_tree)
                 SELECT 
                     m.id, 
-                    rc.chat_id, 
+                    cm.chat_id, 
                     CASE WHEN m.role = 'user' THEN 'query' ELSE 'response' END as type, 
                     m.content, 
                     m.created_at, 
@@ -501,11 +512,10 @@
                     0 as depth,
                     m.id as path_root_id
                 FROM messages m
-                JOIN message_runs mr ON mr.message_id = m.id
-                JOIN chat_runs rc ON rc.run_id = mr.run_id
+                JOIN chat_messages cm ON cm.message_id = m.id
                 LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
                 CROSS JOIN chat_ids_list cil
-                WHERE rc.chat_id = ANY(cil.chat_ids)
+                WHERE cm.chat_id = ANY(cil.chat_ids)
                   AND m.role IN ('user', 'assistant')
                   AND NOT EXISTS (
                       SELECT 1 FROM message_tree mt 
@@ -518,7 +528,7 @@
                 -- Find parents (m) of children (mp) already in the path
                 SELECT 
                     m.id, 
-                    rc.chat_id, 
+                    cm.chat_id, 
                     CASE WHEN m.role = 'user' THEN 'query' ELSE 'response' END as type, 
                     m.content, 
                     m.created_at, 
@@ -530,20 +540,19 @@
                 FROM messages m
                 JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
                 JOIN message_path mp ON mp.id = mt.child_id
-                JOIN message_runs mr ON mr.message_id = m.id
-                JOIN chat_runs rc ON rc.run_id = mr.run_id
+                JOIN chat_messages cm ON cm.message_id = m.id
                 LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
                 CROSS JOIN chat_ids_list cil
                 WHERE mp.depth < 1000  -- Safety limit
                   AND m.role IN ('user', 'assistant')
-                  AND rc.chat_id = mp.chat_id  -- Ensure parent and child are in same chat
-                  AND rc.chat_id = ANY(cil.chat_ids)  -- Ensure we stay within the target chats
+                  AND cm.chat_id = mp.chat_id  -- Ensure parent and child are in same chat
+                  AND cm.chat_id = ANY(cil.chat_ids)  -- Ensure we stay within the target chats
             ),
             -- Include messages without parents (backward compatibility for existing messages)
             messages_without_parents AS (
                 SELECT 
                     m.id, 
-                    rc.chat_id, 
+                    cm.chat_id, 
                     CASE WHEN m.role = 'user' THEN 'query' ELSE 'response' END as type, 
                     m.content, 
                     m.created_at, 
@@ -553,11 +562,10 @@
                     -1 as depth,
                     m.id as path_root_id
                 FROM messages m
-                JOIN message_runs mr ON mr.message_id = m.id
-                JOIN chat_runs rc ON rc.run_id = mr.run_id
+                JOIN chat_messages cm ON cm.message_id = m.id
                 LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
                 CROSS JOIN chat_ids_list cil
-                WHERE rc.chat_id = ANY(cil.chat_ids)
+                WHERE cm.chat_id = ANY(cil.chat_ids)
                   AND m.role IN ('user', 'assistant')
                   AND NOT EXISTS (
                       SELECT 1 FROM message_tree mt 
@@ -664,12 +672,12 @@
         ),
         grades_data AS (
             -- Get latest grade per chat (DISTINCT ON to handle multiple grades)
-            SELECT DISTINCT ON (rc.chat_id)
-                rc.chat_id as chat_id,
+            SELECT DISTINCT ON (cm.chat_id)
+                cm.chat_id as chat_id,
                 jsonb_build_object(
                     'id', scg.id::text,
                     'createdAt', scg.created_at,
-                    'simulationChatId', rc.chat_id::text,
+                    'simulationChatId', cm.chat_id::text,
                     'rubricId', scg.rubric_id::text,
                     'description', scg.description,
                     'passed', scg.passed,
@@ -678,11 +686,16 @@
                 ) as grade
             FROM grades scg
             JOIN runs r ON r.id = scg.run_id
-            JOIN chat_runs rc ON rc.run_id = r.id
+            JOIN message_runs mr ON mr.run_id = r.id
+            JOIN chat_messages cm ON cm.message_id = mr.message_id
             CROSS JOIN chat_ids_list cil
-            WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
-              AND rc.chat_id = ANY(cil.chat_ids)
-            ORDER BY rc.chat_id, scg.created_at DESC
+            WHERE EXISTS (
+                SELECT 1 FROM message_runs mr_check
+                JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+                WHERE mr_check.run_id = scg.run_id
+            )
+              AND cm.chat_id = ANY(cil.chat_ids)
+            ORDER BY cm.chat_id, scg.created_at DESC
         ),
         feedbacks_grouped AS (
             SELECT 
@@ -1164,9 +1177,14 @@
             CROSS JOIN attempt_base ab
             JOIN attempt_chats ac ON ac.attempt_id = ab.id
             JOIN chats sc ON sc.id = ac.chat_id
-            JOIN grades scg ON EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
+            JOIN grades scg ON EXISTS (
+                SELECT 1 FROM message_runs mr_check
+                JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+                WHERE mr_check.run_id = scg.run_id
+            )
             JOIN runs r_scen ON r_scen.id = scg.run_id
-            JOIN chat_runs rc_scen ON rc_scen.run_id = r_scen.id AND rc_scen.chat_id = sc.id
+            JOIN message_runs mr_scen ON mr_scen.run_id = r_scen.id
+            JOIN chat_messages cm_scen ON cm_scen.message_id = mr_scen.message_id AND cm_scen.chat_id = sc.id
             WHERE ss.simulation_id = ab.simulation_id
               AND ss.active = true
               -- Recursively map child scenario to root parent scenario via scenario_tree

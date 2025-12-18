@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -53,7 +54,13 @@ class KeyDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail", response_model=KeyDetailResponse)
+@router.post(
+    "/detail",
+    response_model=KeyDetailResponse,
+    dependencies=[
+        audit_activity("key.viewed", "{{ actor.name }} viewed key '{{ key.name }}'")
+    ],
+)
 async def get_key_detail(
     request_body: KeyDetailRequest,
     request: Request,
@@ -135,6 +142,16 @@ async def get_key_detail(
 
         # Get can_edit from SQL (handles default objects and role checks)
         can_edit = row.get("can_edit", False)
+
+        # Set audit context with data from SQL query
+        actor_name = row.get("actor_name")
+        key_name = row.get("name")
+        if actor_name:
+            audit_set(
+                request,
+                actor={"name": actor_name, "id": profile_id},
+                key={"name": key_name, "id": request_body.keyId},
+            )
 
         # Convert arrays
         valid_department_ids = [

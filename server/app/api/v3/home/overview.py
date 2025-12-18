@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -147,7 +148,13 @@ def _parse_json_strings_recursive(obj: Any) -> Any:  # noqa: ANN401
         return obj
 
 
-@router.post("/overview", response_model=HomeOverviewResponse)
+@router.post(
+    "/overview",
+    response_model=HomeOverviewResponse,
+    dependencies=[
+        audit_activity("home.overview", "{{ actor.name }} viewed home overview")
+    ],
+)
 async def get_home_overview(
     filters: HomeFilters,
     request: Request,
@@ -265,6 +272,17 @@ async def get_home_overview(
             standards_mapping=parsed_result.get("standards_mapping", {}),
             simulation_mapping=simulation_mapping,  # type: ignore[arg-type]
         )
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            profile_id,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

@@ -3,7 +3,9 @@ WITH auth_id_resolved AS (
     SELECT $1::uuid as auth_id
 ),
 user_profile AS (
-    SELECT p.role
+    SELECT 
+        p.role,
+        p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $2::uuid
 ),
@@ -58,7 +60,9 @@ items_json AS (
 )
 SELECT 
     ad.*,
-    ij.items as auth_items_json
+    ij.items as auth_items_json,
+    up.actor_name
 FROM auth_data ad
 CROSS JOIN items_json ij
+CROSS JOIN user_profile up
 

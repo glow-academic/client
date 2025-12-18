@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -31,7 +32,13 @@ from app.api.v3.parameters.detail import (  # noqa: E402
 router = APIRouter()
 
 
-@router.post("/new", response_model=ParameterDetailResponse)
+@router.post(
+    "/new",
+    response_model=ParameterDetailResponse,
+    dependencies=[
+        audit_activity("parameter.new", "{{ actor.name }} viewed new parameter form")
+    ],
+)
 async def get_parameter_new(
     request: ParameterNewRequest,
     http_request: Request,
@@ -76,6 +83,11 @@ async def get_parameter_new(
             raise HTTPException(
                 status_code=404, detail="No default parameter found for user"
             )
+
+        # Set audit context with data from SQL query
+        actor_name = result.get("actor_name")
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Parse parameter_items from JSONB
         parameter_items: list[ParameterItemDetail] = []

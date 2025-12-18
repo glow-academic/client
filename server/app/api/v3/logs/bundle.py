@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -86,7 +87,13 @@ def _parse_json_strings_recursive(obj: Any) -> Any:
         return obj
 
 
-@router.post("/bundle", response_model=LogsBundleResponse)
+@router.post(
+    "/bundle",
+    response_model=LogsBundleResponse,
+    dependencies=[
+        audit_activity("logs.bundle", "{{ actor.name }} viewed logs")
+    ],
+)
 async def get_logs_bundle(
     request: LogsBundleRequest,
     http_request: Request,
@@ -115,6 +122,9 @@ async def get_logs_bundle(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+
         sql_query = load_sql("sql/v3/logs/bundle.sql")
         sql_params = ()  # No parameters for this query
 
@@ -169,6 +179,19 @@ async def get_logs_bundle(
             health_kpis=health_kpis,
             metrics=metrics,
         )
+
+        # Fetch actor_name separately
+        actor_name = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+            actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

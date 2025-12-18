@@ -107,6 +107,7 @@ async def _eval_start_impl(sid: str, data: EvalStartPayload) -> None:
             agent_id = row["agent_id"]
             eval_agent_id = row["eval_agent_id"]
             rubric_id = row["rubric_id"]
+            dynamic = row.get("dynamic", False)
             pending_run_ids = row.get("pending_run_ids") or []
 
             if not pending_run_ids or len(pending_run_ids) == 0:
@@ -158,6 +159,8 @@ async def _eval_start_impl(sid: str, data: EvalStartPayload) -> None:
                 rubric_id=rubric_id,
                 department_id=department_id,
                 profile_id=profile_id,
+                dynamic=dynamic,
+                agent_id=agent_id,
                 emit_progress_func=emit_progress,
             )
 

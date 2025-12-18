@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -30,7 +31,13 @@ class DeleteAuthResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeleteAuthResponse)
+@router.post(
+    "/delete",
+    response_model=DeleteAuthResponse,
+    dependencies=[
+        audit_activity("auth.deleted", "{{ actor.name }} deleted auth '{{ auth.name }}'")
+    ],
+)
 async def delete_auth(
     request: DeleteAuthRequest,
     http_request: Request,
@@ -44,18 +51,35 @@ async def delete_auth(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Delete auth (cascade will handle auth_items)
             sql_query = load_sql("sql/v3/auth/delete_auth_complete.sql")
-            sql_params = (request.authId,)
-            result = await conn.fetchrow(sql_query, request.authId)
+            sql_params = (request.authId, profile_id)
+            result = await conn.fetchrow(sql_query, request.authId, profile_id)
 
             if not result:
                 raise ValueError(f"Auth not found: {request.authId}")
 
             auth_name = result.get("name")
+            actor_name = result.get("actor_name")
             if not auth_name:
                 raise ValueError(f"Auth not found: {request.authId}")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    auth={"name": auth_name, "id": request.authId},
+                )
 
             result_data = DeleteAuthResponse(
                 success=True,

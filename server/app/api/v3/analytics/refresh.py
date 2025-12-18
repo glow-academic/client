@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -28,7 +29,13 @@ class RefreshResponse(BaseModel):
     status: str
 
 
-@router.post("/refresh", response_model=RefreshResponse)
+@router.post(
+    "/refresh",
+    response_model=RefreshResponse,
+    dependencies=[
+        audit_activity("analytics.refreshed", "{{ actor.name }} refreshed analytics")
+    ],
+)
 async def refresh_analytics(
     request: RefreshRequest,
     http_request: Request,
@@ -42,9 +49,28 @@ async def refresh_analytics(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/analytics/refresh_materialized_view.sql")
         sql_params = ()  # No parameters for this query
         await conn.execute(sql_query)
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            profile_id,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         result_data = RefreshResponse(
             success=True,

@@ -1,6 +1,20 @@
 -- Get key detail with department relationships, model relationships, and permissions
 -- Parameters: $1=keyId (uuid), $2=profileId (uuid)
-WITH key_data AS (
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+actor_profile AS (
+    SELECT 
+        $2::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+key_data AS (
     SELECT 
         k.id as key_id,
         k.name,
@@ -112,7 +126,8 @@ SELECT
         WHEN pr.user_role = 'superadmin' THEN true
         WHEN pr.user_role = 'admin' AND uhka.has_access THEN true
         ELSE false
-    END as can_edit
+    END as can_edit,
+    ap.actor_name
 FROM key_data kd
 LEFT JOIN key_departments_data kdd ON true
 LEFT JOIN key_models_data kmd ON true
@@ -120,5 +135,6 @@ CROSS JOIN valid_depts vd
 CROSS JOIN profile_data pr
 CROSS JOIN user_has_key_access uhka
 CROSS JOIN model_mapping_data mmd
+CROSS JOIN actor_profile ap
 WHERE uhka.has_access = true
 

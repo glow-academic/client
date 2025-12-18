@@ -7,10 +7,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.mime.get_content_type import get_content_type
@@ -32,9 +33,16 @@ class TusFinalizeResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/upload/{upload_id}/finalize", response_model=TusFinalizeResponse)
+@router.post(
+    "/upload/{upload_id}/finalize",
+    response_model=TusFinalizeResponse,
+    dependencies=[
+        audit_activity("upload.finalized", "{{ actor.name }} finalized upload '{{ upload.id }}'")
+    ],
+)
 async def tus_finalize(
     upload_id: str,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> TusFinalizeResponse:
@@ -128,6 +136,24 @@ async def tus_finalize(
             status="success",
             uploadId=upload_id,
         )
+
+        # Fetch actor_name separately
+        profile_id = http_request.state.profile_id if hasattr(http_request.state, 'profile_id') else None
+        actor_name_row = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                upload={"id": str(upload_id)},
+            )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

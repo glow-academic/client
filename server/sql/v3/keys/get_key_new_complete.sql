@@ -1,6 +1,20 @@
 -- Get default key structure for new key creation
 -- Parameters: $1=profileId (uuid)
-WITH user_departments AS (
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
+actor_profile AS (
+    SELECT 
+        $1::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $1::uuid
+),
+user_departments AS (
     SELECT DISTINCT pd.department_id
     FROM resolve_profile_id rpi
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
@@ -63,8 +77,10 @@ SELECT
         WHEN pr.user_role = 'superadmin' THEN true
         WHEN pr.user_role = 'admin' AND pd.department_id IS NOT NULL THEN true
         ELSE false
-    END as can_edit
+    END as can_edit,
+    ap.actor_name
 FROM valid_depts vd
 CROSS JOIN profile_data pr
 LEFT JOIN primary_department_id pd ON true
+CROSS JOIN actor_profile ap
 

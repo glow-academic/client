@@ -170,6 +170,7 @@ SELECT
     NULL::text[] as agent_ids,
     NULL::text[] as model_run_ids,
     true as active,
+    false as dynamic,
     NULL::text[] as department_ids,
     COALESCE(vdi.ids, ARRAY[]::text[]) as valid_department_ids,
     COALESCE(dmd.mapping, '{}'::jsonb) as department_mapping,

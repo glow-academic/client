@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -35,7 +36,13 @@ class BulkUpdateStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/update", response_model=BulkUpdateStaffResponse)
+@router.post(
+    "/update",
+    response_model=BulkUpdateStaffResponse,
+    dependencies=[
+        audit_activity("staff.updated", "{{ actor.name }} updated {{ count }} staff member(s)")
+    ],
+)
 async def bulk_update_staff(
     request: BulkUpdateStaffRequest,
     http_request: Request,
@@ -116,6 +123,21 @@ async def bulk_update_staff(
             success=True,
             message=f"{len(request.profileIds)} staff members updated successfully",
         )
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            current_profile_id,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": current_profile_id},
+                count=len(request.profileIds),
+            )
 
         # Invalidate cache after mutation
         tags = ["staff", "profile"]  # Staff operations also affect profile cache

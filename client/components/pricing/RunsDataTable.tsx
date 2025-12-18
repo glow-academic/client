@@ -52,25 +52,29 @@ const currency = (value: number) =>
     maximumFractionDigits: 4,
   }).format(value);
 
-export interface ModelRunRow {
-  id: string;
+export interface GroupRunRow {
+  groupId: string;
   createdAt: string;
-  modelId: string | null;
-  modelName: string;
-  agentId?: string | null;
-  agentName?: string;
-  personaId?: string | null;
-  personaName?: string;
-  profileId?: string | null;
-  profileName?: string;
-  inputTokens: number;
-  outputTokens: number;
-  debugInfo?: DebugInfoItem[];
-  cost: number;
+  runCount: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCost: number;
+  runs: Array<{
+    runId: string;
+    createdAt: string;
+    modelId: string | null;
+    agentId?: string | null;
+    personaId?: string | null;
+    profileId?: string | null;
+    inputTokens: number;
+    outputTokens: number;
+    cost: number;
+    debugInfo?: DebugInfoItem[];
+  }>;
 }
 
 export interface RunsDataTableProps {
-  rows: ModelRunRow[];
+  rows: GroupRunRow[];
   modelMapping: Record<string, ModelMappingWithPricing>;
   profileMapping: Record<string, string>;
   agentMapping: Record<string, string>;
@@ -263,8 +267,8 @@ export function RunsDataTable({
     [commitSearch],
   );
 
-  const columns = React.useMemo<ColumnDef<ModelRunRow>[]>(() => {
-    const cols: ColumnDef<ModelRunRow>[] = [
+  const columns = React.useMemo<ColumnDef<GroupRunRow>[]>(() => {
+    const cols: ColumnDef<GroupRunRow>[] = [
       {
         accessorKey: "createdAt",
         header: ({ column }) => (
@@ -278,185 +282,76 @@ export function RunsDataTable({
         enableSorting: true,
       },
       {
-        accessorKey: "modelName",
+        accessorKey: "runCount",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Model" />
+          <DataTableColumnHeader column={column} title="Runs" />
         ),
         cell: ({ row }) => (
-          <div className="text-sm">{row.getValue("modelName")}</div>
+          <div className="text-sm tabular-nums">
+            {row.getValue("runCount")}
+          </div>
         ),
-        enableHiding: true,
-        filterFn: (row, _id, value) => {
-          return (value as string[]).includes(row.original.modelId || "");
-        },
-      },
-      // Hidden faceting column for Model (IDs)
-      {
-        id: "modelIdFilter",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: ModelRunRow) => row.modelId || "",
-        filterFn: (row, _id, value: string[]) => {
-          if (!value || value.length === 0) return true;
-          const modelId = row.original.modelId || "";
-          // Additive filtering: keep row if modelId is in selected values
-          return value.includes(modelId);
-        },
+        enableSorting: true,
       },
       {
-        accessorKey: "profileName",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Name" />
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm">{row.getValue("profileName")}</div>
-        ),
-        enableHiding: true,
-        filterFn: (row, _id, value) => {
-          return (value as string[]).includes(row.original.profileId || "");
-        },
-      },
-      // Hidden faceting column for Profile/Name (IDs)
-      {
-        id: "profileIdFilter",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: ModelRunRow) => row.profileId || "",
-        filterFn: (row, _id, value: string[]) => {
-          if (!value || value.length === 0) return true;
-          const profileId = row.original.profileId || "";
-          // Additive filtering: keep row if profileId is in selected values
-          return value.includes(profileId);
-        },
-      },
-      {
-        id: "actorId",
-        accessorFn: (r) => r.agentId || r.personaId || "",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Agent/Persona" />
-        ),
-        cell: ({ row }) => {
-          const label =
-            row.original.agentName || row.original.personaName || "";
-          return <div className="text-sm">{label}</div>;
-        },
-        enableHiding: true,
-        filterFn: (row, _id, value) => {
-          const selected = (value as string[] | undefined) ?? [];
-          const { agentId, personaId } = row.original;
-          if (!selected?.length) return true;
-          // Additive filtering: keep row if agentId or personaId is in selected values
-          if (agentId && selected.includes(agentId)) return true;
-          if (personaId && selected.includes(personaId)) return true;
-          return false;
-        },
-      },
-      // Hidden faceting column for Actor (Agent/Persona IDs)
-      {
-        id: "actorIdFilter",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: ModelRunRow) => {
-          // Return array of IDs that this row matches (agentId and/or personaId)
-          const ids: string[] = [];
-          if (row.agentId) ids.push(row.agentId);
-          if (row.personaId) ids.push(row.personaId);
-          return ids;
-        },
-        filterFn: (row, _id, value: string[]) => {
-          const rowIds = (row.getValue("actorIdFilter") as string[]) ?? [];
-          if (!value || value.length === 0) return true;
-          // Additive filtering: keep row if it contains ANY selected actor ID
-          return value.some((v) => rowIds.includes(v));
-        },
-      },
-      {
-        accessorKey: "inputTokens",
+        accessorKey: "totalInputTokens",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Input Tokens" />
         ),
         cell: ({ row }) => (
           <div className="text-sm tabular-nums">
-            {row.getValue("inputTokens")}
+            {row.getValue("totalInputTokens")}
           </div>
         ),
         enableSorting: true,
       },
       {
-        accessorKey: "outputTokens",
+        accessorKey: "totalOutputTokens",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Output Tokens" />
         ),
         cell: ({ row }) => (
           <div className="text-sm tabular-nums">
-            {row.getValue("outputTokens")}
+            {row.getValue("totalOutputTokens")}
           </div>
         ),
         enableSorting: true,
       },
       {
-        accessorKey: "cost",
+        accessorKey: "totalCost",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Cost" />
         ),
         cell: ({ row }) => (
           <div className="text-sm tabular-nums font-medium">
-            {currency(row.getValue("cost") as number)}
+            {currency(row.getValue("totalCost") as number)}
           </div>
         ),
         enableSorting: true,
       },
-    ];
-
-    if (isSuperadmin) {
-      cols.push({
-        id: "debug",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Debug" />
-        ),
+      {
+        id: "view",
+        header: () => <div className="text-sm">View</div>,
         cell: ({ row }) => {
-          const d = row.original.debugInfo || [];
-          const has = d.length > 0;
-          const content = d[0]?.content ?? null; // display first entry content
+          const groupId = row.original.groupId;
           return (
-            <HoverCard>
-              <HoverCardTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0"
-                  disabled={!has}
-                >
-                  <Bug
-                    className={`h-4 w-4 ${has ? "text-amber-600" : "text-muted-foreground"}`}
-                  />
-                </Button>
-              </HoverCardTrigger>
-              <HoverCardContent align="start" className="max-w-[480px]">
-                {content ? (
-                  <pre className="text-xs whitespace-pre-wrap break-words">
-                    {content}
-                  </pre>
-                ) : (
-                  <span className="text-xs text-muted-foreground">
-                    No debug info
-                  </span>
-                )}
-              </HoverCardContent>
-            </HoverCard>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                router.push(`/analytics/pricing/g/${groupId}`);
+              }}
+            >
+              View
+            </Button>
           );
         },
-      });
-    }
+        enableSorting: false,
+      },
+    ];
 
     return cols;
-  }, [isSuperadmin]);
+  }, [isSuperadmin, router]);
 
   // Extract pagination metadata from URL params
   const pricingPage = searchParams.get("pricingPage")

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -91,7 +92,13 @@ class ModelDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail", response_model=ModelDetailResponse)
+@router.post(
+    "/detail",
+    response_model=ModelDetailResponse,
+    dependencies=[
+        audit_activity("model.viewed", "{{ actor.name }} viewed model '{{ model.name }}'")
+    ],
+)
 async def get_model_detail(
     request: ModelDetailRequest,
     http_request: Request,
@@ -131,6 +138,16 @@ async def get_model_detail(
         if not model:
             raise HTTPException(
                 status_code=404, detail=f"Model not found: {request.modelId}"
+            )
+
+        # Set audit context with data from SQL query
+        actor_name = model.get("actor_name")
+        model_name = model.get("name")
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                model={"name": model_name, "id": request.modelId},
             )
 
         # Parse valid_provider_ids from array

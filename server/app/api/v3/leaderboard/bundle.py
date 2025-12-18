@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.analytics_query_builder import build_base_filter
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -127,7 +128,13 @@ class LeaderboardBundleResponse(BaseModel):
     gradient_end_color: str = "rgba(59, 130, 246, 0.8)"
 
 
-@router.post("/bundle", response_model=LeaderboardBundleResponse)
+@router.post(
+    "/bundle",
+    response_model=LeaderboardBundleResponse,
+    dependencies=[
+        audit_activity("leaderboard.bundle", "{{ actor.name }} viewed leaderboard")
+    ],
+)
 async def get_leaderboard(
     filters: LeaderboardBundleFilters,
     request: Request,
@@ -294,6 +301,19 @@ async def get_leaderboard(
 
         # Validate and return response
         response_data = LeaderboardBundleResponse.model_validate(parsed_result)
+
+        # Fetch actor_name separately
+        actor_name = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+            actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

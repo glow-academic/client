@@ -2,7 +2,14 @@
 -- Parameters: $1=parameterId, $2=name, $3=description, $4=active, $5=simulation_parameter, $6=document_parameter, $7=persona_parameter, $8=scenario_parameter, $9=video_parameter, $10=parameter_level_department_ids (text array, nullable), $11=field_connections_json (jsonb array), $12=profile_id (uuid)
 -- field_connections_json format: [{"field_id": "uuid", "default": true/false, "active": true/false}, ...]
 -- Exactly one field connection must have default=true
-WITH update_parameter AS (
+WITH actor_profile AS (
+    SELECT 
+        $12::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $12::uuid
+),
+update_parameter AS (
     UPDATE parameters SET
         name = $2,
         description = $3,
@@ -95,6 +102,10 @@ link_parameter_departments AS (
     ON CONFLICT (parameter_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
-    ),
-SELECT parameter_id FROM update_parameter
+    )
+SELECT 
+    up.parameter_id,
+    ap.actor_name
+FROM update_parameter up
+CROSS JOIN actor_profile ap
 

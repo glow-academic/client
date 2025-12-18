@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.api.v3.profile.upsert import CreateOrUpdateProfileRequest
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -33,7 +34,13 @@ class BulkCreateOrUpdateStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/upsert", response_model=BulkCreateOrUpdateStaffResponse)
+@router.post(
+    "/upsert",
+    response_model=BulkCreateOrUpdateStaffResponse,
+    dependencies=[
+        audit_activity("staff.upserted", "{{ actor.name }} {{ action }} {{ count }} staff member(s)")
+    ],
+)
 async def bulk_create_or_update_staff(
     request: BulkCreateOrUpdateStaffRequest,
     http_request: Request,
@@ -168,6 +175,27 @@ async def bulk_create_or_update_staff(
             updated_count=updated_count,
             message=f"{created_count} created, {updated_count} updated successfully",
         )
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            current_profile_id,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            action = "upserted"
+            if created_count > 0 and updated_count == 0:
+                action = "created"
+            elif updated_count > 0 and created_count == 0:
+                action = "updated"
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": current_profile_id},
+                action=action,
+                count=len(profile_ids),
+            )
 
         # Invalidate cache after mutation
         tags = ["staff", "profile"]  # Staff operations also affect profile cache

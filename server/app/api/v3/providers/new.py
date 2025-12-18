@@ -10,6 +10,7 @@ from pydantic import BaseModel
 # Reuse models from detail.py
 from app.api.v3.providers.detail import ProviderDetailResponse
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -27,7 +28,13 @@ class ProviderNewRequest(BaseModel):
 router = APIRouter()
 
 
-@router.post("/new", response_model=ProviderDetailResponse)
+@router.post(
+    "/new",
+    response_model=ProviderDetailResponse,
+    dependencies=[
+        audit_activity("provider.new", "{{ actor.name }} viewed new provider form")
+    ],
+)
 async def get_provider_new(
     request_body: ProviderNewRequest,
     request: Request,
@@ -73,6 +80,11 @@ async def get_provider_new(
         user_role = row.get("user_role", "trainee")
         can_edit = user_role in ("admin", "superadmin")
         can_delete = user_role in ("admin", "superadmin")
+
+        # Set audit context with data from SQL query
+        actor_name = row.get("actor_name")
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         response_data = ProviderDetailResponse(
             provider_id=row.get("provider_id", ""),

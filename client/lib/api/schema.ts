@@ -3140,7 +3140,7 @@ export interface paths {
         put?: never;
         /**
          * Get Pricing Run Detail
-         * @description Get detailed pricing run information with all messages.
+         * @description Get detailed pricing run or group information with all messages.
          */
         post: operations["get_pricing_run_detail_api_v3_pricing_detail_post"];
         delete?: never;
@@ -6729,6 +6729,11 @@ export interface components {
              */
             active: boolean;
             /**
+             * Dynamic
+             * @default false
+             */
+            dynamic: boolean;
+            /**
              * Run
              * @default false
              */
@@ -9174,6 +9179,26 @@ export interface components {
             } | null;
         };
         /**
+         * GroupRunItem
+         * @description Group run item with aggregated metrics across multiple runs.
+         */
+        GroupRunItem: {
+            /** Group Id */
+            group_id: string;
+            /** Created At */
+            created_at: string;
+            /** Run Count */
+            run_count: number;
+            /** Total Input Tokens */
+            total_input_tokens: number;
+            /** Total Output Tokens */
+            total_output_tokens: number;
+            /** Total Cost */
+            total_cost: number;
+            /** Runs */
+            runs: components["schemas"]["RunSummaryItem"][];
+        };
+        /**
          * GrowthDataPoint
          * @description Growth data point.
          */
@@ -10765,6 +10790,30 @@ export interface components {
             /** Price */
             price: number;
         };
+        /**
+         * PricingGroupDetailResponse
+         * @description Response schema for pricing group detail (multiple runs).
+         */
+        PricingGroupDetailResponse: {
+            /** Groupid */
+            groupId: string;
+            /** Runs */
+            runs: components["schemas"]["RunWithMessages"][];
+            /** Modelmapping */
+            modelMapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Agentmapping */
+            agentMapping: {
+                [key: string]: string;
+            };
+            /** Profilemapping */
+            profileMapping: {
+                [key: string]: string;
+            };
+        };
         /** PricingItem */
         PricingItem: {
             /** Type */
@@ -10784,11 +10833,13 @@ export interface components {
          */
         PricingRunDetailRequest: {
             /** Runid */
-            runId: string;
+            runId?: string | null;
+            /** Grouprunid */
+            groupRunId?: string | null;
         };
         /**
          * PricingRunDetailResponse
-         * @description Response schema for pricing run detail.
+         * @description Response schema for pricing run detail (single run - backward compatible).
          */
         PricingRunDetailResponse: {
             run: components["schemas"]["RunMetadata"];
@@ -10845,11 +10896,11 @@ export interface components {
         };
         /**
          * PricingRunsResponse
-         * @description Response for pricing runs table.
+         * @description Response for pricing groups table.
          */
         PricingRunsResponse: {
             /** Data */
-            data: components["schemas"]["app__api__v3__pricing__runs__ModelRunItem"][];
+            data: components["schemas"]["GroupRunItem"][];
             /** Totalcount */
             totalCount: number;
             /** Page */
@@ -12025,6 +12076,41 @@ export interface components {
             profileId?: string | null;
             /** Personaid */
             personaId?: string | null;
+        };
+        /**
+         * RunSummaryItem
+         * @description Run summary item within a group.
+         */
+        RunSummaryItem: {
+            /** Run Id */
+            run_id: string;
+            /** Created At */
+            created_at: string;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** Cost */
+            cost: number;
+            /** Model Id */
+            model_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Debug Info */
+            debug_info?: components["schemas"]["app__api__v3__pricing__runs__DebugInfoItem"][] | null;
+        };
+        /**
+         * RunWithMessages
+         * @description Run with messages schema.
+         */
+        RunWithMessages: {
+            run: components["schemas"]["RunMetadata"];
+            /** Messages */
+            messages: components["schemas"]["app__api__v3__pricing__detail__MessageItem"][];
         };
         /**
          * ScenarioAttributeAttemptFact
@@ -13917,6 +14003,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Active */
             active?: boolean | null;
+            /** Dynamic */
+            dynamic?: boolean | null;
         };
         /**
          * UpdateEvalResponse
@@ -15798,6 +15886,8 @@ export interface components {
             eval_agent_id: string | null;
             /** Active */
             active: boolean;
+            /** Dynamic */
+            dynamic: boolean;
             /** Rubric Name */
             rubric_name: string;
             /** Rubric Description */
@@ -15997,6 +16087,8 @@ export interface components {
             eval_agent_id: string | null;
             /** Active */
             active: boolean;
+            /** Dynamic */
+            dynamic: boolean;
             /** Rubric Name */
             rubric_name: string;
             /** Rubric Description */
@@ -17262,30 +17354,6 @@ export interface components {
             created_at: string;
             /** Content */
             content: string;
-        };
-        /**
-         * ModelRunItem
-         * @description Model run item with aggregated metrics.
-         */
-        app__api__v3__pricing__runs__ModelRunItem: {
-            /** Model Run Id */
-            model_run_id: string;
-            /** Created At */
-            created_at: string;
-            /** Input Tokens */
-            input_tokens: number;
-            /** Output Tokens */
-            output_tokens: number;
-            /** Model Id */
-            model_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Debug Info */
-            debug_info?: components["schemas"]["app__api__v3__pricing__runs__DebugInfoItem"][] | null;
         };
         /**
          * CohortItem
@@ -24687,7 +24755,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PricingRunDetailResponse"];
+                    "application/json": components["schemas"]["PricingRunDetailResponse"] | components["schemas"]["PricingGroupDetailResponse"];
                 };
             };
             /** @description Validation Error */

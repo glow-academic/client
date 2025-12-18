@@ -9,13 +9,14 @@ from enum import Enum
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
-from app.utils.analytics_query_builder import build_profile_and_analytics_filters
+from app.utils.activity.audit import audit_activity, audit_set
+from app.utils.analytics_query_builder import \
+    build_profile_and_analytics_filters
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -203,7 +204,12 @@ async def _get_per_simulation_metrics(
     return per_sim_metrics
 
 
-@router.post("/export")
+@router.post(
+    "/export",
+    dependencies=[
+        audit_activity("reports.exported", "{{ actor.name }} exported reports")
+    ],
+)
 async def export_reports(
     request: ExportRequest,
     http_request: Request,
@@ -392,6 +398,17 @@ async def export_reports(
                     f"{metric}_export_{datetime.now().strftime('%Y-%m-%d')}.csv"
                 )
 
+                # Fetch actor_name separately
+                actor_name_row = await conn.fetchrow(
+                    "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                    profile_id,
+                )
+                actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+                # Set audit context
+                if actor_name:
+                    audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+
                 return Response(
                     content=csv_data.encode("utf-8"),
                     media_type="text/csv",
@@ -420,6 +437,17 @@ async def export_reports(
                     f"reports_export_{datetime.now().strftime('%Y-%m-%d')}.zip"
                 )
 
+                # Fetch actor_name separately
+                actor_name_row = await conn.fetchrow(
+                    "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                    profile_id,
+                )
+                actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+                # Set audit context
+                if actor_name:
+                    audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+
                 return Response(
                     content=zip_buffer.read(),
                     media_type="application/zip",
@@ -434,6 +462,17 @@ async def export_reports(
             # Generate single CSV with selected metrics
             csv_data = generate_regular_csv(export_data, request.metrics)
             csv_filename = f"reports_export_{datetime.now().strftime('%Y-%m-%d')}.csv"
+
+            # Fetch actor_name separately
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+            actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+            # Set audit context
+            if actor_name:
+                audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
             return Response(
                 content=csv_data.encode("utf-8"),

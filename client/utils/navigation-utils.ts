@@ -227,7 +227,9 @@ export const getSectionRoute = (
       }
       if (section.startsWith("pricing-run-")) {
         const runId = section.replace("pricing-run-", "");
-        return `/analytics/pricing/r/${runId}`;
+        // Note: This now refers to group_id, not individual run_id
+        // The pricing table shows groups, so pricing-run- prefix now means group
+        return `/analytics/pricing/g/${runId}`;
       }
 
       return "/home"; // Default fallback to home

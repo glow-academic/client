@@ -147,9 +147,14 @@ history_chat_grades AS (
         scg.rubric_id
     FROM grades scg
     JOIN runs r ON r.id = scg.run_id
-    JOIN chat_runs rc ON rc.run_id = r.id
-    WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
-      AND rc.chat_id IN (
+    JOIN message_runs mr ON mr.run_id = r.id
+    JOIN chat_messages cm ON cm.message_id = mr.message_id
+    WHERE EXISTS (
+        SELECT 1 FROM message_runs mr_check
+        JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+        WHERE mr_check.run_id = scg.run_id
+    )
+      AND cm.chat_id IN (
         SELECT sc.id FROM attempt_chats ac
         JOIN chats sc ON sc.id = ac.chat_id
         WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
@@ -181,17 +186,27 @@ history_elapsed_time AS (
                     WHEN sc.completed AND hcg.chat_id IS NOT NULL THEN
                         (SELECT scg.time_taken FROM grades scg 
                          JOIN runs r ON r.id = scg.run_id
-                         JOIN chat_runs rc ON rc.run_id = r.id
-                         WHERE rc.chat_id = sc.id 
-                           AND EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
+                         JOIN message_runs mr ON mr.run_id = r.id
+                         JOIN chat_messages cm ON cm.message_id = mr.message_id
+                         WHERE cm.chat_id = sc.id 
+                           AND EXISTS (
+                               SELECT 1 FROM message_runs mr_check
+                               JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+                               WHERE mr_check.run_id = scg.run_id
+                           )
                          ORDER BY scg.created_at DESC LIMIT 1)
                     WHEN sc.completed THEN
                         EXTRACT(EPOCH FROM (
                             (SELECT scg.created_at FROM grades scg 
                              JOIN runs r ON r.id = scg.run_id
-                             JOIN chat_runs rc ON rc.run_id = r.id
-                             WHERE rc.chat_id = sc.id 
-                               AND EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
+                             JOIN message_runs mr ON mr.run_id = r.id
+                             JOIN chat_messages cm ON cm.message_id = mr.message_id
+                             WHERE cm.chat_id = sc.id 
+                               AND EXISTS (
+                                   SELECT 1 FROM message_runs mr_check
+                                   JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+                                   WHERE mr_check.run_id = scg.run_id
+                               )
                              ORDER BY scg.created_at DESC LIMIT 1) - sc.created_at
                         ))::integer
                     ELSE

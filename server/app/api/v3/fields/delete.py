@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -29,7 +30,15 @@ class DeleteFieldResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeleteFieldResponse)
+@router.post(
+    "/delete",
+    response_model=DeleteFieldResponse,
+    dependencies=[
+        audit_activity(
+            "field.deleted", "{{ actor.name }} deleted field '{{ field.name }}'"
+        )
+    ],
+)
 async def delete_field(
     request: DeleteFieldRequest,
     http_request: Request,
@@ -60,8 +69,17 @@ async def delete_field(
                 raise ValueError(f"Field not found: {request.fieldId}")
 
             field_name = result.get("name")
+            actor_name = result.get("actor_name")
             if not field_name:
                 raise ValueError(f"Field not found: {request.fieldId}")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    field={"name": field_name, "id": request.fieldId},
+                )
 
             result_data = DeleteFieldResponse(
                 success=True,

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -46,7 +47,13 @@ class UpdateAuthResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateAuthResponse)
+@router.post(
+    "/update",
+    response_model=UpdateAuthResponse,
+    dependencies=[
+        audit_activity("auth.updated", "{{ actor.name }} updated auth '{{ auth.name }}'")
+    ],
+)
 async def update_auth(
     request: UpdateAuthRequest,
     http_request: Request,
@@ -60,6 +67,14 @@ async def update_auth(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Check if auth exists
             check_sql = "SELECT name FROM auth WHERE id = $1"
@@ -96,11 +111,21 @@ async def update_auth(
                 request.description,
                 request.active,
                 items_json,  # JSONB array of items
+                profile_id,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
                 raise ValueError("Failed to update auth")
+
+            # Set audit context with data from SQL query
+            actor_name = result.get("actor_name")
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    auth={"name": request.name, "id": request.authId},
+                )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

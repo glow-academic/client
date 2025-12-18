@@ -696,13 +696,15 @@ async def _simulation_text_send_impl(
                     "sql/v3/simulations/get_or_create_run_for_chat.sql"
                 )
                 # We need context to create a run, so we'll get it first
-                # For now, get the latest run for the chat
+                # For now, get the latest run for the chat's group
                 latest_run_row = await conn.fetchrow(
                     """
-                    SELECT rc.run_id::text as run_id
-                    FROM chat_runs rc
-                    JOIN runs r ON r.id = rc.run_id
-                    WHERE rc.chat_id = $1::uuid
+                    SELECT gr.run_id::text as run_id
+                    FROM chat_messages cm
+                    JOIN message_runs mr ON mr.message_id = cm.message_id
+                    JOIN group_runs gr ON gr.run_id = mr.run_id
+                    JOIN runs r ON r.id = gr.run_id
+                    WHERE cm.chat_id = $1::uuid
                     ORDER BY r.created_at DESC
                     LIMIT 1
                     """,

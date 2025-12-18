@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -31,7 +32,13 @@ class DuplicateParameterResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/duplicate", response_model=DuplicateParameterResponse)
+@router.post(
+    "/duplicate",
+    response_model=DuplicateParameterResponse,
+    dependencies=[
+        audit_activity("parameter.duplicated", "{{ actor.name }} duplicated parameter '{{ parameter.name }}'")
+    ],
+)
 async def duplicate_parameter(
     request: DuplicateParameterRequest,
     http_request: Request,
@@ -65,16 +72,21 @@ async def duplicate_parameter(
                 raise ValueError(f"Parameter not found: {request.parameterId}")
 
             new_parameter_id = new_parameter["parameter_id"]
+            original_name = new_parameter.get("original_name")
+            actor_name = new_parameter.get("actor_name")
 
-            # Get original parameter name for message
-            original_parameter = await conn.fetchrow(
-                "SELECT name FROM parameters WHERE id = $1", request.parameterId
-            )
+            # Set audit context with data from SQL query
+            if actor_name and original_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    parameter={"name": original_name, "id": request.parameterId},
+                )
 
             result_data = DuplicateParameterResponse(
                 success=True,
                 parameterId=new_parameter_id,
-                message=f"Parameter '{original_parameter['name']}' duplicated successfully",
+                message=f"Parameter '{original_name}' duplicated successfully",
             )
 
             # Invalidate cache after mutation

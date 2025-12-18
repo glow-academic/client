@@ -7,7 +7,9 @@ WITH resolve_profile_id AS (
         END as resolved_profile_id
 ),
 user_profile AS (
-    SELECT p.role
+    SELECT 
+        p.role,
+        p.first_name || ' ' || p.last_name as actor_name
     FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
@@ -55,7 +57,8 @@ SELECT
     CASE 
         WHEN up.role IN ('admin', 'superadmin') THEN true
         ELSE false
-    END as can_duplicate
+    END as can_duplicate,
+    up.actor_name
 FROM auth a
 LEFT JOIN auth_item_counts aic ON aic.auth_id = a.id
 LEFT JOIN auth_sample_items asi ON asi.auth_id = a.id

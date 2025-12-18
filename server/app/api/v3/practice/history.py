@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -86,7 +87,13 @@ class PracticeHistoryResponse(BaseModel):
     ]  # Array of {value: scenarioId, label: scenarioTitle, count: int}
 
 
-@router.post("/history", response_model=PracticeHistoryResponse)
+@router.post(
+    "/history",
+    response_model=PracticeHistoryResponse,
+    dependencies=[
+        audit_activity("practice.history", "{{ actor.name }} viewed practice history")
+    ],
+)
 async def get_practice_history(
     filters: PracticeHistoryFilters,
     request: Request,
@@ -215,6 +222,17 @@ async def get_practice_history(
             simulationOptions=simulation_options,
             scenarioOptions=scenario_options,
         )
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            profile_id,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response with profile-specific tags
         # Add profile-specific tags for granular invalidation

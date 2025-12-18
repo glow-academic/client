@@ -4,7 +4,7 @@ WITH user_departments AS (
     WHERE profile_id = $1 AND active = true
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT role, name as actor_name FROM profiles WHERE id = $1
 ),
 field_parameters_agg AS (
     SELECT 
@@ -94,7 +94,8 @@ SELECT
     END as can_delete,
     true as can_duplicate,
     pmd.mapping as parameter_mapping,
-    dmd.mapping as department_mapping
+    dmd.mapping as department_mapping,
+    up.actor_name
 FROM fields f
 LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id
 LEFT JOIN field_parameters_agg fpa ON fpa.field_id = f.id

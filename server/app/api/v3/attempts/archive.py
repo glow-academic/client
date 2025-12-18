@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
@@ -50,7 +51,13 @@ class BulkArchiveAttemptsResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/archive", response_model=BulkArchiveAttemptsResponse)
+@router.post(
+    "/archive",
+    response_model=BulkArchiveAttemptsResponse,
+    dependencies=[
+        audit_activity("attempt.archived", "{{ actor.name }} archived {{ count }} attempt(s)")
+    ],
+)
 async def bulk_archive_attempts(
     request: BulkArchiveAttemptsRequest,
     http_request: Request,
@@ -148,6 +155,21 @@ async def bulk_archive_attempts(
 
         action = "archived" if request.archived else "unarchived"
         count = updated_count
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            current_profile_id,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": current_profile_id},
+                count=count,
+            )
 
         result_data = BulkArchiveAttemptsResponse(
             success=True,

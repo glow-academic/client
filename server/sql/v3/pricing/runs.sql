@@ -1,4 +1,4 @@
--- Pricing runs query - paginated, filtered, searched, sorted model runs
+-- Pricing groups query - paginated, filtered, searched, sorted group runs
 -- Parameters: 
 --   $1 = start_date (timestamp)
 --   $2 = end_date (timestamp)
@@ -11,7 +11,7 @@
 --   $9 = model_ids (uuid[] | NULL) - filter by model IDs
 --   $10 = profile_ids (uuid[] | NULL) - filter by profile IDs
 --   $11 = actor_ids (uuid[] | NULL) - filter by agent/persona IDs (combined)
--- Returns: JSONB object with data (paginated runs), totalCount, page, pageSize, totalPages, filter options, mappings
+-- Returns: JSONB object with data (paginated groups), totalCount, page, pageSize, totalPages, filter options, mappings
 
 WITH resolve_profile_id AS (
     SELECT 
@@ -41,14 +41,25 @@ runs_base AS (
         mr.agent_id,
         mrper.persona_id,
         sim.practice_simulation,
-        sa.archived
+        sa.archived,
+        gr.group_id
     FROM runs mr
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
     LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
-    -- Join to simulations via chat_runs → chats → attempt_chats → simulation_attempts → simulations
-    LEFT JOIN chat_runs cr ON cr.run_id = mr.id
-    LEFT JOIN chats c ON c.id = cr.chat_id
+    -- Join to groups via group_runs
+    LEFT JOIN group_runs gr ON gr.run_id = mr.id
+    LEFT JOIN groups g ON g.id = gr.group_id
+    -- Join to simulations via chat_messages → chats → attempt_chats → simulation_attempts → simulations
+    -- Get chat_id from any message in this run
+    LEFT JOIN LATERAL (
+        SELECT DISTINCT cm.chat_id
+        FROM message_runs mr2
+        JOIN chat_messages cm ON cm.message_id = mr2.message_id
+        WHERE mr2.run_id = mr.id
+        LIMIT 1
+    ) chat_lookup ON true
+    LEFT JOIN chats c ON c.id = chat_lookup.chat_id
     LEFT JOIN attempt_chats ac ON ac.chat_id = c.id
     LEFT JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     LEFT JOIN simulations sim ON sim.id = sa.simulation_id
@@ -195,6 +206,35 @@ runs_filtered AS (
         )
     )
 ),
+-- Group runs by group_id and aggregate
+-- Note: Runs without groups are excluded (they would have been in chat_runs before migration)
+groups_with_runs AS (
+    SELECT
+        mrf.group_id,
+        COUNT(DISTINCT mrf.run_id) as run_count,
+        SUM(mrf.input_tokens) as total_input_tokens,
+        SUM(mrf.output_tokens) as total_output_tokens,
+        SUM(mrf.run_cost) as total_cost,
+        MIN(mrf.created_at) as created_at,  -- Use earliest run's created_at
+        -- Aggregate run summaries for display
+        jsonb_agg(
+            jsonb_build_object(
+                'run_id', mrf.run_id::text,
+                'created_at', mrf.created_at,
+                'input_tokens', mrf.input_tokens,
+                'output_tokens', mrf.output_tokens,
+                'cost', mrf.run_cost,
+                'model_id', CASE WHEN mrf.model_id IS NOT NULL THEN mrf.model_id::text ELSE NULL END,
+                'profile_id', CASE WHEN mrf.profile_id IS NOT NULL THEN mrf.profile_id::text ELSE NULL END,
+                'agent_id', CASE WHEN mrf.agent_id IS NOT NULL THEN mrf.agent_id::text ELSE NULL END,
+                'persona_id', CASE WHEN mrf.persona_id IS NOT NULL THEN mrf.persona_id::text ELSE NULL END,
+                'debug_info', mrf.debug_info
+            ) ORDER BY mrf.created_at
+        ) as runs
+    FROM runs_filtered mrf
+    WHERE mrf.group_id IS NOT NULL  -- Only include runs that belong to groups
+    GROUP BY mrf.group_id
+),
 -- Get all unique model options from filtered runs (before pagination)
 model_options_cte AS (
     SELECT 
@@ -233,11 +273,11 @@ actor_options_cte AS (
     ORDER BY actor_name
 ),
 -- Add pagination and sorting
-paginated_runs AS (
+paginated_groups AS (
     SELECT
         *,
         COUNT(*) OVER() AS total_count
-    FROM runs_filtered
+    FROM groups_with_runs
     {ORDER_BY_CLAUSE}
     {LIMIT_OFFSET_CLAUSE}
 ),
@@ -307,21 +347,18 @@ SELECT jsonb_build_object(
     'data', COALESCE(
         (SELECT jsonb_agg(
             jsonb_build_object(
-                'run_id', run_id::text,
+                'group_id', group_id::text,
                 'created_at', created_at,
-                'input_tokens', input_tokens,
-                'output_tokens', output_tokens,
-                'cost', run_cost,
-                'model_id', CASE WHEN model_id IS NOT NULL THEN model_id::text ELSE NULL END,
-                'profile_id', CASE WHEN profile_id IS NOT NULL THEN profile_id::text ELSE NULL END,
-                'agent_id', CASE WHEN agent_id IS NOT NULL THEN agent_id::text ELSE NULL END,
-                'persona_id', CASE WHEN persona_id IS NOT NULL THEN persona_id::text ELSE NULL END,
-                'debug_info', debug_info
+                'run_count', run_count,
+                'total_input_tokens', total_input_tokens,
+                'total_output_tokens', total_output_tokens,
+                'total_cost', total_cost,
+                'runs', runs
             ) {JSON_AGG_ORDER_BY}
-        ) FROM paginated_runs),
+        ) FROM paginated_groups),
         '[]'::jsonb
     ),
-    'totalCount', COALESCE((SELECT total_count FROM (SELECT * FROM paginated_runs LIMIT 1) pr_count), 0),
+    'totalCount', COALESCE((SELECT total_count FROM (SELECT * FROM paginated_groups LIMIT 1) pg_count), 0),
     'modelOptions', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
             'value', moc.model_id::text,
@@ -351,4 +388,3 @@ SELECT jsonb_build_object(
     'agent_mapping', COALESCE((SELECT mapping FROM agent_mapping LIMIT 1), '{}'::jsonb),
     'persona_mapping', COALESCE((SELECT mapping FROM persona_mapping LIMIT 1), '{}'::jsonb)
 ) as result
-

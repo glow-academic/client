@@ -8,6 +8,7 @@ import asyncpg  # type: ignore
 from app.api.v3.dashboard.bundle import Method, MetricResponse
 from app.api.v3.reports.export import router as export_router
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.analytics_query_builder import \
     build_profile_and_analytics_filters
 from app.utils.cache.cache_key import cache_key
@@ -121,7 +122,13 @@ class ReportsBundleResponse(BaseModel):
     simulation_mapping: dict[str, SimulationMappingItem]
 
 
-@router.post("", response_model=ReportsBundleResponse)
+@router.post(
+    "",
+    response_model=ReportsBundleResponse,
+    dependencies=[
+        audit_activity("reports.bundle", "{{ actor.name }} viewed reports bundle")
+    ],
+)
 async def get_reports(
     filters: ReportsBundleFilters,
     request: Request,
@@ -330,6 +337,22 @@ async def get_reports(
             scenario_mapping=scenario_mapping,
             simulation_mapping=simulation_mapping,
         )
+
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+
+        # Fetch actor_name separately
+        actor_name = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+            actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

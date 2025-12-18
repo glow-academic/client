@@ -7,7 +7,8 @@ resolve_profile_id AS (
 user_profile AS (
     SELECT 
         up.id,
-        up.role
+        up.role,
+        up.name as actor_name
     FROM resolve_profile_id rpi
     JOIN profiles up ON up.id = rpi.resolved_profile_id
 ),
@@ -112,7 +113,8 @@ SELECT
         WHEN COALESCE(fdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
         WHEN up.role IN ('admin', 'superadmin') THEN true
         ELSE false
-    END as can_edit
+    END as can_edit,
+    up.actor_name
 FROM field_id_resolved fid
 JOIN fields f ON f.id = fid.field_id
 LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id

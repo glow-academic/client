@@ -4,7 +4,8 @@ WITH resolve_profile_id AS (
 user_profile AS (
     SELECT 
         up.id,
-        up.role
+        up.role,
+        up.name as actor_name
     FROM resolve_profile_id rpi
     JOIN profiles up ON up.id = rpi.resolved_profile_id
 ),
@@ -62,7 +63,8 @@ SELECT
     vpd.param_mapping as parameter_mapping,
     vpd.param_ids as valid_parameter_ids,
     up.role::text as user_role,
-    pdd.primary_department_id
+    pdd.primary_department_id,
+    up.actor_name
 FROM user_profile up
 CROSS JOIN valid_departments_data vdd
 CROSS JOIN valid_parameters_data vpd

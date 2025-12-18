@@ -81,6 +81,7 @@ interface FormData {
   name: string;
   description: string;
   active: boolean;
+  dynamic: boolean;
   departmentIds: string[] | null;
   eval_agent_id: string | null;
 }
@@ -153,6 +154,7 @@ export default function Eval({
       name: "",
       description: "",
       active: true,
+      dynamic: false,
       departmentIds: defaultDepartmentIds,
       eval_agent_id: null,
     };
@@ -364,6 +366,7 @@ export default function Eval({
         name: evalData.name || "",
         description: evalData.description || "",
         active: evalData.active ?? true,
+        dynamic: evalData.dynamic ?? false,
         departmentIds: deptIds,
         eval_agent_id: evalData.eval_agent_id || null,
       };
@@ -374,6 +377,7 @@ export default function Eval({
           prev.name !== evalFormData.name ||
           prev.description !== evalFormData.description ||
           prev.active !== evalFormData.active ||
+          prev.dynamic !== evalFormData.dynamic ||
           JSON.stringify(prev.departmentIds?.sort()) !==
             JSON.stringify(evalFormData.departmentIds?.sort()) ||
           prev.eval_agent_id !== evalFormData.eval_agent_id;
@@ -386,6 +390,7 @@ export default function Eval({
           prev.name !== evalFormData.name ||
           prev.description !== evalFormData.description ||
           prev.active !== evalFormData.active ||
+          prev.dynamic !== evalFormData.dynamic ||
           JSON.stringify(prev.departmentIds?.sort()) !==
             JSON.stringify(evalFormData.departmentIds?.sort()) ||
           prev.eval_agent_id !== evalFormData.eval_agent_id;
@@ -509,6 +514,7 @@ export default function Eval({
       current.name !== original.name ||
       current.description !== original.description ||
       current.active !== original.active ||
+      current.dynamic !== original.dynamic ||
       JSON.stringify(current.departmentIds?.sort()) !==
         JSON.stringify(original.departmentIds?.sort()) ||
       current.eval_agent_id !== original.eval_agent_id ||
@@ -671,6 +677,7 @@ export default function Eval({
           eval_agent_id: formData.eval_agent_id || "",
           department_ids: finalDepartmentIds || [],
           active: formData.active ?? true,
+          dynamic: formData.dynamic ?? false,
           model_run_ids: currentModelRunIds,
         };
         await handleUpdateEval(updateRequest);
@@ -686,6 +693,7 @@ export default function Eval({
           eval_agent_id: formData.eval_agent_id || "",
           department_ids: finalDepartmentIds || [],
           active: formData.active || true,
+          dynamic: formData.dynamic || false,
           model_run_ids: currentModelRunIds,
           run: false, // Default to false, user can run manually later
         };
@@ -940,6 +948,34 @@ export default function Eval({
                 </div>
                 <p className="text-xs text-muted-foreground pl-5">
                   Inactive evals will not be shown
+                </p>
+              </div>
+            </div>
+
+            {/* Dynamic Switch */}
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="dynamic"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    Dynamic
+                  </Label>
+                  {formData.dynamic !== undefined ? (
+                    <Switch
+                      id="dynamic"
+                      checked={formData.dynamic ?? false}
+                      onCheckedChange={(checked) => {
+                        handleInputChange("dynamic", checked);
+                      }}
+                      disabled={isReadonly}
+                      data-testid="switch-eval-dynamic"
+                    />
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  When enabled, the agent being evaluated will be re-run with a modified system prompt before grading
                 </p>
               </div>
             </div>

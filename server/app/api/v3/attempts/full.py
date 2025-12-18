@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -362,7 +363,13 @@ class AttemptFullResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/full", response_model=AttemptFullResponse)
+@router.post(
+    "/full",
+    response_model=AttemptFullResponse,
+    dependencies=[
+        audit_activity("attempt.viewed", "{{ actor.name }} viewed attempt '{{ attempt.id }}'")
+    ],
+)
 async def get_attempt_full(
     request: AttemptFullRequest,
     http_request: Request,
@@ -403,6 +410,23 @@ async def get_attempt_full(
         if not result:
             raise HTTPException(
                 status_code=404, detail=f"Attempt not found: {request.attemptId}"
+            )
+
+        # Fetch actor_name separately
+        actor_name_row = None
+        if current_profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                current_profile_id,
+            )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": current_profile_id},
+                attempt={"id": request.attemptId},
             )
 
         # Parse JSONB fields from strings to Python objects

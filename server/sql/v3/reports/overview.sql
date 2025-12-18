@@ -211,10 +211,15 @@ grade_stream AS (
         (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
     FROM grades sg
     JOIN runs r_stag ON r_stag.id = sg.run_id
-    JOIN chat_runs rc_stag ON rc_stag.run_id = r_stag.id
-    JOIN filtered_chats_for_stagnation fc ON fc.chat_id = rc_stag.chat_id
+    JOIN message_runs mr_stag ON mr_stag.run_id = r_stag.id
+    JOIN chat_messages cm_stag ON cm_stag.message_id = mr_stag.message_id
+    JOIN filtered_chats_for_stagnation fc ON fc.chat_id = cm_stag.chat_id
     JOIN rubrics r ON r.id = sg.rubric_id
-    WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = sg.run_id)
+    WHERE EXISTS (
+        SELECT 1 FROM message_runs mr_check
+        JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+        WHERE mr_check.run_id = sg.run_id
+    )
 ),
 ordered_grades AS (
     SELECT *,
@@ -712,10 +717,15 @@ latest_grade_per_chat AS (
         scg.rubric_id
     FROM grades scg
     JOIN runs r ON r.id = scg.run_id
-    JOIN chat_runs rc ON rc.run_id = r.id
-    JOIN filtered_chats fc ON fc.chat_id = rc.chat_id
-    WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
-    ORDER BY rc.chat_id, scg.created_at DESC
+    JOIN message_runs mr ON mr.run_id = r.id
+    JOIN chat_messages cm ON cm.message_id = mr.message_id
+    JOIN filtered_chats fc ON fc.chat_id = cm.chat_id
+    WHERE EXISTS (
+        SELECT 1 FROM message_runs mr_check
+        JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+        WHERE mr_check.run_id = scg.run_id
+    )
+    ORDER BY cm.chat_id, scg.created_at DESC
 ),
 per_grade_group AS (
     SELECT
@@ -1060,9 +1070,14 @@ latest_grade_for_skills AS (
            scg.created_at
     FROM grades scg
     JOIN runs r ON r.id = scg.run_id
-    JOIN chat_runs rc ON rc.run_id = r.id
-    WHERE EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
-    ORDER BY rc.chat_id, scg.rubric_id, scg.created_at DESC
+    JOIN message_runs mr ON mr.run_id = r.id
+    JOIN chat_messages cm ON cm.message_id = mr.message_id
+    WHERE EXISTS (
+        SELECT 1 FROM message_runs mr_check
+        JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+        WHERE mr_check.run_id = scg.run_id
+    )
+    ORDER BY cm.chat_id, scg.rubric_id, scg.created_at DESC
 ),
 per_grade_group_skills AS (
     SELECT

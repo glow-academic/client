@@ -1,4 +1,12 @@
-WITH original_field AS (
+WITH resolve_profile_id AS (
+    SELECT $2::uuid as resolved_profile_id
+),
+user_profile AS (
+    SELECT name as actor_name
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
+original_field AS (
     SELECT 
         f.id,
         f.name,
@@ -29,9 +37,10 @@ new_field AS (
     SELECT 
         of.name || ' (Copy)',
         of.description,
-        o        of.default_field
+        of.value,
+        of.default_field
     FROM original_field of
-    RETURNING id::text as field_id
+    RETURNING id::text as field_id, name as field_name
 ),
 link_parameters AS (
     -- Link new field to same parameters as original
@@ -63,5 +72,10 @@ link_departments AS (
         active = true,
         updated_at = NOW()
 )
-SELECT field_id FROM new_field
+SELECT 
+    nf.field_id,
+    nf.field_name,
+    up.actor_name
+FROM new_field nf
+CROSS JOIN user_profile up
 

@@ -5,16 +5,15 @@
 -- Returns the most recent user message before any given point
 SELECT 
     m.id,
-    rc.chat_id,
+    cm.chat_id,
     m.role,
     m.content,
     m.created_at,
     m.completed,
     m.updated_at
 FROM messages m
-JOIN message_runs mr ON mr.message_id = m.id
-JOIN chat_runs rc ON rc.run_id = mr.run_id
-WHERE rc.chat_id = $1::uuid
+JOIN chat_messages cm ON cm.message_id = m.id
+WHERE cm.chat_id = $1::uuid
   AND m.role = 'user'
 ORDER BY m.created_at DESC
 LIMIT 1

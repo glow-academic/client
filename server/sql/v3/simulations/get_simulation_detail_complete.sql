@@ -156,9 +156,19 @@ user_context AS (
                 )
                 OR sc.scenario_id = ss.scenario_id
             )
-            LEFT JOIN grades scg ON EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
+            LEFT JOIN grades scg ON EXISTS (
+                SELECT 1 FROM message_runs mr_check
+                JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+                WHERE mr_check.run_id = scg.run_id AND cm_check.chat_id = sc.id
+            )
             LEFT JOIN runs r_detail ON r_detail.id = scg.run_id
-            LEFT JOIN chat_runs rc_detail ON rc_detail.run_id = r_detail.id AND rc_detail.chat_id = sc.id
+            LEFT JOIN LATERAL (
+                SELECT DISTINCT cm.chat_id
+                FROM message_runs mr
+                JOIN chat_messages cm ON cm.message_id = mr.message_id
+                WHERE mr.run_id = r_detail.id AND cm.chat_id = sc.id
+                LIMIT 1
+            ) chat_lookup_detail ON true
             WHERE ss.simulation_id = $1
             GROUP BY ss.scenario_id
         ),

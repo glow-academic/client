@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from app.api.v3.profile.detail import ProfileDetailResponse, ProfileItem
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
 
@@ -20,7 +21,13 @@ class ProfileByEmailRequest(BaseModel):
     email: str
 
 
-@router.post("/email", response_model=ProfileDetailResponse)
+@router.post(
+    "/email",
+    response_model=ProfileDetailResponse,
+    dependencies=[
+        audit_activity("profile.email", "{{ actor.name }} viewed profile by email")
+    ],
+)
 async def get_profile_by_email(
     request: ProfileByEmailRequest,
     http_request: Request,
@@ -60,6 +67,22 @@ async def get_profile_by_email(
             if row.get("primary_department_id")
             else None,
         )
+
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+
+        # Fetch actor_name separately
+        actor_name = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+            actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         return ProfileDetailResponse(profile=profile)
     except HTTPException:

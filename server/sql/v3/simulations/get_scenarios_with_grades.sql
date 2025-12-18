@@ -12,9 +12,14 @@ WITH RECURSIVE scenario_ancestors AS (
         0 as depth
     FROM attempt_chats ac
     JOIN chats sc ON sc.id = ac.chat_id
-    JOIN grades scg ON EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
+    JOIN grades scg ON EXISTS (
+        SELECT 1 FROM message_runs mr_check
+        JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+        WHERE mr_check.run_id = scg.run_id AND cm_check.chat_id = sc.id
+    )
     JOIN runs r_scen1 ON r_scen1.id = scg.run_id
-    JOIN chat_runs rc_scen1 ON rc_scen1.run_id = r_scen1.id AND rc_scen1.chat_id = sc.id
+    JOIN message_runs mr_scen1 ON mr_scen1.run_id = r_scen1.id
+    JOIN chat_messages cm_scen1 ON cm_scen1.message_id = mr_scen1.message_id AND cm_scen1.chat_id = sc.id
     WHERE ac.attempt_id = $1::uuid
     
     UNION ALL
@@ -58,7 +63,8 @@ JOIN attempt_chats ac ON ac.attempt_id = sa.id
 JOIN chats sc ON sc.id = ac.chat_id
 JOIN grades scg ON scg.eval = false
 JOIN runs r_scen2 ON r_scen2.id = scg.run_id
-JOIN chat_runs rc_scen2 ON rc_scen2.run_id = r_scen2.id AND rc_scen2.chat_id = sc.id
+JOIN message_runs mr_scen2 ON mr_scen2.run_id = r_scen2.id
+JOIN chat_messages cm_scen2 ON cm_scen2.message_id = mr_scen2.message_id AND cm_scen2.chat_id = sc.id
 LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
 WHERE sa.id = $1::uuid
   AND (

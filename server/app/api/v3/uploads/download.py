@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, Response
 
 from app.api.v3.settings.active import ThemeTokens
 from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.document.pdf_first_page_to_image_bytes import (
     pdf_first_page_to_image_bytes,
 )
@@ -22,7 +23,13 @@ from app.utils.sql_helper import load_sql
 router = APIRouter()
 
 
-@router.get("/download/{upload_id}", response_model=None)
+@router.get(
+    "/download/{upload_id}",
+    response_model=None,
+    dependencies=[
+        audit_activity("upload.downloaded", "{{ actor.name }} downloaded upload '{{ upload.id }}'")
+    ],
+)
 async def download_upload(
     upload_id: str,
     http_request: Request,
@@ -40,6 +47,24 @@ async def download_upload(
 
         if not result:
             raise HTTPException(status_code=404, detail="Upload not found")
+
+        # Fetch actor_name separately
+        profile_id = http_request.state.profile_id if hasattr(http_request.state, 'profile_id') else None
+        actor_name_row = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                upload={"id": upload_id},
+            )
 
         # Handle subfolder paths (e.g., "audio/uuid.ext", "image/sc.png")
         stored_path = result["file_path"]

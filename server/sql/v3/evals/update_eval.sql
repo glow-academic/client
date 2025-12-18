@@ -1,13 +1,13 @@
 -- Update eval with optional runs and departments changes
--- Parameters: $1=eval_id, $2=name, $3=description, $4=rubric_id, $5=agent_id (nullable uuid), $6=eval_agent_id (nullable uuid), $7=run_ids (uuid[] | NULL - if provided, replaces all), $8=department_ids (uuid[] | NULL - if provided, replaces all), $9=active (boolean | NULL), $10=profile_id (uuid)
+-- Parameters: $1=eval_id, $2=name, $3=description, $4=rubric_id, $5=agent_id (nullable uuid), $6=eval_agent_id (nullable uuid), $7=run_ids (uuid[] | NULL - if provided, replaces all), $8=department_ids (uuid[] | NULL - if provided, replaces all), $9=active (boolean | NULL), $10=dynamic (boolean | NULL), $11=profile_id (uuid)
 -- Returns: eval_id, eval_name, actor_name
 
 WITH actor_profile AS (
     SELECT
-        $10::uuid as profile_id,
+        $11::uuid as profile_id,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
-    WHERE p.id = $10::uuid
+    WHERE p.id = $11::uuid
 ),
 update_eval AS (
     UPDATE evals SET
@@ -17,6 +17,7 @@ update_eval AS (
         agent_id = COALESCE($5::uuid, agent_id),
         eval_agent_id = COALESCE($6::uuid, eval_agent_id),
         active = COALESCE($9, active),
+        dynamic = COALESCE($10, dynamic),
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::text as eval_id, name as eval_name

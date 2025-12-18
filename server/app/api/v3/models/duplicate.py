@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -31,7 +32,13 @@ class DuplicateModelResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/duplicate", response_model=DuplicateModelResponse)
+@router.post(
+    "/duplicate",
+    response_model=DuplicateModelResponse,
+    dependencies=[
+        audit_activity("model.duplicated", "{{ actor.name }} duplicated model '{{ model.name }}'")
+    ],
+)
 async def duplicate_model(
     request: DuplicateModelRequest,
     http_request: Request,
@@ -78,11 +85,21 @@ async def duplicate_model(
                 raise ValueError("Failed to create duplicate model")
 
             new_model_id = str(new_model["id"])
+            original_name = new_model.get("original_name") or model["name"]
+            actor_name = new_model.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    model={"name": original_name, "id": request.modelId},
+                )
 
             result_data = DuplicateModelResponse(
                 success=True,
                 modelId=new_model_id,
-                message=f"Model '{model['name']}' duplicated successfully",
+                message=f"Model '{original_name}' duplicated successfully",
             )
 
             # Invalidate cache after mutation

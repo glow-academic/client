@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -79,7 +80,13 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     return data or {}
 
 
-@router.post("/new", response_model=StaffNewResponse)
+@router.post(
+    "/new",
+    response_model=StaffNewResponse,
+    dependencies=[
+        audit_activity("staff.new", "{{ actor.name }} viewed new staff form")
+    ],
+)
 async def get_staff_new(
     request: StaffNewRequest,
     http_request: Request,
@@ -182,6 +189,17 @@ async def get_staff_new(
             department_mapping=department_mapping,
             cohort_mapping=cohort_mapping,
         )
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            profile_id,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

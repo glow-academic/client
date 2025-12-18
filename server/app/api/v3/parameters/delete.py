@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -30,7 +31,13 @@ class DeleteParameterResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeleteParameterResponse)
+@router.post(
+    "/delete",
+    response_model=DeleteParameterResponse,
+    dependencies=[
+        audit_activity("parameter.deleted", "{{ actor.name }} deleted parameter '{{ parameter.name }}'")
+    ],
+)
 async def delete_parameter(
     request: DeleteParameterRequest,
     http_request: Request,
@@ -68,8 +75,17 @@ async def delete_parameter(
                 )
 
             parameter_name = result.get("name")
+            actor_name = result.get("actor_name")
             if not parameter_name:
                 raise ValueError(f"Parameter not found: {request.parameterId}")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    parameter={"name": parameter_name, "id": request.parameterId},
+                )
 
             result_data = DeleteParameterResponse(
                 success=True,

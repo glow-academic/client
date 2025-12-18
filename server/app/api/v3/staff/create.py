@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.api.v3.profile.create import CreateProfileRequest
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -30,7 +31,13 @@ class BulkCreateStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/create", response_model=BulkCreateStaffResponse)
+@router.post(
+    "/create",
+    response_model=BulkCreateStaffResponse,
+    dependencies=[
+        audit_activity("staff.created", "{{ actor.name }} created {{ count }} staff member(s)")
+    ],
+)
 async def bulk_create_staff(
     request: BulkCreateStaffRequest,
     http_request: Request,
@@ -141,6 +148,24 @@ async def bulk_create_staff(
             profileIds=profile_ids,
             message=f"{len(profile_ids)} staff members created successfully",
         )
+
+        # Fetch actor_name separately
+        profile_id = http_request.state.profile_id
+        actor_name_row = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                count=len(profile_ids),
+            )
 
         # Invalidate cache after mutation
         tags = ["staff", "profile"]  # Staff operations also affect profile cache

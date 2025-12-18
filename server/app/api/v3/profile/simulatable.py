@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.api.v3.profile.detail import ProfileItem
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -34,7 +35,13 @@ class SearchSimulatableProfilesResponse(BaseModel):
     profiles: list[ProfileItem]  # Filtered profiles list (max limit items)
 
 
-@router.post("/simulatable", response_model=SearchSimulatableProfilesResponse)
+@router.post(
+    "/simulatable",
+    response_model=SearchSimulatableProfilesResponse,
+    dependencies=[
+        audit_activity("profile.simulatable", "{{ actor.name }} searched simulatable profiles")
+    ],
+)
 async def search_simulatable_profiles(
     request: SearchSimulatableProfilesRequest,
     http_request: Request,
@@ -135,6 +142,17 @@ async def search_simulatable_profiles(
                     )
 
         response_data = SearchSimulatableProfilesResponse(profiles=profiles)
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            profile_id,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

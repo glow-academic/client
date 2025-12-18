@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -30,7 +31,13 @@ class DeleteKeyResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeleteKeyResponse)
+@router.post(
+    "/delete",
+    response_model=DeleteKeyResponse,
+    dependencies=[
+        audit_activity("key.deleted", "{{ actor.name }} deleted key '{{ key.name }}'")
+    ],
+)
 async def delete_key(
     request: DeleteKeyRequest,
     http_request: Request,
@@ -71,6 +78,16 @@ async def delete_key(
                     )
                 raise HTTPException(
                     status_code=404, detail=f"Key not found: {request.keyId}"
+                )
+
+            # Set audit context with data from SQL query
+            key_name = result.get("name")
+            actor_name = result.get("actor_name")
+            if actor_name and key_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    key={"name": key_name, "id": request.keyId},
                 )
 
         # Invalidate cache after mutation

@@ -1,7 +1,21 @@
 -- Get default parameter detail for creation
 -- Parameters: $1 = profile_id (uuid)
 
-WITH user_departments AS (
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
+actor_profile AS (
+    SELECT 
+        $1::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $1::uuid
+),
+user_departments AS (
     SELECT DISTINCT pd.department_id
     FROM resolve_profile_id rpi
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
@@ -252,7 +266,8 @@ SELECT
     apm.mapping as persona_mapping,
     apm.ids as valid_persona_ids,
     adm.mapping as document_mapping,
-    adm.ids as valid_document_ids
+    adm.ids as valid_document_ids,
+    ap.actor_name
 FROM parameter_data p
 CROSS JOIN items_json ij
 CROSS JOIN valid_depts vd
@@ -261,4 +276,5 @@ CROSS JOIN field_mapping_json fmj
 CROSS JOIN field_connections_json fcj
 CROSS JOIN available_personas_mapping apm
 CROSS JOIN available_documents_mapping adm
+CROSS JOIN actor_profile ap
 

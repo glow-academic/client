@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -30,7 +31,16 @@ class DuplicateFieldResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/duplicate", response_model=DuplicateFieldResponse)
+@router.post(
+    "/duplicate",
+    response_model=DuplicateFieldResponse,
+    dependencies=[
+        audit_activity(
+            "field.duplicated",
+            "{{ actor.name }} duplicated field '{{ field.name }}'",
+        )
+    ],
+)
 async def duplicate_field(
     request: DuplicateFieldRequest,
     http_request: Request,
@@ -61,6 +71,16 @@ async def duplicate_field(
                 raise ValueError(f"Field not found: {request.fieldId}")
 
             new_field_id = new_field["field_id"]
+            actor_name = new_field.get("actor_name")
+            field_name = new_field.get("field_name")
+
+            # Set audit context with data from SQL query
+            if actor_name and field_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    field={"name": field_name, "id": new_field_id},
+                )
 
             # Get original field name for message
             original_field = await conn.fetchrow(

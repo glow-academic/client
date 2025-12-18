@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -30,7 +31,13 @@ class DeleteModelResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeleteModelResponse)
+@router.post(
+    "/delete",
+    response_model=DeleteModelResponse,
+    dependencies=[
+        audit_activity("model.deleted", "{{ actor.name }} deleted model '{{ model.name }}'")
+    ],
+)
 async def delete_model(
     request: DeleteModelRequest,
     http_request: Request,
@@ -74,6 +81,15 @@ async def delete_model(
                 raise ValueError(f"Model not found: {request.modelId}")
 
             model_name = result.get("name", "Unknown")
+            actor_name = result.get("actor_name")
+
+            # Set audit context with data from SQL query
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    model={"name": model_name, "id": request.modelId},
+                )
 
             result_data = DeleteModelResponse(
                 success=True,

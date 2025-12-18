@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -252,7 +253,13 @@ def derive_theme_tokens(primitives: ThemePrimitives) -> ThemeTokens:
     )
 
 
-@router.post("/active", response_model=SettingsActiveResponse)
+@router.post(
+    "/active",
+    response_model=SettingsActiveResponse,
+    dependencies=[
+        audit_activity("settings.active", "{{ actor.name }} viewed active settings")
+    ],
+)
 async def get_active_settings(
     request: SettingsActiveRequest,
     http_request: Request,
@@ -336,6 +343,19 @@ async def get_active_settings(
             guestProfileId=settings.get("default_guest_profile_id"),
             defaultAccountProfileId=settings.get("default_account_profile_id"),
         )
+
+        # Fetch actor_name separately (profile_id can be null for guest users)
+        actor_name = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+            actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context (only if we have actor_name)
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

@@ -6,6 +6,7 @@ from typing import Annotated, Any, Literal, cast
 import asyncpg
 from app.api.v3.profile.detail import ProfileItem
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.permissions import (ProfileRole,
                                    get_available_subsections_for_role)
@@ -197,7 +198,13 @@ class ProfileContextResponse(BaseModel):
     settings: SettingsData  # Active settings for the effective profile
 
 
-@router.post("/context", response_model=ProfileContextResponse)
+@router.post(
+    "/context",
+    response_model=ProfileContextResponse,
+    dependencies=[
+        audit_activity("profile.context", "{{ actor.name }} viewed profile context")
+    ],
+)
 async def get_profile_context(
     request: ProfileContextRequest,
     http_request: Request,
@@ -701,6 +708,20 @@ async def get_profile_context(
             guestProfileId=result.get("settings_default_guest_profile_id"),
             defaultAccountProfileId=result.get("settings_default_account_profile_id"),
         )
+
+        # Fetch actor_name separately (use effective_profile_id if available, else actual_profile_id)
+        actor_profile_id = effective_profile_id if effective_profile_id else actual_profile_id
+        actor_name = None
+        if actor_profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                actor_profile_id,
+            )
+            actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": actor_profile_id})
 
         return ProfileContextResponse(
             actualProfile=actual_profile,

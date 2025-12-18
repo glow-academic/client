@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -93,7 +94,13 @@ class DashboardHistoryResponse(BaseModel):
     ]  # Array of {value: scenarioId, label: scenarioTitle, count: int}
 
 
-@router.post("/history", response_model=DashboardHistoryResponse)
+@router.post(
+    "/history",
+    response_model=DashboardHistoryResponse,
+    dependencies=[
+        audit_activity("dashboard.history", "{{ actor.name }} viewed dashboard history")
+    ],
+)
 async def get_dashboard_history(
     filters: DashboardHistoryFilters,
     request: Request,
@@ -122,6 +129,9 @@ async def get_dashboard_history(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+
         # Load SQL query
         sql_query = load_sql("sql/v3/dashboard/history.sql")
 
@@ -228,6 +238,19 @@ async def get_dashboard_history(
             simulationOptions=simulation_options,
             scenarioOptions=scenario_options,
         )
+
+        # Fetch actor_name separately
+        actor_name = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+            actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

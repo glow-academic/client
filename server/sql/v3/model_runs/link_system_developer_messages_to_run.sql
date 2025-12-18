@@ -20,10 +20,11 @@ WITH run_info AS (
         COALESCE(
             $2::uuid,
             -- Try to get department from chat
-            (SELECT sd.department_id FROM chat_runs cr 
-             JOIN chats c ON c.id = cr.chat_id
+            (SELECT sd.department_id FROM message_runs mr
+             JOIN chat_messages cm ON cm.message_id = mr.message_id
+             JOIN chats c ON c.id = cm.chat_id
              JOIN scenario_departments sd ON sd.scenario_id = c.scenario_id AND sd.active = true
-             WHERE cr.run_id = r.id LIMIT 1),
+             WHERE mr.run_id = r.id LIMIT 1),
             -- Try to get department from profile
             (SELECT pd.department_id FROM run_profiles rpf
              JOIN profile_departments pd ON pd.profile_id = rpf.profile_id AND pd.active = true
@@ -117,8 +118,9 @@ scenario_developer_content AS (
     SELECT DISTINCT
         'The following is the scenario for the chat: ' || ps.problem_statement as content
     FROM run_info ri
-    JOIN chat_runs cr ON cr.run_id = ri.run_id
-    JOIN chats c ON c.id = cr.chat_id
+    JOIN message_runs mr ON mr.run_id = ri.run_id
+    JOIN chat_messages cm ON cm.message_id = mr.message_id
+    JOIN chats c ON c.id = cm.chat_id
     JOIN scenario_problem_statements sps ON sps.scenario_id = c.scenario_id AND sps.active = true
     JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     WHERE $3::uuid IS NOT NULL

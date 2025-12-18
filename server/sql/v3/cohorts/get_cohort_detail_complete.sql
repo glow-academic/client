@@ -88,10 +88,20 @@ cohort_simulation_stats AS (
     LEFT JOIN cohort_attempts ca ON ca.simulation_id = cs.simulation_id
     LEFT JOIN attempt_chats ac ON ac.attempt_id = ca.attempt_id
     LEFT JOIN chats sc ON sc.id = ac.chat_id
-    LEFT JOIN chat_runs rc ON rc.chat_id = sc.id
-    LEFT JOIN runs r ON r.id = rc.run_id
+    LEFT JOIN LATERAL (
+        SELECT DISTINCT cm.chat_id, mr.run_id
+        FROM chat_messages cm
+        JOIN message_runs mr ON mr.message_id = cm.message_id
+        WHERE cm.chat_id = sc.id
+        LIMIT 1
+    ) chat_run_lookup ON true
+    LEFT JOIN runs r ON r.id = chat_run_lookup.run_id
     LEFT JOIN grades scg ON scg.run_id = r.id 
-        AND EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
+        AND EXISTS (
+            SELECT 1 FROM message_runs mr_check
+            JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+            WHERE mr_check.run_id = scg.run_id
+        )
     GROUP BY cs.simulation_id, cs.active, cs.position, s.title, s.description
 ),
 valid_departments AS (

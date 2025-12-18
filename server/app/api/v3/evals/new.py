@@ -78,6 +78,7 @@ class EvalDetailResponse(BaseModel):
     agent_id: str | None  # Agent being evaluated
     eval_agent_id: str | None  # Agent performing evaluation
     active: bool
+    dynamic: bool
     rubric_name: str
     rubric_description: str
     rubric_points: int
@@ -294,6 +295,7 @@ async def get_eval_new(
             if row.get("eval_agent_id")
             else None,
             active=row.get("active", True),
+            dynamic=row.get("dynamic", False),
             rubric_id=str(row.get("rubric_id", "")) if row.get("rubric_id") else "",
             rubric_name="",
             rubric_description="",

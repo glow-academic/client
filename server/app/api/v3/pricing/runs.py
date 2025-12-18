@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -59,18 +60,31 @@ class DebugInfoItem(BaseModel):
     content: str
 
 
-class ModelRunItem(BaseModel):
-    """Model run item with aggregated metrics."""
+class RunSummaryItem(BaseModel):
+    """Run summary item within a group."""
 
-    model_run_id: str
+    run_id: str
     created_at: str
     input_tokens: int
     output_tokens: int
+    cost: float
     model_id: str | None = None
     profile_id: str | None = None
     agent_id: str | None = None
     persona_id: str | None = None
     debug_info: list[DebugInfoItem] | None = None
+
+
+class GroupRunItem(BaseModel):
+    """Group run item with aggregated metrics across multiple runs."""
+
+    group_id: str
+    created_at: str
+    run_count: int
+    total_input_tokens: int
+    total_output_tokens: int
+    total_cost: float
+    runs: list[RunSummaryItem]
 
 
 class ModelMappingWithPricing(BaseModel):
@@ -91,9 +105,9 @@ class FilterOption(BaseModel):
 
 
 class PricingRunsResponse(BaseModel):
-    """Response for pricing runs table."""
+    """Response for pricing groups table."""
 
-    data: list[ModelRunItem]
+    data: list[GroupRunItem]
     totalCount: int
     page: int
     pageSize: int
@@ -213,13 +227,13 @@ async def get_pricing_runs(
 
         # Map sortBy to actual column names
         # Note: cost calculation now uses run_pricing_usage joined with model_pricing
+        # Groups are sorted by aggregated values
         sort_column_map = {
             "createdAt": "created_at",
-            "modelName": "model_name",
-            "profileName": "profile_name",
-            "inputTokens": "input_tokens",
-            "outputTokens": "output_tokens",
-            "cost": "run_cost",
+            "inputTokens": "total_input_tokens",
+            "outputTokens": "total_output_tokens",
+            "cost": "total_cost",
+            "runCount": "run_count",
         }
 
         sort_column = sort_column_map.get(sort_by, "created_at")
@@ -320,32 +334,52 @@ async def get_pricing_runs(
             )
         ]
 
-        # Build model runs list
-        model_runs = []
-        for run_data in bundle_data:
-            debug_info = []
-            if isinstance(run_data.get("debug_info"), list):
-                for debug in run_data["debug_info"]:
-                    if isinstance(debug, dict):
-                        debug_info.append(
-                            DebugInfoItem(
-                                id=debug["id"],
-                                created_at=debug["created_at"],
-                                content=debug["content"],
-                            )
-                        )
+        # Build group runs list
+        group_runs = []
+        for group_data in bundle_data:
+            # Parse nested runs
+            runs_list = []
+            runs_data = group_data.get("runs", [])
+            if isinstance(runs_data, str):
+                runs_data = json.loads(runs_data)
+            if isinstance(runs_data, list):
+                for run_data in runs_data:
+                    debug_info = []
+                    if isinstance(run_data.get("debug_info"), list):
+                        for debug in run_data["debug_info"]:
+                            if isinstance(debug, dict):
+                                debug_info.append(
+                                    DebugInfoItem(
+                                        id=debug["id"],
+                                        created_at=debug["created_at"],
+                                        content=debug["content"],
+                                    )
+                                )
 
-            model_runs.append(
-                ModelRunItem(
-                    model_run_id=run_data.get("run_id") or run_data.get("model_run_id"),
-                    created_at=run_data["created_at"],
-                    input_tokens=run_data["input_tokens"],
-                    output_tokens=run_data["output_tokens"],
-                    model_id=run_data.get("model_id"),
-                    profile_id=run_data.get("profile_id"),
-                    agent_id=run_data.get("agent_id"),
-                    persona_id=run_data.get("persona_id"),
-                    debug_info=debug_info,
+                    runs_list.append(
+                        RunSummaryItem(
+                            run_id=run_data.get("run_id", ""),
+                            created_at=run_data.get("created_at", ""),
+                            input_tokens=run_data.get("input_tokens", 0),
+                            output_tokens=run_data.get("output_tokens", 0),
+                            cost=run_data.get("cost", 0.0),
+                            model_id=run_data.get("model_id"),
+                            profile_id=run_data.get("profile_id"),
+                            agent_id=run_data.get("agent_id"),
+                            persona_id=run_data.get("persona_id"),
+                            debug_info=debug_info,
+                        )
+                    )
+
+            group_runs.append(
+                GroupRunItem(
+                    group_id=group_data.get("group_id", ""),
+                    created_at=group_data.get("created_at", ""),
+                    run_count=group_data.get("run_count", 0),
+                    total_input_tokens=group_data.get("total_input_tokens", 0),
+                    total_output_tokens=group_data.get("total_output_tokens", 0),
+                    total_cost=group_data.get("total_cost", 0.0),
+                    runs=runs_list,
                 )
             )
 
@@ -396,7 +430,7 @@ async def get_pricing_runs(
 
         # Build response
         response_data = PricingRunsResponse(
-            data=model_runs,
+            data=group_runs,
             totalCount=total_count,
             page=page,
             pageSize=page_size,
@@ -409,6 +443,19 @@ async def get_pricing_runs(
             agent_mapping=agent_mapping,
             persona_mapping=persona_mapping,
         )
+
+        # Fetch actor_name separately
+        actor_name = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+            actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

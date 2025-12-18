@@ -2,7 +2,21 @@
 -- Parameters: $1 = model_id (uuid), $2 = profile_id (uuid)
 -- Returns: model fields + provider enum + department_mapping + key_mapping + base_url
 
-WITH model_data AS (
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+actor_profile AS (
+    SELECT 
+        $2::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+model_data AS (
     SELECT 
         m.name,
         m.description,
@@ -285,11 +299,13 @@ SELECT
     COALESCE(mrl.reasoning_levels, '[]'::jsonb) as reasoning_levels,
     COALESCE(mv.voices, '[]'::jsonb) as voices,
     COALESCE(mq.qualities, '[]'::jsonb) as qualities,
-    COALESCE(au.units, '[]'::jsonb) as units
+    COALESCE(au.units, '[]'::jsonb) as units,
+    ap.actor_name
 FROM model_data m
 CROSS JOIN valid_departments_data vdd
 CROSS JOIN key_mapping_data kmd
 CROSS JOIN all_units_data au
+CROSS JOIN actor_profile ap
 LEFT JOIN model_endpoint_data med ON true
 LEFT JOIN model_departments_data mdd ON true
 LEFT JOIN model_departments_fallback mdf ON true

@@ -140,17 +140,41 @@ CREATE INDEX ON attempt_chats (attempt_id);
 CREATE INDEX ON attempt_chats (chat_id);
 CREATE INDEX ON attempt_chats (attempt_id, chat_id);
 
--- Run ↔ Chats junction table (BCNF normalization)
-CREATE TABLE chat_runs (
-  run_id UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
-  chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+-- Groups table - groups runs together (replacing chat-based grouping)
+CREATE TABLE groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (run_id, chat_id)
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX ON chat_runs (run_id);
-CREATE INDEX ON chat_runs (chat_id);
+CREATE INDEX ON groups (created_at);
+
+-- Groups ↔ Runs junction table (BCNF normalization)
+CREATE TABLE group_runs (
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  run_id UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (group_id, run_id)
+);
+
+CREATE INDEX ON group_runs (group_id);
+CREATE INDEX ON group_runs (run_id);
+CREATE INDEX ON group_runs (group_id, run_id);
+
+-- Chats ↔ Messages junction table (BCNF normalization)
+-- Preserves chat-to-message relationships
+CREATE TABLE chat_messages (
+  chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+  message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (chat_id, message_id)
+);
+
+CREATE INDEX ON chat_messages (chat_id);
+CREATE INDEX ON chat_messages (message_id);
+CREATE INDEX ON chat_messages (chat_id, message_id);
 
 -- Unified messages table - messages linked to runs via message_runs junction table (BCNF normalization)
 CREATE TABLE messages (

@@ -1,6 +1,6 @@
 -- Start eval attempt: create attempt and get eval data + pending runs
 -- Parameters: $1=eval_id (uuid)
--- Returns: attempt_id, eval_id, agent_id, eval_agent_id, rubric_id, pending_run_ids (uuid[])
+-- Returns: attempt_id, eval_id, agent_id, eval_agent_id, rubric_id, dynamic, pending_run_ids (uuid[])
 WITH new_attempt AS (
     INSERT INTO eval_attempts (eval_id, created_at)
     VALUES ($1::uuid, NOW())
@@ -11,7 +11,8 @@ eval_data AS (
         e.id as eval_id,
         e.agent_id::text as agent_id,
         e.eval_agent_id::text as eval_agent_id,
-        e.rubric_id::text as rubric_id
+        e.rubric_id::text as rubric_id,
+        e.dynamic
     FROM evals e
     WHERE e.id = $1::uuid
 ),
@@ -26,6 +27,7 @@ SELECT
     ed.agent_id,
     ed.eval_agent_id,
     ed.rubric_id,
+    ed.dynamic,
     COALESCE(pr.pending_run_ids, ARRAY[]::text[]) as pending_run_ids
 FROM new_attempt na
 CROSS JOIN eval_data ed

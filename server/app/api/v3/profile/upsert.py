@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -40,7 +41,13 @@ class CreateOrUpdateProfileResponse(BaseModel):
     message: str
 
 
-@router.post("/upsert", response_model=CreateOrUpdateProfileResponse)
+@router.post(
+    "/upsert",
+    response_model=CreateOrUpdateProfileResponse,
+    dependencies=[
+        audit_activity("profile.upserted", "{{ actor.name }} {{ created }} profile '{{ profile.name }}'")
+    ],
+)
 async def create_or_update_profile(
     request: CreateOrUpdateProfileRequest,
     http_request: Request,
@@ -134,6 +141,25 @@ async def create_or_update_profile(
                 if created
                 else f"Profile '{request.firstName} {request.lastName}' updated successfully"
             )
+
+            # Fetch actor_name separately
+            profile_id_for_actor = http_request.state.profile_id
+            actor_name = None
+            if profile_id_for_actor:
+                actor_name_row = await conn.fetchrow(
+                    "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                    profile_id_for_actor,
+                )
+                actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+            # Set audit context
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id_for_actor},
+                    created="created" if created else "updated",
+                    profile={"name": f"{request.firstName} {request.lastName}", "id": str(profile_id)},
+                )
 
         result_data = CreateOrUpdateProfileResponse(
             success=True, profileId=profile_id, created=created, message=message

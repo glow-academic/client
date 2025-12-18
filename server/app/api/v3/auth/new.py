@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -30,7 +31,13 @@ from app.api.v3.auth.detail import (  # noqa: E402
 router = APIRouter()
 
 
-@router.post("/new", response_model=AuthDetailResponse)
+@router.post(
+    "/new",
+    response_model=AuthDetailResponse,
+    dependencies=[
+        audit_activity("auth.new", "{{ actor.name }} viewed new auth form")
+    ],
+)
 async def get_auth_new(
     request: AuthNewRequest,
     http_request: Request,
@@ -97,6 +104,11 @@ async def get_auth_new(
         # Get user role for default behavior
         user_role = result.get("user_role", "trainee")
         can_edit = user_role in ("admin", "superadmin")
+
+        # Set audit context with data from SQL query
+        actor_name = result.get("actor_name")
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         response_data = AuthDetailResponse(
             name=result["name"],

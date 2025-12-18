@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -36,7 +37,15 @@ class UpdateFieldResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateFieldResponse)
+@router.post(
+    "/update",
+    response_model=UpdateFieldResponse,
+    dependencies=[
+        audit_activity(
+            "field.updated", "{{ actor.name }} updated field '{{ field.name }}'"
+        )
+    ],
+)
 async def update_field(
     request: UpdateFieldRequest,
     http_request: Request,
@@ -76,7 +85,17 @@ async def update_field(
                 request.conditional_parameter_ids,
                 profile_id,
             )
-            await conn.fetchrow(sql_query, *sql_params)
+            result = await conn.fetchrow(sql_query, *sql_params)
+
+            # Set audit context with data from SQL query
+            if result:
+                actor_name = result.get("actor_name")
+                if actor_name:
+                    audit_set(
+                        http_request,
+                        actor={"name": actor_name, "id": profile_id},
+                        field={"name": request.name, "id": request.fieldId},
+                    )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

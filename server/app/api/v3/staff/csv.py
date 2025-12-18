@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -61,7 +62,13 @@ class ProcessCSVResponse(BaseModel):
     headers: list[str]
 
 
-@router.post("/csv", response_model=ProcessCSVResponse)
+@router.post(
+    "/csv",
+    response_model=ProcessCSVResponse,
+    dependencies=[
+        audit_activity("staff.csv", "{{ actor.name }} processed staff CSV")
+    ],
+)
 async def process_csv(
     request: ProcessCSVRequest,
     http_request: Request,
@@ -186,6 +193,20 @@ async def process_csv(
         response_data = ProcessCSVResponse(
             success=True, rows=rows, headers=list(headers)
         )
+
+        # Fetch actor_name separately
+        profile_id = http_request.state.profile_id
+        actor_name_row = None
+        if profile_id:
+            actor_name_row = await conn.fetchrow(
+                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+                profile_id,
+            )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

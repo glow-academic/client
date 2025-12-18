@@ -8,7 +8,7 @@
 
 import { useMemo } from "react";
 
-import { RunsDataTable, type ModelRunRow } from "./RunsDataTable";
+import { RunsDataTable, type GroupRunRow } from "./RunsDataTable";
 import type { PricingRunsOut } from "@/app/(main)/analytics/pricing/page";
 
 interface PricingRunsClientProps {
@@ -23,49 +23,32 @@ export function PricingRunsClient({
   const { model_mapping, agent_mapping, persona_mapping, profile_mapping } =
     runsData;
 
-  const rows = useMemo<ModelRunRow[]>(() => {
-    return (runsData?.data || []).map((run) => {
-      const modelId = run.model_id ?? null;
-      const agentId = run.agent_id ?? null;
-      const personaId = run.persona_id ?? null;
-      const profileId = run.profile_id ?? null;
-
-      const modelInfo = modelId ? model_mapping[modelId] : undefined;
-      const inputCost =
-        (run.input_tokens / 1_000_000) * (modelInfo?.input_ppm || 0);
-      const outputCost =
-        (run.output_tokens / 1_000_000) * (modelInfo?.output_ppm || 0);
-      const cost = Number((inputCost + outputCost).toFixed(6));
-
-      const row: ModelRunRow = {
-        id: run.model_run_id,
-        createdAt: run.created_at,
-        modelId,
-        modelName: (modelId && model_mapping[modelId]?.name) || modelId || "",
-        agentId,
-        agentName: (agentId && agent_mapping[agentId]) || agentId || "",
-        personaId,
-        personaName:
-          (personaId && persona_mapping[personaId]) || personaId || "",
-        profileId,
-        profileName:
-          (profileId && profile_mapping[profileId]) || profileId || "",
-        inputTokens: run.input_tokens,
-        outputTokens: run.output_tokens,
-        cost,
+  const rows = useMemo<GroupRunRow[]>(() => {
+    return (runsData?.data || []).map((group) => {
+      const row: GroupRunRow = {
+        groupId: group.group_id,
+        createdAt: group.created_at,
+        runCount: group.run_count,
+        totalInputTokens: group.total_input_tokens,
+        totalOutputTokens: group.total_output_tokens,
+        totalCost: group.total_cost,
+        runs: (group.runs || []).map((run) => ({
+          runId: run.run_id,
+          createdAt: run.created_at,
+          modelId: run.model_id ?? null,
+          agentId: run.agent_id ?? null,
+          personaId: run.persona_id ?? null,
+          profileId: run.profile_id ?? null,
+          inputTokens: run.input_tokens,
+          outputTokens: run.output_tokens,
+          cost: run.cost,
+          debugInfo: run.debug_info,
+        })),
       };
-
-      if (run.debug_info) row.debugInfo = run.debug_info;
 
       return row;
     });
-  }, [
-    runsData,
-    model_mapping,
-    agent_mapping,
-    persona_mapping,
-    profile_mapping,
-  ]);
+  }, [runsData]);
 
   return (
     <div className="mt-6" data-testid="pricing-runs-table">

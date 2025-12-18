@@ -7,7 +7,7 @@ WITH RECURSIVE message_path AS (
     -- Base case: Start from latest messages (no active children in message_tree)
     SELECT 
         m.id, 
-        rc.chat_id, 
+        cm.chat_id, 
         m.role, 
         m.content, 
         m.created_at, 
@@ -16,9 +16,8 @@ WITH RECURSIVE message_path AS (
         0 as depth,
         m.id as path_root_id
     FROM messages m
-    JOIN message_runs mr ON mr.message_id = m.id
-    JOIN chat_runs rc ON rc.run_id = mr.run_id
-    WHERE rc.chat_id = $1::uuid
+    JOIN chat_messages cm ON cm.message_id = m.id
+    WHERE cm.chat_id = $1::uuid
       AND NOT EXISTS (
           SELECT 1 FROM message_tree mt 
           WHERE mt.parent_id = m.id AND mt.active = true
@@ -29,7 +28,7 @@ WITH RECURSIVE message_path AS (
     -- Recursive case: Traverse up the tree following parent links
     SELECT 
         m.id, 
-        rc.chat_id, 
+        cm.chat_id, 
         m.role, 
         m.content, 
         m.created_at, 
@@ -40,17 +39,17 @@ WITH RECURSIVE message_path AS (
     FROM messages m
     JOIN message_tree mt ON mt.child_id = m.id AND mt.active = true
     JOIN message_path mp ON mp.id = mt.parent_id
-    JOIN message_runs mr ON mr.message_id = m.id
-    JOIN chat_runs rc ON rc.run_id = mr.run_id
+    JOIN chat_messages cm ON cm.message_id = m.id
     
     -- Prevent infinite loops (safety limit)
     WHERE mp.depth < 1000
+      AND cm.chat_id = $1::uuid
 ),
 -- Include messages without parents (backward compatibility for existing messages)
 messages_without_parents AS (
     SELECT 
         m.id, 
-        rc.chat_id, 
+        cm.chat_id, 
         m.role, 
         m.content, 
         m.created_at, 
@@ -59,9 +58,8 @@ messages_without_parents AS (
         -1 as depth,  -- Negative depth to sort before tree messages
         m.id as path_root_id
     FROM messages m
-    JOIN message_runs mr ON mr.message_id = m.id
-    JOIN chat_runs rc ON rc.run_id = mr.run_id
-    WHERE rc.chat_id = $1::uuid
+    JOIN chat_messages cm ON cm.message_id = m.id
+    WHERE cm.chat_id = $1::uuid
       AND NOT EXISTS (
           SELECT 1 FROM message_tree mt 
           WHERE mt.child_id = m.id AND mt.active = true

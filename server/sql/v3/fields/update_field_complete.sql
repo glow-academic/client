@@ -1,11 +1,19 @@
-WITH update_field AS (
+WITH resolve_profile_id AS (
+    SELECT $7::uuid as resolved_profile_id
+),
+user_profile AS (
+    SELECT name as actor_name
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
+update_field AS (
     UPDATE fields SET
         name = $2,
         description = $3,
         active = COALESCE($4, active),
         updated_at = NOW()
     WHERE id = $1::uuid
-    RETURNING id::text as field_id
+    RETURNING id::text as field_id, $2 as field_name
 ),
 delete_existing_conditional_parameters AS (
     -- Delete all existing conditional parameter links (soft delete)
@@ -48,5 +56,10 @@ link_departments AS (
         active = true,
         updated_at = NOW()
 )
-SELECT field_id FROM update_field
+SELECT 
+    uf.field_id,
+    uf.field_name,
+    up.actor_name
+FROM update_field uf
+CROSS JOIN user_profile up
 

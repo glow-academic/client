@@ -74,9 +74,19 @@ cohort_simulation_stats AS (
     LEFT JOIN cohort_profile_ids cp ON cp.profile_id = ap.profile_id
     LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
     LEFT JOIN chats sc ON sc.id = ac.chat_id
-    LEFT JOIN grades scg ON EXISTS (SELECT 1 FROM chat_runs cr_check WHERE cr_check.run_id = scg.run_id)
+    LEFT JOIN grades scg ON EXISTS (
+        SELECT 1 FROM message_runs mr_check
+        JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
+        WHERE mr_check.run_id = scg.run_id AND cm_check.chat_id = sc.id
+    )
     LEFT JOIN runs r_cohort_new ON r_cohort_new.id = scg.run_id
-    LEFT JOIN chat_runs rc_cohort_new ON rc_cohort_new.run_id = r_cohort_new.id AND rc_cohort_new.chat_id = sc.id
+    LEFT JOIN LATERAL (
+        SELECT DISTINCT cm.chat_id
+        FROM message_runs mr
+        JOIN chat_messages cm ON cm.message_id = mr.message_id
+        WHERE mr.run_id = r_cohort_new.id AND cm.chat_id = sc.id
+        LIMIT 1
+    ) chat_lookup_cohort ON true
     GROUP BY cs.simulation_id, cs.active, cs.position, s.id, s.title, s.description
 ),
 valid_departments AS (

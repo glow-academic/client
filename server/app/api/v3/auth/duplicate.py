@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -31,7 +32,13 @@ class DuplicateAuthResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/duplicate", response_model=DuplicateAuthResponse)
+@router.post(
+    "/duplicate",
+    response_model=DuplicateAuthResponse,
+    dependencies=[
+        audit_activity("auth.duplicated", "{{ actor.name }} duplicated auth '{{ auth.name }}'")
+    ],
+)
 async def duplicate_auth(
     request: DuplicateAuthRequest,
     http_request: Request,
@@ -45,26 +52,39 @@ async def duplicate_auth(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Duplicate auth with items and key links in single SQL (DHH style)
             sql_query = load_sql("sql/v3/auth/duplicate_auth_complete.sql")
-            sql_params = (request.authId,)
-            new_auth = await conn.fetchrow(sql_query, request.authId)
+            sql_params = (request.authId, profile_id)
+            new_auth = await conn.fetchrow(sql_query, request.authId, profile_id)
 
             if not new_auth:
                 raise ValueError(f"Auth not found: {request.authId}")
 
             new_auth_id = new_auth["auth_id"]
+            original_name = new_auth.get("original_name")
+            actor_name = new_auth.get("actor_name")
 
-            # Get original auth name for message
-            original_auth = await conn.fetchrow(
-                "SELECT name FROM auth WHERE id = $1", request.authId
-            )
+            # Set audit context with data from SQL query
+            if actor_name and original_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    auth={"name": original_name, "id": request.authId},
+                )
 
             result_data = DuplicateAuthResponse(
                 success=True,
                 authId=new_auth_id,
-                message=f"Auth '{original_auth['name']}' duplicated successfully",
+                message=f"Auth '{original_name}' duplicated successfully",
             )
 
             # Invalidate cache after mutation

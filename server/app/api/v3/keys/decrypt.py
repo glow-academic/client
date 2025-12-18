@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -29,7 +30,13 @@ class DecryptKeyResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/decrypt", response_model=DecryptKeyResponse)
+@router.post(
+    "/decrypt",
+    response_model=DecryptKeyResponse,
+    dependencies=[
+        audit_activity("key.decrypted", "{{ actor.name }} decrypted key '{{ key.name }}'")
+    ],
+)
 async def decrypt_key(
     request: DecryptKeyRequest,
     http_request: Request,
@@ -51,8 +58,8 @@ async def decrypt_key(
 
         # Fetch the encrypted key from database
         sql_query = load_sql("sql/v3/keys/get_key_detail.sql")
-        sql_params = (request.keyId, True)  # show_full=True to get encrypted key
-        result = await conn.fetchrow(sql_query, request.keyId, True)
+        sql_params = (request.keyId, True, profile_id)  # show_full=True to get encrypted key
+        result = await conn.fetchrow(sql_query, request.keyId, True, profile_id)
 
         if not result:
             raise HTTPException(
@@ -61,12 +68,22 @@ async def decrypt_key(
 
         # Get the encrypted key value
         encrypted_key = result["key"]
+        key_name = result.get("name")
+        actor_name = result.get("actor_name")
 
         # Decrypt the key
         try:
             decrypted_key = decrypt_api_key(encrypted_key)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
+
+        # Set audit context
+        if actor_name and key_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                key={"name": key_name, "id": request.keyId},
+            )
 
         return DecryptKeyResponse(key=decrypted_key)
     except HTTPException:

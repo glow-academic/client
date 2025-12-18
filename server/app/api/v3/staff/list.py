@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -87,7 +88,13 @@ class StaffListResponse(BaseModel):
     last_active_options: list[dict[str, str]]  # Array of {value, label}
 
 
-@router.post("/list", response_model=StaffListResponse)
+@router.post(
+    "/list",
+    response_model=StaffListResponse,
+    dependencies=[
+        audit_activity("staff.list", "{{ actor.name }} viewed staff list")
+    ],
+)
 async def get_profile_list(
     filters: StaffFilters,
     request: Request,
@@ -284,6 +291,17 @@ async def get_profile_list(
             cohort_options=cohort_options,
             last_active_options=last_active_options,
         )
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            profile_id,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Cache response
         await set_cached(

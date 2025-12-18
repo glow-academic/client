@@ -1,6 +1,13 @@
 -- Duplicate parameter with items and department links in a single transaction
 -- Parameters: $1=original_parameterId, $2=profile_id (uuid)
-WITH original_parameter AS (
+WITH actor_profile AS (
+    SELECT 
+        $2::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+original_parameter AS (
     SELECT 
         name,
         description,
@@ -123,5 +130,11 @@ link_departments AS (
         active = true,
         updated_at = NOW()
 )
-SELECT parameter_id FROM new_parameter
+SELECT 
+    np.parameter_id,
+    op.name as original_name,
+    ap.actor_name
+FROM new_parameter np
+CROSS JOIN original_parameter op
+CROSS JOIN actor_profile ap
 

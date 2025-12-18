@@ -105,6 +105,25 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
             return
 
         async with pool.acquire() as conn:
+            # Get eval data (dynamic flag and agent_id)
+            eval_row = await conn.fetchrow(
+                "SELECT dynamic, agent_id::text as agent_id FROM evals WHERE id = $1::uuid",
+                eval_id,
+            )
+            if not eval_row:
+                await eval_process_next_error(
+                    EvalProcessNextErrorPayload(
+                        success=False,
+                        message=f"Eval not found: {eval_id}",
+                        eval_id=eval_id,
+                    ),
+                    room=f"eval_{attempt_id}",
+                )
+                return
+            
+            dynamic = eval_row.get("dynamic", False)
+            agent_id = eval_row.get("agent_id")
+            
             # Get next pending run for this eval (after current_run_id)
             sql_get_next_run = load_sql("sql/v3/evals/run_eval.sql")
             result = await conn.fetchrow(sql_get_next_run, eval_id)
@@ -193,6 +212,8 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
                 rubric_id=rubric_id,
                 department_id=department_id,
                 profile_id=profile_id,
+                dynamic=dynamic,
+                agent_id=agent_id,
                 emit_progress_func=emit_progress,
             )
 

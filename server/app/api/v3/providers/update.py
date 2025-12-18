@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -35,7 +36,13 @@ class UpdateProviderResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateProviderResponse)
+@router.post(
+    "/update",
+    response_model=UpdateProviderResponse,
+    dependencies=[
+        audit_activity("provider.updated", "{{ actor.name }} updated provider '{{ provider.name }}'")
+    ],
+)
 async def update_provider(
     request: UpdateProviderRequest,
     http_request: Request,
@@ -74,6 +81,15 @@ async def update_provider(
             if not result:
                 raise HTTPException(
                     status_code=404, detail=f"Provider not found: {request.providerId}"
+                )
+
+            # Set audit context with data from SQL query
+            actor_name = result.get("actor_name")
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    provider={"name": request.name, "id": request.providerId},
                 )
 
         # Invalidate cache after mutation

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -76,7 +77,13 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     return data or {}
 
 
-@router.post("/detail", response_model=StaffDetailResponse)
+@router.post(
+    "/detail",
+    response_model=StaffDetailResponse,
+    dependencies=[
+        audit_activity("staff.viewed", "{{ actor.name }} viewed staff '{{ staff.name }}'")
+    ],
+)
 async def get_staff_detail(
     request_body: StaffDetailRequest,
     request: Request,
@@ -197,6 +204,21 @@ async def get_staff_detail(
             cohort_mapping=cohort_mapping,
             valid_cohort_ids=valid_cohort_ids,
         )
+
+        # Fetch actor_name separately
+        actor_name_row = await conn.fetchrow(
+            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+            current_profile_id,
+        )
+        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(
+                request,
+                actor={"name": actor_name, "id": current_profile_id},
+                staff={"name": row.get("name", ""), "id": request_body.profileId},
+            )
 
         # Cache response
         await set_cached(

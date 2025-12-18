@@ -1,6 +1,13 @@
 -- Delete parameter if items not in use, returning parameter name and usage count
 -- Parameters: $1=parameterId, $2=profile_id (uuid)
-WITH usage_check AS (
+WITH actor_profile AS (
+    SELECT 
+        $2::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+usage_check AS (
     SELECT COUNT(DISTINCT sf.scenario_id) as usage_count
     FROM parameter_fields fp
     JOIN scenario_fields sf ON sf.field_id = fp.field_id
@@ -23,7 +30,9 @@ delete_parameter AS (
 )
 SELECT 
     pi.name,
-    pi.usage_count
+    pi.usage_count,
+    ap.actor_name
 FROM parameter_info pi
 LEFT JOIN delete_parameter dp ON dp.name = pi.name
+CROSS JOIN actor_profile ap
 

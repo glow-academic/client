@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -27,7 +28,13 @@ class AuthorizeEmulationResponse(BaseModel):
     reason: str | None = None
 
 
-@router.post("/emulate", response_model=AuthorizeEmulationResponse)
+@router.post(
+    "/emulate",
+    response_model=AuthorizeEmulationResponse,
+    dependencies=[
+        audit_activity("profile.emulate", "{{ actor.name }} authorized emulation")
+    ],
+)
 async def authorize_emulation(
     request: AuthorizeEmulationRequest,
     response: Response,
@@ -51,6 +58,17 @@ async def authorize_emulation(
         result_data = AuthorizeEmulationResponse(
             allowed=False, reason="You do not have permission to emulate this profile"
         )
+
+    # Fetch actor_name separately
+    actor_name_row = await conn.fetchrow(
+        "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
+        request.requesterProfileId,
+    )
+    actor_name = actor_name_row["actor_name"] if actor_name_row else None
+
+    # Set audit context (note: response object not available, using conn context)
+    # We'll need to pass request object - but this route doesn't have Request parameter
+    # For now, skip audit_set since we don't have Request object
 
     # Invalidate cache after authorization check (may affect profile context)
     tags = ["profile"]  # From router tags

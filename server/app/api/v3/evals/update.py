@@ -27,6 +27,7 @@ class UpdateEvalRequest(BaseModel):
     model_run_ids: list[str] | None = None  # If provided, replaces all existing
     department_ids: list[str] | None = None  # If provided, replaces all existing
     active: bool | None = None
+    dynamic: bool | None = None  # If true, re-run agent being evaluated with modified system prompt
     # profileId removed - comes from X-Profile-Id header
 
 
@@ -107,6 +108,7 @@ async def update_eval(
                 model_run_ids_uuid,
                 department_ids_uuid,
                 request.active,
+                request.dynamic,
                 profile_id,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
