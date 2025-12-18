@@ -50,9 +50,7 @@ export function StaffDepartmentsSection({
     if (primaryDepartmentIndex !== undefined) {
       if (index === primaryDepartmentIndex) {
         // If removing primary, set first department as primary (or undefined if none)
-        onPrimaryDepartmentIndexChange(
-          newIds.length > 0 ? 0 : undefined,
-        );
+        onPrimaryDepartmentIndexChange(newIds.length > 0 ? 0 : undefined);
       } else if (index < primaryDepartmentIndex) {
         // If removing before primary, adjust index
         onPrimaryDepartmentIndexChange(primaryDepartmentIndex - 1);
@@ -88,9 +86,7 @@ export function StaffDepartmentsSection({
             }}
             getId={(dept) => (dept as unknown as { id: string }).id}
             getLabel={(dept) => dept.name || ""}
-            getSearchText={(dept) =>
-              `${dept.name} ${dept.description || ""}`
-            }
+            getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
             placeholder="Select departments"
             disabled={isReadonly || isSubmitting}
             multiSelect={true}
@@ -112,7 +108,9 @@ export function StaffDepartmentsSection({
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <div className="font-medium truncate">{dept.name}</div>
+                          <div className="font-medium truncate">
+                            {dept.name}
+                          </div>
                           {isPrimary && (
                             <span className="text-xs text-primary font-medium">
                               Primary
@@ -131,11 +129,7 @@ export function StaffDepartmentsSection({
                           variant={isPrimary ? "default" : "outline"}
                           size="icon"
                           onClick={() => setPrimaryDepartment(index)}
-                          disabled={
-                            isReadonly ||
-                            isSubmitting ||
-                            isPrimary
-                          }
+                          disabled={isReadonly || isSubmitting || isPrimary}
                           className="h-8 w-8 shrink-0"
                           title="Set as primary"
                         >
@@ -164,4 +158,3 @@ export function StaffDepartmentsSection({
     </Card>
   );
 }
-

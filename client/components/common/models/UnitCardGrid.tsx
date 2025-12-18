@@ -44,7 +44,9 @@ export function UnitCardGrid({
   enablePriceEditing = false,
 }: UnitCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [editingPriceUnitId, setEditingPriceUnitId] = React.useState<string | null>(null);
+  const [editingPriceUnitId, setEditingPriceUnitId] = React.useState<
+    string | null
+  >(null);
   const [editingPriceValue, setEditingPriceValue] = React.useState<string>("");
 
   // Apply search filter, then sort selected first
@@ -59,7 +61,7 @@ export function UnitCardGrid({
           unit.name?.toLowerCase().includes(searchLower) ||
           unit.unit_category?.toLowerCase().includes(searchLower) ||
           unit.id?.toLowerCase().includes(searchLower) ||
-          unit.value.toString().includes(searchTerm)
+          unit.value.toString().includes(searchTerm),
       );
     }
 
@@ -71,7 +73,7 @@ export function UnitCardGrid({
       if (!aSelected && bSelected) return 1;
       // Then sort by category, then value
       const categoryCompare = (a.unit_category || "").localeCompare(
-        b.unit_category || ""
+        b.unit_category || "",
       );
       if (categoryCompare !== 0) return categoryCompare;
       return a.value - b.value;
@@ -142,7 +144,7 @@ export function UnitCardGrid({
                   className={cn(
                     "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all",
                     "hover:shadow-md hover:bg-accent/50",
-                    isSelected && "ring-2 ring-primary bg-accent"
+                    isSelected && "ring-2 ring-primary bg-accent",
                   )}
                 >
                   {/* Check icon - top right */}
@@ -160,7 +162,7 @@ export function UnitCardGrid({
                         disabled={readonly}
                         className={cn(
                           "text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                          "disabled:pointer-events-none disabled:opacity-50"
+                          "disabled:pointer-events-none disabled:opacity-50",
                         )}
                       >
                         <div className="flex-1 min-w-0">
@@ -183,8 +185,8 @@ export function UnitCardGrid({
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>
-                        {unit.name} ({unit.unit_category.toUpperCase()}) - Value:{" "}
-                        {unit.value.toLocaleString()}
+                        {unit.name} ({unit.unit_category.toUpperCase()}) -
+                        Value: {unit.value.toLocaleString()}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -202,7 +204,9 @@ export function UnitCardGrid({
                             step="0.0001"
                             min="0"
                             value={editingPriceValue}
-                            onChange={(e) => setEditingPriceValue(e.target.value)}
+                            onChange={(e) =>
+                              setEditingPriceValue(e.target.value)
+                            }
                             placeholder="Price"
                             className="h-8 text-sm flex-1"
                             autoFocus
@@ -215,7 +219,8 @@ export function UnitCardGrid({
                             }}
                             onBlur={() => {
                               // Auto-save on blur if value changed
-                              const priceValue = parseFloat(editingPriceValue) || 0;
+                              const priceValue =
+                                parseFloat(editingPriceValue) || 0;
                               if (priceValue !== unitPrice) {
                                 handleSavePrice(unit.id);
                               } else {
@@ -261,7 +266,9 @@ export function UnitCardGrid({
                         >
                           <span className="font-medium">Price: </span>
                           <span>${unitPrice.toFixed(4)}</span>
-                          <span className="ml-1 text-[10px]">(click to edit)</span>
+                          <span className="ml-1 text-[10px]">
+                            (click to edit)
+                          </span>
                         </div>
                       )}
                     </div>
@@ -275,4 +282,3 @@ export function UnitCardGrid({
     </TooltipProvider>
   );
 }
-

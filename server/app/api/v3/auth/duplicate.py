@@ -17,7 +17,7 @@ class DuplicateAuthRequest(BaseModel):
     """Request to duplicate auth."""
 
     authId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DuplicateAuthResponse(BaseModel):

@@ -521,7 +521,9 @@ export function UploadClassificationDialog({
                     onSelect={setSelectedDepartmentIds}
                     getId={(dept) => (dept as unknown as { id: string }).id}
                     getLabel={(dept) => dept.name || ""}
-                    getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                    getSearchText={(dept) =>
+                      `${dept.name} ${dept.description || ""}`
+                    }
                     placeholder="Dept"
                     multiSelect={true}
                     compact={true}
@@ -669,9 +671,13 @@ export function UploadClassificationDialog({
                               });
                             }
                           }}
-                          getId={(dept) => (dept as unknown as { id: string }).id}
+                          getId={(dept) =>
+                            (dept as unknown as { id: string }).id
+                          }
                           getLabel={(dept) => dept.name || ""}
-                          getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                          getSearchText={(dept) =>
+                            `${dept.name} ${dept.description || ""}`
+                          }
                           placeholder="Dept"
                           multiSelect={true}
                           compact={true}

@@ -68,10 +68,10 @@ export interface ParametersProps {
   listData: ParametersListOut;
   // Server actions (replaces useMutation)
   duplicateParameterAction?: (
-    input: DuplicateParameterIn
+    input: DuplicateParameterIn,
   ) => Promise<DuplicateParameterOut>;
   deleteParameterAction?: (
-    input: DeleteParameterIn
+    input: DeleteParameterIn,
   ) => Promise<DeleteParameterOut>;
 }
 
@@ -102,7 +102,7 @@ export default function Parameters({
 
   const parameters = useMemo(
     () => parametersData?.parameters || [],
-    [parametersData]
+    [parametersData],
   );
 
   // Use server-provided facet options directly (no client-side computation)
@@ -114,7 +114,7 @@ export default function Parameters({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [parametersData?.scenario_options]
+    [parametersData?.scenario_options],
   );
   const departmentOptions = useMemo(() => {
     const mapping = parametersData?.department_mapping || {};
@@ -131,7 +131,7 @@ export default function Parameters({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [parametersData?.document_options]
+    [parametersData?.document_options],
   );
 
   // Column definitions for TanStack Table
@@ -208,7 +208,7 @@ export default function Parameters({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance
@@ -283,7 +283,9 @@ export default function Parameters({
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to duplicate parameter"
+        error instanceof Error
+          ? error.message
+          : "Failed to duplicate parameter",
       );
     } finally {
       setIsDuplicating(null);
@@ -310,7 +312,7 @@ export default function Parameters({
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete parameter"
+        error instanceof Error ? error.message : "Failed to delete parameter",
       );
     } finally {
       setShowDeleteDialog(false);
@@ -339,7 +341,7 @@ export default function Parameters({
 
   const renderPreview = (
     items: ParametersListOut["parameters"][number]["sample_items"],
-    totalCount: number
+    totalCount: number,
   ) => {
     // Show name + description
     return (
@@ -408,7 +410,7 @@ export default function Parameters({
                   size="sm"
                   onClick={() =>
                     router.push(
-                      `/management/parameters/p/${parameter.parameter_id}`
+                      `/management/parameters/p/${parameter.parameter_id}`,
                     )
                   }
                   aria-label={`Edit ${parameter.name}`}
@@ -425,7 +427,7 @@ export default function Parameters({
                   size="sm"
                   onClick={() =>
                     router.push(
-                      `/management/parameters/p/${parameter.parameter_id}`
+                      `/management/parameters/p/${parameter.parameter_id}`,
                     )
                   }
                   aria-label={`View ${parameter.name}`}

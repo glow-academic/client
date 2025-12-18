@@ -19,7 +19,7 @@ from app.utils.sql_helper import load_sql
 # Inline request/response schemas
 class FieldDetailRequest(BaseModel):
     fieldId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class FieldDetailResponse(BaseModel):
@@ -67,11 +67,17 @@ async def get_field_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/fields/get_field_detail_complete.sql")
-        sql_params = (uuid.UUID(request.fieldId), request.profileId)
-        result = await conn.fetchrow(
-            sql_query, uuid.UUID(request.fieldId), request.profileId
-        )
+        sql_params = (uuid.UUID(request.fieldId), profile_id)
+        result = await conn.fetchrow(sql_query, uuid.UUID(request.fieldId), profile_id)
 
         if not result:
             # Check if field exists but user doesn't have department access

@@ -58,7 +58,7 @@ SimulationMapping = dict[str, SimulationMappingItem]
 class RubricsListRequest(BaseModel):
     """Request for rubrics list."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class RubricItem(BaseModel):
@@ -141,16 +141,24 @@ async def get_rubrics_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/rubrics/list_rubrics.sql")
-        sql_params = (filters.profileId,)
-        rows = await conn.fetch(sql_query, filters.profileId)
+        sql_params = (profile_id,)
+        rows = await conn.fetch(sql_query, profile_id)
 
         # Get actor name from first row (same for all rows)
         actor_name = rows[0]["actor_name"] if rows else None
 
         # Set audit context
         if actor_name:
-            audit_set(request, actor={"name": actor_name, "id": filters.profileId})
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         rubrics: list[RubricItem] = []
         standard_groups_mapping: dict[str, StandardGroupMappingItem] = {}
@@ -268,7 +276,7 @@ async def get_rubrics_list(
         # Get user departments for scoping simulation_options
         user_department_rows = await conn.fetch(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
-            filters.profileId,
+            profile_id,
         )
         user_department_ids = {
             str(row["department_id"]) for row in user_department_rows

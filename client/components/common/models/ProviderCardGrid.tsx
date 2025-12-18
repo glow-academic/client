@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
@@ -11,10 +10,7 @@ import { Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface ProviderCardGridProps {
-  providerMapping: Record<
-    string,
-    { name: string; description?: string }
-  >;
+  providerMapping: Record<string, { name: string; description?: string }>;
   validProviderIds: string[];
   selectedProviderId: string | null;
   onSelect: (providerId: string | null) => void;
@@ -42,9 +38,7 @@ export function ProviderCardGrid({
     }));
 
     // Sort by name
-    return providers.sort((a, b) =>
-      (a.name || "").localeCompare(b.name || "")
-    );
+    return providers.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   }, [validProviderIds, providerMapping]);
 
   // Apply search filter
@@ -57,7 +51,7 @@ export function ProviderCardGrid({
       filtered = filtered.filter(
         (provider) =>
           provider.name?.toLowerCase().includes(searchLower) ||
-          provider.description?.toLowerCase().includes(searchLower)
+          provider.description?.toLowerCase().includes(searchLower),
       );
     }
 
@@ -116,7 +110,7 @@ export function ProviderCardGrid({
                         "hover:shadow-md hover:bg-accent/50",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "disabled:pointer-events-none disabled:opacity-50",
-                        isSelected && "ring-2 ring-primary bg-accent"
+                        isSelected && "ring-2 ring-primary bg-accent",
                       )}
                     >
                       {/* Check icon - top right */}
@@ -147,4 +141,3 @@ export function ProviderCardGrid({
     </TooltipProvider>
   );
 }
-

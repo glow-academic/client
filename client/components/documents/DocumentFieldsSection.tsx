@@ -6,7 +6,13 @@
 import { Check, Search } from "lucide-react";
 import { useMemo } from "react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { components } from "@/lib/api/schema";
 
@@ -62,7 +68,8 @@ export function DocumentFieldsSection({
     return validFieldIds.filter((fieldId) => {
       const field = fieldMapping[fieldId];
       if (!field) return false;
-      const searchText = `${field.name} ${field.description || ""} ${field.parameter_name || ""}`.toLowerCase();
+      const searchText =
+        `${field.name} ${field.description || ""} ${field.parameter_name || ""}`.toLowerCase();
       return searchText.includes(searchLower);
     });
   }, [validFieldIds, fieldMapping, searchTerm]);
@@ -76,7 +83,7 @@ export function DocumentFieldsSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50"
+        stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -88,7 +95,7 @@ export function DocumentFieldsSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -142,7 +149,7 @@ export function DocumentFieldsSection({
                   "hover:shadow-md hover:bg-accent/50",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   "disabled:pointer-events-none disabled:opacity-50",
-                  isSelected && "ring-2 ring-primary bg-accent"
+                  isSelected && "ring-2 ring-primary bg-accent",
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -171,4 +178,3 @@ export function DocumentFieldsSection({
     </Card>
   );
 }
-

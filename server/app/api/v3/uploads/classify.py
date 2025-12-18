@@ -36,7 +36,7 @@ router = APIRouter()
 class ClassifyUploadRequest(BaseModel):
     """Request body for upload classification."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
     parameterIds: list[str] | None = None  # Optional filter for specific parameters
 
 
@@ -61,6 +61,16 @@ async def classify_upload(
     tags = ["uploads"]
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
+        profile_id_uuid = uuid.UUID(profile_id)
+
         # Find the upload directory
         upload_dir = TUS_UPLOADS_DIR / upload_id
 
@@ -100,7 +110,7 @@ async def classify_upload(
         rows = await conn.fetch(
             sql_param_items,
             parameter_ids_filter if parameter_ids_filter else [],
-            uuid.UUID(request_body.profileId),
+            profile_id_uuid,
         )
 
         parameter_items = [
@@ -142,7 +152,6 @@ async def classify_upload(
         classification_results.clear()
 
         # Get user's department for agent selection (use first department or None)
-        profile_id_uuid = uuid.UUID(request_body.profileId)
         user_dept_rows = await conn.fetch(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true LIMIT 1",
             profile_id_uuid,

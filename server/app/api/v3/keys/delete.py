@@ -17,7 +17,7 @@ class DeleteKeyRequest(BaseModel):
     """Request to delete key."""
 
     keyId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DeleteKeyResponse(BaseModel):
@@ -44,10 +44,18 @@ async def delete_key(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Delete key with permission checks (cascade deletes department_keys)
             sql_query = load_sql("sql/v3/keys/delete_key.sql")
-            sql_params = (request.keyId, request.profileId)
+            sql_params = (request.keyId, profile_id)
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:

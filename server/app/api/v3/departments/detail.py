@@ -36,7 +36,7 @@ class DepartmentDetailRequest(BaseModel):
     """Request for department detail."""
 
     departmentId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class SettingsMappingItem(BaseModel):
@@ -116,11 +116,17 @@ async def get_department_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/departments/get_department_detail_with_staff.sql")
-        sql_params = (request_body.departmentId, request_body.profileId)
-        dept_row = await conn.fetchrow(
-            sql_query, request_body.departmentId, request_body.profileId
-        )
+        sql_params = (request_body.departmentId, profile_id)
+        dept_row = await conn.fetchrow(sql_query, request_body.departmentId, profile_id)
 
         if not dept_row:
             # Check if department exists but user doesn't have department access

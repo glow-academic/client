@@ -242,7 +242,7 @@ export function ProvidersTable({
         },
       },
     ],
-    [keyMapping, validKeyIds, onKeyChange, onEnabledChange, readonly]
+    [keyMapping, validKeyIds, onKeyChange, onEnabledChange, readonly],
   );
 
   const table = useReactTable({
@@ -273,7 +273,7 @@ export function ProvidersTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   ))}
@@ -285,24 +285,24 @@ export function ProvidersTable({
                 tableRows.map((row) => {
                   const item = row.original;
                   return (
-                  <TableRow
-                    key={row.id}
+                    <TableRow
+                      key={row.id}
                       className={`hover:bg-muted/30 transition-colors ${
                         !item.enabled ? "opacity-50" : ""
                       }`}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className="border-r px-3 py-2 text-center min-h-[60px]"
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          className="border-r px-3 py-2 text-center min-h-[60px]"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
                   );
                 })
               ) : (

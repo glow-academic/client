@@ -140,7 +140,7 @@ export function AuthItemSection({
             className={cn(
               "transition-all",
               !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-              !isEditMode && stepStatus === "pending" && "opacity-50"
+              !isEditMode && stepStatus === "pending" && "opacity-50",
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -152,7 +152,7 @@ export function AuthItemSection({
                       ? "bg-green-500 text-white"
                       : stepStatus === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "bg-muted",
                   )}
                 >
                   {stepStatus === "completed" ? (
@@ -180,7 +180,7 @@ export function AuthItemSection({
                             }
                           }}
                           className={cn(
-                            "w-full text-lg font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                            "w-full text-lg font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
                           )}
                           autoFocus
                           disabled={readonly}
@@ -295,7 +295,7 @@ export function AuthItemSection({
                       <ChevronDown
                         className={cn(
                           "h-3.5 w-3.5 transition-transform duration-200",
-                          isAccordionOpen && "rotate-180"
+                          isAccordionOpen && "rotate-180",
                         )}
                       />
                     </Button>
@@ -381,7 +381,7 @@ export function AuthItemSection({
         className={cn(
           "transition-all",
           !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-          !isEditMode && stepStatus === "pending" && "opacity-50"
+          !isEditMode && stepStatus === "pending" && "opacity-50",
         )}
       >
         <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -393,7 +393,7 @@ export function AuthItemSection({
                   ? "bg-green-500 text-white"
                   : stepStatus === "active"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    : "bg-muted",
               )}
             >
               {stepStatus === "completed" ? (
@@ -420,7 +420,7 @@ export function AuthItemSection({
                       }
                     }}
                     className={cn(
-                      "w-full text-lg font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                      "w-full text-lg font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
                     )}
                     autoFocus
                     disabled={readonly}
@@ -524,7 +524,9 @@ export function AuthItemSection({
               <Switch
                 id={`${authItemId}-active`}
                 checked={active}
-                onCheckedChange={(checked) => onActiveToggle(authItemId, checked)}
+                onCheckedChange={(checked) =>
+                  onActiveToggle(authItemId, checked)
+                }
                 disabled={readonly}
               />
             </div>
@@ -572,4 +574,3 @@ export function AuthItemSection({
     </TooltipProvider>
   );
 }
-

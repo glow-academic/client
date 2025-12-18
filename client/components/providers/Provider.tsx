@@ -8,10 +8,7 @@ import { toast } from "sonner";
 
 // UI Components
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -54,10 +51,10 @@ export interface ProviderProps {
   // For edit mode: provider detail
   providerDetail?: ProviderDetailOut;
   createProviderAction?: (
-    input: CreateProviderIn
+    input: CreateProviderIn,
   ) => Promise<CreateProviderOut>;
   updateProviderAction?: (
-    input: UpdateProviderIn
+    input: UpdateProviderIn,
   ) => Promise<UpdateProviderOut>;
 }
 
@@ -81,7 +78,7 @@ export default function Provider({
       value: "",
       active: true,
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -146,7 +143,8 @@ export default function Provider({
   // Step status logic
   const getStepStatus = useCallback(
     (stepId: string): StepStatus => {
-      const hasName = !!formData?.name?.trim() && formData.name !== "New Provider";
+      const hasName =
+        !!formData?.name?.trim() && formData.name !== "New Provider";
       switch (stepId) {
         case "basic":
           return hasName ? "completed" : "active";
@@ -154,7 +152,7 @@ export default function Provider({
           return "pending";
       }
     },
-    [formData?.name]
+    [formData?.name],
   );
 
   // Single consolidated useEffect to handle all form state scenarios
@@ -175,7 +173,7 @@ export default function Provider({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | undefined
+    value: string | boolean | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -236,7 +234,7 @@ export default function Provider({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && providerId ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode && providerId ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       setIsSubmitting(false);
     }
@@ -258,7 +256,7 @@ export default function Provider({
                     ? "bg-green-500 text-white"
                     : stepStatus === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {stepStatus === "completed" ? (
@@ -288,7 +286,7 @@ export default function Provider({
                     }}
                     className={cn(
                       "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      errors.name && "border-destructive"
+                      errors.name && "border-destructive",
                     )}
                     placeholder="New Provider"
                     disabled={isReadonly || isSubmitting}
@@ -347,9 +345,7 @@ export default function Provider({
                 />
               ) : null}
               {errors.description && (
-                <p className="text-sm text-destructive">
-                  {errors.description}
-                </p>
+                <p className="text-sm text-destructive">{errors.description}</p>
               )}
             </div>
 

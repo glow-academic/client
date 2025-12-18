@@ -9,4 +9,3 @@ import { LeaderboardSkeleton } from "@/components/leaderboard/Leaderboard";
 export default function Loading() {
   return <LeaderboardSkeleton />;
 }
-

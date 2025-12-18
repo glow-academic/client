@@ -41,18 +41,18 @@ export default function Home({ homeData }: HomeProps) {
   // Extract rubric mappings from home overview data
   const standardGroupsMapping = useMemo(
     () => homeOverview?.standard_groups_mapping || {},
-    [homeOverview]
+    [homeOverview],
   );
   const standardsMapping = useMemo(
     () => homeOverview?.standards_mapping || {},
-    [homeOverview]
+    [homeOverview],
   );
 
   const [carouselIndex, setCarouselIndex] = useState(0);
   // Use WebSocket's specific simulation ID for precise loading state
   const loadingSimulation = startingSimulationId;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null
+    null,
   );
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
@@ -88,14 +88,14 @@ export default function Home({ homeData }: HomeProps) {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as unknown as EventListener
+      handleSimulationStarted as unknown as EventListener,
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as unknown as EventListener
+        handleSimulationStarted as unknown as EventListener,
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -115,7 +115,7 @@ export default function Home({ homeData }: HomeProps) {
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page."
+            "WebSocket not connected. Please wait for connection or refresh the page.",
           );
           return;
         }
@@ -152,7 +152,7 @@ export default function Home({ homeData }: HomeProps) {
       isConnected,
       emitStartSimulation,
       loadingToastId,
-    ]
+    ],
   );
 
   // Use data directly from the hook
@@ -318,7 +318,7 @@ export default function Home({ homeData }: HomeProps) {
                       passPct: item.passPct,
                     })}
                   />
-                ) : null
+                ) : null,
               )}
             </div>
           </div>
@@ -418,7 +418,7 @@ export default function Home({ homeData }: HomeProps) {
                           | "guest",
                       }}
                     />
-                  ) : null
+                  ) : null,
                 )}
               </div>
 

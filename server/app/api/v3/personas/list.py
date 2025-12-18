@@ -66,7 +66,8 @@ ScenarioMapping = dict[str, ScenarioMappingItem]
 class PersonasFilters(BaseModel):
     """Filters for personas list request."""
 
-    profileId: str
+    pass
+    # profileId removed - comes from X-Profile-Id header
 
 
 class PersonaItem(BaseModel):
@@ -159,19 +160,27 @@ async def get_personas_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Load SQL string
         sql_query = load_sql("sql/v3/personas/list_personas.sql")
-        sql_params = (filters.profileId,)
+        sql_params = (profile_id,)
 
         # Execute query
-        result = await conn.fetch(sql_query, filters.profileId)
+        result = await conn.fetch(sql_query, profile_id)
 
         # Get actor name from first row (same for all rows)
         actor_name = result[0]["actor_name"] if result else None
 
         # Set audit context
         if actor_name:
-            audit_set(request, actor={"name": actor_name, "id": filters.profileId})
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Build response - transform database rows
         personas = []
@@ -268,7 +277,7 @@ async def get_personas_list(
         # Get user departments for scoping scenario_options
         user_department_rows = await conn.fetch(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
-            filters.profileId,
+            profile_id,
         )
         user_department_ids = {
             str(row["department_id"]) for row in user_department_rows

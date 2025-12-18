@@ -25,7 +25,12 @@ import React, {
 } from "react";
 import { useProfile } from "./profile-context";
 
-type ProfileRole = "superadmin" | "admin" | "instructional" | "member" | "guest";
+type ProfileRole =
+  | "superadmin"
+  | "admin"
+  | "instructional"
+  | "member"
+  | "guest";
 
 export type SimulationFilter = "practice" | "general" | "archived";
 

@@ -204,7 +204,9 @@ export function PracticeCustomizeDialog({
                   onSelect={setSelectedDepartmentIds}
                   getId={(dept) => (dept as unknown as { id: string }).id}
                   getLabel={(dept) => dept.name || ""}
-                  getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                  getSearchText={(dept) =>
+                    `${dept.name} ${dept.description || ""}`
+                  }
                   multiSelect={false}
                   placeholder="Select department (optional)"
                   hideSelectedChips={true}
@@ -220,11 +222,15 @@ export function PracticeCustomizeDialog({
                 selectedIds={selectedPersonaIds}
                 onSelect={setSelectedPersonaIds}
                 getId={(item) => {
-                  const entry = Object.entries(filteredPersonaMapping).find(([, v]) => v === item);
+                  const entry = Object.entries(filteredPersonaMapping).find(
+                    ([, v]) => v === item,
+                  );
                   return entry ? entry[0] : "";
                 }}
                 getLabel={(item) => (item as { name: string }).name || ""}
-                getSearchText={(item) => `${(item as { name: string }).name} ${((item as { description?: string }).description) || ""}`}
+                getSearchText={(item) =>
+                  `${(item as { name: string }).name} ${(item as { description?: string }).description || ""}`
+                }
                 multiSelect={false}
                 placeholder="Choose the target persona you'll practice with in standard mode."
                 buttonClassName="w-full"

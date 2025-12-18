@@ -20,7 +20,7 @@ class BulkCreateOrUpdateStaffRequest(BaseModel):
     """Request to bulk create or update staff members."""
 
     profiles: list[CreateOrUpdateProfileRequest]
-    currentProfileId: str  # Current user's profile ID for role validation
+    # currentProfileId removed - comes from X-Profile-Id header
 
 
 class BulkCreateOrUpdateStaffResponse(BaseModel):
@@ -45,6 +45,14 @@ async def bulk_create_or_update_staff(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get current user's profile_id from header (set by router-level dependency)
+        current_profile_id = http_request.state.profile_id
+        if not current_profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         profile_ids: list[str] = []
         created_count = 0
         updated_count = 0
@@ -100,7 +108,7 @@ async def bulk_create_or_update_staff(
                     dept_uuids,
                     cohort_uuids,
                     uuid.UUID(
-                        request.currentProfileId
+                        current_profile_id
                     ),  # current_profile_id for role validation
                 )
                 result = await conn.fetchrow(create_or_update_sql, *sql_params)

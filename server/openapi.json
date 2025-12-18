@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema from FastAPI v3 API",
+    "description": "Auto-generated OpenAPI schema",
     "version": "0.1.0"
   },
   "paths": {
@@ -64,11 +64,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/update": {
@@ -129,11 +125,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/create": {
@@ -194,11 +186,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/delete": {
@@ -259,11 +247,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/upsert": {
@@ -324,11 +308,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/new": {
@@ -389,11 +369,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/email": {
@@ -454,11 +430,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/context": {
@@ -519,11 +491,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/emulate": {
@@ -584,11 +552,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/profile/simulatable": {
@@ -649,11 +613,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/list": {
@@ -714,11 +674,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/detail": {
@@ -779,11 +735,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/new": {
@@ -844,11 +796,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/create": {
@@ -909,11 +857,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/update": {
@@ -974,11 +918,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/duplicate": {
@@ -1039,11 +979,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/scenarios/delete": {
@@ -1104,11 +1040,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v3/simulations/list": {
@@ -1169,11 +1101,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/detail": {
@@ -1234,11 +1162,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/new": {
@@ -1299,11 +1223,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/create": {
@@ -1364,11 +1284,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/update": {
@@ -1429,11 +1345,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/duplicate": {
@@ -1494,11 +1406,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/simulations/delete": {
@@ -1559,11 +1467,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v3/personas/list": {
@@ -1624,11 +1528,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/detail": {
@@ -1689,11 +1589,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/new": {
@@ -1754,11 +1650,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/create": {
@@ -1819,11 +1711,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/update": {
@@ -1884,11 +1772,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/duplicate": {
@@ -1949,11 +1833,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/personas/delete": {
@@ -2014,11 +1894,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v3/auth/list": {
@@ -2079,11 +1955,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/detail": {
@@ -2144,11 +2016,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/new": {
@@ -2209,11 +2077,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/create": {
@@ -2274,11 +2138,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/update": {
@@ -2339,11 +2199,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/duplicate": {
@@ -2404,11 +2260,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/delete": {
@@ -2469,11 +2321,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/auth/login": {
@@ -2534,11 +2382,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v3/departments/list": {
@@ -2599,11 +2443,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/detail": {
@@ -2664,11 +2504,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/new": {
@@ -2729,11 +2565,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/create": {
@@ -2794,11 +2626,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/update": {
@@ -2859,11 +2687,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/duplicate": {
@@ -2924,11 +2748,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/departments/delete": {
@@ -2989,11 +2809,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/list": {
@@ -3054,11 +2870,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/detail": {
@@ -3119,11 +2931,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/new": {
@@ -3184,11 +2992,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/duplicate": {
@@ -3249,11 +3053,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/leave": {
@@ -3314,11 +3114,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/create": {
@@ -3379,11 +3175,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/update": {
@@ -3444,11 +3236,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/delete": {
@@ -3509,11 +3297,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/cohorts/search": {
@@ -3574,11 +3358,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v3/documents/list": {
@@ -3639,11 +3419,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/detail": {
@@ -3704,11 +3480,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/create": {
@@ -3769,11 +3541,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/delete": {
@@ -3834,11 +3602,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/update": {
@@ -3899,11 +3663,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/certificate": {
@@ -3962,11 +3722,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/documents/render": {
@@ -4027,11 +3783,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v3/evals/list": {
@@ -4092,11 +3844,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/detail": {
@@ -4157,11 +3905,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/new": {
@@ -4222,11 +3966,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/create": {
@@ -4287,11 +4027,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/update": {
@@ -4352,11 +4088,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/delete": {
@@ -4417,11 +4149,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/runs": {
@@ -4482,11 +4210,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/run": {
@@ -4547,11 +4271,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/evals/stop": {
@@ -4612,11 +4332,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/list": {
@@ -4677,11 +4393,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/detail": {
@@ -4742,11 +4454,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/new": {
@@ -4807,11 +4515,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/duplicate": {
@@ -4872,11 +4576,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/create": {
@@ -4937,11 +4637,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/update": {
@@ -5002,11 +4698,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/rubrics/delete": {
@@ -5067,11 +4759,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v3/settings/list": {
@@ -5132,11 +4820,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v3/settings/detail": {
@@ -5197,11 +4881,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v3/settings/update": {
@@ -5262,11 +4942,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v3/settings/active": {
@@ -5327,11 +5003,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v3/analytics/refresh": {
@@ -5392,11 +5064,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "analytics"
-        ]
+        }
       }
     },
     "/api/v3/dashboard/overview": {
@@ -5457,11 +5125,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v3/dashboard/history": {
@@ -5522,11 +5186,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v3/reports/overview": {
@@ -5587,11 +5247,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v3/reports/history": {
@@ -5652,11 +5308,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v3/leaderboard/bundle": {
@@ -5717,11 +5369,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "leaderboard"
-        ]
+        }
       }
     },
     "/api/v3/agents/list": {
@@ -5782,11 +5430,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/detail": {
@@ -5847,11 +5491,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/new": {
@@ -5912,11 +5552,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/create": {
@@ -5977,11 +5613,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/update": {
@@ -6042,11 +5674,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/duplicate": {
@@ -6107,11 +5735,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/agents/delete": {
@@ -6172,11 +5796,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v3/keys/list": {
@@ -6237,11 +5857,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/detail": {
@@ -6302,11 +5918,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/new": {
@@ -6367,11 +5979,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/create": {
@@ -6432,11 +6040,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/update": {
@@ -6497,11 +6101,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/delete": {
@@ -6562,11 +6162,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/keys/decrypt": {
@@ -6627,11 +6223,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v3/models/list": {
@@ -6692,11 +6284,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/detail": {
@@ -6757,11 +6345,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/new": {
@@ -6822,11 +6406,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/create": {
@@ -6887,11 +6467,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/update": {
@@ -6952,11 +6528,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/delete": {
@@ -7017,11 +6589,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/models/duplicate": {
@@ -7082,11 +6650,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "models"
-        ]
+        }
       }
     },
     "/api/v3/providers/list": {
@@ -7147,11 +6711,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/providers/detail": {
@@ -7212,11 +6772,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/providers/new": {
@@ -7277,11 +6833,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/providers/create": {
@@ -7342,11 +6894,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/providers/update": {
@@ -7407,11 +6955,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/providers/delete": {
@@ -7472,11 +7016,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v3/parameters/list": {
@@ -7537,11 +7077,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/detail": {
@@ -7602,11 +7138,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/new": {
@@ -7667,11 +7199,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/create": {
@@ -7732,11 +7260,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/update": {
@@ -7797,11 +7321,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/duplicate": {
@@ -7862,11 +7382,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/parameters/delete": {
@@ -7927,11 +7443,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v3/fields/list": {
@@ -7992,11 +7504,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/detail": {
@@ -8057,11 +7565,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/new": {
@@ -8122,11 +7626,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/create": {
@@ -8187,11 +7687,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/update": {
@@ -8252,11 +7748,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/duplicate": {
@@ -8317,11 +7809,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/fields/delete": {
@@ -8382,11 +7870,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v3/feedback/create": {
@@ -8447,11 +7931,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "feedback"
-        ]
+        }
       }
     },
     "/api/v3/logs/bundle": {
@@ -8512,11 +7992,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "logs"
-        ]
+        }
       }
     },
     "/api/v3/attempts/archive": {
@@ -8577,11 +8053,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v3/attempts/full": {
@@ -8642,11 +8114,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v3/prompts/delete": {
@@ -8707,11 +8175,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "prompts"
-        ]
+        }
       }
     },
     "/api/v3/staff/list": {
@@ -8772,11 +8236,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/search": {
@@ -8837,11 +8297,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/csv": {
@@ -8902,11 +8358,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/data/create": {
@@ -8967,11 +8419,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/create": {
@@ -9032,11 +8480,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/update": {
@@ -9097,11 +8541,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/delete": {
@@ -9162,11 +8602,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/staff/upsert": {
@@ -9227,11 +8663,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v3/home/overview": {
@@ -9292,11 +8724,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "home"
-        ]
+        }
       }
     },
     "/api/v3/home/history": {
@@ -9357,11 +8785,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "home"
-        ]
+        }
       }
     },
     "/api/v3/practice/overview": {
@@ -9422,11 +8846,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v3/practice/history": {
@@ -9487,11 +8907,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v3/pricing/analytics": {
@@ -9552,11 +8968,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v3/pricing/runs": {
@@ -9617,11 +9029,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v3/uploads/upload": {
@@ -9670,11 +9078,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -9721,11 +9125,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v3/uploads/upload/{upload_id}": {
@@ -9783,11 +9183,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       },
       "head": {
         "tags": [
@@ -9843,11 +9239,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       },
       "patch": {
         "tags": [
@@ -9903,11 +9295,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v3/uploads/upload/{upload_id}/finalize": {
@@ -9967,11 +9355,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v3/uploads/upload/{upload_id}/classify": {
@@ -10041,11 +9425,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v3/uploads/download/{upload_id}": {
@@ -10115,11 +9495,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
+        }
       }
     },
     "/socket/v3/client/connect": {
@@ -10146,11 +9522,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/disconnect": {
@@ -10177,11 +9549,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/log": {
@@ -10228,11 +9596,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/join": {
@@ -10280,12 +9644,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/leave": {
@@ -10333,12 +9692,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/text/end": {
@@ -10387,13 +9741,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/text/next": {
@@ -10442,13 +9790,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/text/practice": {
@@ -10497,13 +9839,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/text/send": {
@@ -10552,13 +9888,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/text/start": {
@@ -10607,13 +9937,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/text/stop": {
@@ -10662,13 +9986,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice/start": {
@@ -10717,13 +10035,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice/stop": {
@@ -10772,13 +10084,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice/debug": {
@@ -10827,13 +10133,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice/user/start": {
@@ -10883,14 +10183,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice/user/delta": {
@@ -10940,14 +10233,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice/user/transcript": {
@@ -10997,14 +10283,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice/user/text": {
@@ -11054,14 +10333,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice/user/speech": {
@@ -11111,14 +10383,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice/assistant/delta": {
@@ -11168,14 +10433,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice/assistant/done": {
@@ -11225,14 +10483,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/simulations/voice/assistant/interrupted": {
@@ -11282,14 +10533,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/scenarios/generate": {
@@ -11337,12 +10581,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/scenarios/regenerate": {
@@ -11390,12 +10629,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/scenarios/tools/document": {
@@ -11444,13 +10678,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/scenarios/tools/statement": {
@@ -11499,13 +10727,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/scenarios/tools/objectives": {
@@ -11554,13 +10776,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/scenarios/tools/image": {
@@ -11609,13 +10825,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/scenarios/tools/video": {
@@ -11664,13 +10874,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/scenarios/tools/questions": {
@@ -11719,13 +10923,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/documents/generate": {
@@ -11773,12 +10971,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/videos/generate": {
@@ -11826,12 +11019,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/images/complete": {
@@ -11879,12 +11067,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/client/images/generate": {
@@ -11932,12 +11115,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v3/server/connection_confirmed": {
@@ -11984,11 +11162,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/joined": {
@@ -12036,12 +11210,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/join_error": {
@@ -12089,12 +11258,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/leave_error": {
@@ -12142,12 +11306,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/ended": {
@@ -12196,13 +11355,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/end_error": {
@@ -12251,13 +11404,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/next_error": {
@@ -12306,13 +11453,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/grading_progress": {
@@ -12361,13 +11502,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/continued": {
@@ -12416,13 +11551,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/end_all_started": {
@@ -12471,13 +11600,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/end_chat_started": {
@@ -12526,13 +11649,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/end_all_completed": {
@@ -12581,13 +11698,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/practice_error": {
@@ -12636,13 +11747,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/send_error": {
@@ -12691,13 +11796,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/hint_generation_progress": {
@@ -12746,13 +11845,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/new_message": {
@@ -12801,13 +11894,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/message_token": {
@@ -12856,13 +11943,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/message_complete": {
@@ -12911,13 +11992,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/message_error": {
@@ -12966,13 +12041,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/message_cancelled": {
@@ -13021,13 +12090,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/message_sent": {
@@ -13076,13 +12139,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/started": {
@@ -13131,13 +12188,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/start_error": {
@@ -13186,13 +12237,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/stopped": {
@@ -13241,13 +12286,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/text/stop_error": {
@@ -13296,13 +12335,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/start_response": {
@@ -13351,13 +12384,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/start_error": {
@@ -13406,13 +12433,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/stop_response": {
@@ -13461,13 +12482,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/stop_error": {
@@ -13516,13 +12531,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/debug_error": {
@@ -13571,13 +12580,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/user/start": {
@@ -13627,14 +12630,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/user/delta": {
@@ -13684,14 +12680,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/user/transcript": {
@@ -13741,14 +12730,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/user/text_error": {
@@ -13798,14 +12780,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/assistant/tool_call_error": {
@@ -13855,14 +12830,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/assistant/done": {
@@ -13912,14 +12880,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/simulations/voice/assistant/interrupted": {
@@ -13969,14 +12930,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/generation_progress": {
@@ -14024,12 +12978,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/generation_complete": {
@@ -14077,12 +13026,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/generation_error": {
@@ -14130,12 +13074,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/tools/document_complete": {
@@ -14184,13 +13123,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/tools/document_error": {
@@ -14239,13 +13172,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/tools/statement_complete": {
@@ -14294,13 +13221,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/tools/objectives_complete": {
@@ -14349,13 +13270,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/tools/image_complete": {
@@ -14404,13 +13319,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/tools/video_complete": {
@@ -14459,13 +13368,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/tools/video_error": {
@@ -14514,13 +13417,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/tools/questions_complete": {
@@ -14569,13 +13466,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/scenarios/tools/questions_error": {
@@ -14624,13 +13515,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/documents/generation_progress": {
@@ -14678,12 +13563,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/documents/generation_complete": {
@@ -14731,12 +13611,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/documents/generation_error": {
@@ -14784,12 +13659,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/videos/generation_progress": {
@@ -14837,12 +13707,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/videos/generation_complete": {
@@ -14890,12 +13755,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v3/server/videos/generation_error": {
@@ -14943,12 +13803,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/": {
@@ -14993,16 +13848,11 @@
           "agentId": {
             "type": "string",
             "title": "Agentid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "agentId",
-          "profileId"
+          "agentId"
         ],
         "title": "AgentDetailRequest"
       },
@@ -15092,29 +13942,13 @@
         "title": "AgentItem"
       },
       "AgentNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "AgentNewRequest"
       },
       "AgentsListRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "AgentsListRequest"
       },
       "AgentsListResponse": {
@@ -15320,17 +14154,6 @@
           "attemptId": {
             "type": "string",
             "title": "Attemptid"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -15651,16 +14474,11 @@
           "authId": {
             "type": "string",
             "title": "Authid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "authId",
-          "profileId"
+          "authId"
         ],
         "title": "AuthDetailRequest"
       },
@@ -15701,16 +14519,8 @@
         "title": "AuthDetailResponse"
       },
       "AuthFilters": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "AuthFilters"
       },
       "AuthItem": {
@@ -15964,16 +14774,8 @@
         "title": "AuthListResponse"
       },
       "AuthNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "AuthNewRequest"
       },
       "AuthSampleItem": {
@@ -16194,17 +14996,6 @@
             ],
             "title": "Simulationfilters"
           },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
           "search": {
             "anyOf": [
               {
@@ -16286,16 +15077,11 @@
             },
             "type": "array",
             "title": "Profiles"
-          },
-          "currentProfileId": {
-            "type": "string",
-            "title": "Currentprofileid"
           }
         },
         "type": "object",
         "required": [
-          "profiles",
-          "currentProfileId"
+          "profiles"
         ],
         "title": "BulkCreateOrUpdateStaffRequest",
         "description": "Request to bulk create or update staff members."
@@ -16462,10 +15248,6 @@
             ],
             "title": "Primary Department Id"
           },
-          "currentProfileId": {
-            "type": "string",
-            "title": "Currentprofileid"
-          },
           "active": {
             "anyOf": [
               {
@@ -16480,8 +15262,7 @@
         },
         "type": "object",
         "required": [
-          "profileIds",
-          "currentProfileId"
+          "profileIds"
         ],
         "title": "BulkUpdateStaffRequest",
         "description": "Request to bulk update staff."
@@ -16830,10 +15611,6 @@
       },
       "ClassifyUploadRequest": {
         "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "parameterIds": {
             "anyOf": [
               {
@@ -16850,9 +15627,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "ClassifyUploadRequest",
         "description": "Request body for upload classification."
       },
@@ -16994,16 +15768,11 @@
           "cohortId": {
             "type": "string",
             "title": "Cohortid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "cohortId",
-          "profileId"
+          "cohortId"
         ],
         "title": "CohortDetailRequest",
         "description": "Request for cohort detail."
@@ -17171,16 +15940,8 @@
         "description": "Cohort mapping item."
       },
       "CohortNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "CohortNewRequest",
         "description": "Request for default cohort detail."
       },
@@ -17286,16 +16047,9 @@
             "type": "integer",
             "title": "Limit",
             "default": 200
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "CohortSearchProfileRequest",
         "description": "Request for searching profiles to add to a cohort."
       },
@@ -17358,16 +16112,8 @@
         "description": "Cohorts data with member counts."
       },
       "CohortsListRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "CohortsListRequest",
         "description": "Request for cohorts list."
       },
@@ -17745,10 +16491,6 @@
               }
             ],
             "title": "Model Voice Ids"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -17760,8 +16502,7 @@
           "model_id",
           "active",
           "role",
-          "department_ids",
-          "profileId"
+          "department_ids"
         ],
         "title": "CreateAgentRequest"
       },
@@ -17808,10 +16549,6 @@
             },
             "type": "array",
             "title": "Auth Items"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -17819,8 +16556,7 @@
           "name",
           "description",
           "active",
-          "auth_items",
-          "profileId"
+          "auth_items"
         ],
         "title": "CreateAuthRequest",
         "description": "Request to create auth with nested items."
@@ -17894,16 +16630,11 @@
             "type": "array",
             "title": "Simulation Ids",
             "default": []
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "title",
-          "profileId"
+          "title"
         ],
         "title": "CreateCohortRequest",
         "description": "Request for creating a cohort."
@@ -17956,18 +16687,13 @@
               }
             ],
             "title": "Settingsid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
           "title",
           "description",
-          "active",
-          "profileId"
+          "active"
         ],
         "title": "CreateDepartmentRequest",
         "description": "Request for creating a department."
@@ -18066,10 +16792,6 @@
             ],
             "title": "Parameterids"
           },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "templateUploadId": {
             "anyOf": [
               {
@@ -18096,8 +16818,7 @@
         },
         "type": "object",
         "required": [
-          "name",
-          "profileId"
+          "name"
         ],
         "title": "CreateDocumentRequest",
         "description": "Request to create document."
@@ -18180,10 +16901,6 @@
             "title": "Active",
             "default": true
           },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "run": {
             "type": "boolean",
             "title": "Run",
@@ -18197,8 +16914,7 @@
           "rubric_id",
           "agent_id",
           "eval_agent_id",
-          "model_run_ids",
-          "profileId"
+          "model_run_ids"
         ],
         "title": "CreateEvalRequest",
         "description": "Request to create an eval."
@@ -18236,17 +16952,12 @@
           "message": {
             "type": "string",
             "title": "Message"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
           "type",
-          "message",
-          "profileId"
+          "message"
         ],
         "title": "CreateFeedbackRequest"
       },
@@ -18315,18 +17026,13 @@
               }
             ],
             "title": "Conditional Parameter Ids"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
           "name",
           "description",
-          "department_ids",
-          "profileId"
+          "department_ids"
         ],
         "title": "CreateFieldRequest",
         "description": "Request to create field."
@@ -18387,18 +17093,13 @@
               }
             ],
             "title": "Department Ids"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
           "name",
           "key",
-          "description",
-          "profileId"
+          "description"
         ],
         "title": "CreateKeyRequest",
         "description": "Request to create key."
@@ -18563,10 +17264,6 @@
               }
             ],
             "title": "Qualities"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -18575,8 +17272,7 @@
           "name",
           "description",
           "active",
-          "value",
-          "profileId"
+          "value"
         ],
         "title": "CreateModelRequest",
         "description": "Request to create model."
@@ -18752,10 +17448,6 @@
             },
             "type": "array",
             "title": "Field Connections"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -18764,8 +17456,7 @@
           "description",
           "active",
           "department_ids",
-          "field_connections",
-          "profileId"
+          "field_connections"
         ],
         "title": "CreateParameterRequest",
         "description": "Request to create parameter with field connections."
@@ -18868,10 +17559,6 @@
               }
             ],
             "title": "Example Ids"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -18884,8 +17571,7 @@
           "icon",
           "instructions",
           "parameter_ids",
-          "example_ids",
-          "profileId"
+          "example_ids"
         ],
         "title": "CreatePersonaRequest",
         "description": "Request to create a persona."
@@ -19131,18 +17817,13 @@
               }
             ],
             "title": "Base Url"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
           "name",
           "description",
-          "value",
-          "profileId"
+          "value"
         ],
         "title": "CreateProviderRequest",
         "description": "Request to create provider."
@@ -19216,18 +17897,13 @@
             "type": "array",
             "title": "Standard Groups",
             "default": []
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
           "name",
           "points",
-          "passPoints",
-          "profileId"
+          "passPoints"
         ],
         "title": "CreateRubricRequest",
         "description": "Request for creating a rubric."
@@ -19489,10 +18165,6 @@
               }
             ],
             "title": "Question Timestamps"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -19504,8 +18176,7 @@
           "persona_ids",
           "document_ids",
           "objective_ids",
-          "parameters",
-          "profileId"
+          "parameters"
         ],
         "title": "CreateScenarioRequest",
         "description": "Request to create a scenario."
@@ -19630,10 +18301,6 @@
               }
             ],
             "title": "Content Items"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -19643,8 +18310,7 @@
           "department_ids",
           "active",
           "practice_simulation",
-          "simulation_text_agent_id",
-          "profileId"
+          "simulation_text_agent_id"
         ],
         "title": "CreateSimulationRequest",
         "description": "Request to create a simulation."
@@ -19681,16 +18347,11 @@
             },
             "type": "array",
             "title": "Departmentids"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "departmentIds",
-          "profileId"
+          "departmentIds"
         ],
         "title": "CreateStaffDataRequest",
         "description": "Request for create staff data (mappings, etc.)."
@@ -20502,16 +19163,11 @@
           "keyId": {
             "type": "string",
             "title": "Keyid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "keyId",
-          "profileId"
+          "keyId"
         ],
         "title": "DecryptKeyRequest",
         "description": "Request to decrypt key."
@@ -20582,16 +19238,11 @@
           "agentId": {
             "type": "string",
             "title": "Agentid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "agentId",
-          "profileId"
+          "agentId"
         ],
         "title": "DeleteAgentRequest"
       },
@@ -20618,16 +19269,11 @@
           "authId": {
             "type": "string",
             "title": "Authid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "authId",
-          "profileId"
+          "authId"
         ],
         "title": "DeleteAuthRequest",
         "description": "Request to delete auth."
@@ -20755,16 +19401,11 @@
           "evalId": {
             "type": "string",
             "title": "Evalid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "evalId",
-          "profileId"
+          "evalId"
         ],
         "title": "DeleteEvalRequest",
         "description": "Request to delete an eval."
@@ -20793,16 +19434,11 @@
           "fieldId": {
             "type": "string",
             "title": "Fieldid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "fieldId",
-          "profileId"
+          "fieldId"
         ],
         "title": "DeleteFieldRequest",
         "description": "Request to delete field."
@@ -20831,16 +19467,11 @@
           "keyId": {
             "type": "string",
             "title": "Keyid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "keyId",
-          "profileId"
+          "keyId"
         ],
         "title": "DeleteKeyRequest",
         "description": "Request to delete key."
@@ -20869,16 +19500,11 @@
           "modelId": {
             "type": "string",
             "title": "Modelid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "modelId",
-          "profileId"
+          "modelId"
         ],
         "title": "DeleteModelRequest",
         "description": "Request to delete model."
@@ -20907,16 +19533,11 @@
           "parameterId": {
             "type": "string",
             "title": "Parameterid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "parameterId",
-          "profileId"
+          "parameterId"
         ],
         "title": "DeleteParameterRequest",
         "description": "Request to delete parameter."
@@ -20945,16 +19566,11 @@
           "personaId": {
             "type": "string",
             "title": "Personaid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "personaId",
-          "profileId"
+          "personaId"
         ],
         "title": "DeletePersonaRequest",
         "description": "Request to delete persona."
@@ -21016,16 +19632,11 @@
           "providerId": {
             "type": "string",
             "title": "Providerid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "providerId",
-          "profileId"
+          "providerId"
         ],
         "title": "DeleteProviderRequest",
         "description": "Request to delete provider."
@@ -21054,16 +19665,11 @@
           "rubricId": {
             "type": "string",
             "title": "Rubricid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "rubricId",
-          "profileId"
+          "rubricId"
         ],
         "title": "DeleteRubricRequest",
         "description": "Request for deleting a rubric."
@@ -21092,16 +19698,11 @@
           "scenarioId": {
             "type": "string",
             "title": "Scenarioid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "scenarioId",
-          "profileId"
+          "scenarioId"
         ],
         "title": "DeleteScenarioRequest",
         "description": "Request to delete a scenario."
@@ -21163,31 +19764,18 @@
           "departmentId": {
             "type": "string",
             "title": "Departmentid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "departmentId",
-          "profileId"
+          "departmentId"
         ],
         "title": "DepartmentDetailRequest",
         "description": "Request for department detail."
       },
       "DepartmentNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "DepartmentNewRequest",
         "description": "Request for default department detail."
       },
@@ -21216,16 +19804,8 @@
         "description": "Department option for login page."
       },
       "DepartmentsListRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "DepartmentsListRequest",
         "description": "Request for departments list."
       },
@@ -21267,16 +19847,11 @@
           "documentId": {
             "type": "string",
             "title": "Documentid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "documentId",
-          "profileId"
+          "documentId"
         ],
         "title": "DocumentDetailRequest",
         "description": "Request to get document details."
@@ -21905,16 +20480,8 @@
         "description": "Request to create document from scenario generation tool."
       },
       "DocumentsListRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "DocumentsListRequest",
         "description": "Request for documents list."
       },
@@ -22010,16 +20577,11 @@
           "agentId": {
             "type": "string",
             "title": "Agentid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "agentId",
-          "profileId"
+          "agentId"
         ],
         "title": "DuplicateAgentRequest"
       },
@@ -22051,16 +20613,11 @@
           "authId": {
             "type": "string",
             "title": "Authid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "authId",
-          "profileId"
+          "authId"
         ],
         "title": "DuplicateAuthRequest",
         "description": "Request to duplicate auth."
@@ -22170,16 +20727,11 @@
           "fieldId": {
             "type": "string",
             "title": "Fieldid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "fieldId",
-          "profileId"
+          "fieldId"
         ],
         "title": "DuplicateFieldRequest",
         "description": "Request to duplicate field."
@@ -22213,16 +20765,11 @@
           "modelId": {
             "type": "string",
             "title": "Modelid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "modelId",
-          "profileId"
+          "modelId"
         ],
         "title": "DuplicateModelRequest",
         "description": "Request to duplicate model."
@@ -22256,16 +20803,11 @@
           "parameterId": {
             "type": "string",
             "title": "Parameterid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "parameterId",
-          "profileId"
+          "parameterId"
         ],
         "title": "DuplicateParameterRequest",
         "description": "Request to duplicate parameter."
@@ -22299,16 +20841,11 @@
           "personaId": {
             "type": "string",
             "title": "Personaid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "personaId",
-          "profileId"
+          "personaId"
         ],
         "title": "DuplicatePersonaRequest",
         "description": "Request to duplicate persona."
@@ -22342,16 +20879,11 @@
           "rubricId": {
             "type": "string",
             "title": "Rubricid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "rubricId",
-          "profileId"
+          "rubricId"
         ],
         "title": "DuplicateRubricRequest",
         "description": "Request for duplicating a rubric."
@@ -22385,16 +20917,11 @@
           "scenarioId": {
             "type": "string",
             "title": "Scenarioid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "scenarioId",
-          "profileId"
+          "scenarioId"
         ],
         "title": "DuplicateScenarioRequest",
         "description": "Request to duplicate a scenario."
@@ -22634,16 +21161,11 @@
           "evalId": {
             "type": "string",
             "title": "Evalid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "evalId",
-          "profileId"
+          "evalId"
         ],
         "title": "EvalDetailRequest",
         "description": "Request to get eval details."
@@ -22748,30 +21270,14 @@
         "description": "Individual eval item in the response."
       },
       "EvalNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "EvalNewRequest",
         "description": "Request for default eval detail."
       },
       "EvalsFilters": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "EvalsFilters",
         "description": "Filters for evals list request."
       },
@@ -22950,16 +21456,11 @@
           "fieldId": {
             "type": "string",
             "title": "Fieldid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "fieldId",
-          "profileId"
+          "fieldId"
         ],
         "title": "FieldDetailRequest"
       },
@@ -23133,17 +21634,10 @@
         "description": "Field item for list view."
       },
       "FieldNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "FieldNewRequest"
+        "title": "FieldNewRequest",
+        "description": "Request to get default field detail for creation mode."
       },
       "FieldNewResponse": {
         "properties": {
@@ -23203,16 +21697,8 @@
         "title": "FieldNewResponse"
       },
       "FieldsListRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "FieldsListRequest",
         "description": "Request for fields list."
       },
@@ -23299,16 +21785,8 @@
         "description": "Filter option with count."
       },
       "GenerateCertificateRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "GenerateCertificateRequest",
         "description": "Request to generate certificate."
       },
@@ -24201,10 +22679,6 @@
             ],
             "title": "Cohortids"
           },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "departmentIds": {
             "anyOf": [
               {
@@ -24223,18 +22697,13 @@
         "type": "object",
         "required": [
           "startDate",
-          "endDate",
-          "profileId"
+          "endDate"
         ],
         "title": "HomeFilters",
         "description": "Home filter request schema - always shows general simulations."
       },
       "HomeHistoryFilters": {
         "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "startDate": {
             "type": "string",
             "title": "Startdate"
@@ -24386,7 +22855,6 @@
         },
         "type": "object",
         "required": [
-          "profileId",
           "startDate",
           "endDate"
         ],
@@ -24981,16 +23449,11 @@
           "keyId": {
             "type": "string",
             "title": "Keyid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "keyId",
-          "profileId"
+          "keyId"
         ],
         "title": "KeyDetailRequest",
         "description": "Request for key detail."
@@ -25173,30 +23636,14 @@
         "description": "Key item for list view."
       },
       "KeyNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "KeyNewRequest",
         "description": "Request for default key detail."
       },
       "KeysListRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "KeysListRequest",
         "description": "Request for keys list."
       },
@@ -25530,16 +23977,11 @@
           "cohortId": {
             "type": "string",
             "title": "Cohortid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "cohortId",
-          "profileId"
+          "cohortId"
         ],
         "title": "LeaveCohortRequest",
         "description": "Request for leaving a cohort."
@@ -25760,16 +24202,8 @@
         "description": "Response with list of active provider options and departments."
       },
       "LogsBundleRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "LogsBundleRequest",
         "description": "Logs bundle request schema."
       },
@@ -26059,16 +24493,11 @@
           "modelId": {
             "type": "string",
             "title": "Modelid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "modelId",
-          "profileId"
+          "modelId"
         ],
         "title": "ModelDetailRequest"
       },
@@ -26354,16 +24783,8 @@
         "description": "Model mapping with pricing information."
       },
       "ModelNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "ModelNewRequest"
       },
       "ModelNewResponse": {
@@ -26465,10 +24886,6 @@
       },
       "ModelRunsFilters": {
         "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "startDate": {
             "anyOf": [
               {
@@ -26590,9 +25007,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "ModelRunsFilters",
         "description": "Filters for model_runs query request."
       },
@@ -26661,16 +25075,8 @@
         "description": "Response for model_runs query endpoint."
       },
       "ModelsFilters": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "ModelsFilters"
       },
       "ModelsListResponse": {
@@ -26951,16 +25357,11 @@
           "parameterId": {
             "type": "string",
             "title": "Parameterid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "parameterId",
-          "profileId"
+          "parameterId"
         ],
         "title": "ParameterDetailRequest"
       },
@@ -27133,16 +25534,8 @@
         "title": "ParameterDetailResponse"
       },
       "ParameterNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "ParameterNewRequest"
       },
       "ParameterSampleItem": {
@@ -27169,16 +25562,8 @@
         "title": "ParameterSampleItem"
       },
       "ParametersFilters": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "ParametersFilters"
       },
       "ParametersListResponse": {
@@ -27248,31 +25633,18 @@
           "personaId": {
             "type": "string",
             "title": "Personaid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "personaId",
-          "profileId"
+          "personaId"
         ],
         "title": "PersonaDetailRequest",
         "description": "Request to get persona details."
       },
       "PersonaNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "PersonaNewRequest",
         "description": "Request to get default persona details."
       },
@@ -27463,16 +25835,8 @@
         "description": "Persona trend data point."
       },
       "PersonasFilters": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "PersonasFilters",
         "description": "Filters for personas list request."
       },
@@ -27552,10 +25916,6 @@
       },
       "PracticeFilters": {
         "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "departmentIds": {
             "anyOf": [
               {
@@ -27572,18 +25932,11 @@
           }
         },
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "PracticeFilters",
         "description": "Practice filter request schema - simplified to profile-only.\n\ndepartmentIds filters which practice simulations are shown:\n- If empty \u2192 show all simulations\n- If provided \u2192 show simulations matching those departments OR simulations with no department associations"
       },
       "PracticeHistoryFilters": {
         "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "departmentIds": {
             "anyOf": [
               {
@@ -27684,9 +26037,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "PracticeHistoryFilters",
         "description": "Practice history filter request schema."
       },
@@ -29018,16 +27368,11 @@
           "profileId": {
             "type": "string",
             "title": "Profileid"
-          },
-          "currentProfileId": {
-            "type": "string",
-            "title": "Currentprofileid"
           }
         },
         "type": "object",
         "required": [
-          "profileId",
-          "currentProfileId"
+          "profileId"
         ],
         "title": "ProfileDetailRequest",
         "description": "Request for profile detail."
@@ -29306,16 +27651,8 @@
         "description": "Profile mapping item."
       },
       "ProfileNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "ProfileNewRequest",
         "description": "Request to get default profile details."
       },
@@ -29484,16 +27821,11 @@
           "providerId": {
             "type": "string",
             "title": "Providerid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "providerId",
-          "profileId"
+          "providerId"
         ],
         "title": "ProviderDetailRequest",
         "description": "Request for provider detail."
@@ -29640,16 +27972,8 @@
         "title": "ProviderMappingItem"
       },
       "ProviderNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "ProviderNewRequest",
         "description": "Request for default provider detail."
       },
@@ -29690,16 +28014,8 @@
         "description": "Provider option with id (slug), name, and icon URL."
       },
       "ProvidersListRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "ProvidersListRequest",
         "description": "Request for providers list."
       },
@@ -30158,10 +28474,6 @@
             "type": "object",
             "title": "Templateargs"
           },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "departmentIds": {
             "anyOf": [
               {
@@ -30180,8 +28492,7 @@
         "type": "object",
         "required": [
           "documentId",
-          "templateArgs",
-          "profileId"
+          "templateArgs"
         ],
         "title": "RenderTemplateRequest",
         "description": "Request to render document template."
@@ -30276,10 +28587,6 @@
             ],
             "title": "Simulationfilters"
           },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "page": {
             "type": "integer",
             "title": "Page",
@@ -30368,8 +28675,7 @@
         "type": "object",
         "required": [
           "startDate",
-          "endDate",
-          "profileId"
+          "endDate"
         ],
         "title": "ReportsHistoryFilters",
         "description": "Reports history filter request schema - requires profileId for individual reports."
@@ -30426,10 +28732,6 @@
             ],
             "title": "Simulationfilters"
           },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "departmentIds": {
             "anyOf": [
               {
@@ -30448,8 +28750,7 @@
         "type": "object",
         "required": [
           "startDate",
-          "endDate",
-          "profileId"
+          "endDate"
         ],
         "title": "ReportsOverviewFilters",
         "description": "Reports overview filter request schema - requires profileId for individual reports."
@@ -30489,16 +28790,11 @@
           "rubricId": {
             "type": "string",
             "title": "Rubricid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "rubricId",
-          "profileId"
+          "rubricId"
         ],
         "title": "RubricDetailRequest",
         "description": "Request for rubric detail."
@@ -30866,16 +29162,8 @@
         "description": "Per-rubric matrix package."
       },
       "RubricNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "RubricNewRequest",
         "description": "Request for default rubric detail."
       },
@@ -30916,16 +29204,8 @@
         "title": "RubricStructure"
       },
       "RubricsListRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "RubricsListRequest",
         "description": "Request for rubrics list."
       },
@@ -30994,16 +29274,11 @@
           "evalId": {
             "type": "string",
             "title": "Evalid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "evalId",
-          "profileId"
+          "evalId"
         ],
         "title": "RunEvalRequest",
         "description": "Request to run an eval."
@@ -31110,10 +29385,6 @@
           "scenarioId": {
             "type": "string",
             "title": "Scenarioid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           },
           "departmentIds": {
             "anyOf": [
@@ -31404,8 +29675,7 @@
         },
         "type": "object",
         "required": [
-          "scenarioId",
-          "profileId"
+          "scenarioId"
         ],
         "title": "ScenarioDetailRequest",
         "description": "Request to get scenario details."
@@ -31683,10 +29953,6 @@
       },
       "ScenarioNewRequest": {
         "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
           "departmentIds": {
             "anyOf": [
               {
@@ -31975,9 +30241,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "ScenarioNewRequest",
         "description": "Request to get default scenario details."
       },
@@ -32328,16 +30591,8 @@
         "description": "Request to generate video from scenario generation tool."
       },
       "ScenariosFilters": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "ScenariosFilters",
         "description": "Filters for scenarios list request."
       },
@@ -32456,16 +30711,9 @@
             "type": "integer",
             "title": "Limit",
             "default": 200
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "SearchSimulatableProfilesRequest",
         "description": "Request for simulatable profiles search."
       },
@@ -32531,16 +30779,9 @@
             "type": "integer",
             "title": "Limit",
             "default": 200
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "SearchStaffRequest",
         "description": "Request for staff search."
       },
@@ -32628,17 +30869,6 @@
       },
       "SettingsActiveRequest": {
         "properties": {
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
           "departmentId": {
             "anyOf": [
               {
@@ -32840,16 +31070,11 @@
           "settingsId": {
             "type": "string",
             "title": "Settingsid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "settingsId",
-          "profileId"
+          "settingsId"
         ],
         "title": "SettingsDetailRequest",
         "description": "Request to get settings details."
@@ -33221,16 +31446,8 @@
         "description": "Settings item."
       },
       "SettingsListRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "SettingsListRequest"
       },
       "SettingsListResponse": {
@@ -33467,16 +31684,11 @@
           "simulationId": {
             "type": "string",
             "title": "Simulationid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "simulationId",
-          "profileId"
+          "simulationId"
         ],
         "title": "SimulationDetailRequest",
         "description": "Request to get simulation details."
@@ -34095,16 +32307,8 @@
         "description": "Response indicating a new simulation message was created."
       },
       "SimulationNewRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "SimulationNewRequest",
         "description": "Request to get default simulation details."
       },
@@ -34311,16 +32515,8 @@
         "description": "Simulations data."
       },
       "SimulationsFilters": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "SimulationsFilters",
         "description": "Filters for simulations list."
       },
@@ -34558,16 +32754,8 @@
         "description": "Skill standard fact."
       },
       "StaffFilters": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "profileId"
-        ],
         "title": "StaffFilters",
         "description": "Filters for staff list."
       },
@@ -35081,16 +33269,11 @@
           "evalId": {
             "type": "string",
             "title": "Evalid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "evalId",
-          "profileId"
+          "evalId"
         ],
         "title": "StopEvalRequest",
         "description": "Request to stop an eval."
@@ -35659,10 +33842,6 @@
               }
             ],
             "title": "Model Voice Ids"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -35675,8 +33854,7 @@
           "model_id",
           "active",
           "role",
-          "department_ids",
-          "profileId"
+          "department_ids"
         ],
         "title": "UpdateAgentRequest"
       },
@@ -35722,10 +33900,6 @@
             },
             "type": "array",
             "title": "Auth Items"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -35734,8 +33908,7 @@
           "name",
           "description",
           "active",
-          "auth_items",
-          "profileId"
+          "auth_items"
         ],
         "title": "UpdateAuthRequest",
         "description": "Request to update auth with nested items."
@@ -36115,10 +34288,6 @@
               }
             ],
             "title": "Active"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -36126,8 +34295,7 @@
           "evalId",
           "name",
           "description",
-          "rubric_id",
-          "profileId"
+          "rubric_id"
         ],
         "title": "UpdateEvalRequest",
         "description": "Request to update an eval."
@@ -36202,10 +34370,6 @@
               }
             ],
             "title": "Conditional Parameter Ids"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -36213,8 +34377,7 @@
           "fieldId",
           "name",
           "description",
-          "department_ids",
-          "profileId"
+          "department_ids"
         ],
         "title": "UpdateFieldRequest",
         "description": "Request to update field."
@@ -36273,10 +34436,6 @@
               }
             ],
             "title": "Department Ids"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -36285,8 +34444,7 @@
           "name",
           "key",
           "description",
-          "active",
-          "profileId"
+          "active"
         ],
         "title": "UpdateKeyRequest",
         "description": "Request to update key."
@@ -36455,10 +34613,6 @@
               }
             ],
             "title": "Qualities"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -36468,8 +34622,7 @@
           "name",
           "description",
           "active",
-          "value",
-          "profileId"
+          "value"
         ],
         "title": "UpdateModelRequest",
         "description": "Request to update model."
@@ -36551,10 +34704,6 @@
             },
             "type": "array",
             "title": "Field Connections"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -36569,8 +34718,7 @@
           "scenario_parameter",
           "video_parameter",
           "department_ids",
-          "field_connections",
-          "profileId"
+          "field_connections"
         ],
         "title": "UpdateParameterRequest",
         "description": "Request to update parameter with field connections."
@@ -36672,10 +34820,6 @@
               }
             ],
             "title": "Example Ids"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -36689,8 +34833,7 @@
           "icon",
           "instructions",
           "parameter_ids",
-          "example_ids",
-          "profileId"
+          "example_ids"
         ],
         "title": "UpdatePersonaRequest",
         "description": "Request to update persona."
@@ -36953,10 +35096,6 @@
               }
             ],
             "title": "Base Url"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -36965,8 +35104,7 @@
           "name",
           "description",
           "value",
-          "active",
-          "profileId"
+          "active"
         ],
         "title": "UpdateProviderRequest",
         "description": "Request to update provider."
@@ -37038,10 +35176,6 @@
             "type": "array",
             "title": "Standard Groups",
             "default": []
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -37050,8 +35184,7 @@
           "name",
           "active",
           "points",
-          "passPoints",
-          "profileId"
+          "passPoints"
         ],
         "title": "UpdateRubricRequest",
         "description": "Request for updating a rubric."
@@ -37320,10 +35453,6 @@
               }
             ],
             "title": "Question Timestamps"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           }
         },
         "type": "object",
@@ -37336,8 +35465,7 @@
           "persona_ids",
           "document_ids",
           "objective_ids",
-          "parameters",
-          "profileId"
+          "parameters"
         ],
         "title": "UpdateScenarioRequest",
         "description": "Request to update a scenario."
@@ -37442,10 +35570,6 @@
           "danger_threshold": {
             "type": "integer",
             "title": "Danger Threshold"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
           },
           "provider_key_mapping": {
             "anyOf": [
@@ -37581,8 +35705,7 @@
           "guest_login_enabled",
           "success_threshold",
           "warning_threshold",
-          "danger_threshold",
-          "profileId"
+          "danger_threshold"
         ],
         "title": "UpdateSettingsRequest",
         "description": "Request to update settings."

@@ -191,13 +191,13 @@ export default function SimulationPerformance({
       scenarioFacts
         .filter((f) => f.simulationId === selectedSimulationId)
         .sort((a, b) => a.scenarioName.localeCompare(b.scenarioName)),
-    [scenarioFacts, selectedSimulationId]
+    [scenarioFacts, selectedSimulationId],
   );
 
   // Create lookup for custom tooltip
   const dataByName = useMemo(
     () => Object.fromEntries(data.map((d) => [d.scenarioName, d] as const)),
-    [data]
+    [data],
   );
 
   return (
@@ -217,7 +217,7 @@ export default function SimulationPerformance({
         <div
           className={cn(
             "flex",
-            isMobile ? "flex-col gap-2" : "items-start justify-between"
+            isMobile ? "flex-col gap-2" : "items-start justify-between",
           )}
         >
           <div className="flex flex-col items-start">
@@ -257,7 +257,7 @@ export default function SimulationPerformance({
                   <div className="flex flex-wrap gap-1 mt-2">
                     <Badge variant="outline" className="text-xs">
                       {formatTimeLimit(
-                        (sim as { time_limit?: number | null }).time_limit
+                        (sim as { time_limit?: number | null }).time_limit,
                       )}
                     </Badge>
                   </div>
@@ -279,7 +279,7 @@ export default function SimulationPerformance({
         <div
           className={cn(
             "flex-1 min-h-0",
-            isMobile ? "min-h-[250px]" : "min-h-[300px]"
+            isMobile ? "min-h-[250px]" : "min-h-[300px]",
           )}
         >
           <ResponsiveContainer width="100%" height="100%">
@@ -320,13 +320,13 @@ export default function SimulationPerformance({
                   if (!payload) return null;
                   // Only show the two series we care about (order stable)
                   const items = payload.filter((p) =>
-                    ["Average Score", "Success Rate"].includes(String(p.value))
+                    ["Average Score", "Success Rate"].includes(String(p.value)),
                   );
                   return (
                     <div
                       className={cn(
                         "flex flex-col rounded-md bg-muted/70 backdrop-blur border border-border shadow-sm",
-                        isMobile ? "gap-0.5 p-1" : "gap-1 p-2"
+                        isMobile ? "gap-0.5 p-1" : "gap-1 p-2",
                       )}
                     >
                       {items.map((p) => (
@@ -334,13 +334,13 @@ export default function SimulationPerformance({
                           key={String(p.value)}
                           className={cn(
                             "flex items-center gap-1 leading-none",
-                            isMobile ? "text-[9px]" : "text-[10px]"
+                            isMobile ? "text-[9px]" : "text-[10px]",
                           )}
                         >
                           <span
                             className={cn(
                               "inline-block rounded",
-                              isMobile ? "w-1.5 h-1.5" : "w-2 h-2"
+                              isMobile ? "w-1.5 h-1.5" : "w-2 h-2",
                             )}
                             style={{ background: p.color }}
                           />

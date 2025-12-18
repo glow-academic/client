@@ -12,7 +12,9 @@ import { PopoverProps } from "@radix-ui/react-popover";
 import { Check, Eye, X } from "lucide-react";
 import * as React from "react";
 
-import DocumentViewer, { type DocumentItem as DocumentViewerItem } from "@/components/common/chat/viewers/DocumentViewer";
+import DocumentViewer, {
+  type DocumentItem as DocumentViewerItem,
+} from "@/components/common/chat/viewers/DocumentViewer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -159,7 +161,7 @@ export function DocumentPicker<
                       onClick={(e) => {
                         e.stopPropagation();
                         onSelect(
-                          selectedIds.filter((selectedId) => selectedId !== id)
+                          selectedIds.filter((selectedId) => selectedId !== id),
                         );
                       }}
                       className="h-5 w-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
@@ -173,7 +175,7 @@ export function DocumentPicker<
                 <div className="aspect-square bg-muted rounded-lg relative overflow-hidden">
                   {(() => {
                     const fullDoc = documentDetails.find(
-                      (d) => d.document_id === id
+                      (d) => d.document_id === id,
                     );
                     if (fullDoc) {
                       return (
@@ -279,7 +281,7 @@ export function DocumentPicker<
               <Check
                 className={cn(
                   "ml-auto",
-                  isSelected ? "opacity-100" : "opacity-0"
+                  isSelected ? "opacity-100" : "opacity-0",
                 )}
               />
             </div>
@@ -401,7 +403,7 @@ export function DocumentPicker<
           {previewDocumentId &&
             (() => {
               const fullDoc = documentDetails.find(
-                (d) => d.document_id === previewDocumentId
+                (d) => d.document_id === previewDocumentId,
               );
               if (fullDoc) {
                 return (

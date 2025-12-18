@@ -67,7 +67,7 @@ class ProfileDetailRequest(BaseModel):
     """Request for profile detail."""
 
     profileId: str  # Target profile to get details for
-    currentProfileId: str  # Current user's profile ID for role visibility check
+    # currentProfileId removed - comes from X-Profile-Id header
 
 
 class ProfileDetailResponseFull(BaseModel):
@@ -132,17 +132,23 @@ async def get_profile_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get current user's profile_id from header (set by router-level dependency)
+        current_profile_id = request.state.profile_id
+        if not current_profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Load SQL query
         sql_query = load_sql("sql/v3/profile/staff/get_staff_detail.sql")
         sql_params = (
             request_body.profileId,
-            request_body.currentProfileId,
+            current_profile_id,
         )
 
         # Execute query
-        row = await conn.fetchrow(
-            sql_query, request_body.profileId, request_body.currentProfileId
-        )
+        row = await conn.fetchrow(sql_query, request_body.profileId, current_profile_id)
 
         # If no row returned, profile is not visible to current user (role hierarchy)
         if not row:

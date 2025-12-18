@@ -56,7 +56,6 @@ const getSectionFromSegments = (segments: string[]): string => {
       }
       return "analytics";
 
-
     case "create":
       if (second === "personas") {
         if (third === "p" && fourth) {

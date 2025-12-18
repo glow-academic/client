@@ -16,7 +16,8 @@ from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class ModelsFilters(BaseModel):
-    profileId: str
+    pass
+    # profileId removed - comes from X-Profile-Id header
 
 
 class ModelItem(BaseModel):
@@ -68,9 +69,17 @@ async def get_models_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/models/list_models_complete.sql")
-        sql_params = (filters.profileId,)
-        models_result = await conn.fetch(sql_query, filters.profileId)
+        sql_params = (profile_id,)
+        models_result = await conn.fetch(sql_query, profile_id)
 
         models = []
 

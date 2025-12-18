@@ -4,7 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import { getSession } from "@/auth";
 import Logs from "@/components/logs/Logs";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -19,7 +18,7 @@ type LogsBundleOut = OutputOf<"/api/v3/logs/bundle", "post">;
 const getLogsBundle = cache(
   async (input: LogsBundleIn): Promise<LogsBundleOut> => {
     return api.post("/logs/bundle", input);
-  }
+  },
 );
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -36,18 +35,11 @@ interface HealthPageProps {
 
 export default async function HealthPage(_props: HealthPageProps) {
   // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
+  // profileId removed - comes from X-Profile-Id header (auto-injected)
 
   // Fetch bundle data server-side (for KPIs and metrics)
   const bundleData = await getLogsBundle({
-    body: { profileId },
+    body: {},
   });
 
   return (
@@ -59,4 +51,3 @@ export default async function HealthPage(_props: HealthPageProps) {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type { LogsBundleIn, LogsBundleOut };
-

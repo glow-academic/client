@@ -44,7 +44,8 @@ router = APIRouter()
 class StaffFilters(BaseModel):
     """Filters for staff list."""
 
-    profileId: str  # Current user's profile for permissions
+    pass
+    # profileId removed - comes from X-Profile-Id header
 
 
 class StaffItem(BaseModel):
@@ -111,12 +112,20 @@ async def get_profile_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Load SQL string (includes current user role in result)
         sql_query = load_sql("sql/v3/profile/staff/list_staff.sql")
-        sql_params = (filters.profileId,)
+        sql_params = (profile_id,)
 
         # Execute query
-        result = await conn.fetch(sql_query, filters.profileId)
+        result = await conn.fetch(sql_query, profile_id)
 
         # Get current user's role from first row (same for all rows)
         current_user_role = (

@@ -75,7 +75,7 @@ ScenarioMapping = dict[str, ScenarioMappingItem]
 class CohortsListRequest(BaseModel):
     """Request for cohorts list."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class CohortItem(BaseModel):
@@ -176,16 +176,24 @@ async def get_cohorts_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/cohorts/list_cohorts.sql")
-        sql_params = (filters.profileId,)
-        rows = await conn.fetch(sql_query, filters.profileId)
+        sql_params = (profile_id,)
+        rows = await conn.fetch(sql_query, profile_id)
 
         # Get actor name from first row (same for all rows)
         actor_name = rows[0]["actor_name"] if rows else None
 
         # Set audit context
         if actor_name:
-            audit_set(request, actor={"name": actor_name, "id": filters.profileId})
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         cohorts = []
         profile_mapping: dict[str, ProfileMappingItem] = {}
@@ -318,7 +326,7 @@ async def get_cohorts_list(
         # Get user departments for scoping all facet options
         user_department_rows = await conn.fetch(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
-            filters.profileId,
+            profile_id,
         )
         user_department_ids = {
             str(row["department_id"]) for row in user_department_rows
@@ -327,7 +335,7 @@ async def get_cohorts_list(
         # Get current user's role for role-based filtering
         user_role_row = await conn.fetchrow(
             "SELECT role FROM profiles WHERE id = $1",
-            filters.profileId,
+            profile_id,
         )
         current_user_role = user_role_row["role"] if user_role_row else "guest"
 
@@ -370,7 +378,7 @@ async def get_cohorts_list(
             JOIN profile_departments pd2 ON pd2.department_id = pd1.department_id AND pd2.active = true
             WHERE pd1.profile_id = $1 AND pd1.active = true
             """,
-            filters.profileId,
+            profile_id,
         )
         user_accessible_profile_ids = {
             str(row["profile_id"]) for row in user_profile_department_rows

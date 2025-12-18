@@ -84,7 +84,7 @@ const getProfileContext = async (input: {
 /** ---- Inline filters function for dashboard page ---- */
 async function getDashboardFilters(
   searchParams?: URLSearchParams,
-  authResult?: { effectiveProfileId: string; actualProfileId: string }
+  authResult?: { effectiveProfileId: string; actualProfileId: string },
 ) {
   if (!authResult) {
     throw new Error("Authentication required");

@@ -58,7 +58,7 @@ const getProfileContext = async (input: {
 /** ---- Inline filters function for leaderboard page ---- */
 async function getLeaderboardFilters(
   searchParams?: URLSearchParams,
-  profileIds?: { effectiveProfileId: string; actualProfileId: string }
+  profileIds?: { effectiveProfileId: string; actualProfileId: string },
 ) {
   if (!profileIds) {
     throw new Error("Profile IDs required");
@@ -194,4 +194,3 @@ export default async function LeaderboardPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type { LeaderboardIn, LeaderboardOut };
-

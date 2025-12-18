@@ -3,7 +3,6 @@
  * Settings page
  */
 
-import { getSession } from "@/auth";
 import Settings from "@/components/settings/Settings";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -18,10 +17,11 @@ export type StaffListOut = OutputOf<"/api/v3/staff/list", "post">;
 export type DepartmentsListOut = OutputOf<"/api/v3/departments/list", "post">;
 
 /** ---- Direct fetch for settings list ---- */
-const getSettingsList = async (profileId: string): Promise<SettingsListOut> => {
+const getSettingsList = async (): Promise<SettingsListOut> => {
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post(
     "/settings/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -33,12 +33,12 @@ const getSettingsList = async (profileId: string): Promise<SettingsListOut> => {
 
 /** ---- Direct fetch for settings detail ---- */
 const getSettingsDetail = async (
-  settingsId: string,
-  profileId: string
+  settingsId: string
 ): Promise<SettingsDetailOut> => {
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post(
     "/settings/detail",
-    { body: { settingsId, profileId } },
+    { body: { settingsId } },
     {
       cache: "no-store",
       headers: {
@@ -49,10 +49,11 @@ const getSettingsDetail = async (
 };
 
 /** ---- Direct fetch for keys list ---- */
-const getKeysList = async (profileId: string): Promise<KeysListOut> => {
+const getKeysList = async (): Promise<KeysListOut> => {
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post(
     "/keys/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -63,10 +64,11 @@ const getKeysList = async (profileId: string): Promise<KeysListOut> => {
 };
 
 /** ---- Direct fetch for staff list (for profile selection) ---- */
-const getStaffList = async (profileId: string): Promise<StaffListOut> => {
+const getStaffList = async (): Promise<StaffListOut> => {
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post(
     "/staff/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -77,12 +79,11 @@ const getStaffList = async (profileId: string): Promise<StaffListOut> => {
 };
 
 /** ---- Direct fetch for departments list (for department picker) ---- */
-const getDepartmentsList = async (
-  profileId: string
-): Promise<DepartmentsListOut> => {
+const getDepartmentsList = async (): Promise<DepartmentsListOut> => {
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post(
     "/departments/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -97,51 +98,36 @@ async function updateSettings(
   input: UpdateSettingsIn
 ): Promise<UpdateSettingsOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/settings/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/settings/update", input);
 }
 
 async function getSettingsDetailAction(
-  settingsId: string,
-  profileId: string
+  settingsId: string
 ): Promise<SettingsDetailOut> {
   "use server";
-  return getSettingsDetail(settingsId, profileId);
+  return getSettingsDetail(settingsId);
 }
 
-async function getKeysListAction(profileId: string): Promise<KeysListOut> {
+async function getKeysListAction(): Promise<KeysListOut> {
   "use server";
-  return getKeysList(profileId);
+  return getKeysList();
 }
 
-async function getStaffListAction(profileId: string): Promise<StaffListOut> {
+async function getStaffListAction(): Promise<StaffListOut> {
   "use server";
-  return getStaffList(profileId);
+  return getStaffList();
 }
 
 export default async function SettingsPage() {
   // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
 
   // Fetch settings list server-side
-  const settingsListResponse = await getSettingsList(profileId);
-  const keysList = await getKeysList(profileId);
-  const staffList = await getStaffListAction(profileId);
-  const departmentsList = await getDepartmentsList(profileId);
+  const settingsListResponse = await getSettingsList();
+  const keysList = await getKeysList();
+  const staffList = await getStaffListAction();
+  const departmentsList = await getDepartmentsList();
 
   return (
     <div className="space-y-6" data-page="settings-index">
@@ -149,7 +135,6 @@ export default async function SettingsPage() {
         settingsList={settingsListResponse.settings}
         settingsDetail={null}
         selectedSettingsId={null}
-        profileId={profileId}
         keysList={keysList}
         staffList={staffList}
         departmentsList={departmentsList}

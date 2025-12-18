@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
@@ -31,7 +30,7 @@ export function ModalityCardGrid({
   // Build modalities from MODALITIES array
   const baseModalities = React.useMemo(() => {
     return [...MODALITIES].sort((a, b) =>
-      (a.name || "").localeCompare(b.name || "")
+      (a.name || "").localeCompare(b.name || ""),
     );
   }, []);
 
@@ -45,7 +44,7 @@ export function ModalityCardGrid({
       filtered = filtered.filter(
         (modality) =>
           modality.name?.toLowerCase().includes(searchLower) ||
-          modality.id?.toLowerCase().includes(searchLower)
+          modality.id?.toLowerCase().includes(searchLower),
       );
     }
 
@@ -106,7 +105,7 @@ export function ModalityCardGrid({
                         "hover:shadow-md hover:bg-accent/50",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "disabled:pointer-events-none disabled:opacity-50",
-                        isSelected && "ring-2 ring-primary bg-accent"
+                        isSelected && "ring-2 ring-primary bg-accent",
                       )}
                     >
                       {/* Check icon - top right */}
@@ -132,4 +131,3 @@ export function ModalityCardGrid({
     </TooltipProvider>
   );
 }
-

@@ -98,7 +98,7 @@ function ExampleInputWithAutocomplete({
     <div
       className={cn(
         "flex flex-col gap-2",
-        draggedExampleIndex === index && "opacity-50"
+        draggedExampleIndex === index && "opacity-50",
       )}
       onDragOver={onDragOver}
       onDrop={onDrop}
@@ -183,7 +183,7 @@ export function PersonaContentSection({
   isReadonly,
 }: PersonaContentSectionProps) {
   const [draggedExampleIndex, setDraggedExampleIndex] = useState<number | null>(
-    null
+    null,
   );
 
   const addExample = () => {
@@ -194,9 +194,7 @@ export function PersonaContentSection({
   };
 
   const removeExample = (index: number) => {
-    onExampleMessagesChange(
-      exampleMessages.filter((_, i) => i !== index)
-    );
+    onExampleMessagesChange(exampleMessages.filter((_, i) => i !== index));
   };
 
   const updateExample = (index: number, value: string) => {
@@ -230,7 +228,7 @@ export function PersonaContentSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50"
+        stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -242,7 +240,7 @@ export function PersonaContentSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -272,7 +270,8 @@ export function PersonaContentSection({
             disabled={isReadonly}
           />
           <p className="text-xs text-muted-foreground">
-            Define the persona's behavior, communication style, and response patterns
+            Define the persona's behavior, communication style, and response
+            patterns
           </p>
         </div>
 
@@ -333,4 +332,3 @@ export function PersonaContentSection({
     </Card>
   );
 }
-

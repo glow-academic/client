@@ -77,11 +77,11 @@ export interface UnifiedSidebarProps
   activeSection: string;
   onSectionChange?: (section: string) => void;
   switchEffectiveProfile: (
-    input: SwitchEffectiveProfileParams
+    input: SwitchEffectiveProfileParams,
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   searchSimulatableProfiles: (
-    input: SearchSimulatableProfilesIn
+    input: SearchSimulatableProfilesIn,
   ) => Promise<SearchSimulatableProfilesOut>;
 }
 
@@ -139,7 +139,7 @@ export function UnifiedSidebar({
   const getScrollContainer = () => {
     // Find the scrollable SidebarContent element by data attribute
     return document.querySelector(
-      '[data-sidebar="content"]'
+      '[data-sidebar="content"]',
     ) as HTMLDivElement | null;
   };
 
@@ -196,7 +196,7 @@ export function UnifiedSidebar({
     // Analytics - Available from instructional level and up
     if (
       ["instructional", "admin", "superadmin"].includes(
-        effectiveProfile.role
+        effectiveProfile.role,
       ) &&
       (availableSections.includes("dashboard") ||
         availableSections.includes("reports") ||
@@ -504,7 +504,7 @@ export function UnifiedSidebar({
             section.items?.filter(
               (item) =>
                 item.title.toLowerCase().includes(searchLower) ||
-                item.section?.toLowerCase().includes(searchLower)
+                item.section?.toLowerCase().includes(searchLower),
             ) || [];
 
           // Also check if the section title itself matches
@@ -533,7 +533,7 @@ export function UnifiedSidebar({
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
     onSectionChange,
-    pathname
+    pathname,
   );
 
   // Wrapper function that closes mobile sidebar on section change
@@ -545,7 +545,7 @@ export function UnifiedSidebar({
         setOpenMobile(false);
       }
     },
-    [handleSectionChange, isMobile, setOpenMobile]
+    [handleSectionChange, isMobile, setOpenMobile],
   );
 
   const handleItemClick = useCallback(
@@ -583,7 +583,7 @@ export function UnifiedSidebar({
       // Reset navigation state after a short delay
       setTimeout(() => setIsNavigating(false), 500);
     },
-    [router, handleSectionChange, isNavigating, isMobile, setOpenMobile]
+    [router, handleSectionChange, isNavigating, isMobile, setOpenMobile],
   );
 
   // Handle exit emulation
@@ -646,7 +646,7 @@ export function UnifiedSidebar({
   // Restore scroll position synchronously before paint to prevent flash
   useLayoutEffect(() => {
     const savedScrollFromStorage = sessionStorage.getItem(
-      "sidebar-scroll-position"
+      "sidebar-scroll-position",
     );
     const isRestoringFromStorage =
       sessionStorage.getItem("sidebar-is-restoring") === "true";
@@ -681,7 +681,7 @@ export function UnifiedSidebar({
           return "Logged out successfully";
         } catch (error) {
           throw new Error(
-            typeof error === "string" ? error : "Failed to log out"
+            typeof error === "string" ? error : "Failed to log out",
           );
         } finally {
           setIsLoggingOut(false);
@@ -691,7 +691,7 @@ export function UnifiedSidebar({
         loading: "Logging out...",
         success: (message) => message,
         error: (error) => error.message || "Failed to log out",
-      }
+      },
     );
   };
 
@@ -725,7 +725,7 @@ export function UnifiedSidebar({
                           : getInitials(
                               effectiveProfile?.firstName +
                                 " " +
-                                effectiveProfile?.lastName
+                                effectiveProfile?.lastName,
                             )}
                       </AvatarFallback>
                     </Avatar>

@@ -25,24 +25,12 @@ type BulkUpdateStaffIn = InputOf<"/api/v3/staff/update", "post">;
 type BulkUpdateStaffOut = OutputOf<"/api/v3/staff/update", "post">;
 type SearchStaffIn = InputOf<"/api/v3/staff/search", "post">;
 type SearchStaffOut = OutputOf<"/api/v3/staff/search", "post">;
-type CreateStaffDataIn = InputOf<
-  "/api/v3/staff/data/create",
-  "post"
->;
-type CreateStaffDataOut = OutputOf<
-  "/api/v3/staff/data/create",
-  "post"
->;
+type CreateStaffDataIn = InputOf<"/api/v3/staff/data/create", "post">;
+type CreateStaffDataOut = OutputOf<"/api/v3/staff/data/create", "post">;
 type ProcessCSVIn = InputOf<"/api/v3/staff/csv", "post">;
 type ProcessCSVOut = OutputOf<"/api/v3/staff/csv", "post">;
-type BulkCreateOrUpdateStaffIn = InputOf<
-  "/api/v3/staff/upsert",
-  "post"
->;
-type BulkCreateOrUpdateStaffOut = OutputOf<
-  "/api/v3/staff/upsert",
-  "post"
->;
+type BulkCreateOrUpdateStaffIn = InputOf<"/api/v3/staff/upsert", "post">;
+type BulkCreateOrUpdateStaffOut = OutputOf<"/api/v3/staff/upsert", "post">;
 /** ---- Derived types from server responses ---- */
 type ProfileListItem = StaffListOut["staff"][number];
 type SearchStaffItem = SearchStaffOut["staff"][number];
@@ -67,16 +55,14 @@ const getStaffList = async (input: StaffListIn): Promise<StaffListOut> => {
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function deleteStaff(
-  input: DeleteStaffIn
-): Promise<DeleteStaffOut> {
+async function deleteStaff(input: DeleteStaffIn): Promise<DeleteStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/profile/delete", input);
 }
 
 async function bulkDeleteStaff(
-  input: BulkDeleteStaffIn
+  input: BulkDeleteStaffIn,
 ): Promise<BulkDeleteStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -84,7 +70,7 @@ async function bulkDeleteStaff(
 }
 
 async function getCreateStaffData(
-  input: CreateStaffDataIn
+  input: CreateStaffDataIn,
 ): Promise<CreateStaffDataOut> {
   "use server";
   return api.post("/staff/data/create", input);
@@ -96,7 +82,7 @@ async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
 }
 
 async function bulkCreateOrUpdateStaff(
-  input: BulkCreateOrUpdateStaffIn
+  input: BulkCreateOrUpdateStaffIn,
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation

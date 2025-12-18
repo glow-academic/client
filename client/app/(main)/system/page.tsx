@@ -11,7 +11,8 @@ import type { Metadata } from "next";
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "System",
-    description: "System administration hub for teaching assistant training platform. Manage authentication methods, API keys, system health monitoring, feedback collection, and platform configuration for educational institutions and L&D programs.",
+    description:
+      "System administration hub for teaching assistant training platform. Manage authentication methods, API keys, system health monitoring, feedback collection, and platform configuration for educational institutions and L&D programs.",
   };
 }
 

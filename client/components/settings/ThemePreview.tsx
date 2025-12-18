@@ -8,12 +8,7 @@
 import React from "react";
 import { ArrowDown, ArrowUp, Check, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -69,15 +64,15 @@ export interface ThemePreviewProps {
 function isLightColor(hex: string): boolean {
   // Remove # if present
   const color = hex.replace("#", "");
-  
+
   // Convert to RGB
   const r = parseInt(color.substring(0, 2), 16);
   const g = parseInt(color.substring(2, 4), 16);
   const b = parseInt(color.substring(4, 6), 16);
-  
+
   // Calculate luminance
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
+
   return luminance > 0.5;
 }
 
@@ -109,7 +104,7 @@ export function ThemePreview({
 
   const handleScrollTo = (
     ref?: React.RefObject<HTMLDivElement>,
-    accordionValue?: string
+    accordionValue?: string,
   ) => {
     if (ref?.current) {
       // Open accordion FIRST, then scroll after layout adjusts
@@ -159,7 +154,7 @@ export function ThemePreview({
                 ? ""
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
             style={
               stepStatus === "completed"
@@ -170,11 +165,7 @@ export function ThemePreview({
                 : undefined
             }
           >
-            {stepStatus === "completed" ? (
-              <Check className="w-4 h-4" />
-            ) : (
-              "0"
-            )}
+            {stepStatus === "completed" ? <Check className="w-4 h-4" /> : "0"}
           </div>
           <div className="flex-1 min-w-0">
             <CardTitle className="text-lg">Preview</CardTitle>
@@ -249,7 +240,10 @@ export function ThemePreview({
               className="w-12 shrink-0 border-r border-border/50 cursor-pointer hover:opacity-80 transition-opacity"
               style={{ backgroundColor: sidebar_background }}
               onClick={() =>
-                handleScrollTo(scrollRefs?.sidebarBackgroundRef, "sidebar-background")
+                handleScrollTo(
+                  scrollRefs?.sidebarBackgroundRef,
+                  "sidebar-background",
+                )
               }
             >
               {/* Sidebar accent elements */}
@@ -259,7 +253,10 @@ export function ThemePreview({
                   style={{ backgroundColor: sidebar_primary }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleScrollTo(scrollRefs?.sidebarPrimaryRef, "sidebar-primary");
+                    handleScrollTo(
+                      scrollRefs?.sidebarPrimaryRef,
+                      "sidebar-primary",
+                    );
                   }}
                 />
                 <div
@@ -279,7 +276,9 @@ export function ThemePreview({
               <div
                 className="rounded-lg p-3 border border-border/30 shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
                 style={{ backgroundColor: surface }}
-                onClick={() => handleScrollTo(scrollRefs?.surfaceRef, "surface")}
+                onClick={() =>
+                  handleScrollTo(scrollRefs?.surfaceRef, "surface")
+                }
               >
                 {/* Primary Button */}
                 <div className="mb-2">
@@ -291,7 +290,10 @@ export function ThemePreview({
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleScrollTo(scrollRefs?.primaryColorRef, "primary-color");
+                      handleScrollTo(
+                        scrollRefs?.primaryColorRef,
+                        "primary-color",
+                      );
                     }}
                   >
                     {/* Visual button representation */}
@@ -348,11 +350,31 @@ export function ThemePreview({
               {/* Chart Colors Row */}
               <div className="flex items-center gap-1.5">
                 {[
-                  { color: chart1, ref: scrollRefs?.chart1Ref, accordion: "chart1" },
-                  { color: chart2, ref: scrollRefs?.chart2Ref, accordion: "chart2" },
-                  { color: chart3, ref: scrollRefs?.chart3Ref, accordion: "chart3" },
-                  { color: chart4, ref: scrollRefs?.chart4Ref, accordion: "chart4" },
-                  { color: chart5, ref: scrollRefs?.chart5Ref, accordion: "chart5" },
+                  {
+                    color: chart1,
+                    ref: scrollRefs?.chart1Ref,
+                    accordion: "chart1",
+                  },
+                  {
+                    color: chart2,
+                    ref: scrollRefs?.chart2Ref,
+                    accordion: "chart2",
+                  },
+                  {
+                    color: chart3,
+                    ref: scrollRefs?.chart3Ref,
+                    accordion: "chart3",
+                  },
+                  {
+                    color: chart4,
+                    ref: scrollRefs?.chart4Ref,
+                    accordion: "chart4",
+                  },
+                  {
+                    color: chart5,
+                    ref: scrollRefs?.chart5Ref,
+                    accordion: "chart5",
+                  },
                 ].map((item, index) => (
                   <div
                     key={index}
@@ -369,4 +391,3 @@ export function ThemePreview({
     </Card>
   );
 }
-

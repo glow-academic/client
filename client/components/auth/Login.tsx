@@ -136,7 +136,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 3,
         animationDuration: Math.random() * 3 + 2,
-      }))
+      })),
     );
 
     setMovingSparkles(
@@ -146,7 +146,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 2,
         animationDuration: Math.random() * 2 + 3,
-      }))
+      })),
     );
 
     setFloatingSparkles(
@@ -156,7 +156,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 4,
         animationDuration: Math.random() * 3 + 4,
-      }))
+      })),
     );
 
     setMounted(true);
@@ -264,7 +264,7 @@ export default function Login({
     string | null
   >(
     initialDepartmentId ||
-      (departments.length > 0 ? (departments[0]?.id ?? null) : null)
+      (departments.length > 0 ? (departments[0]?.id ?? null) : null),
   );
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -342,7 +342,7 @@ export default function Login({
         },
         {
           kc_idp_hint: provider.id,
-        }
+        },
       );
 
       // Note: signIn redirects immediately on success, so we don't need toast.success here

@@ -45,7 +45,7 @@ const getHomeOverview = async (input: HomeIn): Promise<HomeOut> => {
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getHomeHistory = async (
-  input: HomeHistoryIn
+  input: HomeHistoryIn,
 ): Promise<HomeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -81,7 +81,7 @@ const getProfileContext = async (input: {
 async function getHomeFilters(
   searchParams: URLSearchParams | undefined,
   effectiveProfileId: string,
-  actualProfileId: string
+  actualProfileId: string,
 ) {
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await getProfileContext({
@@ -196,19 +196,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const defaultFilters = await getHomeFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined,
     effectiveProfileId,
-    actualProfileId
+    actualProfileId,
   );
 
-  // Extract subset for Home: startDate, endDate, profileId (required)
+  // Extract subset for Home: startDate, endDate
   // Always include cohortIds and departmentIds (they are guaranteed to be non-empty from getHomeFilters)
-  // profileId is required for member mode detection and role hierarchy filtering
+  // profileId removed - comes from X-Profile-Id header automatically
   const homeFilters: HomeIn = {
     body: {
       startDate: defaultFilters.startDate,
       endDate: defaultFilters.endDate,
       cohortIds: defaultFilters.cohortIds, // Always non-empty
       departmentIds: defaultFilters.departmentIds, // Always non-empty
-      profileId: effectiveProfileId,
     },
   };
 
@@ -352,10 +351,9 @@ async function HomeHistorySection({
   effectiveProfileId: string;
 }) {
   // Build history filters matching logic from page.tsx
-  // profileId is required for department scoping
+  // profileId removed - comes from X-Profile-Id header automatically
   const historyFilters: HomeHistoryIn = {
     body: {
-      profileId: effectiveProfileId,
       startDate: defaultFilters.startDate,
       endDate: defaultFilters.endDate,
       cohortIds: defaultFilters.cohortIds,
@@ -388,10 +386,10 @@ async function HomeHistorySection({
 
   // Calculate archived/unarchived counts from data (home history API doesn't provide these)
   const archivedCount = historyData.data.filter(
-    (item) => item.isArchived
+    (item) => item.isArchived,
   ).length;
   const unarchivedCount = historyData.data.filter(
-    (item) => !item.isArchived
+    (item) => !item.isArchived,
   ).length;
 
   // Use server-provided data directly (no transformation needed)

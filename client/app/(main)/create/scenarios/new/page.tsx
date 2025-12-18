@@ -28,7 +28,7 @@ type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getScenarioDefault = async (
-  input: ScenarioNewIn
+  input: ScenarioNewIn,
 ): Promise<ScenarioNewOut> => {
   return api.post("/scenarios/new", input, {
     cache: "no-store",
@@ -40,7 +40,7 @@ const getScenarioDefault = async (
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createScenario(
-  input: CreateScenarioIn
+  input: CreateScenarioIn,
 ): Promise<CreateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation

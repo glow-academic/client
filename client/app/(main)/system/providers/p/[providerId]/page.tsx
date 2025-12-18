@@ -22,7 +22,7 @@ type UpdateProviderOut = OutputOf<"/api/v3/providers/update", "post">;
  */
 const getProvider = async (
   providerId: string,
-  profileId: string
+  profileId: string,
 ): Promise<ProviderDetailOut> => {
   return api.post(
     "/providers/detail",
@@ -32,14 +32,14 @@ const getProvider = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ providerId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { providerId } = await params;
   const session = await getSession();
@@ -83,15 +83,25 @@ export default async function EditProviderPage({
 
   // Fetch data for edit mode
   try {
-    const providerDetail = await getProvider(providerId, profileId).catch(() => null);
+    const providerDetail = await getProvider(providerId, profileId).catch(
+      () => null,
+    );
 
     if (!providerDetail) {
       throw new Error("Provider not found");
     }
 
     return (
-      <div className="space-y-6" data-page="provider-edit" data-provider-id={providerId}>
-        <Provider providerId={providerId} providerDetail={providerDetail} updateProviderAction={updateProvider} />
+      <div
+        className="space-y-6"
+        data-page="provider-edit"
+        data-provider-id={providerId}
+      >
+        <Provider
+          providerId={providerId}
+          providerDetail={providerDetail}
+          updateProviderAction={updateProvider}
+        />
       </div>
     );
   } catch (error: unknown) {
@@ -116,7 +126,9 @@ export default async function EditProviderPage({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateProvider(input: UpdateProviderIn): Promise<UpdateProviderOut> {
+async function updateProvider(
+  input: UpdateProviderIn,
+): Promise<UpdateProviderOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId;
@@ -131,5 +143,9 @@ async function updateProvider(input: UpdateProviderIn): Promise<UpdateProviderOu
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { ProviderDetailIn, ProviderDetailOut, UpdateProviderIn, UpdateProviderOut };
-
+export type {
+  ProviderDetailIn,
+  ProviderDetailOut,
+  UpdateProviderIn,
+  UpdateProviderOut,
+};

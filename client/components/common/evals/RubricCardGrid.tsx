@@ -3,15 +3,10 @@
 import * as React from "react";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  FileCheck,
-  Search,
-  Check,
-} from "lucide-react";
+import { FileCheck, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface RubricMappingItem {
@@ -121,7 +116,7 @@ export function RubricCardGrid({
                         "hover:shadow-md hover:bg-accent/50",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "disabled:pointer-events-none disabled:opacity-50",
-                        isSelected && "ring-2 ring-primary bg-accent"
+                        isSelected && "ring-2 ring-primary bg-accent",
                       )}
                     >
                       {/* Check icon - top right */}
@@ -160,4 +155,3 @@ export function RubricCardGrid({
     </TooltipProvider>
   );
 }
-

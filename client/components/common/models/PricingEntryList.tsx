@@ -54,16 +54,10 @@ export function PricingEntryList({
     const existingUnitIds = new Set(entries.map((e) => e.unit_id));
     const availableUnit = units.find((u) => !existingUnitIds.has(u.id));
     if (availableUnit) {
-      onEntriesChange([
-        ...entries,
-        { unit_id: availableUnit.id, price: 0.0 },
-      ]);
+      onEntriesChange([...entries, { unit_id: availableUnit.id, price: 0.0 }]);
     } else {
       // If all units are already added, just add the first unit again
-      onEntriesChange([
-        ...entries,
-        { unit_id: units[0].id, price: 0.0 },
-      ]);
+      onEntriesChange([...entries, { unit_id: units[0].id, price: 0.0 }]);
     }
   };
 
@@ -108,7 +102,8 @@ export function PricingEntryList({
                     </span>
                     {unit && (
                       <span className="text-xs text-muted-foreground ml-2">
-                        ({unit.unit_category.toUpperCase()}, {unit.value.toLocaleString()})
+                        ({unit.unit_category.toUpperCase()},{" "}
+                        {unit.value.toLocaleString()})
                       </span>
                     )}
                   </div>
@@ -138,7 +133,7 @@ export function PricingEntryList({
                     }
                     className={cn(
                       "h-10",
-                      entry.price < 0 && "border-destructive"
+                      entry.price < 0 && "border-destructive",
                     )}
                   />
                 </div>
@@ -174,4 +169,3 @@ export function PricingEntryList({
     </div>
   );
 }
-

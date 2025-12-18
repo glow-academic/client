@@ -36,13 +36,13 @@ const getCohortsList = async (profileId: string): Promise<CohortsListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateCohort(
-  input: DuplicateCohortIn
+  input: DuplicateCohortIn,
 ): Promise<DuplicateCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation

@@ -83,7 +83,7 @@ export function UnifiedAccessDenied({
                 <Button asChild className="w-full">
                   <Link
                     href={`/login?redirectPath=${encodeURIComponent(
-                      redirectPath || pathname
+                      redirectPath || pathname,
                     )}`}
                   >
                     Log In
@@ -195,7 +195,7 @@ export function UnifiedAccessDenied({
   // Handle route denied state (role-based access)
   const getAccessDeniedMessage = (
     role: ProfileRole | undefined,
-    pathname: string
+    pathname: string,
   ) => {
     const section = pathname.split("/")[1];
 

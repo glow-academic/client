@@ -19,7 +19,7 @@ from app.utils.sql_helper import load_sql
 # Inline request/response schemas
 class AttemptFullRequest(BaseModel):
     attemptId: str
-    profileId: str | None = None  # Current user's profile ID for role check
+    # profileId removed - comes from X-Profile-Id header
 
 
 # Strongly typed nested models
@@ -391,13 +391,14 @@ async def get_attempt_full(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get current user's profileId from request body
-        # If not provided, skip role check for backward compatibility
-        current_profile_id = request.profileId
+        # Get current user's profileId from header (set by router-level dependency)
+        # Used for role-based access control
+        current_profile_id = http_request.state.profile_id
+        # Note: profileId is optional - if not provided, skip role check for backward compatibility
 
         sql_query = load_sql("sql/v3/attempts/get_attempt_full_complete.sql")
         sql_params = (request.attemptId,)
-        result = await conn.fetchrow(sql_query, request.attemptId)
+        result = await conn.fetchrow(sql_query, *sql_params)
 
         if not result:
             raise HTTPException(

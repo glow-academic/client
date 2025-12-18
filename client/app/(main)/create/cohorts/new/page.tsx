@@ -92,7 +92,8 @@ async function searchCohortProfile(
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Cohort",
-    description: "Create a new learning cohort for teaching assistant training programs. Organize groups of teaching assistants, configure cohort settings, and set up group-based learning activities for effective L&D program administration.",
+    description:
+      "Create a new learning cohort for teaching assistant training programs. Organize groups of teaching assistants, configure cohort settings, and set up group-based learning activities for effective L&D program administration.",
   };
 }
 
@@ -136,4 +137,3 @@ export type {
   CreateCohortIn,
   CreateCohortOut,
 };
-

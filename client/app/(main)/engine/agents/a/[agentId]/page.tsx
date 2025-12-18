@@ -28,7 +28,7 @@ type DeleteAgentPromptOut = OutputOf<"/api/v3/prompts/delete", "post">;
  */
 const getAgent = async (
   agentId: string,
-  profileId: string
+  profileId: string,
 ): Promise<AgentDetailOut> => {
   return api.post(
     "/agents/detail",
@@ -38,14 +38,14 @@ const getAgent = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ agentId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { agentId } = await params;
   const session = await getSession();
@@ -100,7 +100,7 @@ async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
 }
 
 async function deleteAgentPrompt(
-  input: DeleteAgentPromptIn
+  input: DeleteAgentPromptIn,
 ): Promise<DeleteAgentPromptOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation

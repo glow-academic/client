@@ -63,18 +63,18 @@ function MainLayoutContent({
   children: React.ReactNode;
   attemptData: AttemptFullOut | null;
   switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams
+    input: SwitchEffectiveProfileParams,
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn
+    input: RefreshAnalyticsIn,
   ) => Promise<RefreshAnalyticsOut>;
   searchSimulatableProfilesAction: (
-    input: SearchSimulatableProfilesIn
+    input: SearchSimulatableProfilesIn,
   ) => Promise<SearchSimulatableProfilesOut>;
   processCSVAction?: (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
   bulkCreateOrUpdateStaffAction?: (
-    input: BulkCreateOrUpdateStaffIn
+    input: BulkCreateOrUpdateStaffIn,
   ) => Promise<BulkCreateOrUpdateStaffOut>;
   initialCreateStaffData?: CreateStaffDataOut | null;
 }) {
@@ -85,7 +85,8 @@ function MainLayoutContent({
   const { getEntityName } = useBreadcrumbContext();
 
   // Check if we're on the staff management pages (but not on /new page)
-  const isStaffManagementPage = pathname?.startsWith("/management/staff") && !pathname.includes("/new");
+  const isStaffManagementPage =
+    pathname?.startsWith("/management/staff") && !pathname.includes("/new");
 
   // Generate breadcrumbs client-side and enrich with entity names from context
   const breadcrumbs = useMemo(() => {
@@ -293,7 +294,10 @@ function MainLayoutContent({
 
     if (pathname === "/system/departments") {
       return (
-        <Button onClick={() => router.push("/system/departments/new")} size="sm">
+        <Button
+          onClick={() => router.push("/system/departments/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Department
         </Button>
@@ -427,18 +431,18 @@ export function MainLayoutClient({
   attemptData: AttemptFullOut | null;
   activeSettings: SettingsActiveClient | null;
   switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams
+    input: SwitchEffectiveProfileParams,
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn
+    input: RefreshAnalyticsIn,
   ) => Promise<RefreshAnalyticsOut>;
   searchSimulatableProfilesAction: (
-    input: SearchSimulatableProfilesIn
+    input: SearchSimulatableProfilesIn,
   ) => Promise<SearchSimulatableProfilesOut>;
   processCSVAction?: (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
   bulkCreateOrUpdateStaffAction?: (
-    input: BulkCreateOrUpdateStaffIn
+    input: BulkCreateOrUpdateStaffIn,
   ) => Promise<BulkCreateOrUpdateStaffOut>;
   initialCreateStaffData?: CreateStaffDataOut | null;
 }) {
@@ -448,13 +452,13 @@ export function MainLayoutClient({
   useEffect(() => {
     const checkAccessDenied = () => {
       const accessDeniedElement = document.querySelector(
-        '[data-access-denied="true"]'
+        '[data-access-denied="true"]',
       );
       const wrapperElement = document.querySelector(
-        `[data-route-pathname="${pathname}"]`
+        `[data-route-pathname="${pathname}"]`,
       );
       const wrapperPathname = wrapperElement?.getAttribute(
-        "data-route-pathname"
+        "data-route-pathname",
       );
 
       // If we're on an allowed route but see access denied component, force refresh

@@ -5,7 +5,13 @@
 "use client";
 
 import { Check, FileText, PlayCircle, Users, Video } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -55,14 +61,10 @@ export function ParameterConfigurationSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
-            {isCompleted ? (
-              <Check className="w-4 h-4" />
-            ) : (
-              <span>2</span>
-            )}
+            {isCompleted ? <Check className="w-4 h-4" /> : <span>2</span>}
           </div>
           <div>
             <CardTitle className="text-lg">Parameter Configuration</CardTitle>
@@ -174,4 +176,3 @@ export function ParameterConfigurationSection({
     </Card>
   );
 }
-

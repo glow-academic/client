@@ -18,12 +18,11 @@ type CreateFieldIn = InputOf<"/api/v3/fields/create", "post">;
 type CreateFieldOut = OutputOf<"/api/v3/fields/create", "post">;
 
 /** ---- Direct fetch for default field data ---- */
-const getFieldDetailDefault = async (
-  profileId: string,
-): Promise<FieldNewOut> => {
+const getFieldDetailDefault = async (): Promise<FieldNewOut> => {
+  // profileId removed - comes from X-Profile-Id header (auto-injected)
   return api.post(
     "/fields/new",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -59,17 +58,10 @@ async function createField(input: CreateFieldIn): Promise<CreateFieldOut> {
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewFieldPage() {
   // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
+  // profileId removed - comes from X-Profile-Id header (auto-injected)
 
   // Fetch default field data
-  const fieldDetailDefault = await getFieldDetailDefault(profileId);
+  const fieldDetailDefault = await getFieldDetailDefault();
 
   return (
     <div className="space-y-6">

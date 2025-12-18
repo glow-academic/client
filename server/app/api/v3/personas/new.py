@@ -64,7 +64,8 @@ AgentMapping = dict[str, AgentMappingItem]
 class PersonaNewRequest(BaseModel):
     """Request to get default persona details."""
 
-    profileId: str
+    pass
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DebugInfoItem(BaseModel):
@@ -160,12 +161,20 @@ async def get_persona_new(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Load SQL query
         sql_query = load_sql("sql/v3/personas/get_persona_new_complete.sql")
-        sql_params = (request.profileId,)
+        sql_params = (profile_id,)
 
         # Execute query
-        result = await conn.fetchrow(sql_query, request.profileId)
+        result = await conn.fetchrow(sql_query, profile_id)
 
         if not result:
             raise HTTPException(
@@ -175,7 +184,7 @@ async def get_persona_new(
         # Set audit context
         actor_name = result.get("actor_name")
         if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": request.profileId})
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         valid_department_ids = result.get("valid_department_ids", [])
         valid_agent_ids = result.get("valid_agent_ids", [])

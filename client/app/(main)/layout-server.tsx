@@ -61,11 +61,11 @@ const getLayoutContext = cache(
     const result = await api.post(
       "/profile/context",
       input,
-      cookieHeader ? { headers: { Cookie: cookieHeader } } : undefined
+      cookieHeader ? { headers: { Cookie: cookieHeader } } : undefined,
     );
 
     return result;
-  }
+  },
 );
 
 /** ---- Direct fetch (no caching - source of truth) ----
@@ -73,7 +73,7 @@ const getLayoutContext = cache(
  */
 const getAttemptFull = async (
   _attemptId: string,
-  input: AttemptFullIn
+  input: AttemptFullIn,
 ): Promise<AttemptFullOut> => {
   return api.post("/attempts/full", input, {
     cache: "no-store",
@@ -226,7 +226,7 @@ export async function getLayoutContextData() {
             // eslint-disable-next-line no-console
             console.error(
               "Profile context resolved but missing profile IDs:",
-              initial
+              initial,
             );
             initial = null;
           }
@@ -236,7 +236,7 @@ export async function getLayoutContextData() {
           // eslint-disable-next-line no-console
           console.error(
             "Failed to resolve profile from cookies:",
-            error instanceof Error ? error.message : String(error)
+            error instanceof Error ? error.message : String(error),
           );
           initial = null;
         }
@@ -352,7 +352,7 @@ type SwitchEffectiveProfileResult = {
 };
 
 async function authorizeEmulation(
-  input: AuthorizeEmulationIn
+  input: AuthorizeEmulationIn,
 ): Promise<AuthorizeEmulationOut> {
   return api.post("/profile/emulate", input);
 }
@@ -363,7 +363,7 @@ async function authorizeEmulation(
  * Uses server-side session mutation via NextAuth's unstable_update.
  */
 export async function switchEffectiveProfile(
-  input: SwitchEffectiveProfileParams
+  input: SwitchEffectiveProfileParams,
 ): Promise<SwitchEffectiveProfileResult> {
   try {
     const session = await getSession();
@@ -409,7 +409,7 @@ export async function switchEffectiveProfile(
  * Profile ID will be resolved server-side from department settings.
  */
 export async function setGuestSession(
-  departmentId: string | null
+  departmentId: string | null,
 ): Promise<{ ok: boolean; reason?: string }> {
   "use server";
   try {
@@ -453,7 +453,7 @@ export async function setGuestSession(
  * Profile ID will be resolved server-side from department settings.
  */
 export async function setDefaultAccountSession(
-  departmentId: string | null
+  departmentId: string | null,
 ): Promise<{ ok: boolean; reason?: string }> {
   "use server";
   try {
@@ -508,35 +508,35 @@ export async function clearGuestSessionCookies(): Promise<void> {
 
 /** ---- Strongly-typed server actions for Feedback (single source of truth) ---- */
 export async function createFeedback(
-  input: CreateFeedbackIn
+  input: CreateFeedbackIn,
 ): Promise<CreateFeedbackOut> {
   return api.post("/feedback/create", input);
 }
 
 /** ---- Strongly-typed server actions for Analytics (single source of truth) ---- */
 export async function refreshAnalytics(
-  input: RefreshAnalyticsIn
+  input: RefreshAnalyticsIn,
 ): Promise<RefreshAnalyticsOut> {
   return api.post("/analytics/refresh", input);
 }
 
 /** ---- Strongly-typed server actions for Profile Emulation (single source of truth) ---- */
 export async function searchSimulatableProfiles(
-  input: SearchSimulatableProfilesIn
+  input: SearchSimulatableProfilesIn,
 ): Promise<SearchSimulatableProfilesOut> {
   return api.post("/profile/simulatable", input);
 }
 
 /** ---- Strongly-typed server actions for Staff (single source of truth) ---- */
 export async function searchStaff(
-  input: SearchStaffIn
+  input: SearchStaffIn,
 ): Promise<SearchStaffOut> {
   "use server";
   return api.post("/staff/search", input);
 }
 
 export async function getCreateStaffData(
-  input: CreateStaffDataIn
+  input: CreateStaffDataIn,
 ): Promise<CreateStaffDataOut> {
   "use server";
   return api.post("/staff/data/create", input);
@@ -548,7 +548,7 @@ export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
 }
 
 export async function bulkCreateOrUpdateStaff(
-  input: BulkCreateOrUpdateStaffIn
+  input: BulkCreateOrUpdateStaffIn,
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation

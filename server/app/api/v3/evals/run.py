@@ -19,7 +19,7 @@ class RunEvalRequest(BaseModel):
     """Request to run an eval."""
 
     evalId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class RunEvalResponse(BaseModel):

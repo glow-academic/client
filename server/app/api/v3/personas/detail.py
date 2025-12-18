@@ -73,7 +73,7 @@ class PersonaDetailRequest(BaseModel):
     """Request to get persona details."""
 
     personaId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DebugInfoItem(BaseModel):
@@ -187,12 +187,20 @@ async def get_persona_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Load SQL string
         sql_query = load_sql("sql/v3/personas/get_persona_detail_complete.sql")
-        sql_params = (request.personaId, request.profileId)
+        sql_params = (request.personaId, profile_id)
 
         # Execute query
-        result = await conn.fetchrow(sql_query, request.personaId, request.profileId)
+        result = await conn.fetchrow(sql_query, request.personaId, profile_id)
 
         if not result:
             # Check if persona exists but user doesn't have department access
@@ -430,7 +438,7 @@ async def get_persona_detail(
         if actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": request.profileId},
+                actor={"name": actor_name, "id": profile_id},
                 persona={"name": persona_name, "id": request.personaId},
             )
 

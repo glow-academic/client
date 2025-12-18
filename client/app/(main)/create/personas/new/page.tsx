@@ -28,13 +28,13 @@ const getPersonaDefault = async (profileId: string): Promise<PersonaNewOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createPersona(
-  input: CreatePersonaIn
+  input: CreatePersonaIn,
 ): Promise<CreatePersonaOut> {
   "use server";
   const session = await getSession();

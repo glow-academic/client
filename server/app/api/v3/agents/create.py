@@ -27,7 +27,7 @@ class CreateAgentRequest(BaseModel):
     model_temperature_level_id: str | None = None
     model_reasoning_level_id: str | None = None
     model_voice_ids: list[str] | None = None
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class CreateAgentResponse(BaseModel):
@@ -76,6 +76,14 @@ async def create_agent(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with conn.transaction():
             # Ensure department_ids is always an array (empty array if None)
             dept_ids = request.department_ids if request.department_ids else []
@@ -91,7 +99,7 @@ async def create_agent(
                 request.prompt_id,
                 request.system_prompt if not request.prompt_id else None,
                 dept_ids,  # Always pass array (empty array if no departments)
-                request.profileId,
+                profile_id,
             )
             agent_row = await conn.fetchrow(sql_query, *sql_params)
 
@@ -105,7 +113,7 @@ async def create_agent(
             if actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": request.profileId},
+                    actor={"name": actor_name, "id": profile_id},
                     agent={"name": request.name, "id": agent_id},
                 )
 

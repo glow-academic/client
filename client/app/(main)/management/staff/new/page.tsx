@@ -27,7 +27,7 @@ const getStaffNew = cache(async (profileId: string): Promise<StaffNewOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 });
 

@@ -3,14 +3,10 @@
 import * as React from "react";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Search,
-  Check,
-} from "lucide-react";
+import { Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface ParameterCardGridProps {
@@ -42,7 +38,9 @@ export function ParameterCardGrid({
     }));
 
     // Sort by name
-    return parameters.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    return parameters.sort((a, b) =>
+      (a.name || "").localeCompare(b.name || ""),
+    );
   }, [validParameterIds, parameterMapping]);
 
   // Apply search filter, then sort selected first
@@ -123,7 +121,7 @@ export function ParameterCardGrid({
                         "hover:shadow-md hover:bg-accent/50",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "disabled:pointer-events-none disabled:opacity-50",
-                        isSelected && "ring-2 ring-primary bg-accent"
+                        isSelected && "ring-2 ring-primary bg-accent",
                       )}
                     >
                       {/* Check icon - top right */}
@@ -154,4 +152,3 @@ export function ParameterCardGrid({
     </TooltipProvider>
   );
 }
-

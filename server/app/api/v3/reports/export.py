@@ -43,7 +43,7 @@ class ReportsExportFilters(BaseModel):
     cohortIds: list[str] | None = None
     roles: list[str] | None = None
     simulationFilters: list[SimulationFilter] | None = None
-    profileId: str | None = None
+    # profileId removed - comes from X-Profile-Id header (for individual reports)
     departmentIds: list[str] | None = None
     # Pagination, search, sorting, and additional filters
     page: int | None = None
@@ -216,6 +216,15 @@ async def export_reports(
     logger.info(f"Request: {request}")
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        # For individual reports export, profileId comes from header
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Use the same reports_bundle.sql query that the reports view uses
         sql_template = load_sql("sql/v3/reports/reports_bundle.sql")
 
@@ -228,7 +237,7 @@ async def export_reports(
             sim_filters=[f.value for f in request.filters.simulationFilters]
             if request.filters.simulationFilters
             else None,
-            profile_id=request.filters.profileId,
+            profile_id=profile_id,
             department_ids=request.filters.departmentIds,
         )
 

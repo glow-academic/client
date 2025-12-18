@@ -17,7 +17,8 @@ from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class SettingsListRequest(BaseModel):
-    profileId: str
+    pass
+    # profileId removed - comes from X-Profile-Id header
 
 
 class SettingsItem(BaseModel):
@@ -69,16 +70,24 @@ async def list_settings(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/settings/list_settings.sql")
-        sql_params = (request.profileId,)
-        rows = await conn.fetch(sql_query, request.profileId)
+        sql_params = (profile_id,)
+        rows = await conn.fetch(sql_query, profile_id)
 
         # Get actor_name from first row (same for all rows)
         actor_name = rows[0]["actor_name"] if rows else None
 
         # Set audit context
         if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": request.profileId})
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         settings_items: list[SettingsItem] = []
         for row in rows:

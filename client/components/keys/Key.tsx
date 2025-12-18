@@ -65,7 +65,7 @@ export interface KeyProps {
   createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
   updateKeyAction?: (input: UpdateKeyIn) => Promise<UpdateKeyOut>;
   decryptKeyAction?: (
-    input: DecryptKeyIn | DecryptKeyInNew
+    input: DecryptKeyIn | DecryptKeyInNew,
   ) => Promise<DecryptKeyOut | DecryptKeyOutNew>;
 }
 
@@ -97,7 +97,7 @@ export default function Key({
       description: "",
       active: true,
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -147,7 +147,7 @@ export default function Key({
         setIsPreviewMode(true);
       } catch (error) {
         toast.error(
-          `Failed to decrypt key: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to decrypt key: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
       } finally {
         setIsDecrypting(false);
@@ -259,7 +259,7 @@ export default function Key({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | string[] | undefined
+    value: string | boolean | string[] | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -327,7 +327,7 @@ export default function Key({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && keyId ? "update" : "create"} key: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode && keyId ? "update" : "create"} key: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       setIsSubmitting(false);
     }
@@ -335,7 +335,7 @@ export default function Key({
 
   // Step status logic
   const getStepStatus = (
-    stepId: string
+    stepId: string,
   ): "pending" | "active" | "completed" => {
     const hasName = !!formData?.name?.trim();
 
@@ -364,7 +364,7 @@ export default function Key({
                     "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                     basicStepStatus === "completed"
                       ? "bg-green-500 text-white"
-                      : "bg-primary text-primary-foreground"
+                      : "bg-primary text-primary-foreground",
                   )}
                 >
                   {basicStepStatus === "completed" ? (
@@ -396,7 +396,7 @@ export default function Key({
                       }}
                       className={cn(
                         "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                        errors.name && "border-destructive"
+                        errors.name && "border-destructive",
                       )}
                       placeholder="New Key"
                       disabled={isReadonly || isSubmitting}
@@ -476,7 +476,7 @@ export default function Key({
                 <div
                   className={cn(
                     "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                    "bg-primary text-primary-foreground"
+                    "bg-primary text-primary-foreground",
                   )}
                 >
                   <span>2</span>
@@ -535,7 +535,7 @@ export default function Key({
                       placeholder="Enter key value"
                       className={cn(
                         "flex-1 h-10 resize-none",
-                        errors.key ? "border-destructive" : ""
+                        errors.key ? "border-destructive" : "",
                       )}
                       disabled={isReadonly || isSubmitting}
                       onKeyDown={(e) => {

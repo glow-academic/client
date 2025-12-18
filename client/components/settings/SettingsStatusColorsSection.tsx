@@ -7,13 +7,7 @@
 import { Check, RotateCcw, Search } from "lucide-react";
 import React, { forwardRef, useMemo, useState } from "react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -102,7 +96,10 @@ interface StatusColorCardProps {
   fieldName: "success" | "warning" | "error";
   value: string;
   originalValue: string;
-  onColorChange: (fieldName: "success" | "warning" | "error", value: string) => void;
+  onColorChange: (
+    fieldName: "success" | "warning" | "error",
+    value: string,
+  ) => void;
   onReset: () => void;
   threshold?: {
     value: number;
@@ -133,81 +130,86 @@ export const StatusColorCard = forwardRef<HTMLDivElement, StatusColorCardProps>(
       hideCardWrapper = false,
       renderThresholdInHeader = true,
     },
-    ref
+    ref,
   ) => {
-  const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
 
-  // Normalize current value for comparison
-  const normalizedValue = useMemo(() => {
-    if (!value) return "";
-    return value.toUpperCase().startsWith("#")
-      ? value.toUpperCase()
-      : `#${value.toUpperCase()}`;
-  }, [value]);
+    // Normalize current value for comparison
+    const normalizedValue = useMemo(() => {
+      if (!value) return "";
+      return value.toUpperCase().startsWith("#")
+        ? value.toUpperCase()
+        : `#${value.toUpperCase()}`;
+    }, [value]);
 
-  // Add current value to colors list if not already present
-  const allColors = useMemo(() => {
-    const colorsSet = new Set(presetColors.map((c) => c.toLowerCase()));
-    if (normalizedValue && !colorsSet.has(normalizedValue.toLowerCase())) {
-      return [normalizedValue, ...presetColors];
-    }
-    return presetColors;
-  }, [normalizedValue]);
+    // Add current value to colors list if not already present
+    const allColors = useMemo(() => {
+      const colorsSet = new Set(presetColors.map((c) => c.toLowerCase()));
+      if (normalizedValue && !colorsSet.has(normalizedValue.toLowerCase())) {
+        return [normalizedValue, ...presetColors];
+      }
+      return presetColors;
+    }, [normalizedValue]);
 
-  // Filter and sort colors: selected first, then others
-  const filteredColors = useMemo(() => {
-    let colors = allColors;
-    
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      colors = allColors.filter((colorValue) => {
-        const colorName = getColorName(colorValue).toLowerCase();
-        const colorHex = colorValue.toLowerCase();
-        return colorName.includes(searchLower) || colorHex.includes(searchLower);
+    // Filter and sort colors: selected first, then others
+    const filteredColors = useMemo(() => {
+      let colors = allColors;
+
+      if (searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase();
+        colors = allColors.filter((colorValue) => {
+          const colorName = getColorName(colorValue).toLowerCase();
+          const colorHex = colorValue.toLowerCase();
+          return (
+            colorName.includes(searchLower) || colorHex.includes(searchLower)
+          );
+        });
+      }
+
+      // Sort: selected colors first
+      return colors.sort((a, b) => {
+        const aSelected = a.toLowerCase() === normalizedValue.toLowerCase();
+        const bSelected = b.toLowerCase() === normalizedValue.toLowerCase();
+        if (aSelected && !bSelected) return -1;
+        if (!aSelected && bSelected) return 1;
+        return 0;
       });
-    }
+    }, [allColors, searchTerm, normalizedValue]);
 
-    // Sort: selected colors first
-    return colors.sort((a, b) => {
-      const aSelected = a.toLowerCase() === normalizedValue.toLowerCase();
-      const bSelected = b.toLowerCase() === normalizedValue.toLowerCase();
-      if (aSelected && !bSelected) return -1;
-      if (!aSelected && bSelected) return 1;
-      return 0;
-    });
-  }, [allColors, searchTerm, normalizedValue]);
+    const handleColorSelect = (selectedColor: string) => {
+      if (isReadonly) return;
+      // Allow unselection if clicking already selected color
+      if (selectedColor.toLowerCase() === normalizedValue.toLowerCase()) {
+        onColorChange(fieldName, "");
+        return;
+      }
+      onColorChange(fieldName, selectedColor);
+    };
 
-  const handleColorSelect = (selectedColor: string) => {
-    if (isReadonly) return;
-    // Allow unselection if clicking already selected color
-    if (selectedColor.toLowerCase() === normalizedValue.toLowerCase()) {
-      onColorChange(fieldName, "");
-      return;
-    }
-    onColorChange(fieldName, selectedColor);
-  };
+    const handleHexInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      if (val === "" || /^#?[0-9A-Fa-f]*$/.test(val)) {
+        onColorChange(fieldName, val.startsWith("#") ? val : `#${val}`);
+      }
+    };
 
-  const handleHexInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (val === "" || /^#?[0-9A-Fa-f]*$/.test(val)) {
-      onColorChange(fieldName, val.startsWith("#") ? val : `#${val}`);
-    }
-  };
-
-  // Threshold slider handler
-  const handleThresholdRangeChange = (range: [number, number]) => {
-    if (threshold) {
-      const newThreshold = Math.max(threshold.min, range[1]);
-      threshold.onValueChange(newThreshold);
-    }
-  };
+    // Threshold slider handler
+    const handleThresholdRangeChange = (range: [number, number]) => {
+      if (threshold) {
+        const newThreshold = Math.max(threshold.min, range[1]);
+        threshold.onValueChange(newThreshold);
+      }
+    };
 
     const thresholdSlider = threshold && renderThresholdInHeader && (
       <div className="w-48 shrink-0">
         <RangeSlider
           min={threshold.min}
           max={threshold.max}
-          value={[threshold.min, Math.max(threshold.min, Math.min(threshold.max, threshold.value))]}
+          value={[
+            threshold.min,
+            Math.max(threshold.min, Math.min(threshold.max, threshold.value)),
+          ]}
           onValueChange={handleThresholdRangeChange}
           disabled={isReadonly}
           className="space-y-0"
@@ -238,7 +240,8 @@ export const StatusColorCard = forwardRef<HTMLDivElement, StatusColorCardProps>(
             </div>
           ) : (
             filteredColors.map((colorValue) => {
-              const isSelected = colorValue.toLowerCase() === normalizedValue.toLowerCase();
+              const isSelected =
+                colorValue.toLowerCase() === normalizedValue.toLowerCase();
 
               return (
                 <button
@@ -251,7 +254,7 @@ export const StatusColorCard = forwardRef<HTMLDivElement, StatusColorCardProps>(
                     "hover:shadow-md hover:bg-accent/50",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     "disabled:pointer-events-none disabled:opacity-50",
-                    isSelected && "ring-2 ring-primary bg-accent"
+                    isSelected && "ring-2 ring-primary bg-accent",
                   )}
                 >
                   {isSelected && (
@@ -306,7 +309,13 @@ export const StatusColorCard = forwardRef<HTMLDivElement, StatusColorCardProps>(
             <RangeSlider
               min={threshold.min}
               max={threshold.max}
-              value={[threshold.min, Math.max(threshold.min, Math.min(threshold.max, threshold.value))]}
+              value={[
+                threshold.min,
+                Math.max(
+                  threshold.min,
+                  Math.min(threshold.max, threshold.value),
+                ),
+              ]}
               onValueChange={handleThresholdRangeChange}
               disabled={isReadonly}
               className="space-y-0"
@@ -326,7 +335,7 @@ export const StatusColorCard = forwardRef<HTMLDivElement, StatusColorCardProps>(
         className={cn(
           "transition-all",
           stepStatus === "active" && "ring-2 ring-primary",
-          stepStatus === "pending" && "opacity-50"
+          stepStatus === "pending" && "opacity-50",
         )}
       >
         <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
@@ -338,7 +347,7 @@ export const StatusColorCard = forwardRef<HTMLDivElement, StatusColorCardProps>(
                   ? "bg-green-500 text-white"
                   : stepStatus === "active"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    : "bg-muted",
               )}
             >
               {stepStatus === "completed" ? (
@@ -372,12 +381,10 @@ export const StatusColorCard = forwardRef<HTMLDivElement, StatusColorCardProps>(
             </TooltipProvider>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {content}
-        </CardContent>
+        <CardContent className="space-y-4">{content}</CardContent>
       </Card>
     );
-  }
+  },
 );
 
 StatusColorCard.displayName = "StatusColorCard";
@@ -394,10 +401,13 @@ export interface StatusColors {
 export interface SettingsStatusColorsSectionProps {
   colors: StatusColors;
   originalColors: StatusColors;
-  onColorChange: (fieldName: "success" | "warning" | "error", value: string) => void;
+  onColorChange: (
+    fieldName: "success" | "warning" | "error",
+    value: string,
+  ) => void;
   onThresholdChange: (
     fieldName: "success_threshold" | "warning_threshold" | "danger_threshold",
-    value: number
+    value: number,
   ) => void;
   onResetColor: (fieldName: keyof typeof colors) => void;
   stepStatus: "pending" | "active" | "completed";
@@ -430,7 +440,7 @@ export function SettingsStatusColorsSection({
   const handleWarningThresholdChange = (value: number) => {
     const newValue = Math.max(
       colors.danger_threshold + 1,
-      Math.min(value, colors.success_threshold - 1)
+      Math.min(value, colors.success_threshold - 1),
     );
     onThresholdChange("warning_threshold", newValue);
   };
@@ -461,7 +471,7 @@ export function SettingsStatusColorsSection({
         stepNumber={stepNumber}
         isReadonly={isReadonly}
       />
-      
+
       <StatusColorCard
         ref={cardRefs?.warningRef}
         label="Warning"
@@ -480,7 +490,7 @@ export function SettingsStatusColorsSection({
         stepNumber={stepNumber + 1}
         isReadonly={isReadonly}
       />
-      
+
       <StatusColorCard
         ref={cardRefs?.errorRef}
         label="Error"

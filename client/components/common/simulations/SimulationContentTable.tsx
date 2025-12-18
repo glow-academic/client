@@ -96,7 +96,10 @@ export interface SimulationContentTableProps {
   onAudioToggle?: (contentId: string, enabled: boolean) => void;
   onTextToggle?: (contentId: string, enabled: boolean) => void;
   onRubricChange?: (contentId: string, rubricId: string | null) => void;
-  onTimeLimitChange?: (contentId: string, timeLimitMinutes: number | null) => void;
+  onTimeLimitChange?: (
+    contentId: string,
+    timeLimitMinutes: number | null,
+  ) => void;
   // Rubric picker props
   rubricMapping?: Record<string, { name: string; description?: string }>;
   validRubricIds?: string[];
@@ -131,7 +134,6 @@ export function SimulationContentTable({
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "position", desc: false }, // Default sort by position ascending
   ]);
-
 
   // Columns definition - only shared attributes
   const columns: ColumnDef<ContentItem>[] = React.useMemo(
@@ -309,7 +311,9 @@ export function SimulationContentTable({
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Provide hints to help students progress through the scenario</p>
+              <p>
+                Provide hints to help students progress through the scenario
+              </p>
             </TooltipContent>
           </Tooltip>
         ),
@@ -507,7 +511,9 @@ export function SimulationContentTable({
                   max="120"
                   value={timeLimitMinutes || ""}
                   onChange={(e) => {
-                    const value = e.target.value ? parseInt(e.target.value) : null;
+                    const value = e.target.value
+                      ? parseInt(e.target.value)
+                      : null;
                     onTimeLimitChange?.(contentId, value);
                   }}
                   placeholder="None"

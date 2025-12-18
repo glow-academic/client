@@ -762,10 +762,19 @@ export default function GradedAttemptView({
                       /* Show chat messages for both single and multi-chat attempts */
                       <div className="space-y-4">
                         <AttemptMessages
-                          {...(displayChat.id ? { chatId: displayChat.id } : {})}
+                          {...(displayChat.id
+                            ? { chatId: displayChat.id }
+                            : {})}
                           isAttemptOwner={isAttemptOwner}
                           messages={currentMessages}
-                          currentChat={currentChat ? { id: currentChat.id || "", completed: currentChat.completed } : null}
+                          currentChat={
+                            currentChat
+                              ? {
+                                  id: currentChat.id || "",
+                                  completed: currentChat.completed,
+                                }
+                              : null
+                          }
                           sendMessage={() => {}}
                           isSendingMessage={false}
                           isActive={false}

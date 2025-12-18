@@ -34,7 +34,7 @@ type AuthNewOut = OutputOf<"/api/v3/auth/new", "post">;
  */
 const getAuth = async (
   authId: string,
-  profileId: string
+  profileId: string,
 ): Promise<AuthDetailOut> => {
   return api.post(
     "/auth/detail",
@@ -44,14 +44,14 @@ const getAuth = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ authId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { authId } = await params;
   const session = await getSession();

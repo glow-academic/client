@@ -203,14 +203,17 @@
 
 /* Background image for attempt chat messages - dynamically set via CSS variable */
 .attempt-messages-background {
-  background-image: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), var(--bg-image-url);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)),
+    var(--bg-image-url);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 .dark .attempt-messages-background {
-  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), var(--bg-image-url);
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), var(--bg-image-url);
 }
 
 /* Enhanced contrast for assistant messages (bg-muted) with background image */

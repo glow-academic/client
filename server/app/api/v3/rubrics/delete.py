@@ -16,7 +16,7 @@ class DeleteRubricRequest(BaseModel):
     """Request for deleting a rubric."""
 
     rubricId: str
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DeleteRubricResponse(BaseModel):
@@ -43,10 +43,18 @@ async def delete_rubric(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Delete rubric with existence and usage checks in a single SQL file
         sql_query = load_sql("sql/v3/rubrics/delete_rubric_complete.sql")
-        sql_params = (request.rubricId, request.profileId)
-        result = await conn.fetchrow(sql_query, request.rubricId, request.profileId)
+        sql_params = (request.rubricId, profile_id)
+        result = await conn.fetchrow(sql_query, request.rubricId, profile_id)
 
         if not result:
             # Rubric doesn't exist

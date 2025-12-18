@@ -30,7 +30,7 @@ const getKeysList = async (profileId: string): Promise<KeysListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 

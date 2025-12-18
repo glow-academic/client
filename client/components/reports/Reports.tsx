@@ -79,29 +79,45 @@ export default function Reports({
   // Extract data from API response
   // Type guard to ensure reportsData has expected structure
   const profiles = useMemo(() => {
-    if (reportsData && typeof reportsData === "object" && "data" in reportsData) {
+    if (
+      reportsData &&
+      typeof reportsData === "object" &&
+      "data" in reportsData
+    ) {
       return (reportsData as { data: unknown[] }).data || [];
     }
     return [];
   }, [reportsData]);
-  
+
   const simulationMapping = useMemo(() => {
-    if (reportsData && typeof reportsData === "object" && "simulation_mapping" in reportsData) {
-      return (reportsData as { simulation_mapping: Record<string, unknown> }).simulation_mapping || {};
+    if (
+      reportsData &&
+      typeof reportsData === "object" &&
+      "simulation_mapping" in reportsData
+    ) {
+      return (
+        (reportsData as { simulation_mapping: Record<string, unknown> })
+          .simulation_mapping || {}
+      );
     }
     return {};
   }, [reportsData]);
 
   // Extract pagination metadata from server response
-  const page = reportsData && typeof reportsData === "object" && "page" in reportsData 
-    ? (reportsData as { page: number }).page || 0 
-    : 0;
-  const pageSize = reportsData && typeof reportsData === "object" && "pageSize" in reportsData
-    ? (reportsData as { pageSize: number }).pageSize || 100
-    : 100;
-  const totalPages = reportsData && typeof reportsData === "object" && "totalPages" in reportsData
-    ? (reportsData as { totalPages: number }).totalPages || 0
-    : 0;
+  const page =
+    reportsData && typeof reportsData === "object" && "page" in reportsData
+      ? (reportsData as { page: number }).page || 0
+      : 0;
+  const pageSize =
+    reportsData && typeof reportsData === "object" && "pageSize" in reportsData
+      ? (reportsData as { pageSize: number }).pageSize || 100
+      : 100;
+  const totalPages =
+    reportsData &&
+    typeof reportsData === "object" &&
+    "totalPages" in reportsData
+      ? (reportsData as { totalPages: number }).totalPages || 0
+      : 0;
 
   // Export state
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
@@ -281,7 +297,10 @@ export default function Reports({
     () =>
       Object.entries(simulationMapping).map(([id, simulation]) => ({
         id,
-        title: (simulation && typeof simulation === "object" && "name" in simulation) ? (simulation as { name: string }).name : "Unknown",
+        title:
+          simulation && typeof simulation === "object" && "name" in simulation
+            ? (simulation as { name: string }).name
+            : "Unknown",
       })),
     [simulationMapping],
   );
@@ -1388,10 +1407,14 @@ export default function Reports({
                     onSelect={setSelectedMetrics}
                     getId={(item) => item.value}
                     getLabel={(item) => item.label}
-                    getSearchText={(item) => `${item.label} ${item.description || ""}`}
+                    getSearchText={(item) =>
+                      `${item.label} ${item.description || ""}`
+                    }
                     renderPreview={(item) => (
                       <div className="grid gap-2">
-                        <h4 className="font-medium leading-none">{item.label || "No metric selected"}</h4>
+                        <h4 className="font-medium leading-none">
+                          {item.label || "No metric selected"}
+                        </h4>
                         <div className="text-sm text-muted-foreground">
                           {item.description || "No description available"}
                         </div>
@@ -1405,7 +1428,9 @@ export default function Reports({
                             <IconComponent className="h-4 w-4 text-primary group-data-[selected=true]:text-primary-foreground stroke-current" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">{item.label}</div>
+                            <div className="font-medium truncate">
+                              {item.label}
+                            </div>
                             {item.description && (
                               <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
                                 {item.description}
@@ -1431,7 +1456,8 @@ export default function Reports({
                                 ? "Choose at least one metric..."
                                 : "All metrics selected"
                               : selectedMetrics.length === 1
-                                ? firstMetric?.label || "Select metrics to export..."
+                                ? firstMetric?.label ||
+                                  "Select metrics to export..."
                                 : `${selectedMetrics.length} selected`}
                           </span>
                         </div>

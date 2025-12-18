@@ -126,8 +126,7 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
                 <YAxis yAxisId="right" orientation="right" />
                 <Tooltip
                   formatter={(value: number, name: string) => {
-                    if (name === "cpu")
-                      return [`${value.toFixed(1)}%`, "CPU"];
+                    if (name === "cpu") return [`${value.toFixed(1)}%`, "CPU"];
                     if (name === "latency")
                       return [`${value.toFixed(1)}ms`, "Latency"];
                     if (name === "memory")

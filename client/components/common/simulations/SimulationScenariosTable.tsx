@@ -57,7 +57,7 @@ export interface SimulationScenariosTableProps {
   onRubricChange?: (contentId: string, rubricId: string | null) => void;
   onTimeLimitChange?: (
     contentId: string,
-    timeLimitMinutes: number | null
+    timeLimitMinutes: number | null,
   ) => void;
   // Rubric picker props
   rubricMapping?: Record<string, { name: string; description?: string }>;
@@ -72,7 +72,10 @@ export interface SimulationScenariosTableProps {
       name: string;
       description: string;
       persona_ids?: string[];
-      persona_mapping?: Record<string, { name: string; description: string; color?: string }>;
+      persona_mapping?: Record<
+        string,
+        { name: string; description: string; color?: string }
+      >;
       document_mapping?: Record<string, unknown>;
       parameter_item_mapping?: Record<string, unknown>;
       parameter_item_ids?: string[];
@@ -105,7 +108,7 @@ export function SimulationScenariosTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "position", desc: false },
@@ -114,9 +117,8 @@ export function SimulationScenariosTable({
   // Filter to only scenarios
   const scenarioItems = React.useMemo(
     () => data.filter((item) => item.type === "scenario"),
-    [data]
+    [data],
   );
-
 
   // Columns definition
   const columns: ColumnDef<ContentItem>[] = React.useMemo(
@@ -382,7 +384,7 @@ export function SimulationScenariosTable({
       rubricMapping,
       validRubricIds,
       agentMapping,
-    ]
+    ],
   );
 
   const table = useReactTable({
@@ -428,7 +430,10 @@ export function SimulationScenariosTable({
                 scenarioMapping={
                   scenarioMapping as Record<
                     string,
-                    OutputOf<"/api/v3/simulations/list", "post">["scenario_mapping"][string]
+                    OutputOf<
+                      "/api/v3/simulations/list",
+                      "post"
+                    >["scenario_mapping"][string]
                   >
                 }
                 validScenarioIds={validScenarioIds}
@@ -458,7 +463,7 @@ export function SimulationScenariosTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   ))}
@@ -479,7 +484,7 @@ export function SimulationScenariosTable({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}

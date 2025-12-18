@@ -44,7 +44,7 @@ export function SettingsKeyPicker({
   // Filter and sort keys - selected keys first
   const filteredKeyIds = useMemo(() => {
     let filtered = validKeyIds;
-    
+
     // Filter by search term if provided
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
@@ -55,7 +55,7 @@ export function SettingsKeyPicker({
         return searchText.includes(searchLower);
       });
     }
-    
+
     // Sort: selected keys first, then unselected
     return [...filtered].sort((a, b) => {
       const aSelected = a === selectedKeyId;
@@ -116,7 +116,7 @@ export function SettingsKeyPicker({
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   "disabled:pointer-events-none disabled:opacity-50",
                   isSelected && "ring-2 ring-primary bg-accent",
-                  !key.active && "opacity-60"
+                  !key.active && "opacity-60",
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -150,4 +150,3 @@ export function SettingsKeyPicker({
     </div>
   );
 }
-

@@ -42,7 +42,7 @@ class CohortSearchProfileRequest(BaseModel):
     )
     departmentIds: list[str] | None = None  # Optional: filter by department IDs
     limit: int = 200  # Maximum number of results
-    profileId: str  # Current user's profile ID for permissions
+    # profileId removed - comes from X-Profile-Id header
 
 
 class CohortSearchProfileResponse(BaseModel):
@@ -75,9 +75,17 @@ async def cohort_search_profile(
         return CohortSearchProfileResponse.model_validate(cached["data"])
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Build dynamic SQL query
         # Start with current_profile_id (used in CTEs)
-        params: list[Any] = [request.profileId]
+        params: list[Any] = [profile_id]
         param_idx = 2  # $1 is current_profile_id
 
         # Build search WHERE clause

@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
@@ -31,7 +30,7 @@ export function ReasoningCardGrid({
   // Build reasoning levels from REASONING_LEVELS array
   const baseReasoningLevels = React.useMemo(() => {
     return [...REASONING_LEVELS].sort((a, b) =>
-      (a.name || "").localeCompare(b.name || "")
+      (a.name || "").localeCompare(b.name || ""),
     );
   }, []);
 
@@ -46,7 +45,7 @@ export function ReasoningCardGrid({
         (level) =>
           level.name?.toLowerCase().includes(searchLower) ||
           level.description?.toLowerCase().includes(searchLower) ||
-          level.id?.toLowerCase().includes(searchLower)
+          level.id?.toLowerCase().includes(searchLower),
       );
     }
 
@@ -107,7 +106,7 @@ export function ReasoningCardGrid({
                         "hover:shadow-md hover:bg-accent/50",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "disabled:pointer-events-none disabled:opacity-50",
-                        isSelected && "ring-2 ring-primary bg-accent"
+                        isSelected && "ring-2 ring-primary bg-accent",
                       )}
                     >
                       {/* Check icon - top right */}
@@ -138,4 +137,3 @@ export function ReasoningCardGrid({
     </TooltipProvider>
   );
 }
-

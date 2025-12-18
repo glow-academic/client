@@ -80,7 +80,7 @@ const getProfileContext = async (input: {
 /** ---- Inline filters function for pricing page ---- */
 async function getPricingFilters(
   searchParams?: URLSearchParams,
-  profileIds?: { effectiveProfileId: string; actualProfileId: string }
+  profileIds?: { effectiveProfileId: string; actualProfileId: string },
 ) {
   if (!profileIds) {
     throw new Error("Profile IDs required");

@@ -72,10 +72,7 @@ export default async function NewKeyPage() {
       data-page="key-new"
       aria-label="Create new key page"
     >
-      <Key
-        createKeyAction={createKey}
-        decryptKeyAction={decryptKey}
-      />
+      <Key createKeyAction={createKey} decryptKeyAction={decryptKey} />
     </div>
   );
 }

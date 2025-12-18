@@ -16,7 +16,9 @@ type CreateProviderIn = InputOf<"/api/v3/providers/create", "post">;
 type CreateProviderOut = OutputOf<"/api/v3/providers/create", "post">;
 
 /** ---- Strongly-typed server action ---- */
-async function createProvider(input: CreateProviderIn): Promise<CreateProviderOut> {
+async function createProvider(
+  input: CreateProviderIn,
+): Promise<CreateProviderOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId;
@@ -33,7 +35,8 @@ async function createProvider(input: CreateProviderIn): Promise<CreateProviderOu
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Provider",
-    description: "Create a new AI provider configuration for teaching assistant training platform. Configure provider settings, API endpoints, and maintain platform integrations for educational institutions and L&D programs.",
+    description:
+      "Create a new AI provider configuration for teaching assistant training platform. Configure provider settings, API endpoints, and maintain platform integrations for educational institutions and L&D programs.",
   };
 }
 
@@ -60,5 +63,9 @@ export default async function NewProviderPage() {
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { CreateProviderIn, CreateProviderOut, ProviderNewIn, ProviderNewOut };
-
+export type {
+  CreateProviderIn,
+  CreateProviderOut,
+  ProviderNewIn,
+  ProviderNewOut,
+};

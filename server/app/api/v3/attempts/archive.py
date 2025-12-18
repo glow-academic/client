@@ -25,7 +25,7 @@ class BulkArchiveFilters(BaseModel):
     departmentIds: list[str] | None = None
     roles: list[str] | None = None
     simulationFilters: list[str] | None = None  # ["general", "practice", "archived"]
-    profileId: str | None = None
+    # profileId removed - comes from X-Profile-Id header (use current user's profile when None)
     search: str | None = None
     profileIds: list[str] | None = None
     simulationIds: list[str] | None = None
@@ -64,6 +64,10 @@ async def bulk_archive_attempts(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        # Used as default when filters.profileId is None
+        current_profile_id = http_request.state.profile_id
+
         # Determine which operation mode to use
         if request.archiveAll and request.filters:
             # Filter-based bulk archive: archive all attempts matching filters
@@ -106,7 +110,7 @@ async def bulk_archive_attempts(
                 datetime.fromisoformat(
                     request.filters.endDate.replace("Z", "+00:00")
                 ),  # $3
-                request.filters.profileId if request.filters.profileId else None,  # $4
+                current_profile_id,  # $4 - use current user's profile ID from header
                 request.filters.cohortIds if request.filters.cohortIds else [],  # $5
                 request.filters.departmentIds
                 if request.filters.departmentIds
@@ -178,9 +182,9 @@ async def bulk_archive_attempts(
         # Determine which profileIds to invalidate
         profile_ids_to_invalidate: set[str] = set()
 
-        if request.archiveAll and request.filters and request.filters.profileId:
-            # Filter-based archive with specific profileId
-            profile_ids_to_invalidate.add(request.filters.profileId)
+        if request.archiveAll and request.filters and current_profile_id:
+            # Filter-based archive - use current user's profile ID
+            profile_ids_to_invalidate.add(current_profile_id)
         elif request.attemptIds:
             # AttemptIds-based archive - query database to get unique profileIds
             try:

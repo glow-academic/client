@@ -65,7 +65,10 @@ export interface SimulationScenarioSectionProps {
   onAudioToggle?: (contentId: string, enabled: boolean) => void;
   onTextToggle?: (contentId: string, enabled: boolean) => void;
   onRubricChange?: (contentId: string, rubricId: string | null) => void;
-  onTimeLimitChange?: (contentId: string, timeLimitMinutes: number | null) => void;
+  onTimeLimitChange?: (
+    contentId: string,
+    timeLimitMinutes: number | null,
+  ) => void;
 
   // UI State
   readonly?: boolean;
@@ -73,7 +76,7 @@ export interface SimulationScenarioSectionProps {
   stepNumber?: number;
   isEditMode?: boolean;
   practiceSimulation?: boolean; // Hide hints switch if true
-  
+
   // Accordion props
   accordionValue?: string;
   isAccordionOpen?: boolean;
@@ -118,7 +121,7 @@ export function SimulationScenarioSection({
 
   // Use stepNumber if provided, otherwise fall back to position
   const displayNumber = stepNumber ?? position;
-  
+
   // Conditional rendering flags
   const showHints = practiceSimulation; // Show hints only when practice simulation is true
   const showCopyPaste = item.text_enabled ?? true; // Show when text is enabled
@@ -126,7 +129,7 @@ export function SimulationScenarioSection({
 
   // Track if we've already auto-selected a rubric to prevent infinite loops
   const hasAutoSelectedRef = useRef<string | null>(null);
-  
+
   // Auto-select first rubric if validRubricIds has items and rubric_id is not set
   useEffect(() => {
     // If rubric_id is set (not null), reset the ref and don't auto-select
@@ -136,7 +139,7 @@ export function SimulationScenarioSection({
       }
       return;
     }
-    
+
     // Only auto-select once per contentId, and only if conditions are met
     if (
       !readonly &&
@@ -159,7 +162,7 @@ export function SimulationScenarioSection({
             className={cn(
               "transition-all",
               !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-              !isEditMode && stepStatus === "pending" && "opacity-50"
+              !isEditMode && stepStatus === "pending" && "opacity-50",
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -171,7 +174,7 @@ export function SimulationScenarioSection({
                       ? "bg-green-500 text-white"
                       : stepStatus === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "bg-muted",
                   )}
                 >
                   {stepStatus === "completed" ? (
@@ -255,7 +258,7 @@ export function SimulationScenarioSection({
                       <ChevronDown
                         className={cn(
                           "h-3.5 w-3.5 transition-transform duration-200",
-                          isAccordionOpen && "rotate-180"
+                          isAccordionOpen && "rotate-180",
                         )}
                       />
                     </Button>
@@ -268,366 +271,403 @@ export function SimulationScenarioSection({
             </CardHeader>
             <AccordionContent>
               <CardContent className="space-y-6 px-6 pt-0">
-          {/* If has_active_video, only show time limit and active switches */}
-          {hasActiveVideo ? (
-            <>
-              {/* Active Toggle */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor={`${contentId}-active`}
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                    Active
-                  </Label>
-                  <Switch
-                    id={`${contentId}-active`}
-                    checked={item.active}
-                    onCheckedChange={(checked) => onActiveToggle(contentId, checked)}
-                    disabled={readonly}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-6">
-                  Enable or disable this scenario
-                </p>
-              </div>
+                {/* If has_active_video, only show time limit and active switches */}
+                {hasActiveVideo ? (
+                  <>
+                    {/* Active Toggle */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor={`${contentId}-active`}
+                          className="text-sm flex items-center gap-1.5"
+                        >
+                          <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                          Active
+                        </Label>
+                        <Switch
+                          id={`${contentId}-active`}
+                          checked={item.active}
+                          onCheckedChange={(checked) =>
+                            onActiveToggle(contentId, checked)
+                          }
+                          disabled={readonly}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground pl-6">
+                        Enable or disable this scenario
+                      </p>
+                    </div>
 
-              {/* Time Limit */}
-              <Collapsible
-                open={hasTimeLimit}
-                onOpenChange={(open) => {
-                  if (!open && onTimeLimitChange) {
-                    onTimeLimitChange(contentId, null);
-                  } else if (open && !hasTimeLimit && onTimeLimitChange) {
-                    onTimeLimitChange(contentId, 30); // Default to 30 minutes
-                  }
-                }}
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                    <Label
-                      htmlFor={`${contentId}-time-limit-toggle`}
-                      className="text-sm font-medium"
-                    >
-                      Time Limit
-                    </Label>
-                    <Switch
-                      id={`${contentId}-time-limit-toggle`}
-                      checked={hasTimeLimit}
-                      onCheckedChange={(checked) => {
-                        if (!checked && onTimeLimitChange) {
+                    {/* Time Limit */}
+                    <Collapsible
+                      open={hasTimeLimit}
+                      onOpenChange={(open) => {
+                        if (!open && onTimeLimitChange) {
                           onTimeLimitChange(contentId, null);
-                        } else if (checked && !hasTimeLimit && onTimeLimitChange) {
+                        } else if (open && !hasTimeLimit && onTimeLimitChange) {
                           onTimeLimitChange(contentId, 30); // Default to 30 minutes
                         }
                       }}
-                      disabled={readonly || !onTimeLimitChange}
-                    />
-                  </div>
-                  {!hasTimeLimit && (
-                    <p className="text-xs text-muted-foreground pl-6">
-                      Set a time limit for this scenario
-                    </p>
-                  )}
-                  <CollapsibleContent>
-                    {hasTimeLimit && (
-                      <div className="pl-6 pt-1">
-                        {readonly ? (
-                          <p className="text-sm text-muted-foreground">
-                            {timeLimitMinutes ? `${timeLimitMinutes} min` : "No limit"}
-                          </p>
-                        ) : (
-                          <Input
-                            id={`${contentId}-time-limit`}
-                            type="number"
-                            min="1"
-                            max="120"
-                            value={timeLimitMinutes || ""}
-                            onChange={(e) => {
-                              const value = e.target.value
-                                ? parseInt(e.target.value)
-                                : null;
-                              // If value becomes empty while switch is on, turn off switch
-                              if (!value && hasTimeLimit && onTimeLimitChange) {
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                          <Label
+                            htmlFor={`${contentId}-time-limit-toggle`}
+                            className="text-sm font-medium"
+                          >
+                            Time Limit
+                          </Label>
+                          <Switch
+                            id={`${contentId}-time-limit-toggle`}
+                            checked={hasTimeLimit}
+                            onCheckedChange={(checked) => {
+                              if (!checked && onTimeLimitChange) {
                                 onTimeLimitChange(contentId, null);
-                              } else {
-                                onTimeLimitChange?.(contentId, value);
+                              } else if (
+                                checked &&
+                                !hasTimeLimit &&
+                                onTimeLimitChange
+                              ) {
+                                onTimeLimitChange(contentId, 30); // Default to 30 minutes
                               }
                             }}
-                            onBlur={(e) => {
-                              const value = e.target.value
-                                ? parseInt(e.target.value)
-                                : null;
-                              // If blur with empty value while switch is on, turn off switch
-                              if (!value && hasTimeLimit && onTimeLimitChange) {
-                                onTimeLimitChange(contentId, null);
-                              } else if (value) {
-                                onTimeLimitChange?.(contentId, value);
-                              }
-                            }}
-                            placeholder="Enter minutes"
-                            className="w-full"
                             disabled={readonly || !onTimeLimitChange}
                           />
+                        </div>
+                        {!hasTimeLimit && (
+                          <p className="text-xs text-muted-foreground pl-6">
+                            Set a time limit for this scenario
+                          </p>
                         )}
+                        <CollapsibleContent>
+                          {hasTimeLimit && (
+                            <div className="pl-6 pt-1">
+                              {readonly ? (
+                                <p className="text-sm text-muted-foreground">
+                                  {timeLimitMinutes
+                                    ? `${timeLimitMinutes} min`
+                                    : "No limit"}
+                                </p>
+                              ) : (
+                                <Input
+                                  id={`${contentId}-time-limit`}
+                                  type="number"
+                                  min="1"
+                                  max="120"
+                                  value={timeLimitMinutes || ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value
+                                      ? parseInt(e.target.value)
+                                      : null;
+                                    // If value becomes empty while switch is on, turn off switch
+                                    if (
+                                      !value &&
+                                      hasTimeLimit &&
+                                      onTimeLimitChange
+                                    ) {
+                                      onTimeLimitChange(contentId, null);
+                                    } else {
+                                      onTimeLimitChange?.(contentId, value);
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    const value = e.target.value
+                                      ? parseInt(e.target.value)
+                                      : null;
+                                    // If blur with empty value while switch is on, turn off switch
+                                    if (
+                                      !value &&
+                                      hasTimeLimit &&
+                                      onTimeLimitChange
+                                    ) {
+                                      onTimeLimitChange(contentId, null);
+                                    } else if (value) {
+                                      onTimeLimitChange?.(contentId, value);
+                                    }
+                                  }}
+                                  placeholder="Enter minutes"
+                                  className="w-full"
+                                  disabled={readonly || !onTimeLimitChange}
+                                />
+                              )}
+                            </div>
+                          )}
+                        </CollapsibleContent>
                       </div>
-                    )}
-                  </CollapsibleContent>
-                </div>
-              </Collapsible>
-            </>
-          ) : (
-            <>
-              {/* Rubric Picker */}
-              <div className="space-y-2">
-                <Label htmlFor={`${contentId}-rubric`} className="text-sm">
-                  Rubric
-                </Label>
-                {readonly ? (
-                  <p className="text-sm text-muted-foreground">
-                    {item.rubric_id && rubricMapping[item.rubric_id]
-                      ? rubricMapping[item.rubric_id]?.name || "None"
-                      : "None"}
-                  </p>
+                    </Collapsible>
+                  </>
                 ) : (
-                  <GenericPicker
-                    key={`${contentId}-rubric-${item.rubric_id || 'none'}`}
-                    items={rubricMapping}
-                    itemIds={validRubricIds}
-                    selectedIds={
-                      item.rubric_id &&
-                      rubricMapping[item.rubric_id] &&
-                      validRubricIds.includes(item.rubric_id)
-                        ? [item.rubric_id]
-                        : []
-                    }
-                    onSelect={(ids) =>
-                      onRubricChange?.(contentId, ids[0] || null)
-                    }
-                    getId={(rubric) => (rubric as unknown as { id: string }).id}
-                    getLabel={(rubric) => rubric.name || ""}
-                    getSearchText={(rubric) =>
-                      `${rubric.name} ${rubric.description || ""}`
-                    }
-                    placeholder="Select rubric..."
-                    hideSelectedChips={true}
-                    buttonClassName="w-full"
-                  />
-                )}
-              </div>
+                  <>
+                    {/* Rubric Picker */}
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor={`${contentId}-rubric`}
+                        className="text-sm"
+                      >
+                        Rubric
+                      </Label>
+                      {readonly ? (
+                        <p className="text-sm text-muted-foreground">
+                          {item.rubric_id && rubricMapping[item.rubric_id]
+                            ? rubricMapping[item.rubric_id]?.name || "None"
+                            : "None"}
+                        </p>
+                      ) : (
+                        <GenericPicker
+                          key={`${contentId}-rubric-${item.rubric_id || "none"}`}
+                          items={rubricMapping}
+                          itemIds={validRubricIds}
+                          selectedIds={
+                            item.rubric_id &&
+                            rubricMapping[item.rubric_id] &&
+                            validRubricIds.includes(item.rubric_id)
+                              ? [item.rubric_id]
+                              : []
+                          }
+                          onSelect={(ids) =>
+                            onRubricChange?.(contentId, ids[0] || null)
+                          }
+                          getId={(rubric) =>
+                            (rubric as unknown as { id: string }).id
+                          }
+                          getLabel={(rubric) => rubric.name || ""}
+                          getSearchText={(rubric) =>
+                            `${rubric.name} ${rubric.description || ""}`
+                          }
+                          placeholder="Select rubric..."
+                          hideSelectedChips={true}
+                          buttonClassName="w-full"
+                        />
+                      )}
+                    </div>
 
-              {/* Active Toggle */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor={`${contentId}-active`}
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                    Active
-                  </Label>
-                  <Switch
-                    id={`${contentId}-active`}
-                    checked={item.active}
-                    onCheckedChange={(checked) => onActiveToggle(contentId, checked)}
-                    disabled={readonly}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-6">
-                  Enable or disable this scenario
-                </p>
-              </div>
+                    {/* Active Toggle */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor={`${contentId}-active`}
+                          className="text-sm flex items-center gap-1.5"
+                        >
+                          <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                          Active
+                        </Label>
+                        <Switch
+                          id={`${contentId}-active`}
+                          checked={item.active}
+                          onCheckedChange={(checked) =>
+                            onActiveToggle(contentId, checked)
+                          }
+                          disabled={readonly}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground pl-6">
+                        Enable or disable this scenario
+                      </p>
+                    </div>
 
-              {/* Hints Toggle - Only show if not practice simulation */}
-              {showHints && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor={`${contentId}-hints`}
-                      className="text-sm flex items-center gap-1.5"
-                    >
-                      <Lightbulb className="h-3.5 w-3.5 text-muted-foreground" />
-                      Hints
-                    </Label>
-                    <Switch
-                      id={`${contentId}-hints`}
-                      checked={item.hints_enabled ?? false}
-                      onCheckedChange={(checked) =>
-                        onHintsToggle?.(contentId, checked)
-                      }
-                      disabled={readonly || !onHintsToggle}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-6">
-                    Provide hints to help students progress
-                  </p>
-                </div>
-              )}
+                    {/* Hints Toggle - Only show if not practice simulation */}
+                    {showHints && (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Label
+                            htmlFor={`${contentId}-hints`}
+                            className="text-sm flex items-center gap-1.5"
+                          >
+                            <Lightbulb className="h-3.5 w-3.5 text-muted-foreground" />
+                            Hints
+                          </Label>
+                          <Switch
+                            id={`${contentId}-hints`}
+                            checked={item.hints_enabled ?? false}
+                            onCheckedChange={(checked) =>
+                              onHintsToggle?.(contentId, checked)
+                            }
+                            disabled={readonly || !onHintsToggle}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground pl-6">
+                          Provide hints to help students progress
+                        </p>
+                      </div>
+                    )}
 
-              {/* Text Enabled Toggle */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor={`${contentId}-text`}
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Text className="h-3.5 w-3.5 text-muted-foreground" />
-                    Text Enabled
-                  </Label>
-                  <Switch
-                    id={`${contentId}-text`}
-                    checked={item.text_enabled ?? true}
-                    onCheckedChange={(checked) => {
-                      // Allow both to be off - validation happens on submit
-                      onTextToggle?.(contentId, checked);
-                    }}
-                    disabled={readonly || !onTextToggle}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-6">
-                  Allow students to input text responses
-                </p>
-              </div>
+                    {/* Text Enabled Toggle */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor={`${contentId}-text`}
+                          className="text-sm flex items-center gap-1.5"
+                        >
+                          <Text className="h-3.5 w-3.5 text-muted-foreground" />
+                          Text Enabled
+                        </Label>
+                        <Switch
+                          id={`${contentId}-text`}
+                          checked={item.text_enabled ?? true}
+                          onCheckedChange={(checked) => {
+                            // Allow both to be off - validation happens on submit
+                            onTextToggle?.(contentId, checked);
+                          }}
+                          disabled={readonly || !onTextToggle}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground pl-6">
+                        Allow students to input text responses
+                      </p>
+                    </div>
 
-              {/* Copy/Paste Toggle - Only show when text is enabled, placed below text switch */}
-              {showCopyPaste && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor={`${contentId}-copy-paste`}
-                      className="text-sm flex items-center gap-1.5"
-                    >
-                      <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                      Copy/Paste
-                    </Label>
-                    <Switch
-                      id={`${contentId}-copy-paste`}
-                      checked={item.copy_paste_allowed ?? false}
-                      onCheckedChange={(checked) =>
-                        onCopyPasteToggle?.(contentId, checked)
-                      }
-                      disabled={readonly || !onCopyPasteToggle}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-6">
-                    Allow students to copy and paste text
-                  </p>
-                </div>
-              )}
+                    {/* Copy/Paste Toggle - Only show when text is enabled, placed below text switch */}
+                    {showCopyPaste && (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Label
+                            htmlFor={`${contentId}-copy-paste`}
+                            className="text-sm flex items-center gap-1.5"
+                          >
+                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                            Copy/Paste
+                          </Label>
+                          <Switch
+                            id={`${contentId}-copy-paste`}
+                            checked={item.copy_paste_allowed ?? false}
+                            onCheckedChange={(checked) =>
+                              onCopyPasteToggle?.(contentId, checked)
+                            }
+                            disabled={readonly || !onCopyPasteToggle}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground pl-6">
+                          Allow students to copy and paste text
+                        </p>
+                      </div>
+                    )}
 
-              {/* Audio Enabled Toggle */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor={`${contentId}-audio`}
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Mic className="h-3.5 w-3.5 text-muted-foreground" />
-                    Audio Enabled
-                  </Label>
-                  <Switch
-                    id={`${contentId}-audio`}
-                    checked={item.audio_enabled ?? false}
-                    onCheckedChange={(checked) => {
-                      // Allow both to be off - validation happens on submit
-                      onAudioToggle?.(contentId, checked);
-                    }}
-                    disabled={readonly || !onAudioToggle}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-6">
-                  Allow students to input audio responses
-                </p>
-              </div>
+                    {/* Audio Enabled Toggle */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor={`${contentId}-audio`}
+                          className="text-sm flex items-center gap-1.5"
+                        >
+                          <Mic className="h-3.5 w-3.5 text-muted-foreground" />
+                          Audio Enabled
+                        </Label>
+                        <Switch
+                          id={`${contentId}-audio`}
+                          checked={item.audio_enabled ?? false}
+                          onCheckedChange={(checked) => {
+                            // Allow both to be off - validation happens on submit
+                            onAudioToggle?.(contentId, checked);
+                          }}
+                          disabled={readonly || !onAudioToggle}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground pl-6">
+                        Allow students to input audio responses
+                      </p>
+                    </div>
 
-              {/* Time Limit */}
-              <Collapsible
-                open={hasTimeLimit}
-                onOpenChange={(open) => {
-                  if (!open && onTimeLimitChange) {
-                    onTimeLimitChange(contentId, null);
-                  } else if (open && !hasTimeLimit && onTimeLimitChange) {
-                    onTimeLimitChange(contentId, 30); // Default to 30 minutes
-                  }
-                }}
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                    <Label
-                      htmlFor={`${contentId}-time-limit-toggle`}
-                      className="text-sm font-medium"
-                    >
-                      Time Limit
-                    </Label>
-                    <Switch
-                      id={`${contentId}-time-limit-toggle`}
-                      checked={hasTimeLimit}
-                      onCheckedChange={(checked) => {
-                        if (!checked && onTimeLimitChange) {
+                    {/* Time Limit */}
+                    <Collapsible
+                      open={hasTimeLimit}
+                      onOpenChange={(open) => {
+                        if (!open && onTimeLimitChange) {
                           onTimeLimitChange(contentId, null);
-                        } else if (checked && !hasTimeLimit && onTimeLimitChange) {
+                        } else if (open && !hasTimeLimit && onTimeLimitChange) {
                           onTimeLimitChange(contentId, 30); // Default to 30 minutes
                         }
                       }}
-                      disabled={readonly || !onTimeLimitChange}
-                    />
-                  </div>
-                  {!hasTimeLimit && (
-                    <p className="text-xs text-muted-foreground pl-6">
-                      Set a time limit for this scenario
-                    </p>
-                  )}
-                  <CollapsibleContent>
-                    {hasTimeLimit && (
-                      <div className="pl-6 pt-1">
-                        {readonly ? (
-                          <p className="text-sm text-muted-foreground">
-                            {timeLimitMinutes ? `${timeLimitMinutes} min` : "No limit"}
-                          </p>
-                        ) : (
-                          <Input
-                            id={`${contentId}-time-limit`}
-                            type="number"
-                            min="1"
-                            max="120"
-                            value={timeLimitMinutes || ""}
-                            onChange={(e) => {
-                              const value = e.target.value
-                                ? parseInt(e.target.value)
-                                : null;
-                              // If value becomes empty while switch is on, turn off switch
-                              if (!value && hasTimeLimit && onTimeLimitChange) {
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                          <Label
+                            htmlFor={`${contentId}-time-limit-toggle`}
+                            className="text-sm font-medium"
+                          >
+                            Time Limit
+                          </Label>
+                          <Switch
+                            id={`${contentId}-time-limit-toggle`}
+                            checked={hasTimeLimit}
+                            onCheckedChange={(checked) => {
+                              if (!checked && onTimeLimitChange) {
                                 onTimeLimitChange(contentId, null);
-                              } else {
-                                onTimeLimitChange?.(contentId, value);
+                              } else if (
+                                checked &&
+                                !hasTimeLimit &&
+                                onTimeLimitChange
+                              ) {
+                                onTimeLimitChange(contentId, 30); // Default to 30 minutes
                               }
                             }}
-                            onBlur={(e) => {
-                              const value = e.target.value
-                                ? parseInt(e.target.value)
-                                : null;
-                              // If blur with empty value while switch is on, turn off switch
-                              if (!value && hasTimeLimit && onTimeLimitChange) {
-                                onTimeLimitChange(contentId, null);
-                              } else if (value) {
-                                onTimeLimitChange?.(contentId, value);
-                              }
-                            }}
-                            placeholder="Enter minutes"
-                            className="w-full"
                             disabled={readonly || !onTimeLimitChange}
                           />
+                        </div>
+                        {!hasTimeLimit && (
+                          <p className="text-xs text-muted-foreground pl-6">
+                            Set a time limit for this scenario
+                          </p>
                         )}
+                        <CollapsibleContent>
+                          {hasTimeLimit && (
+                            <div className="pl-6 pt-1">
+                              {readonly ? (
+                                <p className="text-sm text-muted-foreground">
+                                  {timeLimitMinutes
+                                    ? `${timeLimitMinutes} min`
+                                    : "No limit"}
+                                </p>
+                              ) : (
+                                <Input
+                                  id={`${contentId}-time-limit`}
+                                  type="number"
+                                  min="1"
+                                  max="120"
+                                  value={timeLimitMinutes || ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value
+                                      ? parseInt(e.target.value)
+                                      : null;
+                                    // If value becomes empty while switch is on, turn off switch
+                                    if (
+                                      !value &&
+                                      hasTimeLimit &&
+                                      onTimeLimitChange
+                                    ) {
+                                      onTimeLimitChange(contentId, null);
+                                    } else {
+                                      onTimeLimitChange?.(contentId, value);
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    const value = e.target.value
+                                      ? parseInt(e.target.value)
+                                      : null;
+                                    // If blur with empty value while switch is on, turn off switch
+                                    if (
+                                      !value &&
+                                      hasTimeLimit &&
+                                      onTimeLimitChange
+                                    ) {
+                                      onTimeLimitChange(contentId, null);
+                                    } else if (value) {
+                                      onTimeLimitChange?.(contentId, value);
+                                    }
+                                  }}
+                                  placeholder="Enter minutes"
+                                  className="w-full"
+                                  disabled={readonly || !onTimeLimitChange}
+                                />
+                              )}
+                            </div>
+                          )}
+                        </CollapsibleContent>
                       </div>
-                    )}
-                  </CollapsibleContent>
-                </div>
-              </Collapsible>
-            </>
-          )}
+                    </Collapsible>
+                  </>
+                )}
               </CardContent>
             </AccordionContent>
           </Card>
@@ -643,7 +683,7 @@ export function SimulationScenarioSection({
         className={cn(
           "transition-all",
           !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-          !isEditMode && stepStatus === "pending" && "opacity-50"
+          !isEditMode && stepStatus === "pending" && "opacity-50",
         )}
       >
         <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -655,7 +695,7 @@ export function SimulationScenarioSection({
                   ? "bg-green-500 text-white"
                   : stepStatus === "active"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    : "bg-muted",
               )}
             >
               {stepStatus === "completed" ? (
@@ -734,7 +774,9 @@ export function SimulationScenarioSection({
                   <Switch
                     id={`${contentId}-active`}
                     checked={item.active}
-                    onCheckedChange={(checked) => onActiveToggle(contentId, checked)}
+                    onCheckedChange={(checked) =>
+                      onActiveToggle(contentId, checked)
+                    }
                     disabled={readonly}
                   />
                 </div>
@@ -769,7 +811,11 @@ export function SimulationScenarioSection({
                       onCheckedChange={(checked) => {
                         if (!checked && onTimeLimitChange) {
                           onTimeLimitChange(contentId, null);
-                        } else if (checked && !hasTimeLimit && onTimeLimitChange) {
+                        } else if (
+                          checked &&
+                          !hasTimeLimit &&
+                          onTimeLimitChange
+                        ) {
                           onTimeLimitChange(contentId, 30); // Default to 30 minutes
                         }
                       }}
@@ -786,7 +832,9 @@ export function SimulationScenarioSection({
                       <div className="pl-6 pt-1">
                         {readonly ? (
                           <p className="text-sm text-muted-foreground">
-                            {timeLimitMinutes ? `${timeLimitMinutes} min` : "No limit"}
+                            {timeLimitMinutes
+                              ? `${timeLimitMinutes} min`
+                              : "No limit"}
                           </p>
                         ) : (
                           <Input
@@ -843,7 +891,7 @@ export function SimulationScenarioSection({
                   </p>
                 ) : (
                   <GenericPicker
-                    key={`${contentId}-rubric-${item.rubric_id || 'none'}`}
+                    key={`${contentId}-rubric-${item.rubric_id || "none"}`}
                     items={rubricMapping}
                     itemIds={validRubricIds}
                     selectedIds={
@@ -881,7 +929,9 @@ export function SimulationScenarioSection({
                   <Switch
                     id={`${contentId}-active`}
                     checked={item.active}
-                    onCheckedChange={(checked) => onActiveToggle(contentId, checked)}
+                    onCheckedChange={(checked) =>
+                      onActiveToggle(contentId, checked)
+                    }
                     disabled={readonly}
                   />
                 </div>
@@ -1018,7 +1068,11 @@ export function SimulationScenarioSection({
                       onCheckedChange={(checked) => {
                         if (!checked && onTimeLimitChange) {
                           onTimeLimitChange(contentId, null);
-                        } else if (checked && !hasTimeLimit && onTimeLimitChange) {
+                        } else if (
+                          checked &&
+                          !hasTimeLimit &&
+                          onTimeLimitChange
+                        ) {
                           onTimeLimitChange(contentId, 30); // Default to 30 minutes
                         }
                       }}
@@ -1035,7 +1089,9 @@ export function SimulationScenarioSection({
                       <div className="pl-6 pt-1">
                         {readonly ? (
                           <p className="text-sm text-muted-foreground">
-                            {timeLimitMinutes ? `${timeLimitMinutes} min` : "No limit"}
+                            {timeLimitMinutes
+                              ? `${timeLimitMinutes} min`
+                              : "No limit"}
                           </p>
                         ) : (
                           <Input
@@ -1083,4 +1139,3 @@ export function SimulationScenarioSection({
     </TooltipProvider>
   );
 }
-

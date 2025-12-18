@@ -97,7 +97,8 @@ export async function generateMetadata(
 
   return {
     title: "Cohort Edit",
-    description: "Edit learning cohort for teaching assistant training programs. Manage group settings and coordinate group-based learning activities for effective L&D program administration.",
+    description:
+      "Edit learning cohort for teaching assistant training programs. Manage group settings and coordinate group-based learning activities for effective L&D program administration.",
   };
 }
 
@@ -187,4 +188,3 @@ export type {
   UpdateCohortIn,
   UpdateCohortOut,
 };
-

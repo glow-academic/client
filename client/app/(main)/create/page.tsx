@@ -11,7 +11,8 @@ import type { Metadata } from "next";
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Create",
-    description: "Create new teaching resources for teaching assistant training. Design simulations, scenarios, personas, and other educational content to support simulation-based learning and pedagogical development.",
+    description:
+      "Create new teaching resources for teaching assistant training. Design simulations, scenarios, personas, and other educational content to support simulation-based learning and pedagogical development.",
   };
 }
 

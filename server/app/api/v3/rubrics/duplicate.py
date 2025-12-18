@@ -16,7 +16,7 @@ class DuplicateRubricRequest(BaseModel):
     """Request for duplicating a rubric."""
 
     rubricId: str
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DuplicateRubricResponse(BaseModel):
@@ -44,10 +44,18 @@ async def duplicate_rubric(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Duplicate rubric with departments, standard groups, and standards in a single SQL file
         sql_query = load_sql("sql/v3/rubrics/duplicate_rubric_complete.sql")
-        sql_params = (request.rubricId, request.profileId)
-        row = await conn.fetchrow(sql_query, request.rubricId, request.profileId)
+        sql_params = (request.rubricId, profile_id)
+        row = await conn.fetchrow(sql_query, request.rubricId, profile_id)
 
         if not row:
             raise HTTPException(status_code=404, detail="Rubric not found")

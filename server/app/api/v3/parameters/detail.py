@@ -19,7 +19,7 @@ from app.utils.sql_helper import load_sql
 # Inline request/response schemas
 class ParameterDetailRequest(BaseModel):
     parameterId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class ParameterItemDetail(BaseModel):
@@ -96,10 +96,18 @@ async def get_parameter_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/parameters/get_parameter_detail_complete.sql")
-        sql_params = (uuid.UUID(request.parameterId), request.profileId)
+        sql_params = (uuid.UUID(request.parameterId), profile_id)
         result = await conn.fetchrow(
-            sql_query, uuid.UUID(request.parameterId), request.profileId
+            sql_query, uuid.UUID(request.parameterId), profile_id
         )
 
         if not result:

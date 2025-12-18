@@ -3,7 +3,10 @@
 import * as React from "react";
 import { Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { STAFF_ROLES, generateGradientFromHex } from "@/components/common/forms/staff-roles";
+import {
+  STAFF_ROLES,
+  generateGradientFromHex,
+} from "@/components/common/forms/staff-roles";
 
 export interface StaffRoleCardGridProps {
   selectedRoleId: string;
@@ -121,4 +124,3 @@ export function StaffRoleCardGrid({
     </div>
   );
 }
-

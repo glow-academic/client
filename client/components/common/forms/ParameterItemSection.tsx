@@ -98,7 +98,7 @@ export function ParameterItemSection({
       className={cn(
         "transition-all",
         !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-        !isEditMode && stepStatus === "pending" && "opacity-50"
+        !isEditMode && stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -110,7 +110,7 @@ export function ParameterItemSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -213,7 +213,7 @@ export function ParameterItemSection({
                   parameter_id: field.parameter_id,
                   parameter_name: field.parameter_name || "",
                 },
-              ])
+              ]),
             )}
             validParameterItemIds={validFieldIds}
             selectedParameterItemIds={selectedFieldIds}

@@ -150,7 +150,7 @@ export function GenericPicker<T>({
   }, [selectedIds, items, getId]);
 
   const [peekedItem, setPeekedItem] = React.useState<T | undefined>(
-    itemsArray[0]
+    itemsArray[0],
   );
 
   const handleSelect = (itemId: string) => {
@@ -219,7 +219,7 @@ export function GenericPicker<T>({
         <Check
           className={cn(
             "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
-            isSelected ? "opacity-100" : "opacity-0"
+            isSelected ? "opacity-100" : "opacity-0",
           )}
         />
       </div>
@@ -235,7 +235,7 @@ export function GenericPicker<T>({
 
   const buttonClasses = cn(
     compact ? "h-8 justify-between" : "w-full justify-between",
-    buttonClassName
+    buttonClassName,
   );
 
   return (
@@ -269,7 +269,7 @@ export function GenericPicker<T>({
               return (
                 <React.Fragment key={itemId}>
                   {chipRenderer(item, () =>
-                    handleRemoveItem(itemId, {} as React.MouseEvent)
+                    handleRemoveItem(itemId, {} as React.MouseEvent),
                   )}
                 </React.Fragment>
               );
@@ -382,7 +382,7 @@ export function GenericPicker<T>({
                 return (
                   <React.Fragment key={itemId}>
                     {chipRenderer(item, () =>
-                      handleRemoveItem(itemId, {} as React.MouseEvent)
+                      handleRemoveItem(itemId, {} as React.MouseEvent),
                     )}
                   </React.Fragment>
                 );

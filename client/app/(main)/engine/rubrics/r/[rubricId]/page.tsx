@@ -26,7 +26,7 @@ type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
  */
 const getRubric = async (
   rubricId: string,
-  profileId: string
+  profileId: string,
 ): Promise<RubricDetailOut> => {
   return api.post(
     "/rubrics/detail",
@@ -36,7 +36,7 @@ const getRubric = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
@@ -49,14 +49,14 @@ const getRubricDefault = async (profileId: string): Promise<RubricNewOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ rubricId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { rubricId } = await params;
   const session = await getSession();

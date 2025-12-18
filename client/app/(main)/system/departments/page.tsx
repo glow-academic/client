@@ -60,7 +60,8 @@ export async function deleteDepartment(
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Departments",
-    description: "Manage academic departments and organizational units for teaching assistant training programs. Organize departments, configure department-specific settings, and coordinate L&D programs across different academic units.",
+    description:
+      "Manage academic departments and organizational units for teaching assistant training programs. Organize departments, configure department-specific settings, and coordinate L&D programs across different academic units.",
   };
 }
 export default async function DepartmentsPage() {
@@ -96,4 +97,3 @@ export type {
   DuplicateDepartmentIn,
   DuplicateDepartmentOut,
 };
-

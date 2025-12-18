@@ -33,7 +33,7 @@ class UpdateAuthRequest(BaseModel):
     description: str
     active: bool
     auth_items: list[AuthItemUpdate]
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class UpdateAuthResponse(BaseModel):

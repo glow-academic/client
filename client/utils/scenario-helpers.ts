@@ -25,7 +25,7 @@ export interface Model {
  * The API returns parameters grouped by parameter_id with nested field IDs
  */
 export function getFieldIdsFromStructure( // Renamed from getParameterItemIdsFromStructure
-  parameters: Record<string, ParameterDetail>
+  parameters: Record<string, ParameterDetail>,
 ): string[] {
   return Object.values(parameters).flatMap((p) => p.field_ids); // Renamed from parameter_item_ids
 }
@@ -36,7 +36,7 @@ export function getFieldIdsFromStructure( // Renamed from getParameterItemIdsFro
  */
 export function groupFieldsByParameterId( // Renamed from groupParameterItemsByParameterId
   fieldIds: string[], // Renamed from parameterItemIds
-  fieldMapping: Record<string, { parameter_id: string }> // Renamed from parameterItemMapping
+  fieldMapping: Record<string, { parameter_id: string }>, // Renamed from parameterItemMapping
 ): Record<string, string[]> {
   const grouped: Record<string, string[]> = {};
 
@@ -60,7 +60,7 @@ export function groupFieldsByParameterId( // Renamed from groupParameterItemsByP
  */
 export function getObjectivesFromMapping(
   objectiveIds: string[],
-  objectiveMapping: Record<string, { name: string }>
+  objectiveMapping: Record<string, { name: string }>,
 ): string[] {
   return objectiveIds.map((id) => objectiveMapping[id]?.name || "");
 }
@@ -70,7 +70,7 @@ export function getObjectivesFromMapping(
  * This includes all available fields across all parameters
  */
 export function getAllValidFieldIds( // Renamed from getAllValidParameterItemIds
-  parameters: Record<string, ParameterDetail>
+  parameters: Record<string, ParameterDetail>,
 ): string[] {
   const allIds = new Set<string>();
 

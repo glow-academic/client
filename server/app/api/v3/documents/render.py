@@ -25,7 +25,7 @@ class RenderTemplateRequest(BaseModel):
 
     documentId: str
     templateArgs: dict[str, Any]
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
     departmentIds: list[str] | None = (
         None  # Optional department IDs for department-specific theme
     )
@@ -55,9 +55,17 @@ async def render_document_template(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id_str = http_request.state.profile_id
+        if not profile_id_str:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Convert string ID to UUID
         document_id = uuid.UUID(request.documentId)
-        profile_id = uuid.UUID(request.profileId)
+        profile_id = uuid.UUID(profile_id_str)
 
         # Get template upload info and template args
         # SQL uses INNER JOIN so it only returns rows if document exists and has active template
@@ -89,7 +97,7 @@ async def render_document_template(
         with open(full_path, encoding="utf-8") as f:
             template_html = f.read()
 
-        settings_request = SettingsActiveRequest(profileId=request.profileId)
+        settings_request = SettingsActiveRequest()  # profileId comes from header
         # Create a dummy response object for get_active_settings
         dummy_response = Response()
         settings_response = await get_active_settings(

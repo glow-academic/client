@@ -54,7 +54,7 @@ class CohortDetailRequest(BaseModel):
     """Request for cohort detail."""
 
     cohortId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class SimulationInCohort(BaseModel):
@@ -149,11 +149,17 @@ async def get_cohort_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/cohorts/get_cohort_detail_complete.sql")
-        sql_params = (request_body.cohortId, request_body.profileId)
-        row = await conn.fetchrow(
-            sql_query, request_body.cohortId, request_body.profileId
-        )
+        sql_params = (request_body.cohortId, profile_id)
+        row = await conn.fetchrow(sql_query, request_body.cohortId, profile_id)
 
         if not row:
             # Check if cohort exists but user doesn't have department access
@@ -174,7 +180,7 @@ async def get_cohort_detail(
         if actor_name:
             audit_set(
                 request,
-                actor={"name": actor_name, "id": request_body.profileId},
+                actor={"name": actor_name, "id": profile_id},
                 cohort={"name": cohort_name, "id": request_body.cohortId},
             )
 

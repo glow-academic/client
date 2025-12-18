@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
 import type { SettingsDetailOut } from "@/app/(main)/settings/page";
 
 export interface SettingsBasicInfoSectionProps {
@@ -19,10 +18,7 @@ export interface SettingsBasicInfoSectionProps {
   description: string;
   departmentIds: string[];
   validDepartmentIds: string[];
-  departmentMapping: Record<
-    string,
-    { name: string; description: string }
-  >;
+  departmentMapping: Record<string, { name: string; description: string }>;
   active: boolean;
   guestLoginEnabled: boolean;
   settingsList: SettingsDetailOut[];
@@ -139,7 +135,8 @@ export function SettingsBasicInfoSection({
                       </Badge>
                     )}
                     <span className="truncate text-sm">
-                      {setting.name || `Settings (${date.toLocaleDateString()})`}
+                      {setting.name ||
+                        `Settings (${date.toLocaleDateString()})`}
                     </span>
                   </div>
                 );
@@ -161,7 +158,8 @@ export function SettingsBasicInfoSection({
                           </Badge>
                         )}
                         <div className="font-medium truncate">
-                          {item.name || `Settings (${date.toLocaleDateString()})`}
+                          {item.name ||
+                            `Settings (${date.toLocaleDateString()})`}
                         </div>
                       </div>
                       {item.description && (
@@ -170,14 +168,16 @@ export function SettingsBasicInfoSection({
                         </div>
                       )}
                       <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                        {date.toLocaleDateString()} • {item.active ? "Active" : "Inactive"}
+                        {date.toLocaleDateString()} •{" "}
+                        {item.active ? "Active" : "Inactive"}
                       </div>
-                      {item.department_ids && item.department_ids.length > 0 && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {item.department_ids.length} department
-                          {item.department_ids.length !== 1 ? "s" : ""}
-                        </div>
-                      )}
+                      {item.department_ids &&
+                        item.department_ids.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {item.department_ids.length} department
+                            {item.department_ids.length !== 1 ? "s" : ""}
+                          </div>
+                        )}
                     </div>
                   </div>
                 );
@@ -213,13 +213,13 @@ export function SettingsBasicInfoSection({
             <GenericPicker
               items={departmentMapping}
               itemIds={Array.from(
-                new Set([...validDepartmentIds, ...(departmentIds || [])])
+                new Set([...validDepartmentIds, ...(departmentIds || [])]),
               )}
               selectedIds={departmentIds || []}
               onSelect={(ids) => onDepartmentIdsChange(ids)}
               getId={(dept) => {
                 const entry = Object.entries(departmentMapping).find(
-                  ([, v]) => v === dept
+                  ([, v]) => v === dept,
                 );
                 return entry ? entry[0] : "";
               }}
@@ -290,4 +290,3 @@ export function SettingsBasicInfoSection({
     </Card>
   );
 }
-

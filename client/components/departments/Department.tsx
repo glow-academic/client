@@ -20,10 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,13 +55,13 @@ export interface DepartmentProps {
   departmentDetailDefault?: DepartmentNewOut;
   // Server actions (replaces useMutation)
   createDepartmentAction?: (
-    input: CreateDepartmentIn
+    input: CreateDepartmentIn,
   ) => Promise<CreateDepartmentOut>;
   updateDepartmentAction?: (
-    input: UpdateDepartmentIn
+    input: UpdateDepartmentIn,
   ) => Promise<UpdateDepartmentOut>;
   deleteDepartmentAction?: (
-    input: DeleteDepartmentIn
+    input: DeleteDepartmentIn,
   ) => Promise<DeleteDepartmentOut>;
 }
 
@@ -108,7 +105,7 @@ export default function Department({
       description: "",
       active: true,
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -117,7 +114,6 @@ export default function Department({
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
 
   // Use server-provided data (no React Query needed when server data is provided)
   const departmentDetail = serverDepartmentDetail;
@@ -227,7 +223,7 @@ export default function Department({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | undefined
+    value: string | boolean | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -244,7 +240,7 @@ export default function Department({
       }
       return "pending";
     },
-    [formData?.title]
+    [formData?.title],
   );
 
   // Steps array - extensible for future steps
@@ -302,7 +298,7 @@ export default function Department({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} department: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} department: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -320,7 +316,7 @@ export default function Department({
       router.push("/departments");
     } catch (error) {
       toast.error(
-        `Failed to delete department: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to delete department: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -380,7 +376,7 @@ export default function Department({
                     ? "bg-green-500 text-white"
                     : steps[0]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {steps[0]?.status === "completed" ? (
@@ -410,7 +406,7 @@ export default function Department({
                     }}
                     className={cn(
                       "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      errors.title && "border-destructive"
+                      errors.title && "border-destructive",
                     )}
                     placeholder="New Department"
                     disabled={isReadonly}
@@ -481,7 +477,6 @@ export default function Department({
             </div>
           </CardContent>
         </Card>
-
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">

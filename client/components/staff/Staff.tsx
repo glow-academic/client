@@ -2177,9 +2177,13 @@ export default function Staff({
                                   >
                                     <GenericPicker
                                       items={STAFF_ROLES.filter((r) =>
-                                        validRoles.includes(r.id)
+                                        validRoles.includes(r.id),
                                       )}
-                                      selectedIds={editableRow.role ? [editableRow.role] : []}
+                                      selectedIds={
+                                        editableRow.role
+                                          ? [editableRow.role]
+                                          : []
+                                      }
                                       onSelect={(ids) =>
                                         updateEditableRow(
                                           index,
@@ -2189,18 +2193,42 @@ export default function Staff({
                                       }
                                       getId={(role) => role.id}
                                       getLabel={(role) => role.name}
-                                      getSearchText={(role) => `${role.name} ${role.description || ""}`}
+                                      getSearchText={(role) =>
+                                        `${role.name} ${role.description || ""}`
+                                      }
                                       renderItem={(role, isSelected) => {
-                                        const IconComponent = role.icon || UserIcon;
-                                        const hexColor = role.color || "#64748b";
-                                        const generateGradient = (hex: string) => {
+                                        const IconComponent =
+                                          role.icon || UserIcon;
+                                        const hexColor =
+                                          role.color || "#64748b";
+                                        const generateGradient = (
+                                          hex: string,
+                                        ) => {
                                           const cleanHex = hex.replace("#", "");
-                                          const r = parseInt(cleanHex.substr(0, 2), 16);
-                                          const g = parseInt(cleanHex.substr(2, 2), 16);
-                                          const b = parseInt(cleanHex.substr(4, 2), 16);
-                                          const lighterR = Math.min(255, r + 60);
-                                          const lighterG = Math.min(255, g + 60);
-                                          const lighterB = Math.min(255, b + 60);
+                                          const r = parseInt(
+                                            cleanHex.substr(0, 2),
+                                            16,
+                                          );
+                                          const g = parseInt(
+                                            cleanHex.substr(2, 2),
+                                            16,
+                                          );
+                                          const b = parseInt(
+                                            cleanHex.substr(4, 2),
+                                            16,
+                                          );
+                                          const lighterR = Math.min(
+                                            255,
+                                            r + 60,
+                                          );
+                                          const lighterG = Math.min(
+                                            255,
+                                            g + 60,
+                                          );
+                                          const lighterB = Math.min(
+                                            255,
+                                            b + 60,
+                                          );
                                           const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
                                           return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
                                         };
@@ -2209,13 +2237,16 @@ export default function Staff({
                                             <div
                                               className="p-2 rounded-lg shadow-lg flex-shrink-0"
                                               style={{
-                                                background: generateGradient(hexColor),
+                                                background:
+                                                  generateGradient(hexColor),
                                               }}
                                             >
                                               <IconComponent className="h-4 w-4 text-white" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                              <div className="font-medium truncate">{role.name}</div>
+                                              <div className="font-medium truncate">
+                                                {role.name}
+                                              </div>
                                               {role.description && (
                                                 <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
                                                   {role.description}
@@ -2225,25 +2256,50 @@ export default function Staff({
                                             <Check
                                               className={cn(
                                                 "ml-auto",
-                                                isSelected ? "opacity-100" : "opacity-0",
+                                                isSelected
+                                                  ? "opacity-100"
+                                                  : "opacity-0",
                                               )}
                                             />
                                           </div>
                                         );
                                       }}
                                       renderButton={(selectedItems) => {
-                                        if (selectedItems.length === 0) return "Select role...";
+                                        if (selectedItems.length === 0)
+                                          return "Select role...";
                                         const role = selectedItems[0];
-                                        const IconComponent = role?.icon || UserIcon;
-                                        const hexColor = role?.color || "#64748b";
-                                        const generateGradient = (hex: string) => {
+                                        const IconComponent =
+                                          role?.icon || UserIcon;
+                                        const hexColor =
+                                          role?.color || "#64748b";
+                                        const generateGradient = (
+                                          hex: string,
+                                        ) => {
                                           const cleanHex = hex.replace("#", "");
-                                          const r = parseInt(cleanHex.substr(0, 2), 16);
-                                          const g = parseInt(cleanHex.substr(2, 2), 16);
-                                          const b = parseInt(cleanHex.substr(4, 2), 16);
-                                          const lighterR = Math.min(255, r + 60);
-                                          const lighterG = Math.min(255, g + 60);
-                                          const lighterB = Math.min(255, b + 60);
+                                          const r = parseInt(
+                                            cleanHex.substr(0, 2),
+                                            16,
+                                          );
+                                          const g = parseInt(
+                                            cleanHex.substr(2, 2),
+                                            16,
+                                          );
+                                          const b = parseInt(
+                                            cleanHex.substr(4, 2),
+                                            16,
+                                          );
+                                          const lighterR = Math.min(
+                                            255,
+                                            r + 60,
+                                          );
+                                          const lighterG = Math.min(
+                                            255,
+                                            g + 60,
+                                          );
+                                          const lighterB = Math.min(
+                                            255,
+                                            b + 60,
+                                          );
                                           const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
                                           return `linear-gradient(135deg, ${lighterHex} 0%, ${hex} 100%)`;
                                         };
@@ -2252,12 +2308,15 @@ export default function Staff({
                                             <div
                                               className="p-1 rounded-md shadow-sm flex-shrink-0"
                                               style={{
-                                                background: generateGradient(hexColor),
+                                                background:
+                                                  generateGradient(hexColor),
                                               }}
                                             >
                                               <IconComponent className="h-3.5 w-3.5 text-white" />
                                             </div>
-                                            <span className="truncate">{role?.name || "Select role"}</span>
+                                            <span className="truncate">
+                                              {role?.name || "Select role"}
+                                            </span>
                                           </div>
                                         );
                                       }}
@@ -2291,9 +2350,13 @@ export default function Staff({
                                             ids,
                                           )
                                         }
-                                        getId={(dept) => (dept as unknown as { id: string }).id}
+                                        getId={(dept) =>
+                                          (dept as unknown as { id: string }).id
+                                        }
                                         getLabel={(dept) => dept.name || ""}
-                                        getSearchText={(dept) => `${dept.name} ${dept.description || ""}`}
+                                        getSearchText={(dept) =>
+                                          `${dept.name} ${dept.description || ""}`
+                                        }
                                         placeholder="Select departments"
                                         multiSelect={true}
                                         compact={true}
@@ -2321,9 +2384,13 @@ export default function Staff({
                                           ids,
                                         )
                                       }
-                                      getId={(cohort) => (cohort as unknown as { id: string }).id}
+                                      getId={(cohort) =>
+                                        (cohort as unknown as { id: string }).id
+                                      }
                                       getLabel={(cohort) => cohort.name || ""}
-                                      getSearchText={(cohort) => `${cohort.name} ${cohort.description || ""}`}
+                                      getSearchText={(cohort) =>
+                                        `${cohort.name} ${cohort.description || ""}`
+                                      }
                                       placeholder="Select cohorts"
                                       multiSelect={true}
                                       hideSelectedChips={true}

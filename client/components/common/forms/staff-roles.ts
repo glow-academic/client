@@ -3,7 +3,14 @@
  * Extracted from StaffRolePicker for reuse
  */
 
-import { BookOpen, Crown, GraduationCap, Shield, User, Users } from "lucide-react";
+import {
+  BookOpen,
+  Crown,
+  GraduationCap,
+  Shield,
+  User,
+  Users,
+} from "lucide-react";
 
 // Utility function to generate gradient from hex color
 export const generateGradientFromHex = (hexColor: string): string => {

@@ -23,7 +23,7 @@ router = APIRouter()
 class ModelRunsFilters(BaseModel):
     """Filters for model_runs query request."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
     startDate: str | None = None
     endDate: str | None = None
     modelIds: list[str] | None = None
@@ -126,10 +126,18 @@ async def get_model_runs(
         if filters.personaIds:
             persona_ids = [uuid.UUID(pid) for pid in filters.personaIds]
 
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Load SQL string
         sql_query = load_sql("sql/v3/evals/query_model_runs.sql")
         sql_params = (
-            filters.profileId,
+            profile_id,
             start_date,
             end_date,
             model_ids,

@@ -23,7 +23,7 @@ class UpdateFieldRequest(BaseModel):
     conditional_parameter_ids: list[str] | None = (
         None  # Parameters to show when this field is selected
     )
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class UpdateFieldResponse(BaseModel):
@@ -50,6 +50,14 @@ async def update_field(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Check if field exists
             check_sql = "SELECT name FROM fields WHERE id = $1"
@@ -66,7 +74,7 @@ async def update_field(
                 request.active,
                 request.department_ids,
                 request.conditional_parameter_ids,
-                request.profileId,
+                profile_id,
             )
             await conn.fetchrow(sql_query, *sql_params)
 

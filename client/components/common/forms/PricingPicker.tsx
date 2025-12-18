@@ -139,8 +139,12 @@ export function PricingPicker({
                       handleEntryChange(index, "unit_id", ids[0] || "")
                     }
                     getId={(item) => item.id}
-                    getLabel={(item) => `${item.name} (${item.value.toLocaleString()})`}
-                    getSearchText={(item) => `${item.name} ${item.unit_category} ${item.value.toLocaleString()}`}
+                    getLabel={(item) =>
+                      `${item.name} (${item.value.toLocaleString()})`
+                    }
+                    getSearchText={(item) =>
+                      `${item.name} ${item.unit_category} ${item.value.toLocaleString()}`
+                    }
                     renderItem={(item, _isSelected) => (
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-2 flex-1 min-w-0">

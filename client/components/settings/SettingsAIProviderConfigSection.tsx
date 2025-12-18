@@ -7,7 +7,13 @@
 import { Check } from "lucide-react";
 
 import { SettingsKeyPicker } from "@/components/settings/SettingsKeyPicker";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export interface ProviderTableItem {
@@ -68,7 +74,7 @@ export function SettingsAIProviderConfigSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50"
+        stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
@@ -80,7 +86,7 @@ export function SettingsAIProviderConfigSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -117,4 +123,3 @@ export function SettingsAIProviderConfigSection({
     </Card>
   );
 }
-

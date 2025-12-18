@@ -5,7 +5,6 @@
  * 12/05/2025
  */
 
-
 import Field from "@/components/fields/Field";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";

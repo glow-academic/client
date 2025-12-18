@@ -50,7 +50,9 @@ export interface ProvidersProps {
   // Server-provided data (for server-side rendering)
   listData: ProvidersListOut;
   // Server actions (replaces useMutation)
-  deleteProviderAction?: (input: DeleteProviderIn) => Promise<DeleteProviderOut>;
+  deleteProviderAction?: (
+    input: DeleteProviderIn,
+  ) => Promise<DeleteProviderOut>;
 }
 
 export default function Providers({
@@ -79,7 +81,10 @@ export default function Providers({
   const isLoading = false; // No loading when using server data
 
   // Extract data from response
-  const providers = useMemo(() => providersData?.providers || [], [providersData?.providers]);
+  const providers = useMemo(
+    () => providersData?.providers || [],
+    [providersData?.providers],
+  );
 
   // Use server-provided facet options directly (no client-side computation)
   const providerOptions = useMemo(
@@ -129,7 +134,8 @@ export default function Providers({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof providers)[number]) => row.active ? "true" : "false",
+        accessorFn: (row: (typeof providers)[number]) =>
+          row.active ? "true" : "false",
         filterFn: (row, _id, value: string[]) => {
           const rowStatus = row.getValue("status") as string;
           if (value.length === 0) return true;
@@ -267,7 +273,10 @@ export default function Providers({
     setIsDeleting(true);
     try {
       await deleteProviderAction({
-        body: { providerId: deleteItem.id, profileId: effectiveProfile?.id || "" },
+        body: {
+          providerId: deleteItem.id,
+          profileId: effectiveProfile?.id || "",
+        },
       });
       toast.success("Provider deleted successfully");
       router.refresh();
@@ -289,7 +298,6 @@ export default function Providers({
     router.push(`/system/providers/p/${id}`);
   };
 
-
   const handleCreateNew = () => {
     router.push("/system/providers/new");
   };
@@ -308,7 +316,9 @@ export default function Providers({
             <CardTitle className="text-lg">{provider.name}</CardTitle>
             <div className="mt-1 space-y-2">
               <div className="flex items-center gap-2">
-                {!provider.active && <Badge variant="secondary">Inactive</Badge>}
+                {!provider.active && (
+                  <Badge variant="secondary">Inactive</Badge>
+                )}
                 <Badge variant="outline">{provider.value}</Badge>
               </div>
             </div>
@@ -329,7 +339,9 @@ export default function Providers({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleDeleteClick(provider.provider_id, provider.name)}
+                onClick={() =>
+                  handleDeleteClick(provider.provider_id, provider.name)
+                }
                 aria-label={`Delete ${provider.name}`}
                 data-testid={`btn-delete-provider-${provider.provider_id}`}
               >
@@ -427,10 +439,12 @@ export default function Providers({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Provider</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deleteItem?.name}"? This action cannot be undone.
+              Are you sure you want to delete "{deleteItem?.name}"? This action
+              cannot be undone.
               {deleteItem && (
                 <span className="block mt-2 text-destructive font-medium">
-                  Warning: This provider may be in use by models. Deletion will fail if any models are using it.
+                  Warning: This provider may be in use by models. Deletion will
+                  fail if any models are using it.
                 </span>
               )}
             </AlertDialogDescription>
@@ -450,4 +464,3 @@ export default function Providers({
     </div>
   );
 }
-

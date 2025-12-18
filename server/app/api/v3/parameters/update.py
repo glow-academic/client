@@ -35,7 +35,7 @@ class UpdateParameterRequest(BaseModel):
     video_parameter: bool
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     field_connections: list[FieldConnectionCreate]
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class UpdateParameterResponse(BaseModel):
@@ -62,6 +62,14 @@ async def update_parameter(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Check if parameter exists
             check_sql = "SELECT name FROM parameters WHERE id = $1"
@@ -98,7 +106,7 @@ async def update_parameter(
                 request.video_parameter,
                 request.department_ids,  # Parameter-level department_ids
                 field_connections_json,  # JSONB array of field connections
-                request.profileId,
+                profile_id,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

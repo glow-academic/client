@@ -30,11 +30,10 @@ type UpdateSimulationOut = OutputOf<"/api/v3/simulations/update", "post">;
  */
 const getSimulation = async (
   simulationId: string,
-  profileId: string,
 ): Promise<SimulationDetailOut> => {
   return api.post(
     "/simulations/detail",
-    { body: { simulationId, profileId } },
+    { body: { simulationId } },
     {
       cache: "no-store",
       headers: {
@@ -50,12 +49,10 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { simulationId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
+  // profileId removed - comes from X-Profile-Id header automatically
 
-  if (profileId) {
-    try {
-      const simulation = await getSimulation(simulationId, profileId);
+  try {
+    const simulation = await getSimulation(simulationId);
       return {
         title: `${simulation?.name || "Simulation"}`,
         description: `${simulation?.name ? `${simulation.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
@@ -89,18 +86,11 @@ export default async function EditSimulationPage({
 }) {
   const { simulationId } = await params;
   // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
+  // profileId removed - comes from X-Profile-Id header automatically
 
   // Fetch simulation detail (always fresh - source of truth)
   try {
-    const simulationDetail = await getSimulation(simulationId, profileId);
+    const simulationDetail = await getSimulation(simulationId);
 
     return (
       <div

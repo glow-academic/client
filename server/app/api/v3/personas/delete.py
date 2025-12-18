@@ -18,7 +18,7 @@ class DeletePersonaRequest(BaseModel):
     """Request to delete persona."""
 
     personaId: str
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DeletePersonaResponse(BaseModel):
@@ -53,13 +53,19 @@ async def delete_persona(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Delete persona with usage check and name fetch (single query)
             sql_query = load_sql("sql/v3/personas/delete_persona_complete.sql")
-            sql_params = (request.personaId, request.profileId)
-            result = await conn.fetchrow(
-                sql_query, request.personaId, request.profileId
-            )
+            sql_params = (request.personaId, profile_id)
+            result = await conn.fetchrow(sql_query, request.personaId, profile_id)
 
             if not result:
                 raise ValueError("Failed to check persona usage")
@@ -78,7 +84,7 @@ async def delete_persona(
             if actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": request.profileId},
+                    actor={"name": actor_name, "id": profile_id},
                     persona={"name": persona_name, "id": request.personaId},
                 )
 

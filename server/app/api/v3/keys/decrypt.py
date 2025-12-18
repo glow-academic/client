@@ -17,7 +17,7 @@ class DecryptKeyRequest(BaseModel):
     """Request to decrypt key."""
 
     keyId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DecryptKeyResponse(BaseModel):
@@ -41,6 +41,14 @@ async def decrypt_key(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Fetch the encrypted key from database
         sql_query = load_sql("sql/v3/keys/get_key_detail.sql")
         sql_params = (request.keyId, True)  # show_full=True to get encrypted key

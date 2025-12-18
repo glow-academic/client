@@ -40,4 +40,3 @@ async def get_profile_id(
     request.state.profile_id = profile_id
 
     return profile_id
-

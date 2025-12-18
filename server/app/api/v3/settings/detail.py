@@ -19,7 +19,7 @@ class SettingsDetailRequest(BaseModel):
     """Request to get settings details."""
 
     settingsId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class SettingsDetailResponse(BaseModel):

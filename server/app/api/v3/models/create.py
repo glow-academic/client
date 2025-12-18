@@ -41,7 +41,7 @@ class CreateModelRequest(BaseModel):
     reasoning_levels: list[str] | None = None
     voices: list[str] | None = None
     qualities: list[str] | None = None
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class CreateModelResponse(BaseModel):
@@ -77,6 +77,14 @@ async def create_model(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             sql_query = load_sql("sql/v3/models/create_model_complete.sql")
             # Ensure department_ids is always an array (empty if None)
@@ -90,7 +98,7 @@ async def create_model(
                 request.value,
                 department_ids,
                 base_url,
-                request.profileId,
+                profile_id,
             )
             result = await conn.fetchrow(
                 sql_query,
@@ -101,7 +109,7 @@ async def create_model(
                 request.value,
                 department_ids,
                 base_url,
-                request.profileId,
+                profile_id,
             )
 
             if not result:
@@ -114,7 +122,7 @@ async def create_model(
             if actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": request.profileId},
+                    actor={"name": actor_name, "id": profile_id},
                     model={"name": request.name, "id": model_id},
                 )
 

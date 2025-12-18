@@ -7,7 +7,13 @@
 import { Check, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export interface KeyMappingItem {
@@ -73,7 +79,7 @@ export function SettingsKeySelectionSection({
         className={cn(
           "transition-all",
           stepStatus === "active" && "ring-2 ring-primary",
-          stepStatus === "pending" && "opacity-50"
+          stepStatus === "pending" && "opacity-50",
         )}
       >
         <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -86,7 +92,7 @@ export function SettingsKeySelectionSection({
                     ? "bg-green-500 text-white"
                     : stepStatus === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {stepStatus === "completed" ? (
@@ -204,7 +210,7 @@ function KeySelectionContent({
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   "disabled:pointer-events-none disabled:opacity-50",
                   isSelected && "ring-2 ring-primary bg-accent",
-                  !key.active && "opacity-60"
+                  !key.active && "opacity-60",
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -238,4 +244,3 @@ function KeySelectionContent({
     </>
   );
 }
-

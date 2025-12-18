@@ -50,7 +50,7 @@ class EvalDetailRequest(BaseModel):
     """Request to get eval details."""
 
     evalId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class ModelRunItem(BaseModel):
@@ -173,12 +173,20 @@ async def get_eval_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Load SQL string
         sql_query = load_sql("sql/v3/evals/get_eval_detail.sql")
-        sql_params = (request.evalId, request.profileId)
+        sql_params = (request.evalId, profile_id)
 
         # Execute query
-        result = await conn.fetchrow(sql_query, request.evalId, request.profileId)
+        result = await conn.fetchrow(sql_query, request.evalId, profile_id)
 
         if not result:
             # Check if eval exists but user doesn't have department access
@@ -201,7 +209,7 @@ async def get_eval_detail(
         if actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": request.profileId},
+                actor={"name": actor_name, "id": profile_id},
                 eval={"name": eval_name, "id": request.evalId},
             )
 

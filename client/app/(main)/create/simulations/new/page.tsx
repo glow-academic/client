@@ -19,12 +19,10 @@ type CreateSimulationOut = OutputOf<"/api/v3/simulations/create", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getSimulationDefault = async (
-  profileId: string,
-): Promise<SimulationNewOut> => {
+const getSimulationDefault = async (): Promise<SimulationNewOut> => {
   return api.post(
     "/simulations/new",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -63,7 +61,8 @@ export default async function NewSimulationPage() {
   }
 
   // Fetch default simulation detail server-side (per-profile cache)
-  const simulationDetailDefault = await getSimulationDefault(profileId);
+  // profileId removed - comes from X-Profile-Id header automatically
+  const simulationDetailDefault = await getSimulationDefault();
 
   return (
     <div

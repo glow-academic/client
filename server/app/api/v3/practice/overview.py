@@ -196,7 +196,7 @@ class PracticeFilters(BaseModel):
     - If provided → show simulations matching those departments OR simulations with no department associations
     """
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
     departmentIds: list[str] | None = None
 
 
@@ -244,15 +244,22 @@ async def get_practice_overview(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Validate that profile_id is provided (required for practice)
-        if not filters.profileId:
-            raise ValueError("profileId is required for practice overview")
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
 
         # Profile ID must be a valid UUID
         # Guest profile IDs are resolved on the client side before calling this endpoint
-        profile_id_final = filters.profileId.strip()
+        profile_id_final = profile_id.strip()
         if not profile_id_final:
-            raise ValueError("profileId cannot be empty")
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
 
         # Load SQL file
         sql_query = load_sql("sql/v3/practice/practice_overview.sql")

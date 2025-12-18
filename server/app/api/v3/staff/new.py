@@ -40,7 +40,8 @@ router = APIRouter()
 class StaffNewRequest(BaseModel):
     """Request to get default staff details."""
 
-    profileId: str
+    pass
+    # profileId removed - comes from X-Profile-Id header
 
 
 class StaffNewResponse(BaseModel):
@@ -103,12 +104,20 @@ async def get_staff_new(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Load SQL query
         sql_query = load_sql("sql/v3/profile/staff/get_staff_new_complete.sql")
-        sql_params = (request.profileId,)
+        sql_params = (profile_id,)
 
         # Execute query
-        result = await conn.fetchrow(sql_query, request.profileId)
+        result = await conn.fetchrow(sql_query, profile_id)
 
         if not result:
             raise HTTPException(

@@ -20,7 +20,7 @@ from app.utils.theme.oklch_to_hex import hex_to_oklch
 class SettingsActiveRequest(BaseModel):
     """Request to get active settings."""
 
-    profileId: str | None = None  # Can be null, empty string, or UUID
+    # profileId removed - comes from X-Profile-Id header (can be null for guest users)
     departmentId: str | None = (
         None  # Optional department ID for department-specific settings lookup
     )
@@ -277,12 +277,16 @@ async def get_active_settings(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        # Can be null for guest users (header might not be present)
+        profile_id = http_request.state.profile_id
+        # Use empty string instead of None to avoid PostgreSQL type ambiguity
+        profile_id_param = profile_id if profile_id else ""
+
         sql_query = load_sql("sql/v3/settings/get_active_settings.sql")
         # Pass profileId and departmentId to SQL query
-        # profileId: can be null, empty, or UUID
+        # profileId: can be null, empty, or UUID (from header, null for guest users)
         # departmentId: optional UUID for direct department-specific settings lookup
-        # Use empty string instead of None to avoid PostgreSQL type ambiguity
-        profile_id_param = request.profileId if request.profileId else ""
         department_id_param = request.departmentId if request.departmentId else ""
         sql_params = (profile_id_param, department_id_param)
         settings = await conn.fetchrow(sql_query, profile_id_param, department_id_param)

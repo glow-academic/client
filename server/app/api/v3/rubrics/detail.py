@@ -37,7 +37,7 @@ class RubricDetailRequest(BaseModel):
     """Request for rubric detail."""
 
     rubricId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class StandardGroupDetail(BaseModel):
@@ -104,15 +104,23 @@ async def get_rubric_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/rubrics/get_rubric_detail_complete.sql")
         sql_params = (
             uuid.UUID(request_body.rubricId),
-            uuid.UUID(request_body.profileId),
+            uuid.UUID(profile_id),
         )
         row = await conn.fetchrow(
             sql_query,
             uuid.UUID(request_body.rubricId),
-            uuid.UUID(request_body.profileId),
+            uuid.UUID(profile_id),
         )
 
         if not row:
@@ -197,7 +205,7 @@ async def get_rubric_detail(
         if actor_name:
             audit_set(
                 request,
-                actor={"name": actor_name, "id": request_body.profileId},
+                actor={"name": actor_name, "id": profile_id},
                 rubric={"name": rubric_name, "id": request_body.rubricId},
             )
 

@@ -82,7 +82,7 @@ export function AgentModelSection({
       filtered = filtered.filter(
         (model) =>
           model.name?.toLowerCase().includes(searchLower) ||
-          model.description?.toLowerCase().includes(searchLower)
+          model.description?.toLowerCase().includes(searchLower),
       );
     }
 
@@ -128,7 +128,7 @@ export function AgentModelSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50"
+        stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -140,7 +140,7 @@ export function AgentModelSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -198,7 +198,7 @@ export function AgentModelSection({
                           "hover:shadow-md hover:bg-accent/50",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                           "disabled:pointer-events-none disabled:opacity-50",
-                          isSelected && "ring-2 ring-primary bg-accent"
+                          isSelected && "ring-2 ring-primary bg-accent",
                         )}
                       >
                         {/* Check icon - top right */}

@@ -83,9 +83,4 @@ export default async function NewModelPage() {
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  CreateModelIn,
-  CreateModelOut,
-  ModelNewIn,
-  ModelNewOut,
-};
+export type { CreateModelIn, CreateModelOut, ModelNewIn, ModelNewOut };

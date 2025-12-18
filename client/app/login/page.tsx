@@ -58,26 +58,26 @@ async function getLoginData(departmentId?: string): Promise<LoginDataOut> {
  * NOTE: Only profile/context endpoint reads these cookies - all other endpoints
  * receive profileId in request body (validated via profile context)
  * This enables future redirect logic if user is already logged in
- * 
+ *
  * Logic:
  * - If department-id query param provided: use it (overrides cookie)
  * - If no department-id: use default settings (no department-specific)
  * - If no auth-mode: defaults to "default-account" on server
  */
 async function getProfileContext(
-  departmentIdFromQuery?: string
+  departmentIdFromQuery?: string,
 ): Promise<ProfileContextOut | null> {
   try {
     // Forward cookies from server component context to API request
     // This is needed because server components run server-side and cookies aren't automatically forwarded
     const cookieStore = await cookies();
-    
+
     // Use department-id from query parameter if provided, otherwise use cookie
     // Query parameter takes precedence for dynamic settings changes
     const departmentIdToUse =
       departmentIdFromQuery || cookieStore.get("department-id")?.value;
     const authMode = cookieStore.get("auth-mode")?.value;
-    
+
     // Build cookie header - server will default auth-mode to "default-account" if not provided
     const cookieHeader = [
       departmentIdToUse && `department-id=${departmentIdToUse}`,
@@ -108,7 +108,7 @@ async function getProfileContext(
             headers: {
               "X-Bypass-Cache": "1",
             },
-          }
+          },
     )) as ProfileContextOut;
   } catch {
     // If profile context fetch fails, return null - theme will use defaults

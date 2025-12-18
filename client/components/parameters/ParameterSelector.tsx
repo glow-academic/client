@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
-
 type ParameterMappingItem = {
   name: string;
   description: string;
@@ -225,30 +224,34 @@ export function ParameterSelector({
 }: ParameterSelectorProps) {
   // Search state per parameter
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
-  
+
   // Refs to track scroll containers for each parameter
   const scrollContainerRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  
+
   // Preserve scroll position when selectedParameterItemIds changes
   useEffect(() => {
     // Store scroll positions before potential re-render
     const scrollPositions: Record<string, number> = {};
-    Object.entries(scrollContainerRefs.current).forEach(([paramId, container]) => {
-      if (container) {
-        scrollPositions[paramId] = container.scrollTop;
-      }
-    });
-    
+    Object.entries(scrollContainerRefs.current).forEach(
+      ([paramId, container]) => {
+        if (container) {
+          scrollPositions[paramId] = container.scrollTop;
+        }
+      },
+    );
+
     // Restore scroll positions after render
     requestAnimationFrame(() => {
-      Object.entries(scrollContainerRefs.current).forEach(([paramId, container]) => {
-        if (container && scrollPositions[paramId] !== undefined) {
-          container.scrollTop = scrollPositions[paramId];
-        }
-      });
+      Object.entries(scrollContainerRefs.current).forEach(
+        ([paramId, container]) => {
+          if (container && scrollPositions[paramId] !== undefined) {
+            container.scrollTop = scrollPositions[paramId];
+          }
+        },
+      );
     });
   }, [selectedParameterItemIds]);
-  
+
   // Group valid parameter items by parameter (from mapping)
   const parameterItemsByParameter = useMemo(() => {
     const grouped: Record<string, string[]> = {};
@@ -459,13 +462,19 @@ export function ParameterSelector({
         result[parameterId] = itemIds.filter((itemId) => {
           const item = fieldMapping[itemId];
           if (!item) return false;
-          const searchText = `${item.name} ${item.description || ""}`.toLowerCase();
+          const searchText =
+            `${item.name} ${item.description || ""}`.toLowerCase();
           return searchText.includes(searchLower);
         });
       }
     }
     return result;
-  }, [nonNumericalParameters, parameterItemsByParameter, searchTerms, fieldMapping]);
+  }, [
+    nonNumericalParameters,
+    parameterItemsByParameter,
+    searchTerms,
+    fieldMapping,
+  ]);
 
   const hasParameters = allParameters.length > 0;
 
@@ -589,8 +598,9 @@ export function ParameterSelector({
             );
           } else {
             // Non-numerical parameter rendering with card grid
-            const filteredItemIds = filteredItemIdsByParameter[parameterId] || itemIds;
-            
+            const filteredItemIds =
+              filteredItemIdsByParameter[parameterId] || itemIds;
+
             return (
               <div key={parameterId} className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -623,7 +633,7 @@ export function ParameterSelector({
                   />
                 </div>
 
-                <div 
+                <div
                   ref={(el) => {
                     scrollContainerRefs.current[parameterId] = el;
                   }}
@@ -632,14 +642,14 @@ export function ParameterSelector({
                   {filteredItemIds.map((itemId) => {
                     const item = fieldMapping[itemId];
                     if (!item) return null;
-                    
+
                     const isSelected = selectedItemIds.includes(itemId);
                     const isDisabled =
                       disabled ||
                       (maxItemsPerParameter !== undefined &&
                         !isSelected &&
                         selectedItemIds.length >= maxItemsPerParameter);
-                    
+
                     return (
                       <button
                         key={itemId}
@@ -648,11 +658,14 @@ export function ParameterSelector({
                           if (isDisabled) return;
                           // Prevent default to avoid any scroll behavior
                           e.preventDefault();
-                          const isCurrentlySelected = selectedItemIds.includes(itemId);
+                          const isCurrentlySelected =
+                            selectedItemIds.includes(itemId);
                           let newIds: string[];
-                          
+
                           if (isCurrentlySelected) {
-                            newIds = selectedItemIds.filter((id) => id !== itemId);
+                            newIds = selectedItemIds.filter(
+                              (id) => id !== itemId,
+                            );
                           } else {
                             // Enforce maxItemsPerParameter limit
                             let limitedIds = [...selectedItemIds, itemId];
@@ -660,11 +673,17 @@ export function ParameterSelector({
                               maxItemsPerParameter !== undefined &&
                               limitedIds.length > maxItemsPerParameter
                             ) {
-                              limitedIds = limitedIds.slice(0, maxItemsPerParameter);
+                              limitedIds = limitedIds.slice(
+                                0,
+                                maxItemsPerParameter,
+                              );
                             }
                             newIds = limitedIds;
                           }
-                          handleNonNumericalParameterChange(parameterId, newIds);
+                          handleNonNumericalParameterChange(
+                            parameterId,
+                            newIds,
+                          );
                         }}
                         disabled={isDisabled}
                         className={cn(
@@ -672,7 +691,7 @@ export function ParameterSelector({
                           "hover:shadow-md hover:bg-accent/50",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                           "disabled:pointer-events-none disabled:opacity-50",
-                          isSelected && "ring-2 ring-primary bg-accent"
+                          isSelected && "ring-2 ring-primary bg-accent",
                         )}
                       >
                         <div className="font-medium text-sm line-clamp-1">

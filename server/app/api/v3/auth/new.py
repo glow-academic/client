@@ -17,7 +17,8 @@ from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class AuthNewRequest(BaseModel):
-    profileId: str
+    pass
+    # profileId removed - comes from X-Profile-Id header
 
 
 # Reuse models from detail.py
@@ -57,9 +58,17 @@ async def get_auth_new(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/auth/get_auth_new.sql")
-        sql_params = (request.profileId,)
-        result = await conn.fetchrow(sql_query, request.profileId)
+        sql_params = (profile_id,)
+        result = await conn.fetchrow(sql_query, profile_id)
 
         if not result:
             raise HTTPException(

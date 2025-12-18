@@ -24,7 +24,7 @@ class BulkUpdateStaffRequest(BaseModel):
         None  # int for limit, None for unlimited, "__keep__" to not update
     )
     primary_department_id: str | None = None
-    currentProfileId: str  # Current user's profile ID for permission validation
+    # currentProfileId removed - comes from X-Profile-Id header
     active: bool | None = None
 
 
@@ -47,6 +47,14 @@ async def bulk_update_staff(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get current user's profile_id from header (set by router-level dependency)
+        current_profile_id = http_request.state.profile_id
+        if not current_profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Convert profile IDs to UUID array
         profile_uuids = [uuid.UUID(p) for p in request.profileIds]
 
@@ -81,7 +89,7 @@ async def bulk_update_staff(
         # Single consolidated query for validation + update
         sql_query = load_sql("sql/v3/profile/staff/bulk_update_profile_complete.sql")
         sql_params = (
-            uuid.UUID(request.currentProfileId),
+            uuid.UUID(current_profile_id),
             profile_uuids,
             request.role,
             request.active,

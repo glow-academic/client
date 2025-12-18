@@ -54,7 +54,7 @@ router = APIRouter()
 class HomeHistoryFilters(BaseModel):
     """Home history filter request schema - requires profileId for department scoping."""
 
-    profileId: str  # Required: used for department scoping
+    # profileId removed - comes from X-Profile-Id header
     startDate: str
     endDate: str
     cohortIds: list[str] | None = None
@@ -121,8 +121,13 @@ async def get_home_history(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Profile ID is required - always use it (no role checking)
-        profile_id = filters.profileId
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
 
         # Load SQL query
         sql_query = load_sql("sql/v3/home/history.sql")

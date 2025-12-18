@@ -114,9 +114,4 @@ export default async function ModelEditPage({
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type {
-  ModelDetailIn,
-  ModelDetailOut,
-  UpdateModelIn,
-  UpdateModelOut,
-};
+export type { ModelDetailIn, ModelDetailOut, UpdateModelIn, UpdateModelOut };

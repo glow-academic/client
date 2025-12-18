@@ -5,11 +5,10 @@
  * 07/26/2025
  */
 
-import Parameter from "@/components/parameters/Parameter";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import Parameter from "@/components/parameters/Parameter";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -29,40 +28,35 @@ type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getParameter = async (
-  parameterId: string,
-  profileId: string,
+  parameterId: string
 ): Promise<ParameterDetailOut> => {
   return api.post(
     "/parameters/detail",
-    { body: { parameterId, profileId } },
+    { body: { parameterId } },
     {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ parameterId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { parameterId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
 
-  if (profileId) {
-    try {
-      const parameter = await getParameter(parameterId, profileId);
-      return {
-        title: `${parameter?.name || "Parameter"} Parameter`,
-        description: `${parameter?.name ? `${parameter.name} - ` : ""}System parameter configuration for teaching assistant training platform.${parameter?.description ? ` ${parameter.description}` : ""} Manage platform-wide settings and learning environment configurations for effective L&D program administration.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+  try {
+    const parameter = await getParameter(parameterId);
+    return {
+      title: `${parameter?.name || "Parameter"} Parameter`,
+      description: `${parameter?.name ? `${parameter.name} - ` : ""}System parameter configuration for teaching assistant training platform.${parameter?.description ? ` ${parameter.description}` : ""} Manage platform-wide settings and learning environment configurations for effective L&D program administration.`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {
@@ -74,35 +68,20 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createParameter(
-  input: CreateParameterIn,
+  input: CreateParameterIn
 ): Promise<CreateParameterOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/parameters/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body },
   });
 }
 
 async function updateParameter(
-  input: UpdateParameterIn,
+  input: UpdateParameterIn
 ): Promise<UpdateParameterOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/parameters/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/parameters/update", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -112,19 +91,10 @@ export default async function ParameterEditPage({
   params: Promise<{ parameterId: string }>;
 }) {
   const { parameterId } = await params;
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
   // Fetch parameter detail (always fresh - source of truth)
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const parameterDetail = await getParameter(parameterId, profileId);
+    const parameterDetail = await getParameter(parameterId);
 
     return (
       <div
@@ -166,10 +136,10 @@ export default async function ParameterEditPage({
 export type {
   CreateParameterIn,
   CreateParameterOut,
-  ParameterNewIn,
-  ParameterNewOut,
   ParameterDetailIn,
   ParameterDetailOut,
+  ParameterNewIn,
+  ParameterNewOut,
   UpdateParameterIn,
   UpdateParameterOut,
 };

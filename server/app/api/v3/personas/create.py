@@ -26,7 +26,7 @@ class CreatePersonaRequest(BaseModel):
     instructions: str
     parameter_ids: list[str] | None
     example_ids: list[str] | None
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class CreatePersonaResponse(BaseModel):
@@ -62,6 +62,14 @@ async def create_persona(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Ensure department_ids is always an array (empty array if None)
             dept_ids = request.department_ids if request.department_ids else []
@@ -87,7 +95,7 @@ async def create_persona(
                 request.icon,
                 instructions,
                 dept_ids,  # Always pass array (empty array if no departments)
-                request.profileId,
+                profile_id,
                 example_ids,  # Always pass array (empty array if no examples)
             )
             result = await conn.fetchrow(sql_query, *sql_params)
@@ -101,7 +109,7 @@ async def create_persona(
             # Set audit context with data from SQL query
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": request.profileId},
+                actor={"name": actor_name, "id": profile_id},
                 persona={"name": request.name, "id": persona_id},
             )
 

@@ -17,7 +17,7 @@ from app.utils.sql_helper import load_sql
 class CreateFeedbackRequest(BaseModel):
     type: str
     message: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class CreateFeedbackResponse(BaseModel):
@@ -65,11 +65,19 @@ async def create_feedback(
                 status_code=400, detail="Message must be less than 1000 characters"
             )
 
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Execute insert query
         sql_query = load_sql("sql/v3/feedback/create_feedback.sql")
-        sql_params = (request.type, request.message, request.profileId)
+        sql_params = (request.type, request.message, profile_id)
         result = await conn.fetchrow(
-            sql_query, request.type, request.message, request.profileId
+            sql_query, request.type, request.message, profile_id
         )
 
         if not result:
@@ -81,7 +89,7 @@ async def create_feedback(
         if actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": request.profileId},
+                actor={"name": actor_name, "id": profile_id},
                 feedback={"type": request.type},
             )
 

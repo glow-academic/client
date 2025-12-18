@@ -106,7 +106,6 @@ export function StaffEmailCardGrid({
     setEditingValue("");
   };
 
-
   return (
     <div className="space-y-4">
       {/* Search Bar */}
@@ -132,124 +131,131 @@ export function StaffEmailCardGrid({
         ) : (
           filteredEmailIndices.map((index) => {
             const email = emails[index];
-          const isPrimary = primaryEmailIndex !== undefined && index === primaryEmailIndex;
-          const isEditing = editingIndex === index;
+            const isPrimary =
+              primaryEmailIndex !== undefined && index === primaryEmailIndex;
+            const isEditing = editingIndex === index;
 
-          return (
-            <div
-              key={index}
-              className={cn(
-                "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all",
-                "hover:shadow-md hover:bg-accent/50",
-                isPrimary && "ring-2 ring-primary bg-accent",
-                !isEditing && "cursor-pointer",
-              )}
-              onClick={() => !isEditing && handleEmailClick(index)}
-            >
-              <div className="flex items-start gap-3">
-                <Mail className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0 flex items-center gap-2">
-                  {isEditing ? (
-                    <>
-                      <Input
-                        type="email"
-                        value={editingValue}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        placeholder="email@example.com"
-                        className="h-8 text-sm flex-1"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            handleSaveEdit(index);
-                          } else if (e.key === "Escape") {
-                            handleCancelEdit();
-                          }
-                        }}
-                        onBlur={() => {
-                          // Auto-save on blur if value changed
-                          if (editingValue.trim() && editingValue.trim() !== email) {
-                            handleSaveEdit(index);
-                          } else {
-                            handleCancelEdit();
-                          }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleSaveEdit(index);
+            return (
+              <div
+                key={index}
+                className={cn(
+                  "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all",
+                  "hover:shadow-md hover:bg-accent/50",
+                  isPrimary && "ring-2 ring-primary bg-accent",
+                  !isEditing && "cursor-pointer",
+                )}
+                onClick={() => !isEditing && handleEmailClick(index)}
+              >
+                <div className="flex items-start gap-3">
+                  <Mail className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    {isEditing ? (
+                      <>
+                        <Input
+                          type="email"
+                          value={editingValue}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          placeholder="email@example.com"
+                          className="h-8 text-sm flex-1"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleSaveEdit(index);
+                            } else if (e.key === "Escape") {
+                              handleCancelEdit();
+                            }
                           }}
-                          disabled={readonly}
-                          className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleCancelEdit();
+                          onBlur={() => {
+                            // Auto-save on blur if value changed
+                            if (
+                              editingValue.trim() &&
+                              editingValue.trim() !== email
+                            ) {
+                              handleSaveEdit(index);
+                            } else {
+                              handleCancelEdit();
+                            }
                           }}
-                          disabled={readonly}
-                          className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div
-                        className="flex-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartEdit(index, email || "");
-                        }}
-                      >
-                        <input
-                          type="text"
-                          value={email || ""}
-                          readOnly
-                          className={cn(
-                            "w-full text-sm border-none outline-none bg-transparent px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                            email
-                              ? "text-foreground cursor-pointer hover:bg-muted/50"
-                              : "text-muted-foreground cursor-pointer hover:bg-muted/50"
-                          )}
-                          placeholder="Click to edit email"
-                          disabled={readonly}
+                          onClick={(e) => e.stopPropagation()}
                         />
-                      </div>
-                      {emails.length > 1 && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
+                        <div
+                          className="flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleSaveEdit(index);
+                            }}
+                            disabled={readonly}
+                            className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleCancelEdit();
+                            }}
+                            disabled={readonly}
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div
+                          className="flex-1"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleRemoveEmail(index);
+                            handleStartEdit(index, email || "");
                           }}
-                          disabled={readonly}
-                          className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                    </>
-                  )}
+                          <input
+                            type="text"
+                            value={email || ""}
+                            readOnly
+                            className={cn(
+                              "w-full text-sm border-none outline-none bg-transparent px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                              email
+                                ? "text-foreground cursor-pointer hover:bg-muted/50"
+                                : "text-muted-foreground cursor-pointer hover:bg-muted/50",
+                            )}
+                            placeholder="Click to edit email"
+                            disabled={readonly}
+                          />
+                        </div>
+                        {emails.length > 1 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveEmail(index);
+                            }}
+                            disabled={readonly}
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
+            );
           })
         )}
 
@@ -274,4 +280,3 @@ export function StaffEmailCardGrid({
     </div>
   );
 }
-

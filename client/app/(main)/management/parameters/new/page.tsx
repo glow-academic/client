@@ -12,14 +12,8 @@ import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParameterNewIn = InputOf<
-  "/api/v3/parameters/new",
-  "post"
->;
-type ParameterNewOut = OutputOf<
-  "/api/v3/parameters/new",
-  "post"
->;
+type ParameterNewIn = InputOf<"/api/v3/parameters/new", "post">;
+type ParameterNewOut = OutputOf<"/api/v3/parameters/new", "post">;
 type CreateParameterIn = InputOf<"/api/v3/parameters/create", "post">;
 type CreateParameterOut = OutputOf<"/api/v3/parameters/create", "post">;
 type UpdateParameterIn = InputOf<"/api/v3/parameters/update", "post">;
@@ -29,7 +23,7 @@ type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getParameterDefault = async (
-  profileId: string
+  profileId: string,
 ): Promise<ParameterNewOut> => {
   return api.post(
     "/parameters/new",
@@ -39,7 +33,7 @@ const getParameterDefault = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
@@ -65,21 +59,16 @@ async function updateParameter(
 ): Promise<UpdateParameterOut> {
   "use server";
   const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId removed - comes from X-Profile-Id header (auto-injected)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/parameters/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/parameters/update", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Parameter",
-    description: "Create a new system parameter for teaching assistant training platform. Configure platform-wide parameters, learning environment settings, and system-wide configurations for effective L&D program administration.",
+    description:
+      "Create a new system parameter for teaching assistant training platform. Configure platform-wide parameters, learning environment settings, and system-wide configurations for effective L&D program administration.",
   };
 }
 

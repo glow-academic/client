@@ -153,7 +153,9 @@ export default async function DocumentEditPage({
                 documentId,
                 templateArgs,
                 profileId,
-                ...(departmentIds !== undefined && { departmentIds: departmentIds || null }),
+                ...(departmentIds !== undefined && {
+                  departmentIds: departmentIds || null,
+                }),
               },
             });
             renderedHtml = renderResult.rendered_html;

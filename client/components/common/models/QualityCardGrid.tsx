@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
@@ -31,7 +30,7 @@ export function QualityCardGrid({
   // Build qualities from QUALITIES array
   const baseQualities = React.useMemo(() => {
     return [...QUALITIES].sort((a, b) =>
-      (a.name || "").localeCompare(b.name || "")
+      (a.name || "").localeCompare(b.name || ""),
     );
   }, []);
 
@@ -46,7 +45,7 @@ export function QualityCardGrid({
         (quality) =>
           quality.name?.toLowerCase().includes(searchLower) ||
           quality.description?.toLowerCase().includes(searchLower) ||
-          quality.id?.toLowerCase().includes(searchLower)
+          quality.id?.toLowerCase().includes(searchLower),
       );
     }
 
@@ -107,7 +106,7 @@ export function QualityCardGrid({
                         "hover:shadow-md hover:bg-accent/50",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "disabled:pointer-events-none disabled:opacity-50",
-                        isSelected && "ring-2 ring-primary bg-accent"
+                        isSelected && "ring-2 ring-primary bg-accent",
                       )}
                     >
                       {/* Check icon - top right */}
@@ -138,4 +137,3 @@ export function QualityCardGrid({
     </TooltipProvider>
   );
 }
-

@@ -107,7 +107,7 @@ export default function Auth({
       const newParamsString = params.toString();
       router.replace(`${pathname}?${newParamsString}`, { scroll: false });
     },
-    [searchParams, pathname, router]
+    [searchParams, pathname, router],
   );
 
   const initialFormData: FormData = useMemo(
@@ -116,7 +116,7 @@ export default function Auth({
       description: "",
       active: false,
     }),
-    []
+    [],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -124,7 +124,7 @@ export default function Auth({
 
   // State for auth item IDs (only persisted items use URL params)
   const [persistedAuthItemIds, setPersistedAuthItemIds] = useState<string[]>(
-    []
+    [],
   );
 
   // State for auth item data (id -> AuthItemState)
@@ -135,7 +135,7 @@ export default function Auth({
 
   // State for accordion (only one section open at a time)
   const [openAccordionItem, setOpenAccordionItem] = useState<string | null>(
-    null
+    null,
   );
 
   // Track if we've initialized URL params from server data
@@ -190,7 +190,7 @@ export default function Auth({
 
       // Sort by position (from server)
       const sortedItems = [...authItems].sort(
-        (a, b) => (a.position || 1) - (b.position || 1)
+        (a, b) => (a.position || 1) - (b.position || 1),
       );
 
       sortedItems.forEach((item) => {
@@ -224,7 +224,7 @@ export default function Auth({
 
       // Filter out temp-* IDs from URL (they shouldn't be there)
       const persistedIdsFromUrl = itemIdsFromUrl.filter(
-        (id) => !id.startsWith("temp-") && !id.startsWith("new-")
+        (id) => !id.startsWith("temp-") && !id.startsWith("new-"),
       );
 
       const orderedItemIds =
@@ -261,7 +261,7 @@ export default function Auth({
 
     // Filter out temp-* IDs from URL (they shouldn't be there)
     const persistedIdsFromUrl = itemIdsFromUrl.filter(
-      (id) => !id.startsWith("temp-") && !id.startsWith("new-")
+      (id) => !id.startsWith("temp-") && !id.startsWith("new-"),
     );
 
     const arraysEqual =
@@ -277,7 +277,7 @@ export default function Auth({
   const allAuthItemIds = useMemo(() => {
     const persistedIds = persistedAuthItemIds;
     const newIds = Object.keys(authItemStates).filter(
-      (id) => id.startsWith("temp-") || id.startsWith("new-")
+      (id) => id.startsWith("temp-") || id.startsWith("new-"),
     );
     return [...persistedIds, ...newIds];
   }, [persistedAuthItemIds, authItemStates]);
@@ -308,7 +308,7 @@ export default function Auth({
           return "pending";
       }
     },
-    [formData?.name, allAuthItemIds]
+    [formData?.name, allAuthItemIds],
   );
 
   // Steps array
@@ -369,7 +369,7 @@ export default function Auth({
         });
       }
     },
-    [isEditMode, updateUrlParams]
+    [isEditMode, updateUrlParams],
   );
 
   // Convert authItemStates to card format
@@ -416,7 +416,7 @@ export default function Auth({
         return updated;
       });
     },
-    []
+    [],
   );
 
   const handleAuthItemDescriptionChange = useCallback(
@@ -429,7 +429,7 @@ export default function Auth({
         return updated;
       });
     },
-    []
+    [],
   );
 
   const handleAuthItemActiveToggle = useCallback(
@@ -442,7 +442,7 @@ export default function Auth({
         return updated;
       });
     },
-    []
+    [],
   );
 
   const handleAuthItemEncryptedToggle = useCallback(
@@ -455,7 +455,7 @@ export default function Auth({
         return updated;
       });
     },
-    []
+    [],
   );
 
   // Position handlers for auth items
@@ -472,7 +472,7 @@ export default function Auth({
         const allIds = [
           ...persistedAuthItemIds,
           ...Object.keys(authItemStates).filter(
-            (id) => id.startsWith("temp-") || id.startsWith("new-")
+            (id) => id.startsWith("temp-") || id.startsWith("new-"),
           ),
         ];
         const newIndex = allIds.indexOf(authItemId);
@@ -521,14 +521,14 @@ export default function Auth({
 
       // Update URL params for persisted items
       const persistedIds = reorderedIds.filter(
-        (id) => !id.startsWith("temp-") && !id.startsWith("new-")
+        (id) => !id.startsWith("temp-") && !id.startsWith("new-"),
       );
       setPersistedAuthItemIds(persistedIds);
       updateUrlParams({
         authItemIds: persistedIds.length > 0 ? persistedIds : null,
       });
     },
-    [persistedAuthItemIds, authItemStates, searchParams, updateUrlParams]
+    [persistedAuthItemIds, authItemStates, searchParams, updateUrlParams],
   );
 
   const handleAuthItemMoveDown = useCallback(
@@ -544,7 +544,7 @@ export default function Auth({
         const allIds = [
           ...persistedAuthItemIds,
           ...Object.keys(authItemStates).filter(
-            (id) => id.startsWith("temp-") || id.startsWith("new-")
+            (id) => id.startsWith("temp-") || id.startsWith("new-"),
           ),
         ];
         const newIndex = allIds.indexOf(authItemId);
@@ -593,14 +593,14 @@ export default function Auth({
 
       // Update URL params for persisted items
       const persistedIds = reorderedIds.filter(
-        (id) => !id.startsWith("temp-") && !id.startsWith("new-")
+        (id) => !id.startsWith("temp-") && !id.startsWith("new-"),
       );
       setPersistedAuthItemIds(persistedIds);
       updateUrlParams({
         authItemIds: persistedIds.length > 0 ? persistedIds : null,
       });
     },
-    [persistedAuthItemIds, authItemStates, searchParams, updateUrlParams]
+    [persistedAuthItemIds, authItemStates, searchParams, updateUrlParams],
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -661,7 +661,7 @@ export default function Auth({
       router.push("/system/auth");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} auth: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} auth: ${error}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -742,7 +742,7 @@ export default function Auth({
                     ? "bg-green-500 text-white"
                     : steps[0]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {steps[0]?.status === "completed" ? (
@@ -772,7 +772,7 @@ export default function Auth({
                       }
                     }}
                     className={cn(
-                      "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                      "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
                     )}
                     placeholder="New Auth"
                     disabled={isReadonly}
@@ -843,7 +843,7 @@ export default function Auth({
             !isEditMode &&
               steps[1]?.status === "active" &&
               "ring-2 ring-primary",
-            !isEditMode && steps[1]?.status === "pending" && "opacity-50"
+            !isEditMode && steps[1]?.status === "pending" && "opacity-50",
           )}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-2">
@@ -855,7 +855,7 @@ export default function Auth({
                     ? "bg-green-500 text-white"
                     : steps[1]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {steps[1]?.status === "completed" ? (

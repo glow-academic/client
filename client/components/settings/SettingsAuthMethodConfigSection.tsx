@@ -6,7 +6,13 @@
 "use client";
 
 import { SettingsKeyPicker } from "@/components/settings/SettingsKeyPicker";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
 export interface AuthTableItem {
@@ -42,13 +48,9 @@ export interface SettingsAuthMethodConfigSectionProps {
   onKeyChange: (
     authId: string,
     authItemId: string,
-    keyId: string | null
+    keyId: string | null,
   ) => void;
-  onValueChange: (
-    authId: string,
-    authItemId: string,
-    value: string
-  ) => void;
+  onValueChange: (authId: string, authItemId: string, value: string) => void;
   isReadonly: boolean;
 }
 
@@ -65,10 +67,14 @@ export function SettingsAuthMethodConfigSection({
 }: SettingsAuthMethodConfigSectionProps) {
   // Filter data to only show items for this auth method
   const filteredData = data.filter((item) => item.auth_id === authId);
-  
+
   // Separate encrypted and non-encrypted items
-  let encryptedItems = filteredData.filter((item) => item.encrypted && item.auth_item_id);
-  const nonEncryptedItems = filteredData.filter((item) => !item.encrypted && item.auth_item_id);
+  let encryptedItems = filteredData.filter(
+    (item) => item.encrypted && item.auth_item_id,
+  );
+  const nonEncryptedItems = filteredData.filter(
+    (item) => !item.encrypted && item.auth_item_id,
+  );
 
   // Sort encrypted items: items with selected keys first
   encryptedItems = [...encryptedItems].sort((a, b) => {
@@ -158,4 +164,3 @@ export function SettingsAuthMethodConfigSection({
     </div>
   );
 }
-

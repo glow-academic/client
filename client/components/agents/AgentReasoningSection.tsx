@@ -4,8 +4,13 @@
  */
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Check, Search } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -29,7 +34,10 @@ export interface AgentReasoningSectionProps {
   }>;
 
   // Callbacks
-  onReasoningChange: (reasoningLevel: string | null, optionId: string | null) => void;
+  onReasoningChange: (
+    reasoningLevel: string | null,
+    optionId: string | null,
+  ) => void;
 
   // UI State
   stepStatus: StepStatus;
@@ -80,7 +88,9 @@ export function AgentReasoningSection({
     : reasoning || "none";
 
   const availableReasoningLevels =
-    reasoningOptions && Array.isArray(reasoningOptions) && reasoningOptions.length > 0
+    reasoningOptions &&
+    Array.isArray(reasoningOptions) &&
+    reasoningOptions.length > 0
       ? reasoningOptions.map((opt) => opt.reasoning_level)
       : ["none", "minimal", "low", "medium", "high"];
 
@@ -102,7 +112,8 @@ export function AgentReasoningSection({
   const handleReasoningSelect = (reasoningLevel: string) => {
     if (isReadonly) return;
     // Toggle behavior: if already selected, unselect (pass null)
-    const newLevel = selectedReasoningLevel === reasoningLevel ? null : reasoningLevel;
+    const newLevel =
+      selectedReasoningLevel === reasoningLevel ? null : reasoningLevel;
     const optionId = newLevel ? getReasoningOptionId(newLevel) : null;
     onReasoningChange(newLevel, optionId);
   };
@@ -112,7 +123,7 @@ export function AgentReasoningSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50"
+        stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -124,7 +135,7 @@ export function AgentReasoningSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -159,7 +170,9 @@ export function AgentReasoningSection({
             const mappingItem = reasoningMapping[level];
             if (!mappingItem) return null;
 
-            const isSelected = selectedReasoningLevel !== null && selectedReasoningLevel === level;
+            const isSelected =
+              selectedReasoningLevel !== null &&
+              selectedReasoningLevel === level;
 
             return (
               <button
@@ -172,12 +185,14 @@ export function AgentReasoningSection({
                   "hover:shadow-md hover:bg-accent/50",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   "disabled:pointer-events-none disabled:opacity-50",
-                  isSelected && "ring-2 ring-primary bg-accent"
+                  isSelected && "ring-2 ring-primary bg-accent",
                 )}
               >
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{mappingItem.name}</div>
+                    <div className="font-medium text-sm">
+                      {mappingItem.name}
+                    </div>
                     {mappingItem.description && (
                       <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
                         {mappingItem.description}
@@ -196,4 +211,3 @@ export function AgentReasoningSection({
     </Card>
   );
 }
-

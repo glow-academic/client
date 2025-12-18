@@ -38,13 +38,13 @@ const getAuthList = async (profileId: string): Promise<AuthListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateAuth(
-  input: DuplicateAuthIn
+  input: DuplicateAuthIn,
 ): Promise<DuplicateAuthOut> {
   "use server";
   const session = await getSession();

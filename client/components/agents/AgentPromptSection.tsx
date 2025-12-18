@@ -96,7 +96,7 @@ export function AgentPromptSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50"
+        stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -108,7 +108,7 @@ export function AgentPromptSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -185,7 +185,7 @@ export function AgentPromptSection({
                         size="sm"
                         onClick={() =>
                           onEditorModeChange(
-                            editorMode === "preview" ? "editor" : "preview"
+                            editorMode === "preview" ? "editor" : "preview",
                           )
                         }
                         className="h-8 w-8 p-0"
@@ -208,7 +208,7 @@ export function AgentPromptSection({
                           size="sm"
                           onClick={() =>
                             onEditorModeChange(
-                              editorMode === "debug" ? "editor" : "debug"
+                              editorMode === "debug" ? "editor" : "debug",
                             )
                           }
                           className="h-8 w-8 p-0"
@@ -240,7 +240,7 @@ export function AgentPromptSection({
                                 !!(
                                   promptInfo.department_ids &&
                                   promptInfo.department_ids.length > 0
-                                )
+                                ),
                               );
                             }}
                             className="h-8 w-8 p-0"

@@ -64,14 +64,7 @@ import {
 } from "@/utils/department-picker-helpers";
 import { inferMimeFromName } from "@/utils/mime-map";
 import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
-import {
-  Building2,
-  Check,
-  Plus,
-  Tag,
-  UploadCloud,
-  X,
-} from "lucide-react";
+import { Building2, Check, Plus, Tag, UploadCloud, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -101,14 +94,14 @@ export interface DocumentProps {
   documentDetailDefault?: DocumentsListOut;
   // Server actions
   createDocumentAction?: (
-    input: CreateDocumentIn
+    input: CreateDocumentIn,
   ) => Promise<CreateDocumentOut>;
   updateDocumentAction?: (
-    input: UpdateDocumentIn
+    input: UpdateDocumentIn,
   ) => Promise<UpdateDocumentOut>;
   finalizeUploadAction?: (uploadId: string) => Promise<FinalizeUploadOut>;
   renderTemplateAction?: (
-    input: RenderTemplateIn
+    input: RenderTemplateIn,
   ) => Promise<RenderTemplateOut>;
   renderedHtml?: string | null;
 }
@@ -133,9 +126,9 @@ export default function Document({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null
+        effectiveProfile?.primaryDepartmentId ?? null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   // Use server-provided data directly
@@ -185,12 +178,12 @@ export default function Document({
   const [isTemplateMode, setIsTemplateMode] = useState(false);
   const [templateHtml, setTemplateHtml] = useState<string | null>(null);
   const [templateSchema, setTemplateSchema] = useState<TemplateSchema | null>(
-    null
+    null,
   );
   const [templateUploadId, setTemplateUploadId] = useState<string | null>(null);
   const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
-    null
+    null,
   );
   const [templateMapping, setTemplateMapping] = useState<
     Record<
@@ -204,7 +197,7 @@ export default function Document({
     >
   >({});
   const [clientRenderedHtml, setClientRenderedHtml] = useState<string | null>(
-    renderedHtml
+    renderedHtml,
   );
   const [fieldSearchTerm, setFieldSearchTerm] = useState<string>("");
   const searchParams = useSearchParams();
@@ -223,7 +216,7 @@ export default function Document({
     >
   >(new Map());
   const [perFile, setPerFile] = useState<Record<string, FileClassification>>(
-    {}
+    {},
   );
   const [globalDefaultParameterItemIds, setGlobalDefaultParameterItemIds] =
     useState<string[]>([]);
@@ -233,7 +226,7 @@ export default function Document({
     Record<string, boolean>
   >({});
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
-    []
+    [],
   );
 
   // Extract mappings from data
@@ -242,22 +235,22 @@ export default function Document({
       (isEditMode
         ? documentDetail?.department_mapping
         : documentDetailDefault?.department_mapping) || {},
-    [isEditMode, documentDetail, documentDetailDefault]
+    [isEditMode, documentDetail, documentDetailDefault],
   );
   const fieldMapping = useMemo(
     () =>
       (isEditMode
         ? documentDetail?.field_mapping
         : documentDetailDefault?.field_mapping) || {},
-    [isEditMode, documentDetail, documentDetailDefault]
+    [isEditMode, documentDetail, documentDetailDefault],
   );
   const agentMapping = useMemo(
     () => (isEditMode ? documentDetail?.agent_mapping : {}) || {},
-    [isEditMode, documentDetail]
+    [isEditMode, documentDetail],
   );
   const parameterMapping = useMemo(
     () => (isEditMode ? {} : documentDetailDefault?.parameter_mapping) || {},
-    [isEditMode, documentDetailDefault]
+    [isEditMode, documentDetailDefault],
   );
 
   const validDepartmentIds = useMemo(() => {
@@ -283,7 +276,7 @@ export default function Document({
 
       // Filter fields based on linked parameters
       const linkedParameterIds = new Set(
-        documentDetail?.linked_parameter_ids || []
+        documentDetail?.linked_parameter_ids || [],
       );
       return baseIds.filter((itemId) => {
         const item = fieldMapping[itemId];
@@ -310,7 +303,7 @@ export default function Document({
   const documentParameterIds = useMemo(() => {
     if (isEditMode) return [];
     return Object.keys(parameterMapping).filter(
-      (paramId) => parameterMapping[paramId]?.document_parameter === true
+      (paramId) => parameterMapping[paramId]?.document_parameter === true,
     );
   }, [isEditMode, parameterMapping]);
 
@@ -439,7 +432,7 @@ export default function Document({
         // Parse search params to template args
         const templateArgs = searchParamsToTemplateArgs(
           searchParams,
-          templateSchemaForDisplay
+          templateSchemaForDisplay,
         );
 
         // Get departmentIds from documentDetail (edit mode) or form state
@@ -507,10 +500,10 @@ export default function Document({
     }
 
     const deselectedDepts = prevDeptIds.filter(
-      (id) => !currentDeptIds.includes(id)
+      (id) => !currentDeptIds.includes(id),
     );
     const newlySelectedDepts = currentDeptIds.filter(
-      (id) => !prevDeptIds.includes(id)
+      (id) => !prevDeptIds.includes(id),
     );
 
     if (deselectedDepts.length > 0) {
@@ -537,7 +530,7 @@ export default function Document({
     if (globalDefaultParameterItemIds.length > 0) {
       const validSet = new Set(filteredValidParameterItemIds);
       const filtered = globalDefaultParameterItemIds.filter((id) =>
-        validSet.has(id)
+        validSet.has(id),
       );
       if (filtered.length !== globalDefaultParameterItemIds.length) {
         setGlobalDefaultParameterItemIds(filtered);
@@ -550,7 +543,7 @@ export default function Document({
       Object.entries(prev).forEach(([fileName, fc]) => {
         const validSet = new Set(filteredValidParameterItemIds);
         const filtered = (fc.parameterItemIds || []).filter((id) =>
-          validSet.has(id)
+          validSet.has(id),
         );
         if (filtered.length !== (fc.parameterItemIds || []).length) {
           hasChanges = true;
@@ -608,28 +601,28 @@ export default function Document({
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
           const merged = Array.from(
-            new Set([...(v.parameterItemIds ?? []), ...incomingIds])
+            new Set([...(v.parameterItemIds ?? []), ...incomingIds]),
           );
           return [k, { ...v, parameterItemIds: merged }];
-        })
-      )
+        }),
+      ),
     );
   };
 
   const removeParameterItemsFromAll = (idsToRemove: string[]) => {
     if (idsToRemove.length === 0) return;
     setGlobalDefaultParameterItemIds((prev) =>
-      prev.filter((id) => !idsToRemove.includes(id))
+      prev.filter((id) => !idsToRemove.includes(id)),
     );
     setPerFile((prev) =>
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
           const nextIds = (v.parameterItemIds ?? []).filter(
-            (id) => !idsToRemove.includes(id)
+            (id) => !idsToRemove.includes(id),
           );
           return [k, { ...v, parameterItemIds: nextIds }];
-        })
-      )
+        }),
+      ),
     );
   };
 
@@ -656,7 +649,7 @@ export default function Document({
         });
 
         const hasItemForParam = itemsForParam.some((itemId) =>
-          selectedItemIds.includes(itemId)
+          selectedItemIds.includes(itemId),
         );
 
         if (!hasItemForParam && itemsForParam.length > 0) {
@@ -665,7 +658,7 @@ export default function Document({
           }
           const paramName = parameterMapping[paramId]?.name || paramId;
           errors[file.name]!.push(
-            `Required: Select at least one ${paramName} option`
+            `Required: Select at least one ${paramName} option`,
           );
         }
       });
@@ -725,7 +718,7 @@ export default function Document({
         progress: 0,
         toastId: toastId as string,
         status: "uploading",
-      })
+      }),
     );
 
     let tusUploadInstance: tus.Upload | null = null;
@@ -794,7 +787,7 @@ export default function Document({
 
             if (!finalizeResult.success || !finalizeResult.uploadId) {
               throw new Error(
-                finalizeResult.message || "Failed to finalize upload"
+                finalizeResult.message || "Failed to finalize upload",
               );
             }
 
@@ -813,7 +806,7 @@ export default function Document({
                     profileId: effectiveProfile?.id || "",
                     parameterIds: null,
                   }),
-                }
+                },
               );
 
               if (classifyResponse.ok) {
@@ -834,13 +827,13 @@ export default function Document({
               new Set([
                 ...(classification.parameterItemIds || []),
                 ...suggestedParameterItemIds,
-              ])
+              ]),
             );
 
             const finalDepartmentIds = transformDepartmentIdsForSubmit(
               classification.departmentIds || selectedDepartmentIds,
               isSuperadmin,
-              validDepartmentIds
+              validDepartmentIds,
             );
 
             const createResult = await createDocumentAction({
@@ -878,7 +871,7 @@ export default function Document({
                   const newMap = new Map(prev);
                   newMap.delete(fileId);
                   const remaining = Array.from(newMap.values()).filter(
-                    (u) => u.status !== "completed" && u.status !== "error"
+                    (u) => u.status !== "completed" && u.status !== "error",
                   );
                   if (remaining.length === 0 && newMap.size === 0) {
                     setTimeout(() => {
@@ -1046,7 +1039,7 @@ export default function Document({
             documentDescription: body.documentDescription,
             fieldIds: body.fieldIds,
           });
-        }
+        },
       );
 
       if (result.success) {
@@ -1084,7 +1077,7 @@ export default function Document({
       }
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to generate template"
+        error instanceof Error ? error.message : "Failed to generate template",
       );
     } finally {
       setIsGeneratingTemplate(false);
@@ -1157,7 +1150,7 @@ export default function Document({
     const finalDepartmentIds = transformDepartmentIdsForSubmit(
       selectedDepartmentIds,
       isSuperadmin,
-      validDepartmentIds
+      validDepartmentIds,
     );
 
     try {
@@ -1185,14 +1178,14 @@ export default function Document({
         }, 1000);
       } else {
         toast.error(
-          createResult.message || "Failed to create template document"
+          createResult.message || "Failed to create template document",
         );
       }
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to create template document"
+          : "Failed to create template document",
       );
     }
   };
@@ -1224,7 +1217,7 @@ export default function Document({
             isTemplateDocument && templateSchemaForDisplay
               ? (searchParamsToTemplateArgs(
                   searchParams,
-                  templateSchemaForDisplay
+                  templateSchemaForDisplay,
                 ) as Record<string, unknown> | null)
               : null,
         };
@@ -1235,7 +1228,7 @@ export default function Document({
         router.refresh();
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to update document"
+          error instanceof Error ? error.message : "Failed to update document",
         );
       } finally {
         setIsSubmitting(false);
@@ -1259,7 +1252,7 @@ export default function Document({
         const finalDepartmentIds = transformDepartmentIdsForSubmit(
           selectedDepartmentIds,
           isSuperadmin,
-          validDepartmentIds
+          validDepartmentIds,
         );
 
         for (const file of pendingFiles) {
@@ -1275,7 +1268,7 @@ export default function Document({
                 ? transformDepartmentIdsForSubmit(
                     fc.departmentIds,
                     isSuperadmin,
-                    validDepartmentIds
+                    validDepartmentIds,
                   ) || []
                 : finalDepartmentIds || [],
           };
@@ -1337,7 +1330,7 @@ export default function Document({
       pendingFiles.length,
       isTemplateMode,
       templateUploadId,
-    ]
+    ],
   );
 
   // Steps array
@@ -1359,8 +1352,7 @@ export default function Document({
       {
         id: "document",
         title: "Document",
-        description:
-          "Upload a document file or generate a template document.",
+        description: "Upload a document file or generate a template document.",
         status: getStepStatus("document"),
       },
     ];
@@ -1408,10 +1400,10 @@ export default function Document({
                   selectedIds={globalDefaultParameterItemIds}
                   onSelect={(next) => {
                     const added = next.filter(
-                      (id) => !globalDefaultParameterItemIds.includes(id)
+                      (id) => !globalDefaultParameterItemIds.includes(id),
                     );
                     const removed = globalDefaultParameterItemIds.filter(
-                      (id) => !next.includes(id)
+                      (id) => !next.includes(id),
                     );
                     if (added.length) applyParameterItemsToAll(added);
                     if (removed.length) removeParameterItemsFromAll(removed);
@@ -1430,8 +1422,8 @@ export default function Document({
                     documentParameterIds.some((paramId) =>
                       filteredValidParameterItemIds.some(
                         (itemId) =>
-                          fieldMapping[itemId]?.parameter_id === paramId
-                      )
+                          fieldMapping[itemId]?.parameter_id === paramId,
+                      ),
                     )
                   }
                 />
@@ -1498,7 +1490,7 @@ export default function Document({
                                 {validationErrors[file.name]!.map(
                                   (error, idx) => (
                                     <div key={idx}>{error}</div>
-                                  )
+                                  ),
                                 )}
                               </div>
                             )}
@@ -1595,8 +1587,9 @@ export default function Document({
                             documentParameterIds.some((paramId) =>
                               filteredValidParameterItemIds.some(
                                 (itemId) =>
-                                  fieldMapping[itemId]?.parameter_id === paramId
-                              )
+                                  fieldMapping[itemId]?.parameter_id ===
+                                  paramId,
+                              ),
                             )
                           }
                         />
@@ -1677,7 +1670,7 @@ export default function Document({
                 size="sm"
                 onClick={() => {
                   const el = document.getElementById(
-                    "upload-dialog-file-input"
+                    "upload-dialog-file-input",
                   ) as HTMLInputElement | null;
                   el?.click();
                 }}
@@ -1705,9 +1698,7 @@ export default function Document({
           isTemplate={
             isTemplateMode || (isEditMode && !!documentDetail?.template)
           }
-          onNameChange={(name) =>
-            setFormData((prev) => ({ ...prev, name }))
-          }
+          onNameChange={(name) => setFormData((prev) => ({ ...prev, name }))}
           onDescriptionChange={(description) =>
             setFormData((prev) => ({ ...prev, description }))
           }
@@ -1794,9 +1785,7 @@ export default function Document({
                             classifyAgentId: ids[0] || null,
                           }))
                         }
-                        getId={(item) =>
-                          (item as unknown as { id: string }).id
-                        }
+                        getId={(item) => (item as unknown as { id: string }).id}
                         getLabel={(item) => item.name || ""}
                         getSearchText={(item) =>
                           `${item.name} ${item.description || ""}`
@@ -1855,9 +1844,7 @@ export default function Document({
                             documentAgentId: ids[0] || null,
                           }))
                         }
-                        getId={(item) =>
-                          (item as unknown as { id: string }).id
-                        }
+                        getId={(item) => (item as unknown as { id: string }).id}
                         getLabel={(item) => item.name || ""}
                         getSearchText={(item) =>
                           `${item.name} ${item.description || ""}`
@@ -1903,7 +1890,10 @@ export default function Document({
           stepStatus={getStepStatus("fields")}
           stepNumber={2}
           stepTitle={steps[1]?.title || "Fields"}
-          stepDescription={steps[1]?.description || "Select fields (parameter items) for this document."}
+          stepDescription={
+            steps[1]?.description ||
+            "Select fields (parameter items) for this document."
+          }
         />
 
         {/* Document Section with Action Buttons */}
@@ -1911,7 +1901,7 @@ export default function Document({
           className={cn(
             "transition-all",
             getStepStatus("document") === "active" && "ring-2 ring-primary",
-            getStepStatus("document") === "pending" && "opacity-50"
+            getStepStatus("document") === "pending" && "opacity-50",
           )}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1923,7 +1913,7 @@ export default function Document({
                     ? "bg-green-500 text-white"
                     : getStepStatus("document") === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {getStepStatus("document") === "completed" ? (
@@ -2005,7 +1995,7 @@ export default function Document({
                                         "h-4 w-4",
                                         isSelected
                                           ? "opacity-100"
-                                          : "opacity-0"
+                                          : "opacity-0",
                                       )}
                                     />
                                     <span className="font-medium">

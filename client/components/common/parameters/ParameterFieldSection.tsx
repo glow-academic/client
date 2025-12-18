@@ -104,7 +104,7 @@ export function ParameterFieldSection({
             className={cn(
               "transition-all",
               !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-              !isEditMode && stepStatus === "pending" && "opacity-50"
+              !isEditMode && stepStatus === "pending" && "opacity-50",
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -116,7 +116,7 @@ export function ParameterFieldSection({
                       ? "bg-green-500 text-white"
                       : stepStatus === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "bg-muted",
                   )}
                 >
                   {stepStatus === "completed" ? (
@@ -205,7 +205,7 @@ export function ParameterFieldSection({
                       <ChevronDown
                         className={cn(
                           "h-3.5 w-3.5 transition-transform duration-200",
-                          isAccordionOpen && "rotate-180"
+                          isAccordionOpen && "rotate-180",
                         )}
                       />
                     </Button>
@@ -282,7 +282,7 @@ export function ParameterFieldSection({
         className={cn(
           "transition-all",
           !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-          !isEditMode && stepStatus === "pending" && "opacity-50"
+          !isEditMode && stepStatus === "pending" && "opacity-50",
         )}
       >
         <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -294,7 +294,7 @@ export function ParameterFieldSection({
                   ? "bg-green-500 text-white"
                   : stepStatus === "active"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    : "bg-muted",
               )}
             >
               {stepStatus === "completed" ? (
@@ -398,7 +398,9 @@ export function ParameterFieldSection({
                 <Switch
                   id={`${fieldId}-default`}
                   checked={isDefault}
-                  onCheckedChange={(checked) => onDefaultToggle(fieldId, checked)}
+                  onCheckedChange={(checked) =>
+                    onDefaultToggle(fieldId, checked)
+                  }
                   disabled={readonly}
                 />
               </div>
@@ -412,4 +414,3 @@ export function ParameterFieldSection({
     </TooltipProvider>
   );
 }
-

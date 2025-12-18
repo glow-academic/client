@@ -4,13 +4,12 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db, transaction
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -18,7 +17,8 @@ router = APIRouter()
 class UpdateProfileRequest(BaseModel):
     """Request to update profile - supports both simple and comprehensive updates."""
 
-    profileId: str
+    profileId: str  # Target profile ID to update (kept in body as it's the target, not current user)
+    # Current user's profileId comes from X-Profile-Id header (request.state.profile_id)
     # Simple fields (for auth updates)
     firstName: str | None = None
     lastName: str | None = None

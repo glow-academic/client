@@ -17,7 +17,7 @@ class DuplicateModelRequest(BaseModel):
     """Request to duplicate model."""
 
     modelId: str
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DuplicateModelResponse(BaseModel):
@@ -45,6 +45,14 @@ async def duplicate_model(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Get original model data
             get_model_sql = """
@@ -63,10 +71,8 @@ async def duplicate_model(
 
             # Duplicate model (SQL adds ' Copy' to description) - track primary operation
             sql_query = load_sql("sql/v3/models/duplicate.sql")
-            sql_params = (request.modelId, request.profileId)
-            new_model = await conn.fetchrow(
-                sql_query, request.modelId, request.profileId
-            )
+            sql_params = (request.modelId, profile_id)
+            new_model = await conn.fetchrow(sql_query, request.modelId, profile_id)
 
             if not new_model:
                 raise ValueError("Failed to create duplicate model")

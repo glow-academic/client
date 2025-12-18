@@ -23,7 +23,7 @@ export type ResolvedProfileIds = {
 };
 
 export function validateTestHeaders(
-  headers: HeaderLike
+  headers: HeaderLike,
 ): TestProfileIds | null {
   const secret =
     process.env["AUTH_SECRET"] || "test_secret_key_for_integration_tests";
@@ -96,7 +96,7 @@ export function createTestSession({
  */
 export async function checkRouteAccess(
   pathname: string,
-  session: Session | null
+  session: Session | null,
 ): Promise<{
   allowed: boolean;
   reason?: "not-logged-in" | "route-denied";
@@ -139,7 +139,7 @@ export async function checkRouteAccess(
                 pathname: "/",
               },
             },
-            cookieHeader ? { headers: { Cookie: cookieHeader } } : undefined
+            cookieHeader ? { headers: { Cookie: cookieHeader } } : undefined,
           );
 
           const role =

@@ -22,7 +22,7 @@ import type { Metadata, ResolvingMetadata } from "next";
  */
 const getAttemptFull = async (
   _attemptId: string,
-  input: AttemptFullIn
+  input: AttemptFullIn,
 ): Promise<AttemptFullOut> => {
   return api.post("/attempts/full", input, {
     cache: "no-store",
@@ -35,7 +35,7 @@ const getAttemptFull = async (
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ attemptId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { attemptId } = await params;
   const session = await getSession();
@@ -65,7 +65,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateChatCreatedAt(
-  input: UpdateChatCreatedAtIn
+  input: UpdateChatCreatedAtIn,
 ): Promise<UpdateChatCreatedAtOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation

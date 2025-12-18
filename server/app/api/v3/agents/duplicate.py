@@ -16,7 +16,7 @@ from app.utils.sql_helper import load_sql
 # Inline request/response schemas
 class DuplicateAgentRequest(BaseModel):
     agentId: str
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DuplicateAgentResponse(BaseModel):
@@ -50,11 +50,17 @@ async def duplicate_agent(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/agents/duplicate_agent.sql")
-        sql_params = (request.agentId, request.profileId)
-        new_agent_row = await conn.fetchrow(
-            sql_query, request.agentId, request.profileId
-        )
+        sql_params = (request.agentId, profile_id)
+        new_agent_row = await conn.fetchrow(sql_query, request.agentId, profile_id)
 
         if not new_agent_row:
             raise HTTPException(status_code=500, detail="Failed to duplicate agent")
@@ -67,7 +73,7 @@ async def duplicate_agent(
         if actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": request.profileId},
+                actor={"name": actor_name, "id": profile_id},
                 agent={"name": agent_name, "id": agent_id},
             )
 

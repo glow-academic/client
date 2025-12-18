@@ -217,7 +217,7 @@ export default function Growth({
   // Get selected metric objects
   const selectedMetricObjects = useMemo(() => {
     return metricsWithFormatters.filter((metric) =>
-      selectedMetrics.includes(metric.id)
+      selectedMetrics.includes(metric.id),
     );
   }, [metricsWithFormatters, selectedMetrics]);
 
@@ -227,7 +227,7 @@ export default function Growth({
   // Normalize to a string once
   const normalizedInsight = useMemo(
     () => (actionableInsight ?? "").trim(),
-    [actionableInsight]
+    [actionableInsight],
   );
 
   if (!hasDataAvailable) {
@@ -332,7 +332,14 @@ export default function Growth({
                     return (
                       <CustomLineTooltip
                         active={props.active}
-                        payload={(props.payload || []) as Array<{ dataKey?: string; value?: number; name?: string; color?: string }>}
+                        payload={
+                          (props.payload || []) as Array<{
+                            dataKey?: string;
+                            value?: number;
+                            name?: string;
+                            color?: string;
+                          }>
+                        }
                         label={props.label}
                         metricsWithFormatters={metricsWithFormatters}
                       />

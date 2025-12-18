@@ -84,7 +84,7 @@ export function ParameterBasicInfoSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {isCompleted ? <Check className="w-4 h-4" /> : <span>1</span>}

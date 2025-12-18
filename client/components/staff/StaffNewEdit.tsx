@@ -104,7 +104,7 @@ export default function StaffNewEdit({
       primaryDepartmentIndex: undefined,
       active: true,
     }),
-    []
+    [],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -154,7 +154,7 @@ export default function StaffNewEdit({
               (e) =>
                 e ===
                   (staffData as { primary_email?: string | null })
-                    ?.primary_email || e === emails[0]
+                    ?.primary_email || e === emails[0],
             )
           : undefined;
       // Type guard: StaffDetailOut has department_ids, StaffNewOut doesn't
@@ -165,7 +165,7 @@ export default function StaffNewEdit({
       const primaryDeptIndex =
         departmentIds.length > 0 && "primary_department_id" in staffData
           ? departmentIds.findIndex(
-              (id: string) => id === staffData.primary_department_id
+              (id: string) => id === staffData.primary_department_id,
             )
           : -1;
       // Type guard: StaffDetailOut has cohort_ids, StaffNewOut doesn't
@@ -226,11 +226,11 @@ export default function StaffNewEdit({
   const handleInputChange = useCallback(
     (
       field: string,
-      value: string | number | boolean | string[] | undefined
+      value: string | number | boolean | string[] | undefined,
     ) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
-    []
+    [],
   );
 
   // Step status logic
@@ -245,7 +245,7 @@ export default function StaffNewEdit({
         formData?.primaryDepartmentIndex !== undefined &&
         formData.primaryDepartmentIndex >= 0;
       const hasEmails = (formData?.emails || []).some(
-        (e) => e.trim().length > 0
+        (e) => e.trim().length > 0,
       );
       const hasPrimaryEmail =
         formData?.primaryEmailIndex !== undefined &&
@@ -275,7 +275,7 @@ export default function StaffNewEdit({
           return "pending";
       }
     },
-    [formData, staffData]
+    [formData, staffData],
   );
 
   // Steps array
@@ -315,7 +315,7 @@ export default function StaffNewEdit({
         title: "Cohorts",
         description: "Select cohorts for this staff member (optional).",
         status: getStepStatus("cohorts"),
-      }
+      },
     );
 
     return baseSteps;
@@ -369,7 +369,7 @@ export default function StaffNewEdit({
 
     // Validate emails
     const validEmails = (formData.emails || []).filter(
-      (e) => e.trim().length > 0
+      (e) => e.trim().length > 0,
     );
     if (validEmails.length === 0) {
       toast.error("At least one email is required");
@@ -478,7 +478,7 @@ export default function StaffNewEdit({
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} staff: ${errorMessage}`
+        `Failed to ${isEditMode ? "update" : "create"} staff: ${errorMessage}`,
       );
       setIsSubmitting(false);
     }
@@ -541,7 +541,7 @@ export default function StaffNewEdit({
                               handleInputChange("firstName", e.target.value)
                             }
                             className={cn(
-                              "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                              "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
                             )}
                             placeholder="First Name"
                             required
@@ -580,7 +580,7 @@ export default function StaffNewEdit({
                                   new Set([
                                     ...staffData.valid_department_ids,
                                     ...(formData.departmentIds || []),
-                                  ])
+                                  ]),
                                 )}
                                 selectedIds={formData.departmentIds || []}
                                 onSelect={(ids) => {
@@ -606,7 +606,7 @@ export default function StaffNewEdit({
                                       ids.indexOf(currentPrimaryId);
                                     handleInputChange(
                                       "primaryDepartmentIndex",
-                                      newIndex
+                                      newIndex,
                                     );
                                   } else if (ids.length > 0) {
                                     // Set first department as primary if none selected
@@ -616,14 +616,14 @@ export default function StaffNewEdit({
                                     ) {
                                       handleInputChange(
                                         "primaryDepartmentIndex",
-                                        0
+                                        0,
                                       );
                                     }
                                   } else {
                                     // Clear primary if no departments
                                     handleInputChange(
                                       "primaryDepartmentIndex",
-                                      undefined
+                                      undefined,
                                     );
                                   }
                                 }}
@@ -716,7 +716,7 @@ export default function StaffNewEdit({
                                       const num = parseInt(val, 10);
                                       handleInputChange(
                                         "reqPerDay",
-                                        Number.isNaN(num) ? "" : num
+                                        Number.isNaN(num) ? "" : num,
                                       );
                                     }
                                   }}
@@ -746,7 +746,7 @@ export default function StaffNewEdit({
                       "ring-2 ring-primary",
                     !isEditMode &&
                       steps[0]?.status === "pending" &&
-                      "opacity-50"
+                      "opacity-50",
                   )}
                 >
                   <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -758,7 +758,7 @@ export default function StaffNewEdit({
                             ? "bg-green-500 text-white"
                             : steps[0]?.status === "active"
                               ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
+                              : "bg-muted",
                         )}
                       >
                         {steps[0]?.status === "completed" ? (
@@ -804,7 +804,7 @@ export default function StaffNewEdit({
                         "ring-2 ring-primary",
                       !isEditMode &&
                         steps[1]?.status === "pending" &&
-                        "opacity-50"
+                        "opacity-50",
                     )}
                   >
                     <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -816,7 +816,7 @@ export default function StaffNewEdit({
                               ? "bg-green-500 text-white"
                               : steps[1]?.status === "active"
                                 ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
+                                : "bg-muted",
                           )}
                         >
                           {steps[1]?.status === "completed" ? (
@@ -882,7 +882,7 @@ export default function StaffNewEdit({
                                 className={cn(
                                   "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all cursor-pointer",
                                   "hover:shadow-md hover:bg-accent/50",
-                                  isPrimary && "ring-2 ring-primary bg-accent"
+                                  isPrimary && "ring-2 ring-primary bg-accent",
                                 )}
                                 onClick={() => {
                                   if (!isReadonly) {
@@ -890,7 +890,7 @@ export default function StaffNewEdit({
                                       availableDeptIds.indexOf(deptId);
                                     handleInputChange(
                                       "primaryDepartmentIndex",
-                                      index
+                                      index,
                                     );
                                   }
                                 }}
@@ -929,7 +929,7 @@ export default function StaffNewEdit({
                     !isEditMode &&
                       steps.find((s) => s.id === "emails")?.status ===
                         "pending" &&
-                      "opacity-50"
+                      "opacity-50",
                   )}
                 >
                   <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -943,7 +943,7 @@ export default function StaffNewEdit({
                             : steps.find((s) => s.id === "emails")?.status ===
                                 "active"
                               ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
+                              : "bg-muted",
                         )}
                       >
                         {steps.find((s) => s.id === "emails")?.status ===
@@ -998,7 +998,7 @@ export default function StaffNewEdit({
                       !isEditMode &&
                         steps.find((s) => s.id === "cohorts")?.status ===
                           "pending" &&
-                        "opacity-50"
+                        "opacity-50",
                     )}
                   >
                     <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1012,7 +1012,7 @@ export default function StaffNewEdit({
                               : steps.find((s) => s.id === "cohorts")
                                     ?.status === "active"
                                 ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
+                                : "bg-muted",
                           )}
                         >
                           {steps.find((s) => s.id === "cohorts")?.status ===

@@ -149,7 +149,7 @@ def preserve_order_union_selected_first(
 class ScenarioNewRequest(BaseModel):
     """Request to get default scenario details."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
     # Filter parameters (optional)
     departmentIds: list[str] | None = None
     personaIds: list[str] | None = None
@@ -1095,6 +1095,14 @@ async def get_scenario_new(
             except (ValueError, TypeError):
                 image_ids_uuid = None
 
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # SQL query uses parameters $1, $4, $5, $6, $7, $8 (skips $2 and $3)
         # Note: useImage and use_objectives are not used in SQL, but we must provide
         # typed values for $2 and $3 so PostgreSQL can determine parameter types
@@ -1102,7 +1110,7 @@ async def get_scenario_new(
             request_data.objectivesMax is not None and request_data.objectivesMax > 0
         )
         sql_params = (
-            request_data.profileId,  # $1
+            profile_id,  # $1
             request_data.useImage
             if request_data.useImage is not None
             else False,  # $2: boolean (unused)

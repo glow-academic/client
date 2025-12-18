@@ -58,7 +58,7 @@ const getProfileContext = async (input: {
 /** ---- Inline filters function for reports page ---- */
 async function getReportsFilters(
   searchParams?: URLSearchParams,
-  profileIds?: { effectiveProfileId: string; actualProfileId: string }
+  profileIds?: { effectiveProfileId: string; actualProfileId: string },
 ) {
   if (!profileIds) {
     throw new Error("Profile IDs required");
@@ -176,7 +176,7 @@ export default async function ReportsFullPage({
   // Get filters from search params or defaults
   const filters = await getReportsFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined,
-    { effectiveProfileId, actualProfileId }
+    { effectiveProfileId, actualProfileId },
   );
 
   // Extract pagination and filter params from search params for reports table
@@ -332,7 +332,7 @@ async function ReportsSection({
       value: opt.value,
       label: opt.label,
       count: opt.count,
-    })
+    }),
   );
 
   const scenarioOptions = (reportsData?.scenarioOptions || []).map((opt) => ({

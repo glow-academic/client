@@ -49,7 +49,7 @@ export function useFederatedLogout() {
 
       // Where to go after Keycloak is done (back to your login page)
       const returnTo = encodeURIComponent(
-        `${window.location.origin}${appPrefix}/login`
+        `${window.location.origin}${appPrefix}/login`,
       );
 
       // 4. Construct the logout URL

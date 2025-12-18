@@ -38,7 +38,9 @@ export function StaffDepartmentCardGrid({
     }));
 
     // Sort by name
-    return departments.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    return departments.sort((a, b) =>
+      (a.name || "").localeCompare(b.name || ""),
+    );
   }, [validDepartmentIds, departmentMapping]);
 
   // Apply search filter, then sort selected first
@@ -77,14 +79,14 @@ export function StaffDepartmentCardGrid({
     const newIds = isSelected
       ? departmentIds.filter((id) => id !== departmentId)
       : [...departmentIds, departmentId];
-    
+
     onDepartmentIdsChange(newIds);
-    
+
     // If removing primary department, clear it
     if (isSelected && departmentId === primaryDepartmentId) {
       const remainingIds = newIds.filter((id) => id !== departmentId);
       onPrimaryDepartmentIdChange(
-        remainingIds.length > 0 ? remainingIds[0] : undefined
+        remainingIds.length > 0 ? remainingIds[0] : undefined,
       );
     }
   };
@@ -179,4 +181,3 @@ export function StaffDepartmentCardGrid({
     </div>
   );
 }
-

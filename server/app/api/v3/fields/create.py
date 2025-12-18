@@ -23,7 +23,7 @@ class CreateFieldRequest(BaseModel):
     conditional_parameter_ids: list[str] | None = (
         None  # Parameters to show when this field is selected
     )
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class CreateFieldResponse(BaseModel):
@@ -59,6 +59,14 @@ async def create_field(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             sql_query = load_sql("sql/v3/fields/create_field_complete.sql")
             sql_params = (
@@ -67,7 +75,7 @@ async def create_field(
                 request.active,
                 request.department_ids,
                 request.conditional_parameter_ids,
-                request.profileId,
+                profile_id,
             )
             field_result = await conn.fetchrow(sql_query, *sql_params)
 
@@ -81,7 +89,7 @@ async def create_field(
             if actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": request.profileId},
+                    actor={"name": actor_name, "id": profile_id},
                     field={"name": request.name, "id": field_id},
                 )
 

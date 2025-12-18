@@ -60,7 +60,7 @@ export function SimulationControls({
   const currentMessages = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat.id === currentChat.id,
     );
     return chatData?.messages ?? [];
   }, [attemptData, currentChat]);
@@ -84,7 +84,7 @@ export function SimulationControls({
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
-    null
+    null,
   );
   const [endChatLoading, setEndChatLoading] = useState(false);
 
@@ -121,7 +121,7 @@ export function SimulationControls({
         setEndingAction(null);
       }
     },
-    [currentChatId, socket, attemptId]
+    [currentChatId, socket, attemptId],
   );
 
   // End all chats function
@@ -156,7 +156,7 @@ export function SimulationControls({
         setEndingAction(null);
       }
     },
-    [attempt, currentChatId, attemptId, socket]
+    [attempt, currentChatId, attemptId, socket],
   );
 
   // Listen for WebSocket events to reset loading state and handle grading
@@ -237,7 +237,7 @@ export function SimulationControls({
         data.total_count !== undefined
       ) {
         const progress = Math.round(
-          (data.completed_count / data.total_count) * 100
+          (data.completed_count / data.total_count) * 100,
         );
         setGradingProgress({
           completed: data.completed_count,
@@ -259,7 +259,10 @@ export function SimulationControls({
     socket.on("simulations_text_end_all_started", handleEndAllStarted);
     socket.on("simulations_text_end_chat_started", handleEndChatStarted);
     socket.on("simulations_text_end_all_completed", handleEndAllCompleted);
-    socket.on("simulations_text_grading_progress", handleSimulationGradingProgress);
+    socket.on(
+      "simulations_text_grading_progress",
+      handleSimulationGradingProgress,
+    );
 
     return () => {
       socket.off("simulations_text_continued", handleSimulationContinued);
@@ -269,7 +272,7 @@ export function SimulationControls({
       socket.off("simulations_text_end_all_completed", handleEndAllCompleted);
       socket.off(
         "simulations_text_grading_progress",
-        handleSimulationGradingProgress
+        handleSimulationGradingProgress,
       );
     };
   }, [socket, currentChatId]);
@@ -335,7 +338,7 @@ export function SimulationControls({
 
     // Generate sequential permutations (1, 1+2, 1+2+3, etc.)
     const positions = Array.from(optionsByPosition.keys()).sort(
-      (a, b) => a - b
+      (a, b) => a - b,
     );
     const allPermutations: ContinuationPermutation[] = [];
 
@@ -346,7 +349,7 @@ export function SimulationControls({
       // Generate all permutations for this sequence using cartesian product
       const generatePermutations = (
         posIndex: number = 0,
-        currentPerm: ContinuationPermutationOption[] = []
+        currentPerm: ContinuationPermutationOption[] = [],
       ): ContinuationPermutationOption[][] => {
         if (posIndex >= seqPositions.length) {
           return [currentPerm];
@@ -358,7 +361,7 @@ export function SimulationControls({
 
         for (const option of options) {
           results.push(
-            ...generatePermutations(posIndex + 1, [...currentPerm, option])
+            ...generatePermutations(posIndex + 1, [...currentPerm, option]),
           );
         }
 
@@ -370,7 +373,7 @@ export function SimulationControls({
         const totalScore = perm.reduce((sum, opt) => sum + (opt.score || 0), 0);
         const totalTimeTaken = perm.reduce(
           (sum, opt) => sum + (opt.timeTaken || 0),
-          0
+          0,
         );
         const percentages = perm
           .map((opt) => opt.percentage)
@@ -378,7 +381,7 @@ export function SimulationControls({
         const totalPercentage =
           percentages.length > 0
             ? Math.round(
-                percentages.reduce((sum, p) => sum + p, 0) / percentages.length
+                percentages.reduce((sum, p) => sum + p, 0) / percentages.length,
               )
             : null;
 
@@ -727,7 +730,7 @@ export function SimulationControls({
                 }
 
                 const selectedPerm = continuationPermutations.find(
-                  (p) => p.id === selectedContinuationPermutation
+                  (p) => p.id === selectedContinuationPermutation,
                 );
 
                 if (selectedPerm && selectedPerm.options.length > 0) {
@@ -751,7 +754,7 @@ export function SimulationControls({
                     endAllChats(
                       Object.keys(previousChatMap).length > 0
                         ? previousChatMap
-                        : undefined
+                        : undefined,
                     );
                   }
                 } else {

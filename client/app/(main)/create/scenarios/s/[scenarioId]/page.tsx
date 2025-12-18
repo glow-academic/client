@@ -78,7 +78,7 @@ const getScenario = async (
     imageIds?: string[];
     objectiveIds?: string[];
     problemStatementIds?: string[];
-  }
+  },
 ): Promise<ScenarioDetailOut> => {
   return api.post(
     "/scenarios/detail",
@@ -94,14 +94,14 @@ const getScenario = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ scenarioId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { scenarioId } = await params;
   const session = await getSession();
@@ -128,7 +128,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateScenario(
-  input: UpdateScenarioIn
+  input: UpdateScenarioIn,
 ): Promise<UpdateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -313,7 +313,7 @@ export default async function EditScenarioPage({
     const scenarioDetail = await getScenario(
       scenarioId,
       profileId,
-      Object.keys(filterParams).length > 0 ? filterParams : undefined
+      Object.keys(filterParams).length > 0 ? filterParams : undefined,
     );
 
     return (

@@ -135,7 +135,7 @@ export function PersonaSection({
       className={cn(
         "transition-all",
         !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-        !isEditMode && stepStatus === "pending" && "opacity-50"
+        !isEditMode && stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -147,7 +147,7 @@ export function PersonaSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -271,7 +271,7 @@ export function PersonaSection({
                   "hover:shadow-md hover:bg-accent/50",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   "disabled:pointer-events-none disabled:opacity-50",
-                  isSelected && "ring-2 ring-primary bg-accent"
+                  isSelected && "ring-2 ring-primary bg-accent",
                 )}
               >
                 <div className="flex items-start gap-3">

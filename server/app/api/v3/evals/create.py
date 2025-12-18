@@ -26,7 +26,7 @@ class CreateEvalRequest(BaseModel):
     model_run_ids: list[str]
     department_ids: list[str] | None = None
     active: bool = True
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
     run: bool = False  # Whether to run the eval immediately after creation
 
 
@@ -63,6 +63,14 @@ async def create_eval(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Validate rubric exists
             rubric_check = await conn.fetchrow(
@@ -121,7 +129,7 @@ async def create_eval(
                 model_run_ids_uuid,
                 department_ids_uuid,
                 request.active,
-                request.profileId,
+                profile_id,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 
@@ -135,7 +143,7 @@ async def create_eval(
             if actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": request.profileId},
+                    actor={"name": actor_name, "id": profile_id},
                     eval={"name": request.name, "id": eval_id},
                 )
 

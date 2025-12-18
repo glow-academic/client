@@ -56,13 +56,9 @@ export interface AuthsTableProps {
   onKeyChange: (
     authId: string,
     authItemId: string,
-    keyId: string | null
+    keyId: string | null,
   ) => void;
-  onValueChange: (
-    authId: string,
-    authItemId: string,
-    value: string
-  ) => void;
+  onValueChange: (authId: string, authItemId: string, value: string) => void;
   onEnabledChange: (authId: string, enabled: boolean) => void;
   readonly?: boolean;
 }
@@ -98,15 +94,19 @@ export function AuthsTable({
           const item = row.original;
           // Only show switch for first row of each auth (group by auth_id)
           // Use data array index to check previous row
-          const rowIndex = data.findIndex((d) => d.auth_id === item.auth_id && d.auth_item_id === item.auth_item_id);
-          const isFirstRowForAuth = 
-            rowIndex === 0 || 
+          const rowIndex = data.findIndex(
+            (d) =>
+              d.auth_id === item.auth_id &&
+              d.auth_item_id === item.auth_item_id,
+          );
+          const isFirstRowForAuth =
+            rowIndex === 0 ||
             (rowIndex > 0 && data[rowIndex - 1]?.auth_id !== item.auth_id);
-          
+
           if (!isFirstRowForAuth) {
             return <div className="flex items-center justify-center">—</div>;
           }
-          
+
           return (
             <div className="flex items-center justify-center">
               <Switch
@@ -229,7 +229,10 @@ export function AuthsTable({
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>API key picker for encrypted items, text field for non-encrypted items</p>
+              <p>
+                API key picker for encrypted items, text field for non-encrypted
+                items
+              </p>
             </TooltipContent>
           </Tooltip>
         ),
@@ -243,7 +246,7 @@ export function AuthsTable({
               </div>
             );
           }
-          
+
           // Show API key picker for encrypted items
           if (item.encrypted) {
             return (
@@ -251,9 +254,15 @@ export function AuthsTable({
                 <GenericPicker
                   items={keyMapping}
                   itemIds={validKeyIds}
-                  selectedIds={item.selected_key_id ? [item.selected_key_id] : []}
+                  selectedIds={
+                    item.selected_key_id ? [item.selected_key_id] : []
+                  }
                   onSelect={(ids: string[]) => {
-                    onKeyChange(item.auth_id, item.auth_item_id, ids[0] || null);
+                    onKeyChange(
+                      item.auth_id,
+                      item.auth_item_id,
+                      ids[0] || null,
+                    );
                   }}
                   getId={(item) => (item as unknown as { id: string }).id}
                   getLabel={(item) => item["name"] || ""}
@@ -303,7 +312,7 @@ export function AuthsTable({
               </div>
             );
           }
-          
+
           // Show text input for non-encrypted items
           return (
             <div className="flex items-center justify-center px-2">
@@ -311,7 +320,11 @@ export function AuthsTable({
                 type="text"
                 value={item.value || ""}
                 onChange={(e) => {
-                  onValueChange(item.auth_id, item.auth_item_id, e.target.value);
+                  onValueChange(
+                    item.auth_id,
+                    item.auth_item_id,
+                    e.target.value,
+                  );
                 }}
                 disabled={readonly}
                 placeholder="Enter value..."
@@ -322,7 +335,15 @@ export function AuthsTable({
         },
       },
     ],
-    [keyMapping, validKeyIds, onKeyChange, onValueChange, onEnabledChange, readonly, data]
+    [
+      keyMapping,
+      validKeyIds,
+      onKeyChange,
+      onValueChange,
+      onEnabledChange,
+      readonly,
+      data,
+    ],
   );
 
   const table = useReactTable({
@@ -353,7 +374,7 @@ export function AuthsTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   ))}
@@ -371,18 +392,18 @@ export function AuthsTable({
                         !item.enabled ? "opacity-50" : ""
                       }`}
                     >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className="border-r px-3 py-2 text-center min-h-[60px]"
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          className="border-r px-3 py-2 text-center min-h-[60px]"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
                   );
                 })
               ) : (

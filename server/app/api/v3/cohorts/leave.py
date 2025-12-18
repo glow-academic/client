@@ -17,7 +17,7 @@ class LeaveCohortRequest(BaseModel):
     """Request for leaving a cohort."""
 
     cohortId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class LeaveCohortResponse(BaseModel):
@@ -44,10 +44,18 @@ async def leave_cohort(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/cohorts/leave_cohort.sql")
-        sql_params = (uuid.UUID(request.cohortId), uuid.UUID(request.profileId))
+        sql_params = (uuid.UUID(request.cohortId), uuid.UUID(profile_id))
         await conn.execute(
-            sql_query, uuid.UUID(request.cohortId), uuid.UUID(request.profileId)
+            sql_query, uuid.UUID(request.cohortId), uuid.UUID(profile_id)
         )
 
         result = LeaveCohortResponse(

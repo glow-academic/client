@@ -17,7 +17,7 @@ class DeleteModelRequest(BaseModel):
     """Request to delete model."""
 
     modelId: str
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DeleteModelResponse(BaseModel):
@@ -44,11 +44,19 @@ async def delete_model(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Delete model with usage checks and name fetch (single query)
             sql_query = load_sql("sql/v3/models/delete.sql")
-            sql_params = (request.modelId, request.profileId)
-            result = await conn.fetchrow(sql_query, request.modelId, request.profileId)
+            sql_params = (request.modelId, profile_id)
+            result = await conn.fetchrow(sql_query, request.modelId, profile_id)
 
             if not result:
                 raise ValueError("Failed to check model usage")

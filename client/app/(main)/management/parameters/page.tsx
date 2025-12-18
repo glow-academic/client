@@ -28,7 +28,7 @@ type CreateParameterItemOut = OutputOf<
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getParametersList = async (
-  profileId: string
+  profileId: string,
 ): Promise<ParametersListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -41,13 +41,13 @@ const getParametersList = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateParameter(
-  input: DuplicateParameterIn
+  input: DuplicateParameterIn,
 ): Promise<DuplicateParameterOut> {
   "use server";
   const session = await getSession();
@@ -63,7 +63,7 @@ async function duplicateParameter(
 }
 
 async function deleteParameter(
-  input: DeleteParameterIn
+  input: DeleteParameterIn,
 ): Promise<DeleteParameterOut> {
   "use server";
   const session = await getSession();

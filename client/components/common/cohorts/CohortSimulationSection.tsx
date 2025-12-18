@@ -4,13 +4,7 @@
  */
 "use client";
 
-import {
-  ArrowDown,
-  ArrowUp,
-  Check,
-  Power,
-  ChevronDown,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Power, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -97,7 +91,7 @@ export function CohortSimulationSection({
             className={cn(
               "transition-all",
               !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-              !isEditMode && stepStatus === "pending" && "opacity-50"
+              !isEditMode && stepStatus === "pending" && "opacity-50",
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -109,7 +103,7 @@ export function CohortSimulationSection({
                       ? "bg-green-500 text-white"
                       : stepStatus === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "bg-muted",
                   )}
                 >
                   {stepStatus === "completed" ? (
@@ -193,7 +187,7 @@ export function CohortSimulationSection({
                       <ChevronDown
                         className={cn(
                           "h-3.5 w-3.5 transition-transform duration-200",
-                          isAccordionOpen && "rotate-180"
+                          isAccordionOpen && "rotate-180",
                         )}
                       />
                     </Button>
@@ -244,7 +238,7 @@ export function CohortSimulationSection({
         className={cn(
           "transition-all",
           !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-          !isEditMode && stepStatus === "pending" && "opacity-50"
+          !isEditMode && stepStatus === "pending" && "opacity-50",
         )}
       >
         <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -256,7 +250,7 @@ export function CohortSimulationSection({
                   ? "bg-green-500 text-white"
                   : stepStatus === "active"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    : "bg-muted",
               )}
             >
               {stepStatus === "completed" ? (
@@ -347,4 +341,3 @@ export function CohortSimulationSection({
     </TooltipProvider>
   );
 }
-

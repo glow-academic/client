@@ -194,7 +194,7 @@ export default function AttemptImprovement({
                   <div className="flex flex-wrap gap-1 mt-2">
                     <Badge variant="outline" className="text-xs">
                       {formatTimeLimit(
-                        (sim as { time_limit?: number | null }).time_limit
+                        (sim as { time_limit?: number | null }).time_limit,
                       )}
                     </Badge>
                   </div>

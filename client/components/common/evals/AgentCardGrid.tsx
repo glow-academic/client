@@ -3,20 +3,16 @@
 import * as React from "react";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Bot,
-  Search,
-  Check,
-} from "lucide-react";
+import { Bot, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { components } from "@/lib/api/schema";
 
 // Extract AgentMappingItem type from schema
-type AgentMappingItem = components["schemas"]["app__api__v3__evals__detail__AgentMappingItem"];
+type AgentMappingItem =
+  components["schemas"]["app__api__v3__evals__detail__AgentMappingItem"];
 
 export interface AgentCardGridProps {
   agentMapping: Record<string, AgentMappingItem>;
@@ -127,7 +123,7 @@ export function AgentCardGrid({
                         "hover:shadow-md hover:bg-accent/50",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "disabled:pointer-events-none disabled:opacity-50",
-                        isSelected && "ring-2 ring-primary bg-accent"
+                        isSelected && "ring-2 ring-primary bg-accent",
                       )}
                     >
                       {/* Check icon - top right */}
@@ -173,4 +169,3 @@ export function AgentCardGrid({
     </TooltipProvider>
   );
 }
-

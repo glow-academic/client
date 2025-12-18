@@ -7,7 +7,13 @@
 import { Check, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export interface AuthMethod {
@@ -46,7 +52,7 @@ export function SettingsAuthMethodsSection({
       (auth) =>
         auth.auth_name.toLowerCase().includes(term) ||
         auth.auth_description.toLowerCase().includes(term) ||
-        auth.auth_slug?.toLowerCase().includes(term)
+        auth.auth_slug?.toLowerCase().includes(term),
     );
   }, [authMethods, searchTerm]);
 
@@ -55,7 +61,7 @@ export function SettingsAuthMethodsSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50"
+        stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -67,7 +73,7 @@ export function SettingsAuthMethodsSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -100,7 +106,9 @@ export function SettingsAuthMethodsSection({
         <div className="grid grid-cols-2 gap-4 min-h-[272px] max-h-[272px] overflow-y-auto py-2 -mx-6 px-6">
           {filteredAuthMethods.length === 0 ? (
             <div className="col-span-2 text-center py-8 text-muted-foreground">
-              {searchTerm ? "No auth methods found" : "No auth methods available"}
+              {searchTerm
+                ? "No auth methods found"
+                : "No auth methods available"}
             </div>
           ) : (
             filteredAuthMethods.map((auth) => {
@@ -120,12 +128,14 @@ export function SettingsAuthMethodsSection({
                     "hover:shadow-md hover:bg-accent/50",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     "disabled:pointer-events-none disabled:opacity-50",
-                    isSelected && "ring-2 ring-primary bg-accent"
+                    isSelected && "ring-2 ring-primary bg-accent",
                   )}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm">{auth.auth_name}</div>
+                      <div className="font-medium text-sm">
+                        {auth.auth_name}
+                      </div>
                       {auth.auth_description && (
                         <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
                           {auth.auth_description}
@@ -145,4 +155,3 @@ export function SettingsAuthMethodsSection({
     </Card>
   );
 }
-

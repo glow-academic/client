@@ -4,7 +4,7 @@
  * Types update automatically when the OpenAPI schema changes.
  */
 
-import type { InputOf, OutputOf, PathKey } from "@/lib/api/types";
+import type { InputOf, PathKey } from "@/lib/api/types";
 
 // Extract all socket paths (both client and server)
 type SocketPath = Extract<PathKey, `/socket/v3/${string}`>;
@@ -55,13 +55,13 @@ type SocketOutputPayload<P extends SocketPath> =
 // Build ServerToClientEvents type
 export type ServerToClientEvents = {
   [K in ServerToClientPath as EventName<K>]: (
-    payload: SocketOutputPayload<K>
+    payload: SocketOutputPayload<K>,
   ) => void;
 };
 
 // Build ClientToServerEvents type
 export type ClientToServerEvents = {
   [K in ClientToServerPath as EventName<K>]: (
-    payload: SocketInputPayload<K>
+    payload: SocketInputPayload<K>,
   ) => void;
 };

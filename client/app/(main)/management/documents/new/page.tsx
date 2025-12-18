@@ -31,7 +31,7 @@ type GenerateTemplateOut = never;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getDocumentsList = async (
-  profileId: string
+  profileId: string,
 ): Promise<DocumentsListOut> => {
   return api.post(
     "/documents/list",
@@ -41,7 +41,7 @@ const getDocumentsList = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
@@ -55,7 +55,7 @@ async function finalizeUpload(uploadId: string): Promise<FinalizeUploadOut> {
 }
 
 async function createDocument(
-  input: CreateDocumentIn
+  input: CreateDocumentIn,
 ): Promise<CreateDocumentOut> {
   "use server";
   return api.post("/documents/create", input);

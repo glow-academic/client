@@ -43,7 +43,7 @@ export function RangeSlider({
     const updateHandlePositions = () => {
       if (containerRef.current && sliderRef.current) {
         const handles = sliderRef.current.querySelectorAll(
-          '[data-slot="slider-thumb"]'
+          '[data-slot="slider-thumb"]',
         ) as NodeListOf<HTMLElement>;
         const containerRect = containerRef.current.getBoundingClientRect();
         const positions: Record<number, number> = {};

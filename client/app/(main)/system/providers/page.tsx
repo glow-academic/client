@@ -18,7 +18,9 @@ type DeleteProviderOut = OutputOf<"/api/v3/providers/delete", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getProvidersList = async (profileId: string): Promise<ProvidersListOut> => {
+const getProvidersList = async (
+  profileId: string,
+): Promise<ProvidersListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/providers/list",
@@ -35,7 +37,9 @@ const getProvidersList = async (profileId: string): Promise<ProvidersListOut> =>
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function deleteProvider(input: DeleteProviderIn): Promise<DeleteProviderOut> {
+async function deleteProvider(
+  input: DeleteProviderIn,
+): Promise<DeleteProviderOut> {
   "use server";
   const session = await getSession();
   const profileId = session?.effectiveProfileId;
@@ -52,7 +56,8 @@ async function deleteProvider(input: DeleteProviderIn): Promise<DeleteProviderOu
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Providers",
-    description: "Manage AI providers and their configurations for teaching assistant training platform. Configure provider settings, API endpoints, and maintain platform integrations for educational institutions and L&D programs.",
+    description:
+      "Manage AI providers and their configurations for teaching assistant training platform. Configure provider settings, API endpoints, and maintain platform integrations for educational institutions and L&D programs.",
   };
 }
 
@@ -79,4 +84,3 @@ export default async function ProvidersPage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type { ProvidersListOut, DeleteProviderIn, DeleteProviderOut };
-

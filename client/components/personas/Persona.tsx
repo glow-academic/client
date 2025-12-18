@@ -27,10 +27,7 @@ import { PersonaColorSection } from "@/components/personas/PersonaColorSection";
 import { PersonaIconSection } from "@/components/personas/PersonaIconSection";
 import { PersonaContentSection } from "@/components/personas/PersonaContentSection";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -92,9 +89,9 @@ export default function Persona({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
+        effectiveProfile?.primaryDepartmentId || null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   const initialFormData: FormData = useMemo(
@@ -107,7 +104,7 @@ export default function Persona({
       active: true,
       departmentIds: defaultDepartmentIds,
     }),
-    [defaultDepartmentIds]
+    [defaultDepartmentIds],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -147,7 +144,7 @@ export default function Persona({
   // Wrapper functions for compatibility (matching original mutate signature with callbacks)
   const createPersona = (
     body: CreatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
   ) => {
     handleCreatePersona(body)
       .then(() => {
@@ -164,7 +161,7 @@ export default function Persona({
 
   const updatePersona = (
     body: UpdatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
   ) => {
     handleUpdatePersona(body)
       .then(() => {
@@ -185,20 +182,39 @@ export default function Persona({
     return !personaData.can_edit;
   }, [isEditMode, personaData]);
 
-
   // Extract examples from example_mapping
   const exampleMapping = useMemo(() => {
-    return (personaData as PersonaDetailOut & { example_mapping?: Record<string, { name: string }> })?.example_mapping || {};
+    return (
+      (
+        personaData as PersonaDetailOut & {
+          example_mapping?: Record<string, { name: string }>;
+        }
+      )?.example_mapping || {}
+    );
   }, [personaData]);
 
   // Extract examples from example_ids and example_mapping
-  const getExamplesFromMapping = useCallback((exampleIds: string[], mapping: Record<string, { name: string }>): string[] => {
-    return exampleIds.map((id) => mapping[id]?.name || "");
-  }, []);
+  const getExamplesFromMapping = useCallback(
+    (
+      exampleIds: string[],
+      mapping: Record<string, { name: string }>,
+    ): string[] => {
+      return exampleIds.map((id) => mapping[id]?.name || "");
+    },
+    [],
+  );
 
   // Filter examples_history based on selected departments
   const examplesHistory = useMemo(() => {
-    const rawHistory = (personaData as PersonaDetailOut & { examples_history?: Array<{ example: string; department_ids?: string[] }> })?.examples_history || [];
+    const rawHistory =
+      (
+        personaData as PersonaDetailOut & {
+          examples_history?: Array<{
+            example: string;
+            department_ids?: string[];
+          }>;
+        }
+      )?.examples_history || [];
     const selectedDeptIds = formData?.departmentIds || [];
 
     // Convert to array of strings for autocomplete
@@ -253,9 +269,11 @@ export default function Persona({
   useEffect(() => {
     if (personaData && isEditMode) {
       const deptIds = personaData.department_ids || [];
-      const exampleIds = (personaData as PersonaDetailOut & { example_ids?: string[] })?.example_ids || [];
+      const exampleIds =
+        (personaData as PersonaDetailOut & { example_ids?: string[] })
+          ?.example_ids || [];
       const examples = getExamplesFromMapping(exampleIds, exampleMapping);
-      
+
       setFormData({
         name: personaData.name,
         description: personaData.description || "",
@@ -288,7 +306,13 @@ export default function Persona({
       });
       setCurrentExamples([]);
     }
-  }, [personaData, isEditMode, initialFormData, exampleMapping, getExamplesFromMapping]);
+  }, [
+    personaData,
+    isEditMode,
+    initialFormData,
+    exampleMapping,
+    getExamplesFromMapping,
+  ]);
 
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
@@ -334,7 +358,7 @@ export default function Persona({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        personaData?.valid_department_ids || []
+        personaData?.valid_department_ids || [],
       );
 
       // Ensure profileId exists - required for API calls
@@ -368,7 +392,7 @@ export default function Persona({
               toast.error(`Failed to update persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          }
+          },
         );
       } else {
         createPersona(
@@ -393,12 +417,12 @@ export default function Persona({
               toast.error(`Failed to create persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          }
+          },
         );
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
       );
       setIsSubmitting(false);
     }
@@ -429,7 +453,7 @@ export default function Persona({
           return "pending";
       }
     },
-    [formData]
+    [formData],
   );
 
   // Steps array
@@ -438,7 +462,8 @@ export default function Persona({
       {
         id: "basic",
         title: "Basic Information",
-        description: "Set the persona name, description, departments, and active status.",
+        description:
+          "Set the persona name, description, departments, and active status.",
         status: getStepStatus("basic"),
       },
       {
@@ -456,7 +481,8 @@ export default function Persona({
       {
         id: "content",
         title: "Personality",
-        description: "Define instructions and example messages for the persona.",
+        description:
+          "Define instructions and example messages for the persona.",
         status: getStepStatus("content"),
       },
     ];
@@ -512,7 +538,7 @@ export default function Persona({
                       ? "bg-green-500 text-white"
                       : steps[0]?.status === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "bg-muted",
                   )}
                 >
                   {steps[0]?.status === "completed" ? (
@@ -522,185 +548,187 @@ export default function Persona({
                   )}
                 </div>
                 <div className="flex-1">
-              {formData?.name !== undefined ? (
+                  {formData?.name !== undefined ? (
                     <input
                       type="text"
-                  id="name"
-                  data-testid="input-persona-name"
-                  value={formData.name}
-                  onChange={(e) =>
+                      id="name"
+                      data-testid="input-persona-name"
+                      value={formData.name}
+                      onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
                           name: e.target.value,
                         }))
-                  }
+                      }
                       className={cn(
-                        "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                        "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
                       )}
-                  placeholder="e.g., Enthusiastic Student"
-                  required
-                  disabled={isReadonly}
-                />
-              ) : null}
+                      placeholder="e.g., Enthusiastic Student"
+                      required
+                      disabled={isReadonly}
+                    />
+                  ) : null}
                   <p className="text-xs text-muted-foreground mt-1 px-2">
                     {formData?.name === "" || !formData?.name
                       ? "Click to edit • Name is required"
                       : "Click to edit"}
                   </p>
-            </div>
+                </div>
               </div>
             </CardContent>
             <CardContent className="pt-0 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              {formData?.description !== undefined ? (
-                <Textarea
-                  id="description"
-                  data-testid="input-persona-description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  placeholder="Detailed behavior description and personality traits"
-                  rows={4}
-                  required
-                  disabled={isReadonly}
-                />
-              ) : null}
-            </div>
-
-            {/* Department Selection */}
-            {personaData?.valid_department_ids &&
-            personaData.valid_department_ids.length > 1 ? (
               <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                {formData?.departmentIds !== undefined ? (
-                  <GenericPicker
-                    items={personaData?.department_mapping || {}}
-                    itemIds={personaData?.valid_department_ids || []}
-                    selectedIds={formData.departmentIds || []}
-                    onSelect={(ids) =>
+                <Label htmlFor="description">Description *</Label>
+                {formData?.description !== undefined ? (
+                  <Textarea
+                    id="description"
+                    data-testid="input-persona-description"
+                    value={formData.description}
+                    onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        departmentIds: ids,
+                        description: e.target.value,
                       }))
                     }
-                    getId={(dept) => (dept as unknown as { id: string }).id}
-                    getLabel={(dept) => dept.name || ""}
+                    placeholder="Detailed behavior description and personality traits"
+                    rows={4}
+                    required
+                    disabled={isReadonly}
+                  />
+                ) : null}
+              </div>
+
+              {/* Department Selection */}
+              {personaData?.valid_department_ids &&
+              personaData.valid_department_ids.length > 1 ? (
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department</Label>
+                  {formData?.departmentIds !== undefined ? (
+                    <GenericPicker
+                      items={personaData?.department_mapping || {}}
+                      itemIds={personaData?.valid_department_ids || []}
+                      selectedIds={formData.departmentIds || []}
+                      onSelect={(ids) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          departmentIds: ids,
+                        }))
+                      }
+                      getId={(dept) => (dept as unknown as { id: string }).id}
+                      getLabel={(dept) => dept.name || ""}
                       getSearchText={(dept) =>
                         `${dept.name} ${dept.description || ""}`
                       }
-                    placeholder="All Departments"
-                    disabled={isReadonly}
-                    multiSelect={true}
-                    hideSelectedChips={true}
-                    buttonClassName="w-full"
-                  />
-                ) : null}
-              </div>
-            ) : null}
+                      placeholder="All Departments"
+                      disabled={isReadonly}
+                      multiSelect={true}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                    />
+                  ) : null}
+                </div>
+              ) : null}
 
-            {/* Required Parameters */}
-            {personaData &&
-            (
-              personaData as PersonaDetailOut & {
-                linked_parameter_ids?: string[];
-              }
-            ).linked_parameter_ids &&
-            (
-              personaData as PersonaDetailOut & {
-                linked_parameter_ids?: string[];
-              }
-            ).linked_parameter_ids!.length > 0 ? (
-              <div className="space-y-4">
-                <Label>Required Parameters</Label>
-                {formData?.parameterFieldIds !== undefined ? (
-                  <ParameterSelector
-                    parameterMapping={
-                      (
-                        personaData as PersonaDetailOut & {
-                          parameter_mapping?: Record<
-                            string,
-                            {
-                              name: string;
-                              description: string;
-                              numerical: boolean;
-                              document_parameter: boolean;
-                              persona_parameter: boolean;
-                            }
-                          >;
-                        }
-                      ).parameter_mapping || {}
-                    }
-                    fieldMapping={
-                      (
-                        personaData as PersonaDetailOut & {
-                          field_mapping?: Record<
-                            string,
-                            {
-                              name: string;
-                              description: string;
-                              parameter_id: string;
-                              parameter_name: string;
-                              value: string;
-                            }
-                          >;
-                        }
-                      ).field_mapping || {}
-                    }
-                    validParameterItemIds={
-                      (
-                        personaData as PersonaDetailOut & {
-                          valid_parameter_item_ids?: string[];
-                        }
-                      ).valid_parameter_item_ids || []
-                    }
-                    selectedParameterItemIds={formData.parameterFieldIds || []}
-                    onParameterItemIdsChange={(ids) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        parameterFieldIds: ids,
-                      }))
-                    }
-                    disabled={isReadonly}
-                  />
-                ) : null}
-              </div>
-            ) : null}
-
-            {/* Active Switch */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="active"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                    Active
-                  </Label>
-                  {formData?.active !== undefined ? (
-                    <Switch
-                      id="active"
-                      checked={formData.active ?? true}
-                      onCheckedChange={(checked) =>
+              {/* Required Parameters */}
+              {personaData &&
+              (
+                personaData as PersonaDetailOut & {
+                  linked_parameter_ids?: string[];
+                }
+              ).linked_parameter_ids &&
+              (
+                personaData as PersonaDetailOut & {
+                  linked_parameter_ids?: string[];
+                }
+              ).linked_parameter_ids!.length > 0 ? (
+                <div className="space-y-4">
+                  <Label>Required Parameters</Label>
+                  {formData?.parameterFieldIds !== undefined ? (
+                    <ParameterSelector
+                      parameterMapping={
+                        (
+                          personaData as PersonaDetailOut & {
+                            parameter_mapping?: Record<
+                              string,
+                              {
+                                name: string;
+                                description: string;
+                                numerical: boolean;
+                                document_parameter: boolean;
+                                persona_parameter: boolean;
+                              }
+                            >;
+                          }
+                        ).parameter_mapping || {}
+                      }
+                      fieldMapping={
+                        (
+                          personaData as PersonaDetailOut & {
+                            field_mapping?: Record<
+                              string,
+                              {
+                                name: string;
+                                description: string;
+                                parameter_id: string;
+                                parameter_name: string;
+                                value: string;
+                              }
+                            >;
+                          }
+                        ).field_mapping || {}
+                      }
+                      validParameterItemIds={
+                        (
+                          personaData as PersonaDetailOut & {
+                            valid_parameter_item_ids?: string[];
+                          }
+                        ).valid_parameter_item_ids || []
+                      }
+                      selectedParameterItemIds={
+                        formData.parameterFieldIds || []
+                      }
+                      onParameterItemIdsChange={(ids) =>
                         setFormData((prev) => ({
                           ...prev,
-                          active: checked,
+                          parameterFieldIds: ids,
                         }))
                       }
                       disabled={isReadonly}
                     />
                   ) : null}
                 </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Inactive personas will not be available for scenarios
-                </p>
+              ) : null}
+
+              {/* Active Switch */}
+              <div className="space-y-2 pt-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="active"
+                      className="text-sm flex items-center gap-1.5"
+                    >
+                      <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                      Active
+                    </Label>
+                    {formData?.active !== undefined ? (
+                      <Switch
+                        id="active"
+                        checked={formData.active ?? true}
+                        onCheckedChange={(checked) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            active: checked,
+                          }))
+                        }
+                        disabled={isReadonly}
+                      />
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Inactive personas will not be available for scenarios
+                  </p>
+                </div>
               </div>
-            </div>
             </CardContent>
           </Card>
 
@@ -715,7 +743,9 @@ export default function Persona({
               stepStatus={getStepStatus("color")}
               stepNumber={2}
               stepTitle={steps[1]?.title || "Color"}
-              stepDescription={steps[1]?.description || "Select a color for the persona."}
+              stepDescription={
+                steps[1]?.description || "Select a color for the persona."
+              }
               isReadonly={isReadonly}
             />
           )}
@@ -732,7 +762,9 @@ export default function Persona({
               stepStatus={getStepStatus("icon")}
               stepNumber={3}
               stepTitle={steps[2]?.title || "Icon"}
-              stepDescription={steps[2]?.description || "Select an icon for the persona."}
+              stepDescription={
+                steps[2]?.description || "Select an icon for the persona."
+              }
               isReadonly={isReadonly}
             />
           )}
@@ -750,7 +782,10 @@ export default function Persona({
               stepStatus={getStepStatus("content")}
               stepNumber={4}
               stepTitle={steps[3]?.title || "Personality"}
-              stepDescription={steps[3]?.description || "Define instructions and example messages for the persona."}
+              stepDescription={
+                steps[3]?.description ||
+                "Define instructions and example messages for the persona."
+              }
               isReadonly={isReadonly}
             />
           )}

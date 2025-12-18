@@ -7,13 +7,7 @@
 import { Check, RotateCcw, Search } from "lucide-react";
 import React, { forwardRef, useMemo, useState } from "react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -101,7 +95,10 @@ interface ChartColorCardProps {
   fieldName: "chart1" | "chart2" | "chart3" | "chart4" | "chart5";
   value: string;
   originalValue: string;
-  onColorChange: (fieldName: "chart1" | "chart2" | "chart3" | "chart4" | "chart5", value: string) => void;
+  onColorChange: (
+    fieldName: "chart1" | "chart2" | "chart3" | "chart4" | "chart5",
+    value: string,
+  ) => void;
   onReset: () => void;
   stepStatus: "pending" | "active" | "completed";
   stepNumber: number;
@@ -123,66 +120,68 @@ export const ChartColorCard = forwardRef<HTMLDivElement, ChartColorCardProps>(
       isReadonly,
       hideCardWrapper = false,
     },
-    ref
+    ref,
   ) => {
-  const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
 
-  // Normalize current value for comparison
-  const normalizedValue = useMemo(() => {
-    if (!value) return "";
-    return value.toUpperCase().startsWith("#")
-      ? value.toUpperCase()
-      : `#${value.toUpperCase()}`;
-  }, [value]);
+    // Normalize current value for comparison
+    const normalizedValue = useMemo(() => {
+      if (!value) return "";
+      return value.toUpperCase().startsWith("#")
+        ? value.toUpperCase()
+        : `#${value.toUpperCase()}`;
+    }, [value]);
 
-  // Add current value to colors list if not already present
-  const allColors = useMemo(() => {
-    const colorsSet = new Set(presetColors.map((c) => c.toLowerCase()));
-    if (normalizedValue && !colorsSet.has(normalizedValue.toLowerCase())) {
-      return [normalizedValue, ...presetColors];
-    }
-    return presetColors;
-  }, [normalizedValue]);
+    // Add current value to colors list if not already present
+    const allColors = useMemo(() => {
+      const colorsSet = new Set(presetColors.map((c) => c.toLowerCase()));
+      if (normalizedValue && !colorsSet.has(normalizedValue.toLowerCase())) {
+        return [normalizedValue, ...presetColors];
+      }
+      return presetColors;
+    }, [normalizedValue]);
 
-  // Filter and sort colors: selected first, then others
-  const filteredColors = useMemo(() => {
-    let colors = allColors;
-    
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      colors = allColors.filter((colorValue) => {
-        const colorName = getColorName(colorValue).toLowerCase();
-        const colorHex = colorValue.toLowerCase();
-        return colorName.includes(searchLower) || colorHex.includes(searchLower);
+    // Filter and sort colors: selected first, then others
+    const filteredColors = useMemo(() => {
+      let colors = allColors;
+
+      if (searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase();
+        colors = allColors.filter((colorValue) => {
+          const colorName = getColorName(colorValue).toLowerCase();
+          const colorHex = colorValue.toLowerCase();
+          return (
+            colorName.includes(searchLower) || colorHex.includes(searchLower)
+          );
+        });
+      }
+
+      // Sort: selected colors first
+      return colors.sort((a, b) => {
+        const aSelected = a.toLowerCase() === normalizedValue.toLowerCase();
+        const bSelected = b.toLowerCase() === normalizedValue.toLowerCase();
+        if (aSelected && !bSelected) return -1;
+        if (!aSelected && bSelected) return 1;
+        return 0;
       });
-    }
+    }, [allColors, searchTerm, normalizedValue]);
 
-    // Sort: selected colors first
-    return colors.sort((a, b) => {
-      const aSelected = a.toLowerCase() === normalizedValue.toLowerCase();
-      const bSelected = b.toLowerCase() === normalizedValue.toLowerCase();
-      if (aSelected && !bSelected) return -1;
-      if (!aSelected && bSelected) return 1;
-      return 0;
-    });
-  }, [allColors, searchTerm, normalizedValue]);
+    const handleColorSelect = (selectedColor: string) => {
+      if (isReadonly) return;
+      // Allow unselection if clicking already selected color
+      if (selectedColor.toLowerCase() === normalizedValue.toLowerCase()) {
+        onColorChange(fieldName, "");
+        return;
+      }
+      onColorChange(fieldName, selectedColor);
+    };
 
-  const handleColorSelect = (selectedColor: string) => {
-    if (isReadonly) return;
-    // Allow unselection if clicking already selected color
-    if (selectedColor.toLowerCase() === normalizedValue.toLowerCase()) {
-      onColorChange(fieldName, "");
-      return;
-    }
-    onColorChange(fieldName, selectedColor);
-  };
-
-  const handleHexInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (val === "" || /^#?[0-9A-Fa-f]*$/.test(val)) {
-      onColorChange(fieldName, val.startsWith("#") ? val : `#${val}`);
-    }
-  };
+    const handleHexInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      if (val === "" || /^#?[0-9A-Fa-f]*$/.test(val)) {
+        onColorChange(fieldName, val.startsWith("#") ? val : `#${val}`);
+      }
+    };
 
     const content = (
       <div className="space-y-4">
@@ -207,7 +206,8 @@ export const ChartColorCard = forwardRef<HTMLDivElement, ChartColorCardProps>(
             </div>
           ) : (
             filteredColors.map((colorValue) => {
-              const isSelected = colorValue.toLowerCase() === normalizedValue.toLowerCase();
+              const isSelected =
+                colorValue.toLowerCase() === normalizedValue.toLowerCase();
 
               return (
                 <button
@@ -220,7 +220,7 @@ export const ChartColorCard = forwardRef<HTMLDivElement, ChartColorCardProps>(
                     "hover:shadow-md hover:bg-accent/50",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     "disabled:pointer-events-none disabled:opacity-50",
-                    isSelected && "ring-2 ring-primary bg-accent"
+                    isSelected && "ring-2 ring-primary bg-accent",
                   )}
                 >
                   {isSelected && (
@@ -280,7 +280,7 @@ export const ChartColorCard = forwardRef<HTMLDivElement, ChartColorCardProps>(
         className={cn(
           "transition-all",
           stepStatus === "active" && "ring-2 ring-primary",
-          stepStatus === "pending" && "opacity-50"
+          stepStatus === "pending" && "opacity-50",
         )}
       >
         <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
@@ -292,7 +292,7 @@ export const ChartColorCard = forwardRef<HTMLDivElement, ChartColorCardProps>(
                   ? "bg-green-500 text-white"
                   : stepStatus === "active"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    : "bg-muted",
               )}
             >
               {stepStatus === "completed" ? (
@@ -323,12 +323,10 @@ export const ChartColorCard = forwardRef<HTMLDivElement, ChartColorCardProps>(
             </Tooltip>
           </TooltipProvider>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {content}
-        </CardContent>
+        <CardContent className="space-y-4">{content}</CardContent>
       </Card>
     );
-  }
+  },
 );
 
 ChartColorCard.displayName = "ChartColorCard";
@@ -383,7 +381,7 @@ export function SettingsChartColorsSection({
         stepNumber={stepNumber}
         isReadonly={isReadonly}
       />
-      
+
       <ChartColorCard
         ref={cardRefs?.chart2Ref}
         label="Chart 2"
@@ -396,7 +394,7 @@ export function SettingsChartColorsSection({
         stepNumber={stepNumber + 1}
         isReadonly={isReadonly}
       />
-      
+
       <ChartColorCard
         ref={cardRefs?.chart3Ref}
         label="Chart 3"
@@ -409,7 +407,7 @@ export function SettingsChartColorsSection({
         stepNumber={stepNumber + 2}
         isReadonly={isReadonly}
       />
-      
+
       <ChartColorCard
         ref={cardRefs?.chart4Ref}
         label="Chart 4"
@@ -422,7 +420,7 @@ export function SettingsChartColorsSection({
         stepNumber={stepNumber + 3}
         isReadonly={isReadonly}
       />
-      
+
       <ChartColorCard
         ref={cardRefs?.chart5Ref}
         label="Chart 5"

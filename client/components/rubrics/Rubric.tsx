@@ -261,7 +261,7 @@ export default function Rubric({
           return "pending";
       }
     },
-    [formData.name, standardGroups.length, standards.length]
+    [formData.name, standardGroups.length, standards.length],
   );
 
   // Steps array
@@ -313,12 +313,12 @@ export default function Rubric({
       // Build standard groups array for API
       // Group standards by their standardGroupId, preserve position order
       const sortedGroups = [...updates.standardGroups].sort(
-        (a, b) => a.position - b.position
+        (a, b) => a.position - b.position,
       );
       const allGroups = sortedGroups.map((group) => {
         // Find standards that belong to this group
         const groupStandards = updates.standards.filter(
-          (s) => s.standardGroupId === group.id
+          (s) => s.standardGroupId === group.id,
         );
         return {
           name: group.name,
@@ -332,7 +332,7 @@ export default function Rubric({
             // Get description from grid cell for this group-standard pair
             // If not found, use empty string (will be set from standard's description on first save)
             const cell = updates.gridCells.find(
-              (c) => c.standardGroupId === group.id && c.standardId === s.id
+              (c) => c.standardGroupId === group.id && c.standardId === s.id,
             );
             return {
               name: s.name,
@@ -347,7 +347,7 @@ export default function Rubric({
       const totalPoints = allGroups.reduce((sum, g) => sum + g.points, 0);
       const totalPassPoints = allGroups.reduce(
         (sum, g) => sum + g.passPoints,
-        0
+        0,
       );
 
       // Ensure profileId exists - required for API calls
@@ -369,7 +369,7 @@ export default function Rubric({
         },
       });
     },
-    [updateRubricAction, rubricId, effectiveProfile?.id]
+    [updateRubricAction, rubricId, effectiveProfile?.id],
   );
 
   // Handle save
@@ -384,7 +384,7 @@ export default function Rubric({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        rubricData?.valid_department_ids || []
+        rubricData?.valid_department_ids || [],
       );
 
       if (isEditMode) {
@@ -410,11 +410,11 @@ export default function Rubric({
         // Calculate total points from standard groups
         const totalPoints = standardGroups.reduce(
           (sum, g) => sum + g.points,
-          0
+          0,
         );
         const totalPassPoints = standardGroups.reduce(
           (sum, g) => sum + g.passPoints,
-          0
+          0,
         );
 
         const data = await createRubricAction({
@@ -437,7 +437,7 @@ export default function Rubric({
                 .filter((s) => s.standardGroupId === g.id)
                 .map((s) => {
                   const cell = gridCells.find(
-                    (c) => c.standardGroupId === g.id && c.standardId === s.id
+                    (c) => c.standardGroupId === g.id && c.standardId === s.id,
                   );
                   return {
                     name: s.name,
@@ -460,7 +460,7 @@ export default function Rubric({
         isEditMode ? "Failed to update rubric" : "Failed to create rubric",
         {
           description: error instanceof Error ? error.message : "Unknown error",
-        }
+        },
       );
     } finally {
       setIsSaving(false);
@@ -486,19 +486,19 @@ export default function Rubric({
       const existingGroupIds = new Set(standardGroups.map((g) => g.id));
       const newGroupIds = new Set(newGroups.map((g) => g.id));
       const deletedGroupIds = Array.from(existingGroupIds).filter(
-        (id) => !newGroupIds.has(id)
+        (id) => !newGroupIds.has(id),
       );
       const addedGroupIds = Array.from(newGroupIds).filter(
-        (id) => !existingGroupIds.has(id)
+        (id) => !existingGroupIds.has(id),
       );
 
       // Clean up standards and grid cells for deleted groups
       if (deletedGroupIds.length > 0) {
         setStandards((prev) =>
-          prev.filter((s) => !deletedGroupIds.includes(s.standardGroupId))
+          prev.filter((s) => !deletedGroupIds.includes(s.standardGroupId)),
         );
         setGridCells((prev) =>
-          prev.filter((c) => !deletedGroupIds.includes(c.standardGroupId))
+          prev.filter((c) => !deletedGroupIds.includes(c.standardGroupId)),
         );
       }
 
@@ -547,17 +547,17 @@ export default function Rubric({
 
       setStandardGroups(updatedGroups);
     },
-    [standardGroups, standards]
+    [standardGroups, standards],
   );
 
   // Handle group metadata change
   const handleGroupChange = useCallback(
     (groupId: string, updates: Partial<StandardGroup>) => {
       setStandardGroups((prev) =>
-        prev.map((g) => (g.id === groupId ? { ...g, ...updates } : g))
+        prev.map((g) => (g.id === groupId ? { ...g, ...updates } : g)),
       );
     },
-    []
+    [],
   );
 
   // Handle add standard
@@ -567,7 +567,7 @@ export default function Rubric({
       if (!group) return;
 
       const groupStandards = standards.filter(
-        (s) => s.standardGroupId === groupId
+        (s) => s.standardGroupId === groupId,
       );
 
       // Check if we've reached the maximum number of standards (group points)
@@ -597,7 +597,7 @@ export default function Rubric({
       // Initialize grid cells for this standard
       standardGroups.forEach((g) => {
         const existingCell = gridCells.find(
-          (c) => c.standardGroupId === g.id && c.standardId === newStandard.id
+          (c) => c.standardGroupId === g.id && c.standardId === newStandard.id,
         );
         if (!existingCell) {
           setGridCells((prev) => [
@@ -611,7 +611,7 @@ export default function Rubric({
         }
       });
     },
-    [standardGroups, standards, gridCells]
+    [standardGroups, standards, gridCells],
   );
 
   // Handle remove standard
@@ -620,35 +620,35 @@ export default function Rubric({
       setStandards((prev) => prev.filter((s) => s.id !== standardId));
       setGridCells((prev) =>
         prev.filter(
-          (c) => !(c.standardGroupId === groupId && c.standardId === standardId)
-        )
+          (c) =>
+            !(c.standardGroupId === groupId && c.standardId === standardId),
+        ),
       );
     },
-    []
+    [],
   );
 
   // Handle grid cell change
   const handleCellChange = (
     groupId: string,
     standardId: string,
-    description: string
+    description: string,
   ) => {
     setGridCells((prev) => {
       const existing = prev.find(
-        (c) => c.standardGroupId === groupId && c.standardId === standardId
+        (c) => c.standardGroupId === groupId && c.standardId === standardId,
       );
       if (existing) {
         return prev.map((c) =>
           c.standardGroupId === groupId && c.standardId === standardId
             ? { ...c, description }
-            : c
+            : c,
         );
       } else {
         return [...prev, { standardGroupId: groupId, standardId, description }];
       }
     });
   };
-
 
   // Group level names by uniqueness for column headers
   const levelNameGroups = useMemo(() => {
@@ -659,7 +659,7 @@ export default function Rubric({
 
     standardGroups.forEach((group) => {
       const groupStandards = standards.filter(
-        (s) => s.standardGroupId === group.id
+        (s) => s.standardGroupId === group.id,
       );
       groupStandards.forEach((standard) => {
         const existing = nameMap.get(standard.name);
@@ -709,7 +709,7 @@ export default function Rubric({
           const group = row.original;
           // Find the standard for this group with this name
           const standard = standards.find(
-            (s) => s.standardGroupId === group.id && s.name === levelGroup.name
+            (s) => s.standardGroupId === group.id && s.name === levelGroup.name,
           );
 
           if (!standard) {
@@ -722,7 +722,7 @@ export default function Rubric({
 
           const cell = gridCells.find(
             (c) =>
-              c.standardGroupId === group.id && c.standardId === standard.id
+              c.standardGroupId === group.id && c.standardId === standard.id,
           );
 
           return (
@@ -814,7 +814,7 @@ export default function Rubric({
                   ? "bg-green-500 text-white"
                   : steps[0]?.status === "active"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    : "bg-muted",
               )}
             >
               {steps[0]?.status === "completed" ? (
@@ -843,7 +843,7 @@ export default function Rubric({
                   }
                 }}
                 className={cn(
-                  "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                  "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
                 )}
                 placeholder="New Rubric"
                 disabled={isReadonly}
@@ -933,7 +933,7 @@ export default function Rubric({
         className={cn(
           "transition-all",
           !isEditMode && steps[1]?.status === "active" && "ring-2 ring-primary",
-          !isEditMode && steps[1]?.status === "pending" && "opacity-50"
+          !isEditMode && steps[1]?.status === "pending" && "opacity-50",
         )}
       >
         <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -945,7 +945,7 @@ export default function Rubric({
                   ? "bg-green-500 text-white"
                   : steps[1]?.status === "active"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    : "bg-muted",
               )}
             >
               {steps[1]?.status === "completed" ? (
@@ -988,7 +988,7 @@ export default function Rubric({
           {standardGroups.map((group, index) => {
             const stepIndex = 2 + index; // After basic (0), groups (1)
             const groupStandards = standards.filter(
-              (s) => s.standardGroupId === group.id
+              (s) => s.standardGroupId === group.id,
             );
             const hasStandards = groupStandards.length > 0;
             // Step status: pending if previous groups aren't done, active if this group has no standards, completed if it has standards
@@ -1031,7 +1031,7 @@ export default function Rubric({
             !isEditMode &&
               steps[3]?.status === "active" &&
               "ring-2 ring-primary",
-            !isEditMode && steps[3]?.status === "pending" && "opacity-50"
+            !isEditMode && steps[3]?.status === "pending" && "opacity-50",
           )}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1043,7 +1043,7 @@ export default function Rubric({
                     ? "bg-green-500 text-white"
                     : steps[3]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {steps[3]?.status === "completed" ? (
@@ -1097,7 +1097,7 @@ export default function Rubric({
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
-                                header.getContext()
+                                header.getContext(),
                               )}
                         </TableHead>
                       ))}
@@ -1122,7 +1122,7 @@ export default function Rubric({
                           >
                             {flexRender(
                               cell.column.columnDef.cell,
-                              cell.getContext()
+                              cell.getContext(),
                             )}
                           </TableCell>
                         ))}

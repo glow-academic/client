@@ -118,7 +118,7 @@ class EvalDetailResponse(BaseModel):
 class EvalNewRequest(BaseModel):
     """Request for default eval detail."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 router = APIRouter()
@@ -164,9 +164,17 @@ async def get_eval_new(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/evals/get_eval_new_complete.sql")
-        sql_params = (request_body.profileId,)
-        row = await conn.fetchrow(sql_query, request_body.profileId)
+        sql_params = (profile_id,)
+        row = await conn.fetchrow(sql_query, profile_id)
 
         if not row:
             raise HTTPException(

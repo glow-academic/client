@@ -5,7 +5,6 @@
  * 12/04/2025
  */
 
-
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import StaffNewEdit from "@/components/staff/StaffNewEdit";
 import { api } from "@/lib/api/client";

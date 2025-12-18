@@ -3,19 +3,22 @@
 import * as React from "react";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  FileText,
-  Search,
-  Check,
-} from "lucide-react";
+import { FileText, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface ParameterFieldCardGridProps {
-  fieldMapping: Record<string, { name: string; description?: string; usage_count?: number; department_ids?: string[] | null }>;
+  fieldMapping: Record<
+    string,
+    {
+      name: string;
+      description?: string;
+      usage_count?: number;
+      department_ids?: string[] | null;
+    }
+  >;
   validFieldIds: string[];
   selectedFieldIds: string[];
   onSelect: (ids: string[]) => void;
@@ -124,7 +127,7 @@ export function ParameterFieldCardGrid({
                         "hover:shadow-md hover:bg-accent/50",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "disabled:pointer-events-none disabled:opacity-50",
-                        isSelected && "ring-2 ring-primary bg-accent"
+                        isSelected && "ring-2 ring-primary bg-accent",
                       )}
                     >
                       {/* Check icon - top right */}
@@ -158,4 +161,3 @@ export function ParameterFieldCardGrid({
     </TooltipProvider>
   );
 }
-

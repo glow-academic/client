@@ -40,7 +40,7 @@ class ReportsOverviewFilters(BaseModel):
     cohortIds: list[str] | None = None
     roles: list[str] | None = None
     simulationFilters: list[SimulationFilter] | None = None
-    profileId: str  # REQUIRED (not optional)
+    # profileId removed - comes from X-Profile-Id header
     departmentIds: list[str] | None = None
 
 
@@ -73,10 +73,18 @@ async def get_reports_overview(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/reports/overview.sql")
 
         # Build parameters in the same order as the query expects ($1-$7)
-        # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id (required), $7: department_ids
+        # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id (from header), $7: department_ids
         start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
         cohort_ids = filters.cohortIds or []
@@ -89,7 +97,6 @@ async def get_reports_overview(
             if filters.simulationFilters
             else ["general"]
         )
-        profile_id = filters.profileId  # Required, so always present
         department_ids = filters.departmentIds or []
 
         sql_params = (

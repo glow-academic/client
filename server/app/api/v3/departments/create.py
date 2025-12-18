@@ -20,7 +20,7 @@ class CreateDepartmentRequest(BaseModel):
     description: str
     active: bool
     settingsId: str | None = None
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class CreateDepartmentResponse(BaseModel):
@@ -57,10 +57,15 @@ async def create_department(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        async with transaction(conn):
-            # Require profileId in request body (already required by Pydantic model)
-            profile_id = request.profileId
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
 
+        async with transaction(conn):
             # Single consolidated query: creates department and settings relationship
             sql_query = load_sql("sql/v3/departments/create_department_complete.sql")
             sql_params = (

@@ -24,7 +24,7 @@ type StopEvalOut = OutputOf<"/api/v3/evals/stop", "post">;
 /** ---- Direct fetch for eval detail ---- */
 const getEvalDetail = async (
   evalId: string,
-  profileId: string
+  profileId: string,
 ): Promise<EvalDetailOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -37,7 +37,7 @@ const getEvalDetail = async (
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 

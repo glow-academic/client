@@ -33,7 +33,7 @@ type SettingsDetailOut = OutputOf<"/api/v3/settings/detail", "post">;
  */
 const getDepartment = async (
   departmentId: string,
-  profileId: string
+  profileId: string,
 ): Promise<DepartmentDetailOut> => {
   return api.post(
     "/departments/detail",
@@ -43,7 +43,7 @@ const getDepartment = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
@@ -56,13 +56,13 @@ const getKeysList = async (profileId: string): Promise<KeysListOut> => {
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 const getSettingsDetail = async (
   settingsId: string,
-  profileId: string
+  profileId: string,
 ): Promise<SettingsDetailOut> => {
   return api.post(
     "/settings/detail",
@@ -72,14 +72,14 @@ const getSettingsDetail = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ departmentId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { departmentId } = await params;
   const session = await getSession();
@@ -106,7 +106,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions ---- */
 async function updateDepartment(
-  input: UpdateDepartmentIn
+  input: UpdateDepartmentIn,
 ): Promise<UpdateDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -135,7 +135,7 @@ async function getKeysListAction(profileId: string): Promise<KeysListOut> {
 
 async function getSettingsDetailAction(
   settingsId: string,
-  profileId: string
+  profileId: string,
 ): Promise<SettingsDetailOut> {
   "use server";
   return getSettingsDetail(settingsId, profileId);
@@ -172,7 +172,7 @@ export default async function DepartmentEditPage({
       try {
         settingsDetail = await getSettingsDetail(
           departmentDetail.settings_id,
-          profileId
+          profileId,
         );
       } catch {
         // Settings might not exist, continue without it

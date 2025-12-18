@@ -18,7 +18,7 @@ class DeleteScenarioRequest(BaseModel):
     """Request to delete a scenario."""
 
     scenarioId: str
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DeleteScenarioResponse(BaseModel):
@@ -54,8 +54,13 @@ async def delete_scenario(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Require profileId in request body (already required by Pydantic model)
-        profile_id = request.profileId
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
 
         # Delete scenario with existence and usage checks in a single SQL file
         sql_query = load_sql("sql/v3/scenarios/delete_scenario_complete.sql")

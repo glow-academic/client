@@ -4,7 +4,13 @@
  */
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -55,9 +61,7 @@ export function AgentTemperatureSection({
   const getTemperatureLevelId = (temp: number): string | null => {
     const levels = temperatureBounds.levels || [];
     const matchingLevel = levels.find(
-      (l) =>
-        !l.is_upper &&
-        Math.abs(parseFloat(l.temperature) - temp) < 0.001
+      (l) => !l.is_upper && Math.abs(parseFloat(l.temperature) - temp) < 0.001,
     );
     return matchingLevel?.id || null;
   };
@@ -67,7 +71,7 @@ export function AgentTemperatureSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50"
+        stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -79,7 +83,7 @@ export function AgentTemperatureSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -98,9 +102,7 @@ export function AgentTemperatureSection({
         <div className="space-y-2">
           <Label htmlFor="temperature">
             Temperature:{" "}
-            {temperature !== undefined
-              ? temperature.toFixed(2)
-              : "0.00"}
+            {temperature !== undefined ? temperature.toFixed(2) : "0.00"}
           </Label>
           {temperature !== undefined ? (
             <>
@@ -128,9 +130,7 @@ export function AgentTemperatureSection({
                     <span>
                       {temperatureBounds.lower.toFixed(2)} (Deterministic)
                     </span>
-                    <span>
-                      {temperatureBounds.upper.toFixed(2)} (Creative)
-                    </span>
+                    <span>{temperatureBounds.upper.toFixed(2)} (Creative)</span>
                   </div>
                 </>
               ) : (
@@ -156,9 +156,7 @@ export function AgentTemperatureSection({
                     <span>
                       {temperatureBounds.lower.toFixed(2)} (Deterministic)
                     </span>
-                    <span>
-                      {temperatureBounds.upper.toFixed(2)} (Creative)
-                    </span>
+                    <span>{temperatureBounds.upper.toFixed(2)} (Creative)</span>
                   </div>
                 </>
               )}
@@ -169,4 +167,3 @@ export function AgentTemperatureSection({
     </Card>
   );
 }
-

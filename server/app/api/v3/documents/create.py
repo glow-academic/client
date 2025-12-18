@@ -27,7 +27,7 @@ class CreateDocumentRequest(BaseModel):
     departmentIds: list[str] | None = None
     parameterItemIds: list[str] | None = None
     parameterIds: list[str] | None = None
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
     templateUploadId: str | None = None  # Template HTML upload
     templateArgs: dict[str, Any] | None = None  # Template schema JSON
 
@@ -62,6 +62,14 @@ async def create_document(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         document_id = uuid.uuid4()
 
         dept_uuids = (
@@ -97,7 +105,7 @@ async def create_document(
             if request_body.templateUploadId
             else None,
             template_args_jsonb,
-            request_body.profileId,
+            profile_id,
         )
 
         result = await conn.fetchrow(sql_query, *sql_params)
@@ -108,7 +116,7 @@ async def create_document(
             if actor_name:
                 audit_set(
                     request,
-                    actor={"name": actor_name, "id": request_body.profileId},
+                    actor={"name": actor_name, "id": profile_id},
                     document={"name": request_body.name, "id": str(document_id)},
                 )
 

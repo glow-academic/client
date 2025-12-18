@@ -17,7 +17,7 @@ class DeleteEvalRequest(BaseModel):
     """Request to delete an eval."""
 
     evalId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DeleteEvalResponse(BaseModel):

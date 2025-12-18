@@ -7,7 +7,13 @@
 import { Check, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export interface ProfileMappingItem {
@@ -59,7 +65,8 @@ export function SettingsDefaultAccountSection({
     return validProfileIds.filter((profileId) => {
       const profile = profileMapping[profileId];
       if (!profile) return false;
-      const searchText = `${profile.name} ${profile.first_name} ${profile.last_name} ${profile.role}`.toLowerCase();
+      const searchText =
+        `${profile.name} ${profile.first_name} ${profile.last_name} ${profile.role}`.toLowerCase();
       return searchText.includes(searchLower);
     });
   }, [validProfileIds, profileMapping, searchTerm]);
@@ -69,7 +76,7 @@ export function SettingsDefaultAccountSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50"
+        stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -81,7 +88,7 @@ export function SettingsDefaultAccountSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -137,7 +144,7 @@ export function SettingsDefaultAccountSection({
                     "hover:shadow-md hover:bg-accent/50",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     "disabled:pointer-events-none disabled:opacity-50",
-                    isSelected && "ring-2 ring-primary bg-accent"
+                    isSelected && "ring-2 ring-primary bg-accent",
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -164,4 +171,3 @@ export function SettingsDefaultAccountSection({
     </Card>
   );
 }
-

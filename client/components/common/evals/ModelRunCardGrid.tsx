@@ -3,16 +3,10 @@
 import * as React from "react";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Play,
-  Search,
-  Check,
-  Loader2,
-} from "lucide-react";
+import { Play, Search, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -37,9 +31,9 @@ export function ModelRunCardGrid({
   readonly = false,
 }: ModelRunCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [modelRuns, setModelRuns] = React.useState<ModelRunsResponse["model_runs"]>(
-    [],
-  );
+  const [modelRuns, setModelRuns] = React.useState<
+    ModelRunsResponse["model_runs"]
+  >([]);
   const [loading, setLoading] = React.useState(false);
 
   // Fetch model runs when filters change
@@ -81,7 +75,9 @@ export function ModelRunCardGrid({
       if (aSelected && !bSelected) return -1;
       if (!aSelected && bSelected) return 1;
       // Both selected or both unselected - sort by created_at desc
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      return (
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     });
   }, [modelRuns, selectedModelRunIds]);
 
@@ -126,7 +122,9 @@ export function ModelRunCardGrid({
                 </div>
               ) : (
                 filteredModelRuns.map((mr) => {
-                  const isSelected = selectedModelRunIds.includes(mr.model_run_id);
+                  const isSelected = selectedModelRunIds.includes(
+                    mr.model_run_id,
+                  );
 
                   return (
                     <Tooltip key={mr.model_run_id}>
@@ -140,7 +138,7 @@ export function ModelRunCardGrid({
                             "hover:shadow-md hover:bg-accent/50",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                             "disabled:pointer-events-none disabled:opacity-50",
-                            isSelected && "ring-2 ring-primary bg-accent"
+                            isSelected && "ring-2 ring-primary bg-accent",
                           )}
                         >
                           {/* Check icon - top right */}
@@ -188,4 +186,3 @@ export function ModelRunCardGrid({
     </TooltipProvider>
   );
 }
-

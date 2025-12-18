@@ -26,7 +26,7 @@ class UpdateEvalRequest(BaseModel):
     model_run_ids: list[str] | None = None  # If provided, replaces all existing
     department_ids: list[str] | None = None  # If provided, replaces all existing
     active: bool | None = None
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class UpdateEvalResponse(BaseModel):

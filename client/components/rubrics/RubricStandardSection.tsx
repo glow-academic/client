@@ -53,7 +53,11 @@ export interface RubricStandardSectionProps {
   // Callbacks
   onGroupChange: (groupId: string, updates: Partial<StandardGroup>) => void;
   onStandardsChange: (standards: Standard[]) => void;
-  onGridCellChange: (groupId: string, standardId: string, description: string) => void;
+  onGridCellChange: (
+    groupId: string,
+    standardId: string,
+    description: string,
+  ) => void;
   onAddStandard: (groupId: string) => void;
   onRemoveStandard: (groupId: string, standardId: string) => void;
 
@@ -78,7 +82,9 @@ export function RubricStandardSection({
   stepNumber,
   isEditMode = false,
 }: RubricStandardSectionProps) {
-  const groupStandards = standards.filter((s) => s.standardGroupId === group.id);
+  const groupStandards = standards.filter(
+    (s) => s.standardGroupId === group.id,
+  );
   const displayNumber = stepNumber ?? position;
 
   return (
@@ -86,7 +92,7 @@ export function RubricStandardSection({
       className={cn(
         "transition-all",
         !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-        !isEditMode && stepStatus === "pending" && "opacity-50"
+        !isEditMode && stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -98,7 +104,7 @@ export function RubricStandardSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -108,9 +114,12 @@ export function RubricStandardSection({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg font-semibold truncate">{group.name}</CardTitle>
+            <CardTitle className="text-lg font-semibold truncate">
+              {group.name}
+            </CardTitle>
             <CardDescription>
-              {group.description || "Configure standards and levels for this group."}
+              {group.description ||
+                "Configure standards and levels for this group."}
             </CardDescription>
           </div>
         </div>
@@ -153,10 +162,7 @@ export function RubricStandardSection({
           <Label>Standards / Levels</Label>
           <div className="space-y-2">
             {groupStandards.map((standard) => (
-              <div
-                key={standard.id}
-                className="flex items-center gap-2"
-              >
+              <div key={standard.id} className="flex items-center gap-2">
                 <Input
                   type="number"
                   placeholder="Points"
@@ -164,16 +170,20 @@ export function RubricStandardSection({
                   onChange={(e) => {
                     const val = parseInt(e.target.value) || 0;
                     // Check if this point value is already used by another standard in this group
-                    const otherStandards = groupStandards.filter((s) => s.id !== standard.id);
-                    const isDuplicate = otherStandards.some((s) => s.points === val);
+                    const otherStandards = groupStandards.filter(
+                      (s) => s.id !== standard.id,
+                    );
+                    const isDuplicate = otherStandards.some(
+                      (s) => s.points === val,
+                    );
                     // Check if value exceeds group points
                     const exceedsMax = val > group.points;
-                    
+
                     if (!isDuplicate && !exceedsMax && val >= 1) {
                       onStandardsChange(
                         standards.map((s) =>
-                          s.id === standard.id ? { ...s, points: val } : s
-                        )
+                          s.id === standard.id ? { ...s, points: val } : s,
+                        ),
                       );
                     }
                   }}
@@ -188,8 +198,10 @@ export function RubricStandardSection({
                   onChange={(e) => {
                     onStandardsChange(
                       standards.map((s) =>
-                        s.id === standard.id ? { ...s, name: e.target.value } : s
-                      )
+                        s.id === standard.id
+                          ? { ...s, name: e.target.value }
+                          : s,
+                      ),
                     );
                   }}
                   disabled={readonly}
@@ -209,21 +221,22 @@ export function RubricStandardSection({
               </div>
             ))}
           </div>
-          {groupStandards.length > 0 && !readonly && groupStandards.length < group.points && (
-            <div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => onAddStandard(group.id)}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" /> Add Standard
-              </Button>
-            </div>
-          )}
+          {groupStandards.length > 0 &&
+            !readonly &&
+            groupStandards.length < group.points && (
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onAddStandard(group.id)}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" /> Add Standard
+                </Button>
+              </div>
+            )}
         </div>
       </CardContent>
     </Card>
   );
 }
-

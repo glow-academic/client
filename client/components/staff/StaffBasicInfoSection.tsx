@@ -75,7 +75,7 @@ export function StaffBasicInfoSection({
             value={firstName}
             onChange={(e) => onFirstNameChange(e.target.value)}
             className={cn(
-              "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+              "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
             )}
             placeholder="First Name"
             required
@@ -97,7 +97,7 @@ export function StaffBasicInfoSection({
             value={lastName}
             onChange={(e) => onLastNameChange(e.target.value)}
             className={cn(
-              "w-full text-lg font-medium border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+              "w-full text-lg font-medium border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
             )}
             placeholder="Last Name (optional)"
             disabled={isReadonly || isSubmitting}
@@ -107,106 +107,101 @@ export function StaffBasicInfoSection({
           </p>
         </div>
       </div>
-        {/* Departments Section */}
-        <div className="space-y-2">
-          <Label>Departments</Label>
-          <StaffDepartmentCardGrid
-            departmentIds={departmentIds}
-            primaryDepartmentId={primaryDepartmentId}
-            validDepartmentIds={validDepartmentIds}
-            departmentMapping={departmentMapping}
-            onDepartmentIdsChange={(ids) => {
-              onDepartmentIdsChange(ids);
-              // If primary department is not in the new list, clear it
-              if (primaryDepartmentId && !ids.includes(primaryDepartmentId)) {
-                onPrimaryDepartmentIdChange(ids.length > 0 ? ids[0] : undefined);
-              }
-            }}
-            onPrimaryDepartmentIdChange={onPrimaryDepartmentIdChange}
-            readonly={isReadonly || isSubmitting}
-          />
-        </div>
+      {/* Departments Section */}
+      <div className="space-y-2">
+        <Label>Departments</Label>
+        <StaffDepartmentCardGrid
+          departmentIds={departmentIds}
+          primaryDepartmentId={primaryDepartmentId}
+          validDepartmentIds={validDepartmentIds}
+          departmentMapping={departmentMapping}
+          onDepartmentIdsChange={(ids) => {
+            onDepartmentIdsChange(ids);
+            // If primary department is not in the new list, clear it
+            if (primaryDepartmentId && !ids.includes(primaryDepartmentId)) {
+              onPrimaryDepartmentIdChange(ids.length > 0 ? ids[0] : undefined);
+            }
+          }}
+          onPrimaryDepartmentIdChange={onPrimaryDepartmentIdChange}
+          readonly={isReadonly || isSubmitting}
+        />
+      </div>
 
-        {/* Requests Per Day Section */}
-        <div className="space-y-2 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="requestsPerDayEnabled"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                Requests per day
-              </Label>
-              <Switch
-                id="requestsPerDayEnabled"
-                checked={requestsPerDayEnabled}
-                onCheckedChange={(checked) => {
-                  onRequestsPerDayEnabledChange(checked);
-                  if (!checked) {
+      {/* Requests Per Day Section */}
+      <div className="space-y-2 pt-2">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="requestsPerDayEnabled"
+              className="text-sm flex items-center gap-1.5"
+            >
+              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              Requests per day
+            </Label>
+            <Switch
+              id="requestsPerDayEnabled"
+              checked={requestsPerDayEnabled}
+              onCheckedChange={(checked) => {
+                onRequestsPerDayEnabledChange(checked);
+                if (!checked) {
+                  onRequestsPerDayChange("");
+                }
+              }}
+              disabled={isReadonly || isSubmitting}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground pl-5">
+            Set a daily request limit for this staff member
+          </p>
+          {requestsPerDayEnabled && (
+            <div className="space-y-2 pt-2">
+              <Input
+                id="reqPerDay"
+                type="number"
+                value={requestsPerDay === "" ? "" : String(requestsPerDay)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "") {
                     onRequestsPerDayChange("");
+                  } else {
+                    const num = parseInt(val, 10);
+                    onRequestsPerDayChange(Number.isNaN(num) ? "" : num);
                   }
                 }}
+                placeholder="e.g. 100"
+                min={1}
+                step={1}
                 disabled={isReadonly || isSubmitting}
+                data-testid="input-staff-requests-per-day"
               />
             </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Set a daily request limit for this staff member
-            </p>
-            {requestsPerDayEnabled && (
-              <div className="space-y-2 pt-2">
-                <Input
-                  id="reqPerDay"
-                  type="number"
-                  value={
-                    requestsPerDay === "" ? "" : String(requestsPerDay)
-                  }
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === "") {
-                      onRequestsPerDayChange("");
-                    } else {
-                      const num = parseInt(val, 10);
-                      onRequestsPerDayChange(
-                        Number.isNaN(num) ? "" : num,
-                      );
-                    }
-                  }}
-                  placeholder="e.g. 100"
-                  min={1}
-                  step={1}
-                  disabled={isReadonly || isSubmitting}
-                  data-testid="input-staff-requests-per-day"
-                />
-              </div>
-            )}
-          </div>
+          )}
         </div>
+      </div>
 
-        {/* Active Switch */}
-        <div className="space-y-2 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="active"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                Active
-              </Label>
-              <Switch
-                id="active"
-                checked={active ?? true}
-                onCheckedChange={(checked) => onActiveChange(checked)}
-                disabled={isReadonly || isSubmitting}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Whether this staff member is active
-            </p>
+      {/* Active Switch */}
+      <div className="space-y-2 pt-2">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="active"
+              className="text-sm flex items-center gap-1.5"
+            >
+              <Power className="h-3.5 w-3.5 text-muted-foreground" />
+              Active
+            </Label>
+            <Switch
+              id="active"
+              checked={active ?? true}
+              onCheckedChange={(checked) => onActiveChange(checked)}
+              disabled={isReadonly || isSubmitting}
+            />
           </div>
+          <p className="text-xs text-muted-foreground pl-5">
+            Whether this staff member is active
+          </p>
         </div>
+      </div>
     </div>
   );
 }
-

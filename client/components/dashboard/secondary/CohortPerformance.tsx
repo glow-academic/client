@@ -137,7 +137,7 @@ export default function CohortPerformance({
         w: 0,
         totalAttempts: 0,
         passedAttempts: c.passedAttempts, // not recomputed (per-student), keep original
-      })
+      }),
     );
 
     cohortFacts.forEach((f) => {
@@ -175,7 +175,7 @@ export default function CohortPerformance({
 
   // Helper function to calculate status for a cohort based on pass rate
   const getCohortStatus = (
-    passRate: number
+    passRate: number,
   ): "success" | "warning" | "danger" | "neutral" => {
     if (passRate === 0) return "neutral";
     if (passRate >= 85) return "success";
@@ -185,7 +185,7 @@ export default function CohortPerformance({
 
   // Helper function to get color for a cohort status
   const getCohortColor = (
-    cohortStatus: "success" | "warning" | "danger" | "neutral"
+    cohortStatus: "success" | "warning" | "danger" | "neutral",
   ): string => {
     switch (cohortStatus) {
       case "success":
@@ -250,7 +250,7 @@ export default function CohortPerformance({
                   <div className="flex flex-wrap gap-1 mt-2">
                     <Badge variant="outline" className="text-xs">
                       {formatTimeLimit(
-                        (sim as { time_limit?: number | null }).time_limit
+                        (sim as { time_limit?: number | null }).time_limit,
                       )}
                     </Badge>
                   </div>
@@ -346,7 +346,7 @@ export default function CohortPerformance({
                     {(() => {
                       // Filter daily data for this specific cohort
                       const cohortDailyData = dailyData.filter(
-                        (d: DailyRow) => d.cohortId === cohort.id
+                        (d: DailyRow) => d.cohortId === cohort.id,
                       );
                       if (cohortDailyData.length === 0) return null;
 

@@ -43,7 +43,7 @@ class UpdateScenarioRequest(BaseModel):
     active_video_id: str | None = None
     question_ids: list[str] | None = None
     question_timestamps: dict[str, dict[str, list[int]]] | None = None
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class UpdateScenarioResponse(BaseModel):
@@ -175,8 +175,13 @@ async def update_scenario(
         if request.video_enabled and not request.video_agent_id:
             raise ValueError("video_agent_id is required when video_enabled is true")
 
-        # Require profileId in request body (already required by Pydantic model)
-        profile_id = request.profileId
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
 
         # Update scenario with all relationships in a single SQL file
         sql_query = load_sql("sql/v3/scenarios/update_scenario_complete.sql")

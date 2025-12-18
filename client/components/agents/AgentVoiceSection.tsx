@@ -5,8 +5,13 @@
 "use client";
 
 import { VOICES } from "@/components/common/forms/voices";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Check, Search } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -61,14 +66,15 @@ export function AgentVoiceSection({
   // Filter voices based on search term and availability
   const filteredVoices = useMemo(() => {
     let voicesToShow = VOICES.filter((voice) =>
-      availableVoiceNames.includes(voice.id)
+      availableVoiceNames.includes(voice.id),
     );
 
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      voicesToShow = voicesToShow.filter((voice) =>
-        voice.name.toLowerCase().includes(searchLower) ||
-        voice.id.toLowerCase().includes(searchLower)
+      voicesToShow = voicesToShow.filter(
+        (voice) =>
+          voice.name.toLowerCase().includes(searchLower) ||
+          voice.id.toLowerCase().includes(searchLower),
       );
     }
 
@@ -95,7 +101,7 @@ export function AgentVoiceSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50"
+        stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -107,7 +113,7 @@ export function AgentVoiceSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
             {stepStatus === "completed" ? (
@@ -152,7 +158,7 @@ export function AgentVoiceSection({
                   "hover:shadow-md hover:bg-accent/50",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   "disabled:pointer-events-none disabled:opacity-50",
-                  isSelected && "ring-2 ring-primary bg-accent"
+                  isSelected && "ring-2 ring-primary bg-accent",
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -171,4 +177,3 @@ export function AgentVoiceSection({
     </Card>
   );
 }
-

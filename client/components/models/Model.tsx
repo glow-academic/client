@@ -148,9 +148,9 @@ export default function Model({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId || null
+        effectiveProfile?.primaryDepartmentId || null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   const initialFormData: FormData = useMemo(
@@ -165,7 +165,7 @@ export default function Model({
       customModel: false,
       baseUrl: "",
     }),
-    [defaultDepartmentIds]
+    [defaultDepartmentIds],
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -298,7 +298,7 @@ export default function Model({
             type: (p.type || p.pricing_type) as "input" | "output" | "cached",
             unit_id: p.unit_id,
             price: p.price,
-          })
+          }),
         ) || [];
 
       // Transform pricing array to Record structure
@@ -368,7 +368,7 @@ export default function Model({
         voices: modelDetail.voices
           ? (modelDetail.voices as Array<string | { voice: string }>)
               .map((v: string | { voice: string }) =>
-                typeof v === "string" ? v : v.voice
+                typeof v === "string" ? v : v.voice,
               )
               .filter(Boolean)
           : [],
@@ -404,7 +404,7 @@ export default function Model({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | undefined
+    value: string | boolean | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -474,7 +474,7 @@ export default function Model({
             formData?.enablePricing &&
             formData?.pricing &&
             Object.values(formData.pricing).some(
-              (entries) => entries && entries.length > 0
+              (entries) => entries && entries.length > 0,
             );
           return hasPricingEntries
             ? "completed"
@@ -524,7 +524,7 @@ export default function Model({
           return "pending";
       }
     },
-    [formData]
+    [formData],
   );
 
   // Steps array
@@ -597,7 +597,7 @@ export default function Model({
   // Helper to get step by ID
   const getStepById = useCallback(
     (stepId: string) => steps.find((s) => s.id === stepId),
-    [steps]
+    [steps],
   );
 
   // Helper to get step number (1-indexed) based on visible steps
@@ -629,7 +629,7 @@ export default function Model({
       const index = visibleSteps.findIndex((s) => s.id === stepId);
       return index >= 0 ? index + 1 : 0;
     },
-    [steps, formData]
+    [steps, formData],
   );
 
   // Custom URL editing handlers
@@ -756,7 +756,7 @@ export default function Model({
                 type: type as "input" | "output" | "cached",
                 unit_id: entry.unit_id,
                 price: entry.price,
-              }))
+              })),
             )
           : undefined;
 
@@ -848,7 +848,7 @@ export default function Model({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       setIsSubmitting(false);
     }
@@ -868,7 +868,7 @@ export default function Model({
                   "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0",
                   basicStepStatus === "completed"
                     ? "bg-green-500 text-white"
-                    : "bg-primary text-primary-foreground"
+                    : "bg-primary text-primary-foreground",
                 )}
               >
                 {basicStepStatus === "completed" ? (
@@ -895,7 +895,7 @@ export default function Model({
                     }}
                     className={cn(
                       "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      errors.name && "border-destructive"
+                      errors.name && "border-destructive",
                     )}
                     placeholder="New Model"
                     disabled={isReadonly || isSubmitting}
@@ -1187,7 +1187,7 @@ export default function Model({
                   !isEditMode &&
                     step?.status === "active" &&
                     "ring-2 ring-primary",
-                  !isEditMode && step?.status === "pending" && "opacity-50"
+                  !isEditMode && step?.status === "pending" && "opacity-50",
                 )}
               >
                 <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1199,7 +1199,7 @@ export default function Model({
                           ? "bg-green-500 text-white"
                           : step?.status === "active"
                             ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                            : "bg-muted",
                       )}
                     >
                       {step?.status === "completed" ? (
@@ -1242,7 +1242,7 @@ export default function Model({
                           placeholder="e.g. https://api.example.com/v1"
                           className={cn(
                             "flex-1 h-10 resize-none",
-                            errors.baseUrl ? "border-destructive" : ""
+                            errors.baseUrl ? "border-destructive" : "",
                           )}
                           disabled={isReadonly || isSubmitting}
                           onKeyDown={(e) => {
@@ -1338,7 +1338,7 @@ export default function Model({
                 !isEditMode &&
                   step?.status === "active" &&
                   "ring-2 ring-primary",
-                !isEditMode && step?.status === "pending" && "opacity-50"
+                !isEditMode && step?.status === "pending" && "opacity-50",
               )}
             >
               <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1350,7 +1350,7 @@ export default function Model({
                         ? "bg-green-500 text-white"
                         : step?.status === "active"
                           ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
+                          : "bg-muted",
                     )}
                   >
                     {step?.status === "completed" ? (
@@ -1401,7 +1401,7 @@ export default function Model({
                 !isEditMode &&
                   step?.status === "active" &&
                   "ring-2 ring-primary",
-                !isEditMode && step?.status === "pending" && "opacity-50"
+                !isEditMode && step?.status === "pending" && "opacity-50",
               )}
             >
               <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1413,7 +1413,7 @@ export default function Model({
                         ? "bg-green-500 text-white"
                         : step?.status === "active"
                           ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
+                          : "bg-muted",
                     )}
                   >
                     {step?.status === "completed" ? (
@@ -1462,7 +1462,7 @@ export default function Model({
                 !isEditMode &&
                   step?.status === "active" &&
                   "ring-2 ring-primary",
-                !isEditMode && step?.status === "pending" && "opacity-50"
+                !isEditMode && step?.status === "pending" && "opacity-50",
               )}
             >
               <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1474,7 +1474,7 @@ export default function Model({
                         ? "bg-green-500 text-white"
                         : step?.status === "active"
                           ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
+                          : "bg-muted",
                     )}
                   >
                     {step?.status === "completed" ? (
@@ -1524,7 +1524,7 @@ export default function Model({
                   !isEditMode &&
                     step?.status === "active" &&
                     "ring-2 ring-primary",
-                  !isEditMode && step?.status === "pending" && "opacity-50"
+                  !isEditMode && step?.status === "pending" && "opacity-50",
                 )}
               >
                 <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1536,7 +1536,7 @@ export default function Model({
                           ? "bg-green-500 text-white"
                           : step?.status === "active"
                             ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                            : "bg-muted",
                       )}
                     >
                       {step?.status === "completed" ? (
@@ -1593,7 +1593,7 @@ export default function Model({
                     !isEditMode &&
                       step?.status === "active" &&
                       "ring-2 ring-primary",
-                    !isEditMode && step?.status === "pending" && "opacity-50"
+                    !isEditMode && step?.status === "pending" && "opacity-50",
                   )}
                 >
                   <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1605,7 +1605,7 @@ export default function Model({
                             ? "bg-green-500 text-white"
                             : step?.status === "active"
                               ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
+                              : "bg-muted",
                         )}
                       >
                         {step?.status === "completed" ? (
@@ -1676,7 +1676,7 @@ export default function Model({
                           "ring-2 ring-primary",
                         !isEditMode &&
                           step?.status === "pending" &&
-                          "opacity-50"
+                          "opacity-50",
                       )}
                     >
                       <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1688,7 +1688,7 @@ export default function Model({
                                 ? "bg-green-500 text-white"
                                 : step?.status === "active"
                                   ? "bg-primary text-primary-foreground"
-                                  : "bg-muted"
+                                  : "bg-muted",
                             )}
                           >
                             {pricingEntries.length > 0 ? (
@@ -1723,21 +1723,21 @@ export default function Model({
                               const currentEntries =
                                 newPricing[pricingType] || [];
                               const currentUnitIds = new Set(
-                                currentEntries.map((e) => e.unit_id)
+                                currentEntries.map((e) => e.unit_id),
                               );
 
                               // Find added and removed units
                               const newUnitIds = new Set(unitIds);
                               const addedUnitIds = unitIds.filter(
-                                (id) => !currentUnitIds.has(id)
+                                (id) => !currentUnitIds.has(id),
                               );
                               const removedUnitIds = Array.from(
-                                currentUnitIds
+                                currentUnitIds,
                               ).filter((id) => !newUnitIds.has(id));
 
                               // Remove entries for deselected units
                               const updatedEntries = currentEntries.filter(
-                                (e) => !removedUnitIds.includes(e.unit_id)
+                                (e) => !removedUnitIds.includes(e.unit_id),
                               );
 
                               // Add entries for newly selected units
@@ -1759,7 +1759,7 @@ export default function Model({
                           readonly={isReadonly || isSubmitting}
                           enablePriceEditing={true}
                           prices={Object.fromEntries(
-                            pricingEntries.map((e) => [e.unit_id, e.price])
+                            pricingEntries.map((e) => [e.unit_id, e.price]),
                           )}
                           onPriceChange={(unitId, price) => {
                             setFormData((prev) => {
@@ -1771,7 +1771,7 @@ export default function Model({
                               // Find and update the entry for this unit
                               const entries = newPricing[pricingType] || [];
                               const entryIndex = entries.findIndex(
-                                (e) => e.unit_id === unitId
+                                (e) => e.unit_id === unitId,
                               );
 
                               if (entryIndex >= 0 && entries[entryIndex]) {
@@ -1817,7 +1817,7 @@ export default function Model({
                   !isEditMode &&
                     step?.status === "active" &&
                     "ring-2 ring-primary",
-                  !isEditMode && step?.status === "pending" && "opacity-50"
+                  !isEditMode && step?.status === "pending" && "opacity-50",
                 )}
               >
                 <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1829,7 +1829,7 @@ export default function Model({
                           ? "bg-green-500 text-white"
                           : step?.status === "active"
                             ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                            : "bg-muted",
                       )}
                     >
                       {step?.status === "completed" ? (
@@ -1878,7 +1878,7 @@ export default function Model({
                   !isEditMode &&
                     step?.status === "active" &&
                     "ring-2 ring-primary",
-                  !isEditMode && step?.status === "pending" && "opacity-50"
+                  !isEditMode && step?.status === "pending" && "opacity-50",
                 )}
               >
                 <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1890,7 +1890,7 @@ export default function Model({
                           ? "bg-green-500 text-white"
                           : step?.status === "active"
                             ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                            : "bg-muted",
                       )}
                     >
                       {step?.status === "completed" ? (
@@ -1981,7 +1981,7 @@ export default function Model({
                   !isEditMode &&
                     step?.status === "active" &&
                     "ring-2 ring-primary",
-                  !isEditMode && step?.status === "pending" && "opacity-50"
+                  !isEditMode && step?.status === "pending" && "opacity-50",
                 )}
               >
                 <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1993,7 +1993,7 @@ export default function Model({
                           ? "bg-green-500 text-white"
                           : step?.status === "active"
                             ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                            : "bg-muted",
                       )}
                     >
                       {step?.status === "completed" ? (

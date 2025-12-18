@@ -36,7 +36,7 @@ class UpdateSettingsRequest(BaseModel):
     success_threshold: int
     warning_threshold: int
     danger_threshold: int
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
     provider_key_mapping: dict[str, str] | None = (
         None  # Provider key mapping (provider_id -> key_id)
     )
@@ -84,6 +84,14 @@ async def update_settings(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Prepare key mappings as JSONB
             import json
@@ -123,7 +131,7 @@ async def update_settings(
                 request.success_threshold,
                 request.warning_threshold,
                 request.danger_threshold,
-                request.profileId,
+                profile_id,
                 provider_key_mapping_json,
                 auth_key_mapping_json,
                 request.default_admin_profile_id or None,
@@ -155,7 +163,7 @@ async def update_settings(
                 request.success_threshold,
                 request.warning_threshold,
                 request.danger_threshold,
-                request.profileId,
+                profile_id,
                 provider_key_mapping_json,
                 auth_key_mapping_json,
                 request.default_admin_profile_id or None,

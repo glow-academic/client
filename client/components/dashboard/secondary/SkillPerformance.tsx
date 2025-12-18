@@ -116,7 +116,7 @@ export default function SkillPerformance({
 
   const activePackage = useMemo(
     () => packages.find((p) => p.rubricId === activeRubricId),
-    [packages, activeRubricId]
+    [packages, activeRubricId],
   );
 
   // Use status from server
@@ -176,7 +176,7 @@ export default function SkillPerformance({
                 tick={({ payload, x, y }) => {
                   const dataIndex =
                     activePackage?.radarData?.findIndex(
-                      (item) => item.metric === payload.value
+                      (item) => item.metric === payload.value,
                     ) ?? 0;
                   const totalItems = activePackage?.radarData?.length ?? 1;
                   const angle = (dataIndex * 360) / totalItems;

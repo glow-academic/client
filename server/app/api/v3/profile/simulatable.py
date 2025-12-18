@@ -25,7 +25,7 @@ class SearchSimulatableProfilesRequest(BaseModel):
         None  # Search term (first_name, last_name, email, role). Empty/None returns all profiles (up to limit)
     )
     limit: int = 200  # Maximum number of results
-    profileId: str  # Current user's profile ID for permissions
+    # profileId removed - comes from X-Profile-Id header
 
 
 class SearchSimulatableProfilesResponse(BaseModel):
@@ -56,12 +56,20 @@ async def search_simulatable_profiles(
         return SearchSimulatableProfilesResponse.model_validate(cached["data"])
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Load base SQL query
         sql_query = load_sql("sql/v3/profile/search_simulatable_profiles.sql")
 
         # Build search WHERE clause
         search_where_clause = ""
-        params: list[Any] = [request.profileId, request.limit]
+        params: list[Any] = [profile_id, request.limit]
 
         # Search query filter (if provided)
         if request.query and request.query.strip():

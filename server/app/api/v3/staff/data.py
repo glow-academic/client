@@ -38,7 +38,7 @@ class CreateStaffDataRequest(BaseModel):
     """Request for create staff data (mappings, etc.)."""
 
     departmentIds: list[str]
-    profileId: str  # Current user's profile for permissions
+    # profileId removed - comes from X-Profile-Id header
 
 
 class CreateStaffDataResponse(BaseModel):
@@ -75,11 +75,17 @@ async def get_create_staff_data(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/profile/staff/get_create_staff_data.sql")
-        sql_params = (request.departmentIds, request.profileId)
-        result = await conn.fetchrow(
-            sql_query, request.departmentIds, request.profileId
-        )
+        sql_params = (request.departmentIds, profile_id)
+        result = await conn.fetchrow(sql_query, request.departmentIds, profile_id)
 
         if not result:
             # Return empty mappings if no data

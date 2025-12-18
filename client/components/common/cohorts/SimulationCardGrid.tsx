@@ -7,11 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  PlayCircle,
-  Search,
-  Check,
-} from "lucide-react";
+import { PlayCircle, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface SimulationCardGridProps {
@@ -45,7 +41,9 @@ export function SimulationCardGrid({
     }));
 
     // Sort by name
-    return simulations.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    return simulations.sort((a, b) =>
+      (a.name || "").localeCompare(b.name || ""),
+    );
   }, [validSimulationIds, simulationMapping]);
 
   // Apply search filter, then sort selected first
@@ -117,7 +115,8 @@ export function SimulationCardGrid({
           ) : (
             filteredSimulations.map((simulation) => {
               const isSelected = selectedSimulationIds.includes(simulation.id);
-              const cannotRemove = isSelected && canRemoveMap[simulation.id] === false;
+              const cannotRemove =
+                isSelected && canRemoveMap[simulation.id] === false;
 
               return (
                 <Tooltip key={simulation.id}>
@@ -132,7 +131,7 @@ export function SimulationCardGrid({
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "disabled:pointer-events-none disabled:opacity-50",
                         isSelected && "ring-2 ring-primary bg-accent",
-                        cannotRemove && "opacity-75 cursor-not-allowed"
+                        cannotRemove && "opacity-75 cursor-not-allowed",
                       )}
                     >
                       {/* Check icon - top right */}
@@ -159,7 +158,10 @@ export function SimulationCardGrid({
                   </TooltipTrigger>
                   {cannotRemove && (
                     <TooltipContent>
-                      <p>This simulation cannot be removed because it has active records</p>
+                      <p>
+                        This simulation cannot be removed because it has active
+                        records
+                      </p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -171,4 +173,3 @@ export function SimulationCardGrid({
     </TooltipProvider>
   );
 }
-

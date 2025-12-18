@@ -10,7 +10,7 @@ import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ eval_run_id: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { eval_run_id } = await params;
 
@@ -38,10 +38,5 @@ export default async function BenchmarkEvalRunPage({
     return null;
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Content will be added later */}
-    </div>
-  );
+  return <div className="space-y-6">{/* Content will be added later */}</div>;
 }
-

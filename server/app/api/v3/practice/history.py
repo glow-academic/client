@@ -53,7 +53,7 @@ router = APIRouter()
 class PracticeHistoryFilters(BaseModel):
     """Practice history filter request schema."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
     departmentIds: list[str] | None = None
     page: int = 0
     pageSize: int = 20
@@ -115,8 +115,15 @@ async def get_practice_history(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Profile ID must be a valid UUID (guest profile IDs are resolved on the client side)
-        profile_id = filters.profileId
 
         # Load SQL query
         sql_query = load_sql("sql/v3/practice/history.sql")

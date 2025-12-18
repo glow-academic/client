@@ -45,7 +45,7 @@ class CreateRubricRequest(BaseModel):
     passPoints: int
     department_ids: list[str] = []
     standard_groups: list[StandardGroupItem] = []
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class CreateRubricResponse(BaseModel):
@@ -81,6 +81,14 @@ async def create_rubric(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Convert standard groups to JSONB array for SQL
         standard_groups_json = json.dumps(
             [
@@ -118,7 +126,7 @@ async def create_rubric(
             request.passPoints,
             department_ids,
             standard_groups_json,
-            request.profileId,
+            profile_id,
         )
         row = await conn.fetchrow(sql_query, *sql_params)
 
@@ -132,7 +140,7 @@ async def create_rubric(
         if actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": request.profileId},
+                actor={"name": actor_name, "id": profile_id},
                 rubric={"name": request.name, "id": rubric_id},
             )
 

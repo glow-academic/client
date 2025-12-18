@@ -34,13 +34,13 @@ const getPersonasList = async (profileId: string): Promise<PersonasListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    }
+    },
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicatePersona(
-  input: DuplicatePersonaIn
+  input: DuplicatePersonaIn,
 ): Promise<DuplicatePersonaOut> {
   "use server";
   const session = await getSession();
@@ -56,7 +56,7 @@ async function duplicatePersona(
 }
 
 async function deletePersona(
-  input: DeletePersonaIn
+  input: DeletePersonaIn,
 ): Promise<DeletePersonaOut> {
   "use server";
   const session = await getSession();

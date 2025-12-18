@@ -424,7 +424,9 @@ export default function AttemptChat({
       (c) => c.chat.id === currentChat.id,
     );
     const serverHints = chatData?.hints || [];
-    const optimisticChatHints = currentChat.id ? (optimisticHints[currentChat.id] || []) : [];
+    const optimisticChatHints = currentChat.id
+      ? optimisticHints[currentChat.id] || []
+      : [];
 
     // Merge server hints with optimistic hints
     // Prefer server hints when they have content, use optimistic hints as fallback
@@ -1226,21 +1228,30 @@ export default function AttemptChat({
 
     socket.on("simulations_text_new_message", handleSimulationNewMessage);
     socket.on("simulations_text_message_sent", handleMessageSent);
-    socket.on("simulations_text_message_complete", handleSimulationMessageComplete);
+    socket.on(
+      "simulations_text_message_complete",
+      handleSimulationMessageComplete,
+    );
     socket.on("simulations_text_run_complete", handleSimulationRunComplete);
-    socket.on("simulations_text_message_cancelled", handleSimulationMessageCancelled);
+    socket.on(
+      "simulations_text_message_cancelled",
+      handleSimulationMessageCancelled,
+    );
     socket.on("simulations_text_message_error", handleSimulationMessageError);
     socket.on("simulations_text_stopped", handleSimulationStopped);
     socket.on("simulations_text_continued", handleSimulationContinued);
     socket.on("simulations_text_end_all_completed", handleEndAllCompleted);
-    socket.on(
-      "simulations_text_send_error",
-      handleSendSimulationMessageError,
-    );
+    socket.on("simulations_text_send_error", handleSendSimulationMessageError);
     socket.on("simulations_text_stop_error", handleStopSimulationError);
     socket.on("simulations_text_next_error", handleContinueSimulationError);
-    socket.on("simulations_text_grading_progress", handleSimulationGradingProgress);
-    socket.on("simulations_text_hint_generation_progress", handleHintGenerationProgress);
+    socket.on(
+      "simulations_text_grading_progress",
+      handleSimulationGradingProgress,
+    );
+    socket.on(
+      "simulations_text_hint_generation_progress",
+      handleHintGenerationProgress,
+    );
 
     // Quiz event handlers
     const handleQuizCompleteResponse = (data: {
@@ -1283,7 +1294,10 @@ export default function AttemptChat({
 
     socket.on("quiz_complete_response", handleQuizCompleteResponse);
     socket.on("quiz_complete_error", handleQuizCompleteError);
-    socket.on("quiz_submit_response_response", handleQuizSubmitResponseResponse);
+    socket.on(
+      "quiz_submit_response_response",
+      handleQuizSubmitResponseResponse,
+    );
     socket.on("quiz_submit_response_error", handleQuizSubmitResponseError);
 
     return () => {
@@ -1312,7 +1326,10 @@ export default function AttemptChat({
         "simulation_grading_progress",
         handleSimulationGradingProgress,
       );
-      socket.off("simulations_text_hint_generation_progress", handleHintGenerationProgress);
+      socket.off(
+        "simulations_text_hint_generation_progress",
+        handleHintGenerationProgress,
+      );
       socket.off("quiz_complete_response", handleQuizCompleteResponse);
       socket.off("quiz_complete_error", handleQuizCompleteError);
       socket.off(
@@ -1617,7 +1634,6 @@ export default function AttemptChat({
       setSelectedDocumentId(null);
     }
   }, [displayChat, currentChatIndex, scenarioDocuments, selectedDocumentId]);
-
 
   if (!chats || chats.length === 0) {
     return (

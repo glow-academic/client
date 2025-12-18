@@ -31,7 +31,7 @@ function parseName(name: string | null | undefined): {
 // Helper function to create a profile with guest role
 async function createGuestProfile(
   email: string,
-  name: string | null | undefined
+  name: string | null | undefined,
 ): Promise<void> {
   const { firstName, lastName } = parseName(name);
   try {
@@ -54,7 +54,7 @@ async function createGuestProfile(
       // eslint-disable-next-line no-console
       console.error(
         `Failed to create guest profile for ${email}:`,
-        errorMessage
+        errorMessage,
       );
     }
   }
@@ -113,7 +113,7 @@ export const {
             // eslint-disable-next-line no-console
             console.error(
               `Failed to update lastLogin for profile ${existingProfile.id}:`,
-              error instanceof Error ? error.message : String(error)
+              error instanceof Error ? error.message : String(error),
             );
           }
         } else {
@@ -125,7 +125,7 @@ export const {
         // eslint-disable-next-line no-console
         console.error(
           `Error in createUser event for ${user.email}:`,
-          error instanceof Error ? error.message : String(error)
+          error instanceof Error ? error.message : String(error),
         );
       }
     },
@@ -169,7 +169,7 @@ export const {
               // eslint-disable-next-line no-console
               console.error(
                 `Failed to update profile ${existingProfile.id}:`,
-                error instanceof Error ? error.message : String(error)
+                error instanceof Error ? error.message : String(error),
               );
             }
           }
@@ -213,7 +213,7 @@ export const {
                 `Failed to fetch profile after creation for ${user.email}:`,
                 retryError instanceof Error
                   ? retryError.message
-                  : String(retryError)
+                  : String(retryError),
               );
             }
           } catch (createError) {
@@ -224,7 +224,7 @@ export const {
               `Failed to create profile in jwt callback for ${user.email}:`,
               createError instanceof Error
                 ? createError.message
-                : String(createError)
+                : String(createError),
             );
           }
         }

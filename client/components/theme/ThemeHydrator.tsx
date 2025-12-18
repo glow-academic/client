@@ -36,7 +36,11 @@ export function ThemeHydrator({
       // Future: could check window.matchMedia("(prefers-color-scheme: dark)")
       root.classList.remove("dark");
     }
-  }, [activeSettings?.settings_id, activeSettings?.mode, activeSettings?.tokens]); // Re-run when active theme changes
+  }, [
+    activeSettings?.settings_id,
+    activeSettings?.mode,
+    activeSettings?.tokens,
+  ]); // Re-run when active theme changes
 
   return null; // No UI
 }

@@ -16,7 +16,7 @@ class DuplicateFieldRequest(BaseModel):
     """Request to duplicate field."""
 
     fieldId: str
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DuplicateFieldResponse(BaseModel):
@@ -44,12 +44,18 @@ async def duplicate_field(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             sql_query = load_sql("sql/v3/fields/duplicate_field_complete.sql")
-            sql_params = (request.fieldId, request.profileId)
-            new_field = await conn.fetchrow(
-                sql_query, request.fieldId, request.profileId
-            )
+            sql_params = (request.fieldId, profile_id)
+            new_field = await conn.fetchrow(sql_query, request.fieldId, profile_id)
 
             if not new_field:
                 raise ValueError(f"Field not found: {request.fieldId}")

@@ -98,7 +98,7 @@ class ScenarioMappingItem(BaseModel):
 class DocumentsListRequest(BaseModel):
     """Request for documents list."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DocumentItem(BaseModel):
@@ -190,16 +190,24 @@ async def get_documents_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/documents/list_documents.sql")
-        sql_params = (filters.profileId,)
-        rows = await conn.fetch(sql_query, filters.profileId)
+        sql_params = (profile_id,)
+        rows = await conn.fetch(sql_query, profile_id)
 
         # Get actor name from first row (same for all rows)
         actor_name = rows[0]["actor_name"] if rows else None
 
         # Set audit context
         if actor_name:
-            audit_set(request, actor={"name": actor_name, "id": filters.profileId})
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         documents: list[DocumentItem] = []
         scenario_mapping: dict[str, ScenarioMappingItem] = {}

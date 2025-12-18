@@ -169,7 +169,7 @@ class ScenarioDetailRequest(BaseModel):
     """Request to get scenario details."""
 
     scenarioId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
     # Filter parameters (optional)
     departmentIds: list[str] | None = None
     personaIds: list[str] | None = None
@@ -1002,13 +1002,21 @@ async def get_scenario_detail(
             except (ValueError, TypeError):
                 problem_statement_ids_uuid = None
 
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Derive useObjectives from objectivesMax for backward compatibility with SQL
         use_objectives = (
             request_data.objectivesMax is not None and request_data.objectivesMax > 0
         )
         sql_params = (
             request_data.scenarioId,
-            request_data.profileId,
+            profile_id,
             request_data.useImage
             if request_data.useImage is not None
             else False,  # $3: boolean (unused, but needed for type inference)
@@ -1865,7 +1873,7 @@ async def get_scenario_detail(
         if actor_name:
             audit_set(
                 request,
-                actor={"name": actor_name, "id": request_data.profileId},
+                actor={"name": actor_name, "id": profile_id},
                 scenario={"name": scenario_name, "id": request_data.scenarioId},
             )
 

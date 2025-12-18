@@ -18,7 +18,8 @@ from app.utils.sql_helper import load_sql
 class KeysListRequest(BaseModel):
     """Request for keys list."""
 
-    profileId: str
+    pass
+    # profileId removed - comes from X-Profile-Id header
 
 
 class KeyItem(BaseModel):
@@ -76,9 +77,17 @@ async def get_keys_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/keys/list_keys.sql")
-        sql_params = (filters.profileId,)
-        rows = await conn.fetch(sql_query, filters.profileId)
+        sql_params = (profile_id,)
+        rows = await conn.fetch(sql_query, profile_id)
 
         keys = []
         department_mapping: dict[str, dict[str, str]] = {}

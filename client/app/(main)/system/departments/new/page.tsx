@@ -39,7 +39,8 @@ async function createDepartment(
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Department",
-    description: "Create a new academic department for teaching assistant training programs. Set up department-specific configurations, organize teaching staff, and coordinate L&D programs across different academic units.",
+    description:
+      "Create a new academic department for teaching assistant training programs. Set up department-specific configurations, organize teaching staff, and coordinate L&D programs across different academic units.",
   };
 }
 
@@ -77,4 +78,3 @@ export type {
   DepartmentNewIn,
   DepartmentNewOut,
 };
-

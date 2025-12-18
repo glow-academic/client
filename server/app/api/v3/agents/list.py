@@ -38,7 +38,8 @@ ModelMapping = dict[str, ModelMappingItem]
 
 # Inline request/response schemas
 class AgentsListRequest(BaseModel):
-    profileId: str
+    pass
+    # profileId removed - comes from X-Profile-Id header
 
 
 class AgentItem(BaseModel):
@@ -97,18 +98,26 @@ async def list_agents(
 
     try:
         # Load SQL string
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/agents/get_agents_list_complete.sql")
-        sql_params = (request.profileId,)
+        sql_params = (profile_id,)
 
         # Execute query
-        rows = await conn.fetch(sql_query, request.profileId)
+        rows = await conn.fetch(sql_query, profile_id)
 
         # Get actor name from first row (same for all rows)
         actor_name = rows[0]["actor_name"] if rows else None
 
         # Set audit context
         if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": request.profileId})
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Build model mapping and department mapping from the single result set
         model_mapping: ModelMapping = {}

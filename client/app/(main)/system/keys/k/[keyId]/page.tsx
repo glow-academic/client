@@ -25,7 +25,7 @@ type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt", "post">;
  */
 const getKey = async (
   keyId: string,
-  profileId: string
+  profileId: string,
 ): Promise<KeyDetailOut> => {
   return api.post(
     "/keys/detail",
@@ -35,14 +35,14 @@ const getKey = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    }
+    },
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ keyId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { keyId } = await params;
   const session = await getSession();

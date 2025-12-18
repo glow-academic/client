@@ -545,20 +545,18 @@ export default function Documents({
                           document.field_ids.length > 0 && (
                             <div className="mb-3">
                               <div className="flex flex-wrap gap-1">
-                                {document.field_ids
-                                  .slice(0, 3)
-                                  .map((id) => {
-                                    const item = fieldMapping[id];
-                                    return (
-                                      <Badge
-                                        key={id}
-                                        variant="default"
-                                        className="text-[10px]"
-                                      >
-                                        {item?.name || id}
-                                      </Badge>
-                                    );
-                                  })}
+                                {document.field_ids.slice(0, 3).map((id) => {
+                                  const item = fieldMapping[id];
+                                  return (
+                                    <Badge
+                                      key={id}
+                                      variant="default"
+                                      className="text-[10px]"
+                                    >
+                                      {item?.name || id}
+                                    </Badge>
+                                  );
+                                })}
                                 {document.field_ids.length > 3 && (
                                   <Badge
                                     variant="outline"

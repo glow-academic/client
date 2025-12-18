@@ -27,10 +27,5 @@ export default async function BenchmarkPage() {
     return null;
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Content will be added later */}
-    </div>
-  );
+  return <div className="space-y-6">{/* Content will be added later */}</div>;
 }
-

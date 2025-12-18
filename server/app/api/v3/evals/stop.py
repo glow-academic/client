@@ -18,7 +18,7 @@ class StopEvalRequest(BaseModel):
     """Request to stop an eval."""
 
     evalId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class StopEvalResponse(BaseModel):

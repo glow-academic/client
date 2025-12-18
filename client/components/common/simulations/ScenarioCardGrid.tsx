@@ -7,18 +7,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  FileText,
-  Search,
-  Check,
-} from "lucide-react";
+import { FileText, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OutputOf } from "@/lib/api/types";
 
 // Extract types from API response (single source of truth)
 type SimulationsListOut = OutputOf<"/api/v3/simulations/list", "post">;
 type ScenarioMappingItem = SimulationsListOut["scenario_mapping"][string];
-
 
 export interface ScenarioCardGridProps<
   T extends ScenarioMappingItem = ScenarioMappingItem,
@@ -57,7 +52,6 @@ export function ScenarioCardGrid<
     // Sort by name
     return scenarios.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   }, [validScenarioIds, scenarioMapping]);
-
 
   // Apply search filter, then sort selected first
   const filteredScenarios = React.useMemo(() => {
@@ -103,8 +97,6 @@ export function ScenarioCardGrid<
     onSelect(newIds);
   };
 
-
-
   return (
     <TooltipProvider>
       <div className="space-y-4">
@@ -130,7 +122,8 @@ export function ScenarioCardGrid<
           ) : (
             filteredScenarios.map((scenario) => {
               const isSelected = selectedScenarioIds.includes(scenario.id);
-              const cannotRemove = isSelected && canRemoveMap[scenario.id] === false;
+              const cannotRemove =
+                isSelected && canRemoveMap[scenario.id] === false;
 
               return (
                 <Tooltip key={scenario.id}>
@@ -145,7 +138,7 @@ export function ScenarioCardGrid<
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         "disabled:pointer-events-none disabled:opacity-50",
                         isSelected && "ring-2 ring-primary bg-accent",
-                        cannotRemove && "opacity-75 cursor-not-allowed"
+                        cannotRemove && "opacity-75 cursor-not-allowed",
                       )}
                     >
                       {/* Check icon - top right */}
@@ -172,7 +165,10 @@ export function ScenarioCardGrid<
                   </TooltipTrigger>
                   {cannotRemove && (
                     <TooltipContent>
-                      <p>This scenario cannot be removed because it has active records</p>
+                      <p>
+                        This scenario cannot be removed because it has active
+                        records
+                      </p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -184,4 +180,3 @@ export function ScenarioCardGrid<
     </TooltipProvider>
   );
 }
-

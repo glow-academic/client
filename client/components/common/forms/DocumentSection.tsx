@@ -157,7 +157,7 @@ export function DocumentSection({
         className={cn(
           "transition-all",
           !isEditMode && stepStatus === "active" && "ring-2 ring-primary",
-          !isEditMode && stepStatus === "pending" && "opacity-50"
+          !isEditMode && stepStatus === "pending" && "opacity-50",
         )}
       >
         <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -169,7 +169,7 @@ export function DocumentSection({
                   ? "bg-green-500 text-white"
                   : stepStatus === "active"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    : "bg-muted",
               )}
             >
               {stepStatus === "completed" ? (
@@ -275,7 +275,7 @@ export function DocumentSection({
 
               const isSelected = selectedDocumentIds.includes(docId);
               const fullDoc = documentDetails?.find(
-                (d) => d.document_id === docId
+                (d) => d.document_id === docId,
               );
 
               // Create document item for DocumentViewer
@@ -324,7 +324,7 @@ export function DocumentSection({
                     "hover:shadow-md",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     "disabled:pointer-events-none disabled:opacity-50",
-                    isSelected && "ring-2 ring-primary"
+                    isSelected && "ring-2 ring-primary",
                   )}
                 >
                   {/* Preview button - top left */}
@@ -392,7 +392,7 @@ export function DocumentSection({
               (() => {
                 const docId = localPreviewDocumentId;
                 const fullDoc = documentDetails?.find(
-                  (d) => d.document_id === docId
+                  (d) => d.document_id === docId,
                 );
                 const docForViewer: DocumentItem = fullDoc
                   ? {

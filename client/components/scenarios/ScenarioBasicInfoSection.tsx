@@ -182,7 +182,7 @@ export function ScenarioBasicInfoSection({
               <GenericPicker
                 items={departmentMapping}
                 itemIds={Array.from(
-                  new Set([...validDepartmentIds, ...(departmentIds || [])])
+                  new Set([...validDepartmentIds, ...(departmentIds || [])]),
                 )}
                 selectedIds={departmentIds || []}
                 onSelect={(ids) => onDepartmentIdsChange(ids)}
@@ -408,6 +408,3 @@ export function ScenarioBasicInfoSection({
     </Card>
   );
 }
-
-
-

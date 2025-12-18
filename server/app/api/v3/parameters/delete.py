@@ -17,7 +17,7 @@ class DeleteParameterRequest(BaseModel):
     """Request to delete parameter."""
 
     parameterId: str
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DeleteParameterResponse(BaseModel):
@@ -44,13 +44,19 @@ async def delete_parameter(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Delete parameter with usage check in single SQL (DHH style)
             sql_query = load_sql("sql/v3/parameters/delete_parameter_complete.sql")
-            sql_params = (request.parameterId, request.profileId)
-            result = await conn.fetchrow(
-                sql_query, request.parameterId, request.profileId
-            )
+            sql_params = (request.parameterId, profile_id)
+            result = await conn.fetchrow(sql_query, request.parameterId, profile_id)
 
             if not result:
                 raise ValueError(f"Parameter not found: {request.parameterId}")

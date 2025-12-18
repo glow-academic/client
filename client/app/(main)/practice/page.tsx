@@ -45,7 +45,7 @@ const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
  * Note: Practice history endpoint doesn't use Redis cache, but header is sent for consistency.
  */
 const getPracticeHistory = async (
-  input: PracticeHistoryIn
+  input: PracticeHistoryIn,
 ): Promise<PracticeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -111,7 +111,7 @@ const getProfileContext = async (input: {
           headers: {
             "X-Bypass-Cache": "1",
           },
-        }
+        },
   ) as Promise<{
     effectiveProfile: { id: string; role: string };
     actualProfile: { id: string; role: string };
@@ -221,10 +221,10 @@ export default async function PracticePage({
     throw error;
   }
 
-  // Build practice filters (only profileId and departmentIds)
+  // Build practice filters (only departmentIds)
+  // profileId removed - comes from X-Profile-Id header automatically
   // Always pass departmentIds (never empty array) - use all IDs from profile context
   const practiceFiltersBody: PracticeIn["body"] = {
-    profileId: effectiveProfileId,
     departmentIds: profileContext.departmentIds || [], // Always pass (non-empty from profile context)
   };
 
@@ -377,10 +377,10 @@ async function PracticeHistorySection({
   effectiveProfileId: string;
   departmentIds: string[];
 }) {
-  // Build history filters for practice (simplified: profileId and departmentIds only)
+  // Build history filters for practice (simplified: departmentIds only)
+  // profileId removed - comes from X-Profile-Id header automatically
   const historyFilters: PracticeHistoryIn = {
     body: {
-      profileId: effectiveProfileId,
       departmentIds: departmentIds,
       page: historyPage,
       pageSize: historyPageSize,
@@ -409,10 +409,10 @@ async function PracticeHistorySection({
 
   // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
   const archivedCount = historyData.data.filter(
-    (item) => item.isArchived
+    (item) => item.isArchived,
   ).length;
   const unarchivedCount = historyData.data.filter(
-    (item) => !item.isArchived
+    (item) => !item.isArchived,
   ).length;
 
   // Use server-provided data directly (no transformation needed)

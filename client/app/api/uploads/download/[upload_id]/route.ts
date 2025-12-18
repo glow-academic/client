@@ -10,7 +10,7 @@ export async function GET(
     // Extract preview query parameter
     const { searchParams } = new URL(request.url);
     const preview = searchParams.get("preview") === "true";
-    
+
     // Build URL with preview parameter if present
     const url = new URL(
       `${INTERNAL_HTTP_BASE}/api/v3/uploads/download/${upload_id}`,
@@ -18,13 +18,13 @@ export async function GET(
     if (preview) {
       url.searchParams.set("preview", "true");
     }
-    
+
     const response = await fetch(url.toString(), {
-        method: "GET",
-        headers: {
-          // Forward any auth headers if needed
-          Cookie: request.headers.get("cookie") || "",
-        },
+      method: "GET",
+      headers: {
+        // Forward any auth headers if needed
+        Cookie: request.headers.get("cookie") || "",
+      },
     });
 
     if (!response.ok) {

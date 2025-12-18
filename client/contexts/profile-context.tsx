@@ -141,7 +141,7 @@ export function ProfileProviderClient({
 
   // Department filter state
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    []
+    [],
   );
 
   // Handle null initial (access denied case) - with server-side access control,
@@ -230,7 +230,7 @@ export function ProfileProviderClient({
 
         if (connectionAttempts.current >= maxConnectionAttempts) {
           toast.error(
-            "Unable to connect to real-time updates. Some features may be limited."
+            "Unable to connect to real-time updates. Some features may be limited.",
           );
         }
       });
@@ -240,7 +240,7 @@ export function ProfileProviderClient({
       socket.on(
         "simulations_text_started",
         (
-          data: Parameters<ServerToClientEvents["simulations_text_started"]>[0]
+          data: Parameters<ServerToClientEvents["simulations_text_started"]>[0],
         ) => {
           setStartingSimulationId(null);
           if (data.success) {
@@ -248,12 +248,12 @@ export function ProfileProviderClient({
             window.dispatchEvent(
               new CustomEvent("simulationStarted", {
                 detail: { attemptId: data.attempt_id },
-              })
+              }),
             );
           } else {
             toast.error(data.message);
           }
-        }
+        },
       );
 
       socket.on(
@@ -261,12 +261,12 @@ export function ProfileProviderClient({
         (
           data: Parameters<
             ServerToClientEvents["simulations_text_practice_error"]
-          >[0]
+          >[0],
         ) => {
           setStartingSimulationId(null);
           toast.error(data.message);
           window.dispatchEvent(new CustomEvent("simulationError"));
-        }
+        },
       );
     };
 
@@ -305,7 +305,7 @@ export function ProfileProviderClient({
         effectiveProfile &&
         effectiveProfile.id !== bootstrapProfile.id &&
         sessionSnapshot.emulationTTL &&
-        sessionSnapshot.fullEmulation
+        sessionSnapshot.fullEmulation,
     );
   }, [
     bootstrapProfile,
@@ -346,7 +346,7 @@ export function ProfileProviderClient({
       const route = getSectionRoute(defaultSection, pathname);
       router.push(route);
     },
-    [router, pathname]
+    [router, pathname],
   );
 
   const isSectionAvailable = useCallback(
@@ -356,7 +356,7 @@ export function ProfileProviderClient({
         "guest") as ProfileRole;
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile?.role]
+    [effectiveProfile?.role],
   );
 
   // WebSocket helper methods
@@ -387,7 +387,7 @@ export function ProfileProviderClient({
       setStartingSimulationId(data.simulation_id);
       socketRef.current.emit("simulation_text_start", payload);
     },
-    [isConnected]
+    [isConnected],
   );
 
   const emitCreatePracticeScenario = useCallback(
@@ -434,7 +434,7 @@ export function ProfileProviderClient({
       }
       socketRef.current.emit("simulation_text_practice", payload);
     },
-    [isConnected]
+    [isConnected],
   );
 
   const value: ProfileContextType = {

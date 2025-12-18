@@ -5,7 +5,6 @@
  * 06/09/2025
  */
 import { Simulations } from "@/components/simulations/Simulations";
-import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -22,13 +21,11 @@ type DeleteSimulationOut = OutputOf<"/api/v3/simulations/delete", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getSimulationsList = async (
-  profileId: string,
-): Promise<SimulationsListOut> => {
+const getSimulationsList = async (): Promise<SimulationsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/simulations/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -67,17 +64,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function SimulationsPage() {
   // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
+  // profileId removed - comes from X-Profile-Id header automatically
 
   // Fetch list data server-side
-  const listData = await getSimulationsList(profileId);
+  const listData = await getSimulationsList();
 
   return (
     <div className="space-y-6" data-page="simulations-index">

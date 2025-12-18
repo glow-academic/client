@@ -18,11 +18,11 @@ type CreateEvalIn = InputOf<"/api/v3/evals/create", "post">;
 type CreateEvalOut = OutputOf<"/api/v3/evals/create", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getEvalDefault = async (profileId: string): Promise<EvalNewOut> => {
+const getEvalDefault = async (): Promise<EvalNewOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/evals/new",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -46,15 +46,8 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions ---- */
 async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/evals/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  // profileId removed - comes from X-Profile-Id header automatically
+  return api.post("/evals/create", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -70,7 +63,7 @@ export default async function NewEvalPage() {
   }
 
   // Fetch eval default data (for dropdowns and defaults)
-  const evalDetailDefault = await getEvalDefault(profileId);
+  const evalDetailDefault = await getEvalDefault();
 
   return (
     <div

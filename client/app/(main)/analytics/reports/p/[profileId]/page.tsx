@@ -99,7 +99,7 @@ const getProfileContext = async (input: {
 /** ---- Inline filters function for profile reports page ---- */
 async function getProfileReportsFilters(
   searchParams?: URLSearchParams,
-  profileIds?: { effectiveProfileId: string; actualProfileId: string }
+  profileIds?: { effectiveProfileId: string; actualProfileId: string },
 ) {
   if (!profileIds) {
     throw new Error("Profile IDs required");

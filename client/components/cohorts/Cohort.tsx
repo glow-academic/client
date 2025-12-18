@@ -48,14 +48,7 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import {
-  BarChart3,
-  Check,
-  CheckCircle2,
-  Clock,
-  Loader2,
-  Power,
-} from "lucide-react";
+import { Check, Loader2, Power } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // Import types from new page (create action)
@@ -139,12 +132,12 @@ export default function Cohort({
       const newParamsString = params.toString();
       router.replace(`${pathname}?${newParamsString}`, { scroll: false });
     },
-    [searchParams, pathname, router]
+    [searchParams, pathname, router],
   );
 
   // State for accordion (only one section open at a time)
   const [openAccordionItem, setOpenAccordionItem] = useState<string | null>(
-    null
+    null,
   );
 
   // Track if we've initialized URL params from server data to prevent infinite loops
@@ -154,9 +147,9 @@ export default function Cohort({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null
+        effectiveProfile?.primaryDepartmentId ?? null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   const initialFormData: FormData = {
@@ -224,7 +217,7 @@ export default function Cohort({
 
   // State for junction data
   const [currentSimulationIds, setCurrentSimulationIds] = useState<string[]>(
-    []
+    [],
   );
 
   // Readonly logic using server-provided can_edit flag
@@ -236,7 +229,7 @@ export default function Cohort({
   // Filter valid IDs based on selected departments
   const departmentMapping = useMemo(
     () => cohortData?.department_mapping || {},
-    [cohortData?.department_mapping]
+    [cohortData?.department_mapping],
   );
 
   const validSimulationIds = useMemo(() => {
@@ -274,7 +267,7 @@ export default function Cohort({
         simulationIds: simulationIds.length > 0 ? simulationIds : null,
       });
     },
-    [updateUrlParams]
+    [updateUrlParams],
   );
 
   // Sync simulation IDs from URL params (DHH-style: compute when needed, not in effects)
@@ -283,12 +276,12 @@ export default function Cohort({
   useEffect(() => {
     const simulationIdsFromUrl =
       searchParams.get("simulationIds")?.split(",").filter(Boolean) || [];
-    
+
     // Compare arrays preserving order (not sorted)
-    const arraysEqual = 
+    const arraysEqual =
       simulationIdsFromUrl.length === currentSimulationIds.length &&
       simulationIdsFromUrl.every((id, idx) => id === currentSimulationIds[idx]);
-    
+
     if (!arraysEqual) {
       setCurrentSimulationIds(simulationIdsFromUrl);
     }
@@ -299,9 +292,10 @@ export default function Cohort({
   const handleSimulationMoveUp = useCallback(
     (simulationId: string) => {
       // Get ordered simulation IDs from searchParams (source of truth) - ALWAYS use searchParams first
-      const orderedIds =
-        searchParams.get("simulationIds")?.split(",").filter(Boolean) ||
-        [...currentSimulationIds];
+      const orderedIds = searchParams
+        .get("simulationIds")
+        ?.split(",")
+        .filter(Boolean) || [...currentSimulationIds];
 
       const index = orderedIds.indexOf(simulationId);
       if (index <= 0) return;
@@ -319,15 +313,16 @@ export default function Cohort({
         simulationIds: reorderedIds.length > 0 ? reorderedIds : null,
       });
     },
-    [currentSimulationIds, isEditMode, searchParams, updateUrlParams]
+    [currentSimulationIds, isEditMode, searchParams, updateUrlParams],
   );
 
   const handleSimulationMoveDown = useCallback(
     (simulationId: string) => {
       // Get ordered simulation IDs from searchParams (source of truth) - ALWAYS use searchParams first
-      const orderedIds =
-        searchParams.get("simulationIds")?.split(",").filter(Boolean) ||
-        [...currentSimulationIds];
+      const orderedIds = searchParams
+        .get("simulationIds")
+        ?.split(",")
+        .filter(Boolean) || [...currentSimulationIds];
 
       const index = orderedIds.indexOf(simulationId);
       if (index < 0 || index >= orderedIds.length - 1) return;
@@ -345,7 +340,7 @@ export default function Cohort({
         simulationIds: reorderedIds.length > 0 ? reorderedIds : null,
       });
     },
-    [currentSimulationIds, isEditMode, searchParams, updateUrlParams]
+    [currentSimulationIds, isEditMode, searchParams, updateUrlParams],
   );
 
   // Handle simulation active toggle
@@ -356,7 +351,7 @@ export default function Cohort({
         [simulationId]: active,
       }));
     },
-    []
+    [],
   );
 
   // Load cohort data from V2 API response
@@ -469,7 +464,7 @@ export default function Cohort({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | string[] | null
+    value: string | boolean | string[] | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -499,7 +494,7 @@ export default function Cohort({
           return "pending";
       }
     },
-    [formData?.title, currentSimulationIds.length]
+    [formData?.title, currentSimulationIds.length],
   );
 
   // Steps array
@@ -508,7 +503,8 @@ export default function Cohort({
       {
         id: "basic",
         title: "Basic Information",
-        description: "Set the cohort name, description, departments, and active status.",
+        description:
+          "Set the cohort name, description, departments, and active status.",
         status: getStepStatus("basic"),
       },
       {
@@ -529,13 +525,13 @@ export default function Cohort({
 
     // Track which simulation IDs are in saved cohort data
     const savedSimulationIds = new Set(
-      cohortData?.simulations?.map((s) => s.simulation_id) || []
+      cohortData?.simulations?.map((s) => s.simulation_id) || [],
     );
 
     return orderedIds.map((simulationId, index) => {
       const simulation = cohortData?.simulation_mapping[simulationId];
       const simulationData = cohortData?.simulations?.find(
-        (s) => s.simulation_id === simulationId
+        (s) => s.simulation_id === simulationId,
       );
 
       // A simulation is "new" if it's selected but not in saved cohort data
@@ -546,7 +542,10 @@ export default function Cohort({
         simulationName: simulation?.name || "Unnamed Simulation",
         simulationDescription: simulation?.description || "",
         position: index + 1,
-        active: simulationActiveStates[simulationId] ?? simulationData?.active ?? true,
+        active:
+          simulationActiveStates[simulationId] ??
+          simulationData?.active ??
+          true,
         isNew,
       };
     });
@@ -603,7 +602,7 @@ export default function Cohort({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        validDepartmentIds
+        validDepartmentIds,
       );
 
       const targetCohortId = cohortId || editingCohortId;
@@ -641,7 +640,7 @@ export default function Cohort({
     } catch (error) {
       const targetCohortId = cohortId || editingCohortId;
       toast.error(
-        `Failed to ${targetCohortId ? "update" : "create"} cohort: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${targetCohortId ? "update" : "create"} cohort: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -672,7 +671,6 @@ export default function Cohort({
     }
     return map;
   }, [cohortData?.simulations]);
-
 
   return (
     <div
@@ -722,7 +720,7 @@ export default function Cohort({
                     ? "bg-green-500 text-white"
                     : steps[0]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {steps[0]?.status === "completed" ? (
@@ -741,7 +739,7 @@ export default function Cohort({
                     onChange={(e) => handleInputChange("title", e.target.value)}
                     className={cn(
                       "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      errors.title && "border-destructive"
+                      errors.title && "border-destructive",
                     )}
                     placeholder="New Cohort"
                     disabled={isReadonly}
@@ -788,7 +786,9 @@ export default function Cohort({
                       items={cohortData?.department_mapping || {}}
                       itemIds={cohortData?.valid_department_ids || []}
                       selectedIds={formData.departmentIds || []}
-                      onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                      onSelect={(ids) =>
+                        handleInputChange("departmentIds", ids)
+                      }
                       getId={(dept) => (dept as unknown as { id: string }).id}
                       getLabel={(dept) => dept.name || ""}
                       getSearchText={(dept) =>
@@ -842,7 +842,7 @@ export default function Cohort({
             !isEditMode &&
               steps[1]?.status === "active" &&
               "ring-2 ring-primary",
-            !isEditMode && steps[1]?.status === "pending" && "opacity-50"
+            !isEditMode && steps[1]?.status === "pending" && "opacity-50",
           )}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -854,7 +854,7 @@ export default function Cohort({
                     ? "bg-green-500 text-white"
                     : steps[1]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {steps[1]?.status === "completed" ? (
@@ -942,9 +942,7 @@ export default function Cohort({
           </Button>
           <Button
             type="submit"
-            disabled={
-              isSubmitting || isReadonly || (isEditMode && !hasChanges)
-            }
+            disabled={isSubmitting || isReadonly || (isEditMode && !hasChanges)}
             className="min-w-[120px]"
             data-testid="btn-submit-cohort"
           >
@@ -973,8 +971,9 @@ export default function Cohort({
               Update Cohort
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This cohort is currently used by {currentSimulationIds.length || 0}{" "}
-              simulation{(currentSimulationIds.length || 0) !== 1 ? "s" : ""}:
+              This cohort is currently used by{" "}
+              {currentSimulationIds.length || 0} simulation
+              {(currentSimulationIds.length || 0) !== 1 ? "s" : ""}:
               <ul className="mt-2 list-disc list-inside">
                 {currentSimulationIds.map((simId) => {
                   const sim = cohortData?.simulation_mapping[simId];

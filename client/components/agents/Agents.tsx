@@ -248,7 +248,9 @@ export default function Agents({
     if (!duplicateAgentAction || !effectiveProfile?.id) return;
 
     try {
-      await duplicateAgentAction({ body: { agentId: id, profileId: effectiveProfile.id } });
+      await duplicateAgentAction({
+        body: { agentId: id, profileId: effectiveProfile.id },
+      });
       toast.success("Agent duplicated successfully");
       router.refresh();
     } catch {
@@ -261,7 +263,9 @@ export default function Agents({
 
     setIsDeleting(true);
     try {
-      await deleteAgentAction({ body: { agentId: deleteItem.id, profileId: effectiveProfile.id } });
+      await deleteAgentAction({
+        body: { agentId: deleteItem.id, profileId: effectiveProfile.id },
+      });
       toast.success("Agent deleted successfully");
       router.refresh();
     } catch {

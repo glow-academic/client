@@ -31,7 +31,7 @@ DepartmentMapping = dict[str, DepartmentMappingItem]
 class EvalsFilters(BaseModel):
     """Filters for evals list request."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class EvalItem(BaseModel):
@@ -99,12 +99,20 @@ async def get_evals_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Load SQL string
         sql_query = load_sql("sql/v3/evals/list_evals.sql")
-        sql_params = (filters.profileId,)
+        sql_params = (profile_id,)
 
         # Execute query
-        result = await conn.fetch(sql_query, filters.profileId)
+        result = await conn.fetch(sql_query, profile_id)
 
         # Build response - transform database rows
         evals = []

@@ -48,7 +48,15 @@ export interface FieldConnectionItem {
 
 export interface ParameterFieldsTableProps {
   data: FieldConnectionItem[]; // All available fields with connection status
-  fieldMapping: Record<string, { name: string; description?: string; usage_count?: number; department_ids?: string[] | null }>;
+  fieldMapping: Record<
+    string,
+    {
+      name: string;
+      description?: string;
+      usage_count?: number;
+      department_ids?: string[] | null;
+    }
+  >;
   validFieldIds: string[];
   selectedFieldIds: string[]; // Currently connected field IDs
   onFieldSelect?: (ids: string[]) => void;
@@ -313,7 +321,9 @@ export function ParameterFieldsTable({
                 onSelect={onFieldSelect}
                 getId={(item) => (item as unknown as { id: string }).id}
                 getLabel={(item) => item.name || ""}
-                getSearchText={(item) => `${item.name} ${item.description || ""}`}
+                getSearchText={(item) =>
+                  `${item.name} ${item.description || ""}`
+                }
                 placeholder="Add fields..."
                 multiSelect={true}
                 hideSelectedChips={true}
@@ -383,4 +393,3 @@ export function ParameterFieldsTable({
     </TooltipProvider>
   );
 }
-

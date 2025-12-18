@@ -27,7 +27,8 @@ class DepartmentMappingItem(BaseModel):
 class FieldsListRequest(BaseModel):
     """Request for fields list."""
 
-    profileId: str
+    pass
+    # profileId removed - comes from X-Profile-Id header
 
 
 class FieldItem(BaseModel):
@@ -97,9 +98,17 @@ async def get_fields_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/fields/list_fields.sql")
-        sql_params = (filters.profileId,)
-        rows = await conn.fetch(sql_query, filters.profileId)
+        sql_params = (profile_id,)
+        rows = await conn.fetch(sql_query, profile_id)
 
         fields = []
         parameter_mapping: dict[str, dict[str, str]] = {}
@@ -155,10 +164,18 @@ async def get_fields_list(
                                 description=ddata.get("description", ""),
                             )
 
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Get user departments for scoping facet options
         user_department_rows = await conn.fetch(
             "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
-            filters.profileId,
+            profile_id,
         )
         user_department_ids = {
             str(row["department_id"]) for row in user_department_rows

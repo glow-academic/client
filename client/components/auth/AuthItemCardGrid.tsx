@@ -32,9 +32,9 @@ export function AuthItemCardGrid({
   const [editingField, setEditingField] = React.useState<
     "name" | "description" | null
   >(null);
-  const [editingValue, setEditingValue] = React.useState<
-    Partial<AuthItemCard>
-  >({});
+  const [editingValue, setEditingValue] = React.useState<Partial<AuthItemCard>>(
+    {},
+  );
 
   const handleAddItem = () => {
     if (readonly) return;
@@ -63,7 +63,7 @@ export function AuthItemCardGrid({
 
   const handleStartEdit = (
     item: AuthItemCard,
-    field: "name" | "description"
+    field: "name" | "description",
   ) => {
     if (readonly) return;
     setEditingId(item.id);
@@ -71,10 +71,7 @@ export function AuthItemCardGrid({
     setEditingValue({ [field]: item[field] || "" });
   };
 
-  const handleSaveEdit = (
-    id: string,
-    field: "name" | "description"
-  ) => {
+  const handleSaveEdit = (id: string, field: "name" | "description") => {
     if (readonly) return;
     if (field === "name" && !editingValue.name?.trim()) {
       handleCancelEdit();
@@ -120,7 +117,7 @@ export function AuthItemCardGrid({
               key={item.id}
               className={cn(
                 "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all",
-                "hover:shadow-md hover:bg-accent/50"
+                "hover:shadow-md hover:bg-accent/50",
               )}
             >
               {/* Name Field */}
@@ -133,7 +130,10 @@ export function AuthItemCardGrid({
                     type="text"
                     value={editingValue.name || ""}
                     onChange={(e) =>
-                      setEditingValue((prev) => ({ ...prev, name: e.target.value }))
+                      setEditingValue((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
                     }
                     placeholder="Auth item name"
                     className="h-8 text-sm flex-1"
@@ -205,7 +205,7 @@ export function AuthItemCardGrid({
                           "w-full text-sm font-medium border-none outline-none bg-transparent px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
                           item.name
                             ? "text-foreground cursor-pointer hover:bg-muted/50"
-                            : "text-muted-foreground cursor-pointer hover:bg-muted/50"
+                            : "text-muted-foreground cursor-pointer hover:bg-muted/50",
                         )}
                         placeholder="Click to edit name"
                         disabled={readonly}
@@ -318,7 +318,7 @@ export function AuthItemCardGrid({
             className={cn(
               "flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed bg-card text-card-foreground shadow-sm transition-all",
               "hover:shadow-md hover:bg-accent/50 hover:border-primary",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             )}
           >
             <Plus className="h-6 w-6 text-muted-foreground" />
@@ -331,4 +331,3 @@ export function AuthItemCardGrid({
     </div>
   );
 }
-

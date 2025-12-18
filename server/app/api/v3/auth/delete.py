@@ -17,7 +17,7 @@ class DeleteAuthRequest(BaseModel):
     """Request to delete auth."""
 
     authId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DeleteAuthResponse(BaseModel):

@@ -18,7 +18,7 @@ class DuplicatePersonaRequest(BaseModel):
     """Request to duplicate persona."""
 
     personaId: str
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DuplicatePersonaResponse(BaseModel):
@@ -55,13 +55,19 @@ async def duplicate_persona(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Duplicate persona (fetch and duplicate in single query)
             sql_query = load_sql("sql/v3/personas/duplicate_persona_complete_v2.sql")
-            sql_params = (request.personaId, request.profileId)
-            result = await conn.fetchrow(
-                sql_query, request.personaId, request.profileId
-            )
+            sql_params = (request.personaId, profile_id)
+            result = await conn.fetchrow(sql_query, request.personaId, profile_id)
 
             if not result or not result.get("new_persona_id"):
                 raise ValueError(f"Persona not found: {request.personaId}")
@@ -74,7 +80,7 @@ async def duplicate_persona(
             if actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": request.profileId},
+                    actor={"name": actor_name, "id": profile_id},
                     persona={"name": original_name, "id": request.personaId},
                 )
 

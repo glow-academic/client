@@ -53,7 +53,7 @@ class CreateSimulationRequest(BaseModel):
         None  # Deprecated, use content_items
     )
     content_items: list[ContentItemInRequest] | None = None  # Unified content list
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class CreateSimulationResponse(BaseModel):
@@ -155,8 +155,13 @@ async def create_simulation(
             scenario_time_limit_seconds_array = (
                 scenario_time_limit_seconds if scenario_time_limit_seconds else []
             )
-            # Require profileId in request body (already required by Pydantic model)
-            profile_id = request.profileId
+            # Get profile_id from header (set by router-level dependency)
+            profile_id = http_request.state.profile_id
+            if not profile_id:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Profile ID is required. Please sign in again.",
+                )
 
             # Create simulation with departments and scenarios in single SQL (DHH style)
             # Note: rubric_id and time_limit are now per-scenario, not simulation-level

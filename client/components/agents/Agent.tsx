@@ -102,7 +102,7 @@ export interface AgentProps {
   createAgentAction?: (input: CreateAgentIn) => Promise<CreateAgentOut>;
   updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
   deleteAgentPromptAction?: (
-    input: DeleteAgentPromptIn
+    input: DeleteAgentPromptIn,
   ) => Promise<DeleteAgentPromptOut>;
 }
 
@@ -130,7 +130,7 @@ export default function Agent({
   const [formData, setFormData] = useState<AgentFormData>();
   const [errors, setErrors] = useState<FormErrors>({});
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
-    "editor"
+    "editor",
   );
   const prevDepartmentIdsRef = React.useRef<string[]>([]);
   const [showDeletePromptDialog, setShowDeletePromptDialog] = useState(false);
@@ -310,7 +310,7 @@ export default function Agent({
     const filtered: Record<string, PromptInfo> = {};
 
     for (const [promptId, promptInfoRaw] of Object.entries(
-      agentDetail.prompt_mapping
+      agentDetail.prompt_mapping,
     )) {
       // Add default values for name and description if missing (for backward compatibility)
       // Type assertion needed because API schema may not be fully updated in TypeScript types
@@ -337,7 +337,7 @@ export default function Agent({
         // Specific departments selected - show prompts for those departments
         if (
           promptInfo.department_ids.some((deptId) =>
-            selectedDeptIds.includes(deptId)
+            selectedDeptIds.includes(deptId),
           )
         ) {
           filtered[promptId] = promptInfo;
@@ -424,14 +424,14 @@ export default function Agent({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null
+        effectiveProfile?.primaryDepartmentId ?? null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   // Helper function to get required modalities based on agent_type
   const getRequiredModalities = (
-    agentType: string
+    agentType: string,
   ): {
     input: string[];
     output: string[];
@@ -461,7 +461,7 @@ export default function Agent({
   // Helper to extract modalities from model info
   // The API returns input_modalities and output_modalities as separate fields
   const getModelModalities = (
-    modelInfo: AgentModelMappingItem | undefined
+    modelInfo: AgentModelMappingItem | undefined,
   ): { input: string[]; output: string[] } => {
     if (!modelInfo) return { input: [], output: [] };
 
@@ -533,7 +533,7 @@ export default function Agent({
         const hasRequiredOutput =
           requiredModalities.output.length === 0 ||
           requiredModalities.output.every((mod) =>
-            modelOutputMods.includes(mod)
+            modelOutputMods.includes(mod),
           );
 
         if (hasRequiredInput && hasRequiredOutput) {
@@ -587,7 +587,7 @@ export default function Agent({
       reasoning: "none",
       voices: [],
     }),
-    [defaultDepartmentIds]
+    [defaultDepartmentIds],
   );
 
   // Set breadcrumb context when agent data is loaded
@@ -731,7 +731,7 @@ export default function Agent({
 
   const handleInputChange = (
     field: keyof AgentFormData,
-    value: string | number | boolean | string[] | null | undefined
+    value: string | number | boolean | string[] | null | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -784,7 +784,7 @@ export default function Agent({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        validDepartmentIds
+        validDepartmentIds,
       );
 
       if (isEditMode && agentId && agentDetail) {
@@ -816,7 +816,7 @@ export default function Agent({
               const allShareSamePrompt =
                 existingPromptIds.length > 0 &&
                 existingPromptIds.every(
-                  (promptId) => promptId === existingPromptIds[0]
+                  (promptId) => promptId === existingPromptIds[0],
                 );
 
               if (allShareSamePrompt) {
@@ -910,7 +910,7 @@ export default function Agent({
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unknown error";
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
+        `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`,
       );
       setIsSubmitting(false);
     }
@@ -953,7 +953,7 @@ export default function Agent({
           return "pending";
       }
     },
-    [formData]
+    [formData],
   );
 
   // Steps array
@@ -1050,10 +1050,10 @@ export default function Agent({
         }
 
         const hasRequiredInput = requiredModalities.input.every((mod) =>
-          modelInputMods.includes(mod)
+          modelInputMods.includes(mod),
         );
         const hasRequiredOutput = requiredModalities.output.every((mod) =>
-          modelOutputMods.includes(mod)
+          modelOutputMods.includes(mod),
         );
         if (!hasRequiredInput || !hasRequiredOutput) {
           // Reset to first valid model or empty
@@ -1075,10 +1075,10 @@ export default function Agent({
 
               return (
                 requiredModalities.input.every((mod) =>
-                  inputMods.includes(mod)
+                  inputMods.includes(mod),
                 ) &&
                 requiredModalities.output.every((mod) =>
-                  outputMods.includes(mod)
+                  outputMods.includes(mod),
                 )
               );
             }) || [];
@@ -1394,7 +1394,7 @@ export default function Agent({
                           return {
                             id: String(optObj["id"] || ""),
                             reasoning_level: String(
-                              optObj["reasoning_level"] || ""
+                              optObj["reasoning_level"] || "",
                             ),
                           };
                         }) as Array<{
@@ -1422,7 +1422,7 @@ export default function Agent({
                           | "minimal"
                           | "low"
                           | "medium"
-                          | "high"
+                          | "high",
                       );
                     }
                   }}

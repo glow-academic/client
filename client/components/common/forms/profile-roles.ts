@@ -3,7 +3,12 @@
  * Extracted from ProfileRolePicker for reuse
  */
 
-export type ProfileRole = "superadmin" | "admin" | "instructional" | "member" | "guest";
+export type ProfileRole =
+  | "superadmin"
+  | "admin"
+  | "instructional"
+  | "member"
+  | "guest";
 
 export const PROFILE_ROLES: ProfileRole[] = [
   "superadmin",
@@ -20,4 +25,3 @@ export const ROLE_LABEL: Record<ProfileRole, string> = {
   member: "Member",
   guest: "Guest",
 };
-

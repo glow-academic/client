@@ -21,7 +21,7 @@ router = APIRouter()
 class LogsBundleRequest(BaseModel):
     """Logs bundle request schema."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class TrendData(BaseModel):

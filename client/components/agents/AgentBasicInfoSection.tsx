@@ -72,7 +72,7 @@ export function AgentBasicInfoSection({
       className={cn(
         "transition-all",
         stepStatus === "active" && "ring-2 ring-primary",
-        stepStatus === "pending" && "opacity-50"
+        stepStatus === "pending" && "opacity-50",
       )}
     >
       <CardContent className="pt-3">
@@ -84,10 +84,14 @@ export function AgentBasicInfoSection({
                 ? "bg-green-500 text-white"
                 : stepStatus === "active"
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+                  : "bg-muted",
             )}
           >
-            {isCompleted ? <Check className="w-4 h-4" /> : <span>{stepNumber}</span>}
+            {isCompleted ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <span>{stepNumber}</span>
+            )}
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-semibold">{stepTitle}</h3>
@@ -107,7 +111,7 @@ export function AgentBasicInfoSection({
             placeholder="e.g., Enthusiastic Student Agent"
             className={cn(
               "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-              errors?.name && "border-destructive"
+              errors?.name && "border-destructive",
             )}
             disabled={isReadonly}
             required
@@ -126,9 +130,7 @@ export function AgentBasicInfoSection({
             onChange={(e) => onDescriptionChange(e.target.value)}
             placeholder="Detailed behavior description and personality traits"
             rows={4}
-            className={cn(
-              errors?.description && "border-destructive"
-            )}
+            className={cn(errors?.description && "border-destructive")}
             disabled={isReadonly}
             required
           />
@@ -190,7 +192,3 @@ export function AgentBasicInfoSection({
     </Card>
   );
 }
-
-
-
-

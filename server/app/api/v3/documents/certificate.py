@@ -9,7 +9,7 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel
 
@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 class GenerateCertificateRequest(BaseModel):
     """Request to generate certificate."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 router = APIRouter()
@@ -33,13 +33,22 @@ router = APIRouter()
 @router.post("/certificate")
 async def generate_certificate(
     request: GenerateCertificateRequest,
+    http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Response:
     """Generate a certificate PDF/text for a profile."""
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Load SQL query and fetch certificate data from database
         sql_query = load_sql("sql/v3/documents/get_certificate_data.sql")
-        result = await conn.fetchrow(sql_query, request.profileId)
+        result = await conn.fetchrow(sql_query, profile_id)
 
         if not result:
             raise HTTPException(

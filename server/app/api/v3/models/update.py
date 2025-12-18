@@ -41,7 +41,7 @@ class UpdateModelRequest(BaseModel):
     reasoning_levels: list[str] | None = None
     voices: list[str] | None = None
     qualities: list[str] | None = None
-    profileId: str  # Required for auditing/access control
+    # profileId removed - comes from X-Profile-Id header
 
 
 class UpdateModelResponse(BaseModel):
@@ -68,6 +68,14 @@ async def update_model(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         async with transaction(conn):
             # Check if model exists
             check_sql = "SELECT name FROM models WHERE id = $1"
@@ -90,7 +98,7 @@ async def update_model(
                 request.value,
                 department_ids,
                 base_url,
-                request.profileId,
+                profile_id,
             )
             await conn.execute(
                 sql_query,
@@ -102,7 +110,7 @@ async def update_model(
                 request.value,
                 department_ids,
                 base_url,
-                request.profileId,
+                profile_id,
             )
 
             # Update temperature bounds if provided

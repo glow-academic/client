@@ -133,7 +133,7 @@ export default function Eval({
       const newParamsString = params.toString();
       router.replace(`${pathname}?${newParamsString}`, { scroll: false });
     },
-    [searchParams, pathname, router]
+    [searchParams, pathname, router],
   );
 
   // Track if we've initialized URL params from server data to prevent infinite loops
@@ -143,9 +143,9 @@ export default function Eval({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null
+        effectiveProfile?.primaryDepartmentId ?? null,
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
   );
 
   const initialFormData: FormData = useMemo(() => {
@@ -302,7 +302,7 @@ export default function Eval({
         updateUrlParams({ rubricId: null });
       }
     },
-    [updateUrlParams, currentRubricId, validRubricIds]
+    [updateUrlParams, currentRubricId, validRubricIds],
   );
 
   // Handle rubric selection
@@ -313,7 +313,7 @@ export default function Eval({
         rubricId: rubricId || null,
       });
     },
-    [updateUrlParams]
+    [updateUrlParams],
   );
 
   // Handle model run selection
@@ -324,7 +324,7 @@ export default function Eval({
         modelRunIds: modelRunIds.length > 0 ? modelRunIds : null,
       });
     },
-    [updateUrlParams]
+    [updateUrlParams],
   );
 
   // Sync selections from URL params
@@ -530,7 +530,7 @@ export default function Eval({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | string[] | null
+    value: string | boolean | string[] | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -567,7 +567,7 @@ export default function Eval({
       currentAgentIds.length,
       currentRubricId,
       currentModelRunIds.length,
-    ]
+    ],
   );
 
   // Steps array
@@ -655,7 +655,7 @@ export default function Eval({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        validDepartmentIds
+        validDepartmentIds,
       );
 
       const targetEvalId = evalId || editingEvalId;
@@ -708,7 +708,7 @@ export default function Eval({
     } catch (error) {
       const targetEvalId = evalId || editingEvalId;
       toast.error(
-        `Failed to ${targetEvalId ? "update" : "create"} eval: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${targetEvalId ? "update" : "create"} eval: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -786,7 +786,7 @@ export default function Eval({
                     ? "bg-green-500 text-white"
                     : steps[0]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {steps[0]?.status === "completed" ? (
@@ -805,7 +805,7 @@ export default function Eval({
                     onChange={(e) => handleInputChange("name", e.target.value)}
                     className={cn(
                       "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      errors.name && "border-destructive"
+                      errors.name && "border-destructive",
                     )}
                     placeholder="New Eval"
                     disabled={isReadonly}
@@ -962,7 +962,7 @@ export default function Eval({
             !isEditMode &&
               steps[1]?.status === "active" &&
               "ring-2 ring-primary",
-            !isEditMode && steps[1]?.status === "pending" && "opacity-50"
+            !isEditMode && steps[1]?.status === "pending" && "opacity-50",
           )}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -974,7 +974,7 @@ export default function Eval({
                     ? "bg-green-500 text-white"
                     : steps[1]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {steps[1]?.status === "completed" ? (
@@ -1015,7 +1015,7 @@ export default function Eval({
               !isEditMode &&
                 steps[2]?.status === "active" &&
                 "ring-2 ring-primary",
-              !isEditMode && steps[2]?.status === "pending" && "opacity-50"
+              !isEditMode && steps[2]?.status === "pending" && "opacity-50",
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1027,7 +1027,7 @@ export default function Eval({
                       ? "bg-green-500 text-white"
                       : steps[2]?.status === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "bg-muted",
                   )}
                 >
                   {steps[2]?.status === "completed" ? (
@@ -1074,7 +1074,7 @@ export default function Eval({
               !isEditMode &&
                 steps[3]?.status === "active" &&
                 "ring-2 ring-primary",
-              !isEditMode && steps[3]?.status === "pending" && "opacity-50"
+              !isEditMode && steps[3]?.status === "pending" && "opacity-50",
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1086,7 +1086,7 @@ export default function Eval({
                       ? "bg-green-500 text-white"
                       : steps[3]?.status === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "bg-muted",
                   )}
                 >
                   {steps[3]?.status === "completed" ? (

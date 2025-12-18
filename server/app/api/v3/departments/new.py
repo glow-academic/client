@@ -33,7 +33,7 @@ class CohortMappingItem(BaseModel):
 class DepartmentNewRequest(BaseModel):
     """Request for default department detail."""
 
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class SettingsMappingItem(BaseModel):
@@ -91,13 +91,21 @@ async def get_department_new(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/departments/get_department_default_complete.sql")
-        sql_params = (request_body.profileId,)
-        result = await conn.fetchrow(sql_query, request_body.profileId)
+        sql_params = (profile_id,)
+        result = await conn.fetchrow(sql_query, profile_id)
 
         if not result:
             raise HTTPException(
-                status_code=404, detail=f"Profile {request_body.profileId} not found"
+                status_code=404, detail=f"Profile {profile_id} not found"
             )
 
         is_superadmin = result["profile_role"] == "superadmin"

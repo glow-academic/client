@@ -128,7 +128,7 @@ class HomeFilters(BaseModel):
     startDate: str
     endDate: str
     cohortIds: list[str] | None = None
-    profileId: str  # Required: used for TA mode detection and role hierarchy filtering
+    # profileId removed - comes from X-Profile-Id header
     departmentIds: list[str] | None = None
 
 
@@ -175,6 +175,14 @@ async def get_home_overview(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Profile ID is required and must be a valid UUID
         # Guest profile IDs are resolved on the client side before calling this endpoint
         # SQL will infer role hierarchy from profileId
@@ -203,7 +211,7 @@ async def get_home_overview(
         params = [
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $2
-            filters.profileId,  # $3 (required)
+            profile_id,  # $3 (from header)
             filters.cohortIds if filters.cohortIds else [],  # $4
             filters.departmentIds if filters.departmentIds else [],  # $5
         ]

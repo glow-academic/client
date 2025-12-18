@@ -12,7 +12,11 @@ import type {
   RefreshAnalyticsOut,
 } from "@/app/(main)/layout-server";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { PROFILE_ROLES, ROLE_LABEL, type ProfileRole } from "@/components/common/forms/profile-roles";
+import {
+  PROFILE_ROLES,
+  ROLE_LABEL,
+  type ProfileRole,
+} from "@/components/common/forms/profile-roles";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";

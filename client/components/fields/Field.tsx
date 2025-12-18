@@ -198,7 +198,13 @@ export default function Field({
         clearEntityMetadata(fieldId);
       }
     };
-  }, [isEditMode, fieldDetail, fieldId, setEntityMetadata, clearEntityMetadata]);
+  }, [
+    isEditMode,
+    fieldDetail,
+    fieldId,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   // Readonly logic using server-provided can_edit flag
   const isReadonly = useMemo(() => {
@@ -216,13 +222,14 @@ export default function Field({
           return hasName ? "completed" : "active";
         case "conditionalParameters":
           if (!hasName) return "pending";
-          const hasParameters = (formData?.conditionalParameterIds?.length || 0) > 0;
+          const hasParameters =
+            (formData?.conditionalParameterIds?.length || 0) > 0;
           return hasParameters ? "completed" : "active";
         default:
           return "pending";
       }
     },
-    [formData]
+    [formData],
   );
 
   // Steps array
@@ -231,13 +238,15 @@ export default function Field({
       {
         id: "basic",
         title: "Basic Information",
-        description: "Set the field name, description, departments, and active status.",
+        description:
+          "Set the field name, description, departments, and active status.",
         status: getStepStatus("basic"),
       },
       {
         id: "conditionalParameters",
         title: "Conditional Parameters",
-        description: "Select parameters to show when this field is selected (enables parameter chaining).",
+        description:
+          "Select parameters to show when this field is selected (enables parameter chaining).",
         status: getStepStatus("conditionalParameters"),
       },
     ];
@@ -364,7 +373,7 @@ export default function Field({
                     ? "bg-green-500 text-white"
                     : steps[0]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted",
                 )}
               >
                 {steps[0]?.status === "completed" ? (
@@ -394,14 +403,16 @@ export default function Field({
                     }}
                     className={cn(
                       "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      errors.name && "border-destructive"
+                      errors.name && "border-destructive",
                     )}
                     placeholder="New Field"
                     disabled={isReadonly}
                   />
                 ) : null}
                 <p className="text-xs text-muted-foreground mt-1 px-2">
-                  {formData?.name === "" || !formData?.name || formData?.name === "New Field"
+                  {formData?.name === "" ||
+                  !formData?.name ||
+                  formData?.name === "New Field"
                     ? "Click to edit • Name will be auto-generated if unchanged"
                     : "Click to edit"}
                 </p>
@@ -444,16 +455,16 @@ export default function Field({
                     items={departmentMapping}
                     itemIds={validDepartmentIds}
                     selectedIds={formData.departmentIds || []}
-                    onSelect={(ids) =>
-                      handleInputChange("departmentIds", ids)
-                    }
+                    onSelect={(ids) => handleInputChange("departmentIds", ids)}
                     getId={(dept) => {
                       const entry = Object.entries(departmentMapping).find(
-                        ([, v]) => v === dept
+                        ([, v]) => v === dept,
                       );
                       return entry ? entry[0] : "";
                     }}
-                    getLabel={(dept) => (dept["name"] as string | undefined) || ""}
+                    getLabel={(dept) =>
+                      (dept["name"] as string | undefined) || ""
+                    }
                     getSearchText={(dept) =>
                       `${dept["name"]} ${dept["description"] || ""}`
                     }
@@ -506,7 +517,7 @@ export default function Field({
               !isEditMode &&
                 steps[1]?.status === "active" &&
                 "ring-2 ring-primary",
-              !isEditMode && steps[1]?.status === "pending" && "opacity-50"
+              !isEditMode && steps[1]?.status === "pending" && "opacity-50",
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -518,7 +529,7 @@ export default function Field({
                       ? "bg-green-500 text-white"
                       : steps[1]?.status === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "bg-muted",
                   )}
                 >
                   {steps[1]?.status === "completed" ? (

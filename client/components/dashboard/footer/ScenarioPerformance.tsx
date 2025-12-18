@@ -459,7 +459,9 @@ export default function ScenarioPerformance({
             selectedIds={activeParameterId ? [activeParameterId] : []}
             onSelect={(ids) => setSelectedParameterId(ids[0] || "")}
             getId={(item) => {
-              const entry = Object.entries(parameterMappingForPicker).find(([, v]) => v === item);
+              const entry = Object.entries(parameterMappingForPicker).find(
+                ([, v]) => v === item,
+              );
               return entry ? entry[0] : "";
             }}
             getLabel={(item) => item.name}

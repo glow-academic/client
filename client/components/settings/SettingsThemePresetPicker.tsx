@@ -7,10 +7,7 @@
 
 import React, { useMemo } from "react";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import {
-  UNIVERSITY_THEMES,
-  type ThemePreset,
-} from "./universityThemes";
+import { UNIVERSITY_THEMES, type ThemePreset } from "./universityThemes";
 
 // Re-export ThemePreset for backward compatibility
 export type { ThemePreset };
@@ -69,4 +66,3 @@ export function SettingsThemePresetPicker({
     </div>
   );
 }
-

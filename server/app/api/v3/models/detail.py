@@ -18,7 +18,7 @@ from app.utils.sql_helper import load_sql
 # Inline request/response schemas
 class ModelDetailRequest(BaseModel):
     modelId: str
-    profileId: str
+    # profileId removed - comes from X-Profile-Id header
 
 
 class DepartmentMappingItem(BaseModel):
@@ -116,9 +116,17 @@ async def get_model_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/models/get_model_detail_complete.sql")
-        sql_params = (request.modelId, request.profileId)
-        model = await conn.fetchrow(sql_query, request.modelId, request.profileId)
+        sql_params = (request.modelId, profile_id)
+        model = await conn.fetchrow(sql_query, request.modelId, profile_id)
 
         if not model:
             raise HTTPException(

@@ -44,7 +44,7 @@ class SearchStaffRequest(BaseModel):
         None  # Department IDs to EXCLUDE profiles from (optional)
     )
     limit: int = 200  # Maximum number of results
-    profileId: str  # Current user's profile ID for permissions
+    # profileId removed - comes from X-Profile-Id header
 
 
 class SearchStaffResponse(BaseModel):
@@ -77,9 +77,17 @@ async def search_staff(
         return SearchStaffResponse.model_validate(cached["data"])
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Build dynamic SQL query (similar to staff_queries.search_staff)
         # Start with current_profile_id (used in CTEs)
-        params: list[Any] = [request.profileId]
+        params: list[Any] = [profile_id]
         param_idx = 2  # $1 is current_profile_id
 
         # Build search WHERE clause
