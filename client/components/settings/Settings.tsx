@@ -336,16 +336,16 @@ export default function Settings({
           settingsDetail.default_guest_profile_id ?? null,
       };
       setFormData(newFormData);
-      // Store original form data for change tracking (only if not already set, or if this is initial load)
+      // Store original form data for change tracking (only if not already set, or if selectedSettingsId changed)
       if (
         !originalFormData ||
-        originalSelectedSettingsId === selectedSettingsId
+        originalSelectedSettingsId !== selectedSettingsId
       ) {
         setOriginalFormData(newFormData);
+        // Sync originalSelectedSettingsId with selectedSettingsId when settingsDetail changes
+        // This prevents false positives in change detection and ensures they stay in sync
+        setOriginalSelectedSettingsId(selectedSettingsId);
       }
-      // Always sync originalSelectedSettingsId with selectedSettingsId when settingsDetail changes
-      // This prevents false positives in change detection and ensures they stay in sync
-      setOriginalSelectedSettingsId(selectedSettingsId);
 
       // Initialize key mappings from settings detail
       const providerKeyMap = settingsDetail.provider_key_mapping || {};
@@ -402,7 +402,7 @@ export default function Settings({
       );
       setSelectedProviderIds(enabledProviderIds);
     }
-  }, [settingsDetail, originalFormData, originalSelectedSettingsId, selectedSettingsId]);
+  }, [settingsDetail, selectedSettingsId]);
 
   // Sync originalSelectedSettingsId when selectedSettingsId changes from null to a value
   // This handles the case where auto-select sets selectedSettingsId after settingsDetail loads
