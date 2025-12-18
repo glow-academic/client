@@ -11,10 +11,8 @@ import type {
   RefreshAnalyticsIn,
   RefreshAnalyticsOut,
 } from "@/app/(main)/layout-server";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   PROFILE_ROLES,
-  ROLE_LABEL,
   type ProfileRole,
 } from "@/components/common/forms/profile-roles";
 import { Button } from "@/components/ui/button";
@@ -33,6 +31,7 @@ import {
   Cohort as CohortSelectorCohort,
 } from "./analytics/CohortSelector";
 import { DepartmentSelector } from "./analytics/DepartmentSelector";
+import { RoleSelector } from "./analytics/RoleSelector";
 
 export interface AnalyticsFiltersProps {
   homePage?: boolean;
@@ -342,24 +341,18 @@ export function AnalyticsFilters({
 
             {/* Role Picker - hide on home, report, and practice pages */}
             {!homePage && !reportPage && !practicePage && (
-              <GenericPicker
-                items={
+              <RoleSelector
+                roles={
                   selectedCohortIds.length > 0
                     ? PROFILE_ROLES.filter(
                         (role) => role === "instructional" || role === "member",
                       )
                     : PROFILE_ROLES.filter((role) => scopedRoles.includes(role))
                 }
-                selectedIds={selectedRoles}
-                onSelect={(ids) => handleRoleSelect(ids as ProfileRole[])}
-                getId={(item) => item}
-                getLabel={(item) => ROLE_LABEL[item as ProfileRole]}
-                getSearchText={(item) => ROLE_LABEL[item as ProfileRole]}
+                selectedRoles={selectedRoles}
+                onSelect={handleRoleSelect}
                 placeholder="Roles"
-                multiSelect={true}
                 hideSelectedChips={true}
-                buttonClassName="min-w-[75px] justify-between"
-                groupHeading="Roles"
               />
             )}
 

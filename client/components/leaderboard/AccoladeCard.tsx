@@ -9,8 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import clsx from "clsx";
-import { motion } from "framer-motion";
-import { ReactNode, useRef, useState } from "react";
+import { ReactNode } from "react";
 
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
@@ -47,80 +46,34 @@ export default function AccoladeCard({
   gradientStartColor = "rgba(59, 130, 246, 0.8)",
   gradientEndColor = "rgba(59, 130, 246, 0.8)",
 }: AccoladeCardProps) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [hovering, setHovering] = useState(false);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    const rotateY = (x - 0.5) * 10;
-    const rotateX = (0.5 - y) * 10;
-    ref.current.style.setProperty("--rx", `${rotateX}deg`);
-    ref.current.style.setProperty("--ry", `${rotateY}deg`);
-  };
-
   const asButton = !!onClick && !disabled;
 
   return (
-    <div
-      className="rounded-2xl p-[1px] h-full relative"
+    <Card
       data-testid={dataTestId}
-      style={
-        {
-          background: `linear-gradient(90deg, ${gradientStartColor}, ${gradientEndColor}, ${gradientStartColor})`,
-          backgroundSize: "300% 100%",
-          animation: "gradient-move 4s linear infinite",
-          WebkitMask:
-            "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-          WebkitMaskComposite: "xor",
-          maskComposite: "exclude",
-        } as React.CSSProperties
-      }
+      className={clsx(
+        "h-full flex flex-col border-2 border-primary py-0",
+        asButton && "cursor-pointer hover:shadow-md transition-shadow",
+      )}
+      onClick={asButton ? onClick : undefined}
+      role={asButton ? "button" : undefined}
+      tabIndex={asButton ? 0 : -1}
+      onKeyDown={(e) => {
+        if (asButton && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
     >
-      <motion.div
-        ref={ref}
-        {...(layoutId && { layoutId })}
-        className={clsx(
-          "relative group rounded-2xl p-4 h-full bg-card",
-          asButton && "cursor-pointer",
-          "transition-shadow will-change-transform shadow-sm flex flex-col",
-        )}
-        style={{
-          transform: hovering
-            ? "perspective(800px) rotateX(var(--rx)) rotateY(var(--ry))"
-            : undefined,
-        }}
-        onMouseMove={handleMouseMove}
-        onMouseEnter={() => setHovering(true)}
-        onMouseLeave={() => {
-          setHovering(false);
-          if (ref.current) {
-            ref.current.style.setProperty("--rx", "0deg");
-            ref.current.style.setProperty("--ry", "0deg");
-          }
-        }}
-        {...(!disabled && {
-          whileHover: { boxShadow: "0 20px 40px rgba(0,0,0,0.12)", y: -2 },
-          whileTap: { scale: 0.98 },
-        })}
-        onClick={asButton ? onClick : undefined}
-        role={asButton ? "button" : undefined}
-        tabIndex={asButton ? 0 : -1}
-        onKeyDown={(e) => {
-          if (asButton && (e.key === "Enter" || e.key === " ")) {
-            e.preventDefault();
-            onClick?.();
-          }
-        }}
-      >
-        <div className="flex flex-row items-center justify-between mb-2 text-muted-foreground">
+      <CardHeader className="pb-3 p-0 px-4 pt-4">
+        <div className="flex flex-row items-center justify-between">
           <div className="rounded-lg p-2 bg-muted/50">{icon}</div>
           <div className="font-semibold text-sm">{title}</div>
         </div>
+      </CardHeader>
+      <CardContent className="pt-0 px-4 pb-4 flex-1 flex flex-col items-center justify-center">
         {user ? (
-          <div className="flex flex-col items-center justify-center w-full gap-2 py-2">
+          <div className="flex flex-col items-center justify-center w-full gap-2">
             <Avatar
               className="h-14 w-14 outline outline-muted-foreground flex-shrink-0 mb-2"
               style={{ outlineWidth: "1px", outlineStyle: "solid" }}
@@ -141,8 +94,8 @@ export default function AccoladeCard({
             <p className="text-sm text-muted-foreground">No holder yet</p>
           </div>
         )}
-      </motion.div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
