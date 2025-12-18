@@ -7,12 +7,14 @@ CREATE TABLE activity (
   created_at  timestamptz NOT NULL DEFAULT now(),
   message     text NOT NULL,                    -- fully rendered activity message (no placeholders)
   endpoint    text NOT NULL,                    -- route path
-  profile_id  UUID NOT NULL REFERENCES profiles(id)
+  profile_id  UUID NOT NULL REFERENCES profiles(id),
+  error       BOOLEAN NOT NULL DEFAULT false    -- true if HTTP status >= 400 or template rendering failed
 );
 
 CREATE INDEX ON activity (created_at);
 CREATE INDEX ON activity (profile_id);
 CREATE INDEX ON activity (endpoint);
+CREATE INDEX ON activity (error);
 
 -- Application metrics table (snapshot-based metrics tracking)
 CREATE TABLE app_metrics (
@@ -46,12 +48,14 @@ CREATE TABLE feedback (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   type        feedback_type NOT NULL,
   message     TEXT NOT NULL DEFAULT 'No message provided',
-  profile_id  UUID NOT NULL REFERENCES profiles(id)
+  profile_id  UUID NOT NULL REFERENCES profiles(id),
+  resolved    BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE INDEX ON feedback (created_at);
 CREATE INDEX ON feedback (profile_id);
 CREATE INDEX ON feedback (type);
+CREATE INDEX ON feedback (resolved);
 
 
 -- ============================================================================

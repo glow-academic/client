@@ -240,13 +240,6 @@ export default function EvalCard({
               {rubricName}
             </Badge>
           </div>
-
-          <div className="text-sm text-muted-foreground mt-2 space-y-1">
-            <div>
-              Completed: {completedRuns} / {totalRuns}
-            </div>
-            {pendingRuns > 0 && <div>Pending: {pendingRuns}</div>}
-          </div>
         </CardContent>
 
         <CardFooter className="pt-0 relative z-10">
@@ -279,7 +272,7 @@ export default function EvalCard({
             <Button
               onClick={() => onStartEval(evalId)}
               disabled={isDisabled}
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-medium text-sm hover:shadow-lg transition-all duration-300"
+              className="w-full font-medium text-sm hover:shadow-lg transition-all duration-300"
               variant="default"
             >
               {isLoading ? (

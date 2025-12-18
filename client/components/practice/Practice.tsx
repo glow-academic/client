@@ -16,7 +16,6 @@ import { useProfile } from "@/contexts/profile-context";
 // This functionality needs to be re-implemented or removed
 import { Skeleton } from "@/components/ui/skeleton";
 import { HistorySkeleton } from "../common/history/SimulationHistory";
-import { PracticeCustomizeDialog } from "./PracticeCustomizeDialog";
 import PracticeZone, { PracticeZoneSkeleton } from "./PracticeZone";
 
 export interface PracticeProps {
@@ -35,7 +34,6 @@ export default function Practice({
     activeProfile,
     isConnected,
     emitStartSimulation,
-    emitCreatePracticeScenario,
     startingSimulationId,
   } = useProfile();
 
@@ -45,51 +43,10 @@ export default function Practice({
     null,
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  // Practice customize dialog state
-  const [customizeOpen, setCustomizeOpen] = useState(false);
-  const [isStartingAttempt, setIsStartingAttempt] = useState(false);
-
-  // Listen for customize button click from layout
-  useEffect(() => {
-    const handleOpenCustomize = () => setCustomizeOpen(true);
-    window.addEventListener("openPracticeCustomize", handleOpenCustomize);
-    return () =>
-      window.removeEventListener("openPracticeCustomize", handleOpenCustomize);
-  }, []);
 
   // Extract data from practiceData
   const bundle = practiceData;
   const practiceOverview = bundle;
-
-  // Extract entity mappings for PracticeCustomizeDialog (memoized to prevent reference changes)
-  const personaMapping = useMemo(
-    () => bundle?.persona_mapping || {},
-    [bundle?.persona_mapping],
-  );
-  const scenarioMapping = useMemo(
-    () => bundle?.scenario_mapping || {},
-    [bundle?.scenario_mapping],
-  );
-  const parameterMapping = useMemo(
-    () => bundle?.parameter_mapping || {},
-    [bundle?.parameter_mapping],
-  );
-  const parameterItemMapping = useMemo(
-    () => bundle?.field_mapping || {},
-    [bundle?.field_mapping],
-  );
-  const simulationMapping = useMemo(
-    () => bundle?.simulation_mapping || {},
-    [bundle?.simulation_mapping],
-  );
-  const departmentMapping = useMemo(
-    () => bundle?.department_mapping || {},
-    [bundle?.department_mapping],
-  );
-  const validDepartmentIds = useMemo(
-    () => bundle?.valid_department_ids || [],
-    [bundle?.valid_department_ids],
-  );
 
   // Normalize simulation items to ensure required fields are present
   const simulationItems = useMemo(() => {
@@ -123,7 +80,6 @@ export default function Practice({
         toast.dismiss(loadingToastId);
         setLoadingToastId(null);
       }
-      setIsStartingAttempt(false); // Reset practice scenario loading state
       const { attemptId } = event.detail;
       // Server-side Redis cache is already invalidated by the WebSocket handler
       router.refresh(); // Refresh current page data so it's updated when user returns
@@ -139,7 +95,6 @@ export default function Practice({
         toast.dismiss(loadingToastId);
         setLoadingToastId(null);
       }
-      setIsStartingAttempt(false); // Reset practice scenario loading state
       toast.error("Failed to start simulation. Please try again.");
     };
 
@@ -305,82 +260,6 @@ export default function Practice({
           loadingSimulation={loadingSimulation}
         />
       </div>
-
-      {/* Practice Customize Dialog */}
-      {customizeOpen && (
-        <PracticeCustomizeDialog
-          open={customizeOpen}
-          onClose={() => setCustomizeOpen(false)}
-          personaMapping={personaMapping}
-          scenarioMapping={scenarioMapping}
-          parameterMapping={parameterMapping}
-          parameterItemMapping={parameterItemMapping}
-          simulationMapping={simulationMapping}
-          departmentMapping={departmentMapping}
-          validDepartmentIds={validDepartmentIds}
-          onStartAttempt={async (params) => {
-            if (!isConnected) {
-              toast.error("WebSocket not connected. Please refresh the page.");
-              return;
-            }
-
-            setIsStartingAttempt(true);
-            const profileIdForEmit =
-              effectiveProfile?.role === "guest"
-                ? ""
-                : String(effectiveProfile?.id || "");
-
-            // Standard mode - use simulation_text_practice WebSocket event
-            // Store toast ID so it can be dismissed when simulation starts
-            const practiceToastId = toast.loading(
-              "Creating practice scenario...",
-              {
-                dismissible: true,
-              },
-            );
-            setLoadingToastId(practiceToastId);
-
-            // Set timeout for practice scenario creation
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-            timeoutRef.current = setTimeout(() => {
-              toast.dismiss(practiceToastId);
-              toast.error(
-                "Practice scenario creation timed out. Please try again.",
-              );
-              setLoadingToastId(null);
-              setIsStartingAttempt(false);
-            }, 30000);
-
-            emitCreatePracticeScenario({
-              persona_id: params.personaId || null,
-              parameter_item_ids: params.parameterItemIds || [],
-              department_id: params.departmentId || null,
-              profile_id: profileIdForEmit,
-              infinite_mode: false,
-            });
-            setCustomizeOpen(false);
-          }}
-          isStartingAttempt={isStartingAttempt}
-          effectiveProfile={{
-            ...effectiveProfile!,
-            role: effectiveProfile!.role as
-              | "ta"
-              | "instructional"
-              | "superadmin"
-              | "admin"
-              | "guest",
-          }}
-          activeProfile={{
-            ...activeProfile!,
-            role: activeProfile!.role as
-              | "ta"
-              | "instructional"
-              | "superadmin"
-              | "admin"
-              | "guest",
-          }}
-        />
-      )}
     </TooltipProvider>
   );
 }

@@ -9,11 +9,13 @@
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { SlidersHorizontal } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
 
 export function PracticeCustomizeButton() {
+  const router = useRouter();
   const { effectiveProfile } = useProfile();
 
   // Determine if button should be shown based on role
@@ -35,7 +37,7 @@ export function PracticeCustomizeButton() {
   }
 
   const handleClick = () => {
-    window.dispatchEvent(new CustomEvent("openPracticeCustomize"));
+    router.push("/practice/custom");
   };
 
   return (

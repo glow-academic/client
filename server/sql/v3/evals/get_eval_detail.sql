@@ -66,7 +66,7 @@ runs_list AS (
         er.completed,
         er.created_at as assigned_at,
         er.updated_at as status_updated_at,
-        r.created_at as run_created_at,
+        r.created_at as model_run_created_at,
         -- Get model info
         rm.model_id::text as model_id,
         m.name as model_name,

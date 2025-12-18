@@ -6897,6 +6897,168 @@
         ]
       }
     },
+    "/api/v3/activity/bundle": {
+      "post": {
+        "tags": [
+          "v3",
+          "activity"
+        ],
+        "summary": "Get Activity Bundle",
+        "description": "Get activity bundle with header metrics.",
+        "operationId": "get_activity_bundle_api_v3_activity_bundle_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityBundleFilters"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityBundleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "activity"
+        ]
+      }
+    },
+    "/api/v3/activity/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "activity"
+        ],
+        "summary": "Get Activity List",
+        "description": "Get paginated list of activity entries.",
+        "operationId": "get_activity_list_api_v3_activity_list_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityListFilters"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "activity"
+        ]
+      }
+    },
     "/api/v3/dashboard/overview": {
       "post": {
         "tags": [
@@ -10845,6 +11007,168 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateFeedbackResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "feedback"
+        ]
+      }
+    },
+    "/api/v3/feedback/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "feedback"
+        ],
+        "summary": "Get Feedback List",
+        "description": "Get list of all feedback entries.",
+        "operationId": "get_feedback_list_api_v3_feedback_list_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackListFilters"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "feedback"
+        ]
+      }
+    },
+    "/api/v3/feedback/resolve": {
+      "post": {
+        "tags": [
+          "v3",
+          "feedback"
+        ],
+        "summary": "Resolve Feedback",
+        "description": "Resolve or unresolve a feedback entry.",
+        "operationId": "resolve_feedback_api_v3_feedback_resolve_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveFeedbackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveFeedbackResponse"
                 }
               }
             }
@@ -18929,6 +19253,154 @@
   },
   "components": {
     "schemas": {
+      "ActivityBundleFilters": {
+        "properties": {},
+        "type": "object",
+        "title": "ActivityBundleFilters",
+        "description": "Filters for activity bundle request."
+      },
+      "ActivityBundleMetrics": {
+        "properties": {
+          "total_activity_entries": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "recent_activity_24h": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "unresolved_feedback_count": {
+            "$ref": "#/components/schemas/MetricResponse"
+          },
+          "total_feedback_count": {
+            "$ref": "#/components/schemas/MetricResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_activity_entries",
+          "recent_activity_24h",
+          "unresolved_feedback_count",
+          "total_feedback_count"
+        ],
+        "title": "ActivityBundleMetrics",
+        "description": "Header metrics for activity page."
+      },
+      "ActivityBundleResponse": {
+        "properties": {
+          "metrics": {
+            "$ref": "#/components/schemas/ActivityBundleMetrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metrics"
+        ],
+        "title": "ActivityBundleResponse",
+        "description": "Response for activity bundle endpoint."
+      },
+      "ActivityItem": {
+        "properties": {
+          "activity_id": {
+            "type": "string",
+            "title": "Activity Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "error": {
+            "type": "boolean",
+            "title": "Error"
+          },
+          "profile_name": {
+            "type": "string",
+            "title": "Profile Name"
+          },
+          "profile_id": {
+            "type": "string",
+            "title": "Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activity_id",
+          "created_at",
+          "message",
+          "error",
+          "profile_name",
+          "profile_id"
+        ],
+        "title": "ActivityItem",
+        "description": "Individual activity item in the response."
+      },
+      "ActivityListFilters": {
+        "properties": {
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 0
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize",
+            "default": 50
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          }
+        },
+        "type": "object",
+        "title": "ActivityListFilters",
+        "description": "Filters for activity list request."
+      },
+      "ActivityListResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityItem"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "totalCount": {
+            "type": "integer",
+            "title": "Totalcount"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize"
+          },
+          "totalPages": {
+            "type": "integer",
+            "title": "Totalpages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "totalCount",
+          "page",
+          "pageSize",
+          "totalPages"
+        ],
+        "title": "ActivityListResponse",
+        "description": "Response for activity list endpoint."
+      },
       "AgentDetailRequest": {
         "properties": {
           "agentId": {
@@ -27061,6 +27533,86 @@
         "title": "ExportRequest",
         "description": "Request to export reports data."
       },
+      "FeedbackItem": {
+        "properties": {
+          "feedback_id": {
+            "type": "string",
+            "title": "Feedback Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "resolved": {
+            "type": "boolean",
+            "title": "Resolved"
+          },
+          "author_name": {
+            "type": "string",
+            "title": "Author Name"
+          },
+          "author_email": {
+            "type": "string",
+            "title": "Author Email"
+          },
+          "author_emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Author Emails"
+          },
+          "author_profile_id": {
+            "type": "string",
+            "title": "Author Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feedback_id",
+          "type",
+          "message",
+          "created_at",
+          "resolved",
+          "author_name",
+          "author_email",
+          "author_emails",
+          "author_profile_id"
+        ],
+        "title": "FeedbackItem",
+        "description": "Individual feedback item in the response."
+      },
+      "FeedbackListFilters": {
+        "properties": {},
+        "type": "object",
+        "title": "FeedbackListFilters",
+        "description": "Filters for feedback list request."
+      },
+      "FeedbackListResponse": {
+        "properties": {
+          "feedback": {
+            "items": {
+              "$ref": "#/components/schemas/FeedbackItem"
+            },
+            "type": "array",
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feedback"
+        ],
+        "title": "FeedbackListResponse",
+        "description": "Response for feedback list endpoint."
+      },
       "FieldConnection": {
         "properties": {
           "field_id": {
@@ -34928,6 +35480,54 @@
         ],
         "title": "ReportsOverviewFilters",
         "description": "Reports overview filter request schema - requires profileId for individual reports."
+      },
+      "ResolveFeedbackRequest": {
+        "properties": {
+          "feedback_id": {
+            "type": "string",
+            "title": "Feedback Id"
+          },
+          "resolved": {
+            "type": "boolean",
+            "title": "Resolved"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feedback_id",
+          "resolved"
+        ],
+        "title": "ResolveFeedbackRequest",
+        "description": "Request to resolve/unresolve feedback."
+      },
+      "ResolveFeedbackResponse": {
+        "properties": {
+          "feedback_id": {
+            "type": "string",
+            "title": "Feedback Id"
+          },
+          "resolved": {
+            "type": "boolean",
+            "title": "Resolved"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feedback_id",
+          "resolved",
+          "success",
+          "message"
+        ],
+        "title": "ResolveFeedbackResponse",
+        "description": "Response for resolve feedback endpoint."
       },
       "ResponseInputItem": {
         "properties": {
@@ -50063,6 +50663,39 @@
           "description": {
             "type": "string",
             "title": "Description"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "rubric_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Points"
+          },
+          "rubric_pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Pass Points"
           }
         },
         "type": "object",

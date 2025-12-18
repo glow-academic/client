@@ -15,7 +15,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 
 def test_practice_customization_dialog(page: Page, base_url: str) -> None:
-    """Test customize dialog flow on practice page."""
+    """Test customize page flow on practice page."""
     page.goto(f"{base_url}/practice")
     page.wait_for_load_state("networkidle")
 
@@ -26,12 +26,18 @@ def test_practice_customization_dialog(page: Page, base_url: str) -> None:
     # Click customize button
     customize_button = page.get_by_test_id("practice-customize-button")
     customize_button.wait_for(state="visible", timeout=10000)
-    customize_button.click()
+    
+    # Set up navigation promise before clicking
+    with page.wait_for_event("framenavigated", timeout=10000):
+        customize_button.click()
 
-    # Wait for customize dialog to open
-    customize_dialog = page.get_by_test_id("practice-customize-dialog")
-    customize_dialog.wait_for(state="visible", timeout=10000)
-    expect(customize_dialog).to_be_visible()
+    # Wait for customize page to load
+    page.wait_for_url(f"{base_url}/practice/custom", timeout=10000)
+    page.wait_for_load_state("networkidle")
+    
+    customize_page = page.get_by_test_id("practice-customize-page")
+    customize_page.wait_for(state="visible", timeout=10000)
+    expect(customize_page).to_be_visible()
 
     # Get practice data to find available options
     fetch_practice_data(
@@ -40,22 +46,6 @@ def test_practice_customization_dialog(page: Page, base_url: str) -> None:
         effective_profile_id=ADMIN_PROFILE_ID,
         bypass_cache=True,
     )
-
-    # Select simulation from picker
-    simulation_picker = page.get_by_test_id("practice-simulation-picker")
-    simulation_picker.wait_for(state="visible", timeout=10000)
-    simulation_picker.click()
-
-    # Wait for options to appear and select first available simulation
-    simulation_options = page.get_by_role("option")
-    if simulation_options.count() > 0:
-        first_option = simulation_options.first
-        first_option.wait_for(state="visible", timeout=5000)
-        first_option.click()
-    else:
-        # If no options, close picker
-        page.keyboard.press("Escape")
-        pytest.skip("No simulations available for practice")
 
     # Select persona from picker
     persona_picker = page.get_by_test_id("practice-persona-picker")

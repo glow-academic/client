@@ -1,12 +1,15 @@
 /**
  * EvalAttemptsTable.tsx
- * Table component for displaying eval attempts
+ * Table component for displaying eval attempts using TanStack React Table
  * @AshokSaravanan222 & @siladiea
  * 01/XX/2025
  */
 
 "use client";
 
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,11 +29,21 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
-  Search,
+  X,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import * as React from "react";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  useReactTable,
+} from "@tanstack/react-table";
 
 /** ---- Strong types from OpenAPI ---- */
 type EvalAttemptsListIn = InputOf<"/api/v3/evals/attempts/list", "post">;
@@ -56,18 +69,51 @@ export default function EvalAttemptsTable({
   initialPageSize = 20,
 }: EvalAttemptsTableProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [attempts, setAttempts] = useState<EvalAttemptItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(initialPage);
-  const [pageSize, setPageSize] = useState(initialPageSize);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [attempts, setAttempts] = React.useState<EvalAttemptItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [totalCount, setTotalCount] = React.useState(0);
+  const [page, setPage] = React.useState(initialPage);
+  const [pageSize, setPageSize] = React.useState(initialPageSize);
+  const [searchTerm, setSearchTerm] = React.useState("");
 
-  // Get filters from URL
-  useEffect(() => {
+  // Search input ref for focus management
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize column filters from URL search params
+  const [columnFilters, setColumnFilters] = React.useState<
+    Array<{ id: string; value: unknown }>
+  >(() => {
+    const filters: Array<{ id: string; value: unknown }> = [];
+    const urlStatus = searchParams?.get("attemptsStatus");
+    if (urlStatus) {
+      filters.push({
+        id: "status",
+        value: [urlStatus],
+      });
+    }
+    return filters;
+  });
+
+  // Initialize sorting from URL search params
+  const [sorting, setSorting] = React.useState<
+    Array<{ id: string; desc: boolean }>
+  >(() => {
+    const sortBy = searchParams?.get("attemptsSortBy") || "created_at";
+    const sortOrder = searchParams?.get("attemptsSortOrder") || "desc";
+    return [
+      {
+        id: sortBy,
+        desc: sortOrder === "desc",
+      },
+    ];
+  });
+
+  // Get filters from URL on mount
+  React.useEffect(() => {
     const urlPage = searchParams?.get("attemptsPage");
     const urlPageSize = searchParams?.get("attemptsPageSize");
     const urlSearch = searchParams?.get("attemptsSearch");
@@ -76,19 +122,27 @@ export default function EvalAttemptsTable({
     if (urlPage) setPage(parseInt(urlPage, 10));
     if (urlPageSize) setPageSize(parseInt(urlPageSize, 10));
     if (urlSearch !== null) setSearchTerm(urlSearch);
-    if (urlStatus !== null) setStatusFilter(urlStatus || null);
+    if (urlStatus) {
+      setColumnFilters([{ id: "status", value: [urlStatus] }]);
+    }
   }, [searchParams]);
 
   // Fetch attempts
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchAttempts = async () => {
       setLoading(true);
       try {
+        const statusFilter = columnFilters.find((f) => f.id === "status")
+          ?.value as string[] | undefined;
+        const status = statusFilter && statusFilter.length > 0 
+          ? statusFilter[0] 
+          : undefined;
+
         const filters: EvalAttemptsListIn = {
           body: {
             page,
             pageSize,
-            ...(statusFilter && { status: statusFilter }),
+            ...(status && { status }),
             ...(searchTerm && { search: searchTerm }),
           },
         };
@@ -106,58 +160,185 @@ export default function EvalAttemptsTable({
     };
 
     fetchAttempts();
-  }, [page, pageSize, statusFilter, searchTerm]);
+  }, [page, pageSize, columnFilters, searchTerm]);
 
-  // Update URL when filters change
-  const updateUrl = (updates: {
-    page?: number;
-    pageSize?: number;
-    search?: string;
-    status?: string | null;
-  }) => {
-    const params = new URLSearchParams(searchParams?.toString() || "");
-    if (updates.page !== undefined) {
-      params.set("attemptsPage", updates.page.toString());
-    }
-    if (updates.pageSize !== undefined) {
-      params.set("attemptsPageSize", updates.pageSize.toString());
-    }
-    if (updates.search !== undefined) {
-      if (updates.search) {
-        params.set("attemptsSearch", updates.search);
-      } else {
-        params.delete("attemptsSearch");
+  // Helper function to update URL search params
+  const updateAttemptsParams = React.useCallback(
+    (updates: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      status?: string | null;
+      sortBy?: string;
+      sortOrder?: string;
+    }) => {
+      const params = new URLSearchParams(searchParams?.toString() || "");
+
+      // Update pagination
+      if (updates.page !== undefined) {
+        if (updates.page === 0) {
+          params.delete("attemptsPage");
+        } else {
+          params.set("attemptsPage", updates.page.toString());
+        }
       }
-    }
-    if (updates.status !== undefined) {
-      if (updates.status) {
-        params.set("attemptsStatus", updates.status);
-      } else {
-        params.delete("attemptsStatus");
+      if (updates.pageSize !== undefined) {
+        if (updates.pageSize === 20) {
+          params.delete("attemptsPageSize");
+        } else {
+          params.set("attemptsPageSize", updates.pageSize.toString());
+        }
       }
-    }
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
 
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    setPage(0);
-    updateUrl({ search: value, page: 0 });
-  };
+      // Update search
+      if (updates.search !== undefined) {
+        if (!updates.search) {
+          params.delete("attemptsSearch");
+        } else {
+          params.set("attemptsSearch", updates.search);
+        }
+      }
 
-  const handleStatusFilterChange = (status: string | null) => {
-    setStatusFilter(status);
-    setPage(0);
-    updateUrl({ status, page: 0 });
-  };
+      // Update status filter
+      if (updates.status !== undefined) {
+        if (!updates.status) {
+          params.delete("attemptsStatus");
+        } else {
+          params.set("attemptsStatus", updates.status);
+        }
+      }
 
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    updateUrl({ page: newPage });
-  };
+      // Update sorting
+      if (updates.sortBy !== undefined && updates.sortOrder !== undefined) {
+        if (updates.sortBy === "created_at" && updates.sortOrder === "desc") {
+          params.delete("attemptsSortBy");
+          params.delete("attemptsSortOrder");
+        } else {
+          params.set("attemptsSortBy", updates.sortBy);
+          params.set("attemptsSortOrder", updates.sortOrder);
+        }
+      }
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+      const newUrl = `${pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+      router.replace(newUrl, { scroll: false });
+    },
+    [searchParams, pathname, router]
+  );
 
+  // Commit search to URL (called on Enter or blur, or after debounce)
+  const commitSearch = React.useCallback(
+    (value: string) => {
+      updateAttemptsParams({
+        page: 0,
+        search: value.trim() || "",
+      });
+    },
+    [updateAttemptsParams]
+  );
+
+  // Handle search input change with debounce
+  const handleSearchChange = React.useCallback(
+    (value: string) => {
+      // Update local state immediately for responsive UI
+      setSearchTerm(value);
+
+      // Clear existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      // If query becomes empty, commit immediately (no debounce)
+      if (value === "") {
+        commitSearch("");
+        return;
+      }
+
+      // Otherwise, debounce the search (500ms delay)
+      searchTimeoutRef.current = setTimeout(() => {
+        commitSearch(value);
+      }, 500);
+    },
+    [commitSearch]
+  );
+
+  // Create status options from data
+  const statusOptions = React.useMemo(() => {
+    const statuses = new Set(attempts.map((a) => a.status));
+    return [
+      { value: "pending", label: "Pending" },
+      { value: "running", label: "Running" },
+      { value: "completed", label: "Completed" },
+    ].filter((opt) => statuses.has(opt.value));
+  }, [attempts]);
+
+  // Handle column filters change
+  const handleColumnFiltersChange = React.useCallback(
+    (
+      updater:
+        | ColumnFiltersState
+        | ((prev: ColumnFiltersState) => ColumnFiltersState)
+    ) => {
+      const newFilters =
+        typeof updater === "function" ? updater(columnFilters) : updater;
+      setColumnFilters(newFilters);
+
+      // Extract status filter value and update URL
+      const statusFilter = newFilters.find((f) => f.id === "status")
+        ?.value as string[] | undefined;
+      const status =
+        statusFilter && statusFilter.length > 0 ? statusFilter[0] : null;
+
+      updateAttemptsParams({
+        page: 0,
+        status,
+      });
+    },
+    [columnFilters, updateAttemptsParams]
+  );
+
+  // Handle sorting change
+  const handleSortingChange = React.useCallback(
+    (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+      const newSorting =
+        typeof updater === "function" ? updater(sorting) : updater;
+      setSorting(newSorting);
+
+      const sortBy = newSorting[0]?.id || "created_at";
+      const sortOrder = newSorting[0]?.desc ? "desc" : "asc";
+
+      // Reset to page 0 whenever sort changes
+      updateAttemptsParams({
+        page: 0,
+        sortBy,
+        sortOrder,
+      });
+    },
+    [sorting, updateAttemptsParams]
+  );
+
+  // Handle pagination change
+  const handlePaginationChange = React.useCallback(
+    (
+      updater:
+        | { pageIndex: number; pageSize: number }
+        | ((prev: { pageIndex: number; pageSize: number }) => {
+            pageIndex: number;
+            pageSize: number;
+          })
+    ) => {
+      const newPagination =
+        typeof updater === "function"
+          ? updater({ pageIndex: page, pageSize })
+          : updater;
+      updateAttemptsParams({
+        page: newPagination.pageIndex,
+        pageSize: newPagination.pageSize,
+      });
+    },
+    [page, pageSize, updateAttemptsParams]
+  );
+
+  // Get status badge
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
@@ -184,67 +365,231 @@ export default function EvalAttemptsTable({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return dateString;
-    }
-  };
+  // Define columns
+  const columns = React.useMemo<ColumnDef<EvalAttemptItem>[]>(
+    () => [
+      // Hidden faceting column for Status
+      {
+        id: "status",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        filterFn: (row, _id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
+          const status = row.original.status;
+          return value.includes(status);
+        },
+      },
+      // Name column
+      {
+        accessorKey: "eval_name",
+        id: "eval_name",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Name" />
+        ),
+        cell: ({ row }) => {
+          const evalName = row.original.eval_name;
+          return (
+            <div className="flex items-center min-w-0 max-w-[200px]">
+              <span className="truncate font-medium">{evalName}</span>
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+      // Eval column (description)
+      {
+        accessorKey: "eval_description",
+        id: "eval_description",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Eval" />
+        ),
+        cell: ({ row }) => {
+          const description = row.original.eval_description;
+          return (
+            <div className="flex items-center min-w-0 max-w-[280px]">
+              <span className="truncate text-sm text-muted-foreground">
+                {description || "No description"}
+              </span>
+            </div>
+          );
+        },
+        enableSorting: false,
+      },
+      // Runs column
+      {
+        accessorKey: "completed_runs",
+        id: "runs",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Runs" />
+        ),
+        cell: ({ row }) => {
+          const completedRuns = row.original.completed_runs;
+          const totalRuns = row.original.total_runs;
+          return (
+            <div className="text-center">
+              <span className="font-medium">
+                {completedRuns} / {totalRuns}
+              </span>
+            </div>
+          );
+        },
+        enableSorting: true,
+        accessorFn: (row) => {
+          // Sort by completion ratio
+          if (row.total_runs === 0) return 0;
+          return row.completed_runs / row.total_runs;
+        },
+      },
+      // Status column
+      {
+        accessorKey: "status",
+        id: "status_display",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Status" />
+        ),
+        cell: ({ row }) => {
+          return getStatusBadge(row.original.status);
+        },
+        enableSorting: true,
+      },
+      // View button column
+      {
+        id: "actions",
+        cell: ({ row }) => {
+          const attemptId = row.original.attempt_id;
+          return (
+            <div className="text-right">
+              <Link href={`/benchmark/a/${attemptId}`}>
+                <Button variant="ghost" size="sm">
+                  View
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          );
+        },
+      },
+    ],
+    []
+  );
+
+  const table = useReactTable({
+    data: attempts,
+    columns,
+    state: {
+      sorting,
+      columnFilters,
+      pagination: { pageIndex: page, pageSize },
+    },
+    onSortingChange: handleSortingChange,
+    onColumnFiltersChange: handleColumnFiltersChange,
+    onPaginationChange: handlePaginationChange,
+    manualPagination: true,
+    manualFiltering: true,
+    manualSorting: true,
+    pageCount: Math.ceil(totalCount / pageSize),
+    getCoreRowModel: getCoreRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getRowId: (row) => row.attempt_id,
+  });
+
+  // Handle comprehensive reset (filters, search, sorting, pagination)
+  const handleResetAll = React.useCallback(() => {
+    // Reset table state
+    table.resetColumnFilters();
+    table.resetSorting();
+
+    // Reset local state
+    setColumnFilters([]);
+    setSearchTerm("");
+    setSorting([{ id: "created_at", desc: true }]);
+
+    // Update URL with all reset values (preserve pageSize)
+    updateAttemptsParams({
+      page: 0,
+      search: "",
+      status: null,
+      sortBy: "created_at",
+      sortOrder: "desc",
+    });
+  }, [table, updateAttemptsParams]);
+
+  // Toolbar state - check if any filters/search/sorting are active
+  const currentSortBy = sorting[0]?.id || "created_at";
+  const currentSortOrder = sorting[0]?.desc ? "desc" : "asc";
+  const isFiltered =
+    table.getState().columnFilters.length > 0 ||
+    searchTerm !== "" ||
+    currentSortBy !== "created_at" ||
+    currentSortOrder !== "desc";
+
+  const statusColumn = table.getColumn("status");
+
+  // Get visible columns for skeleton rows
+  const visibleColumns = table.getVisibleLeafColumns();
+
+  // Memoize table rows
+  const tableRows = React.useMemo(() => {
+    return table.getRowModel().rows;
+  }, [table, attempts.length, page, pageSize]);
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <h2 className="text-2xl font-bold">Evaluation Attempts</h2>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+      {/* Toolbar */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0 min-w-0">
           {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search evals..."
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-8 w-full sm:w-64"
-            />
-          </div>
+          <Input
+            ref={searchInputRef}
+            placeholder="Search by name or description..."
+            value={searchTerm}
+            onChange={(event) => {
+              handleSearchChange(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                // Clear timeout and commit immediately
+                if (searchTimeoutRef.current) {
+                  clearTimeout(searchTimeoutRef.current);
+                }
+                commitSearch(event.currentTarget.value);
+              }
+            }}
+            onBlur={(event) => {
+              // Clear timeout and commit immediately on blur
+              if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+              }
+              commitSearch(event.currentTarget.value);
+            }}
+            className="h-8 w-full md:w-[200px] lg:w-[250px]"
+          />
+
           {/* Status filter */}
-          <div className="flex gap-2">
+          {statusColumn && statusOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={statusColumn}
+              title="Status"
+              options={statusOptions}
+              isServerDriven={false}
+            />
+          )}
+
+          {/* Reset button */}
+          {isFiltered && (
             <Button
-              variant={statusFilter === null ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleStatusFilterChange(null)}
+              variant="ghost"
+              onClick={handleResetAll}
+              className="h-8 px-2 lg:px-3 hidden md:flex"
             >
-              All
+              Reset
+              <X className="ml-2 h-4 w-4" />
             </Button>
-            <Button
-              variant={statusFilter === "pending" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleStatusFilterChange("pending")}
-            >
-              Pending
-            </Button>
-            <Button
-              variant={statusFilter === "running" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleStatusFilterChange("running")}
-            >
-              Running
-            </Button>
-            <Button
-              variant={statusFilter === "completed" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleStatusFilterChange("completed")}
-            >
-              Completed
-            </Button>
-          </div>
+          )}
         </div>
       </div>
 
@@ -252,63 +597,54 @@ export default function EvalAttemptsTable({
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Eval Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Runs</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
           </TableHeader>
           <TableBody>
             {loading ? (
               Array.from({ length: pageSize }).map((_, i) => (
                 <TableRow key={`skeleton-${i}`}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-48" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-20 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-16" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-32" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="h-8 w-20 ml-auto" />
-                  </TableCell>
+                  {visibleColumns.map((column) => (
+                    <TableCell key={column.id}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
                 </TableRow>
               ))
-            ) : attempts.length === 0 ? (
+            ) : tableRows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={columns.length}
                   className="text-center text-muted-foreground"
                 >
                   No attempts found
                 </TableCell>
               </TableRow>
             ) : (
-              attempts.map((attempt) => (
-                <TableRow key={attempt.attempt_id}>
-                  <TableCell className="font-medium">
-                    {attempt.eval_name}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(attempt.status)}</TableCell>
-                  <TableCell>
-                    {attempt.completed_runs} / {attempt.total_runs}
-                  </TableCell>
-                  <TableCell>{formatDate(attempt.created_at)}</TableCell>
-                  <TableCell className="text-right">
-                    <Link href={`/benchmark/a/${attempt.attempt_id}`}>
-                      <Button variant="ghost" size="sm">
-                        View
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    </Link>
-                  </TableCell>
+              tableRows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
                 </TableRow>
               ))
             )}
@@ -317,57 +653,7 @@ export default function EvalAttemptsTable({
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {page * pageSize + 1} to{" "}
-            {Math.min((page + 1) * pageSize, totalCount)} of {totalCount}{" "}
-            attempts
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page === 0}
-            >
-              Previous
-            </Button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                let pageNum: number;
-                if (totalPages <= 5) {
-                  pageNum = i;
-                } else if (page < 2) {
-                  pageNum = i;
-                } else if (page > totalPages - 3) {
-                  pageNum = totalPages - 5 + i;
-                } else {
-                  pageNum = page - 2 + i;
-                }
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={page === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handlePageChange(pageNum)}
-                  >
-                    {pageNum + 1}
-                  </Button>
-                );
-              })}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page >= totalPages - 1}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      <DataTablePagination table={table} />
     </div>
   );
 }

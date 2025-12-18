@@ -114,20 +114,20 @@ async def get_rubric_detail(
 
         sql_query = load_sql("sql/v3/rubrics/get_rubric_detail_complete.sql")
         sql_params = (
-            uuid.UUID(request_body.rubricId),
-            uuid.UUID(profile_id),
+            request_body.rubricId,
+            profile_id,
         )
         row = await conn.fetchrow(
             sql_query,
-            uuid.UUID(request_body.rubricId),
-            uuid.UUID(profile_id),
+            request_body.rubricId,
+            profile_id,
         )
 
         if not row:
             # Check if rubric exists but user doesn't have department access
             rubric_exists_check = await conn.fetchval(
                 "SELECT EXISTS(SELECT 1 FROM rubrics WHERE id = $1)",
-                uuid.UUID(request_body.rubricId),
+                request_body.rubricId,
             )
             if rubric_exists_check:
                 raise HTTPException(

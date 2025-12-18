@@ -94,6 +94,9 @@ class SimulationMappingItem(BaseModel):
 
     name: str
     description: str
+    rubric_id: str | None = None
+    rubric_points: int | None = None
+    rubric_pass_points: int | None = None
 
 
 class ScenarioMappingItem(BaseModel):
@@ -303,9 +306,15 @@ async def get_reports(
         if simulation_mapping_data and isinstance(simulation_mapping_data, dict):
             for sim_id, sim_data in simulation_mapping_data.items():
                 if isinstance(sim_data, dict):
+                    rubric_id = sim_data.get("rubric_id")
+                    rubric_points = sim_data.get("rubric_points")
+                    rubric_pass_points = sim_data.get("rubric_pass_points")
                     simulation_mapping[sim_id] = SimulationMappingItem(
                         name=sim_data.get("name", ""),
                         description=sim_data.get("description", ""),
+                        rubric_id=str(rubric_id) if rubric_id else None,
+                        rubric_points=int(rubric_points) if rubric_points is not None else None,
+                        rubric_pass_points=int(rubric_pass_points) if rubric_pass_points is not None else None,
                     )
 
         # Build response

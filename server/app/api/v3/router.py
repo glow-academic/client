@@ -1,6 +1,7 @@
 """V3 API router - DHH-style architecture with SQL files and utility functions."""
 # mypy: ignore-errors
 
+from app.api.v3.activity import router as activity_router
 from app.api.v3.agents import router as agents_router
 # ============================================================================
 # Batch E: Analytics & Dashboard Routes
@@ -84,6 +85,7 @@ router.include_router(settings_router)
 
 # Batch E: Analytics & Dashboard Routes
 router.include_router(analytics_router)
+router.include_router(activity_router)
 router.include_router(dashboard_router)
 router.include_router(reports_router)
 router.include_router(leaderboard_router)

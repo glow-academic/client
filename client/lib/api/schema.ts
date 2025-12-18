@@ -1704,6 +1704,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/activity/bundle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Activity Bundle
+         * @description Get activity bundle with header metrics.
+         */
+        post: operations["get_activity_bundle_api_v3_activity_bundle_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/activity/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Activity List
+         * @description Get paginated list of activity entries.
+         */
+        post: operations["get_activity_list_api_v3_activity_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/dashboard/overview": {
         parameters: {
             query?: never;
@@ -2678,6 +2718,46 @@ export interface paths {
          * @description Create new app feedback entry.
          */
         post: operations["create_feedback_api_v3_feedback_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/feedback/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Feedback List
+         * @description Get list of all feedback entries.
+         */
+        post: operations["get_feedback_list_api_v3_feedback_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/feedback/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Feedback
+         * @description Resolve or unresolve a feedback entry.
+         */
+        post: operations["resolve_feedback_api_v3_feedback_resolve_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5407,6 +5487,80 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ActivityBundleFilters
+         * @description Filters for activity bundle request.
+         */
+        ActivityBundleFilters: Record<string, never>;
+        /**
+         * ActivityBundleMetrics
+         * @description Header metrics for activity page.
+         */
+        ActivityBundleMetrics: {
+            total_activity_entries: components["schemas"]["MetricResponse"];
+            recent_activity_24h: components["schemas"]["MetricResponse"];
+            unresolved_feedback_count: components["schemas"]["MetricResponse"];
+            total_feedback_count: components["schemas"]["MetricResponse"];
+        };
+        /**
+         * ActivityBundleResponse
+         * @description Response for activity bundle endpoint.
+         */
+        ActivityBundleResponse: {
+            metrics: components["schemas"]["ActivityBundleMetrics"];
+        };
+        /**
+         * ActivityItem
+         * @description Individual activity item in the response.
+         */
+        ActivityItem: {
+            /** Activity Id */
+            activity_id: string;
+            /** Created At */
+            created_at: string;
+            /** Message */
+            message: string;
+            /** Error */
+            error: boolean;
+            /** Profile Name */
+            profile_name: string;
+            /** Profile Id */
+            profile_id: string;
+        };
+        /**
+         * ActivityListFilters
+         * @description Filters for activity list request.
+         */
+        ActivityListFilters: {
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @default 50
+             */
+            pageSize: number;
+            /** Search */
+            search?: string | null;
+        };
+        /**
+         * ActivityListResponse
+         * @description Response for activity list endpoint.
+         */
+        ActivityListResponse: {
+            /** Data */
+            data: components["schemas"]["ActivityItem"][];
+            /** Totalcount */
+            totalCount: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Totalpages */
+            totalPages: number;
+        };
         /** AgentDetailRequest */
         AgentDetailRequest: {
             /** Agentid */
@@ -8631,6 +8785,43 @@ export interface components {
              */
             brightspaceFormat: boolean;
         };
+        /**
+         * FeedbackItem
+         * @description Individual feedback item in the response.
+         */
+        FeedbackItem: {
+            /** Feedback Id */
+            feedback_id: string;
+            /** Type */
+            type: string;
+            /** Message */
+            message: string;
+            /** Created At */
+            created_at: string;
+            /** Resolved */
+            resolved: boolean;
+            /** Author Name */
+            author_name: string;
+            /** Author Email */
+            author_email: string;
+            /** Author Emails */
+            author_emails: string[];
+            /** Author Profile Id */
+            author_profile_id: string;
+        };
+        /**
+         * FeedbackListFilters
+         * @description Filters for feedback list request.
+         */
+        FeedbackListFilters: Record<string, never>;
+        /**
+         * FeedbackListResponse
+         * @description Response for feedback list endpoint.
+         */
+        FeedbackListResponse: {
+            /** Feedback */
+            feedback: components["schemas"]["FeedbackItem"][];
+        };
         /** FieldConnection */
         FieldConnection: {
             /** Field Id */
@@ -11442,6 +11633,30 @@ export interface components {
             simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
             /** Departmentids */
             departmentIds?: string[] | null;
+        };
+        /**
+         * ResolveFeedbackRequest
+         * @description Request to resolve/unresolve feedback.
+         */
+        ResolveFeedbackRequest: {
+            /** Feedback Id */
+            feedback_id: string;
+            /** Resolved */
+            resolved: boolean;
+        };
+        /**
+         * ResolveFeedbackResponse
+         * @description Response for resolve feedback endpoint.
+         */
+        ResolveFeedbackResponse: {
+            /** Feedback Id */
+            feedback_id: string;
+            /** Resolved */
+            resolved: boolean;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * ResponseInputItem
@@ -17008,6 +17223,12 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Rubric Points */
+            rubric_points?: number | null;
+            /** Rubric Pass Points */
+            rubric_pass_points?: number | null;
         };
         /**
          * StandardGroupItem
@@ -21747,6 +21968,78 @@ export interface operations {
             };
         };
     };
+    get_activity_bundle_api_v3_activity_bundle_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityBundleFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_activity_list_api_v3_activity_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityListFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_dashboard_api_v3_dashboard_overview_post: {
         parameters: {
             query?: never;
@@ -23498,6 +23791,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateFeedbackResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_feedback_list_api_v3_feedback_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackListFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_feedback_api_v3_feedback_resolve_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveFeedbackRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveFeedbackResponse"];
                 };
             };
             /** @description Validation Error */

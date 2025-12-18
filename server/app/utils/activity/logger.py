@@ -57,36 +57,43 @@ async def log_activity(
     )
 
     # Render template to produce final message string
+    template_error = False
     try:
         template = jinja.from_string(intent.template)
         message = template.render(**ctx)
     except Exception as e:
         # Never break the request because audit rendering failed
+        template_error = True
         message = f"[audit_render_error] {intent.event_key}: {e}"
+
+    # Determine if this activity represents an error
+    # Error if HTTP status >= 400 OR template rendering failed
+    is_error = response_status_code >= 400 or template_error
 
     # Insert into activity table (async, fire-and-forget)
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
             asyncio.create_task(
-                _insert_activity(message, str(request.url.path), resolved_profile_id)
+                _insert_activity(message, str(request.url.path), resolved_profile_id, is_error)
             )
         else:
             asyncio.run(
-                _insert_activity(message, str(request.url.path), resolved_profile_id)
+                _insert_activity(message, str(request.url.path), resolved_profile_id, is_error)
             )
     except RuntimeError:
         # No event loop, skip DB write
         pass
 
 
-async def _insert_activity(message: str, endpoint: str, profile_id: str) -> None:
+async def _insert_activity(message: str, endpoint: str, profile_id: str, error: bool = False) -> None:
     """Insert activity record into database.
 
     Args:
         message: Fully rendered activity message
         endpoint: Route path
         profile_id: Profile UUID
+        error: Whether this activity represents an error (HTTP status >= 400 or template rendering failed)
     """
     if _db_pool is None:
         return
@@ -95,12 +102,13 @@ async def _insert_activity(message: str, endpoint: str, profile_id: str) -> None
         async with _db_pool.acquire() as conn:
             await conn.execute(
                 """
-                INSERT INTO activity (message, endpoint, profile_id, created_at)
-                VALUES ($1, $2, $3, now())
+                INSERT INTO activity (message, endpoint, profile_id, error, created_at)
+                VALUES ($1, $2, $3, $4, now())
                 """,
                 message,
                 endpoint,
                 profile_id,
+                error,
             )
     except Exception:
         # Never break logging if DB write fails
