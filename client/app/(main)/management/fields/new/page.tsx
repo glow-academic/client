@@ -8,7 +8,6 @@
 import Field from "@/components/fields/Field";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -44,15 +43,8 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createField(input: CreateFieldIn): Promise<CreateFieldOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/fields/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/fields/create", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */

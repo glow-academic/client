@@ -9,7 +9,6 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -52,7 +51,6 @@ type GenerateAIScenarioOut = {
  */
 const getScenario = async (
   scenarioId: string,
-  profileId: string,
   filterParams?: {
     departmentIds?: string[];
     personaIds?: string[];
@@ -85,7 +83,6 @@ const getScenario = async (
     {
       body: {
         scenarioId,
-        profileId,
         ...(filterParams || {}),
       },
     },
@@ -104,12 +101,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { scenarioId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (profileId) {
-    try {
-      const scenario = await getScenario(scenarioId, profileId);
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  try {
+    const scenario = await getScenario(scenarioId);
       return {
         title: `${scenario?.name || "Scenario"}`,
         description: `${scenario?.name ? `${scenario.name} - ` : ""}Problem-based learning scenario for teaching assistant training. Practice pedagogical problem-solving and instructional design through realistic educational challenges.${scenario?.problem_statement ? ` ${scenario.problem_statement}` : ""}`,
@@ -144,16 +138,8 @@ export default async function EditScenarioPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { scenarioId } = await params;
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Parse search params
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -312,7 +298,6 @@ export default async function EditScenarioPage({
 
     const scenarioDetail = await getScenario(
       scenarioId,
-      profileId,
       Object.keys(filterParams).length > 0 ? filterParams : undefined,
     );
 

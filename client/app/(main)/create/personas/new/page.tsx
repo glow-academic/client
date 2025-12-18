@@ -8,7 +8,6 @@
 import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -19,10 +18,10 @@ type CreatePersonaOut = OutputOf<"/api/v3/personas/create", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getPersonaDefault = async (profileId: string): Promise<PersonaNewOut> => {
+const getPersonaDefault = async (): Promise<PersonaNewOut> => {
   return api.post(
     "/personas/new",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -37,16 +36,9 @@ async function createPersona(
   input: CreatePersonaIn,
 ): Promise<CreatePersonaOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/personas/create", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -58,18 +50,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NewPersonaPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch default persona detail server-side (per-profile cache)
-  const personaDetailDefault = await getPersonaDefault(profileId);
+  const personaDetailDefault = await getPersonaDefault();
 
   return (
     <div

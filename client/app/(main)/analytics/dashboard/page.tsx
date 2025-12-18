@@ -7,13 +7,13 @@
 
 import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Dashboard from "@/components/dashboard/Dashboard";
-import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type DashboardIn = InputOf<"/api/v3/dashboard/overview", "post">;
@@ -29,7 +29,7 @@ type BulkArchiveAttemptsOut = OutputOf<"/api/v3/attempts/archive", "post">;
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getDashboardOverview = async (
-  input: DashboardIn,
+  input: DashboardIn
 ): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -49,7 +49,7 @@ const getDashboardOverview = async (
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getDashboardHistory = async (
-  input: DashboardHistoryIn,
+  input: DashboardHistoryIn
 ): Promise<DashboardHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -63,38 +63,14 @@ const getDashboardHistory = async (
   });
 };
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
- */
-const getProfileContext = async (input: {
-  body: {
-    actualProfileId: string;
-    effectiveProfileId: string;
-    pathname: string;
-  };
-}) => {
-  return api.post("/profile/context", input, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
-  });
-};
-
 /** ---- Inline filters function for dashboard page ---- */
-async function getDashboardFilters(
-  searchParams?: URLSearchParams,
-  authResult?: { effectiveProfileId: string; actualProfileId: string },
-) {
-  if (!authResult) {
-    throw new Error("Authentication required");
-  }
-
-  // Fetch profile context to get earliestAttemptDate
-  const profileContext = await getProfileContext({
+async function getDashboardFilters(searchParams?: URLSearchParams) {
+  // Use cached layout context (reuses data already fetched by layout)
+  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
+  const profileContext = await getLayoutContext({
     body: {
-      actualProfileId: authResult.actualProfileId,
-      effectiveProfileId: authResult.effectiveProfileId,
+      actualProfileId: null as unknown as string,
+      effectiveProfileId: null as unknown as string,
       pathname: "/",
     },
   });
@@ -175,17 +151,8 @@ interface DashboardPageProps {
 export default async function DashboardPage({
   searchParams,
 }: DashboardPageProps) {
-  // Access control is handled server-side in layout
-  // Get profile IDs from session
-  const session = await getSession();
-  const effectiveProfileId = session?.effectiveProfileId;
-  const actualProfileId = session?.user?.profileId;
-
-  if (!effectiveProfileId || !actualProfileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
   // Parse search params
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -201,8 +168,7 @@ export default async function DashboardPage({
 
   // Get filters from search params or defaults
   const filters = await getDashboardFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined,
-    { effectiveProfileId, actualProfileId },
+    searchParamsObj.toString() ? searchParamsObj : undefined
   );
 
   // Dashboard bundle no longer uses profileId - removed from request
@@ -323,11 +289,11 @@ export default async function DashboardPage({
 
 /** ---- Strongly-typed server actions for Dashboard (single source of truth) ---- */
 async function bulkArchiveAttempts(
-  input: BulkArchiveAttemptsIn,
+  input: BulkArchiveAttemptsIn
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
   // Server invalidates Redis cache with "dashboard" and "history" tags
-  return api.post("/attempts/bulk-archive", input);
+  return api.post("/attempts/archive", input);
 }
 
 /** ---- Inline history section component (only used here) ---- */
@@ -363,7 +329,7 @@ async function DashboardHistorySection({
   historySortBy: string;
   historySortOrder: string;
   bulkArchiveAttemptsAction?: (
-    input: BulkArchiveAttemptsIn,
+    input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
 }) {
   // Build history filters matching logic from dashboard page

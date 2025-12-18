@@ -11,9 +11,9 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 import { Suspense } from "react";
+import { getLayoutContext } from "../../../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type ProfileDetailIn = InputOf<"/api/v3/profile/detail", "post">;
@@ -78,24 +78,6 @@ const getReportsHistory = async (
   });
 };
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
- */
-const getProfileContext = async (input: {
-  body: {
-    actualProfileId: string;
-    effectiveProfileId: string;
-    pathname: string;
-  };
-}) => {
-  return api.post("/profile/context", input, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
-  });
-};
-
 /** ---- Inline filters function for profile reports page ---- */
 async function getProfileReportsFilters(
   searchParams?: URLSearchParams,
@@ -105,8 +87,8 @@ async function getProfileReportsFilters(
     throw new Error("Profile IDs required");
   }
 
-  // Fetch profile context to get earliestAttemptDate
-  const profileContext = await getProfileContext({
+  // Use cached layout context (reuses data already fetched by layout)
+  const profileContext = await getLayoutContext({
     body: {
       actualProfileId: profileIds.actualProfileId,
       effectiveProfileId: profileIds.effectiveProfileId,
@@ -184,8 +166,7 @@ export async function generateMetadata(
   try {
     const profileData = await getProfileDetail(profileId, {
       body: {
-        profileId,
-        currentProfileId: profileId,
+        profileId
       },
     });
     const name = profileData.name || "";
@@ -215,15 +196,6 @@ export default async function ReportsPage({
 }: ProfileReportsPageProps) {
   const { profileId } = await params;
   // Access control is handled server-side in layout
-  // Get profile IDs from session
-  const session = await getSession();
-  const effectiveProfileId = session?.effectiveProfileId;
-  const actualProfileId = session?.user?.profileId;
-
-  if (!effectiveProfileId || !actualProfileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
 
   // Parse search params
   const paramsObj = await searchParams;
@@ -240,9 +212,8 @@ export default async function ReportsPage({
 
   // Get filters from search params or defaults
   const defaultFilters = await getProfileReportsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined,
-    { effectiveProfileId, actualProfileId },
-  );
+    searchParamsObj.toString() ? searchParamsObj : undefined
+  );    
   const reportsFilters = {
     ...defaultFilters,
     profileId, // Required for reports overview
@@ -305,7 +276,6 @@ export default async function ReportsPage({
     getProfileDetail(profileId, {
       body: {
         profileId,
-        currentProfileId: profileId,
       },
     }),
     getReportsOverview({
@@ -398,7 +368,7 @@ async function ReportHistorySection({
   // Build history filters - profileId is required for reports history
   const historyFilters: ReportsHistoryIn = {
     body: {
-      profileId, // Required for reports history
+      profileIds: [profileId], // Required for reports history
       startDate: defaultFilters.startDate,
       endDate: defaultFilters.endDate,
       cohortIds: defaultFilters.cohortIds,

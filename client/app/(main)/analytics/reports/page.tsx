@@ -5,7 +5,6 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
 import Reports from "@/components/reports/Reports";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -13,6 +12,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 // Using reports/overview endpoint for now - may need to check actual endpoint
@@ -37,38 +37,14 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   });
 };
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
- */
-const getProfileContext = async (input: {
-  body: {
-    actualProfileId: string;
-    effectiveProfileId: string;
-    pathname: string;
-  };
-}) => {
-  return api.post("/profile/context", input, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
-  });
-};
-
 /** ---- Inline filters function for reports page ---- */
-async function getReportsFilters(
-  searchParams?: URLSearchParams,
-  profileIds?: { effectiveProfileId: string; actualProfileId: string },
-) {
-  if (!profileIds) {
-    throw new Error("Profile IDs required");
-  }
-
-  // Fetch profile context to get earliestAttemptDate
-  const profileContext = await getProfileContext({
+async function getReportsFilters(searchParams?: URLSearchParams) {
+  // Use cached layout context (reuses data already fetched by layout)
+  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
+  const profileContext = await getLayoutContext({
     body: {
-      actualProfileId: profileIds.actualProfileId,
-      effectiveProfileId: profileIds.effectiveProfileId,
+      actualProfileId: null as unknown as string,
+      effectiveProfileId: null as unknown as string,
       pathname: "/",
     },
   });
@@ -149,17 +125,8 @@ interface ReportsPageProps {
 export default async function ReportsFullPage({
   searchParams,
 }: ReportsPageProps) {
-  // Access control is handled server-side in layout
-  // Get profile IDs from session
-  const session = await getSession();
-  const effectiveProfileId = session?.effectiveProfileId;
-  const actualProfileId = session?.user?.profileId;
-
-  if (!effectiveProfileId || !actualProfileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
   // Parse search params
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -175,8 +142,7 @@ export default async function ReportsFullPage({
 
   // Get filters from search params or defaults
   const filters = await getReportsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined,
-    { effectiveProfileId, actualProfileId },
+    searchParamsObj.toString() ? searchParamsObj : undefined
   );
 
   // Extract pagination and filter params from search params for reports table
@@ -332,7 +298,7 @@ async function ReportsSection({
       value: opt.value,
       label: opt.label,
       count: opt.count,
-    }),
+    })
   );
 
   const scenarioOptions = (reportsData?.scenarioOptions || []).map((opt) => ({

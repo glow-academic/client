@@ -9,7 +9,6 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import StaffNewEdit from "@/components/staff/StaffNewEdit";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -23,11 +22,10 @@ type UpdateStaffOut = OutputOf<"/api/v3/profile/update", "post">;
  */
 const getStaff = async (
   profileId: string,
-  currentProfileId: string,
 ): Promise<StaffDetailOut> => {
   return api.post(
     "/profile/detail",
-    { body: { profileId, currentProfileId } },
+    { body: { profileId } },
     {
       cache: "no-store",
       headers: {
@@ -43,12 +41,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { profileId } = await params;
-  const session = await getSession();
-  const currentProfileId = session?.effectiveProfileId;
-
-  if (currentProfileId) {
-    try {
-      const staffDetail = await getStaff(profileId, currentProfileId);
+  // currentProfileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  try {
+    const staffDetail = await getStaff(profileId);
       return {
         title: `Edit ${staffDetail.name}`,
         description: `${staffDetail.name ? `Edit ${staffDetail.name} - ` : ""}Manage teaching staff member profile, role assignments, and access permissions for teaching assistant training programs. Configure staff participation in learning cohorts and educational resources.`,
@@ -68,15 +63,8 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions ---- */
 async function updateStaff(input: UpdateStaffIn): Promise<UpdateStaffOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-
-  return api.post("/profile/update", {
-    body: { ...input.body, profileId },
-  });
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/profile/update", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -86,19 +74,11 @@ export default async function StaffEditPage({
   params: Promise<{ profileId: string }>;
 }) {
   const { profileId } = await params;
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const currentProfileId = session?.effectiveProfileId;
-
-  if (!currentProfileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // currentProfileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch staff detail (always fresh - source of truth)
   try {
-    const staffDetail = await getStaff(profileId, currentProfileId);
+    const staffDetail = await getStaff(profileId);
 
     return (
       <div

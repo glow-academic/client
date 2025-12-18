@@ -5,11 +5,10 @@
  * 06/09/2025
  */
 
-import Simulation from "@/components/simulations/Simulation";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import Simulation from "@/components/simulations/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -29,7 +28,7 @@ type UpdateSimulationOut = OutputOf<"/api/v3/simulations/update", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getSimulation = async (
-  simulationId: string,
+  simulationId: string
 ): Promise<SimulationDetailOut> => {
   return api.post(
     "/simulations/detail",
@@ -39,27 +38,26 @@ const getSimulation = async (
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ simulationId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { simulationId } = await params;
   // profileId removed - comes from X-Profile-Id header automatically
 
   try {
     const simulation = await getSimulation(simulationId);
-      return {
-        title: `${simulation?.name || "Simulation"}`,
-        description: `${simulation?.name ? `${simulation.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+    return {
+      title: `${simulation?.name || "Simulation"}`,
+      description: `${simulation?.name ? `${simulation.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {
@@ -71,7 +69,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateSimulation(
-  input: UpdateSimulationIn,
+  input: UpdateSimulationIn
 ): Promise<UpdateSimulationOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -130,10 +128,10 @@ export default async function EditSimulationPage({
 export type {
   CreateSimulationIn,
   CreateSimulationOut,
-  SimulationNewIn,
-  SimulationNewOut,
   SimulationDetailIn,
   SimulationDetailOut,
+  SimulationNewIn,
+  SimulationNewOut,
   UpdateSimulationIn,
   UpdateSimulationOut,
 };

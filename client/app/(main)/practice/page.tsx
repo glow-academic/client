@@ -5,7 +5,6 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
 import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Practice from "@/components/practice/Practice";
 import { api } from "@/lib/api/client";
@@ -13,6 +12,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type PracticeIn = InputOf<"/api/v3/practice/overview", "post">;
@@ -45,7 +45,7 @@ const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
  * Note: Practice history endpoint doesn't use Redis cache, but header is sent for consistency.
  */
 const getPracticeHistory = async (
-  input: PracticeHistoryIn,
+  input: PracticeHistoryIn
 ): Promise<PracticeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -57,67 +57,6 @@ const getPracticeHistory = async (
       },
     }),
   });
-};
-
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
- */
-const getProfileContext = async (input: {
-  body: {
-    actualProfileId: string | null;
-    effectiveProfileId: string | null;
-    pathname: string;
-  };
-}): Promise<{
-  effectiveProfile: { id: string; role: string };
-  actualProfile: { id: string; role: string };
-  departmentIds: string[];
-  [key: string]: unknown;
-}> => {
-  // Forward cookies from server component context to API request
-  // This is needed because server components run server-side and cookies aren't automatically forwarded
-  const { cookies } = await import("next/headers");
-  const cookieStore = await cookies();
-  const cookieHeader = [
-    cookieStore.get("department-id")?.value &&
-      `department-id=${cookieStore.get("department-id")?.value}`,
-    cookieStore.get("auth-mode")?.value &&
-      `auth-mode=${cookieStore.get("auth-mode")?.value}`,
-  ]
-    .filter(Boolean)
-    .join("; ");
-
-  return api.post(
-    "/profile/context",
-    {
-      body: {
-        actualProfileId:
-          input.body.actualProfileId ?? (null as unknown as string),
-        effectiveProfileId:
-          input.body.effectiveProfileId ?? (null as unknown as string),
-        pathname: input.body.pathname,
-      },
-    },
-    cookieHeader
-      ? {
-          cache: "no-store",
-          headers: {
-            "X-Bypass-Cache": "1",
-            Cookie: cookieHeader,
-          },
-        }
-      : {
-          cache: "no-store",
-          headers: {
-            "X-Bypass-Cache": "1",
-          },
-        },
-  ) as Promise<{
-    effectiveProfile: { id: string; role: string };
-    actualProfile: { id: string; role: string };
-    departmentIds: string[];
-    [key: string]: unknown;
-  }>;
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -135,51 +74,9 @@ interface PracticePageProps {
 export default async function PracticePage({
   searchParams,
 }: PracticePageProps) {
-  // Access control is handled server-side in layout
+  // Access control handled server-side in layout
   // Practice page allows guest role users (authenticated users with guest role)
-  // Get profile IDs from session
-  const session = await getSession();
-  let effectiveProfileId = session?.effectiveProfileId;
-  let actualProfileId = session?.user?.profileId;
-
-  // For guest/default-account users, session doesn't have profile IDs
-  // Resolve from cookies (same as layout does)
-  if (!effectiveProfileId || !actualProfileId) {
-    try {
-      const { cookies } = await import("next/headers");
-      const cookieStore = await cookies();
-      const authMode = cookieStore.get("auth-mode")?.value;
-
-      if (
-        authMode &&
-        (authMode === "default-guest" || authMode === "default-account")
-      ) {
-        // Resolve profile from cookies
-        const profileContext = await getProfileContext({
-          body: {
-            actualProfileId: null,
-            effectiveProfileId: null,
-            pathname: "/practice",
-          },
-        });
-
-        if (
-          profileContext?.effectiveProfile?.id &&
-          profileContext?.actualProfile?.id
-        ) {
-          effectiveProfileId = profileContext.effectiveProfile.id;
-          actualProfileId = profileContext.actualProfile.id;
-        } else {
-          return null;
-        }
-      } else {
-        return null;
-      }
-    } catch {
-      return null;
-    }
-  }
-
+  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts) or cookies
   // Parse search params
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -194,12 +91,14 @@ export default async function PracticePage({
   });
 
   // Get profileId and departmentIds from profile context with resolved UUIDs
+  // Use cached layout context (reuses data already fetched by layout)
+  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts) or cookies
   let profileContext;
   try {
-    profileContext = await getProfileContext({
+    profileContext = await getLayoutContext({
       body: {
-        actualProfileId,
-        effectiveProfileId,
+        actualProfileId: null as unknown as string,
+        effectiveProfileId: null as unknown as string,
         pathname: "/practice",
       },
     });
@@ -267,8 +166,10 @@ export default async function PracticePage({
     history: [],
   };
 
+  // Get effectiveProfileId from profile context
+  const effectiveProfileId = profileContext.effectiveProfile?.id;
+
   // Check if user is a guest
-  // Note: effectiveProfileId is already resolved above
   const isGuest =
     !effectiveProfileId || profileContext.effectiveProfile?.role === "guest";
 
@@ -409,10 +310,10 @@ async function PracticeHistorySection({
 
   // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
   const archivedCount = historyData.data.filter(
-    (item) => item.isArchived,
+    (item) => item.isArchived
   ).length;
   const unarchivedCount = historyData.data.filter(
-    (item) => !item.isArchived,
+    (item) => !item.isArchived
   ).length;
 
   // Use server-provided data directly (no transformation needed)

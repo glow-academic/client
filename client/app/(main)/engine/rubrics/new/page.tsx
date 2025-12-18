@@ -9,7 +9,6 @@ import { createRubric } from "@/app/(main)/engine/rubrics/page";
 import Rubric from "@/components/rubrics/Rubric";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 import { cache } from "react";
 
@@ -34,19 +33,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** ---- Server renders client with typed data (mutations in child components) ---- */
 export default async function NewRubricPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch default rubric detail server-side
   const rubricNew = await getRubricDefault({
-    body: { profileId },
+    body: {},
   });
 
   return (

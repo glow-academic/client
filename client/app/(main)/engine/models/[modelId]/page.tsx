@@ -8,7 +8,6 @@
 import Model from "@/components/models/Model";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -23,11 +22,10 @@ type UpdateModelOut = OutputOf<"/api/v3/models/update", "post">;
  */
 const getModel = async (
   modelId: string,
-  profileId: string,
 ): Promise<ModelDetailOut> => {
   return api.post(
     "/models/detail",
-    { body: { modelId, profileId } },
+    { body: { modelId } },
     {
       cache: "no-store",
       headers: {
@@ -43,12 +41,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { modelId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (profileId) {
-    try {
-      const model = await getModel(modelId, profileId);
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  try {
+    const model = await getModel(modelId);
       return {
         title: `${model?.name || "Model"}`,
         description:
@@ -70,16 +65,9 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateModel(input: UpdateModelIn): Promise<UpdateModelOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/models/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/models/update", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -89,18 +77,10 @@ export default async function ModelEditPage({
   params: Promise<{ modelId: string }>;
 }) {
   const { modelId } = await params;
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch model data (always fresh - source of truth, includes provider_mapping)
-  const model = await getModel(modelId, profileId);
+  const model = await getModel(modelId);
 
   return (
     <div className="space-y-6" data-page="model-edit" data-model-id={modelId}>

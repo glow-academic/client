@@ -6,7 +6,6 @@ import Keys from "@/components/keys/Keys";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -18,11 +17,11 @@ type DeleteKeyOut = OutputOf<"/api/v3/keys/delete", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getKeysList = async (profileId: string): Promise<KeysListOut> => {
+const getKeysList = async (): Promise<KeysListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/keys/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -37,15 +36,10 @@ const getKeysList = async (profileId: string): Promise<KeysListOut> => {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function deleteKey(input: DeleteKeyIn): Promise<DeleteKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/delete", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body },
   });
 }
 
@@ -59,17 +53,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function KeysPage() {
   // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
 
   // Fetch list data server-side
-  const listData = await getKeysList(profileId);
+  const listData = await getKeysList();
 
   return (
     <div className="space-y-6" data-page="keys-index">

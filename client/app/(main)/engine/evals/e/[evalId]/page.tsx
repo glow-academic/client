@@ -5,7 +5,6 @@
  * 01/26/2025
  */
 
-import { getSession } from "@/auth";
 import Eval from "@/components/evals/Eval";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -24,12 +23,11 @@ type StopEvalOut = OutputOf<"/api/v3/evals/stop", "post">;
 /** ---- Direct fetch for eval detail ---- */
 const getEvalDetail = async (
   evalId: string,
-  profileId: string,
 ): Promise<EvalDetailOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/evals/detail",
-    { body: { evalId, profileId } },
+    { body: { evalId } },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -53,15 +51,8 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions ---- */
 async function updateEval(input: UpdateEvalIn): Promise<UpdateEvalOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/evals/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/evals/update", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -71,18 +62,10 @@ export default async function EvalDetailPage({
   params: Promise<{ evalId: string }>;
 }) {
   const { evalId } = await params;
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch eval detail
-  const evalDetail = await getEvalDetail(evalId, profileId);
+  const evalDetail = await getEvalDetail(evalId);
 
   return (
     <div

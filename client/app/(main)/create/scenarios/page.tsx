@@ -5,7 +5,6 @@
  * 06/09/2025
  */
 import { Scenarios } from "@/components/scenarios/Scenarios";
-import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -22,13 +21,11 @@ type DeleteScenarioOut = OutputOf<"/api/v3/scenarios/delete", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getScenariosList = async (
-  profileId: string,
-): Promise<ScenariosListOut> => {
+const getScenariosList = async (): Promise<ScenariosListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/scenarios/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -66,18 +63,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ScenariosPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch list data server-side
-  const listData = await getScenariosList(profileId);
+  const listData = await getScenariosList();
 
   return (
     <div className="space-y-6" data-page="scenarios-index">

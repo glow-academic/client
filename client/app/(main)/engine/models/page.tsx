@@ -8,7 +8,6 @@ import Models from "@/components/models/Models";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -22,11 +21,11 @@ type DeleteModelOut = OutputOf<"/api/v3/models/delete", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getModelsList = async (profileId: string): Promise<ModelsListOut> => {
+const getModelsList = async (): Promise<ModelsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/models/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -62,18 +61,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ModelsPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch list data server-side
-  const listData = await getModelsList(profileId);
+  const listData = await getModelsList();
 
   return (
     <div className="space-y-6" data-page="models-index">

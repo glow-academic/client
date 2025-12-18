@@ -8,7 +8,6 @@ import Agents from "@/components/agents/Agents";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -22,11 +21,11 @@ type DeleteAgentOut = OutputOf<"/api/v3/agents/delete", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getAgentsList = async (profileId: string): Promise<AgentsListOut> => {
+const getAgentsList = async (): Promise<AgentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/agents/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -62,18 +61,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AgentsPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch list data server-side
-  const listData = await getAgentsList(profileId);
+  const listData = await getAgentsList();
 
   return (
     <div className="space-y-6" data-page="agents-index">

@@ -9,7 +9,6 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Rubric from "@/components/rubrics/Rubric";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -26,11 +25,10 @@ type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
  */
 const getRubric = async (
   rubricId: string,
-  profileId: string,
 ): Promise<RubricDetailOut> => {
   return api.post(
     "/rubrics/detail",
-    { body: { rubricId, profileId } },
+    { body: { rubricId } },
     {
       cache: "no-store",
       headers: {
@@ -40,10 +38,10 @@ const getRubric = async (
   );
 };
 
-const getRubricDefault = async (profileId: string): Promise<RubricNewOut> => {
+const getRubricDefault = async (): Promise<RubricNewOut> => {
   return api.post(
     "/rubrics/new",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -59,12 +57,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { rubricId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (profileId) {
-    try {
-      const rubric = await getRubric(rubricId, profileId);
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  try {
+    const rubric = await getRubric(rubricId);
       return {
         title: `${rubric?.name || "Rubric"}`,
         description: `${rubric?.name ? `${rubric.name} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubric?.description ? ` ${rubric.description}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,
@@ -88,24 +83,16 @@ export default async function EditRubricPage({
   params: Promise<{ rubricId: string }>;
 }) {
   const { rubricId } = await params;
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch data based on mode (edit vs create)
   try {
     const [rubricDetail, rubricNew] = await Promise.all([
       rubricId
-        ? getRubric(rubricId, profileId).catch(() => null)
+        ? getRubric(rubricId).catch(() => null)
         : Promise.resolve(null),
       !rubricId
-        ? getRubricDefault(profileId).catch(() => null)
+        ? getRubricDefault().catch(() => null)
         : Promise.resolve(null),
     ]);
 
@@ -147,16 +134,9 @@ export default async function EditRubricPage({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateRubric(input: UpdateRubricIn): Promise<UpdateRubricOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/rubrics/update", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

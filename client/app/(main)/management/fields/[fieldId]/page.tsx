@@ -8,7 +8,6 @@
 import Field from "@/components/fields/Field";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -21,11 +20,10 @@ type UpdateFieldOut = OutputOf<"/api/v3/fields/update", "post">;
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getField = async (
   fieldId: string,
-  profileId: string,
 ): Promise<FieldDetailOut> => {
   return api.post(
     "/fields/detail",
-    { body: { fieldId, profileId } },
+    { body: { fieldId } },
     {
       cache: "no-store",
       headers: {
@@ -41,12 +39,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { fieldId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (profileId) {
-    try {
-      const field = await getField(fieldId, profileId);
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  try {
+    const field = await getField(fieldId);
       return {
         title: `${field?.name || "Field"}`,
         description:
@@ -68,15 +63,8 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateField(input: UpdateFieldIn): Promise<UpdateFieldOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/fields/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/fields/update", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -86,18 +74,10 @@ export default async function FieldEditPage({
   params: Promise<{ fieldId: string }>;
 }) {
   const { fieldId } = await params;
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch field data (always fresh - source of truth)
-  const field = await getField(fieldId, profileId);
+  const field = await getField(fieldId);
 
   return (
     <div className="space-y-6" data-page="field-edit" data-field-id={fieldId}>

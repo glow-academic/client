@@ -7,7 +7,6 @@
 
 import Department from "@/components/departments/Department";
 import { api } from "@/lib/api/client";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 import { cache } from "react";
 
@@ -23,12 +22,12 @@ type CreateDepartmentOut = OutputOf<"/api/v3/departments/create", "post">;
 const getDepartmentDefault = cache(
   async (input: DepartmentNewIn): Promise<DepartmentNewOut> => {
     return api.post("/departments/new", input);
-  },
+  }
 );
 
 /** ---- Strongly-typed server actions ---- */
 async function createDepartment(
-  input: CreateDepartmentIn,
+  input: CreateDepartmentIn
 ): Promise<CreateDepartmentOut> {
   "use server";
   const out = await api.post("/departments/create", input);
@@ -47,18 +46,9 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewDepartmentPage() {
   // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
   // Fetch default department detail server-side
   const departmentDetailDefault = await getDepartmentDefault({
-    body: { profileId },
+    body: {},
   });
 
   return (

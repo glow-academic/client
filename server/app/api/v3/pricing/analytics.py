@@ -124,6 +124,11 @@ async def get_pricing(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        # Note: profile_id is available but not used for filtering in this endpoint
+        # It's read for consistency with other analytics endpoints
+        profile_id = request.state.profile_id
+
         # Build parameters for consolidated SQL file (role check happens in SQL)
         start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
@@ -139,7 +144,9 @@ async def get_pricing(
         if filters.cohortIds:
             cohort_ids = [uuid.UUID(c) for c in filters.cohortIds]
 
-        # Pricing analytics doesn't filter by profileId
+        # Pricing analytics shows aggregated data across all profiles
+        # Uses profileIds (array) filter when users want to filter by specific profiles
+        # SQL queries don't have a single profile_id parameter - they use profileIds array instead
         profile_uuid = None
 
         roles = filters.roles or None

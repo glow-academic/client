@@ -8,7 +8,6 @@
 import Model from "@/components/models/Model";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -18,12 +17,10 @@ type CreateModelIn = InputOf<"/api/v3/models/create", "post">;
 type CreateModelOut = OutputOf<"/api/v3/models/create", "post">;
 
 /** ---- Direct fetch for default model data (provider mapping for picker) ---- */
-const getModelDetailDefault = async (
-  profileId: string,
-): Promise<ModelNewOut> => {
+const getModelDetailDefault = async (): Promise<ModelNewOut> => {
   return api.post(
     "/models/new",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -45,32 +42,17 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createModel(input: CreateModelIn): Promise<CreateModelOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/models/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/models/create", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewModelPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch default model data (provider mapping for picker)
-  const modelDetailDefault = await getModelDetailDefault(profileId);
+  const modelDetailDefault = await getModelDetailDefault();
 
   return (
     <div className="space-y-6">

@@ -8,7 +8,6 @@ import Parameters from "@/components/parameters/Parameters";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -27,13 +26,11 @@ type CreateParameterItemOut = OutputOf<
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getParametersList = async (
-  profileId: string,
-): Promise<ParametersListOut> => {
+const getParametersList = async (): Promise<ParametersListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/parameters/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -50,32 +47,18 @@ async function duplicateParameter(
   input: DuplicateParameterIn,
 ): Promise<DuplicateParameterOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/parameters/duplicate", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/parameters/duplicate", input);
 }
 
 async function deleteParameter(
   input: DeleteParameterIn,
 ): Promise<DeleteParameterOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/parameters/delete", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/parameters/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -87,18 +70,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ContextPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch list data server-side
-  const listData = await getParametersList(profileId);
+  const listData = await getParametersList();
 
   return (
     <div className="space-y-6" data-page="parameters-index">

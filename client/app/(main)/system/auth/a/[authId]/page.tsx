@@ -11,7 +11,6 @@ import type {
   UpdateKeyIn,
   UpdateKeyOut,
 } from "@/app/(main)/system/auth/page";
-import { getSession } from "@/auth";
 import Auth from "@/components/auth/Auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
@@ -34,11 +33,10 @@ type AuthNewOut = OutputOf<"/api/v3/auth/new", "post">;
  */
 const getAuth = async (
   authId: string,
-  profileId: string,
 ): Promise<AuthDetailOut> => {
   return api.post(
     "/auth/detail",
-    { body: { authId, profileId } },
+    { body: { authId } },
     {
       cache: "no-store",
       headers: {
@@ -54,12 +52,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { authId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (profileId) {
-    try {
-      const auth = await getAuth(authId, profileId);
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  try {
+    const auth = await getAuth(authId);
       return {
         title: `${auth?.name || "Auth"} Auth`,
         description: `${auth?.name ? `${auth.name} - ` : ""}Authentication method configuration for teaching assistant training platform.${auth?.description ? ` ${auth.description}` : ""} Manage identity providers and secure access mechanisms for educational institutions and L&D programs.`,
@@ -79,42 +74,23 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auth/create", {
-    body: { ...input.body, profileId },
-  });
+  return api.post("/auth/create", input);
 }
 
 async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auth/update", {
-    body: { ...input.body, profileId },
-  });
+  return api.post("/auth/update", input);
 }
 
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/keys/create", input);
 }
 
 async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
@@ -125,16 +101,9 @@ async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
 
 async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/keys/update", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -144,19 +113,11 @@ export default async function AuthEditPage({
   params: Promise<{ authId: string }>;
 }) {
   const { authId } = await params;
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch auth detail (always fresh - source of truth)
   try {
-    const authDetail = await getAuth(authId, profileId);
+    const authDetail = await getAuth(authId);
 
     return (
       <div className="space-y-6" data-page="auth-edit" data-auth-id={authId}>

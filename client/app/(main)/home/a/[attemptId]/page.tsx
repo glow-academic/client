@@ -5,7 +5,6 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
@@ -49,19 +48,9 @@ export async function generateMetadata(
   const { attemptId } = await params;
 
   try {
-    const session = await getSession();
-    const profileId = session?.effectiveProfileId;
-
-    if (!profileId) {
-      return {
-        title: `Attempt ${attemptId.substring(0, 8)}...`,
-        description:
-          "Teaching practice session for graduate teaching assistant training. Review pedagogical performance, student interaction strategies, and teaching effectiveness through simulation-based learning assessment.",
-      };
-    }
-
+    // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
     const attemptData = await getAttemptFull(attemptId, {
-      body: { attemptId, profileId },
+      body: { attemptId },
     });
     const simulationTitle = attemptData?.simulation?.["title"];
     return {
@@ -94,20 +83,12 @@ export default async function AttemptPage({
 }) {
   const { attemptId } = await params;
 
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch attempt data server-side
   try {
     const attemptData = await getAttemptFull(attemptId, {
-      body: { attemptId, profileId },
+      body: { attemptId },
     });
 
     return (

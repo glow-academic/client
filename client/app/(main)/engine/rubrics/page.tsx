@@ -8,7 +8,6 @@ import Rubrics from "@/components/rubrics/Rubrics";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -26,11 +25,11 @@ type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getRubricsList = async (profileId: string): Promise<RubricsListOut> => {
+const getRubricsList = async (): Promise<RubricsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/rubrics/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -47,64 +46,36 @@ export async function duplicateRubric(
   input: DuplicateRubricIn,
 ): Promise<DuplicateRubricOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/duplicate", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/rubrics/duplicate", input);
 }
 
 export async function deleteRubric(
   input: DeleteRubricIn,
 ): Promise<DeleteRubricOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/delete", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/rubrics/delete", input);
 }
 
 export async function createRubric(
   input: CreateRubricIn,
 ): Promise<CreateRubricOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/rubrics/create", input);
 }
 
 export async function updateRubric(
   input: UpdateRubricIn,
 ): Promise<UpdateRubricOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/rubrics/update", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -116,18 +87,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RubricsPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch list data server-side
-  const listData = await getRubricsList(profileId);
+  const listData = await getRubricsList();
 
   return (
     <div className="space-y-6" data-page="rubrics-index">

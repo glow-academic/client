@@ -7,7 +7,6 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Provider from "@/components/providers/Provider";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -20,41 +19,34 @@ type UpdateProviderOut = OutputOf<"/api/v3/providers/update", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getProvider = async (
-  providerId: string,
-  profileId: string,
-): Promise<ProviderDetailOut> => {
+const getProvider = async (providerId: string): Promise<ProviderDetailOut> => {
   return api.post(
     "/providers/detail",
-    { body: { providerId, profileId } },
+    { body: { providerId } },
     {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ providerId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { providerId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
 
-  if (profileId) {
-    try {
-      const provider = await getProvider(providerId, profileId);
-      return {
-        title: `${provider?.name || "Provider"}`,
-        description: `${provider?.name ? `${provider.name} - ` : ""}AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+  try {
+    const provider = await getProvider(providerId);
+    return {
+      title: `${provider?.name || "Provider"}`,
+      description: `${provider?.name ? `${provider.name} - ` : ""}AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {
@@ -73,19 +65,10 @@ export default async function EditProviderPage({
   const { providerId } = await params;
   // Access control is handled server-side in layout
   // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
 
   // Fetch data for edit mode
   try {
-    const providerDetail = await getProvider(providerId, profileId).catch(
-      () => null,
-    );
+    const providerDetail = await getProvider(providerId).catch(() => null);
 
     if (!providerDetail) {
       throw new Error("Provider not found");
@@ -127,18 +110,13 @@ export default async function EditProviderPage({
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateProvider(
-  input: UpdateProviderIn,
+  input: UpdateProviderIn
 ): Promise<UpdateProviderOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/providers/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body },
   });
 }
 

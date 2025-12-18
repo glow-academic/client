@@ -6,7 +6,6 @@
 import Provider from "@/components/providers/Provider";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -17,18 +16,13 @@ type CreateProviderOut = OutputOf<"/api/v3/providers/create", "post">;
 
 /** ---- Strongly-typed server action ---- */
 async function createProvider(
-  input: CreateProviderIn,
+  input: CreateProviderIn
 ): Promise<CreateProviderOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/providers/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body },
   });
 }
 
@@ -43,13 +37,6 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function NewProviderPage() {
   // Access control is handled server-side in layout
   // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
 
   return (
     <div

@@ -5,7 +5,6 @@
  * 06/09/2025
  */
 import Personas from "@/components/personas/Personas";
-import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -22,11 +21,11 @@ type DeletePersonaOut = OutputOf<"/api/v3/personas/delete", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getPersonasList = async (profileId: string): Promise<PersonasListOut> => {
+const getPersonasList = async (): Promise<PersonasListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/personas/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -34,41 +33,27 @@ const getPersonasList = async (profileId: string): Promise<PersonasListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    },
+    }
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicatePersona(
-  input: DuplicatePersonaIn,
+  input: DuplicatePersonaIn
 ): Promise<DuplicatePersonaOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/duplicate", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/personas/duplicate", input);
 }
 
 async function deletePersona(
-  input: DeletePersonaIn,
+  input: DeletePersonaIn
 ): Promise<DeletePersonaOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/delete", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/personas/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -80,18 +65,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PersonasPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch list data server-side
-  const listData = await getPersonasList(profileId);
+  const listData = await getPersonasList();
 
   return (
     <div className="space-y-6" data-page="personas-index">

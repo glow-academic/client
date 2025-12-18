@@ -8,7 +8,6 @@
 import Simulation from "@/components/simulations/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -50,18 +49,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NewSimulationPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch default simulation detail server-side (per-profile cache)
-  // profileId removed - comes from X-Profile-Id header automatically
   const simulationDetailDefault = await getSimulationDefault();
 
   return (

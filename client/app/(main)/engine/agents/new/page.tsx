@@ -8,7 +8,6 @@
 import Agent from "@/components/agents/Agent";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -23,10 +22,10 @@ type DeleteAgentPromptOut = OutputOf<"/api/v3/prompts/delete", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getAgentDefault = async (profileId: string): Promise<AgentNewOut> => {
+const getAgentDefault = async (): Promise<AgentNewOut> => {
   return api.post(
     "/agents/new",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -39,30 +38,16 @@ const getAgentDefault = async (profileId: string): Promise<AgentNewOut> => {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/agents/create", input);
 }
 
 async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/agents/update", input);
 }
 
 async function deleteAgentPrompt(
@@ -82,18 +67,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NewAgentPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch default agent detail server-side (per-profile cache)
-  const agentDetailDefault = await getAgentDefault(profileId);
+  const agentDetailDefault = await getAgentDefault();
 
   return (
     <div

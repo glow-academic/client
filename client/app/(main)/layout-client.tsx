@@ -33,14 +33,9 @@ import {
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
 import type {
   AttemptFullOut,
-  BulkCreateOrUpdateStaffIn,
-  BulkCreateOrUpdateStaffOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
-  CreateStaffDataOut,
   LayoutContextResponse,
-  ProcessCSVIn,
-  ProcessCSVOut,
   RefreshAnalyticsIn,
   RefreshAnalyticsOut,
   SafeSessionSnapshot,
@@ -72,11 +67,6 @@ function MainLayoutContent({
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn,
   ) => Promise<SearchSimulatableProfilesOut>;
-  processCSVAction?: (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
-  bulkCreateOrUpdateStaffAction?: (
-    input: BulkCreateOrUpdateStaffIn,
-  ) => Promise<BulkCreateOrUpdateStaffOut>;
-  initialCreateStaffData?: CreateStaffDataOut | null;
 }) {
   const pathname = usePathname() || "/";
 
@@ -421,9 +411,6 @@ export function MainLayoutClient({
   createFeedbackAction,
   refreshAnalyticsAction,
   searchSimulatableProfilesAction,
-  processCSVAction: _processCSVAction,
-  bulkCreateOrUpdateStaffAction: _bulkCreateOrUpdateStaffAction,
-  initialCreateStaffData,
 }: {
   children: React.ReactNode;
   initial: LayoutContextResponse | null; // Can be null if user doesn't have access
@@ -440,11 +427,6 @@ export function MainLayoutClient({
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn,
   ) => Promise<SearchSimulatableProfilesOut>;
-  processCSVAction?: (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
-  bulkCreateOrUpdateStaffAction?: (
-    input: BulkCreateOrUpdateStaffIn,
-  ) => Promise<BulkCreateOrUpdateStaffOut>;
-  initialCreateStaffData?: CreateStaffDataOut | null;
 }) {
   const pathname = usePathname();
 
@@ -494,16 +476,6 @@ export function MainLayoutClient({
               createFeedbackAction={createFeedbackAction}
               refreshAnalyticsAction={refreshAnalyticsAction}
               searchSimulatableProfilesAction={searchSimulatableProfilesAction}
-              {...(_processCSVAction !== undefined && {
-                processCSVAction: _processCSVAction,
-              })}
-              {...(_bulkCreateOrUpdateStaffAction !== undefined && {
-                bulkCreateOrUpdateStaffAction: _bulkCreateOrUpdateStaffAction,
-              })}
-              {...(initialCreateStaffData !== undefined &&
-                initialCreateStaffData !== null && {
-                  initialCreateStaffData,
-                })}
             >
               {children}
             </MainLayoutContent>

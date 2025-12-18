@@ -991,7 +991,6 @@ export default function Staff({
       const response = await bulkCreateOrUpdateStaffAction({
         body: {
           profiles,
-          currentProfileId: effectiveProfile?.id || "",
         },
       });
 
@@ -1018,7 +1017,6 @@ export default function Staff({
     cohortMappingForCSV,
     validCohortIdsForCSV,
     validRoles,
-    effectiveProfile?.id,
     bulkCreateOrUpdateStaffAction,
     router,
   ]);

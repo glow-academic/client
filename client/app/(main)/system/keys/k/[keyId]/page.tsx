@@ -7,7 +7,6 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import Key from "@/components/keys/Key";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -23,41 +22,33 @@ type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getKey = async (
-  keyId: string,
-  profileId: string,
-): Promise<KeyDetailOut> => {
+const getKey = async (keyId: string): Promise<KeyDetailOut> => {
   return api.post(
     "/keys/detail",
-    { body: { keyId, profileId } },
+    { body: { keyId } },
     {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
+    }
   );
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ keyId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { keyId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (profileId) {
-    try {
-      const key = await getKey(keyId, profileId);
-      return {
-        title: `${key?.name || "Key"}`,
-        description: `${key?.name ? `${key.name} - ` : ""}API key configuration for teaching assistant training platform. Manage secure access credentials and API integrations for educational institutions and L&D programs.`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+  try {
+    const key = await getKey(keyId);
+    return {
+      title: `${key?.name || "Key"}`,
+      description: `${key?.name ? `${key.name} - ` : ""}API key configuration for teaching assistant training platform. Manage secure access credentials and API integrations for educational institutions and L&D programs.`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {
@@ -76,17 +67,9 @@ export default async function EditKeyPage({
   const { keyId } = await params;
   // Access control is handled server-side in layout
   // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
   // Fetch data for edit mode
   try {
-    const keyDetail = await getKey(keyId, profileId).catch(() => null);
+    const keyDetail = await getKey(keyId).catch(() => null);
 
     if (!keyDetail) {
       throw new Error("Key not found");
@@ -126,37 +109,27 @@ export default async function EditKeyPage({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/keys/update", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body },
   });
 }
 
 async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/keys/decrypt-key", {
+  return api.post("/keys/decrypt", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body },
   });
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  DecryptKeyIn,
+  DecryptKeyOut,
   KeyDetailIn,
   KeyDetailOut,
   UpdateKeyIn,
   UpdateKeyOut,
-  DecryptKeyIn,
-  DecryptKeyOut,
 };

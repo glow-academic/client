@@ -8,7 +8,6 @@ import Fields from "@/components/fields/Fields";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -19,11 +18,11 @@ type DeleteFieldIn = InputOf<"/api/v3/fields/delete", "post">;
 type DeleteFieldOut = OutputOf<"/api/v3/fields/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
-const getFieldsList = async (profileId: string): Promise<FieldsListOut> => {
+const getFieldsList = async (): Promise<FieldsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/fields/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -57,18 +56,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function FieldsPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch list data server-side
-  const listData = await getFieldsList(profileId);
+  const listData = await getFieldsList();
 
   return (
     <div className="space-y-6" data-page="fields-index">

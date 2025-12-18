@@ -12,8 +12,8 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
+import { getLayoutContext } from "../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type PricingIn = InputOf<"/api/v3/pricing/analytics", "post">;
@@ -45,7 +45,7 @@ const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getPricingRuns = async (
-  input: PricingRunsIn,
+  input: PricingRunsIn
 ): Promise<PricingRunsOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -59,35 +59,17 @@ const getPricingRuns = async (
   });
 };
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
- */
-const getProfileContext = async (input: {
-  body: {
-    actualProfileId: string;
-    effectiveProfileId: string;
-    pathname: string;
-  };
-}) => {
-  return api.post("/profile/context", input, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
-  });
-};
-
 /** ---- Inline filters function for pricing page ---- */
 async function getPricingFilters(
   searchParams?: URLSearchParams,
-  profileIds?: { effectiveProfileId: string; actualProfileId: string },
+  profileIds?: { effectiveProfileId: string; actualProfileId: string }
 ) {
   if (!profileIds) {
     throw new Error("Profile IDs required");
   }
 
-  // Fetch profile context to get earliestAttemptDate
-  const profileContext = await getProfileContext({
+  // Use cached layout context (reuses data already fetched by layout)
+  const profileContext = await getLayoutContext({
     body: {
       actualProfileId: profileIds.actualProfileId,
       effectiveProfileId: profileIds.effectiveProfileId,
@@ -171,14 +153,6 @@ interface PricingPageProps {
 export default async function PricingPage({ searchParams }: PricingPageProps) {
   // Access control is handled server-side in layout
   // Get profile IDs from session
-  const session = await getSession();
-  const effectiveProfileId = session?.effectiveProfileId;
-  const actualProfileId = session?.user?.profileId;
-
-  if (!effectiveProfileId || !actualProfileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
 
   // Parse search params
   const params = await searchParams;
@@ -195,8 +169,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
 
   // Get filters from search params or defaults
   const filters = await getPricingFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined,
-    { effectiveProfileId, actualProfileId },
+    searchParamsObj.toString() ? searchParamsObj : undefined
   );
 
   // Fetch summary data server-side (for chart - all runs, no pagination)

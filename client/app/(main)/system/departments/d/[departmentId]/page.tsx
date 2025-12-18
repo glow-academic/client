@@ -5,7 +5,6 @@
  * 07/20/2025
  */
 
-import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Department from "@/components/departments/Department";
 import { api } from "@/lib/api/client";
@@ -33,11 +32,10 @@ type SettingsDetailOut = OutputOf<"/api/v3/settings/detail", "post">;
  */
 const getDepartment = async (
   departmentId: string,
-  profileId: string,
 ): Promise<DepartmentDetailOut> => {
   return api.post(
     "/departments/detail",
-    { body: { departmentId, profileId } },
+    { body: { departmentId } },
     {
       cache: "no-store",
       headers: {
@@ -47,10 +45,10 @@ const getDepartment = async (
   );
 };
 
-const getKeysList = async (profileId: string): Promise<KeysListOut> => {
+const getKeysList = async (): Promise<KeysListOut> => {
   return api.post(
     "/keys/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -62,11 +60,10 @@ const getKeysList = async (profileId: string): Promise<KeysListOut> => {
 
 const getSettingsDetail = async (
   settingsId: string,
-  profileId: string,
 ): Promise<SettingsDetailOut> => {
   return api.post(
     "/settings/detail",
-    { body: { settingsId, profileId } },
+    { body: { settingsId } },
     {
       cache: "no-store",
       headers: {
@@ -82,12 +79,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { departmentId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (profileId) {
-    try {
-      const department = await getDepartment(departmentId, profileId);
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  try {
+    const department = await getDepartment(departmentId);
       return {
         title: `${department?.title || "Department"} Department`,
         description: `${department?.title ? `${department.title} - ` : ""}Academic department for teaching assistant training programs.${department?.description ? ` ${department.description}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
@@ -128,17 +122,18 @@ async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   return api.post("/keys/update", input);
 }
 
-async function getKeysListAction(profileId: string): Promise<KeysListOut> {
+async function getKeysListAction(): Promise<KeysListOut> {
   "use server";
-  return getKeysList(profileId);
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return getKeysList();
 }
 
 async function getSettingsDetailAction(
   settingsId: string,
-  profileId: string,
 ): Promise<SettingsDetailOut> {
   "use server";
-  return getSettingsDetail(settingsId, profileId);
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return getSettingsDetail(settingsId);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -149,22 +144,14 @@ export default async function DepartmentEditPage({
 }) {
   const { departmentId } = await params;
 
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch department detail (always fresh - source of truth)
   try {
-    const departmentDetail = await getDepartment(departmentId, profileId);
+    const departmentDetail = await getDepartment(departmentId);
 
     // Fetch keys list
-    const keysList = await getKeysList(profileId);
+    const keysList = await getKeysList();
 
     // Fetch settings detail if department has linked settings
     let settingsDetail: SettingsDetailOut | null = null;
@@ -172,7 +159,6 @@ export default async function DepartmentEditPage({
       try {
         settingsDetail = await getSettingsDetail(
           departmentDetail.settings_id,
-          profileId,
         );
       } catch {
         // Settings might not exist, continue without it

@@ -8,7 +8,6 @@
 import StaffNewEdit from "@/components/staff/StaffNewEdit";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 import { cache } from "react";
 
@@ -18,10 +17,10 @@ type CreateStaffIn = InputOf<"/api/v3/profile/create", "post">;
 type CreateStaffOut = OutputOf<"/api/v3/profile/create", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getStaffNew = cache(async (profileId: string): Promise<StaffNewOut> => {
+const getStaffNew = cache(async (): Promise<StaffNewOut> => {
   return api.post(
     "/profile/new",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -51,18 +50,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewStaffPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch default staff detail server-side
-  const staffDetailDefault = await getStaffNew(profileId);
+  const staffDetailDefault = await getStaffNew();
 
   return (
     <div

@@ -6,7 +6,6 @@
 import Key from "@/components/keys/Key";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -21,29 +20,12 @@ type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt", "post">;
 /** ---- Strongly-typed server actions ---- */
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/keys/create", { ...input });
 }
 
 async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/keys/decrypt-key", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/keys/decrypt", { ...input });
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -55,16 +37,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NewKeyPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
   // Fetch key default data (for dropdowns and defaults)
   return (
     <div
@@ -81,8 +53,8 @@ export default async function NewKeyPage() {
 export type {
   CreateKeyIn,
   CreateKeyOut,
-  KeyNewIn,
-  KeyNewOut,
   DecryptKeyIn,
   DecryptKeyOut,
+  KeyNewIn,
+  KeyNewOut,
 };

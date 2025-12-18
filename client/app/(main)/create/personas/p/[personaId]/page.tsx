@@ -9,7 +9,6 @@ import Persona from "@/components/personas/Persona";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -26,11 +25,10 @@ type UpdatePersonaOut = OutputOf<"/api/v3/personas/update", "post">;
  */
 const getPersona = async (
   personaId: string,
-  profileId: string,
 ): Promise<PersonaDetailOut> => {
   return api.post(
     "/personas/detail",
-    { body: { personaId, profileId } },
+    { body: { personaId } },
     {
       cache: "no-store",
       headers: {
@@ -46,19 +44,15 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { personaId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (profileId) {
-    try {
-      const persona = await getPersona(personaId, profileId);
-      return {
-        title: `${persona?.name || "Persona"} Persona`,
-        description: `${persona?.name ? `${persona.name} - ` : ""}AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.${persona?.description ? ` ${persona.description}` : ""}`,
-      };
-    } catch {
-      // Fall through to default metadata
-    }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  try {
+    const persona = await getPersona(personaId);
+    return {
+      title: `${persona?.name || "Persona"} Persona`,
+      description: `${persona?.name ? `${persona.name} - ` : ""}AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.${persona?.description ? ` ${persona.description}` : ""}`,
+    };
+  } catch {
+    // Fall through to default metadata
   }
 
   return {
@@ -73,32 +67,18 @@ async function createPersona(
   input: CreatePersonaIn,
 ): Promise<CreatePersonaOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/create", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/personas/create", input);
 }
 
 async function updatePersona(
   input: UpdatePersonaIn,
 ): Promise<UpdatePersonaOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/update", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  return api.post("/personas/update", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -108,19 +88,11 @@ export default async function PersonaEditPage({
   params: Promise<{ personaId: string }>;
 }) {
   const { personaId } = await params;
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch persona detail (always fresh - source of truth)
   try {
-    const personaDetail = await getPersona(personaId, profileId);
+    const personaDetail = await getPersona(personaId);
 
     return (
       <div

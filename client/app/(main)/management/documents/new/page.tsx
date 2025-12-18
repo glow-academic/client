@@ -8,7 +8,6 @@
 import Document from "@/components/documents/Document";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -30,12 +29,10 @@ type GenerateTemplateOut = never;
 // RenderTemplate types removed - not used on new page since we don't have documentId yet
 
 /** ---- Direct fetch (no Next.js cache) ---- */
-const getDocumentsList = async (
-  profileId: string,
-): Promise<DocumentsListOut> => {
+const getDocumentsList = async (): Promise<DocumentsListOut> => {
   return api.post(
     "/documents/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -74,18 +71,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NewDocumentPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch list data server-side for mappings
-  const listData = await getDocumentsList(profileId);
+  const listData = await getDocumentsList();
 
   // Note: Server-side rendering on new page is not implemented since we don't have a documentId yet
   // The form will handle rendering client-side until document is created

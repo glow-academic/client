@@ -152,6 +152,11 @@ async def get_leaderboard(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        # Note: profile_id is read for consistency but not used for filtering
+        # Leaderboard shows aggregated data across all profiles
+        profile_id = request.state.profile_id
+
         # Build WHERE clause using analytics query builder utility
         where_clause, params = build_base_filter(
             start_date=filters.startDate,
@@ -161,7 +166,7 @@ async def get_leaderboard(
             sim_filters=[f.value for f in filters.simulationFilters]
             if filters.simulationFilters
             else None,
-            profile_id=None,  # Leaderboard doesn't filter by profileId
+            profile_id=None,  # Leaderboard shows aggregated data across all profiles
             department_ids=filters.departmentIds,
         )
 

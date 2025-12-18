@@ -8,7 +8,6 @@
 import Parameter from "@/components/parameters/Parameter";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -22,12 +21,10 @@ type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getParameterDefault = async (
-  profileId: string,
-): Promise<ParameterNewOut> => {
+const getParameterDefault = async (): Promise<ParameterNewOut> => {
   return api.post(
     "/parameters/new",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -42,15 +39,10 @@ async function createParameter(
   input: CreateParameterIn,
 ): Promise<CreateParameterOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/parameters/create", {
     ...input,
-    body: { ...input.body, profileId },
+    body: { ...input.body },
   });
 }
 
@@ -58,7 +50,6 @@ async function updateParameter(
   input: UpdateParameterIn,
 ): Promise<UpdateParameterOut> {
   "use server";
-  const session = await getSession();
   // profileId removed - comes from X-Profile-Id header (auto-injected)
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/parameters/update", input);
@@ -74,17 +65,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function NewParameterPage() {
   // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
 
   // Fetch default parameter detail server-side
-  const parameterDetailDefault = await getParameterDefault(profileId);
+  const parameterDetailDefault = await getParameterDefault();
 
   return (
     <div className="space-y-6" data-page="parameter-new">

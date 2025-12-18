@@ -12,11 +12,8 @@ import { headers } from "next/headers";
 import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
 import {
-  bulkCreateOrUpdateStaff,
   createFeedback,
-  getCreateStaffData,
   getLayoutContextData,
-  processCSV,
   refreshAnalytics,
   searchSimulatableProfiles,
   switchEffectiveProfile,
@@ -79,8 +76,6 @@ export default async function MainLayout({
           createFeedbackAction={createFeedback}
           refreshAnalyticsAction={refreshAnalytics}
           searchSimulatableProfilesAction={searchSimulatableProfiles}
-          processCSVAction={processCSV}
-          bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
         >
           <UnifiedAccessDenied
             key={`access-denied-content-${pathname}-${reason}`}
@@ -120,27 +115,6 @@ export default async function MainLayout({
     );
   }
 
-  // Check if we're on the staff page and fetch initial data if needed
-  const profileId =
-    session?.effectiveProfileId || initial?.effectiveProfile.id || null;
-  const isStaffPage = pathname === "/management/staff";
-
-  let initialCreateStaffData = null;
-
-  if (isStaffPage && profileId) {
-    try {
-      initialCreateStaffData = await getCreateStaffData({
-        body: {
-          departmentIds: [],
-          profileId,
-        },
-      });
-    } catch {
-      // If fetch fails, continue without staff data
-      // This can happen if user doesn't have access
-    }
-  }
-
   return (
     <div
       key={`allowed-wrapper-${pathname}`}
@@ -157,9 +131,6 @@ export default async function MainLayout({
         createFeedbackAction={createFeedback}
         refreshAnalyticsAction={refreshAnalytics}
         searchSimulatableProfilesAction={searchSimulatableProfiles}
-        processCSVAction={processCSV}
-        bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
-        initialCreateStaffData={initialCreateStaffData}
       >
         {/* Only the PAGE AREA suspends */}
         <Suspense

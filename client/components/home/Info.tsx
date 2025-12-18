@@ -19,11 +19,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-interface InfoProps {
-  isLoggedIn?: boolean;
-}
-
-export default function Info({ isLoggedIn = false }: InfoProps) {
+export default function Info() {
   const containerRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const licensingRef = useRef<HTMLDivElement>(null);

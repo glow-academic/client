@@ -8,7 +8,6 @@ import Evals from "@/components/evals/Evals";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -17,11 +16,11 @@ type DeleteEvalIn = InputOf<"/api/v3/evals/delete", "post">;
 type DeleteEvalOut = OutputOf<"/api/v3/evals/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
-const getEvalsList = async (profileId: string): Promise<EvalsListOut> => {
+const getEvalsList = async (): Promise<EvalsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
     "/evals/list",
-    { body: { profileId } },
+    { body: {} },
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -29,22 +28,15 @@ const getEvalsList = async (profileId: string): Promise<EvalsListOut> => {
           "X-Bypass-Cache": "1",
         },
       }),
-    },
+    }
   );
 };
 
 /** ---- Strongly-typed server actions ---- */
 async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
   "use server";
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-  if (!profileId) {
-    throw new Error("Authentication required");
-  }
-  return api.post("/evals/delete", {
-    ...input,
-    body: { ...input.body, profileId },
-  });
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/evals/delete", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -56,18 +48,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function EvalsPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch list data server-side
-  const listData = await getEvalsList(profileId);
+  const listData = await getEvalsList();
 
   return <Evals listData={listData} deleteEvalAction={deleteEval} />;
 }

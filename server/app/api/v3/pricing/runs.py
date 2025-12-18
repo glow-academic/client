@@ -174,8 +174,14 @@ async def get_pricing_runs(
         if filters.cohortIds:
             cohort_ids = [uuid.UUID(c) for c in filters.cohortIds]
 
-        profile_uuid = None
-        # Pricing runs doesn't filter by profileId
+        # Get profile_id from header (set by router-level dependency)
+        # Note: profile_id is available but not used for filtering in this endpoint
+        # It's read for consistency with other analytics endpoints
+        profile_id = request.state.profile_id
+
+        # Pricing runs shows aggregated data across all profiles
+        # Uses profileIds (array) filter when users want to filter by specific profiles
+        # SQL queries don't have a single profile_id parameter - they use profileIds array instead
         profile_uuid = None
 
         roles = filters.roles or None

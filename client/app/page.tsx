@@ -4,7 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 05/14/2025
  */
-import { getSession } from "@/auth";
 
 import Info from "@/components/home/Info";
 import type { Metadata } from "next";
@@ -18,9 +17,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function InfoPage() {
-  const session = await getSession();
-  // Check if user is logged in: effectiveProfileId exists
-  const isLoggedIn = !!session?.effectiveProfileId;
-
-  return <Info isLoggedIn={isLoggedIn} />;
+  return <Info />;
 }

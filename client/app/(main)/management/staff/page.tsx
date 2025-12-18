@@ -9,7 +9,6 @@ import Staff from "@/components/staff/Staff";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -98,27 +97,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function StaffPage() {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
   // Fetch list data server-side
   const listData = await getStaffList({
-    body: { profileId },
+    body: {},
   });
 
   // Fetch initial create staff data for CreateStaffButton
   const initialCreateStaffData = await getCreateStaffData({
-    body: {
-      departmentIds: [],
-      profileId,
-    },
+    body: { departmentIds: [] },
   });
 
   return (

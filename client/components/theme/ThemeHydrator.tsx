@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import type { SettingsActiveOut } from "@/app/(main)/layout-server";
 import { applyThemeTokens } from "@/lib/theme/apply-theme";
+import { SettingsActiveClient } from "@/app/(main)/layout-server";
 
 /**
  * ThemeHydrator component that applies theme tokens from activeSettings
@@ -14,7 +14,7 @@ import { applyThemeTokens } from "@/lib/theme/apply-theme";
 export function ThemeHydrator({
   activeSettings,
 }: {
-  activeSettings: SettingsActiveOut | null;
+  activeSettings: SettingsActiveClient | null;
 }) {
   useEffect(() => {
     if (!activeSettings?.tokens) return;

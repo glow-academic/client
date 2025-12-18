@@ -8,7 +8,6 @@
 import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -60,16 +59,8 @@ export default async function NewScenarioPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Parse search params
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -178,7 +169,6 @@ export default async function NewScenarioPage({
   // Fetch default scenario detail server-side with filter params
   const scenarioDetailDefault = await getScenarioDefault({
     body: {
-      profileId,
       departmentIds: departmentIds || null,
       personaIds: personaIds || null,
       documentIds: documentIds || null,

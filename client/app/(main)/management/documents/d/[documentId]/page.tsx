@@ -10,7 +10,6 @@ import Document from "@/components/documents/Document";
 import type { TemplateSchema } from "@/components/documents/TemplateForm";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getSession } from "@/auth";
 import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
 import type { Metadata, ResolvingMetadata } from "next";
 
@@ -28,11 +27,10 @@ type GenerateTemplateOut = never;
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getDocument = async (
   documentId: string,
-  profileId: string,
 ): Promise<DocumentDetailOut> => {
   return api.post(
     "/documents/detail",
-    { body: { documentId, profileId } },
+    { body: { documentId } },
     {
       cache: "no-store",
       headers: {
@@ -48,12 +46,9 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { documentId } = await params;
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (profileId) {
-    try {
-      const document = await getDocument(documentId, profileId);
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  try {
+    const document = await getDocument(documentId);
       return {
         title: `${document?.name || "Document"}`,
         description: `${document?.name ? `${document.name} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
@@ -97,19 +92,11 @@ export default async function DocumentEditPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { documentId } = await params;
-  // Access control is handled server-side in layout
-  // Get profileId from session
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId;
-
-  if (!profileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch document detail (always fresh - source of truth)
   try {
-    const documentDetail = await getDocument(documentId, profileId);
+    const documentDetail = await getDocument(documentId);
 
     // Parse search params for template args and render server-side if template document
     let renderedHtml: string | null = null;

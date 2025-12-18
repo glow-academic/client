@@ -5,7 +5,6 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
 import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Home from "@/components/home/Home";
 import { api } from "@/lib/api/client";
@@ -14,6 +13,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { getLayoutContext } from "../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type HomeIn = InputOf<"/api/v3/home/overview", "post">;
@@ -45,7 +45,7 @@ const getHomeOverview = async (input: HomeIn): Promise<HomeOut> => {
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getHomeHistory = async (
-  input: HomeHistoryIn,
+  input: HomeHistoryIn
 ): Promise<HomeHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -59,35 +59,14 @@ const getHomeHistory = async (
   });
 };
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
- */
-const getProfileContext = async (input: {
-  body: {
-    actualProfileId: string;
-    effectiveProfileId: string;
-    pathname: string;
-  };
-}) => {
-  return api.post("/profile/context", input, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
-  });
-};
-
 /** ---- Inline filters function for home page ---- */
-async function getHomeFilters(
-  searchParams: URLSearchParams | undefined,
-  effectiveProfileId: string,
-  actualProfileId: string,
-) {
-  // Fetch profile context to get earliestAttemptDate
-  const profileContext = await getProfileContext({
+async function getHomeFilters(searchParams: URLSearchParams | undefined) {
+  // Use cached layout context (reuses data already fetched by layout)
+  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
+  const profileContext = await getLayoutContext({
     body: {
-      actualProfileId,
-      effectiveProfileId,
+      actualProfileId: null as unknown as string,
+      effectiveProfileId: null as unknown as string,
       pathname: "/",
     },
   });
@@ -167,17 +146,8 @@ interface HomePageProps {
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  // Access control is handled server-side in layout
-  // Get profile IDs from session
-  const session = await getSession();
-  const effectiveProfileId = session?.effectiveProfileId;
-  const actualProfileId = session?.user?.profileId;
-
-  if (!effectiveProfileId || !actualProfileId) {
-    // This should not happen due to server-side access control, but handle gracefully
-    return null;
-  }
-
+  // Access control handled server-side in layout
+  // profileIds come from X-Profile-Id header (auto-injected by request-core.ts)
   // Parse search params
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -192,11 +162,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   });
 
   // Get filters from search params or defaults, then subset to Home fields
-  // Note: getHomeFilters uses getProfileContext which is now cached
+  // Note: getHomeFilters uses getLayoutContext which reuses cached data from layout
   const defaultFilters = await getHomeFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined,
-    effectiveProfileId,
-    actualProfileId,
+    searchParamsObj.toString() ? searchParamsObj : undefined
   );
 
   // Extract subset for Home: startDate, endDate
@@ -386,10 +354,10 @@ async function HomeHistorySection({
 
   // Calculate archived/unarchived counts from data (home history API doesn't provide these)
   const archivedCount = historyData.data.filter(
-    (item) => item.isArchived,
+    (item) => item.isArchived
   ).length;
   const unarchivedCount = historyData.data.filter(
-    (item) => !item.isArchived,
+    (item) => !item.isArchived
   ).length;
 
   // Use server-provided data directly (no transformation needed)
