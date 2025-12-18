@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.v3.evals.attempt import router as attempt_router
+from app.api.v3.evals.attempts import router as attempts_router
 from app.api.v3.evals.create import router as create_router
 from app.api.v3.evals.delete import router as delete_router
 from app.api.v3.evals.detail import router as detail_router
@@ -26,3 +27,4 @@ router.include_router(runs_router)
 router.include_router(run_router)
 router.include_router(stop_router)
 router.include_router(attempt_router)
+router.include_router(attempts_router)

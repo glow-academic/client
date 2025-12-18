@@ -1444,6 +1444,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/evals/attempts/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Eval Attempts List
+         * @description Get eval attempts list with pagination, filtering, and status information.
+         */
+        post: operations["get_eval_attempts_list_api_v3_evals_attempts_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/rubrics/list": {
         parameters: {
             query?: never;
@@ -8244,6 +8264,76 @@ export interface components {
             /** Runs */
             runs: components["schemas"]["RunItem"][];
             status_summary: components["schemas"]["StatusSummary"];
+        };
+        /**
+         * EvalAttemptItem
+         * @description Individual eval attempt item in the response.
+         */
+        EvalAttemptItem: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Eval Id */
+            eval_id: string;
+            /** Eval Name */
+            eval_name: string;
+            /** Eval Description */
+            eval_description: string;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Rubric Name */
+            rubric_name: string;
+            /** Created At */
+            created_at: string;
+            /** Archived */
+            archived: boolean;
+            /** Status */
+            status: string;
+            /** Total Runs */
+            total_runs: number;
+            /** Completed Runs */
+            completed_runs: number;
+            /** Pending Runs */
+            pending_runs: number;
+        };
+        /**
+         * EvalAttemptsFilters
+         * @description Filters for eval attempts list request.
+         */
+        EvalAttemptsFilters: {
+            /** Evalids */
+            evalIds?: string[] | null;
+            /** Status */
+            status?: string | null;
+            /** Archived */
+            archived?: boolean | null;
+            /** Search */
+            search?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @default 20
+             */
+            pageSize: number;
+        };
+        /**
+         * EvalAttemptsListResponse
+         * @description Response for eval attempts list endpoint.
+         */
+        EvalAttemptsListResponse: {
+            /** Attempts */
+            attempts: components["schemas"]["EvalAttemptItem"][];
+            /** Total Count */
+            total_count: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
         };
         /**
          * EvalCompletedPayload
@@ -21176,6 +21266,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvalAttemptFullResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_eval_attempts_list_api_v3_evals_attempts_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalAttemptsFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalAttemptsListResponse"];
                 };
             };
             /** @description Validation Error */

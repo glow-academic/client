@@ -13,12 +13,30 @@ import { toast } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import BenchmarkZone, { BenchmarkZoneSkeleton } from "./BenchmarkZone";
+import EvalAttemptsTable from "./EvalAttemptsTable";
+
+// Rubric mapping types
+type RubricMapping = {
+  standard_groups: Record<string, string[]>;
+  standardGroupsMapping: Record<
+    string,
+    { name: string; description: string; points: number; passPoints: number }
+  >;
+  standardsMapping: Record<
+    string,
+    { name: string; description: string; points: number }
+  >;
+};
 
 export interface BenchmarkProps {
   evalsData: EvalsListOut;
+  rubricMappings?: Record<string, RubricMapping>; // keyed by rubric_id
 }
 
-export default function Benchmark({ evalsData }: BenchmarkProps) {
+export default function Benchmark({
+  evalsData,
+  rubricMappings,
+}: BenchmarkProps) {
   const router = useRouter();
 
   const {
@@ -229,7 +247,11 @@ export default function Benchmark({ evalsData }: BenchmarkProps) {
           }}
           onStartEval={handleStartEval}
           loadingEval={loadingEval}
+          rubricMappings={rubricMappings}
         />
+
+        {/* Eval Attempts Table */}
+        <EvalAttemptsTable />
       </div>
     </TooltipProvider>
   );

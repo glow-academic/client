@@ -5,6 +5,7 @@
  * 01/XX/2025
  */
 
+import TableRubric from "@/components/common/rubric/TableRubric";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,11 +13,32 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { AlertCircle, CheckCircle2, Clock, Loader2, Play } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Play,
+  Table,
+  User,
+} from "lucide-react";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
 
@@ -32,6 +54,16 @@ export interface EvalCardProps {
   onStartEval: (evalId: string) => void;
   loadingEval: string | null;
   effectiveProfile: ProfileItem;
+  // Rubric data for dialog
+  standard_groups?: Record<string, string[]>;
+  standardGroupsMapping?: Record<
+    string,
+    { name: string; description: string; points: number; passPoints: number }
+  >;
+  standardsMapping?: Record<
+    string,
+    { name: string; description: string; points: number }
+  >;
 }
 
 export default function EvalCard({
@@ -46,6 +78,9 @@ export default function EvalCard({
   onStartEval,
   loadingEval,
   effectiveProfile,
+  standard_groups,
+  standardGroupsMapping,
+  standardsMapping,
 }: EvalCardProps) {
   const { activeProfile } = useProfile();
   const isEmulatingAnother = Boolean(
@@ -56,6 +91,12 @@ export default function EvalCard({
 
   const isLoading = loadingEval === evalId;
   const isDisabled = isLoading || isEmulatingAnother;
+
+  // Use default User icon
+  const IconComponent = User;
+
+  // Default gradient for eval cards (purple theme)
+  const backgroundGradient = "from-gray-900 to-gray-600";
 
   const getStatusBadge = () => {
     switch (status) {
@@ -84,55 +125,179 @@ export default function EvalCard({
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow flex flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex flex-col gap-2">
-          <CardTitle className="text-lg line-clamp-2">{name}</CardTitle>
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {description}
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
+    <div className="relative h-full">
+      <Card
+        data-testid={`eval-card-${evalId}`}
+        data-eval-id={evalId}
+        className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg rounded-lg flex flex-col h-full"
+      >
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5 pointer-events-none select-none rounded-lg">
+          <div
+            className={cn(
+              "absolute inset-0 bg-gradient-to-br rounded-lg",
+              backgroundGradient
+            )}
+          ></div>
+          <div
+            className="absolute inset-0 rounded-lg"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)",
+              backgroundSize: "20px 20px",
+            }}
+          ></div>
+        </div>
+
+        <CardHeader className="pb-1 relative z-10">
+          <div className="flex items-start justify-between">
+            <Button
+              variant="default"
+              size="icon"
+              className="rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0"
+              style={{
+                minHeight: 40,
+                minWidth: 40,
+              }}
+            >
+              <IconComponent className="h-5 w-5" />
+            </Button>
+            <div className="flex flex-col items-end space-y-1 flex-1 min-h-[40px] justify-between">
+              {/* Rubric Icon */}
+              {effectiveProfile?.role !== "guest" &&
+                standard_groups &&
+                Object.keys(standard_groups).length > 0 && (
+                  <Dialog>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="relative z-20"
+                          >
+                            <Table className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>View Rubric</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <DialogContent className="max-w-4xl">
+                      <DialogDescription hidden>
+                        This dialog shows the rubric for the eval.
+                      </DialogDescription>
+                      <DialogHeader>
+                        <DialogTitle>Grading Rubric: {name}</DialogTitle>
+                      </DialogHeader>
+                      <div
+                        className="overflow-x-auto -mx-6 px-6"
+                        style={{ WebkitOverflowScrolling: "touch" }}
+                      >
+                        {standard_groups &&
+                        standardGroupsMapping &&
+                        standardsMapping ? (
+                          <TableRubric
+                            standardGroups={standard_groups}
+                            standardGroupsMapping={standardGroupsMapping}
+                            standardsMapping={standardsMapping}
+                            showFullStandardsOnMobile={true}
+                          />
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No rubric is associated with this eval.
+                          </p>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+            </div>
+          </div>
+        </CardHeader>
+
+        {/* Make content take up remaining space, but not push footer off */}
+        <CardContent className="space-y-1 relative z-10 flex-1 flex flex-col justify-start">
+          <div className="flex flex-col justify-between h-full">
+            <h3
+              className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
+              data-testid="eval-title"
+            >
+              {name}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+              {description}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 mt-2">
             {getStatusBadge()}
-            <Badge variant="outline">
+            <Badge variant="outline" className="text-xs">
               {totalRuns} {totalRuns === 1 ? "run" : "runs"}
             </Badge>
             <Badge variant="outline" className="text-xs">
               {rubricName}
             </Badge>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-1">
-        <div className="text-sm text-muted-foreground space-y-1">
-          <div>
-            Completed: {completedRuns} / {totalRuns}
+
+          <div className="text-sm text-muted-foreground mt-2 space-y-1">
+            <div>
+              Completed: {completedRuns} / {totalRuns}
+            </div>
+            {pendingRuns > 0 && <div>Pending: {pendingRuns}</div>}
           </div>
-          {pendingRuns > 0 && (
-            <div>Pending: {pendingRuns}</div>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button
-          onClick={() => onStartEval(evalId)}
-          disabled={isDisabled}
-          className="w-full"
-          variant="default"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Starting...
-            </>
+        </CardContent>
+
+        <CardFooter className="pt-0 relative z-10">
+          {isEmulatingAnother ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="w-full">
+                  <button
+                    onClick={() => {
+                      window.dispatchEvent(
+                        new CustomEvent("evalButtonPressed", {
+                          detail: { evalId },
+                        }),
+                      );
+                      onStartEval(evalId);
+                    }}
+                    disabled
+                    data-testid={`start-eval-${evalId}`}
+                    className="w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 cursor-not-allowed opacity-70 bg-gradient-to-r from-gray-500 to-gray-600"
+                  >
+                    Unavailable
+                  </button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>You cannot start evals on behalf of another user.</p>
+              </TooltipContent>
+            </Tooltip>
           ) : (
-            <>
-              <Play className="h-4 w-4 mr-2" />
-              Start Eval
-            </>
+            <Button
+              onClick={() => onStartEval(evalId)}
+              disabled={isDisabled}
+              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-medium text-sm hover:shadow-lg transition-all duration-300"
+              variant="default"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4 mr-2" />
+                  Start Eval
+                </>
+              )}
+            </Button>
           )}
-        </Button>
-      </CardFooter>
-    </Card>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 

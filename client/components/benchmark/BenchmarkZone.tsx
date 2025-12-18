@@ -11,11 +11,25 @@ import type { OutputOf } from "@/lib/api/types";
 type EvalsListOut = OutputOf<"/api/v3/evals/list", "post">;
 type EvalItem = EvalsListOut["evals"][number];
 
+// Rubric mapping types
+type RubricMapping = {
+  standard_groups: Record<string, string[]>;
+  standardGroupsMapping: Record<
+    string,
+    { name: string; description: string; points: number; passPoints: number }
+  >;
+  standardsMapping: Record<
+    string,
+    { name: string; description: string; points: number }
+  >;
+};
+
 interface BenchmarkZoneProps {
   evals: EvalItem[];
   profile: ProfileItem | null;
   onStartEval: (evalId: string) => void;
   loadingEval: string | null;
+  rubricMappings?: Record<string, RubricMapping>; // keyed by rubric_id
 }
 
 export default function BenchmarkZone({
@@ -23,6 +37,7 @@ export default function BenchmarkZone({
   profile,
   onStartEval,
   loadingEval,
+  rubricMappings,
 }: BenchmarkZoneProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
 
@@ -91,8 +106,9 @@ export default function BenchmarkZone({
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
         data-testid="benchmark-eval-grid"
       >
-        {visibleEvals.map(
-          (evalItem) =>
+        {visibleEvals.map((evalItem) => {
+          const rubricMapping = rubricMappings?.[evalItem.rubric_id];
+          return (
             profile && (
               <EvalCard
                 key={evalItem.eval_id}
@@ -107,9 +123,13 @@ export default function BenchmarkZone({
                 onStartEval={onStartEval}
                 loadingEval={loadingEval}
                 effectiveProfile={profile}
+                standard_groups={rubricMapping?.standard_groups}
+                standardGroupsMapping={rubricMapping?.standardGroupsMapping}
+                standardsMapping={rubricMapping?.standardsMapping}
               />
             )
-        )}
+          );
+        })}
       </div>
 
       {/* Dots indicator */}

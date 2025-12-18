@@ -735,14 +735,15 @@
                         sim.id::text,
                         jsonb_build_object(
                             'name', sim.title,
-                            'description', COALESCE(sim.description, '')
+                            'description', COALESCE(sim.description, ''),
+                            'rubric_id', (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = sim.id AND ss.active = true ORDER BY ss.position LIMIT 1)::text,
+                            'rubric_points', (SELECT r.points FROM rubrics r WHERE r.id = (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = sim.id AND ss.active = true ORDER BY ss.position LIMIT 1)),
+                            'rubric_pass_points', (SELECT r.pass_points FROM rubrics r WHERE r.id = (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = sim.id AND ss.active = true ORDER BY ss.position LIMIT 1))
                         )
                     )
                     FROM simulations sim
-                    LEFT JOIN simulation_departments sd ON sd.simulation_id = sim.id AND sd.active = true
                     WHERE sim.active = true
                       -- Only include simulations that appear in the filtered data (respects simulationFilters)
                       AND sim.id IN (SELECT DISTINCT simulation_id FROM filt WHERE simulation_id IS NOT NULL)
-                      -- Department filtering removed - departments are already filtered at profile level
                 ), '{}'::jsonb)
             ) AS result

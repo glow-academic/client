@@ -5840,6 +5840,91 @@
         ]
       }
     },
+    "/api/v3/evals/attempts/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals",
+          "evals",
+          "attempts"
+        ],
+        "summary": "Get Eval Attempts List",
+        "description": "Get eval attempts list with pagination, filtering, and status information.",
+        "operationId": "get_eval_attempts_list_api_v3_evals_attempts_list_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalAttemptsFilters"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalAttemptsListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals",
+          "evals",
+          "attempts"
+        ]
+      }
+    },
     "/api/v3/rubrics/list": {
       "post": {
         "tags": [
@@ -26155,6 +26240,176 @@
         ],
         "title": "EvalAttemptFullResponse",
         "description": "Response for eval attempt full endpoint."
+      },
+      "EvalAttemptItem": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "eval_name": {
+            "type": "string",
+            "title": "Eval Name"
+          },
+          "eval_description": {
+            "type": "string",
+            "title": "Eval Description"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "rubric_name": {
+            "type": "string",
+            "title": "Rubric Name"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs"
+          },
+          "completed_runs": {
+            "type": "integer",
+            "title": "Completed Runs"
+          },
+          "pending_runs": {
+            "type": "integer",
+            "title": "Pending Runs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "eval_id",
+          "eval_name",
+          "eval_description",
+          "rubric_id",
+          "rubric_name",
+          "created_at",
+          "archived",
+          "status",
+          "total_runs",
+          "completed_runs",
+          "pending_runs"
+        ],
+        "title": "EvalAttemptItem",
+        "description": "Individual eval attempt item in the response."
+      },
+      "EvalAttemptsFilters": {
+        "properties": {
+          "evalIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evalids"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 0
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize",
+            "default": 20
+          }
+        },
+        "type": "object",
+        "title": "EvalAttemptsFilters",
+        "description": "Filters for eval attempts list request."
+      },
+      "EvalAttemptsListResponse": {
+        "properties": {
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/EvalAttemptItem"
+            },
+            "type": "array",
+            "title": "Attempts"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempts",
+          "total_count",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "EvalAttemptsListResponse",
+        "description": "Response for eval attempts list endpoint."
       },
       "EvalCompletedPayload": {
         "properties": {
