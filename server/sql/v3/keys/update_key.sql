@@ -1,6 +1,14 @@
 -- Update a key with department links
 -- Parameters: $1=key_id, $2=name, $3=key (encrypted), $4=description, $5=active, $6=department_ids (text array, nullable), $7=profile_id (uuid)
-WITH update_key AS (
+-- Returns: key_id, key_masked, key_name, actor_name
+WITH actor_profile AS (
+    SELECT
+        $7::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $7::uuid
+),
+update_key AS (
     UPDATE keys
     SET 
         name = $2,
@@ -9,7 +17,7 @@ WITH update_key AS (
         active = $5,
         updated_at = NOW()
     WHERE id = $1::uuid
-    RETURNING id::text as key_id, key
+    RETURNING id::text as key_id, key, name as key_name
 ),
 replace_departments AS (
     -- Deactivate all existing department links
@@ -33,9 +41,12 @@ link_departments AS (
         updated_at = NOW()
 )
 SELECT 
-    key_id,
+    uk.key_id,
     CASE 
-        WHEN LENGTH(key) > 4 THEN LEFT(key, 4) || '****'
+        WHEN LENGTH(uk.key) > 4 THEN LEFT(uk.key, 4) || '****'
         ELSE '****'
-    END as key_masked
-FROM update_key
+    END as key_masked,
+    uk.key_name,
+    ap.actor_name
+FROM update_key uk
+CROSS JOIN actor_profile ap

@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -65,7 +66,13 @@ class ParameterDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail", response_model=ParameterDetailResponse)
+@router.post(
+    "/detail",
+    response_model=ParameterDetailResponse,
+    dependencies=[
+        audit_activity("parameter.detail", "{{ actor.name }} viewed parameter '{{ parameter.name }}'")
+    ],
+)
 async def get_parameter_detail(
     request: ParameterDetailRequest,
     http_request: Request,
@@ -109,6 +116,17 @@ async def get_parameter_detail(
         result = await conn.fetchrow(
             sql_query, uuid.UUID(request.parameterId), profile_id
         )
+
+        # Get actor name from result
+        actor_name = result.get("actor_name") if result else None
+
+        # Set audit context
+        if actor_name and result:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                parameter={"name": result.get("name", ""), "id": request.parameterId},
+            )
 
         if not result:
             # Check if parameter exists but user doesn't have department access

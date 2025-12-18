@@ -3,10 +3,12 @@
 from fastapi import APIRouter
 
 from app.api.v3.pricing.analytics import router as analytics_router
+from app.api.v3.pricing.detail import router as detail_router
 from app.api.v3.pricing.runs import router as runs_router
 
 router = APIRouter(prefix="/pricing", tags=["pricing"])
 router.include_router(analytics_router)
 router.include_router(runs_router)
+router.include_router(detail_router)
 
 __all__ = ["router"]

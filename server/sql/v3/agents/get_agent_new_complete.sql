@@ -1,8 +1,19 @@
 -- Get default agent detail for creation
 -- Parameters: $1 = profile_id (uuid)
 
-WITH user_profile AS (
-    SELECT role FROM resolve_profile_id rpi
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
+user_profile AS (
+    SELECT 
+        role,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 primary_department_id AS (
@@ -155,6 +166,7 @@ SELECT
     COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
     COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
     up.role as user_role,
+    up.actor_name,
     pdi.department_id as primary_department_id
 FROM (SELECT 1) dummy
 CROSS JOIN valid_departments_data vdd

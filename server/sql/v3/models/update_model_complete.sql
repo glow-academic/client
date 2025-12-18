@@ -2,7 +2,15 @@
 -- Parameters: $1=model_id, $2=provider_id (uuid), $3=name, $4=description, $5=active, 
 --            $6=value (text), $7=department_ids (text array, nullable), 
 --            $8=base_url (text, nullable), $9=profile_id (uuid)
-WITH update_model AS (
+-- Returns: model_id, model_name, actor_name
+WITH actor_profile AS (
+    SELECT
+        $9::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $9::uuid
+),
+update_model AS (
     UPDATE models SET
         provider_id = $2::uuid,
         name = $3,
@@ -11,7 +19,7 @@ WITH update_model AS (
         value = $6,
         updated_at = NOW()
     WHERE id = $1::uuid
-    RETURNING id::text as model_id
+    RETURNING id::text as model_id, name as model_name
 ),
 deactivate_all_departments AS (
     -- Deactivate all existing department links
@@ -56,5 +64,7 @@ deactivate_endpoint AS (
     WHERE model_id = $1::uuid
       AND ($8 IS NULL OR TRIM($8) = '')
 )
-SELECT model_id FROM update_model
+SELECT um.model_id, um.model_name, ap.actor_name
+FROM update_model um
+CROSS JOIN actor_profile ap
 

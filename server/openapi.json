@@ -12648,6 +12648,87 @@
         ]
       }
     },
+    "/api/v3/pricing/detail": {
+      "post": {
+        "tags": [
+          "v3",
+          "pricing"
+        ],
+        "summary": "Get Pricing Run Detail",
+        "description": "Get detailed pricing run information with all messages.",
+        "operationId": "get_pricing_run_detail_api_v3_pricing_detail_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingRunDetailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingRunDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "pricing"
+        ]
+      }
+    },
     "/api/v3/uploads/upload": {
       "options": {
         "tags": [
@@ -20949,7 +21030,7 @@
           },
           "messages": {
             "items": {
-              "$ref": "#/components/schemas/MessageItem"
+              "$ref": "#/components/schemas/app__api__v3__attempts__full__MessageItem"
             },
             "type": "array",
             "title": "Messages"
@@ -30509,60 +30590,6 @@
         "title": "LogsBundleResponse",
         "description": "Logs bundle response."
       },
-      "MessageItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "chatId": {
-            "type": "string",
-            "title": "Chatid"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "completed": {
-            "type": "boolean",
-            "title": "Completed"
-          },
-          "personaId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "chatId",
-          "content",
-          "type",
-          "completed"
-        ],
-        "title": "MessageItem"
-      },
       "MessageSentPayload": {
         "properties": {
           "message_id": {
@@ -33025,6 +33052,68 @@
           "price"
         ],
         "title": "PricingItem"
+      },
+      "PricingRunDetailRequest": {
+        "properties": {
+          "runId": {
+            "type": "string",
+            "title": "Runid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "runId"
+        ],
+        "title": "PricingRunDetailRequest",
+        "description": "Request schema for pricing run detail."
+      },
+      "PricingRunDetailResponse": {
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/RunMetadata"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__pricing__detail__MessageItem"
+            },
+            "type": "array",
+            "title": "Messages"
+          },
+          "modelMapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Modelmapping"
+          },
+          "agentMapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Agentmapping"
+          },
+          "profileMapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Profilemapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run",
+          "messages",
+          "modelMapping",
+          "agentMapping",
+          "profileMapping"
+        ],
+        "title": "PricingRunDetailResponse",
+        "description": "Response schema for pricing run detail."
       },
       "PricingRunsFilters": {
         "properties": {
@@ -36328,6 +36417,89 @@
         ],
         "title": "RunItem",
         "description": "Run item in eval attempt."
+      },
+      "RunMetadata": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "inputTokens": {
+            "type": "integer",
+            "title": "Inputtokens"
+          },
+          "outputTokens": {
+            "type": "integer",
+            "title": "Outputtokens"
+          },
+          "cachedInputTokens": {
+            "type": "integer",
+            "title": "Cachedinputtokens"
+          },
+          "cost": {
+            "type": "number",
+            "title": "Cost"
+          },
+          "modelId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelid"
+          },
+          "agentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agentid"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "createdAt",
+          "inputTokens",
+          "outputTokens",
+          "cachedInputTokens",
+          "cost"
+        ],
+        "title": "RunMetadata",
+        "description": "Run metadata schema."
       },
       "ScenarioAttributeAttemptFact": {
         "properties": {
@@ -44387,6 +44559,60 @@
         ],
         "title": "AttemptItem"
       },
+      "app__api__v3__attempts__full__MessageItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "chatId": {
+            "type": "string",
+            "title": "Chatid"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "chatId",
+          "content",
+          "type",
+          "completed"
+        ],
+        "title": "MessageItem"
+      },
       "app__api__v3__attempts__full__PersonaItem": {
         "properties": {
           "id": {
@@ -50482,6 +50708,45 @@
         ],
         "title": "ModelRunItem",
         "description": "Model run item with aggregated metrics."
+      },
+      "app__api__v3__pricing__detail__MessageItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "role",
+          "content",
+          "createdAt",
+          "updatedAt",
+          "completed"
+        ],
+        "title": "MessageItem",
+        "description": "Message item schema."
       },
       "app__api__v3__pricing__runs__DebugInfoItem": {
         "properties": {

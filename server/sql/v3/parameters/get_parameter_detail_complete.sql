@@ -12,7 +12,8 @@ resolve_profile_id AS (
 user_profile AS (
     SELECT 
         up.id,
-        up.role
+        up.role,
+        up.first_name || ' ' || up.last_name as actor_name
     FROM resolve_profile_id rpi
     JOIN profiles up ON up.id = rpi.resolved_profile_id
 ),
@@ -108,7 +109,8 @@ parameter_data AS (
             WHEN up.role = 'superadmin' THEN true
             WHEN up.role IN ('admin', 'instructional') THEN true
             ELSE false
-        END as can_edit
+        END as can_edit,
+        up.actor_name
     FROM parameter_id_resolved pid
     JOIN parameters p ON p.id = pid.parameter_id
     LEFT JOIN parameter_departments_aggregated pda ON true

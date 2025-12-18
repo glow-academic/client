@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -54,7 +55,13 @@ class UpdateModelResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateModelResponse)
+@router.post(
+    "/update",
+    response_model=UpdateModelResponse,
+    dependencies=[
+        audit_activity("model.updated", "{{ actor.name }} updated model '{{ model.name }}'")
+    ],
+)
 async def update_model(
     request: UpdateModelRequest,
     http_request: Request,
@@ -100,7 +107,7 @@ async def update_model(
                 base_url,
                 profile_id,
             )
-            await conn.execute(
+            result_row = await conn.fetchrow(
                 sql_query,
                 request.modelId,
                 request.provider_id,
@@ -112,6 +119,18 @@ async def update_model(
                 base_url,
                 profile_id,
             )
+
+            if not result_row:
+                raise ValueError(f"Model not found: {request.modelId}")
+
+            model_name = result_row["model_name"]
+            actor_name = result_row["actor_name"]
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    model={"name": model_name, "id": request.modelId},
+                )
 
             # Update temperature bounds if provided
             if request.temperature_bounds:

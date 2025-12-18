@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -70,7 +71,13 @@ class UpdateSettingsResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateSettingsResponse)
+@router.post(
+    "/update",
+    response_model=UpdateSettingsResponse,
+    dependencies=[
+        audit_activity("settings.updated", "{{ actor.name }} updated settings '{{ settings.name }}'")
+    ],
+)
 async def update_settings(
     request: UpdateSettingsRequest,
     http_request: Request,
@@ -178,6 +185,15 @@ async def update_settings(
                 raise HTTPException(status_code=500, detail="Failed to update settings")
 
             settings_id = result["settings_id"]
+            settings_name = result.get("settings_name", request.name)
+            actor_name = result.get("actor_name")
+
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    settings={"name": settings_name, "id": settings_id},
+                )
 
             result_data = UpdateSettingsResponse(
                 success=True,

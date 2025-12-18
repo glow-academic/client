@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -27,7 +28,15 @@ class DeleteAgentPromptResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeleteAgentPromptResponse)
+@router.post(
+    "/delete",
+    response_model=DeleteAgentPromptResponse,
+    dependencies=[
+        audit_activity(
+            "prompt.deleted", "{{ actor.name }} deleted prompt '{{ prompt.name }}'"
+        )
+    ],
+)
 async def delete_agent_prompt(
     request: DeleteAgentPromptRequest,
     http_request: Request,
@@ -41,11 +50,30 @@ async def delete_agent_prompt(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/agents/delete_agent_prompt.sql")
-        sql_params = (request.agentId, request.promptId, request.departmentId)
-        await conn.execute(
-            sql_query, request.agentId, request.promptId, request.departmentId
+        sql_params = (request.agentId, request.promptId, request.departmentId, profile_id)
+        result = await conn.fetchrow(
+            sql_query, request.agentId, request.promptId, request.departmentId, profile_id
         )
+
+        # Set audit context
+        if result:
+            prompt_name = result.get("prompt_name", "Unknown")
+            actor_name = result.get("actor_name")
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    prompt={"name": prompt_name, "id": request.promptId},
+                )
 
         result_data = DeleteAgentPromptResponse(
             success=True, message="Prompt deleted successfully"

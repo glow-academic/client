@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -58,7 +59,13 @@ class UpdateRubricResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateRubricResponse)
+@router.post(
+    "/update",
+    response_model=UpdateRubricResponse,
+    dependencies=[
+        audit_activity("rubric.updated", "{{ actor.name }} updated rubric '{{ rubric.name }}'")
+    ],
+)
 async def update_rubric(
     request: UpdateRubricRequest,
     http_request: Request,
@@ -124,6 +131,15 @@ async def update_rubric(
 
         if not row:
             raise HTTPException(status_code=404, detail="Rubric not found")
+
+        rubric_name = row["rubric_name"]
+        actor_name = row["actor_name"]
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                rubric={"name": rubric_name, "id": request.rubricId},
+            )
 
         result = UpdateRubricResponse(
             success=True,

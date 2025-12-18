@@ -1,7 +1,22 @@
 -- Get default rubric detail for creation
 -- Parameters: $1 = profile_id (uuid)
 
-WITH user_departments AS (
+WITH resolve_profile_id AS (
+    -- Resolve profile ID from parameter
+    SELECT 
+        CASE 
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
+user_profile AS (
+    SELECT 
+        role as user_role,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
+user_departments AS (
     SELECT DISTINCT pd.department_id
     FROM resolve_profile_id rpi
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
@@ -57,11 +72,6 @@ valid_depts AS (
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
 ),
-profile_data AS (
-    SELECT role as user_role 
-    FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
-),
 primary_department_id AS (
     SELECT department_id::text
     FROM resolve_profile_id rpi
@@ -110,13 +120,14 @@ SELECT
     COALESCE(rdd.department_ids, ARRAY[]::text[]) as department_ids,
     vd.dept_mapping as department_mapping,
     vd.dept_ids as valid_department_ids,
-    pr.user_role,
+    up.user_role,
+    up.actor_name,
     sg.groups_json as standard_groups_complete,
     pdi.department_id as primary_department_id
 FROM rubric_data r
 LEFT JOIN rubric_departments_data rdd ON true
 CROSS JOIN valid_depts vd
-CROSS JOIN profile_data pr
+CROSS JOIN user_profile up
 CROSS JOIN standard_groups_with_standards sg
 LEFT JOIN primary_department_id pdi ON true
 

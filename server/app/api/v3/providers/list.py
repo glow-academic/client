@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -49,7 +50,13 @@ class ProvidersListResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/list", response_model=ProvidersListResponse)
+@router.post(
+    "/list",
+    response_model=ProvidersListResponse,
+    dependencies=[
+        audit_activity("providers.list", "{{ actor.name }} visited the Providers page")
+    ],
+)
 async def get_providers_list(
     filters: ProvidersListRequest,
     request: Request,
@@ -85,6 +92,13 @@ async def get_providers_list(
         sql_query = load_sql("sql/v3/providers/list_providers.sql")
         sql_params = (profile_id,)
         rows = await conn.fetch(sql_query, profile_id)
+
+        # Get actor name from first row (same for all rows)
+        actor_name = rows[0]["actor_name"] if rows else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         providers = []
         provider_options: list[dict[str, str]] = []

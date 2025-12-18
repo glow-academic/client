@@ -4,7 +4,10 @@
 --          provider (enum), base_url, can_edit, can_delete
 
 WITH user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        first_name || ' ' || last_name as actor_name
+    FROM profiles WHERE id = $1
 ),
 -- Pre-aggregate simulation usage counts for all models
 -- Simulations are linked to models via simulation_text_agent_id/simulation_voice_agent_id -> agents -> model_id
@@ -78,7 +81,8 @@ SELECT
     CASE 
         WHEN (mwu.simulation_usage_count + mwu.agent_usage_count) = 0 THEN true
         ELSE false
-    END as can_delete
+    END as can_delete,
+    up.actor_name
 FROM models_with_usage mwu
 CROSS JOIN user_profile up
 ORDER BY mwu.updated_at DESC

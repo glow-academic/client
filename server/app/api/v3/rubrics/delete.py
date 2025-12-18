@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -29,7 +30,13 @@ class DeleteRubricResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete", response_model=DeleteRubricResponse)
+@router.post(
+    "/delete",
+    response_model=DeleteRubricResponse,
+    dependencies=[
+        audit_activity("rubric.deleted", "{{ actor.name }} deleted rubric '{{ rubric.name }}'")
+    ],
+)
 async def delete_rubric(
     request: DeleteRubricRequest,
     http_request: Request,
@@ -69,6 +76,15 @@ async def delete_rubric(
             raise HTTPException(
                 status_code=400,
                 detail=f"Cannot delete rubric: in use by {usage_count} simulation(s)",
+            )
+
+        rubric_name = result["name"]
+        actor_name = result["actor_name"]
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                rubric={"name": rubric_name, "id": request.rubricId},
             )
 
         result_data = DeleteRubricResponse(

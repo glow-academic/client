@@ -16,6 +16,7 @@ from app.api.v3.rubrics.detail import (
     StandardMappingItem,
 )
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -32,7 +33,13 @@ class RubricNewRequest(BaseModel):
 router = APIRouter()
 
 
-@router.post("/new", response_model=RubricDetailResponse)
+@router.post(
+    "/new",
+    response_model=RubricDetailResponse,
+    dependencies=[
+        audit_activity("rubric.new", "{{ actor.name }} opened new rubric form")
+    ],
+)
 async def get_rubric_new(
     request_body: RubricNewRequest,
     request: Request,
@@ -73,6 +80,10 @@ async def get_rubric_new(
             raise HTTPException(
                 status_code=404, detail="No rubrics found for user's departments"
             )
+
+        actor_name = row.get("actor_name")
+        if actor_name:
+            audit_set(request, actor={"name": actor_name, "id": profile_id})
 
         # Parse standard groups from JSONB (same as detail.py)
         standard_groups_detail: dict[str, StandardGroupDetail] = {}

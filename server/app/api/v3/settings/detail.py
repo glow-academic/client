@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -82,7 +83,13 @@ class SettingsDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail", response_model=SettingsDetailResponse)
+@router.post(
+    "/detail",
+    response_model=SettingsDetailResponse,
+    dependencies=[
+        audit_activity("settings.detail", "{{ actor.name }} viewed settings '{{ settings.name }}'")
+    ],
+)
 async def get_settings_detail(
     request: SettingsDetailRequest,
     http_request: Request,
@@ -107,9 +114,28 @@ async def get_settings_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         sql_query = load_sql("sql/v3/settings/get_settings_detail.sql")
-        sql_params = (request.settingsId,)
-        settings = await conn.fetchrow(sql_query, request.settingsId)
+        sql_params = (request.settingsId, profile_id)
+        settings = await conn.fetchrow(sql_query, request.settingsId, profile_id)
+
+        # Get actor name from result
+        actor_name = settings.get("actor_name") if settings else None
+
+        # Set audit context
+        if actor_name and settings:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                settings={"name": settings.get("name", ""), "id": request.settingsId},
+            )
 
         if not settings:
             raise HTTPException(

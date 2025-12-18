@@ -1,7 +1,13 @@
 -- List providers with endpoint info and permissions
 -- Parameters: $1=profileId (uuid)
-WITH user_profile AS (
-    SELECT role FROM resolve_profile_id rpi
+WITH resolve_profile_id AS (
+    SELECT $1::uuid as resolved_profile_id
+),
+user_profile AS (
+    SELECT 
+        p.role,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 provider_data AS (
@@ -51,9 +57,11 @@ status_options_data AS (
 SELECT 
     pd.*,
     pod.options as provider_options,
-    sod.options as status_options
+    sod.options as status_options,
+    up.actor_name
 FROM provider_data pd
 CROSS JOIN provider_options_data pod
 CROSS JOIN status_options_data sod
+CROSS JOIN user_profile up
 ORDER BY pd.created_at DESC
 

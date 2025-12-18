@@ -1,7 +1,14 @@
 -- Duplicate rubric with departments, standard groups, and standards in a single transaction
 -- Parameters: $1=originalRubricId, $2=profile_id (uuid)
--- Returns: rubric_id
-WITH original_rubric AS (
+-- Returns: rubric_id, original_name, actor_name
+WITH actor_profile AS (
+    SELECT
+        $2::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $2::uuid
+),
+original_rubric AS (
     -- Get original rubric data
     SELECT 
         id,
@@ -145,5 +152,11 @@ new_standards AS (
     JOIN groups_mapping gm ON os.standard_group_id = gm.old_group_id
     RETURNING id
 )
-SELECT rubric_id FROM new_rubric
+SELECT 
+    nr.rubric_id,
+    or_r.name as original_name,
+    ap.actor_name
+FROM new_rubric nr
+CROSS JOIN original_rubric or_r
+CROSS JOIN actor_profile ap
 

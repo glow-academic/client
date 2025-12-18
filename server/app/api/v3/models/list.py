@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -44,7 +45,13 @@ class ModelsListResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/list", response_model=ModelsListResponse)
+@router.post(
+    "/list",
+    response_model=ModelsListResponse,
+    dependencies=[
+        audit_activity("models.list", "{{ actor.name }} visited the Models page")
+    ],
+)
 async def get_models_list(
     filters: ModelsFilters,
     http_request: Request,
@@ -80,6 +87,13 @@ async def get_models_list(
         sql_query = load_sql("sql/v3/models/list_models_complete.sql")
         sql_params = (profile_id,)
         models_result = await conn.fetch(sql_query, profile_id)
+
+        # Get actor name from first row (same for all rows)
+        actor_name = models_result[0]["actor_name"] if models_result else None
+
+        # Set audit context
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         models = []
 

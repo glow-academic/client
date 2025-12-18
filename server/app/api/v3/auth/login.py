@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity
 from app.utils.sql_helper import load_sql
 
 
@@ -50,7 +51,13 @@ class LoginProvidersResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/login", response_model=LoginProvidersResponse)
+@router.post(
+    "/login",
+    response_model=LoginProvidersResponse,
+    dependencies=[
+        audit_activity("auth.login", "User accessed login page")
+    ],
+)
 async def get_login_providers(
     request: LoginProvidersRequest,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],

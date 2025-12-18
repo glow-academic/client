@@ -114,7 +114,9 @@ parameter_documents AS (
     GROUP BY fp.parameter_id
 ),
 user_profile AS (
-    SELECT p.role
+    SELECT 
+        p.role,
+        p.first_name || ' ' || p.last_name as actor_name
     FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
@@ -215,7 +217,8 @@ SELECT
     CASE 
         WHEN up.role IN ('admin', 'superadmin') THEN true
         ELSE false
-    END as can_duplicate
+    END as can_duplicate,
+    up.actor_name
 FROM parameters p
 LEFT JOIN parameter_item_departments_for_filter pidf ON pidf.parameter_id = p.id
 LEFT JOIN parameter_item_departments_data pidd ON pidd.parameter_id = p.id

@@ -1,4 +1,16 @@
-WITH prompt_info AS (
+-- Parameters: $1=agent_id, $2=prompt_id, $3=department_id (nullable), $4=profile_id
+-- Returns: prompt_name, actor_name
+WITH actor_profile AS (
+    SELECT
+        $4::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $4::uuid
+),
+prompt_name_lookup AS (
+    SELECT name as prompt_name FROM prompts WHERE id = $2::uuid
+),
+prompt_info AS (
     -- Check if this prompt is active (default or department-specific)
     SELECT 
         CASE WHEN EXISTS (
@@ -85,4 +97,7 @@ check_other_links AS (
 DELETE FROM prompts
 WHERE id = $2::uuid
 AND (SELECT can_delete_prompt FROM check_other_links) = true
+RETURNING 
+    (SELECT prompt_name FROM prompt_name_lookup) as prompt_name,
+    (SELECT actor_name FROM actor_profile) as actor_name
 

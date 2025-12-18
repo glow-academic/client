@@ -30,7 +30,15 @@
 --   $27 = auth_enabled (jsonb, optional) - {auth_id: enabled (boolean)}
 --   $28 = auth_value_mapping (jsonb, optional) - {auth_id: {auth_item_id: value}} for non-encrypted items
 --   $29 = department_ids (text array, nullable) - Empty array = global settings, non-empty = department-specific
-WITH old_settings_id AS (
+-- Returns: settings_id, settings_name, actor_name
+WITH actor_profile AS (
+    SELECT
+        $21::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $21::uuid
+),
+old_settings_id AS (
     -- Capture old settings ID before deactivating
     SELECT id::text as old_id FROM settings WHERE active = true LIMIT 1
 ),
@@ -88,7 +96,7 @@ insert_new AS (
         $19::integer,
         $20::integer
     )
-    RETURNING id::text as settings_id
+    RETURNING id::text as settings_id, name as settings_name
 ),
 manage_setting_providers AS (
     -- Manage provider links based on provider_enabled mapping
@@ -361,5 +369,10 @@ link_department_settings AS (
         active = true,
         updated_at = NOW()
 )
-SELECT settings_id FROM insert_new
+SELECT 
+    in_new.settings_id,
+    in_new.settings_name,
+    ap.actor_name
+FROM insert_new in_new
+CROSS JOIN actor_profile ap
 

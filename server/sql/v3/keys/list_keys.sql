@@ -6,7 +6,10 @@ WITH user_departments AS (
     WHERE profile_id = $1 AND active = true
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        first_name || ' ' || last_name as actor_name
+    FROM profiles WHERE id = $1
 ),
 -- Get department_ids via setting_provider_keys -> settings -> department_settings
 key_departments_data AS (
@@ -169,10 +172,12 @@ SELECT
     dmd.mapping as department_mapping,
     mmd.mapping as model_mapping,
     dod.options as department_options,
-    mod.options as model_options
+    mod.options as model_options,
+    up.actor_name
 FROM key_data kd
 CROSS JOIN department_mapping_data dmd
 CROSS JOIN model_mapping_data mmd
 CROSS JOIN department_options_data dod
 CROSS JOIN model_options_data mod
+CROSS JOIN user_profile up
 ORDER BY kd.created_at DESC

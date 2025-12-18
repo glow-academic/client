@@ -3129,6 +3129,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/pricing/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Pricing Run Detail
+         * @description Get detailed pricing run information with all messages.
+         */
+        post: operations["get_pricing_run_detail_api_v3_pricing_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/uploads/upload": {
         parameters: {
             query?: never;
@@ -6139,7 +6159,7 @@ export interface components {
             chat: components["schemas"]["ChatItem"];
             scenario: components["schemas"]["app__api__v3__attempts__full__ScenarioItem"] | null;
             /** Messages */
-            messages: components["schemas"]["MessageItem"][];
+            messages: components["schemas"]["app__api__v3__attempts__full__MessageItem"][];
             /** Hints */
             hints: components["schemas"]["HintsByMessage"][];
             grade?: components["schemas"]["GradeItem"] | null;
@@ -9869,25 +9889,6 @@ export interface components {
             /** Metrics */
             metrics: components["schemas"]["MetricsDataPoint"][];
         };
-        /** MessageItem */
-        MessageItem: {
-            /** Id */
-            id: string;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Chatid */
-            chatId: string;
-            /** Content */
-            content: string;
-            /** Type */
-            type: string;
-            /** Completed */
-            completed: boolean;
-            /** Personaid */
-            personaId?: string | null;
-        };
         /**
          * MessageSentPayload
          * @description Response indicating a message was sent.
@@ -10776,6 +10777,37 @@ export interface components {
             unit_category: string;
             /** Price */
             price: number;
+        };
+        /**
+         * PricingRunDetailRequest
+         * @description Request schema for pricing run detail.
+         */
+        PricingRunDetailRequest: {
+            /** Runid */
+            runId: string;
+        };
+        /**
+         * PricingRunDetailResponse
+         * @description Response schema for pricing run detail.
+         */
+        PricingRunDetailResponse: {
+            run: components["schemas"]["RunMetadata"];
+            /** Messages */
+            messages: components["schemas"]["app__api__v3__pricing__detail__MessageItem"][];
+            /** Modelmapping */
+            modelMapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Agentmapping */
+            agentMapping: {
+                [key: string]: string;
+            };
+            /** Profilemapping */
+            profileMapping: {
+                [key: string]: string;
+            };
         };
         /**
          * PricingRunsFilters
@@ -11967,6 +11999,32 @@ export interface components {
             grade_passed?: boolean | null;
             /** Grade Created At */
             grade_created_at?: string | null;
+        };
+        /**
+         * RunMetadata
+         * @description Run metadata schema.
+         */
+        RunMetadata: {
+            /** Id */
+            id: string;
+            /** Createdat */
+            createdAt: string;
+            /** Inputtokens */
+            inputTokens: number;
+            /** Outputtokens */
+            outputTokens: number;
+            /** Cachedinputtokens */
+            cachedInputTokens: number;
+            /** Cost */
+            cost: number;
+            /** Modelid */
+            modelId?: string | null;
+            /** Agentid */
+            agentId?: string | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Personaid */
+            personaId?: string | null;
         };
         /**
          * ScenarioAttributeAttemptFact
@@ -14897,6 +14955,25 @@ export interface components {
             /** Profileid */
             profileId?: string | null;
         };
+        /** MessageItem */
+        app__api__v3__attempts__full__MessageItem: {
+            /** Id */
+            id: string;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Chatid */
+            chatId: string;
+            /** Content */
+            content: string;
+            /** Type */
+            type: string;
+            /** Completed */
+            completed: boolean;
+            /** Personaid */
+            personaId?: string | null;
+        };
         /** PersonaItem */
         app__api__v3__attempts__full__PersonaItem: {
             /** Id */
@@ -17155,6 +17232,24 @@ export interface components {
             persona_id?: string | null;
             /** Debug Info */
             debug_info?: components["schemas"]["app__api__v3__pricing__analytics__DebugInfoItem"][] | null;
+        };
+        /**
+         * MessageItem
+         * @description Message item schema.
+         */
+        app__api__v3__pricing__detail__MessageItem: {
+            /** Id */
+            id: string;
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Completed */
+            completed: boolean;
         };
         /**
          * DebugInfoItem
@@ -24557,6 +24652,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PricingRunsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pricing_run_detail_api_v3_pricing_detail_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PricingRunDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingRunDetailResponse"];
                 };
             };
             /** @description Validation Error */

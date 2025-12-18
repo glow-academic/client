@@ -1,6 +1,15 @@
 -- Get settings detail by ID with auth and provider info
--- Parameters: $1 = settings_id (uuid)
-WITH settings_auths_data AS (
+-- Parameters: $1 = settings_id (uuid), $2 = profile_id (uuid)
+WITH resolve_profile_id AS (
+    SELECT $2::uuid as resolved_profile_id
+),
+user_profile AS (
+    SELECT 
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
+settings_auths_data AS (
     -- Get linked auths for this settings
     SELECT 
         ARRAY_AGG(a.id::text ORDER BY a.name) as auth_ids,
@@ -239,7 +248,8 @@ SELECT
     apd.all_provider_mapping,
     aad.all_auth_ids,
     aad.all_auth_mapping,
-    COALESCE(sdd.department_ids, NULL) as department_ids
+    COALESCE(sdd.department_ids, NULL) as department_ids,
+    up.actor_name
 FROM settings s
 LEFT JOIN settings_auths_data sad ON true
 LEFT JOIN settings_providers_data spd ON true
@@ -252,6 +262,7 @@ LEFT JOIN settings_default_guest_data sdgd ON true
 LEFT JOIN all_providers_data apd ON true
 LEFT JOIN all_auths_data aad ON true
 LEFT JOIN settings_departments_data sdd ON true
+CROSS JOIN user_profile up
 WHERE s.id = $1::uuid
 LIMIT 1
 

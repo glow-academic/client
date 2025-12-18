@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -30,7 +31,15 @@ class DuplicateRubricResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/duplicate", response_model=DuplicateRubricResponse)
+@router.post(
+    "/duplicate",
+    response_model=DuplicateRubricResponse,
+    dependencies=[
+        audit_activity(
+            "rubric.duplicated", "{{ actor.name }} duplicated rubric '{{ rubric.name }}'"
+        )
+    ],
+)
 async def duplicate_rubric(
     request: DuplicateRubricRequest,
     http_request: Request,
@@ -61,13 +70,14 @@ async def duplicate_rubric(
             raise HTTPException(status_code=404, detail="Rubric not found")
 
         rubric_id = row["rubric_id"]
-
-        # Get original rubric name for message
-        original_rubric = await conn.fetchrow(
-            "SELECT name FROM rubrics WHERE id = $1",
-            request.rubricId,
-        )
-        original_name = original_rubric["name"] if original_rubric else "Rubric"
+        original_name = row["original_name"]
+        actor_name = row["actor_name"]
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                rubric={"name": original_name, "id": rubric_id},
+            )
 
         result = DuplicateRubricResponse(
             success=True,

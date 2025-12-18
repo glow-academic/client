@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.auth.encrypt_api_key import encrypt_api_key
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
@@ -38,7 +39,13 @@ class UpdateKeyResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateKeyResponse)
+@router.post(
+    "/update",
+    response_model=UpdateKeyResponse,
+    dependencies=[
+        audit_activity("key.updated", "{{ actor.name }} updated key '{{ key.name }}'")
+    ],
+)
 async def update_key(
     request: UpdateKeyRequest,
     http_request: Request,
@@ -87,6 +94,15 @@ async def update_key(
 
             key_id = result["key_id"]
             key_masked = result["key_masked"]
+            key_name = result["key_name"]
+            actor_name = result["actor_name"]
+
+            if actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": actor_name, "id": profile_id},
+                    key={"name": key_name, "id": request.keyId},
+                )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

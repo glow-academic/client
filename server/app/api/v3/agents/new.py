@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -85,7 +86,13 @@ class AgentDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/new", response_model=AgentDetailResponse)
+@router.post(
+    "/new",
+    response_model=AgentDetailResponse,
+    dependencies=[
+        audit_activity("agent.new", "{{ actor.name }} opened new agent form")
+    ],
+)
 async def get_agent_new(
     request: AgentNewRequest,
     http_request: Request,
@@ -121,6 +128,10 @@ async def get_agent_new(
         sql_query = load_sql("sql/v3/agents/get_agent_new_complete.sql")
         sql_params = (profile_id,)
         result = await conn.fetchrow(sql_query, profile_id)
+
+        actor_name = result.get("actor_name") if result else None
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
         # Initialize defaults
         model_mapping: ModelMapping = {}

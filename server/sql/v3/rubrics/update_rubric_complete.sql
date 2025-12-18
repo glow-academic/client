@@ -1,7 +1,14 @@
 -- Update rubric with departments, standard groups, and standards in a single transaction
 -- Parameters: $1=rubricId, $2=name, $3=description (nullable), $4=active, $5=points, $6=passPoints, $7=department_ids (nullable text array), $8=standard_groups (JSONB array), $9=profile_id (uuid)
--- Returns: rubric_id
-WITH update_rubric AS (
+-- Returns: rubric_id, rubric_name, actor_name
+WITH actor_profile AS (
+    SELECT
+        $9::uuid as profile_id,
+        p.first_name || ' ' || p.last_name as actor_name
+    FROM profiles p
+    WHERE p.id = $9::uuid
+),
+update_rubric AS (
     UPDATE rubrics SET
         name = $2,
         description = COALESCE($3, ''),
@@ -10,7 +17,7 @@ WITH update_rubric AS (
         pass_points = $6,
         updated_at = NOW()
     WHERE id = $1::uuid
-    RETURNING id::text as rubric_id
+    RETURNING id::text as rubric_id, name as rubric_name
 ),
 replace_departments AS (
     -- Deactivate all existing department links
@@ -119,5 +126,7 @@ new_standards AS (
     FROM standards_data
     RETURNING id
 )
-SELECT rubric_id FROM update_rubric
+SELECT ur.rubric_id, ur.rubric_name, ap.actor_name
+FROM update_rubric ur
+CROSS JOIN actor_profile ap
 
