@@ -518,7 +518,7 @@
                     m.id, 
                     c.id AS chat_id, 
                     CASE WHEN m.role = 'user' THEN 'query' ELSE 'response' END as type, 
-                    m.content, 
+                    mc.content, 
                     m.created_at, 
                     m.completed, 
                     m.updated_at,
@@ -532,6 +532,7 @@
                 JOIN runs r ON r.id = gr.run_id
                 JOIN message_runs mr ON mr.run_id = r.id
                 JOIN messages m ON m.id = mr.message_id
+                LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
                 LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
                 CROSS JOIN chat_ids_list cil
                 WHERE c.id = ANY(cil.chat_ids)
@@ -549,7 +550,7 @@
                     m.id, 
                     mp.chat_id, 
                     CASE WHEN m.role = 'user' THEN 'query' ELSE 'response' END as type, 
-                    m.content, 
+                    mc.content, 
                     m.created_at, 
                     m.completed, 
                     m.updated_at,
@@ -557,6 +558,7 @@
                     mp.depth + 1 as depth,
                     mp.path_root_id
                 FROM messages m
+                LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
                 JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
                 JOIN message_path mp ON mp.id = mt.child_id
                 JOIN message_runs mr ON mr.message_id = m.id
@@ -578,7 +580,7 @@
                     m.id, 
                     c.id AS chat_id, 
                     CASE WHEN m.role = 'user' THEN 'query' ELSE 'response' END as type, 
-                    m.content, 
+                    mc.content, 
                     m.created_at, 
                     m.completed, 
                     m.updated_at,
@@ -592,6 +594,7 @@
                 JOIN runs r ON r.id = gr.run_id
                 JOIN message_runs mr ON mr.run_id = r.id
                 JOIN messages m ON m.id = mr.message_id
+                LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
                 LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
                 CROSS JOIN chat_ids_list cil
                 WHERE c.id = ANY(cil.chat_ids)

@@ -5,9 +5,10 @@
 WITH run_messages AS (
     SELECT 
         m.role,
-        m.content,
+        mc.content,
         m.created_at
     FROM messages m
+    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN message_runs mr ON mr.message_id = m.id
     WHERE mr.run_id = $1::uuid
     ORDER BY m.created_at ASC

@@ -251,16 +251,24 @@ system_message_hash AS (
 existing_system_message AS (
     SELECT m.id as system_message_id
     FROM messages m
-    JOIN system_message_hash smh ON message_content_hash(m.content, 'system') = smh.hash
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN system_message_hash smh ON message_content_hash(mc.content, 'system') = smh.hash
     WHERE m.role = 'system'
     LIMIT 1
 ),
 new_system_message AS (
-    INSERT INTO messages (role, content, completed, audio, created_at, updated_at)
-    SELECT 'system'::message_role, smc.content, false, false, NOW(), NOW()
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'system'::message_role, false, false, NOW(), NOW()
     FROM system_message_content smc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
-    RETURNING id as system_message_id
+    RETURNING id as system_message_id, created_at, updated_at
+),
+insert_system_content AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT nsm.system_message_id, 0, smc.content, nsm.created_at, nsm.updated_at
+    FROM new_system_message nsm
+    CROSS JOIN system_message_content smc
+    WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
 ),
 system_message AS (
     SELECT system_message_id FROM existing_system_message
@@ -306,8 +314,9 @@ existing_developer_messages_with_rn AS (
         m.id as message_id,
         ROW_NUMBER() OVER (PARTITION BY dmp.content ORDER BY m.created_at ASC) as rn
     FROM developer_messages_processed dmp
-    JOIN messages m ON m.role = 'developer' 
-        AND message_content_hash(m.content, 'developer') = dmp.hash
+    JOIN messages m ON m.role = 'developer'
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+        AND message_content_hash(mc.content, 'developer') = dmp.hash
 ),
 existing_developer_messages AS (
     SELECT 
@@ -318,21 +327,33 @@ existing_developer_messages AS (
     WHERE rn = 1
 ),
 new_developer_messages AS (
-    INSERT INTO messages (role, content, completed, audio, created_at, updated_at)
-    SELECT 'developer'::message_role, dmp.content, false, false, NOW(), NOW()
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'developer'::message_role, false, false, NOW(), NOW()
     FROM developer_messages_processed dmp
     WHERE NOT EXISTS (
         SELECT 1 FROM existing_developer_messages edm 
         WHERE edm.content = dmp.content
     )
-    RETURNING id as message_id, content
+    RETURNING id as message_id, created_at, updated_at
+),
+insert_developer_content AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT ndm.message_id, 0, dmp.content, ndm.created_at, ndm.updated_at
+    FROM new_developer_messages ndm
+    JOIN developer_messages_processed dmp ON NOT EXISTS (
+        SELECT 1 FROM existing_developer_messages edm 
+        WHERE edm.content = dmp.content
+    )
 ),
 all_developer_messages AS (
     SELECT message_id, content, first_idx FROM existing_developer_messages
     UNION ALL
-    SELECT ndm.message_id, ndm.content, dmp.first_idx 
+    SELECT ndm.message_id, dmp.content, dmp.first_idx 
     FROM developer_messages_processed dmp
-    JOIN new_developer_messages ndm ON ndm.content = dmp.content
+    JOIN new_developer_messages ndm ON NOT EXISTS (
+        SELECT 1 FROM existing_developer_messages edm 
+        WHERE edm.content = dmp.content
+    )
 ),
 -- Link developer messages to run (preserve order for parent selection)
 link_developers AS (
@@ -364,10 +385,16 @@ link_system_to_developer AS (
 ),
 -- Create assistant message if output provided
 assistant_message AS (
-    INSERT INTO messages (role, content, completed, audio, created_at, updated_at)
-    SELECT 'assistant'::message_role, trim($11), true, false, NOW(), NOW()
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'assistant'::message_role, true, false, NOW(), NOW()
     WHERE $11 IS NOT NULL AND trim($11) != ''
-    RETURNING id as assistant_message_id
+    RETURNING id as assistant_message_id, created_at, updated_at
+),
+insert_assistant_content AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT am.assistant_message_id, 0, trim($11), am.created_at, am.updated_at
+    FROM assistant_message am
+    WHERE $11 IS NOT NULL AND trim($11) != ''
 ),
 link_assistant AS (
     INSERT INTO message_runs (message_id, run_id, created_at, updated_at)

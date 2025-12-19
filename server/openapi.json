@@ -24097,6 +24097,35 @@
         "title": "ConnectionConfirmedPayload",
         "description": "Response indicating WebSocket connection was confirmed."
       },
+      "ContentItem": {
+        "properties": {
+          "idx": {
+            "type": "integer",
+            "title": "Idx"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "idx",
+          "content",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "ContentItem",
+        "description": "Content entry schema."
+      },
       "ContinuationOption": {
         "properties": {
           "scenarioId": {
@@ -36243,6 +36272,17 @@
             },
             "type": "object",
             "title": "Profilemapping"
+          },
+          "previousContextStartIndex": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previouscontextstartindex"
           }
         },
         "type": "object",
@@ -39879,6 +39919,17 @@
             },
             "type": "array",
             "title": "Messages"
+          },
+          "previousContextStartIndex": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previouscontextstartindex"
           }
         },
         "type": "object",
@@ -54692,9 +54743,12 @@
             "type": "string",
             "title": "Role"
           },
-          "content": {
-            "type": "string",
-            "title": "Content"
+          "contents": {
+            "items": {
+              "$ref": "#/components/schemas/ContentItem"
+            },
+            "type": "array",
+            "title": "Contents"
           },
           "createdAt": {
             "type": "string",
@@ -54707,13 +54761,24 @@
           "completed": {
             "type": "boolean",
             "title": "Completed"
+          },
+          "runIdx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runidx"
           }
         },
         "type": "object",
         "required": [
           "id",
           "role",
-          "content",
+          "contents",
           "createdAt",
           "updatedAt",
           "completed"

@@ -132,7 +132,6 @@ messages_with_tree AS (
             rcm.run_id,
             rcm.chat_id,
             m.role, 
-            m.content, 
             m.created_at, 
             m.completed, 
             m.updated_at,
@@ -159,7 +158,6 @@ messages_with_tree AS (
             mp.run_id,  -- Keep the child's run_id (the run we're querying for)
             mp.chat_id,
             m.role, 
-            m.content, 
             m.created_at, 
             m.completed, 
             m.updated_at,
@@ -212,7 +210,6 @@ messages_with_tree AS (
             rcm.run_id,
             rcm.chat_id,
             m.role, 
-            m.content, 
             m.created_at, 
             m.completed, 
             m.updated_at,
@@ -253,7 +250,6 @@ messages_with_tree AS (
             rcm.run_id,
             rcm.chat_id,
             m.role, 
-            m.content, 
             m.created_at, 
             m.completed, 
             m.updated_at,
@@ -296,7 +292,6 @@ messages_with_tree AS (
         am.run_id,
         am.chat_id,
         am.role,
-        am.content,
         am.created_at,
         am.completed,
         am.updated_at,
@@ -305,29 +300,105 @@ messages_with_tree AS (
     FROM all_messages am
     ORDER BY am.id, am.run_id, am.run_idx, am.depth DESC, am.created_at
 ),
-runs_with_messages AS (
-    -- Aggregate messages per run, ordered by tree traversal order (depth DESC)
-    -- Order by depth DESC to get: system (3) -> developer (2) -> user (1) -> assistant (0)
+-- Get all content entries for each message
+messages_with_content AS (
     SELECT 
+        mwt.id,
         mwt.run_id,
+        mwt.role,
+        mwt.created_at,
+        mwt.completed,
+        mwt.updated_at,
+        mwt.run_idx,
         COALESCE(
             jsonb_agg(
                 jsonb_build_object(
-                    'id', mwt.id::text,
-                    'role', mwt.role,
-                    'content', mwt.content,
+                    'idx', mc.idx,
+                    'content', mc.content,
+                    'createdAt', mc.created_at,
+                    'updatedAt', mc.updated_at
+                ) ORDER BY mc.idx
+            ) FILTER (WHERE mc.idx IS NOT NULL),
+            jsonb_build_array(
+                jsonb_build_object(
+                    'idx', 0,
+                    'content', '',
                     'createdAt', mwt.created_at,
-                    'updatedAt', mwt.updated_at,
-                    'completed', mwt.completed
+                    'updatedAt', mwt.updated_at
+                )
+            )
+        ) as contents
+    FROM messages_with_tree mwt
+    LEFT JOIN message_content mc ON mc.message_id = mwt.id
+    GROUP BY mwt.id, mwt.run_id, mwt.role, mwt.created_at, mwt.completed, mwt.updated_at, mwt.run_idx
+),
+-- Get run idx for each run
+runs_with_idx AS (
+    SELECT 
+        rm.run_id,
+        gr.idx as run_idx
+    FROM runs_metadata rm
+    JOIN group_runs gr ON gr.run_id = rm.run_id
+),
+runs_with_messages AS (
+    -- Aggregate messages per run, ordered by tree traversal order (depth DESC)
+    -- Order by depth DESC to get: system (3) -> developer (2) -> user (1) -> assistant (0)
+    -- Calculate previousContextStartIndex: index of first message from previous runs
+    SELECT 
+        mwc.run_id,
+        rwi.run_idx as current_run_idx,
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', mwc.id::text,
+                    'role', mwc.role,
+                    'contents', mwc.contents,
+                    'createdAt', mwc.created_at,
+                    'updatedAt', mwc.updated_at,
+                    'completed', mwc.completed,
+                    'runIdx', mwc.run_idx
                 ) ORDER BY 
-                    mwt.run_idx,  -- Order by run idx first (system/dev from run 0, then run 1, then run 2, etc.)
-                    mwt.depth DESC,  -- Then by depth (system=3, developer=2, user=1, assistant=0)
-                    mwt.created_at  -- Then by creation time within same role
+                    mwc.run_idx,  -- Order by run idx first (system/dev from run 0, then run 1, then run 2, etc.)
+                    mwc.created_at  -- Then by creation time
             ),
             '[]'::jsonb
         ) as messages
-    FROM messages_with_tree mwt
-    GROUP BY mwt.run_id
+    FROM messages_with_content mwc
+    JOIN runs_with_idx rwi ON rwi.run_id = mwc.run_id
+    GROUP BY mwc.run_id, rwi.run_idx
+),
+-- Calculate previousContextStartIndex for each run
+runs_with_context_index AS (
+    SELECT 
+        rwm.run_id,
+        rwm.current_run_idx,
+        rwm.messages,
+        -- Calculate previousContextStartIndex: find first message index where runIdx >= current run idx
+        -- This indicates where the current run's messages start (after previous context)
+        -- For first run (idx=0), this will be NULL (no previous context)
+        -- For subsequent runs, find the index of the first message that belongs to the current run
+        CASE 
+            WHEN rwm.current_run_idx = 0 THEN NULL::integer
+            ELSE (
+                SELECT msg_idx
+                FROM (
+                    SELECT 
+                        row_number() OVER (ORDER BY 
+                            CASE WHEN (msg->>'runIdx') IS NULL THEN 999999 ELSE (msg->>'runIdx')::integer END,
+                            msg->>'createdAt'
+                        ) - 1 as msg_idx,
+                        CASE 
+                            WHEN (msg->>'runIdx') IS NULL THEN 999999
+                            ELSE (msg->>'runIdx')::integer
+                        END as msg_run_idx
+                    FROM jsonb_array_elements(rwm.messages) as msg
+                ) indexed_msgs
+                WHERE indexed_msgs.msg_run_idx >= rwm.current_run_idx
+                ORDER BY indexed_msgs.msg_idx
+                LIMIT 1
+            )
+        END as previous_context_start_index
+    FROM runs_with_messages rwm
 ),
 -- Build run details with messages
 runs_detail AS (
@@ -342,10 +413,11 @@ runs_detail AS (
         rm.profile_id,
         rm.persona_id,
         COALESCE(rc.run_cost, 0) as cost,
-        COALESCE(rwm.messages, '[]'::jsonb) as messages
+        COALESCE(rwci.messages, '[]'::jsonb) as messages,
+        rwci.previous_context_start_index
     FROM runs_metadata rm
     LEFT JOIN run_costs rc ON rc.run_id = rm.run_id
-    LEFT JOIN runs_with_messages rwm ON rwm.run_id = rm.run_id
+    LEFT JOIN runs_with_context_index rwci ON rwci.run_id = rm.run_id
 ),
 -- Build model mapping
 model_mapping_data AS (
@@ -403,7 +475,8 @@ SELECT
                             'agentId', CASE WHEN rd.agent_id IS NOT NULL THEN rd.agent_id::text ELSE NULL END,
                             'profileId', CASE WHEN rd.profile_id IS NOT NULL THEN rd.profile_id::text ELSE NULL END,
                             'personaId', CASE WHEN rd.persona_id IS NOT NULL THEN rd.persona_id::text ELSE NULL END,
-                            'messages', rd.messages
+                            'messages', rd.messages,
+                            'previousContextStartIndex', rd.previous_context_start_index
                         ) ORDER BY rd.created_at
                     )
                     FROM runs_detail rd),

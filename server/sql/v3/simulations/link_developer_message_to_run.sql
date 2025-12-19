@@ -7,16 +7,22 @@ WITH content_hash AS (
 ),
 existing_message AS (
     SELECT m.id, m.created_at
-    FROM messages m, content_hash ch
+    FROM messages m
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN content_hash ch ON message_content_hash(mc.content, 'developer') = ch.hash
     WHERE m.role = 'developer'
-    AND message_content_hash(m.content, 'developer') = ch.hash
     LIMIT 1
 ),
 new_message AS (
-    INSERT INTO messages (role, content, completed, audio, created_at, updated_at)
-    SELECT 'developer'::message_role, $1::text, false, false, NOW(), NOW()
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'developer'::message_role, false, false, NOW(), NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_message)
-    RETURNING id, created_at
+    RETURNING id, created_at, updated_at
+),
+insert_content AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT id, 0, $1::text, created_at, updated_at
+    FROM new_message
 ),
 developer_msg AS (
     SELECT id, created_at FROM existing_message

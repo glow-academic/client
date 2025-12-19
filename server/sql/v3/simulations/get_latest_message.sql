@@ -6,7 +6,7 @@ SELECT
     m.id,
     c.id AS chat_id,
     m.role,
-    m.content,
+    mc.content,
     m.created_at,
     m.completed,
     m.updated_at
@@ -17,6 +17,7 @@ JOIN group_runs gr ON gr.group_id = g.id
 JOIN runs r ON r.id = gr.run_id
 JOIN message_runs mr ON mr.run_id = r.id
 JOIN messages m ON m.id = mr.message_id
+LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
 WHERE c.id = $1::uuid
   AND NOT EXISTS (
       SELECT 1 FROM message_tree mt 

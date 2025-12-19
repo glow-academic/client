@@ -92,11 +92,12 @@ messages_data AS (
     SELECT 
         m.id,
         m.role,
-        m.content,
+        mc.content,
         m.created_at,
         m.updated_at,
         m.completed
     FROM messages m
+    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN message_runs mr ON mr.message_id = m.id
     CROSS JOIN run_base rb
     WHERE mr.run_id = rb.id

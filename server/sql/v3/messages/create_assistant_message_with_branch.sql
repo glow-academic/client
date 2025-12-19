@@ -3,9 +3,14 @@
 -- Returns: message_id, created_at
 -- Creates message, links to run, and creates message_tree branch
 WITH assistant_message AS (
-    INSERT INTO messages (role, content, completed, audio, created_at, updated_at)
-    VALUES ('assistant'::message_role, $1::text, true, false, NOW(), NOW())
-    RETURNING id, created_at
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    VALUES ('assistant'::message_role, true, false, NOW(), NOW())
+    RETURNING id, created_at, updated_at
+),
+insert_content AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT id, 0, $1::text, created_at, updated_at
+    FROM assistant_message
 ),
 link_to_run AS (
     INSERT INTO message_runs (message_id, run_id, created_at, updated_at)

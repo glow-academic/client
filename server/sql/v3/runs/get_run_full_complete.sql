@@ -83,7 +83,7 @@ messages_grouped AS (
                     'createdAt', m.created_at,
                     'updatedAt', m.updated_at,
                     'chatId', c.id::text,
-                    'content', m.content,
+                    'content', mc.content,
                     'type', CASE 
                         WHEN m.role = 'user' THEN 'query'
                         WHEN m.role = 'assistant' OR m.role = 'response' THEN 'response'
@@ -101,6 +101,7 @@ messages_grouped AS (
     JOIN runs r ON r.id = gr.run_id
     JOIN message_runs mr ON mr.run_id = r.id
     JOIN messages m ON m.id = mr.message_id
+    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
     CROSS JOIN chat_ids_list cil
     CROSS JOIN run_base rb
     WHERE c.id = ANY(cil.chat_ids)
@@ -138,6 +139,7 @@ hints_data AS (
     JOIN runs r ON r.id = gr.run_id
     JOIN message_runs mr ON mr.run_id = r.id
     JOIN messages m ON m.id = mr.message_id
+    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
     CROSS JOIN chat_ids_list cil
     CROSS JOIN run_base rb
     WHERE c.id = ANY(cil.chat_ids)

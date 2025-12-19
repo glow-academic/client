@@ -91,16 +91,24 @@ system_message_hash AS (
 existing_system_message AS (
     SELECT m.id as system_message_id
     FROM messages m
-    JOIN system_message_hash smh ON message_content_hash(m.content, 'system') = smh.hash
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN system_message_hash smh ON message_content_hash(mc.content, 'system') = smh.hash
     WHERE m.role = 'system'
     LIMIT 1
 ),
 new_system_message AS (
-    INSERT INTO messages (role, content, completed, audio, created_at, updated_at)
-    SELECT 'system'::message_role, smc.content, false, false, NOW(), NOW()
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'system'::message_role, false, false, NOW(), NOW()
     FROM system_message_content smc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
-    RETURNING id as system_message_id
+    RETURNING id as system_message_id, created_at, updated_at
+),
+insert_system_content AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT nsm.system_message_id, 0, smc.content, nsm.created_at, nsm.updated_at
+    FROM new_system_message nsm
+    CROSS JOIN system_message_content smc
+    WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
 ),
 system_message AS (
     SELECT system_message_id FROM existing_system_message
@@ -139,16 +147,24 @@ scenario_developer_hash AS (
 existing_scenario_developer_message AS (
     SELECT m.id as developer_message_id
     FROM messages m
-    JOIN scenario_developer_hash sdh ON message_content_hash(m.content, 'developer') = sdh.hash
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN scenario_developer_hash sdh ON message_content_hash(mc.content, 'developer') = sdh.hash
     WHERE m.role = 'developer'
     LIMIT 1
 ),
 new_scenario_developer_message AS (
-    INSERT INTO messages (role, content, completed, audio, created_at, updated_at)
-    SELECT 'developer'::message_role, sdc.content, false, false, NOW(), NOW()
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'developer'::message_role, false, false, NOW(), NOW()
     FROM scenario_developer_content sdc
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
-    RETURNING id as developer_message_id
+    RETURNING id as developer_message_id, created_at, updated_at
+),
+insert_scenario_developer_content AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT nsdm.developer_message_id, 0, sdc.content, nsdm.created_at, nsdm.updated_at
+    FROM new_scenario_developer_message nsdm
+    CROSS JOIN scenario_developer_content sdc
+    WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
 ),
 scenario_developer_message AS (
     SELECT developer_message_id FROM existing_scenario_developer_message

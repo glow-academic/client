@@ -86,6 +86,7 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const [showDeveloperPrompt, setShowDeveloperPrompt] = useState(false);
+  const [showPreviousContext, setShowPreviousContext] = useState(true);
 
   // This component only handles group responses (has 'runs' property)
   // Type assertion is safe here since this component is specifically for groups
@@ -123,17 +124,35 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
     if (!currentRun) {
       return [];
     }
-    return currentRun.messages.filter((message: MessageItem) => {
+
+    // First filter by previous context (if needed)
+    let messagesToFilter = currentRun.messages;
+    if (
+      !showPreviousContext &&
+      currentRun.previousContextStartIndex !== null &&
+      currentRun.previousContextStartIndex !== undefined
+    ) {
+      // Hide messages before the previousContextStartIndex (these are from previous runs)
+      messagesToFilter = currentRun.messages.slice(
+        currentRun.previousContextStartIndex
+      );
+    }
+
+    // Then filter by system/developer toggles
+    return messagesToFilter.filter((message: MessageItem) => {
       const role = message.role.toLowerCase();
+
+      // Filter by system/developer toggles
       if (role === "system" && !showSystemPrompt) {
         return false;
       }
       if (role === "developer" && !showDeveloperPrompt) {
         return false;
       }
+
       return true;
     });
-  }, [currentRun, showSystemPrompt, showDeveloperPrompt]);
+  }, [currentRun, showSystemPrompt, showDeveloperPrompt, showPreviousContext]);
 
   if (!isGroupResponse) {
     return null; // This component only handles group responses
@@ -170,6 +189,21 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
               Run {currentRunIndex + 1} of {sortedRuns.length}
             </h3>
             <div className="flex items-center gap-4">
+              {currentRunIndex > 0 && (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="show-previous-context"
+                    checked={showPreviousContext}
+                    onCheckedChange={setShowPreviousContext}
+                  />
+                  <Label
+                    htmlFor="show-previous-context"
+                    className="text-sm cursor-pointer"
+                  >
+                    Show previous context
+                  </Label>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Switch
                   id="show-system-prompt"
@@ -259,61 +293,115 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
                 const RoleIcon = getRoleIcon(message.role);
                 const roleLabel = getRoleLabel(message.role);
 
+                // Check if this is the boundary between previous context and current run
+                // Find the original index in the unfiltered messages array
+                const originalIndex = currentRun.messages.findIndex(
+                  (m) => m.id === message.id
+                );
+                const isPreviousContextBoundary =
+                  currentRun.previousContextStartIndex !== null &&
+                  currentRun.previousContextStartIndex !== undefined &&
+                  originalIndex === currentRun.previousContextStartIndex &&
+                  showPreviousContext; // Only show boundary when previous context is visible
+
                 return (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      "flex gap-3",
-                      isUser ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    {!isUser && (
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
-                          <RoleIcon className="h-4 w-4" />
+                  <div key={message.id}>
+                    {isPreviousContextBoundary && (
+                      <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-dashed border-muted-foreground/30" />
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                          <span className="bg-card px-2 text-muted-foreground">
+                            Previous context
+                          </span>
                         </div>
                       </div>
                     )}
                     <div
                       className={cn(
-                        "flex flex-col gap-1 max-w-[80%]",
-                        isUser ? "items-end" : "items-start"
+                        "flex gap-3",
+                        isUser ? "justify-end" : "justify-start"
                       )}
                     >
+                      {!isUser && (
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
+                            <RoleIcon className="h-4 w-4" />
+                          </div>
+                        </div>
+                      )}
                       <div
                         className={cn(
-                          "rounded-lg p-3",
-                          isUser
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                          "flex flex-col gap-1 max-w-[80%]",
+                          isUser ? "items-end" : "items-start"
                         )}
                       >
-                        <Markdown>{message.content}</Markdown>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
-                        <Badge variant="outline" className="text-xs">
-                          {roleLabel}
-                        </Badge>
-                        <span>{formatDate(message.createdAt)}</span>
-                        {message.updatedAt !== message.createdAt && (
-                          <span className="text-muted-foreground/70">
-                            (updated {formatDate(message.updatedAt)})
-                          </span>
-                        )}
-                        {message.completed && (
-                          <Badge variant="secondary" className="text-xs">
-                            Completed
+                        <div
+                          className={cn(
+                            "rounded-lg p-3",
+                            isUser
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
+                          )}
+                        >
+                          {message.contents && message.contents.length > 0 ? (
+                            <div className="space-y-2">
+                              {message.contents.map(
+                                (contentItem, contentIdx) => (
+                                  <div
+                                    key={contentIdx}
+                                    className="flex items-start gap-2"
+                                  >
+                                    {contentIdx > 0 && (
+                                      <div className="w-0.5 h-full bg-border mt-1.5 min-h-[1rem]" />
+                                    )}
+                                    <div className="flex-1">
+                                      <Markdown>{contentItem.content}</Markdown>
+                                      {contentIdx > 0 && (
+                                        <div className="text-xs text-muted-foreground mt-1 opacity-70">
+                                          Version {contentItem.idx + 1}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          ) : (
+                            // Fallback for backward compatibility
+                            <Markdown>
+                              {message.contents && message.contents.length > 0
+                                ? message.contents[0]?.content || ""
+                                : ""}
+                            </Markdown>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                          <Badge variant="outline" className="text-xs">
+                            {roleLabel}
                           </Badge>
-                        )}
-                      </div>
-                    </div>
-                    {isUser && (
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-                          <User className="h-4 w-4 text-primary-foreground" />
+                          <span>{formatDate(message.createdAt)}</span>
+                          {message.updatedAt !== message.createdAt && (
+                            <span className="text-muted-foreground/70">
+                              (updated {formatDate(message.updatedAt)})
+                            </span>
+                          )}
+                          {message.completed && (
+                            <Badge variant="secondary" className="text-xs">
+                              Completed
+                            </Badge>
+                          )}
                         </div>
                       </div>
-                    )}
+                      {isUser && (
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+                            <User className="h-4 w-4 text-primary-foreground" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })

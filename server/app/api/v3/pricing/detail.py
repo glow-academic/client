@@ -4,6 +4,9 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
@@ -11,8 +14,6 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -20,7 +21,17 @@ router = APIRouter()
 # Inline request/response schemas
 class PricingRunDetailRequest(BaseModel):
     """Request schema for pricing run detail."""
+
     groupId: str
+
+
+class ContentItem(BaseModel):
+    """Content entry schema."""
+
+    idx: int
+    content: str
+    createdAt: str
+    updatedAt: str
 
 
 class MessageItem(BaseModel):
@@ -28,10 +39,11 @@ class MessageItem(BaseModel):
 
     id: str
     role: str
-    content: str
+    contents: list[ContentItem]
     createdAt: str
     updatedAt: str
     completed: bool
+    runIdx: int | None = None
 
 
 class RunMetadata(BaseModel):
@@ -54,6 +66,7 @@ class RunWithMessages(BaseModel):
 
     run: RunMetadata
     messages: list[MessageItem]
+    previousContextStartIndex: int | None = None
 
 
 class PricingRunDetailResponse(BaseModel):
@@ -64,6 +77,7 @@ class PricingRunDetailResponse(BaseModel):
     modelMapping: dict[str, dict[str, str]]
     agentMapping: dict[str, str]
     profileMapping: dict[str, str]
+    previousContextStartIndex: int | None = None
 
 
 class PricingGroupDetailResponse(BaseModel):
@@ -174,14 +188,40 @@ async def get_pricing_run_detail(
                 messages_data = run_data.get("messages", [])
                 if isinstance(messages_data, list):
                     for msg in messages_data:
+                        # Parse contents array
+                        contents: list[ContentItem] = []
+                        contents_data = msg.get("contents", [])
+                        if isinstance(contents_data, list):
+                            for content_item in contents_data:
+                                contents.append(
+                                    ContentItem(
+                                        idx=content_item["idx"],
+                                        content=content_item["content"],
+                                        createdAt=content_item["createdAt"],
+                                        updatedAt=content_item["updatedAt"],
+                                    )
+                                )
+                        else:
+                            # Fallback: if contents is not an array, create single content entry
+                            # This handles backward compatibility during migration
+                            contents.append(
+                                ContentItem(
+                                    idx=0,
+                                    content=msg.get("content", ""),
+                                    createdAt=msg.get("createdAt", ""),
+                                    updatedAt=msg.get("updatedAt", ""),
+                                )
+                            )
+
                         messages.append(
                             MessageItem(
                                 id=msg["id"],
                                 role=msg["role"],
-                                content=msg["content"],
+                                contents=contents,
                                 createdAt=msg["createdAt"],
                                 updatedAt=msg["updatedAt"],
                                 completed=msg["completed"],
+                                runIdx=msg.get("runIdx"),
                             )
                         )
 
@@ -199,7 +239,11 @@ async def get_pricing_run_detail(
                 )
 
                 runs_with_messages.append(
-                    RunWithMessages(run=run_metadata, messages=messages)
+                    RunWithMessages(
+                        run=run_metadata,
+                        messages=messages,
+                        previousContextStartIndex=run_data.get("previousContextStartIndex"),
+                    )
                 )
 
         # Parse mappings

@@ -204,11 +204,27 @@ CREATE TABLE messages (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  content    TEXT        NOT NULL,
   role       message_role NOT NULL,
   completed  BOOLEAN     NOT NULL           DEFAULT FALSE,
   audio      BOOLEAN     NOT NULL           DEFAULT FALSE
 );
+
+-- Message content junction table (BCNF normalization)
+-- Supports multiple content entries per message (enables content history, versions, metadata)
+-- Primary content is always idx=0
+CREATE TABLE message_content (
+  message_id UUID        NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  idx        INTEGER     NOT NULL,
+  content    TEXT        NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (message_id, idx),
+  CHECK (idx >= 0)
+);
+
+CREATE INDEX ON message_content (message_id);
+CREATE INDEX ON message_content (message_id, idx);
+CREATE INDEX ON message_content (message_id, created_at DESC);
 
 -- Message-runs junction table (allows messages to belong to multiple runs)
 -- This enables sharing of system/developer messages across runs

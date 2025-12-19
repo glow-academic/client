@@ -7304,6 +7304,20 @@ export interface components {
             server_time: number;
         };
         /**
+         * ContentItem
+         * @description Content entry schema.
+         */
+        ContentItem: {
+            /** Idx */
+            idx: number;
+            /** Content */
+            content: string;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
+        };
+        /**
          * ContinuationOption
          * @description A single continuation option for a scenario.
          */
@@ -12016,6 +12030,8 @@ export interface components {
             profileMapping: {
                 [key: string]: string;
             };
+            /** Previouscontextstartindex */
+            previousContextStartIndex?: number | null;
         };
         /**
          * PricingRunsFilters
@@ -13314,6 +13330,8 @@ export interface components {
             run: components["schemas"]["RunMetadata"];
             /** Messages */
             messages: components["schemas"]["app__api__v3__pricing__detail__MessageItem"][];
+            /** Previouscontextstartindex */
+            previousContextStartIndex?: number | null;
         };
         /**
          * ScenarioAttributeAttemptFact
@@ -18758,14 +18776,16 @@ export interface components {
             id: string;
             /** Role */
             role: string;
-            /** Content */
-            content: string;
+            /** Contents */
+            contents: components["schemas"]["ContentItem"][];
             /** Createdat */
             createdAt: string;
             /** Updatedat */
             updatedAt: string;
             /** Completed */
             completed: boolean;
+            /** Runidx */
+            runIdx?: number | null;
         };
         /**
          * DebugInfoItem
