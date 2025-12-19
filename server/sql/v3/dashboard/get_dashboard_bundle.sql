@@ -703,9 +703,9 @@
                 WHERE chat_id IS NOT NULL
             ),
             latest_grade_per_chat AS (
-                SELECT DISTINCT ON (rc.chat_id)
+                SELECT DISTINCT ON (cm.chat_id)
                     scg.id,
-                    rc.chat_id,
+                    cm.chat_id,
                     scg.rubric_id
                 FROM grades scg
                 JOIN runs r ON r.id = scg.run_id
@@ -1072,9 +1072,9 @@
                     )
             ),
             latest_grade_for_skills AS (
-                SELECT DISTINCT ON (rc.chat_id, scg.rubric_id)
+                SELECT DISTINCT ON (cm.chat_id, scg.rubric_id)
                        scg.id AS grade_id,
-                       rc.chat_id,
+                       cm.chat_id,
                        scg.rubric_id,
                        scg.created_at
                 FROM grades scg

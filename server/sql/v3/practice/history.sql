@@ -141,8 +141,8 @@ history_chat_rollup AS (
 ),
 -- Get latest grade per chat
 history_chat_grades AS (
-    SELECT DISTINCT ON (rc.chat_id)
-        rc.chat_id,
+    SELECT DISTINCT ON (cm.chat_id)
+        cm.chat_id,
         scg.score,
         scg.rubric_id
     FROM grades scg
@@ -159,7 +159,7 @@ history_chat_grades AS (
         JOIN chats sc ON sc.id = ac.chat_id
         WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     )
-    ORDER BY rc.chat_id, scg.created_at DESC
+    ORDER BY cm.chat_id, scg.created_at DESC
 ),
 -- Aggregate grades per attempt
 history_grade_rollup AS (

@@ -103,7 +103,7 @@ sim_expected AS (
            COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS expected_scenarios
     FROM simulations s
 ),
--- Per attempt: sum grade_percent over completed root scenarios
+-- Per attempt: sum grade_percent over completed root scenarios (one grade per root scenario per attempt)
 attempt_scores AS (
     SELECT
         ap.attempt_id,
@@ -111,7 +111,13 @@ attempt_scores AS (
         ap.simulation_id,
         COALESCE(SUM(ap.grade_percent) FILTER (WHERE ap.completed AND ap.grade_percent IS NOT NULL), 0)::numeric AS sum_completed_pct,
         se.expected_scenarios
-    FROM filt ap
+    FROM (
+        SELECT DISTINCT ON (ap_inner.attempt_id, ap_inner.scenario_id)
+            ap_inner.*
+        FROM filt ap_inner
+        WHERE ap_inner.completed AND ap_inner.grade_percent IS NOT NULL
+        ORDER BY ap_inner.attempt_id, ap_inner.scenario_id, ap_inner.grade_created_at DESC
+    ) ap
     JOIN sim_expected se ON se.simulation_id = ap.simulation_id
     GROUP BY ap.attempt_id, ap.profile_id, ap.simulation_id, se.expected_scenarios
 ),

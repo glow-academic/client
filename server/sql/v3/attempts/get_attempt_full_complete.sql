@@ -638,7 +638,7 @@
         ),
         hints_data AS (
             SELECT 
-                rc.chat_id,
+                cm.chat_id,
                 COALESCE(
                     jsonb_agg(
                         jsonb_build_object(
@@ -662,13 +662,13 @@
                 ) as hints
             FROM messages m
             JOIN message_runs mr ON mr.message_id = m.id
-            JOIN chat_runs rc ON rc.run_id = mr.run_id
+            JOIN chat_messages cm ON cm.message_id = m.id
             CROSS JOIN chat_ids_list cil
             CROSS JOIN attempt_base ab
-            WHERE rc.chat_id = ANY(cil.chat_ids)
+            WHERE cm.chat_id = ANY(cil.chat_ids)
               AND m.role IN ('user', 'assistant')
               AND ab.sim_practice_simulation = true
-            GROUP BY rc.chat_id
+            GROUP BY cm.chat_id
         ),
         grades_data AS (
             -- Get latest grade per chat (DISTINCT ON to handle multiple grades)
