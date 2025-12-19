@@ -6,23 +6,29 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    trace,
+)
 from agents.items import TResponseInputItem
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
-from app.utils.agents.tools.create_safe_field_name import \
-    create_safe_field_name
+from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
+from app.utils.chat.get_simulation_conversation_history import (
+    get_simulation_conversation_history,
+)
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -434,7 +440,9 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 raise ValueError("Failed to create simulation chat grade")
             grade_id = uuid.UUID(grade_row["id"])
 
-            logger.info(f"Created grade record {grade_id} for chat {simulation_chat_id}")
+            logger.info(
+                f"Created grade record {grade_id} for chat {simulation_chat_id}"
+            )
 
             # Create grading tools for each standard group
             profile_id_str = context.get("profile_id")
@@ -452,9 +460,11 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             # Add audio grading tool if audio messages exist and audio agent is configured
             if has_audio_messages and grade_voice_agent_id:
                 from agents import function_tool
-                from app.socket.v3.simulations.grading.tools.audio import \
-                    _grading_tool_audio_impl
                 from pydantic import Field
+
+                from app.socket.v3.simulations.grading.tools.audio import (
+                    _grading_tool_audio_impl,
+                )
 
                 async def grade_audio(
                     message_numbers: list[int] = Field(

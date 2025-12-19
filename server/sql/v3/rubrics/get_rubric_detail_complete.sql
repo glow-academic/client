@@ -15,7 +15,8 @@ rubric_data AS (
         description,
         active,
         points,
-        pass_points as passpoints
+        pass_points as passpoints,
+        rubric_agent_id::text as rubric_agent_id
     FROM rubrics
     WHERE id = $1
 ),
@@ -71,6 +72,50 @@ user_has_rubric_access AS (
         WHERE rd.rubric_id = $1 AND rd.active = true
     ) = 0 as has_access
 ),
+user_departments_for_agents AS (
+    SELECT DISTINCT department_id
+    FROM profile_departments
+    WHERE profile_id = $2 AND active = true
+),
+valid_agents AS (
+    -- Get agents with role 'rubric'
+    -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+    -- Also include agent assigned to this rubric (rubric_agent_id) even if it doesn't pass department filter
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                a.id::text,
+                jsonb_build_object(
+                    'name', a.name,
+                    'description', COALESCE(a.description, ''),
+                    'roles', ARRAY[a.role::text]
+                )
+            ),
+            '{}'::jsonb
+        ) as agent_mapping,
+        array_agg(a.id::text ORDER BY a.name) as agent_ids
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN rubric_data rd
+    WHERE a.active = true 
+    AND a.role = 'rubric'
+    AND (
+        -- Department access: has matching department link OR has no department links at all (cross-dept)
+        EXISTS (
+            SELECT 1 FROM agent_departments ad2 
+            WHERE ad2.agent_id = a.id 
+            AND ad2.active = true 
+            AND ad2.department_id IN (SELECT department_id FROM user_departments_for_agents)
+        )
+        OR NOT EXISTS (
+            SELECT 1 FROM agent_departments ad3 
+            WHERE ad3.agent_id = a.id 
+            AND ad3.active = true
+        )
+        -- Include agent assigned to this rubric even if it doesn't pass department filter
+        OR a.id::text = rd.rubric_agent_id
+    )
+),
 standard_groups_with_standards AS (
     SELECT 
         COALESCE(
@@ -115,6 +160,8 @@ SELECT
     pr.user_role,
     up.actor_name,
     sg.groups_json as standard_groups_complete,
+    COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
+    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     CASE 
         -- Default rubrics (no department_ids) are read-only for non-superadmin
         WHEN (COALESCE(rdd.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND pr.user_role != 'superadmin') THEN false
@@ -129,5 +176,6 @@ CROSS JOIN profile_data pr
 CROSS JOIN user_profile up
 CROSS JOIN standard_groups_with_standards sg
 CROSS JOIN user_has_rubric_access uhra
+CROSS JOIN valid_agents va
 WHERE uhra.has_access = true
 

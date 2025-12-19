@@ -76,6 +76,7 @@ rubric_data AS (
         r.points,
         r.pass_points as passPoints,
         r.agent_role::text as agent_role,
+        r.rubric_agent_id::text as rubric_agent_id,
         COALESCE(rdd.department_ids, NULL) as department_ids,
         COALESCE(rsd.simulation_ids, ARRAY[]::text[]) as simulation_ids,
         COALESCE(rasl.active_simulation_count, 0) as active_simulation_count,

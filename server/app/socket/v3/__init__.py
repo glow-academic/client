@@ -9,6 +9,7 @@ from . import (
     evals,
     images,
     log,
+    rubrics,
     scenarios,
     simulations,
     videos,
@@ -35,6 +36,7 @@ client_router.include_router(documents.client_router)
 client_router.include_router(videos.client_router)
 client_router.include_router(images.client_router)
 client_router.include_router(evals.client_router)
+client_router.include_router(rubrics.client_router)
 
 server_router.include_router(simulations.server_router)
 server_router.include_router(scenarios.server_router)
@@ -42,6 +44,7 @@ server_router.include_router(documents.server_router)
 server_router.include_router(videos.server_router)
 server_router.include_router(images.server_router)
 server_router.include_router(evals.server_router)
+server_router.include_router(rubrics.server_router)
 
 # Include both routers in main router
 router.include_router(client_router)

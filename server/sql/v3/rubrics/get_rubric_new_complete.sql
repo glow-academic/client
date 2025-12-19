@@ -79,6 +79,46 @@ primary_department_id AS (
     WHERE pd.is_primary = TRUE
     LIMIT 1
 ),
+user_departments_for_agents AS (
+    SELECT DISTINCT department_id
+    FROM profile_departments
+    WHERE profile_id = $1 AND active = true
+),
+valid_agents AS (
+    -- Get agents with role 'rubric'
+    -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                a.id::text,
+                jsonb_build_object(
+                    'name', a.name,
+                    'description', COALESCE(a.description, ''),
+                    'roles', ARRAY[a.role::text]
+                )
+            ),
+            '{}'::jsonb
+        ) as agent_mapping,
+        array_agg(a.id::text ORDER BY a.name) as agent_ids
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role = 'rubric'
+    AND (
+        -- Department access: has matching department link OR has no department links at all (cross-dept)
+        EXISTS (
+            SELECT 1 FROM agent_departments ad2 
+            WHERE ad2.agent_id = a.id 
+            AND ad2.active = true 
+            AND ad2.department_id IN (SELECT department_id FROM user_departments_for_agents)
+        )
+        OR NOT EXISTS (
+            SELECT 1 FROM agent_departments ad3 
+            WHERE ad3.agent_id = a.id 
+            AND ad3.active = true
+        )
+    )
+),
 standard_groups_with_standards AS (
     SELECT 
         COALESCE(
@@ -123,11 +163,14 @@ SELECT
     up.user_role,
     up.actor_name,
     sg.groups_json as standard_groups_complete,
-    pdi.department_id as primary_department_id
+    pdi.department_id as primary_department_id,
+    COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
+    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids
 FROM rubric_data r
 LEFT JOIN rubric_departments_data rdd ON true
 CROSS JOIN valid_depts vd
 CROSS JOIN user_profile up
 CROSS JOIN standard_groups_with_standards sg
 LEFT JOIN primary_department_id pdi ON true
+CROSS JOIN valid_agents va
 

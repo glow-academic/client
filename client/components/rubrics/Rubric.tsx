@@ -111,7 +111,7 @@ export default function Rubric({
 }: RubricProps) {
   const router = useRouter();
   const isEditMode = !!rubricId;
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, socket, isConnected } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
@@ -125,6 +125,7 @@ export default function Rubric({
     description: rubricData?.description || "",
     active: rubricData?.active ?? true,
     departmentIds: rubricData?.department_ids || [],
+    rubricAgentId: rubricData?.rubric_agent_id || null,
   });
 
   // Grid state
@@ -135,6 +136,7 @@ export default function Rubric({
   // Loading states
   const [isSaving, setIsSaving] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isGeneratingRubric, setIsGeneratingRubric] = useState(false);
 
   // Set breadcrumb context
   useEffect(() => {
@@ -162,6 +164,7 @@ export default function Rubric({
         description: rubricData.description || "",
         active: rubricData.active ?? true,
         departmentIds: rubricData.department_ids || [],
+        rubricAgentId: rubricData.rubric_agent_id || null,
       });
     }
   }, [rubricData]);
@@ -238,6 +241,30 @@ export default function Rubric({
     return !rubricData.can_edit;
   }, [isEditMode, rubricData]);
 
+  // Auto-select rubric agent if only one option available
+  useEffect(() => {
+    if (!rubricData) return;
+
+    const agentMapping = rubricData.agent_mapping || {};
+    const rubricAgentIds =
+      rubricData.valid_agent_ids?.filter((id) => {
+        const agent = agentMapping[id];
+        return agent?.roles?.includes("rubric");
+      }) || [];
+
+    // Auto-select first rubric agent if only one option and not already set
+    if (rubricAgentIds.length === 1 && !formData.rubricAgentId) {
+      setFormData((prev) => ({
+        ...prev,
+        rubricAgentId: rubricAgentIds[0] || null,
+      }));
+    }
+  }, [
+    isEditMode,
+    rubricData,
+    formData.rubricAgentId,
+  ]);
+
   // Step status logic
   const getStepStatus = useCallback(
     (stepId: string): StepStatus => {
@@ -305,6 +332,7 @@ export default function Rubric({
       standardGroups: StandardGroup[];
       standards: Standard[];
       gridCells: GridCell[];
+      rubricAgentId?: string | null;
     }) => {
       if (!updateRubricAction || !rubricId) {
         throw new Error("updateRubricAction and rubricId are required");
@@ -365,6 +393,7 @@ export default function Rubric({
           passPoints: totalPassPoints,
           department_ids: updates.department_ids || [],
           standard_groups: allGroups,
+          rubric_agent_id: updates.rubricAgentId || null,
         },
       });
     },
@@ -396,6 +425,7 @@ export default function Rubric({
           standardGroups,
           standards,
           gridCells,
+          rubricAgentId: formData.rubricAgentId,
         });
         toast.success("Rubric updated successfully");
         router.refresh();
@@ -424,6 +454,7 @@ export default function Rubric({
             active: formData.active,
             points: totalPoints,
             passPoints: totalPassPoints,
+            rubric_agent_id: formData.rubricAgentId || null,
             standard_groups: standardGroups.map((g, index) => ({
               name: g.name,
               short_name: g.name.substring(0, 10).toUpperCase(),
@@ -646,6 +677,187 @@ export default function Rubric({
         return [...prev, { standardGroupId: groupId, standardId, description }];
       }
     });
+  };
+
+  // Handle rubric generation
+  const handleGenerateRubric = async () => {
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected");
+      return;
+    }
+
+    if (!formData.rubricAgentId) {
+      toast.error("Please select a rubric agent before generating");
+      return;
+    }
+
+    if (standardGroups.length === 0 || standards.length === 0) {
+      toast.error("Please add standard groups and standards before generating");
+      return;
+    }
+
+    const departmentId = formData.departmentIds[0] || rubricData?.valid_department_ids?.[0];
+    if (!departmentId) {
+      toast.error("Please select a department");
+      return;
+    }
+
+    setIsGeneratingRubric(true);
+    const toastId = toast.loading("Generating rubric descriptions...");
+
+    try {
+      type GenerateRubricOut = {
+        success: boolean;
+        message: string;
+        trace_id?: string;
+      };
+
+      const result = await new Promise<GenerateRubricOut>(
+        (resolve, reject) => {
+          const handleProgress = (data: {
+            type: string;
+            message?: string;
+            trace_id?: string;
+          }) => {
+            if (data.type === "start") {
+              toast.loading(data.message || "Starting rubric generation...", {
+                id: toastId,
+              });
+            } else if (data.type === "tool_call") {
+              toast.loading(
+                data.message || `Generating descriptions...`,
+                { id: toastId },
+              );
+            }
+          };
+
+          const handleComplete = (data: {
+            success: boolean;
+            message: string;
+            trace_id?: string;
+          }) => {
+            socket.off("rubrics_generation_progress", handleProgress);
+            socket.off("rubrics_generation_complete", handleComplete);
+            socket.off("rubrics_generation_error", handleError);
+            socket.off(
+              "rubrics_tools_standard_group_descriptions_complete",
+              handleDescriptionsComplete,
+            );
+
+            if (data.success) {
+              resolve({
+                success: true,
+                message: data.message,
+                trace_id: data.trace_id,
+              });
+            } else {
+              reject(new Error(data.message || "Rubric generation failed"));
+            }
+          };
+
+          const handleError = (data: {
+            success: boolean;
+            message: string;
+            trace_id?: string;
+          }) => {
+            socket.off("rubrics_generation_progress", handleProgress);
+            socket.off("rubrics_generation_complete", handleComplete);
+            socket.off("rubrics_generation_error", handleError);
+            socket.off(
+              "rubrics_tools_standard_group_descriptions_complete",
+              handleDescriptionsComplete,
+            );
+
+            reject(new Error(data.message || "Rubric generation failed"));
+          };
+
+          const handleDescriptionsComplete = (data: {
+            success: boolean;
+            rubric_id: string;
+            updated_count: number;
+            trace_id?: string;
+            message?: string;
+            descriptions?: Array<{
+              standard_group_id: string;
+              standard_id: string;
+              description: string;
+            }>;
+          }) => {
+            // Update grid cells with generated descriptions
+            if (data.descriptions && Array.isArray(data.descriptions)) {
+              setGridCells((prevCells) => {
+                const updatedCells = [...prevCells];
+                data.descriptions!.forEach((desc) => {
+                  const cellIndex = updatedCells.findIndex(
+                    (c) =>
+                      c.standardGroupId === desc.standard_group_id &&
+                      c.standardId === desc.standard_id,
+                  );
+                  if (cellIndex >= 0) {
+                    updatedCells[cellIndex] = {
+                      ...updatedCells[cellIndex],
+                      description: desc.description,
+                    };
+                  } else {
+                    updatedCells.push({
+                      standardGroupId: desc.standard_group_id,
+                      standardId: desc.standard_id,
+                      description: desc.description,
+                    });
+                  }
+                });
+                return updatedCells;
+              });
+              toast.success(
+                `Generated ${data.updated_count} description${data.updated_count !== 1 ? "s" : ""}`,
+                { id: toastId },
+              );
+            }
+          };
+
+          socket.on("rubrics_generation_progress", handleProgress);
+          socket.on("rubrics_generation_complete", handleComplete);
+          socket.on("rubrics_generation_error", handleError);
+          socket.on(
+            "rubrics_tools_standard_group_descriptions_complete",
+            handleDescriptionsComplete,
+          );
+
+          socket.emit("rubric_generate", {
+            departmentId,
+            profileId: effectiveProfile?.id,
+            rubricId: isEditMode && rubricId ? rubricId : undefined,
+            rubricAgentId: formData.rubricAgentId!,
+            standardGroups: standardGroups.map((g) => ({
+              id: g.id,
+              name: g.name,
+              description: g.description,
+              points: g.points,
+              passPoints: g.passPoints,
+            })),
+            standards: standards.map((s) => ({
+              id: s.id,
+              name: s.name,
+              points: s.points,
+              standardGroupId: s.standardGroupId,
+            })),
+          });
+        },
+      );
+
+      if (result.success) {
+        toast.success("Rubric generation completed successfully", {
+          id: toastId,
+        });
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to generate rubric",
+        { id: toastId },
+      );
+    } finally {
+      setIsGeneratingRubric(false);
+    }
   };
 
   // Group level names by uniqueness for column headers
@@ -899,6 +1111,54 @@ export default function Rubric({
               </div>
             )}
 
+          {/* Rubric Agent Selection */}
+          {(() => {
+            const agentMapping = rubricData?.agent_mapping || {};
+            const rubricAgentIds =
+              rubricData?.valid_agent_ids?.filter((id) => {
+                const agent = agentMapping[id];
+                return agent?.roles?.includes("rubric");
+              }) || [];
+
+            const showRubricPicker = rubricAgentIds.length > 0;
+
+            if (!showRubricPicker) {
+              return null;
+            }
+
+            return (
+              <div className="space-y-2">
+                <Label htmlFor="rubricAgentId">Rubric Agent</Label>
+                {formData?.rubricAgentId !== undefined ? (
+                  <GenericPicker
+                    items={agentMapping}
+                    itemIds={rubricAgentIds}
+                    selectedIds={
+                      formData?.rubricAgentId ? [formData.rubricAgentId] : []
+                    }
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        rubricAgentId: ids[0] || null,
+                      }))
+                    }
+                    getId={(item) => (item as unknown as { id: string }).id}
+                    getLabel={(item) => item.name || ""}
+                    getSearchText={(item) =>
+                      `${item.name} ${item.description || ""}`
+                    }
+                    placeholder="Select rubric agent"
+                    disabled={isReadonly}
+                    multiSelect={false}
+                    hideSelectedChips={true}
+                    buttonClassName="w-full"
+                    groupHeading="Agents"
+                  />
+                ) : null}
+              </div>
+            );
+          })()}
+
           {/* Active Switch */}
           <div className="space-y-2 pt-2">
             <div className="flex items-center gap-2">
@@ -1064,13 +1324,11 @@ export default function Rubric({
               <Button
                 variant="default"
                 size="sm"
-                disabled={isReadonly}
-                onClick={() => {
-                  toast.info("Generate feature coming soon");
-                }}
+                disabled={isReadonly || isGeneratingRubric || !formData.rubricAgentId}
+                onClick={handleGenerateRubric}
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Generate
+                {isGeneratingRubric ? "Generating..." : "Generate"}
               </Button>
             </div>
           </CardHeader>

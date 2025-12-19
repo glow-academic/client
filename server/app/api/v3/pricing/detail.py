@@ -252,6 +252,7 @@ async def get_pricing_run_detail(
             await set_cached(
                 cache_key_val,
                 {"data": response_data.model_dump()},
+                ttl=300,
                 tags=tags,
             )
             response.headers["X-Cache-Tags"] = ",".join(tags)
@@ -370,6 +371,7 @@ async def get_pricing_run_detail(
         await set_cached(
             cache_key_val,
             {"data": response_data.model_dump()},
+            ttl=300,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)

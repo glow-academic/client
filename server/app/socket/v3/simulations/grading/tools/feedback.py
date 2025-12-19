@@ -241,4 +241,3 @@ async def feedback_tool_complete_api(
 async def feedback_tool_error_api(request: FeedbackToolErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Feedback tool error."""
     return {"success": True}
-

@@ -4,11 +4,12 @@ import json
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -83,7 +84,9 @@ async def _grading_tool_message_strength_impl(
     try:
         validated = MessageStrengthToolPayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in grading_tool_message_strength for {sid}: {e}")
+        logger.error(
+            f"Validation error in grading_tool_message_strength for {sid}: {e}"
+        )
         await message_strength_tool_error(
             MessageStrengthToolErrorPayload(
                 success=False,
@@ -276,4 +279,3 @@ async def message_strength_tool_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Message strength tool error."""
     return {"success": True}
-

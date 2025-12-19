@@ -55,6 +55,7 @@ def create_grading_tools(
 
     # Add message_strength tool
     if grade_id and message_id_map:
+
         async def message_strength(
             message_number: int = Field(
                 description="Message number (as shown in conversation history, e.g., 1, 3, 5) to add strength feedback to"
@@ -64,7 +65,7 @@ def create_grading_tools(
             ),
             highlight: list[str] | None = Field(
                 default=None,
-                description="List of sections to highlight as strengths (e.g., ['section1', 'section2'])"
+                description="List of sections to highlight as strengths (e.g., ['section1', 'section2'])",
             ),
         ) -> str:
             """Add strength feedback to a specific message.
@@ -102,7 +103,9 @@ def create_grading_tools(
                     "type": "message_strength_added",
                     "chat_id": str(chat_id),
                     "message_number": message_number,
-                    "feedback_preview": feedback[:100] + "..." if len(feedback) > 100 else feedback,
+                    "feedback_preview": feedback[:100] + "..."
+                    if len(feedback) > 100
+                    else feedback,
                 }
             )
 
@@ -122,7 +125,7 @@ def create_grading_tools(
             ),
             strike: list[dict[str, str]] | None = Field(
                 default=None,
-                description="List of find/replace pairs for strikethrough suggestions (e.g., [{'find': 'keyword', 'replace': 'better keyword'}])"
+                description="List of find/replace pairs for strikethrough suggestions (e.g., [{'find': 'keyword', 'replace': 'better keyword'}])",
             ),
         ) -> str:
             """Add improvement feedback to a specific message.
@@ -160,7 +163,9 @@ def create_grading_tools(
                     "type": "message_improvement_added",
                     "chat_id": str(chat_id),
                     "message_number": message_number,
-                    "feedback_preview": feedback[:100] + "..." if len(feedback) > 100 else feedback,
+                    "feedback_preview": feedback[:100] + "..."
+                    if len(feedback) > 100
+                    else feedback,
                 }
             )
 

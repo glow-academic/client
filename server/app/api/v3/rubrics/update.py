@@ -46,6 +46,7 @@ class UpdateRubricRequest(BaseModel):
     passPoints: int
     department_ids: list[str] = []
     standard_groups: list[StandardGroupItem] = []
+    rubric_agent_id: str | None = None
     # profileId removed - comes from X-Profile-Id header
 
 
@@ -128,6 +129,7 @@ async def update_rubric(
             department_ids,
             standard_groups_json,
             profile_id,
+            request.rubric_agent_id,
         )
         row = await conn.fetchrow(sql_query, *sql_params)
 

@@ -290,4 +290,3 @@ async def message_improvement_tool_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Message improvement tool error."""
     return {"success": True}
-

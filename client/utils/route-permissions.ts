@@ -109,14 +109,20 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
       },
       {
         path: "/analytics/pricing",
-        roles: ["admin", "superadmin"],
+        roles: ["instructional", "admin", "superadmin"],
         title: "Pricing",
         redirectTo: "/analytics/pricing",
       },
       {
         path: "/analytics/pricing/r/[runId]",
-        roles: ["admin", "superadmin"],
+        roles: ["instructional", "admin", "superadmin"],
         title: "Run",
+        redirectTo: "/analytics/pricing",
+      },
+      {
+        path: "/analytics/pricing/g/[groupRunId]",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Group",
         redirectTo: "/analytics/pricing",
       },
     ],

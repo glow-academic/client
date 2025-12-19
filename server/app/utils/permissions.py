@@ -120,14 +120,20 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
             ),
             RoutePermission(
                 path="/analytics/pricing",
-                roles=["admin", "superadmin"],
+                roles=["instructional", "admin", "superadmin"],
                 title="Pricing",
                 redirectTo="/analytics/pricing",
             ),
             RoutePermission(
                 path="/analytics/pricing/r/[runId]",
-                roles=["admin", "superadmin"],
+                roles=["instructional", "admin", "superadmin"],
                 title="Pricing Run",
+                redirectTo="/analytics/pricing",
+            ),
+            RoutePermission(
+                path="/analytics/pricing/g/[groupRunId]",
+                roles=["instructional", "admin", "superadmin"],
+                title="Pricing Group",
                 redirectTo="/analytics/pricing",
             ),
         ],

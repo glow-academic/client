@@ -1,5 +1,5 @@
 -- Update rubric with departments, standard groups, and standards in a single transaction
--- Parameters: $1=rubricId, $2=name, $3=description (nullable), $4=active, $5=points, $6=passPoints, $7=department_ids (nullable text array), $8=standard_groups (JSONB array), $9=profile_id (uuid)
+-- Parameters: $1=rubricId, $2=name, $3=description (nullable), $4=active, $5=points, $6=passPoints, $7=department_ids (nullable text array), $8=standard_groups (JSONB array), $9=profile_id (uuid), $10=rubric_agent_id (uuid, nullable)
 -- Returns: rubric_id, rubric_name, actor_name
 WITH actor_profile AS (
     SELECT
@@ -15,6 +15,7 @@ update_rubric AS (
         active = $4,
         points = $5,
         pass_points = $6,
+        rubric_agent_id = CASE WHEN $10::text IS NULL OR $10::text = '' THEN NULL ELSE $10::uuid END,
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::text as rubric_id, name as rubric_name

@@ -1,5 +1,5 @@
 -- Create rubric with departments, standard groups, and standards in a single transaction
--- Parameters: $1=name, $2=description (nullable), $3=active, $4=points, $5=passPoints, $6=department_ids (nullable text array), $7=standard_groups (JSONB array), $8=profile_id (uuid, required)
+-- Parameters: $1=name, $2=description (nullable), $3=active, $4=points, $5=passPoints, $6=department_ids (nullable text array), $7=standard_groups (JSONB array), $8=profile_id (uuid, required), $9=rubric_agent_id (uuid, nullable)
 -- Returns: rubric_id, actor_name
 -- profile_id is always a UUID (required in request body)
 actor_profile AS (
@@ -15,14 +15,16 @@ new_rubric AS (
         description,
         active,
         points,
-        pass_points
+        pass_points,
+        rubric_agent_id
     )
     VALUES (
         $1,
         COALESCE($2, ''),
         $3,
         $4,
-        $5
+        $5,
+        CASE WHEN $9::text IS NULL OR $9::text = '' THEN NULL ELSE $9::uuid END
     )
     RETURNING id::text as rubric_id
 ),

@@ -10,6 +10,8 @@ from pydantic import BaseModel
 
 # Reuse models from detail.py
 from app.api.v3.rubrics.detail import (
+    AgentMapping,
+    AgentMappingItem,
     DepartmentMappingItem,
     RubricDetailResponse,
     StandardGroupDetail,
@@ -162,6 +164,35 @@ async def get_rubric_new(
             str(did) for did in (row.get("valid_department_ids") or [])
         ]
 
+        # Get rubric_agent_id from row (may be null for new rubrics)
+        rubric_agent_id = row.get("rubric_agent_id")
+        rubric_agent_id_str = str(rubric_agent_id) if rubric_agent_id else None
+
+        # Parse agent mapping
+        agent_mapping: AgentMapping = {}
+        if row.get("agent_mapping"):
+            agent_data = row["agent_mapping"]
+            if isinstance(agent_data, str):
+                agent_data = json.loads(agent_data)
+            if isinstance(agent_data, dict):
+                for aid, adata in agent_data.items():
+                    if isinstance(adata, dict):
+                        roles = adata.get("roles", [])
+                        if isinstance(roles, str):
+                            try:
+                                roles = json.loads(roles)
+                            except json.JSONDecodeError:
+                                roles = []
+                        if not isinstance(roles, list):
+                            roles = []
+                        agent_mapping[aid] = AgentMappingItem(
+                            name=adata.get("name", ""),
+                            description=adata.get("description", ""),
+                            roles=[str(r) for r in roles],
+                        )
+
+        valid_agent_ids = [str(aid) for aid in (row.get("valid_agent_ids") or [])]
+
         response_data = RubricDetailResponse(
             name=row.get("name", ""),
             description=row.get("description", ""),
@@ -176,6 +207,9 @@ async def get_rubric_new(
             standard_groups_mapping=standard_groups_mapping,
             standards_mapping=standards_mapping,
             department_mapping=department_mapping,
+            rubric_agent_id=rubric_agent_id_str,
+            agent_mapping=agent_mapping,
+            valid_agent_ids=valid_agent_ids,
         )
 
         # Cache response

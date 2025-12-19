@@ -4381,6 +4381,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/client/rubrics/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rubric Generate Api
+         * @description Client-to-server event: Generate rubric descriptions using AI.
+         */
+        post: operations["rubric_generate_api_socket_v3_client_rubrics_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/rubrics/tools/standard_group_descriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rubric Tool Standard Group Descriptions Api
+         * @description Client-to-server event: Update standard group descriptions from rubric generation tool.
+         */
+        post: operations["rubric_tool_standard_group_descriptions_api_socket_v3_client_rubrics_tools_standard_group_descriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/server/connection_confirmed": {
         parameters: {
             query?: never;
@@ -6075,6 +6115,106 @@ export interface paths {
          * @description Server-to-client event: Error occurred while stopping eval run.
          */
         post: operations["eval_run_stop_error_api_socket_v3_server_evals_run_stop_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/rubrics/generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rubric Generation Progress Api
+         * @description Server-to-client event: Progress update for rubric generation.
+         */
+        post: operations["rubric_generation_progress_api_socket_v3_server_rubrics_generation_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/rubrics/generation_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rubric Generation Complete Api
+         * @description Server-to-client event: Rubric generation completed successfully.
+         */
+        post: operations["rubric_generation_complete_api_socket_v3_server_rubrics_generation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/rubrics/generation_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rubric Generation Error Api
+         * @description Server-to-client event: Error occurred during rubric generation.
+         */
+        post: operations["rubric_generation_error_api_socket_v3_server_rubrics_generation_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/rubrics/tools/standard_group_descriptions_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Standard Group Descriptions Tool Complete Api
+         * @description Server-to-client event: Standard group descriptions tool completed successfully.
+         */
+        post: operations["standard_group_descriptions_tool_complete_api_socket_v3_server_rubrics_tools_standard_group_descriptions_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/rubrics/tools/standard_group_descriptions_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Standard Group Descriptions Tool Error Api
+         * @description Server-to-client event: Error occurred in standard group descriptions tool.
+         */
+        post: operations["standard_group_descriptions_tool_error_api_socket_v3_server_rubrics_tools_standard_group_descriptions_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7819,6 +7959,8 @@ export interface components {
              * @default []
              */
             standard_groups: components["schemas"]["app__api__v3__rubrics__create__StandardGroupItem"][];
+            /** Rubric Agent Id */
+            rubric_agent_id?: string | null;
         };
         /**
          * CreateRubricResponse
@@ -9928,6 +10070,28 @@ export interface components {
             room?: string | null;
             /** Trace Id */
             trace_id?: string | null;
+        };
+        /**
+         * GenerateRubricPayload
+         * @description Request to generate rubric descriptions using AI.
+         */
+        GenerateRubricPayload: {
+            /** Departmentid */
+            departmentId: string;
+            /** Rubricagentid */
+            rubricAgentId: string;
+            /** Profileid */
+            profileId?: string | null;
+            /** Rubricid */
+            rubricId?: string | null;
+            /** Standardgroups */
+            standardGroups: {
+                [key: string]: unknown;
+            }[];
+            /** Standards */
+            standards: {
+                [key: string]: unknown;
+            }[];
         };
         /**
          * GenerateScenarioAIPayload
@@ -12829,6 +12993,52 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__rubrics__detail__DepartmentMappingItem"];
             };
+            /** Rubric Agent Id */
+            rubric_agent_id?: string | null;
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__rubrics__detail__AgentMappingItem"];
+            };
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
+        };
+        /**
+         * RubricGenerationCompletePayload
+         * @description Response indicating rubric generation completed successfully.
+         */
+        RubricGenerationCompletePayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * RubricGenerationErrorPayload
+         * @description Response indicating an error occurred in rubric generation.
+         */
+        RubricGenerationErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id?: string | null;
+        };
+        /**
+         * RubricGenerationProgressPayload
+         * @description Response indicating progress in rubric generation.
+         */
+        RubricGenerationProgressPayload: {
+            /** Type */
+            type: string;
+            /** Message */
+            message?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Trace Id */
+            trace_id?: string | null;
         };
         /**
          * RubricHeatmapCell
@@ -14572,6 +14782,52 @@ export interface components {
             rubricId: string;
         };
         /**
+         * StandardGroupDescriptionsToolCompletePayload
+         * @description Response indicating standard group descriptions tool completed successfully.
+         */
+        StandardGroupDescriptionsToolCompletePayload: {
+            /** Success */
+            success: boolean;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Updated Count */
+            updated_count: number;
+            /** Trace Id */
+            trace_id: string;
+            /** Message */
+            message?: string | null;
+            /** Descriptions */
+            descriptions?: {
+                [key: string]: unknown;
+            }[] | null;
+        };
+        /**
+         * StandardGroupDescriptionsToolErrorPayload
+         * @description Response indicating an error occurred in standard group descriptions tool.
+         */
+        StandardGroupDescriptionsToolErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Trace Id */
+            trace_id: string;
+        };
+        /**
+         * StandardGroupDescriptionsToolPayload
+         * @description Request to update standard group descriptions from rubric generation tool.
+         */
+        StandardGroupDescriptionsToolPayload: {
+            /** Trace Id */
+            trace_id: string;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Descriptions */
+            descriptions: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
          * StandardGroupDetail
          * @description Standard group detail for detail response.
          */
@@ -15439,6 +15695,8 @@ export interface components {
              * @default []
              */
             standard_groups: components["schemas"]["app__api__v3__rubrics__update__StandardGroupItem"][];
+            /** Rubric Agent Id */
+            rubric_agent_id?: string | null;
         };
         /**
          * UpdateRubricResponse
@@ -18646,6 +18904,18 @@ export interface components {
             description?: string | null;
             /** Points */
             points: number;
+        };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        app__api__v3__rubrics__detail__AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles: string[];
         };
         /**
          * DepartmentMappingItem
@@ -28147,6 +28417,76 @@ export interface operations {
             };
         };
     };
+    rubric_generate_api_socket_v3_client_rubrics_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateRubricPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rubric_tool_standard_group_descriptions_api_socket_v3_client_rubrics_tools_standard_group_descriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StandardGroupDescriptionsToolPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     connection_confirmed_api_socket_v3_server_connection_confirmed_post: {
         parameters: {
             query?: never;
@@ -31097,6 +31437,181 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EvalRunStopErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rubric_generation_progress_api_socket_v3_server_rubrics_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RubricGenerationProgressPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rubric_generation_complete_api_socket_v3_server_rubrics_generation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RubricGenerationCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rubric_generation_error_api_socket_v3_server_rubrics_generation_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RubricGenerationErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    standard_group_descriptions_tool_complete_api_socket_v3_server_rubrics_tools_standard_group_descriptions_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StandardGroupDescriptionsToolCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    standard_group_descriptions_tool_error_api_socket_v3_server_rubrics_tools_standard_group_descriptions_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StandardGroupDescriptionsToolErrorPayload"];
             };
         };
         responses: {

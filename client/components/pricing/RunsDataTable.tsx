@@ -348,6 +348,60 @@ export function RunsDataTable({
         },
         enableSorting: false,
       },
+      // Hidden faceting column for Model (IDs)
+      {
+        id: "modelIdFilter",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: GroupRunRow) => {
+          const modelIds = new Set<string>();
+          row.runs.forEach((run) => {
+            if (run.modelId) {
+              modelIds.add(run.modelId);
+            }
+          });
+          return Array.from(modelIds);
+        },
+      },
+      // Hidden faceting column for Profile (IDs)
+      {
+        id: "profileIdFilter",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: GroupRunRow) => {
+          const profileIds = new Set<string>();
+          row.runs.forEach((run) => {
+            if (run.profileId) {
+              profileIds.add(run.profileId);
+            }
+          });
+          return Array.from(profileIds);
+        },
+      },
+      // Hidden faceting column for Actor (Agent/Persona IDs)
+      {
+        id: "actorIdFilter",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: GroupRunRow) => {
+          const actorIds = new Set<string>();
+          row.runs.forEach((run) => {
+            if (run.agentId) {
+              actorIds.add(run.agentId);
+            }
+            if (run.personaId) {
+              actorIds.add(run.personaId);
+            }
+          });
+          return Array.from(actorIds);
+        },
+      },
     ];
 
     return cols;

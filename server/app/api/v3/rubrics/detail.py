@@ -32,6 +32,18 @@ class StandardMappingItem(BaseModel):
     points: int
 
 
+class AgentMappingItem(BaseModel):
+    """Agent mapping item with role information."""
+
+    name: str
+    description: str
+    roles: list[str]
+
+
+# Type aliases for Dict mappings
+AgentMapping = dict[str, AgentMappingItem]
+
+
 class RubricDetailRequest(BaseModel):
     """Request for rubric detail."""
 
@@ -65,6 +77,9 @@ class RubricDetailResponse(BaseModel):
     standard_groups_mapping: dict[str, dict[str, str]]
     standards_mapping: dict[str, StandardMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
+    rubric_agent_id: str | None = None
+    agent_mapping: AgentMapping
+    valid_agent_ids: list[str]
 
 
 router = APIRouter()
@@ -208,6 +223,35 @@ async def get_rubric_detail(
                 rubric={"name": rubric_name, "id": request_body.rubricId},
             )
 
+        # Get rubric_agent_id from row
+        rubric_agent_id = row.get("rubric_agent_id")
+        rubric_agent_id_str = str(rubric_agent_id) if rubric_agent_id else None
+
+        # Parse agent mapping
+        agent_mapping: AgentMapping = {}
+        if row.get("agent_mapping"):
+            agent_data = row["agent_mapping"]
+            if isinstance(agent_data, str):
+                agent_data = json.loads(agent_data)
+            if isinstance(agent_data, dict):
+                for aid, adata in agent_data.items():
+                    if isinstance(adata, dict):
+                        roles = adata.get("roles", [])
+                        if isinstance(roles, str):
+                            try:
+                                roles = json.loads(roles)
+                            except json.JSONDecodeError:
+                                roles = []
+                        if not isinstance(roles, list):
+                            roles = []
+                        agent_mapping[aid] = AgentMappingItem(
+                            name=adata.get("name", ""),
+                            description=adata.get("description", ""),
+                            roles=[str(r) for r in roles],
+                        )
+
+        valid_agent_ids = [str(aid) for aid in (row.get("valid_agent_ids") or [])]
+
         response_data = RubricDetailResponse(
             name=row.get("name", ""),
             description=row.get("description", ""),
@@ -222,6 +266,9 @@ async def get_rubric_detail(
             standard_groups_mapping=standard_groups_mapping,
             standards_mapping=standards_mapping,
             department_mapping=department_mapping,
+            rubric_agent_id=rubric_agent_id_str,
+            agent_mapping=agent_mapping,
+            valid_agent_ids=valid_agent_ids,
         )
 
         # Cache response
