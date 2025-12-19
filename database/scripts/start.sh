@@ -165,11 +165,52 @@ create_backup() {
 
 # Function to get latest backup
 # Handles both old format (restore_TIMESTAMP.sql.gz) and new format (restore_MIGRATIONNUM_TIMESTAMP.sql.gz)
+# Prioritizes backups by migration number (highest first), then by timestamp
 get_latest_backup() {
   # Check if history directory exists and has restore files
   if [[ -d "$HISTORY_DIR" ]] && ls "$HISTORY_DIR"/restore_*.sql.gz 1> /dev/null 2>&1; then
-    # Get the most recent backup by modification time (works for both formats)
-    ls -t "$HISTORY_DIR"/restore_*.sql.gz 2>/dev/null | head -1
+    # Sort backups: extract migration number, sort numerically (highest first), then by timestamp
+    # For files with migration numbers: restore_MIGRATIONNUM_TIMESTAMP.sql.gz
+    # For old format: restore_TIMESTAMP.sql.gz (treated as migration 0)
+    local latest_backup=""
+    local highest_migration=-1
+    
+    for backup_file in "$HISTORY_DIR"/restore_*.sql.gz; do
+      local filename=$(basename "$backup_file")
+      local migration_num=""
+      
+      # Extract migration number from filename
+      # New format: restore_115_20251218_171553.sql.gz -> 115
+      # Old format: restore_20251218_171553.sql.gz -> treat as 0
+      if [[ "$filename" =~ ^restore_([0-9]+)_[0-9]{8}_[0-9]{6}\.sql\.gz$ ]]; then
+        migration_num="${BASH_REMATCH[1]}"
+      elif [[ "$filename" =~ ^restore_[0-9]{8}_[0-9]{6}\.sql\.gz$ ]]; then
+        migration_num="0"
+      fi
+      
+      # Compare by migration number first
+      if [[ -n "$migration_num" ]]; then
+        if [[ "$migration_num" -gt "$highest_migration" ]]; then
+          highest_migration="$migration_num"
+          latest_backup="$backup_file"
+        elif [[ "$migration_num" -eq "$highest_migration" ]] && [[ -n "$latest_backup" ]]; then
+          # Same migration number, compare timestamps (newer wins)
+          local current_ts=$(echo "$filename" | grep -oE '[0-9]{8}_[0-9]{6}')
+          local latest_ts=$(basename "$latest_backup" | grep -oE '[0-9]{8}_[0-9]{6}')
+          if [[ -n "$current_ts" ]] && [[ -n "$latest_ts" ]] && [[ "$current_ts" > "$latest_ts" ]]; then
+            latest_backup="$backup_file"
+          fi
+        fi
+      fi
+    done
+    
+    # Return the backup with highest migration number, or fallback to modification time
+    if [[ -n "$latest_backup" ]]; then
+      echo "$latest_backup"
+    else
+      # Fallback: no migration-numbered backups found, use modification time
+      ls -t "$HISTORY_DIR"/restore_*.sql.gz 2>/dev/null | head -1
+    fi
   else
     # Return empty string if no backups found
     echo ""
