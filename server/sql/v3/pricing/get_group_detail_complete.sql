@@ -110,10 +110,23 @@ first_runs_map AS (
     FROM group_runs gr
     WHERE gr.idx = 0
 ),
+-- Map each run to its previous run (idx - 1) in the same group
+previous_runs_map AS (
+    SELECT 
+        gr_current.group_id,
+        gr_current.run_id as current_run_id,
+        gr_previous.run_id as previous_run_id
+    FROM group_runs gr_current
+    JOIN group_runs gr_previous ON gr_previous.group_id = gr_current.group_id
+        AND gr_previous.idx = gr_current.idx - 1
+    WHERE gr_current.idx > 0  -- Only non-first runs have a previous run
+),
 -- Tree traversal for messages: get all messages following conversation flow per run
 messages_with_tree AS (
     WITH RECURSIVE message_path AS (
-        -- Base case: Start from latest messages (no active children in message_tree)
+        -- Base case: Include ALL messages from current run
+        -- We include all messages from the current run, regardless of whether they have children
+        -- The recursive traversal will handle following parent links
         SELECT 
             m.id, 
             rcm.run_id,
@@ -124,7 +137,8 @@ messages_with_tree AS (
             m.completed, 
             m.updated_at,
             0 as depth,
-            m.id as path_root_id
+            m.id as path_root_id,
+            gr.idx as run_idx  -- Track run idx for ordering
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
@@ -134,19 +148,15 @@ messages_with_tree AS (
         JOIN messages m ON m.id = mr.message_id
         JOIN chat_groups cg ON cg.group_id = g.id
         JOIN chats c ON c.id = cg.chat_id AND c.id = rcm.chat_id
-        WHERE NOT EXISTS (
-            SELECT 1 FROM message_tree mt 
-            WHERE mt.parent_id = m.id AND mt.active = true
-        )
         
         UNION ALL
         
         -- Recursive case: Traverse up the tree following parent links
         -- Find parents (m) of children (mp) already in the path
-        -- For system/developer messages: allow traversing to first run's messages in same group
+        -- Limit traversal to only go back to the immediate previous run (not all the way to run 0)
         SELECT 
             m.id, 
-            mp.run_id,
+            mp.run_id,  -- Keep the child's run_id (the run we're querying for)
             mp.chat_id,
             m.role, 
             m.content, 
@@ -154,7 +164,8 @@ messages_with_tree AS (
             m.completed, 
             m.updated_at,
             mp.depth + 1 as depth,
-            mp.path_root_id
+            mp.path_root_id,
+            COALESCE(gr_parent_msg.idx, gr_current.idx) as run_idx  -- Track run idx for ordering
         FROM messages m
         JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
@@ -162,25 +173,38 @@ messages_with_tree AS (
         JOIN groups g ON g.id = rgm.group_id
         JOIN chat_groups cg ON cg.group_id = g.id
         JOIN chats c ON c.id = cg.chat_id AND c.id = mp.chat_id
-        -- For system/developer messages: check first run in same group
-        -- For other messages: check current run only
-        LEFT JOIN first_runs_map frm ON frm.group_id = g.id
+        -- Get the current run's idx and previous run's idx
+        LEFT JOIN group_runs gr_current ON gr_current.run_id = mp.run_id AND gr_current.group_id = g.id
+        LEFT JOIN previous_runs_map prm ON prm.current_run_id = mp.run_id
+        LEFT JOIN group_runs gr_parent ON gr_parent.run_id = prm.previous_run_id AND gr_parent.group_id = g.id
+        -- Check if parent message is linked to current run OR immediate previous run only
         LEFT JOIN message_runs mr_current ON mr_current.message_id = m.id AND mr_current.run_id = mp.run_id
-        LEFT JOIN message_runs mr_first ON mr_first.message_id = m.id 
-            AND mr_first.run_id = frm.first_run_id 
-            AND m.role IN ('system', 'developer')
+        LEFT JOIN message_runs mr_previous ON mr_previous.message_id = m.id 
+            AND mr_previous.run_id = prm.previous_run_id
+        -- Get parent message's run idx to limit traversal depth
+        LEFT JOIN message_runs mr_parent ON mr_parent.message_id = m.id
+        LEFT JOIN group_runs gr_parent_msg ON gr_parent_msg.run_id = mr_parent.run_id AND gr_parent_msg.group_id = g.id
         WHERE mp.depth < 1000  -- Safety limit
         AND (
-            -- Message is linked to current run (normal case)
+            -- Message is linked to current run (normal case - traverse within same run)
             mr_current.message_id IS NOT NULL
             OR
-            -- Message is system/developer and linked to first run in same group (deduplication case)
-            (m.role IN ('system', 'developer') AND mr_first.message_id IS NOT NULL)
+            -- Message is from previous runs (for non-first runs)
+            -- This handles cross-run message_tree links and allows continuing traversal within previous runs
+            -- Once we've crossed into a previous run, we can continue traversing within that run's message tree
+            -- This allows getting the full conversation context from all previous runs
+            (
+                prm.previous_run_id IS NOT NULL 
+                AND gr_current.idx > 0  -- Only for non-first runs
+                -- Allow if parent is from any previous run (idx < current idx)
+                -- This allows both cross-run links and continuing traversal within previous runs
+                AND gr_parent_msg.idx < gr_current.idx
+            )
         )
     ),
     -- Include messages without parents (backward compatibility for existing messages)
     -- Assign depth based on role to ensure proper ordering: system (3) -> developer (2) -> user (1) -> assistant (0)
-    -- For system/developer messages: also include those from first run in same group (for deduplication)
+    -- For non-first runs: also include all messages from previous run in same group
     messages_without_parents AS (
         -- Messages linked to current run
         SELECT 
@@ -199,7 +223,8 @@ messages_with_tree AS (
                 WHEN m.role = 'assistant' THEN 0
                 ELSE -1
             END as depth,
-            m.id as path_root_id
+            m.id as path_root_id,
+            gr.idx as run_idx  -- Track run idx for ordering
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
@@ -220,7 +245,9 @@ messages_with_tree AS (
         
         UNION
         
-        -- System/developer messages from first run in same group (for non-first runs)
+        -- System/developer messages from first run (for non-first runs)
+        -- These are only linked to first run but should appear in all runs
+        -- Include them regardless of whether they have children (they link to user messages)
         SELECT 
             m.id, 
             rcm.run_id,
@@ -235,7 +262,8 @@ messages_with_tree AS (
                 WHEN m.role = 'developer' THEN 2
                 ELSE -1
             END as depth,
-            m.id as path_root_id
+            m.id as path_root_id,
+            0 as run_idx  -- System/dev messages are from first run (idx=0)
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
@@ -246,10 +274,6 @@ messages_with_tree AS (
         JOIN chat_groups cg ON cg.group_id = g.id
         JOIN chats c ON c.id = cg.chat_id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
-            SELECT 1 FROM message_tree mt 
-            WHERE mt.child_id = m.id AND mt.active = true
-        )
-        AND NOT EXISTS (
             SELECT 1 FROM message_path mp 
             WHERE mp.id = m.id AND mp.run_id = rcm.run_id
         )
@@ -266,7 +290,7 @@ messages_with_tree AS (
         SELECT * FROM messages_without_parents
     )
     -- Select distinct messages ordered by conversation flow
-    -- Prefer tree-traversed messages (depth >= 0) over messages without parents (depth = -1)
+    -- Order by run_idx first (to group messages by run), then depth (to maintain conversation order)
     SELECT DISTINCT ON (am.id, am.run_id)
         am.id,
         am.run_id,
@@ -276,9 +300,10 @@ messages_with_tree AS (
         am.created_at,
         am.completed,
         am.updated_at,
-        am.depth
+        am.depth,
+        am.run_idx
     FROM all_messages am
-    ORDER BY am.id, am.run_id, am.depth DESC, am.created_at
+    ORDER BY am.id, am.run_id, am.run_idx, am.depth DESC, am.created_at
 ),
 runs_with_messages AS (
     -- Aggregate messages per run, ordered by tree traversal order (depth DESC)
@@ -295,8 +320,9 @@ runs_with_messages AS (
                     'updatedAt', mwt.updated_at,
                     'completed', mwt.completed
                 ) ORDER BY 
-                    mwt.depth DESC,
-                    mwt.created_at
+                    mwt.run_idx,  -- Order by run idx first (system/dev from run 0, then run 1, then run 2, etc.)
+                    mwt.depth DESC,  -- Then by depth (system=3, developer=2, user=1, assistant=0)
+                    mwt.created_at  -- Then by creation time within same role
             ),
             '[]'::jsonb
         ) as messages
