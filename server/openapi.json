@@ -14834,6 +14834,165 @@
         ]
       }
     },
+    "/socket/v3/client/simulations/feedback": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Grading Tool Feedback Api",
+        "description": "Client-to-server event: Create feedback for a standard group.",
+        "operationId": "grading_tool_feedback_api_socket_v3_client_simulations_feedback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackToolPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Grading Tool Feedback Api Socket V3 Client Simulations Feedback Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/simulations/message_strength": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Grading Tool Message Strength Api",
+        "description": "Client-to-server event: Add strength feedback to a message.",
+        "operationId": "grading_tool_message_strength_api_socket_v3_client_simulations_message_strength_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageStrengthToolPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Grading Tool Message Strength Api Socket V3 Client Simulations Message Strength Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/simulations/message_improvement": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Grading Tool Message Improvement Api",
+        "description": "Client-to-server event: Add improvement feedback to a message.",
+        "operationId": "grading_tool_message_improvement_api_socket_v3_client_simulations_message_improvement_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageImprovementToolPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Grading Tool Message Improvement Api Socket V3 Client Simulations Message Improvement Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
     "/socket/v3/client/simulations/message_start": {
       "post": {
         "tags": [
@@ -18508,6 +18667,324 @@
                   },
                   "type": "object",
                   "title": "Response Audio Tool Error Api Socket V3 Server Simulations Audio Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/feedback_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Feedback Tool Complete Api",
+        "description": "Server-to-client event: Feedback tool completed successfully.",
+        "operationId": "feedback_tool_complete_api_socket_v3_server_simulations_feedback_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackToolCompletePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Feedback Tool Complete Api Socket V3 Server Simulations Feedback Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/feedback_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Feedback Tool Error Api",
+        "description": "Server-to-client event: Feedback tool error.",
+        "operationId": "feedback_tool_error_api_socket_v3_server_simulations_feedback_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackToolErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Feedback Tool Error Api Socket V3 Server Simulations Feedback Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/message_strength_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Message Strength Tool Complete Api",
+        "description": "Server-to-client event: Message strength tool completed successfully.",
+        "operationId": "message_strength_tool_complete_api_socket_v3_server_simulations_message_strength_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageStrengthToolCompletePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Message Strength Tool Complete Api Socket V3 Server Simulations Message Strength Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/message_strength_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Message Strength Tool Error Api",
+        "description": "Server-to-client event: Message strength tool error.",
+        "operationId": "message_strength_tool_error_api_socket_v3_server_simulations_message_strength_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageStrengthToolErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Message Strength Tool Error Api Socket V3 Server Simulations Message Strength Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/message_improvement_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Message Improvement Tool Complete Api",
+        "description": "Server-to-client event: Message improvement tool completed successfully.",
+        "operationId": "message_improvement_tool_complete_api_socket_v3_server_simulations_message_improvement_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageImprovementToolCompletePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Message Improvement Tool Complete Api Socket V3 Server Simulations Message Improvement Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/message_improvement_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Message Improvement Tool Error Api",
+        "description": "Server-to-client event: Message improvement tool error.",
+        "operationId": "message_improvement_tool_error_api_socket_v3_server_simulations_message_improvement_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageImprovementToolErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Message Improvement Tool Error Api Socket V3 Server Simulations Message Improvement Error Post"
                 }
               }
             }
@@ -29384,6 +29861,136 @@
         "title": "FeedbackListResponse",
         "description": "Response for feedback list endpoint."
       },
+      "FeedbackToolCompletePayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "feedback_id": {
+            "type": "string",
+            "title": "Feedback Id"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "chat_id",
+          "trace_id",
+          "feedback_id"
+        ],
+        "title": "FeedbackToolCompletePayload",
+        "description": "Response indicating feedback tool completed successfully."
+      },
+      "FeedbackToolErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "chat_id",
+          "trace_id",
+          "message"
+        ],
+        "title": "FeedbackToolErrorPayload",
+        "description": "Response indicating an error occurred in feedback tool."
+      },
+      "FeedbackToolPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "grade_id": {
+            "type": "string",
+            "title": "Grade Id"
+          },
+          "standard_group_id": {
+            "type": "string",
+            "title": "Standard Group Id"
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          },
+          "feedback": {
+            "type": "string",
+            "title": "Feedback"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "sid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "trace_id",
+          "grade_id",
+          "standard_group_id",
+          "score",
+          "feedback"
+        ],
+        "title": "FeedbackToolPayload",
+        "description": "Request to create feedback for a standard group."
+      },
       "FieldConnection": {
         "properties": {
           "field_id": {
@@ -32334,6 +32941,153 @@
         ],
         "title": "MessageFeedbackReplaceItem"
       },
+      "MessageImprovementToolCompletePayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "message_feedback_id": {
+            "type": "string",
+            "title": "Message Feedback Id"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "chat_id",
+          "trace_id",
+          "message_feedback_id"
+        ],
+        "title": "MessageImprovementToolCompletePayload",
+        "description": "Response indicating message improvement tool completed successfully."
+      },
+      "MessageImprovementToolErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "chat_id",
+          "trace_id",
+          "message"
+        ],
+        "title": "MessageImprovementToolErrorPayload",
+        "description": "Response indicating an error occurred in message improvement tool."
+      },
+      "MessageImprovementToolPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "grade_id": {
+            "type": "string",
+            "title": "Grade Id"
+          },
+          "message_number": {
+            "type": "integer",
+            "title": "Message Number"
+          },
+          "feedback": {
+            "type": "string",
+            "title": "Feedback"
+          },
+          "strike": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StrikeItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strike"
+          },
+          "message_id_map": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Message Id Map"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "sid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "trace_id",
+          "grade_id",
+          "message_number",
+          "feedback",
+          "message_id_map"
+        ],
+        "title": "MessageImprovementToolPayload",
+        "description": "Request to add improvement feedback to a message."
+      },
       "MessageSentPayload": {
         "properties": {
           "message_id": {
@@ -32362,6 +33116,153 @@
         ],
         "title": "MessageSentPayload",
         "description": "Response indicating a message was sent."
+      },
+      "MessageStrengthToolCompletePayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "message_feedback_id": {
+            "type": "string",
+            "title": "Message Feedback Id"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "chat_id",
+          "trace_id",
+          "message_feedback_id"
+        ],
+        "title": "MessageStrengthToolCompletePayload",
+        "description": "Response indicating message strength tool completed successfully."
+      },
+      "MessageStrengthToolErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "chat_id",
+          "trace_id",
+          "message"
+        ],
+        "title": "MessageStrengthToolErrorPayload",
+        "description": "Response indicating an error occurred in message strength tool."
+      },
+      "MessageStrengthToolPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "grade_id": {
+            "type": "string",
+            "title": "Grade Id"
+          },
+          "message_number": {
+            "type": "integer",
+            "title": "Message Number"
+          },
+          "feedback": {
+            "type": "string",
+            "title": "Feedback"
+          },
+          "highlight": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight"
+          },
+          "message_id_map": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Message Id Map"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "sid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "trace_id",
+          "grade_id",
+          "message_number",
+          "feedback",
+          "message_id_map"
+        ],
+        "title": "MessageStrengthToolPayload",
+        "description": "Request to add strength feedback to a message."
       },
       "Method": {
         "type": "string",
@@ -42818,6 +43719,25 @@
         ],
         "title": "StopVoiceResponsePayload",
         "description": "Response from stopping a voice simulation session."
+      },
+      "StrikeItem": {
+        "properties": {
+          "find": {
+            "type": "string",
+            "title": "Find"
+          },
+          "replace": {
+            "type": "string",
+            "title": "Replace"
+          }
+        },
+        "type": "object",
+        "required": [
+          "find",
+          "replace"
+        ],
+        "title": "StrikeItem",
+        "description": "Strike/replace item for message improvement."
       },
       "TemplateInfo": {
         "properties": {

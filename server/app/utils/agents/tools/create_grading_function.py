@@ -7,12 +7,12 @@ from typing import Any
 from agents import Tool, function_tool
 from pydantic import Field
 
-from app.main import get_grading_storage
+from app.main import get_internal_sio
 from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 from app.utils.logging.db_logger import get_logger
-from app.utils.storage.request_storage import build_storage_key
 
 logger = get_logger(__name__)
+internal_sio = get_internal_sio()
 
 
 def create_grading_function(
@@ -22,6 +22,8 @@ def create_grading_function(
     total_standard_groups: int,
     emit_progress_func: Callable[[dict[str, Any]], Awaitable[None]],
     profile_id: str | None = None,
+    grade_id: str | None = None,
+    trace_id: str | None = None,
 ) -> Tool:
     """Create a function tool for grading a specific standard group."""
     safe_name = create_safe_field_name(standard_group["short_name"])
@@ -63,27 +65,21 @@ def create_grading_function(
             standard_group_name=standard_group["name"],
             full_description=full_description,
         )
-        if not profile_id:
-            return "Error: Storage configuration missing"
+        if not grade_id:
+            return "Error: Grade ID not available"
 
-        storage = get_grading_storage()
-        storage_key = build_storage_key(
-            operation_type="grading",
-            profile_id=profile_id,
-            primary_id=str(chat_id),
-        )
-
-        await storage.set(
-            storage_key, safe_name, {"score": score, "feedback": feedback}
-        )
-        await storage.set(storage_key, f"{safe_name}_progress", True)
-
-        # Count completed standard groups (exclude "summary" from count)
-        all_data = await storage.get_all(storage_key)
-        completed_count = sum(
-            1
-            for k, v in all_data.items()
-            if k.endswith("_progress") and v and k != "summary_progress"
+        # Call feedback tool handler via internal WebSocket
+        await internal_sio.emit(
+            "grading_tool_feedback",
+            {
+                "chat_id": str(chat_id),
+                "trace_id": trace_id or "grading",
+                "grade_id": grade_id,
+                "standard_group_id": str(standard_group["id"]),
+                "score": score,
+                "feedback": feedback,
+                "profile_id": profile_id,
+            },
         )
 
         # Emit progress event
@@ -97,7 +93,7 @@ def create_grading_function(
                 "feedback_preview": feedback[:100] + "..."
                 if len(feedback) > 100
                 else feedback,
-                "completed_count": completed_count,
+                "completed_count": 0,  # Will be calculated by frontend from events
                 "total_count": total_standard_groups,
             }
         )

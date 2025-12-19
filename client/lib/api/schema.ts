@@ -3801,6 +3801,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/client/simulations/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Grading Tool Feedback Api
+         * @description Client-to-server event: Create feedback for a standard group.
+         */
+        post: operations["grading_tool_feedback_api_socket_v3_client_simulations_feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/simulations/message_strength": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Grading Tool Message Strength Api
+         * @description Client-to-server event: Add strength feedback to a message.
+         */
+        post: operations["grading_tool_message_strength_api_socket_v3_client_simulations_message_strength_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/simulations/message_improvement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Grading Tool Message Improvement Api
+         * @description Client-to-server event: Add improvement feedback to a message.
+         */
+        post: operations["grading_tool_message_improvement_api_socket_v3_client_simulations_message_improvement_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/client/simulations/message_start": {
         parameters: {
             query?: never;
@@ -5155,6 +5215,126 @@ export interface paths {
          * @description Server-to-client event: Audio tool error.
          */
         post: operations["audio_tool_error_api_socket_v3_server_simulations_audio_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/feedback_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Feedback Tool Complete Api
+         * @description Server-to-client event: Feedback tool completed successfully.
+         */
+        post: operations["feedback_tool_complete_api_socket_v3_server_simulations_feedback_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/feedback_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Feedback Tool Error Api
+         * @description Server-to-client event: Feedback tool error.
+         */
+        post: operations["feedback_tool_error_api_socket_v3_server_simulations_feedback_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/message_strength_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Message Strength Tool Complete Api
+         * @description Server-to-client event: Message strength tool completed successfully.
+         */
+        post: operations["message_strength_tool_complete_api_socket_v3_server_simulations_message_strength_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/message_strength_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Message Strength Tool Error Api
+         * @description Server-to-client event: Message strength tool error.
+         */
+        post: operations["message_strength_tool_error_api_socket_v3_server_simulations_message_strength_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/message_improvement_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Message Improvement Tool Complete Api
+         * @description Server-to-client event: Message improvement tool completed successfully.
+         */
+        post: operations["message_improvement_tool_complete_api_socket_v3_server_simulations_message_improvement_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/message_improvement_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Message Improvement Tool Error Api
+         * @description Server-to-client event: Message improvement tool error.
+         */
+        post: operations["message_improvement_tool_error_api_socket_v3_server_simulations_message_improvement_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9494,6 +9674,58 @@ export interface components {
             /** Feedback */
             feedback: components["schemas"]["FeedbackItem"][];
         };
+        /**
+         * FeedbackToolCompletePayload
+         * @description Response indicating feedback tool completed successfully.
+         */
+        FeedbackToolCompletePayload: {
+            /** Success */
+            success: boolean;
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Feedback Id */
+            feedback_id: string;
+            /** Message */
+            message?: string | null;
+        };
+        /**
+         * FeedbackToolErrorPayload
+         * @description Response indicating an error occurred in feedback tool.
+         */
+        FeedbackToolErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * FeedbackToolPayload
+         * @description Request to create feedback for a standard group.
+         */
+        FeedbackToolPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Grade Id */
+            grade_id: string;
+            /** Standard Group Id */
+            standard_group_id: string;
+            /** Score */
+            score: number;
+            /** Feedback */
+            feedback: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Sid */
+            sid?: string | null;
+        };
         /** FieldConnection */
         FieldConnection: {
             /** Field Id */
@@ -10566,6 +10798,62 @@ export interface components {
             replace: string;
         };
         /**
+         * MessageImprovementToolCompletePayload
+         * @description Response indicating message improvement tool completed successfully.
+         */
+        MessageImprovementToolCompletePayload: {
+            /** Success */
+            success: boolean;
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Message Feedback Id */
+            message_feedback_id: string;
+            /** Message */
+            message?: string | null;
+        };
+        /**
+         * MessageImprovementToolErrorPayload
+         * @description Response indicating an error occurred in message improvement tool.
+         */
+        MessageImprovementToolErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * MessageImprovementToolPayload
+         * @description Request to add improvement feedback to a message.
+         */
+        MessageImprovementToolPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Grade Id */
+            grade_id: string;
+            /** Message Number */
+            message_number: number;
+            /** Feedback */
+            feedback: string;
+            /** Strike */
+            strike?: components["schemas"]["StrikeItem"][] | null;
+            /** Message Id Map */
+            message_id_map: {
+                [key: string]: number;
+            };
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Sid */
+            sid?: string | null;
+        };
+        /**
          * MessageSentPayload
          * @description Response indicating a message was sent.
          */
@@ -10578,6 +10866,62 @@ export interface components {
             message: string;
             /** Created At */
             created_at: string;
+        };
+        /**
+         * MessageStrengthToolCompletePayload
+         * @description Response indicating message strength tool completed successfully.
+         */
+        MessageStrengthToolCompletePayload: {
+            /** Success */
+            success: boolean;
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Message Feedback Id */
+            message_feedback_id: string;
+            /** Message */
+            message?: string | null;
+        };
+        /**
+         * MessageStrengthToolErrorPayload
+         * @description Response indicating an error occurred in message strength tool.
+         */
+        MessageStrengthToolErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * MessageStrengthToolPayload
+         * @description Request to add strength feedback to a message.
+         */
+        MessageStrengthToolPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Grade Id */
+            grade_id: string;
+            /** Message Number */
+            message_number: number;
+            /** Feedback */
+            feedback: string;
+            /** Highlight */
+            highlight?: string[] | null;
+            /** Message Id Map */
+            message_id_map: {
+                [key: string]: number;
+            };
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Sid */
+            sid?: string | null;
         };
         /**
          * Method
@@ -14416,6 +14760,16 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
+        };
+        /**
+         * StrikeItem
+         * @description Strike/replace item for message improvement.
+         */
+        StrikeItem: {
+            /** Find */
+            find: string;
+            /** Replace */
+            replace: string;
         };
         /**
          * TemplateInfo
@@ -26778,6 +27132,111 @@ export interface operations {
             };
         };
     };
+    grading_tool_feedback_api_socket_v3_client_simulations_feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackToolPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    grading_tool_message_strength_api_socket_v3_client_simulations_message_strength_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageStrengthToolPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    grading_tool_message_improvement_api_socket_v3_client_simulations_message_improvement_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageImprovementToolPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     simulation_message_start_api_socket_v3_client_simulations_message_start_post: {
         parameters: {
             query?: never;
@@ -29133,6 +29592,216 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AudioToolErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    feedback_tool_complete_api_socket_v3_server_simulations_feedback_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackToolCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    feedback_tool_error_api_socket_v3_server_simulations_feedback_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackToolErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_strength_tool_complete_api_socket_v3_server_simulations_message_strength_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageStrengthToolCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_strength_tool_error_api_socket_v3_server_simulations_message_strength_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageStrengthToolErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_improvement_tool_complete_api_socket_v3_server_simulations_message_improvement_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageImprovementToolCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_improvement_tool_error_api_socket_v3_server_simulations_message_improvement_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageImprovementToolErrorPayload"];
             };
         };
         responses: {

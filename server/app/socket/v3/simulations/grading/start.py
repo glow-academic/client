@@ -6,30 +6,23 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner,
+                    ToolsToFinalOutputResult, trace)
 from agents.items import TResponseInputItem
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
-from app.main import get_grading_storage, get_internal_sio, get_pool, sio
+from app.main import get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
-from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
+from app.utils.agents.tools.create_safe_field_name import \
+    create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import (
-    get_simulation_conversation_history,
-)
+from app.utils.chat.get_simulation_conversation_history import \
+    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from app.utils.storage.request_storage import build_storage_key
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -270,14 +263,12 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             input_items: list[TResponseInputItem] = []
 
             # prepare conversation history from chat_id
-            # Check if any messages have audio and if grade_voice_agent_id is available
+            # Always enable message numbering for grading so agent can reference messages
             has_audio_messages = any(msg.get("audio", False) for msg in messages)
             grade_voice_agent_id = context_row.get("grade_voice_agent_id")
 
-            # Use message numbering if audio messages exist and audio agent is configured
-            include_message_numbers = (
-                has_audio_messages and grade_voice_agent_id is not None
-            )
+            # Always enable message numbering for grading
+            include_message_numbers = True
             conversation_history, message_id_map = get_simulation_conversation_history(
                 messages, include_message_numbers=include_message_numbers
             )
@@ -413,6 +404,38 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                     room=f"simulation_{simulation_chat_id}",
                 )
 
+            # Create model run first (needed for grade record)
+            sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+            model_run_row = await conn.fetchrow(
+                sql_create_run,
+                str(department_id),
+                context["model"]["id"],
+                context["agent"]["id"],
+                "agent",
+                context["profile_id"],
+                None,  # key_id
+                str(context["agent"]["id"]),  # agent_id
+            )
+            model_run_id = uuid.UUID(model_run_row["run_id"])
+
+            # Create grade record at START with placeholder values
+            # Tools will insert feedbacks as they're called
+            sql_create_grade = load_sql("sql/v3/grading/create_grade_complete.sql")
+            grade_row = await conn.fetchrow(
+                sql_create_grade,
+                str(model_run_id),  # run_id
+                str(rubric_id),
+                "",  # description (placeholder)
+                False,  # passed (placeholder)
+                0,  # score (placeholder)
+                actual_time_taken,
+            )
+            if not grade_row:
+                raise ValueError("Failed to create simulation chat grade")
+            grade_id = uuid.UUID(grade_row["id"])
+
+            logger.info(f"Created grade record {grade_id} for chat {simulation_chat_id}")
+
             # Create grading tools for each standard group
             profile_id_str = context.get("profile_id")
             grading_tools = create_grading_tools(
@@ -421,16 +444,17 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 simulation_chat_id,
                 emit_progress_wrapper,
                 profile_id=str(profile_id_str) if profile_id_str else None,
+                grade_id=str(grade_id),
+                message_id_map=message_id_map,
+                trace_id=chat["trace_id"],
             )
 
             # Add audio grading tool if audio messages exist and audio agent is configured
             if has_audio_messages and grade_voice_agent_id:
                 from agents import function_tool
+                from app.socket.v3.simulations.grading.tools.audio import \
+                    _grading_tool_audio_impl
                 from pydantic import Field
-
-                from app.socket.v3.simulations.grading.tools.audio import (
-                    _grading_tool_audio_impl,
-                )
 
                 async def grade_audio(
                     message_numbers: list[int] = Field(
@@ -513,7 +537,8 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             ) -> ToolsToFinalOutputResult:
                 # Use grading_progress from outer scope
                 nonlocal grading_progress
-                required_tools = ["summary"]
+                # No longer require summary tool
+                required_tools = []
                 for group in standard_groups:
                     safe_name = create_safe_field_name(group["short_name"])
                     required_tools.append(safe_name)
@@ -573,19 +598,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                     error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                 raise ValueError(error_message)
 
-            # Create model run with all junction records using SQL file
-            sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
-            model_run_row = await conn.fetchrow(
-                sql_create_run,
-                str(department_id),
-                model["id"],
-                agent["id"],
-                "agent",
-                context["profile_id"],
-                None,  # key_id
-                str(agent["id"]),  # agent_id
-            )
-            model_run_id = uuid.UUID(model_run_row["run_id"])
+            # Model run already created above (before grade record)
 
             # Run the grading
             logger.info("Running grading agent...")
@@ -623,90 +636,31 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 },
             )
 
-            # Extract results from request-scoped storage
-            profile_id_str = context.get("profile_id")
-            if not profile_id_str:
-                raise ValueError("Profile ID not found in context")
-
-            storage = get_grading_storage()
-            storage_key = build_storage_key(
-                operation_type="grading",
-                profile_id=str(profile_id_str),
-                primary_id=str(simulation_chat_id),
-            )
-            grading_result = await storage.get_all(storage_key)
-
             logger.info("Grading agent completed successfully")
-            logger.info(f"Grading result keys: {list(grading_result.keys())}")
-            logger.info(f"Grading result content: {grading_result}")
 
-            # Calculate overall score from tool call results
-            overall_score = 0
-            for group in standard_groups:
-                safe_name = create_safe_field_name(group["short_name"])
-                group_data = grading_result.get(safe_name, {})
-                score = group_data.get("score", 0)
-                try:
-                    overall_score += int(score)
-                except (TypeError, ValueError):
-                    logger.warning(
-                        f"Non-integer value for {group['short_name']} ('{score}'); treating as 0"
-                    )
+            # Calculate overall score from feedbacks in database
+            sql_get_feedbacks = """
+                SELECT total
+                FROM feedbacks
+                WHERE grade_id = $1::uuid
+            """
+            feedback_rows = await conn.fetch(sql_get_feedbacks, str(grade_id))
+            overall_score = sum(row["total"] for row in feedback_rows)
 
             passed = overall_score >= rubric["pass_points"]
 
-            # Get summary from tool call results
-            summary = grading_result.get("summary", "")
+            # Get description from final output (no summary tool anymore)
+            summary = getattr(result, "final_output", None) or ""
 
-            # Save grading results using SQL files
-            # 1. Create grade record
-            sql_create_grade = load_sql("sql/v3/grading/create_grade_complete.sql")
-            grade_row = await conn.fetchrow(
-                sql_create_grade,
-                str(simulation_chat_id),
-                str(rubric_id),
+            # Update grade record with final values
+            sql_update_grade = load_sql("sql/v3/grading/update_grade_final.sql")
+            await conn.execute(
+                sql_update_grade,
+                str(grade_id),
                 summary,
                 passed,
                 overall_score,
-                actual_time_taken,
             )
-            if not grade_row:
-                raise ValueError("Failed to create simulation chat grade")
-            grade_id = uuid.UUID(grade_row["id"])
-
-            # 2. Create feedback records
-            feedback_records = []
-            for group in standard_groups:
-                safe_name = create_safe_field_name(group["short_name"])
-                group_data = grading_result.get(safe_name, {})
-                group_score = group_data.get("score", 0)
-                group_feedback = group_data.get("feedback", "")
-
-                # Find the corresponding standard for this score
-                group_standards = [
-                    s for s in standards if s["standard_group_id"] == group["id"]
-                ]
-                matching_standard = None
-                for standard in group_standards:
-                    if standard["points"] == group_score:
-                        matching_standard = standard
-                        break
-
-                if matching_standard:
-                    feedback_records.append(
-                        {
-                            "standard_id": str(matching_standard["id"]),
-                            "total": group_score,
-                            "feedback": group_feedback,
-                        }
-                    )
-
-            if feedback_records:
-                feedbacks_json = json.dumps(feedback_records)
-                sql_create_feedbacks = load_sql(
-                    "sql/v3/grading/create_feedbacks_complete.sql"
-                )
-                await conn.execute(sql_create_feedbacks, str(grade_id), feedbacks_json)
 
             # 3. Mark chat as completed
             sql_mark_completed = """
