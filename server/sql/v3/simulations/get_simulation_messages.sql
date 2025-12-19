@@ -91,7 +91,7 @@ all_messages AS (
     SELECT * FROM messages_without_parents
 )
 -- Select distinct messages (in case of multiple paths), ordered by conversation flow
--- Order by created_at to maintain chronological order
+-- Order by depth first to maintain tree structure, then created_at for chronological order within same depth
 -- The tree traversal ensures we get all messages in the active conversation path
 SELECT DISTINCT ON (am.id)
     am.id::text,
@@ -105,4 +105,4 @@ SELECT DISTINCT ON (am.id)
     ma.upload_id::text as upload_id
 FROM all_messages am
 LEFT JOIN message_audio ma ON ma.message_id = am.id
-ORDER BY am.id, am.created_at
+ORDER BY am.id, am.depth DESC, am.created_at

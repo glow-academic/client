@@ -199,7 +199,8 @@ messages_with_tree AS (
         am.content,
         am.created_at,
         am.completed,
-        am.updated_at
+        am.updated_at,
+        am.depth
     FROM all_messages am
     ORDER BY am.id, am.run_id, am.created_at
 ),
@@ -216,7 +217,7 @@ runs_with_messages AS (
                     'createdAt', mwt.created_at,
                     'updatedAt', mwt.updated_at,
                     'completed', mwt.completed
-                ) ORDER BY mwt.chat_id, mwt.created_at
+                ) ORDER BY mwt.chat_id, mwt.depth DESC, mwt.created_at
             ),
             '[]'::jsonb
         ) as messages

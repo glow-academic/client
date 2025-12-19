@@ -11,8 +11,11 @@ import type { PricingGroupDetailOut } from "@/app/(main)/analytics/pricing/g/[gr
 import Markdown from "@/components/common/chat/markdown/Markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import type { components } from "@/lib/api/schema";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -80,30 +83,72 @@ const formatCost = (cost: number): string => {
 };
 
 export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
-  const { runs, modelMapping, agentMapping, profileMapping } = groupDetail;
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
+  const [showDeveloperPrompt, setShowDeveloperPrompt] = useState(false);
+
+  // This component only handles group responses (has 'runs' property)
+  // Type assertion is safe here since this component is specifically for groups
+  const isGroupResponse = "runs" in groupDetail;
+  const groupDetailTyped = useMemo(() => {
+    return isGroupResponse
+      ? (groupDetail as Extract<PricingGroupDetailOut, { runs: unknown }>)
+      : null;
+  }, [groupDetail, isGroupResponse]);
+
+  const runs = useMemo(() => groupDetailTyped?.runs ?? [], [groupDetailTyped]);
+  const modelMapping = groupDetailTyped?.modelMapping ?? {};
+  const agentMapping = groupDetailTyped?.agentMapping ?? {};
+  const profileMapping = groupDetailTyped?.profileMapping ?? {};
 
   // Sort runs chronologically
   const sortedRuns = useMemo(() => {
+    if (!isGroupResponse || runs.length === 0) {
+      return [];
+    }
     return [...runs].sort(
       (a, b) =>
         new Date(a.run.createdAt).getTime() -
         new Date(b.run.createdAt).getTime()
     );
-  }, [runs]);
+  }, [runs, isGroupResponse]);
 
   // Get current run
   const currentRun = sortedRuns[currentRunIndex];
+
+  // Filter messages based on toggle switches
+  type MessageItem =
+    components["schemas"]["app__api__v3__pricing__detail__MessageItem"];
+  const filteredMessages = useMemo(() => {
+    if (!currentRun) {
+      return [];
+    }
+    return currentRun.messages.filter((message: MessageItem) => {
+      const role = message.role.toLowerCase();
+      if (role === "system" && !showSystemPrompt) {
+        return false;
+      }
+      if (role === "developer" && !showDeveloperPrompt) {
+        return false;
+      }
+      return true;
+    });
+  }, [currentRun, showSystemPrompt, showDeveloperPrompt]);
+
+  if (!isGroupResponse) {
+    return null; // This component only handles group responses
+  }
+
   if (!currentRun) {
     return null;
   }
 
-  const { run, messages } = currentRun;
+  const { run } = currentRun;
   // Messages are already ordered by message_tree from server, no need to sort
 
   const modelName =
     run.modelId && modelMapping[run.modelId]
-      ? modelMapping[run.modelId].name
+      ? (modelMapping[run.modelId]?.["name"] ?? run.modelId)
       : run.modelId || "Unknown";
   const agentName =
     run.agentId && agentMapping[run.agentId]
@@ -120,9 +165,39 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
       <div className="flex flex-col border rounded-lg p-6 bg-card max-h-[700px] min-h-0 overflow-hidden">
         {/* Run header */}
         <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-2">
-            Run {currentRunIndex + 1} of {sortedRuns.length}
-          </h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold">
+              Run {currentRunIndex + 1} of {sortedRuns.length}
+            </h3>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="show-system-prompt"
+                  checked={showSystemPrompt}
+                  onCheckedChange={setShowSystemPrompt}
+                />
+                <Label
+                  htmlFor="show-system-prompt"
+                  className="text-sm cursor-pointer"
+                >
+                  Show system prompt
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="show-developer-prompt"
+                  checked={showDeveloperPrompt}
+                  onCheckedChange={setShowDeveloperPrompt}
+                />
+                <Label
+                  htmlFor="show-developer-prompt"
+                  className="text-sm cursor-pointer"
+                >
+                  Show developer prompt
+                </Label>
+              </div>
+            </div>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
             <div>
               <div className="text-sm text-muted-foreground">Cost</div>
@@ -173,13 +248,13 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
         {/* Messages list */}
         <ScrollArea className="border rounded-lg h-[500px] min-h-0">
           <div className="space-y-4 p-4">
-            {messages.length === 0 ? (
+            {filteredMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-muted-foreground">
                 <MessageSquare className="h-12 w-12 mb-4 opacity-50" />
                 <p className="text-sm">No messages found for this run</p>
               </div>
             ) : (
-              messages.map((message) => {
+              filteredMessages.map((message: MessageItem) => {
                 const isUser = message.role.toLowerCase() === "user";
                 const RoleIcon = getRoleIcon(message.role);
                 const roleLabel = getRoleLabel(message.role);
