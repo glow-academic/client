@@ -38,6 +38,10 @@ from .grading import (
 from .grading import (
     server_router as grading_server_router,
 )
+from .streaming import (
+    client_router as streaming_client_router,
+    server_router as streaming_server_router,
+)
 
 client_router = APIRouter(prefix="/simulations", tags=["socket-client"])
 server_router = APIRouter(prefix="/simulations", tags=["socket-server"])
@@ -48,6 +52,7 @@ client_router.include_router(leave_client_router)
 client_router.include_router(text_client_router)
 client_router.include_router(voice_client_router)
 client_router.include_router(grading_client_router)
+client_router.include_router(streaming_client_router)
 
 server_router.include_router(enter_server_router)
 server_router.include_router(join_server_router)
@@ -55,3 +60,4 @@ server_router.include_router(leave_server_router)
 server_router.include_router(text_server_router)
 server_router.include_router(voice_server_router)
 server_router.include_router(grading_server_router)
+server_router.include_router(streaming_server_router)

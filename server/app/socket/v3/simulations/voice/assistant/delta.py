@@ -13,13 +13,17 @@ from app.main import (
     get_simulation_tool_calls_locks,
     sio,
 )
+from app.socket.v3.simulations.streaming.message import (
+    _simulation_message_start_impl,
+    _simulation_message_token_impl,
+)
+from app.socket.v3.simulations.streaming.tool_call import (
+    _simulation_tool_call_start_impl,
+    _simulation_tool_call_token_impl,
+)
 from app.socket.v3.simulations.text.send import (
-    SimulationMessageTokenPayload,
-    SimulationNewMessagePayload,
     extract_new_message_chars,
     extract_persona_from_json,
-    simulation_message_token,
-    simulation_new_message,
 )
 from app.utils.agents.tools.create_persona_tools import find_persona_by_name
 from app.utils.logging.db_logger import get_logger
@@ -218,28 +222,21 @@ async def _simulation_voice_assistant_delta_impl(
                         "completed": False,
                     }
                     
-                    # Create tool call in database
+                    # Create tool call in database via unified handler
                     if run_id:
                         try:
-                            sql_create_tool_call = load_sql(
-                                "sql/v3/tool_calls/create_tool_call.sql"
+                            db_tool_call_id_str = await _simulation_tool_call_start_impl(
+                                sid,
+                                {
+                                    "chat_id": chat_id_str,
+                                    "run_id": str(run_id),
+                                    "call_id": call_id,
+                                    "tool_name": "speak",
+                                },
+                                conn=conn,
                             )
-                            tool_call_row = await conn.fetchrow(
-                                sql_create_tool_call,
-                                call_id,
-                                "speak",
-                            )
-                            if tool_call_row:
-                                tool_calls_dict[chat_id_str][call_id]["db_tool_call_id"] = tool_call_row["id"]
-                                # Link tool call to run
-                                sql_link_tool_call = load_sql(
-                                    "sql/v3/tool_calls/link_tool_call_to_run.sql"
-                                )
-                                await conn.execute(
-                                    sql_link_tool_call,
-                                    str(tool_call_row["id"]),
-                                    run_id,
-                                )
+                            if db_tool_call_id_str:
+                                tool_calls_dict[chat_id_str][call_id]["db_tool_call_id"] = uuid.UUID(db_tool_call_id_str)  # type: ignore[assignment]
                         except Exception as e:
                             logger.warning(
                                 f"Failed to create tool call in database: {e}"
@@ -256,16 +253,17 @@ async def _simulation_voice_assistant_delta_impl(
                 tool_call_state["arguments_raw"] += delta
                 new_raw = tool_call_state["arguments_raw"]
                 
-                # Update tool call arguments in database
+                # Update tool call arguments in database via unified handler
                 if tool_call_state.get("db_tool_call_id"):
                     try:
-                        sql_update_args = load_sql(
-                            "sql/v3/tool_calls/update_tool_call_arguments.sql"
-                        )
-                        await conn.execute(
-                            sql_update_args,
-                            str(tool_call_state["db_tool_call_id"]),
-                            new_raw,
+                        await _simulation_tool_call_token_impl(
+                            sid,
+                            {
+                                "tool_call_id": str(tool_call_state["db_tool_call_id"]),
+                                "chat_id": chat_id_str,
+                                "arguments_raw": new_raw,
+                            },
+                            conn=conn,
                         )
                     except Exception as e:
                         logger.warning(
@@ -290,144 +288,7 @@ async def _simulation_voice_assistant_delta_impl(
 
                     # Create DB message if not created yet
                     if tool_call_state["db_message_id"] is None:
-                        sql_create_message = load_sql(
-                            "sql/v3/simulations/create_message.sql"
-                        )
-                        assistant_message_row = await conn.fetchrow(
-                            sql_create_message, "assistant", "", False, None
-                        )
-                        db_message_id = assistant_message_row["id"]
-                        assistant_created_at = assistant_message_row["created_at"]
-                        tool_call_state["db_message_id"] = db_message_id
-
-                        # Ensure assistant message created_at is after latest user message
-                        # This fixes ordering issues in voice mode where messages are created concurrently
-                        latest_user_message_row = await conn.fetchrow(
-                            """
-                            SELECT m.created_at
-                            FROM messages m
-                            JOIN message_runs mr ON mr.message_id = m.id
-                            JOIN runs r ON r.id = mr.run_id
-                            JOIN group_runs gr ON gr.run_id = r.id
-                            JOIN groups g ON g.id = gr.group_id
-                            JOIN chats c ON c.group_id = g.id
-                            WHERE c.id = $1::uuid
-                              AND m.role = 'user'
-                              AND m.id != $2::uuid
-                            ORDER BY m.created_at DESC
-                            LIMIT 1
-                            """,
-                            chat_id_uuid,
-                            db_message_id,
-                        )
-
-                        if latest_user_message_row:
-                            user_created_at = latest_user_message_row["created_at"]
-                            # If user message was created after or very close to assistant message,
-                            # update assistant message created_at to be after user message
-                            # Use 1ms offset to ensure proper ordering
-                            if user_created_at >= assistant_created_at:
-                                await conn.execute(
-                                    """
-                                    UPDATE messages
-                                    SET created_at = $1::timestamp + INTERVAL '1 millisecond'
-                                    WHERE id = $2::uuid
-                                    """,
-                                    user_created_at,
-                                    db_message_id,
-                                )
-                                # Fetch updated created_at for emission
-                                updated_row = await conn.fetchrow(
-                                    "SELECT created_at FROM messages WHERE id = $1::uuid",
-                                    db_message_id,
-                                )
-                                if updated_row:
-                                    assistant_created_at = updated_row["created_at"]
-                                logger.info(
-                                    f"Updated assistant message {db_message_id} created_at to be after "
-                                    f"user message {user_created_at} to ensure proper ordering"
-                                )
-
-                        # Link message to run if run_id exists
-                        if tool_call_state.get("run_id"):
-                            sql_link = load_sql(
-                                "sql/v3/simulations/link_message_to_run.sql"
-                            )
-                            await conn.execute(
-                                sql_link,
-                                str(db_message_id),
-                                str(tool_call_state["run_id"]),
-                            )
-
-                        # Link to persona if we have it
-                        if tool_call_state["persona_so_far"]:
-                            persona_match = find_persona_by_name(
-                                tool_call_state["persona_so_far"],
-                                tool_call_state["personas"],
-                            )
-                            if persona_match:
-                                persona_id, _ = persona_match
-                                sql_link_persona = load_sql(
-                                    "sql/v3/simulations/link_message_to_persona.sql"
-                                )
-                                try:
-                                    await conn.execute(
-                                        sql_link_persona,
-                                        str(db_message_id),
-                                        str(persona_id),
-                                    )
-                                except Exception as link_err:
-                                    logger.warning(
-                                        f"Failed to link message to persona: {link_err}"
-                                    )
-
-                        # Create branch from latest message (which may be user or assistant)
-                        # This ensures sequential branching: User1 -> Assistant1 -> Assistant2
-                        # Query finds message with no active children, excluding current message
-                        latest_message_row = await conn.fetchrow(
-                            """
-                            SELECT m.id
-                            FROM messages m
-                            JOIN message_runs mr ON mr.message_id = m.id
-                            JOIN runs r ON r.id = mr.run_id
-                            JOIN group_runs gr ON gr.run_id = r.id
-                            JOIN groups g ON g.id = gr.group_id
-                            JOIN chats c ON c.group_id = g.id
-                            WHERE c.id = $1::uuid
-                              AND m.id != $2::uuid
-                              AND NOT EXISTS (
-                                  SELECT 1 FROM message_tree mt 
-                                  WHERE mt.parent_id = m.id AND mt.active = true
-                              )
-                            ORDER BY m.created_at DESC
-                            LIMIT 1
-                            """,
-                            chat_id_uuid,
-                            db_message_id,
-                        )
-
-                        # Use latest message as parent (ensures sequential branching),
-                        # fallback to original parent_message_id
-                        parent_id_str = None
-                        if latest_message_row and latest_message_row.get("id"):
-                            parent_id_str = str(latest_message_row["id"])
-                        elif tool_call_state["parent_message_id"]:
-                            parent_id_str = str(tool_call_state["parent_message_id"])
-
-                        if parent_id_str:
-                            assistant_id_str = str(db_message_id)
-                            if parent_id_str != assistant_id_str:
-                                sql_branch = load_sql(
-                                    "sql/v3/simulations/create_message_branch.sql"
-                                )
-                                await conn.execute(
-                                    sql_branch, parent_id_str, assistant_id_str
-                                )
-                                logger.info(
-                                    f"Created branch from message {parent_id_str} to assistant message {assistant_id_str}"
-                                )
-
-                        # Emit new message event
+                        # Resolve persona_id if we have persona_so_far
                         persona_id_str = None
                         if tool_call_state["persona_so_far"]:
                             persona_match = find_persona_by_name(
@@ -437,39 +298,40 @@ async def _simulation_voice_assistant_delta_impl(
                             if persona_match:
                                 persona_id_str = str(persona_match[0])
 
-                        await simulation_new_message(
-                            SimulationNewMessagePayload(
-                                message_id=str(db_message_id),
-                                chat_id=chat_id_str,
-                                role="assistant",
-                                content="",
-                                completed=False,
-                                created_at=assistant_created_at.isoformat(),
-                                persona_id=persona_id_str,
-                            ),
-                            room=f"simulation_{chat_id_uuid}",
+                        # Use unified streaming handler (handles created_at ordering automatically)
+                        db_message_id_str = await _simulation_message_start_impl(
+                            sid,
+                            {
+                                "chat_id": chat_id_str,
+                                "run_id": str(tool_call_state["run_id"]) if tool_call_state.get("run_id") else None,
+                                "role": "assistant",
+                                "content": "",
+                                "completed": False,
+                                "parent_message_id": str(tool_call_state["parent_message_id"]) if tool_call_state["parent_message_id"] else None,
+                                "persona_id": persona_id_str,
+                            },
+                            conn=conn,
                         )
+                        if db_message_id_str:
+                            db_message_id = uuid.UUID(db_message_id_str)
+                            tool_call_state["db_message_id"] = db_message_id
+                        else:
+                            logger.error("Failed to create message via unified handler")
+                            # Skip token update if message creation failed
+                            return
 
-                    # Update DB with accumulated content
-                    sql_update = load_sql(
-                        "sql/v3/simulations/update_message_content.sql"
-                    )
-                    await conn.execute(
-                        sql_update,
-                        tool_call_state["message_so_far"],
-                        str(tool_call_state["db_message_id"]),
-                    )
-
-                    # Emit token event
-                    await simulation_message_token(
-                        SimulationMessageTokenPayload(
-                            message_id=str(tool_call_state["db_message_id"]),
-                            chat_id=chat_id_str,
-                            token=new_message_chars,
-                            accumulated_content=tool_call_state["message_so_far"],
-                        ),
-                        room=f"simulation_{chat_id_uuid}",
-                    )
+                    # Update DB with accumulated content and emit token via unified handler
+                    if tool_call_state.get("db_message_id"):
+                        await _simulation_message_token_impl(
+                            sid,
+                            {
+                                "message_id": str(tool_call_state["db_message_id"]),
+                                "chat_id": chat_id_str,
+                                "token": new_message_chars,
+                                "accumulated_content": tool_call_state["message_so_far"],
+                            },
+                            conn=conn,
+                        )
 
                 logger.debug(
                     f"Processed delta for call_id={call_id}, "

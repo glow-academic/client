@@ -7,6 +7,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, get_voice_speech_timestamps, sio
+from app.socket.v3.simulations.streaming.message import (
+    _simulation_message_start_impl,
+)
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
@@ -107,61 +110,31 @@ async def _simulation_voice_user_transcript_impl(
                     f"No stored timestamp found for item_id={data.item_id}, using NOW()"
                 )
 
-            # Create user message with stored timestamp (or NOW() if not found)
-            sql_create_message = load_sql("sql/v3/simulations/create_message.sql")
-            user_message_row = await conn.fetchrow(
-                sql_create_message, "user", transcript, True, speech_started_at
+            # Create user message with stored timestamp via unified handler
+            db_message_id_str = await _simulation_message_start_impl(
+                sid,
+                {
+                    "chat_id": str(chat_id_uuid),
+                    "run_id": str(run_id_for_message),
+                    "role": "user",
+                    "content": transcript,
+                    "completed": True,
+                    "created_at": speech_started_at.isoformat() if speech_started_at else None,
+                },
+                conn=conn,
             )
-            user_message = {
-                "id": user_message_row["id"],
-                "created_at": user_message_row["created_at"],
-            }
-
-            # Link message to run via message_runs
-            sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
-            await conn.execute(
-                sql_link,
-                str(user_message["id"]),
-                run_id_for_message,
+            if not db_message_id_str:
+                logger.error("Failed to create user message via unified handler")
+                return
+            
+            user_message_id = uuid.UUID(db_message_id_str)
+            
+            # Get created_at for emission
+            message_row = await conn.fetchrow(
+                "SELECT created_at FROM messages WHERE id = $1::uuid",
+                user_message_id,
             )
-
-            # Create branch from latest message to new user message (if latest exists)
-            # Now uses groups/group_runs pattern (instead of chat_runs)
-            latest_message_row = await conn.fetchrow(
-                """
-                SELECT m.id
-                FROM messages m
-                JOIN message_runs mr ON mr.message_id = m.id
-                JOIN runs r ON r.id = mr.run_id
-                JOIN group_runs gr ON gr.run_id = r.id
-                JOIN groups g ON g.id = gr.group_id
-                JOIN chats c ON c.group_id = g.id
-                WHERE c.id = $1::uuid
-                  AND m.id != $2::uuid
-                  AND NOT EXISTS (
-                      SELECT 1 FROM message_tree mt 
-                      WHERE mt.parent_id = m.id AND mt.active = true
-                  )
-                ORDER BY m.created_at DESC
-                LIMIT 1
-                """,
-                chat_id_uuid,
-                user_message["id"],
-            )
-            if latest_message_row and latest_message_row["id"] != user_message["id"]:
-                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
-                await conn.execute(
-                    sql_branch,
-                    str(latest_message_row["id"]),
-                    str(user_message["id"]),
-                )
-                logger.info(
-                    f"Created branch from message {latest_message_row['id']} to user message {user_message['id']}"
-                )
-            else:
-                logger.info(
-                    f"Created user message {user_message['id']} (no previous message to branch from)"
-                )
+            created_at = message_row["created_at"] if message_row else None
 
             # Link audio upload to message if upload_id is provided
             if data.upload_id:
@@ -172,11 +145,11 @@ async def _simulation_voice_user_transcript_impl(
                     )
                     await conn.execute(
                         sql_insert_message_audio,
-                        str(user_message["id"]),
+                        str(user_message_id),
                         str(upload_id_uuid),
                     )
                     logger.info(
-                        f"Linked audio upload {data.upload_id} to message {user_message['id']}"
+                        f"Linked audio upload {data.upload_id} to message {user_message_id}"
                     )
                 except ValueError as e:
                     logger.warning(
@@ -187,40 +160,24 @@ async def _simulation_voice_user_transcript_impl(
                         f"Error linking audio upload to message: {e}", exc_info=True
                     )
 
-            # Emit user message to connected clients (same pattern as voice_user_message.py)
+            # Note: simulation_new_message is already emitted by _simulation_message_start_impl
+            # Emit message_sent event for tour progression and cross-component communication
             from app.socket.v3.simulations.text.send import (
                 MessageSentPayload,
-                SimulationNewMessagePayload,
                 message_sent,
-                simulation_new_message,
             )
-
-            logger.info(f"Emitting user message to room simulation_{chat_id_uuid}")
-            await simulation_new_message(
-                SimulationNewMessagePayload(
-                    message_id=str(user_message["id"]),
-                    chat_id=str(chat_id_uuid),
-                    role="user",
-                    content=transcript,
-                    completed=True,
-                    created_at=user_message["created_at"].isoformat(),
-                ),
-                room=room,
-            )
-
-            # Emit message_sent event for tour progression and cross-component communication
             await message_sent(
                 MessageSentPayload(
-                    message_id=str(user_message["id"]),
+                    message_id=str(user_message_id),
                     chat_id=str(chat_id_uuid),
                     message=transcript,
-                    created_at=user_message["created_at"].isoformat(),
+                    created_at=created_at.isoformat() if created_at else "",
                 ),
                 room=room,
             )
 
             logger.info(
-                f"Created user message {user_message['id']} for chat {chat_id} via simulation_voice_user_transcript"
+                f"Created user message {user_message_id} for chat {chat_id} via simulation_voice_user_transcript"
             )
 
     except ValueError as e:

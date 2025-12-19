@@ -14724,6 +14724,324 @@
         ]
       }
     },
+    "/socket/v3/client/simulations/message_start": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Simulation Message Start Api",
+        "description": "Internal event: Start a new message.",
+        "operationId": "simulation_message_start_api_socket_v3_client_simulations_message_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationMessageStartPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Message Start Api Socket V3 Client Simulations Message Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/simulations/message_token": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Simulation Message Token Api",
+        "description": "Internal event: Update message with token.",
+        "operationId": "simulation_message_token_api_socket_v3_client_simulations_message_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationMessageTokenPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Message Token Api Socket V3 Client Simulations Message Token Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/simulations/message_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Simulation Message Complete Api",
+        "description": "Internal event: Complete a message.",
+        "operationId": "simulation_message_complete_api_socket_v3_client_simulations_message_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationMessageCompleteInternalPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Message Complete Api Socket V3 Client Simulations Message Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/simulations/tool_call_start": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Simulation Tool Call Start Api",
+        "description": "Internal event: Start a new tool call.",
+        "operationId": "simulation_tool_call_start_api_socket_v3_client_simulations_tool_call_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationToolCallStartPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Tool Call Start Api Socket V3 Client Simulations Tool Call Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/simulations/tool_call_token": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Simulation Tool Call Token Api",
+        "description": "Internal event: Update tool call arguments.",
+        "operationId": "simulation_tool_call_token_api_socket_v3_client_simulations_tool_call_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationToolCallTokenPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Tool Call Token Api Socket V3 Client Simulations Tool Call Token Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/simulations/tool_call_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Simulation Tool Call Complete Api",
+        "description": "Internal event: Complete a tool call.",
+        "operationId": "simulation_tool_call_complete_api_socket_v3_client_simulations_tool_call_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationToolCallCompletePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Tool Call Complete Api Socket V3 Client Simulations Tool Call Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
     "/socket/v3/client/scenarios/generate": {
       "post": {
         "tags": [
@@ -40531,6 +40849,41 @@
         "title": "SimulationMessageCancelledPayload",
         "description": "Response indicating a simulation message was cancelled."
       },
+      "SimulationMessageCompleteInternalPayload": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "final_content": {
+            "type": "string",
+            "title": "Final Content"
+          },
+          "sid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "chat_id",
+          "final_content"
+        ],
+        "title": "SimulationMessageCompleteInternalPayload",
+        "description": "Internal event to complete a message."
+      },
       "SimulationMessageCompletePayload": {
         "properties": {
           "message_id": {
@@ -40573,6 +40926,101 @@
         ],
         "title": "SimulationMessageErrorPayload",
         "description": "Response indicating an error occurred in a simulation message."
+      },
+      "SimulationMessageStartPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "default": ""
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed",
+            "default": false
+          },
+          "parent_message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Message Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "sid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "role"
+        ],
+        "title": "SimulationMessageStartPayload",
+        "description": "Internal event to start a new message."
       },
       "SimulationMessageTokenPayload": {
         "properties": {
@@ -40843,6 +41291,116 @@
         ],
         "title": "SimulationTextEndPayload",
         "description": "Request to end a simulation chat session."
+      },
+      "SimulationToolCallCompletePayload": {
+        "properties": {
+          "tool_call_id": {
+            "type": "string",
+            "title": "Tool Call Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "arguments_raw": {
+            "type": "string",
+            "title": "Arguments Raw"
+          },
+          "sid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool_call_id",
+          "chat_id",
+          "arguments_raw"
+        ],
+        "title": "SimulationToolCallCompletePayload",
+        "description": "Internal event to complete a tool call."
+      },
+      "SimulationToolCallStartPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "call_id": {
+            "type": "string",
+            "title": "Call Id"
+          },
+          "tool_name": {
+            "type": "string",
+            "title": "Tool Name"
+          },
+          "sid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "run_id",
+          "call_id",
+          "tool_name"
+        ],
+        "title": "SimulationToolCallStartPayload",
+        "description": "Internal event to start a new tool call."
+      },
+      "SimulationToolCallTokenPayload": {
+        "properties": {
+          "tool_call_id": {
+            "type": "string",
+            "title": "Tool Call Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "arguments_raw": {
+            "type": "string",
+            "title": "Arguments Raw"
+          },
+          "sid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool_call_id",
+          "chat_id",
+          "arguments_raw"
+        ],
+        "title": "SimulationToolCallTokenPayload",
+        "description": "Internal event for tool call arguments update."
       },
       "SimulationsData": {
         "properties": {

@@ -3761,6 +3761,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/client/simulations/message_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Message Start Api
+         * @description Internal event: Start a new message.
+         */
+        post: operations["simulation_message_start_api_socket_v3_client_simulations_message_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/simulations/message_token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Message Token Api
+         * @description Internal event: Update message with token.
+         */
+        post: operations["simulation_message_token_api_socket_v3_client_simulations_message_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/simulations/message_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Message Complete Api
+         * @description Internal event: Complete a message.
+         */
+        post: operations["simulation_message_complete_api_socket_v3_client_simulations_message_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/simulations/tool_call_start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Tool Call Start Api
+         * @description Internal event: Start a new tool call.
+         */
+        post: operations["simulation_tool_call_start_api_socket_v3_client_simulations_tool_call_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/simulations/tool_call_token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Tool Call Token Api
+         * @description Internal event: Update tool call arguments.
+         */
+        post: operations["simulation_tool_call_token_api_socket_v3_client_simulations_tool_call_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/simulations/tool_call_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Tool Call Complete Api
+         * @description Internal event: Complete a tool call.
+         */
+        post: operations["simulation_tool_call_complete_api_socket_v3_client_simulations_tool_call_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/client/scenarios/generate": {
         parameters: {
             query?: never;
@@ -13468,6 +13588,20 @@ export interface components {
             final_content: string;
         };
         /**
+         * SimulationMessageCompleteInternalPayload
+         * @description Internal event to complete a message.
+         */
+        SimulationMessageCompleteInternalPayload: {
+            /** Message Id */
+            message_id: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Final Content */
+            final_content: string;
+            /** Sid */
+            sid?: string | null;
+        };
+        /**
          * SimulationMessageCompletePayload
          * @description Response indicating a simulation message was completed.
          */
@@ -13488,6 +13622,38 @@ export interface components {
             chat_id: string;
             /** Error */
             error: string;
+        };
+        /**
+         * SimulationMessageStartPayload
+         * @description Internal event to start a new message.
+         */
+        SimulationMessageStartPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** Role */
+            role: string;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+            /** Parent Message Id */
+            parent_message_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Persona Name */
+            persona_name?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Sid */
+            sid?: string | null;
         };
         /**
          * SimulationMessageTokenPayload
@@ -13619,6 +13785,50 @@ export interface components {
              * @default assistant
              */
             chat_type: string;
+        };
+        /**
+         * SimulationToolCallCompletePayload
+         * @description Internal event to complete a tool call.
+         */
+        SimulationToolCallCompletePayload: {
+            /** Tool Call Id */
+            tool_call_id: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Arguments Raw */
+            arguments_raw: string;
+            /** Sid */
+            sid?: string | null;
+        };
+        /**
+         * SimulationToolCallStartPayload
+         * @description Internal event to start a new tool call.
+         */
+        SimulationToolCallStartPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Call Id */
+            call_id: string;
+            /** Tool Name */
+            tool_name: string;
+            /** Sid */
+            sid?: string | null;
+        };
+        /**
+         * SimulationToolCallTokenPayload
+         * @description Internal event for tool call arguments update.
+         */
+        SimulationToolCallTokenPayload: {
+            /** Tool Call Id */
+            tool_call_id: string;
+            /** Chat Id */
+            chat_id: string;
+            /** Arguments Raw */
+            arguments_raw: string;
+            /** Sid */
+            sid?: string | null;
         };
         /**
          * SimulationsData
@@ -26267,6 +26477,216 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SimulationGradingStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_message_start_api_socket_v3_client_simulations_message_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationMessageStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_message_token_api_socket_v3_client_simulations_message_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationMessageTokenPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_message_complete_api_socket_v3_client_simulations_message_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationMessageCompleteInternalPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_tool_call_start_api_socket_v3_client_simulations_tool_call_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationToolCallStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_tool_call_token_api_socket_v3_client_simulations_tool_call_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationToolCallTokenPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_tool_call_complete_api_socket_v3_client_simulations_tool_call_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationToolCallCompletePayload"];
             };
         };
         responses: {

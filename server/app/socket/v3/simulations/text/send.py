@@ -10,6 +10,12 @@ from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
 from app.main import (get_hint_storage, get_internal_sio, get_pool,
                       get_simulation_tool_calls_dict, sio)
+from app.socket.v3.simulations.streaming.message import (
+    _simulation_message_complete_impl, _simulation_message_start_impl,
+    _simulation_message_token_impl)
+from app.socket.v3.simulations.streaming.tool_call import (
+    _simulation_tool_call_complete_impl, _simulation_tool_call_start_impl,
+    _simulation_tool_call_token_impl)
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
@@ -1576,27 +1582,20 @@ Tool Usage Instructions:
                                                         "completed": False,
                                                     }
                                                     
-                                                    # Create tool call in database
+                                                    # Create tool call in database via unified handler
                                                     try:
-                                                        sql_create_tool_call = load_sql(
-                                                            "sql/v3/tool_calls/create_tool_call.sql"
+                                                        db_tool_call_id_str = await _simulation_tool_call_start_impl(
+                                                            sid,
+                                                            {
+                                                                "chat_id": chat_id_str,
+                                                                "run_id": str(model_run_id),
+                                                                "call_id": call_id or real_item_id,
+                                                                "tool_name": tool_name,
+                                                            },
+                                                            conn=conn,
                                                         )
-                                                        tool_call_row = await conn.fetchrow(
-                                                            sql_create_tool_call,
-                                                            call_id or real_item_id,
-                                                            tool_name,
-                                                        )
-                                                        if tool_call_row:
-                                                            tool_calls_dict[chat_id_str][real_item_id]["db_tool_call_id"] = tool_call_row["id"]
-                                                            # Link tool call to run
-                                                            sql_link_tool_call = load_sql(
-                                                                "sql/v3/tool_calls/link_tool_call_to_run.sql"
-                                                            )
-                                                            await conn.execute(
-                                                                sql_link_tool_call,
-                                                                str(tool_call_row["id"]),
-                                                                str(model_run_id),
-                                                            )
+                                                        if db_tool_call_id_str:
+                                                            tool_calls_dict[chat_id_str][real_item_id]["db_tool_call_id"] = uuid.UUID(db_tool_call_id_str)  # type: ignore[assignment]
                                                     except Exception as e:
                                                         logger.warning(
                                                             f"Failed to create tool call in database: {e}"
@@ -1689,16 +1688,17 @@ Tool Usage Instructions:
                                     tool_call_state["arguments_raw"] += arguments_delta
                                     new_raw = tool_call_state["arguments_raw"]
                                     
-                                    # Update tool call arguments in database
+                                    # Update tool call arguments in database via unified handler
                                     if tool_call_state.get("db_tool_call_id"):
                                         try:
-                                            sql_update_args = load_sql(
-                                                "sql/v3/tool_calls/update_tool_call_arguments.sql"
-                                            )
-                                            await conn.execute(
-                                                sql_update_args,
-                                                str(tool_call_state["db_tool_call_id"]),
-                                                new_raw,
+                                            await _simulation_tool_call_token_impl(
+                                                sid,
+                                                {
+                                                    "tool_call_id": str(tool_call_state["db_tool_call_id"]),
+                                                    "chat_id": chat_id_str,
+                                                    "arguments_raw": new_raw,
+                                                },
+                                                conn=conn,
                                             )
                                         except Exception as e:
                                             logger.warning(
@@ -1729,70 +1729,7 @@ Tool Usage Instructions:
 
                                         # Create DB message if not created yet
                                         if tool_call_state["db_message_id"] is None:
-                                            sql_create_message = load_sql(
-                                                "sql/v3/simulations/create_message.sql"
-                                            )
-                                            assistant_message_row = await conn.fetchrow(
-                                                sql_create_message,
-                                                "assistant",
-                                                "",
-                                                False,
-                                                None,
-                                            )
-                                            db_message_id = assistant_message_row["id"]
-                                            tool_call_state["db_message_id"] = (
-                                                db_message_id
-                                            )
-
-                                            # Link message to run
-                                            sql_link = load_sql(
-                                                "sql/v3/simulations/link_message_to_run.sql"
-                                            )
-                                            await conn.execute(
-                                                sql_link,
-                                                str(db_message_id),
-                                                str(model_run_id),
-                                            )
-
-                                            # Link to persona if we have it
-                                            if tool_call_state["persona_so_far"]:
-                                                persona_match = find_persona_by_name(
-                                                    tool_call_state["persona_so_far"],
-                                                    personas,
-                                                )
-                                                if persona_match:
-                                                    persona_id, _ = persona_match
-                                                    sql_link_persona = load_sql(
-                                                        "sql/v3/simulations/link_message_to_persona.sql"
-                                                    )
-                                                    try:
-                                                        await conn.execute(
-                                                            sql_link_persona,
-                                                            str(db_message_id),
-                                                            str(persona_id),
-                                                        )
-                                                    except Exception as link_err:
-                                                        logger.warning(
-                                                            f"Failed to link message to persona: {link_err}"
-                                                        )
-
-                                            # Create branch if parent exists
-                                            if tool_call_state["parent_message_id"]:
-                                                parent_id_str = str(
-                                                    tool_call_state["parent_message_id"]
-                                                )
-                                                assistant_id_str = str(db_message_id)
-                                                if parent_id_str != assistant_id_str:
-                                                    sql_branch = load_sql(
-                                                        "sql/v3/simulations/create_message_branch.sql"
-                                                    )
-                                                    await conn.execute(
-                                                        sql_branch,
-                                                        parent_id_str,
-                                                        assistant_id_str,
-                                                    )
-
-                                            # Emit new message event
+                                            # Resolve persona_id if we have persona_so_far
                                             persona_id_str = None
                                             if tool_call_state["persona_so_far"]:
                                                 persona_match = find_persona_by_name(
@@ -1800,48 +1737,39 @@ Tool Usage Instructions:
                                                     personas,
                                                 )
                                                 if persona_match:
-                                                    persona_id_str = str(
-                                                        persona_match[0]
-                                                    )
+                                                    persona_id_str = str(persona_match[0])
 
-                                            await simulation_new_message(
-                                                SimulationNewMessagePayload(
-                                                    message_id=str(db_message_id),
-                                                    chat_id=chat_id_str,
-                                                    role="assistant",
-                                                    content="",
-                                                    completed=False,
-                                                    created_at=assistant_message_row[
-                                                        "created_at"
-                                                    ].isoformat(),
-                                                    persona_id=persona_id_str,
-                                                ),
-                                                room=f"simulation_{chat_id_uuid}",
+                                            # Use unified streaming handler
+                                            db_message_id_str = await _simulation_message_start_impl(
+                                                sid,
+                                                {
+                                                    "chat_id": chat_id_str,
+                                                    "run_id": str(model_run_id),
+                                                    "role": "assistant",
+                                                    "content": "",
+                                                    "completed": False,
+                                                    "parent_message_id": str(tool_call_state["parent_message_id"]) if tool_call_state["parent_message_id"] else None,
+                                                    "persona_id": persona_id_str,
+                                                },
+                                                conn=conn,
                                             )
+                                            if db_message_id_str:
+                                                db_message_id = uuid.UUID(db_message_id_str)
+                                                tool_call_state["db_message_id"] = db_message_id
+                                            else:
+                                                logger.error("Failed to create message via unified handler")
+                                                continue
 
-                                        # Update DB with accumulated content
-                                        sql_update = load_sql(
-                                            "sql/v3/simulations/update_message_content.sql"
-                                        )
-                                        await conn.execute(
-                                            sql_update,
-                                            tool_call_state["message_so_far"],
-                                            str(tool_call_state["db_message_id"]),
-                                        )
-
-                                        # Emit token event
-                                        await simulation_message_token(
-                                            SimulationMessageTokenPayload(
-                                                message_id=str(
-                                                    tool_call_state["db_message_id"]
-                                                ),
-                                                chat_id=chat_id_str,
-                                                token=new_message_chars,
-                                                accumulated_content=tool_call_state[
-                                                    "message_so_far"
-                                                ],
-                                            ),
-                                            room=f"simulation_{chat_id_uuid}",
+                                        # Update DB with accumulated content and emit token via unified handler
+                                        await _simulation_message_token_impl(
+                                            sid,
+                                            {
+                                                "message_id": str(tool_call_state["db_message_id"]),
+                                                "chat_id": chat_id_str,
+                                                "token": new_message_chars,
+                                                "accumulated_content": tool_call_state["message_so_far"],
+                                            },
+                                            conn=conn,
                                         )
 
                             # Check for tool call completion via raw_response_event with output_item.done
@@ -1913,13 +1841,15 @@ Tool Usage Instructions:
                                             # Finalize tool call in database
                                             if tool_call_state.get("db_tool_call_id"):
                                                 try:
-                                                    sql_finalize = load_sql(
-                                                        "sql/v3/tool_calls/finalize_tool_call.sql"
-                                                    )
-                                                    await conn.execute(
-                                                        sql_finalize,
-                                                        str(tool_call_state["db_tool_call_id"]),
-                                                        tool_call_state["arguments_raw"],
+                                                    # Finalize tool call via unified handler
+                                                    await _simulation_tool_call_complete_impl(
+                                                        sid,
+                                                        {
+                                                            "tool_call_id": str(tool_call_state["db_tool_call_id"]),
+                                                            "chat_id": chat_id_str,
+                                                            "arguments_raw": tool_call_state["arguments_raw"],
+                                                        },
+                                                        conn=conn,
                                                     )
                                                 except Exception as e:
                                                     logger.warning(
@@ -2063,29 +1993,15 @@ Tool Usage Instructions:
                                                     final_message = tool_call_state[
                                                         "message_so_far"
                                                     ]
-                                                    sql_complete = load_sql(
-                                                        "sql/v3/simulations/complete_message.sql"
-                                                    )
-                                                    await conn.execute(
-                                                        sql_complete,
-                                                        final_message,
-                                                        str(
-                                                            tool_call_state[
-                                                                "db_message_id"
-                                                            ]
-                                                        ),
-                                                    )
-                                                    await simulation_message_complete(
-                                                        SimulationMessageCompletePayload(
-                                                            message_id=str(
-                                                                tool_call_state[
-                                                                    "db_message_id"
-                                                                ]
-                                                            ),
-                                                            chat_id=chat_id_str,
-                                                            final_content=final_message,
-                                                        ),
-                                                        room=f"simulation_{chat_id_uuid}",
+                                                    # Complete message via unified handler
+                                                    await _simulation_message_complete_impl(
+                                                        sid,
+                                                        {
+                                                            "message_id": str(tool_call_state["db_message_id"]),
+                                                            "chat_id": chat_id_str,
+                                                            "final_content": final_message,
+                                                        },
+                                                        conn=conn,
                                                     )
                                                 del tool_calls_dict[chat_id_str][
                                                     tool_call_id
@@ -2142,13 +2058,15 @@ Tool Usage Instructions:
                                             # Finalize tool call in database
                                             if tool_call_state.get("db_tool_call_id"):
                                                 try:
-                                                    sql_finalize = load_sql(
-                                                        "sql/v3/tool_calls/finalize_tool_call.sql"
-                                                    )
-                                                    await conn.execute(
-                                                        sql_finalize,
-                                                        str(tool_call_state["db_tool_call_id"]),
-                                                        tool_call_state["arguments_raw"],
+                                                    # Finalize tool call via unified handler
+                                                    await _simulation_tool_call_complete_impl(
+                                                        sid,
+                                                        {
+                                                            "tool_call_id": str(tool_call_state["db_tool_call_id"]),
+                                                            "chat_id": chat_id_str,
+                                                            "arguments_raw": tool_call_state["arguments_raw"],
+                                                        },
+                                                        conn=conn,
                                                     )
                                                 except Exception as e:
                                                     logger.warning(
@@ -2292,29 +2210,15 @@ Tool Usage Instructions:
                                                     final_message = tool_call_state[
                                                         "message_so_far"
                                                     ]
-                                                    sql_complete = load_sql(
-                                                        "sql/v3/simulations/complete_message.sql"
-                                                    )
-                                                    await conn.execute(
-                                                        sql_complete,
-                                                        final_message,
-                                                        str(
-                                                            tool_call_state[
-                                                                "db_message_id"
-                                                            ]
-                                                        ),
-                                                    )
-                                                    await simulation_message_complete(
-                                                        SimulationMessageCompletePayload(
-                                                            message_id=str(
-                                                                tool_call_state[
-                                                                    "db_message_id"
-                                                                ]
-                                                            ),
-                                                            chat_id=chat_id_str,
-                                                            final_content=final_message,
-                                                        ),
-                                                        room=f"simulation_{chat_id_uuid}",
+                                                    # Complete message via unified handler
+                                                    await _simulation_message_complete_impl(
+                                                        sid,
+                                                        {
+                                                            "message_id": str(tool_call_state["db_message_id"]),
+                                                            "chat_id": chat_id_str,
+                                                            "final_content": final_message,
+                                                        },
+                                                        conn=conn,
                                                     )
                                                     del tool_calls_dict[chat_id_str][
                                                         tool_call_id
@@ -2588,7 +2492,7 @@ Tool Usage Instructions:
                                             try:
                                                 db_message_id = tool_call_state.get(
                                                     "db_message_id"
-                                                )
+                                                )  # type: ignore[assignment]
                                                 if (
                                                     db_message_id
                                                     and tool_call_state.get(

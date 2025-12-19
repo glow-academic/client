@@ -15,11 +15,12 @@ from app.main import (
     get_simulation_tool_calls_locks,
     sio,
 )
-from app.socket.v3.simulations.text.send import (
-    SimulationMessageCompletePayload,
-    SimulationNewMessagePayload,
-    simulation_message_complete,
-    simulation_new_message,
+from app.socket.v3.simulations.streaming.message import (
+    _simulation_message_start_impl,
+    _simulation_message_complete_impl,
+)
+from app.socket.v3.simulations.streaming.tool_call import (
+    _simulation_tool_call_complete_impl,
 )
 from app.utils.agents.tools.create_persona_tools import find_persona_by_name
 from app.utils.logging.db_logger import get_logger
@@ -170,13 +171,15 @@ async def _simulation_voice_assistant_done_impl(
                 # Finalize tool call in database
                 if tool_call_state.get("db_tool_call_id"):
                     try:
-                        sql_finalize = load_sql(
-                            "sql/v3/tool_calls/finalize_tool_call.sql"
-                        )
-                        await conn.execute(
-                            sql_finalize,
-                            str(tool_call_state["db_tool_call_id"]),
-                            data.arguments,  # Final complete JSON string
+                        # Finalize tool call via unified handler
+                        await _simulation_tool_call_complete_impl(
+                            sid,
+                            {
+                                "tool_call_id": str(tool_call_state["db_tool_call_id"]),
+                                "chat_id": chat_id_str,
+                                "arguments_raw": data.arguments,  # Final complete JSON string
+                            },
+                            conn=conn,
                         )
                     except Exception as e:
                         logger.warning(
@@ -268,15 +271,6 @@ async def _simulation_voice_assistant_done_impl(
                     logger.warning(
                         f"No DB message found for call_id={call_id}, creating one now"
                     )
-                    sql_create_message = load_sql(
-                        "sql/v3/simulations/create_message.sql"
-                    )
-                    assistant_message_row = await conn.fetchrow(
-                        sql_create_message, "assistant", "", False, None
-                    )
-                    db_message_id = assistant_message_row["id"]
-                    tool_call_state["db_message_id"] = db_message_id
-
                     # Get run_id (now uses groups/group_runs)
                     sql_get_latest_run = load_sql("sql/v3/simulations/get_latest_run_for_chat.sql")
                     latest_run_row = await conn.fetchrow(
@@ -285,123 +279,48 @@ async def _simulation_voice_assistant_done_impl(
                     )
                     run_id = latest_run_row["run_id"] if latest_run_row else None
 
-                    # Link message to run if run_id exists
-                    if run_id:
-                        sql_link = load_sql(
-                            "sql/v3/simulations/link_message_to_run.sql"
-                        )
-                        await conn.execute(sql_link, str(db_message_id), str(run_id))
-
-                    # Link to persona
-                    sql_link_persona = load_sql(
-                        "sql/v3/simulations/link_message_to_persona.sql"
+                    # Use unified streaming handler to create message
+                    db_message_id_str = await _simulation_message_start_impl(
+                        sid,
+                        {
+                            "chat_id": chat_id_str,
+                            "run_id": str(run_id) if run_id else None,
+                            "role": "assistant",
+                            "content": "",
+                            "completed": False,
+                            "parent_message_id": str(tool_call_state["parent_message_id"]) if tool_call_state["parent_message_id"] else None,
+                            "persona_id": persona_id,
+                        },
+                        conn=conn,
                     )
-                    try:
-                        await conn.execute(
-                            sql_link_persona, str(db_message_id), persona_id
-                        )
-                    except Exception as link_err:
-                        logger.warning(f"Failed to link message to persona: {link_err}")
-
-                    # Create branch from latest message (which may be user or assistant)
-                    # This ensures sequential branching: User1 -> Assistant1 -> Assistant2
-                    # Query finds message with no active children, excluding current message
-                    latest_message_row = await conn.fetchrow(
-                        """
-                        SELECT m.id
-                        FROM messages m
-                        JOIN message_runs mr ON mr.message_id = m.id
-                        JOIN runs r ON r.id = mr.run_id
-                        JOIN group_runs gr ON gr.run_id = r.id
-                        JOIN groups g ON g.id = gr.group_id
-                        JOIN chats c ON c.group_id = g.id
-                        WHERE c.id = $1::uuid
-                          AND m.id != $2::uuid
-                          AND NOT EXISTS (
-                              SELECT 1 FROM message_tree mt 
-                              WHERE mt.parent_id = m.id AND mt.active = true
-                          )
-                        ORDER BY m.created_at DESC
-                        LIMIT 1
-                        """,
-                        chat_id_uuid,
-                        db_message_id,
-                    )
-
-                    # Use latest message as parent (ensures sequential branching),
-                    # fallback to original parent_message_id
-                    parent_id_str = None
-                    if latest_message_row and latest_message_row.get("id"):
-                        parent_id_str = str(latest_message_row["id"])
-                    elif tool_call_state["parent_message_id"]:
-                        parent_id_str = str(tool_call_state["parent_message_id"])
-
-                    if parent_id_str:
-                        assistant_id_str = str(db_message_id)
-                        if parent_id_str != assistant_id_str:
-                            sql_branch = load_sql(
-                                "sql/v3/simulations/create_message_branch.sql"
-                            )
-                            await conn.execute(
-                                sql_branch, parent_id_str, assistant_id_str
-                            )
-                            logger.info(
-                                f"Created branch from message {parent_id_str} to assistant message {assistant_id_str}"
-                            )
-
-                    # Emit new message event FIRST (before completing) to match simulation mode
-                    await simulation_new_message(
-                        SimulationNewMessagePayload(
-                            message_id=str(db_message_id),
-                            chat_id=chat_id_str,
-                            role="assistant",
-                            content="",  # Empty initially, will be updated
-                            completed=False,
-                            created_at=assistant_message_row["created_at"].isoformat(),
-                            persona_id=persona_id,
-                        ),
-                        room=f"simulation_{chat_id_uuid}",
-                    )
+                    if db_message_id_str:
+                        db_message_id = uuid.UUID(db_message_id_str)
+                        tool_call_state["db_message_id"] = db_message_id
+                    else:
+                        logger.error("Failed to create message via unified handler")
+                        return
 
                 db_message_id = tool_call_state["db_message_id"]
 
                 # Use final message content (may be more complete than accumulated)
                 final_content = message_content.strip()
 
-                # Update message in database with final content
-                sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
-                await conn.execute(sql_update, final_content, str(db_message_id))
-
-                # Complete message
-                sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
-                await conn.execute(sql_complete, final_content, str(db_message_id))
+                # Complete message via unified handler (handles DB update and client emission)
+                await _simulation_message_complete_impl(
+                    sid,
+                    {
+                        "message_id": str(db_message_id),
+                        "chat_id": chat_id_str,
+                        "final_content": final_content,
+                    },
+                    conn=conn,
+                )
 
                 # Add message ID to accumulator for voice_response_done handler
                 if chat_id_str not in _voice_message_ids:
                     _voice_message_ids[chat_id_str] = []
                 if str(db_message_id) not in _voice_message_ids[chat_id_str]:
                     _voice_message_ids[chat_id_str].append(str(db_message_id))
-
-                # Emit completion event
-                await simulation_message_complete(
-                    SimulationMessageCompletePayload(
-                        message_id=str(db_message_id),
-                        chat_id=chat_id_str,
-                        final_content=final_content,
-                    ),
-                    room=f"simulation_{chat_id_uuid}",
-                )
-
-                # Emit updated message with completed=True
-                # Get created_at from database
-                message_row = await conn.fetchrow(
-                    "SELECT created_at FROM messages WHERE id = $1::uuid", db_message_id
-                )
-                created_at_iso = (
-                    message_row["created_at"].isoformat()
-                    if message_row and message_row.get("created_at")
-                    else ""
-                )
 
                 await simulation_new_message(
                     SimulationNewMessagePayload(
