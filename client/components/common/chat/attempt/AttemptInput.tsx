@@ -130,6 +130,12 @@ export default function AttemptInput({
   const assistantRecorderRef = useRef<MediaRecorder | null>(null);
   const assistantAudioChunksRef = useRef<BlobPart[]>([]);
   const assistantRecordingItemIdRef = useRef<string | null>(null);
+  // Track call_id -> message_id mapping for linking audio uploads
+  const callIdToMessageIdRef = useRef<Map<string, string>>(new Map());
+  // Track pending uploads waiting for message_id (call_id -> upload_id)
+  const pendingAudioUploadsRef = useRef<Map<string, string>>(new Map());
+  // Track the last call_id for final message linking
+  const lastCallIdRef = useRef<string | null>(null);
 
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
@@ -293,6 +299,9 @@ export default function AttemptInput({
 
     processedItemIdsRef.current = new Set(); // reset
     audioUploadIdRef.current.clear(); // reset audio upload mappings
+    callIdToMessageIdRef.current.clear(); // reset call_id -> message_id mappings
+    pendingAudioUploadsRef.current.clear(); // reset pending audio uploads
+    lastCallIdRef.current = null; // reset last call_id
 
     // Cleanup audio recording
     try {
@@ -986,6 +995,82 @@ export default function AttemptInput({
             return;
           }
 
+          // Track this as the last call_id for final message linking
+          lastCallIdRef.current = evt.call_id;
+
+          // Stop recording temporarily to splice audio for this tool call
+          const isRecordingActive =
+            assistantRecorderRef.current &&
+            assistantRecorderRef.current.state !== "inactive";
+
+          if (isRecordingActive && assistantRecorderRef.current) {
+            const recorder = assistantRecorderRef.current;
+
+            try {
+              recorder.stop();
+
+              recorder.onstop = async () => {
+                try {
+                  // Get accumulated chunks for this tool call
+                  const chunks = [...assistantAudioChunksRef.current];
+
+                  if (chunks.length > 0) {
+                    const blob = new Blob(chunks, {
+                      type: "audio/webm",
+                    });
+
+                    // Clear chunks for next tool call
+                    assistantAudioChunksRef.current = [];
+
+                    // Upload audio segment
+                    const uploadId = await uploadAudioWithTus(blob, {
+                      filename: `assistant-${evt.call_id}.webm`,
+                      filetype: "audio/webm",
+                      role: "assistant",
+                      subfolder: "audio",
+                    });
+
+                    // Store pending upload - will link when message_id arrives
+                    pendingAudioUploadsRef.current.set(evt.call_id, uploadId);
+
+                    // eslint-disable-next-line no-console
+                    console.log(
+                      "[Voice] Uploaded audio segment for tool call:",
+                      {
+                        call_id: evt.call_id,
+                        upload_id: uploadId,
+                      }
+                    );
+                  }
+
+                  // Restart recording for next tool call
+                  if (assistantRecorderRef.current) {
+                    assistantAudioChunksRef.current = [];
+                    assistantRecorderRef.current.start();
+                    // eslint-disable-next-line no-console
+                    console.log(
+                      "[Voice] Restarted recording for next tool call"
+                    );
+                  }
+                } catch (err) {
+                  // eslint-disable-next-line no-console
+                  console.error("[Voice] Failed to upload audio segment:", err);
+                  // Still restart recording even if upload failed
+                  if (assistantRecorderRef.current) {
+                    assistantAudioChunksRef.current = [];
+                    assistantRecorderRef.current.start();
+                  }
+                }
+              };
+            } catch (err) {
+              // eslint-disable-next-line no-console
+              console.error(
+                "[Voice] Error stopping recorder for tool call:",
+                err
+              );
+            }
+          }
+
           // Forward done event to server
           socket.emit("simulation_voice_assistant_done", {
             chat_id: currentChat.id,
@@ -1407,8 +1492,7 @@ export default function AttemptInput({
             image_tokens: 0,
           };
 
-          // Stop assistant audio recording if active
-          // Simplified: Just stop any active recording and use this response_id
+          // Handle final audio segment (remaining audio after all tool calls)
           const isRecordingActive =
             assistantRecorderRef.current &&
             assistantRecorderRef.current.state !== "inactive";
@@ -1416,45 +1500,45 @@ export default function AttemptInput({
           if (isRecordingActive && assistantRecorderRef.current) {
             const recorder = assistantRecorderRef.current;
 
-            // Set response_id for this recording
-            assistantRecordingItemIdRef.current = evt.response.id;
-
             try {
               recorder.stop();
 
               recorder.onstop = async () => {
                 try {
-                  const blob = new Blob(assistantAudioChunksRef.current, {
-                    type: "audio/webm",
-                  });
+                  // Get remaining chunks for final message
+                  const chunks = [...assistantAudioChunksRef.current];
                   assistantAudioChunksRef.current = [];
-                  const responseId = assistantRecordingItemIdRef.current;
-                  assistantRecordingItemIdRef.current = null;
 
-                  if (!socket || !currentChat?.id) {
-                    // eslint-disable-next-line no-console
-                    console.warn(
-                      "[Voice] Missing socket or chat_id, cannot upload assistant audio"
+                  if (chunks.length > 0 && lastCallIdRef.current) {
+                    const blob = new Blob(chunks, {
+                      type: "audio/webm",
+                    });
+
+                    // Upload final audio segment
+                    const uploadId = await uploadAudioWithTus(blob, {
+                      filename: `assistant-final-${evt.response.id}.webm`,
+                      filetype: "audio/webm",
+                      role: "assistant",
+                      subfolder: "audio",
+                    });
+
+                    // Store pending upload for final message (will link when message_id arrives)
+                    // Use a special key to identify final message
+                    pendingAudioUploadsRef.current.set(
+                      `final-${lastCallIdRef.current}`,
+                      uploadId
                     );
-                    return;
+
+                    // eslint-disable-next-line no-console
+                    console.log("[Voice] Uploaded final audio segment:", {
+                      response_id: evt.response.id,
+                      upload_id: uploadId,
+                    });
                   }
-
-                  const uploadId = await uploadAudioWithTus(blob, {
-                    filename: `assistant-${responseId}.webm`,
-                    filetype: "audio/webm",
-                    role: "assistant",
-                    subfolder: "audio",
-                  });
-
-                  // eslint-disable-next-line no-console
-                  console.log("[Voice] Uploaded assistant audio:", {
-                    response_id: responseId,
-                    upload_id: uploadId,
-                  });
                 } catch (err) {
                   // eslint-disable-next-line no-console
                   console.error(
-                    "[Voice] Failed to upload assistant audio:",
+                    "[Voice] Failed to upload final audio segment:",
                     err
                   );
                 }
@@ -1462,7 +1546,7 @@ export default function AttemptInput({
             } catch (err) {
               // eslint-disable-next-line no-console
               console.error(
-                "[Voice] Error stopping assistant audio recorder:",
+                "[Voice] Error stopping recorder for final audio:",
                 err
               );
             }
@@ -1494,6 +1578,75 @@ export default function AttemptInput({
               output_tokens: evt.response.usage.output_tokens,
             },
           });
+        }
+      );
+
+      // Listen for simulation_new_message events to link audio uploads to messages
+      socket.on(
+        "simulation_new_message",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          role: string;
+          content: string;
+          completed: boolean;
+          created_at: string;
+          persona_id?: string;
+        }) => {
+          // Only handle assistant messages for voice mode
+          if (data.role !== "assistant" || data.chat_id !== currentChat?.id) {
+            return;
+          }
+
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Received simulation_new_message:", {
+            message_id: data.message_id,
+            chat_id: data.chat_id,
+            role: data.role,
+          });
+
+          // Try to find matching call_id for this message
+          // We'll match by order: first pending upload -> first message
+          const pendingEntries = Array.from(
+            pendingAudioUploadsRef.current.entries()
+          );
+
+          if (pendingEntries.length > 0) {
+            // Get the first pending upload (oldest)
+            const firstEntry = pendingEntries[0];
+            if (!firstEntry) {
+              return;
+            }
+            const [callId, uploadId] = firstEntry;
+
+            // Remove from pending
+            pendingAudioUploadsRef.current.delete(callId);
+
+            // Store mapping
+            if (!callId.startsWith("final-")) {
+              callIdToMessageIdRef.current.set(callId, data.message_id);
+            }
+
+            // Link audio upload to message
+            socket.emit("simulation_voice_assistant_audio_link", {
+              chat_id: data.chat_id,
+              message_id: data.message_id,
+              upload_id: uploadId,
+            });
+
+            // eslint-disable-next-line no-console
+            console.log("[Voice] Linked audio upload to message:", {
+              call_id: callId,
+              message_id: data.message_id,
+              upload_id: uploadId,
+            });
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[Voice] No pending audio upload found for message:",
+              data.message_id
+            );
+          }
         }
       );
 

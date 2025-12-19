@@ -14500,6 +14500,63 @@
         ]
       }
     },
+    "/socket/v3/client/simulations/voice/assistant/audio_link": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Simulation Voice Assistant Audio Link Api",
+        "description": "Client-to-server event: Link audio upload to assistant message.",
+        "operationId": "simulation_voice_assistant_audio_link_api_socket_v3_client_simulations_voice_assistant_audio_link_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceAssistantAudioLinkPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Assistant Audio Link Api Socket V3 Client Simulations Voice Assistant Audio Link Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
     "/socket/v3/client/simulations/voice/assistant/delta": {
       "post": {
         "tags": [
@@ -14702,6 +14759,59 @@
                   },
                   "type": "object",
                   "title": "Response Simulation Grading Start Api Socket V3 Client Simulations Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/simulations/audio": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Grading Tool Audio Api",
+        "description": "Client-to-server event: Grade audio messages.",
+        "operationId": "grading_tool_audio_api_socket_v3_client_simulations_audio_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioToolPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Grading Tool Audio Api Socket V3 Client Simulations Audio Post"
                 }
               }
             }
@@ -18033,6 +18143,63 @@
         ]
       }
     },
+    "/socket/v3/server/simulations/voice/assistant/audio_link": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Simulation Voice Assistant Audio Link Server Api",
+        "description": "Server-to-client event: Audio upload linked to assistant message.",
+        "operationId": "simulation_voice_assistant_audio_link_server_api_socket_v3_server_simulations_voice_assistant_audio_link_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceAssistantAudioLinkPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice Assistant Audio Link Server Api Socket V3 Server Simulations Voice Assistant Audio Link Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
     "/socket/v3/server/simulations/voice/assistant/tool_call_error": {
       "post": {
         "tags": [
@@ -18235,6 +18402,112 @@
                   },
                   "type": "object",
                   "title": "Response Simulation Grading Progress Api Socket V3 Server Simulations Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/audio_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Audio Tool Complete Api",
+        "description": "Server-to-client event: Audio tool completed successfully.",
+        "operationId": "audio_tool_complete_api_socket_v3_server_simulations_audio_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioToolCompletePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Audio Tool Complete Api Socket V3 Server Simulations Audio Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/audio_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Audio Tool Error Api",
+        "description": "Server-to-client event: Audio tool error.",
+        "operationId": "audio_tool_error_api_socket_v3_server_simulations_audio_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioToolErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Audio Tool Error Api Socket V3 Server Simulations Audio Error Post"
                 }
               }
             }
@@ -21044,6 +21317,147 @@
           "active"
         ],
         "title": "AttemptProfileItem"
+      },
+      "AudioToolCompletePayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "analysis": {
+            "type": "string",
+            "title": "Analysis"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "chat_id",
+          "trace_id",
+          "analysis"
+        ],
+        "title": "AudioToolCompletePayload",
+        "description": "Response indicating audio tool completed successfully."
+      },
+      "AudioToolErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "chat_id",
+          "trace_id",
+          "message"
+        ],
+        "title": "AudioToolErrorPayload",
+        "description": "Response indicating an error occurred in audio tool."
+      },
+      "AudioToolPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "message_numbers": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Message Numbers"
+          },
+          "what_to_analyze": {
+            "type": "string",
+            "title": "What To Analyze"
+          },
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "department_id": {
+            "type": "string",
+            "title": "Department Id"
+          },
+          "message_id_map": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Message Id Map"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "sid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "trace_id",
+          "message_numbers",
+          "what_to_analyze",
+          "agent_id",
+          "department_id",
+          "message_id_map"
+        ],
+        "title": "AudioToolPayload",
+        "description": "Request to grade audio from grading tool."
       },
       "AuthDetailRequest": {
         "properties": {
@@ -45211,6 +45625,30 @@
           "showImage"
         ],
         "title": "VideoItem"
+      },
+      "VoiceAssistantAudioLinkPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "upload_id": {
+            "type": "string",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "message_id",
+          "upload_id"
+        ],
+        "title": "VoiceAssistantAudioLinkPayload",
+        "description": "Request to link audio upload to assistant message."
       },
       "VoiceDebugInfoErrorPayload": {
         "properties": {

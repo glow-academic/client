@@ -1,6 +1,6 @@
 -- Get all messages for a chat using tree traversal
 -- Parameters: $1=chat_id (uuid)
--- Returns: id, chat_id, role, content, created_at, completed, updated_at
+-- Returns: id, chat_id, role, content, created_at, completed, updated_at, audio, upload_id
 -- Traverses backwards from latest messages (no active children) up the tree to root
 -- Handles backward compatibility: messages without parents are included and ordered by created_at
 WITH RECURSIVE message_path AS (
@@ -13,6 +13,7 @@ WITH RECURSIVE message_path AS (
         m.created_at, 
         m.completed, 
         m.updated_at,
+        m.audio,
         0 as depth,
         m.id as path_root_id
     FROM chats c
@@ -38,6 +39,7 @@ WITH RECURSIVE message_path AS (
         m.created_at, 
         m.completed, 
         m.updated_at,
+        m.audio,
         mp.depth + 1 as depth,
         mp.path_root_id
     FROM messages m
@@ -45,7 +47,7 @@ WITH RECURSIVE message_path AS (
     JOIN message_path mp ON mp.id = mt.parent_id
     JOIN message_runs mr ON mr.message_id = m.id
     JOIN runs r ON r.id = mr.run_id
-    JOIN group_runs gr ON gr.run_id = r.id
+    JOIN group_runs gr ON gr.group_id = r.id
     JOIN groups g ON g.id = gr.group_id
     JOIN chats c ON c.group_id = g.id
     
@@ -63,6 +65,7 @@ messages_without_parents AS (
         m.created_at, 
         m.completed, 
         m.updated_at,
+        m.audio,
         -1 as depth,  -- Negative depth to sort before tree messages
         m.id as path_root_id
     FROM chats c
@@ -90,14 +93,16 @@ all_messages AS (
 -- Select distinct messages (in case of multiple paths), ordered by conversation flow
 -- Order by created_at to maintain chronological order
 -- The tree traversal ensures we get all messages in the active conversation path
-SELECT DISTINCT ON (id)
-    id::text,
-    chat_id::text,
-    role,
-    content,
-    created_at,
-    completed,
-    updated_at
-FROM all_messages
-ORDER BY id, created_at
-
+SELECT DISTINCT ON (am.id)
+    am.id::text,
+    am.chat_id::text,
+    am.role,
+    am.content,
+    am.created_at,
+    am.completed,
+    am.updated_at,
+    am.audio,
+    ma.upload_id::text as upload_id
+FROM all_messages am
+LEFT JOIN message_audio ma ON ma.message_id = am.id
+ORDER BY am.id, am.created_at

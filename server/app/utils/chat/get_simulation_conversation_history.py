@@ -22,7 +22,8 @@ def get_simulation_conversation_history(
     messages: list[dict[str, Any]],
     conn: asyncpg.Connection | None = None,
     run_id: str | None = None,
-) -> list[TResponseInputItem]:
+    include_message_numbers: bool = False,
+) -> tuple[list[TResponseInputItem], dict[str, int]]:
     """
     Get the conversation history for a given list of messages.
     When there are multiple consecutive response messages, only the latest one is kept.
@@ -33,11 +34,14 @@ def get_simulation_conversation_history(
         messages: List of Messages objects from the database
         conn: Optional database connection for querying tool calls
         run_id: Optional run_id for querying tool calls
+        include_message_numbers: If True, prefix messages with sequential numbers [1], [2], etc.
 
     Returns:
-        List of message objects formatted for OpenAI API consumption
+        Tuple of (conversation_history, message_id_map) where message_id_map maps message_id -> number
     """
     conversation_history: list[TResponseInputItem] = []
+    message_id_map: dict[str, int] = {}
+    message_number = 1
 
     # Filter out error messages and make a list of all items
     items = [msg for msg in messages if not msg.get("content", "").startswith("Error:")]
@@ -49,47 +53,80 @@ def get_simulation_conversation_history(
     current_response_messages: list[dict[str, Any]] = []
 
     for item in items:
+        # Handle both "type" (legacy/test) and "role" (database) fields
         msg_type = item.get("type", "")
+        msg_role = item.get("role", "")
         msg_content = item.get("content", "")
+        message_id = item.get("id", "")
 
-        if msg_type == "query" and msg_content != "":
+        # Check if this is a user message (type="query" or role="user")
+        is_user_message = (msg_type == "query" or msg_role == "user") and msg_content != ""
+        
+        if is_user_message:
             # If we have pending response messages, add the latest one
             if current_response_messages:
                 latest_response = current_response_messages[-1]
+                response_id = latest_response.get("id", "")
+                content = latest_response.get("content", "")
+                
+                if include_message_numbers:
+                    content = f"[{message_number}] {content}"
+                    if response_id:
+                        message_id_map[response_id] = message_number
+                    message_number += 1
+                
                 assistant_message_item: TResponseInputItem = {
                     "role": "assistant",
-                    "content": latest_response.get("content", ""),
+                    "content": content,
                 }
                 conversation_history.append(assistant_message_item)
                 current_response_messages = []
 
             # Add the user message
+            content = msg_content
+            if include_message_numbers:
+                content = f"[{message_number}] {content}"
+                if message_id:
+                    message_id_map[message_id] = message_number
+                message_number += 1
+            
             user_message_item: TResponseInputItem = {
                 "role": "user",
-                "content": msg_content,
+                "content": content,
             }
             conversation_history.append(user_message_item)
-        elif msg_type == "response" and msg_content != "":
+        # Check if this is an assistant message (type="response" or role="assistant")
+        elif (msg_type == "response" or msg_role == "assistant") and msg_content != "":
             # Collect response messages to find the latest one
             current_response_messages.append(item)
 
     # Handle any remaining response messages at the end
     if current_response_messages:
         latest_response = current_response_messages[-1]
+        response_id = latest_response.get("id", "")
+        content = latest_response.get("content", "")
+        
+        if include_message_numbers:
+            content = f"[{message_number}] {content}"
+            if response_id:
+                message_id_map[response_id] = message_number
+            message_number += 1
+        
         current_assistant_message_item: TResponseInputItem = {
             "role": "assistant",
-            "content": latest_response.get("content", ""),
+            "content": content,
         }
         conversation_history.append(current_assistant_message_item)
 
-    return conversation_history
+    return conversation_history, message_id_map
 
 
 async def get_simulation_conversation_history_with_tool_calls(
     messages: list[dict[str, Any]],
     conn: asyncpg.Connection,
     run_id: str,
-) -> list[TResponseInputItem]:
+    include_message_numbers: bool = False,
+) -> tuple[list[TResponseInputItem], dict[str, int]]:
     """
     Get conversation history with tool calls reconstructed from database.
 
@@ -97,12 +134,15 @@ async def get_simulation_conversation_history_with_tool_calls(
         messages: List of Messages objects from the database
         conn: Database connection for querying tool calls
         run_id: Run ID for querying tool calls
+        include_message_numbers: If True, prefix messages with sequential numbers [1], [2], etc.
 
     Returns:
-        List of message objects formatted for OpenAI API consumption with tool calls
+        Tuple of (conversation_history, message_id_map) where message_id_map maps message_id -> number
     """
     # Get base conversation history
-    conversation_history = get_simulation_conversation_history(messages)
+    conversation_history, message_id_map = get_simulation_conversation_history(
+        messages, include_message_numbers=include_message_numbers
+    )
 
     # Get tool calls for this run
     tool_calls_data = await _get_tool_calls_for_run(conn, run_id)
@@ -152,4 +192,4 @@ async def get_simulation_conversation_history_with_tool_calls(
             }
             reconstructed_history.append(tool_result)
 
-    return reconstructed_history
+    return reconstructed_history, message_id_map

@@ -28,6 +28,7 @@ simulation_info AS (
         (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
         (SELECT sd.department_id::text FROM simulation_departments sd 
          WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as department_id,
+        s.grade_voice_agent_id::text as grade_voice_agent_id,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -145,6 +146,7 @@ SELECT
     si.rubric_id::text,
     si.department_id::text,
     si.time_limit,
+    si.grade_voice_agent_id,
     
     -- Rubric data
     r.id::text as rubric_id,
@@ -261,7 +263,7 @@ CROSS JOIN runs_today rt
 GROUP BY ci.id, ci.scenario_id, ci.attempt_id, ci.title, ci.trace_id, ci.created_at, ci.completed,
          ps.problem_statement,
          ai.id, ai.simulation_id, ai.total_chats,
-         si.id, si.rubric_id, si.department_id, si.time_limit,
+         si.id, si.rubric_id, si.department_id, si.time_limit, si.grade_voice_agent_id,
          r.id, r.name, r.description, r.points, r.pass_points,
          a.id, a.name, pr_prompt.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
          m.id, m.value, p.value, me.base_url, k.key, act_s.settings_id,

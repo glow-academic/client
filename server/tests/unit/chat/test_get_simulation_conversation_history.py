@@ -27,13 +27,14 @@ class TestGet_Simulation_Conversation_History:
             },
         ]
 
-        result = get_simulation_conversation_history(messages)
+        result, message_id_map = get_simulation_conversation_history(messages)
 
         assert len(result) == 2
         assert result[0]["role"] == "user"
         assert result[0]["content"] == "Hello"
         assert result[1]["role"] == "assistant"
         assert result[1]["content"] == "Hi there!"
+        assert isinstance(message_id_map, dict)
 
     def test_get_simulation_conversation_history_filters_errors(self) -> None:
         """Test that error messages are filtered out."""
@@ -50,11 +51,12 @@ class TestGet_Simulation_Conversation_History:
             },
         ]
 
-        result = get_simulation_conversation_history(messages)
+        result, message_id_map = get_simulation_conversation_history(messages)
 
         # Error message should be filtered out
         assert len(result) == 1
         assert result[0]["content"] == "Hello"
+        assert isinstance(message_id_map, dict)
 
     def test_get_simulation_conversation_history_consecutive_responses(self) -> None:
         """Test handling of consecutive response messages."""
@@ -76,14 +78,16 @@ class TestGet_Simulation_Conversation_History:
             },
         ]
 
-        result = get_simulation_conversation_history(messages)
+        result, message_id_map = get_simulation_conversation_history(messages)
 
         # Should only keep the latest response
         assert len(result) == 2
         assert result[1]["content"] == "Second response"
+        assert isinstance(message_id_map, dict)
 
     def test_get_simulation_conversation_history_empty(self) -> None:
         """Test with empty messages list."""
-        result = get_simulation_conversation_history([])
+        result, message_id_map = get_simulation_conversation_history([])
 
         assert result == []
+        assert message_id_map == {}

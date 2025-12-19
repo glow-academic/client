@@ -422,7 +422,7 @@ async def _generate_hints_background_inline(
             ]
 
             # Build conversation history
-            conversation_history = get_simulation_conversation_history(messages)
+            conversation_history, _ = get_simulation_conversation_history(messages)
 
             # Format scenario from context
             chat_scenario = format_chat_scenario(context["problem_statement"])
@@ -928,7 +928,7 @@ async def _simulation_text_send_impl(
                     messages = [dict(row) for row in message_rows]
 
                     # Prepare conversation history from chat_id
-                    conversation_history = get_simulation_conversation_history(messages)
+                    conversation_history, _ = get_simulation_conversation_history(messages)
 
                     # Format chat scenario using the problem statement from context
                     chat_scenario = format_chat_scenario(context["problem_statement"])

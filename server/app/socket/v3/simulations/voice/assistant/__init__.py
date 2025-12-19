@@ -2,6 +2,12 @@
 
 from fastapi import APIRouter
 
+from .audio import (
+    client_router as audio_client_router,
+)
+from .audio import (
+    server_router as audio_server_router,
+)
 from .delta import (
     client_router as delta_client_router,
 )
@@ -24,10 +30,12 @@ from .interrupted import (
 client_router = APIRouter(prefix="/assistant", tags=["socket-client"])
 server_router = APIRouter(prefix="/assistant", tags=["socket-server"])
 
+client_router.include_router(audio_client_router)
 client_router.include_router(delta_client_router)
 client_router.include_router(done_client_router)
 client_router.include_router(interrupted_client_router)
 
+server_router.include_router(audio_server_router)
 server_router.include_router(delta_server_router)
 server_router.include_router(done_server_router)
 server_router.include_router(interrupted_server_router)

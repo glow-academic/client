@@ -3681,6 +3681,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/client/simulations/voice/assistant/audio_link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Assistant Audio Link Api
+         * @description Client-to-server event: Link audio upload to assistant message.
+         */
+        post: operations["simulation_voice_assistant_audio_link_api_socket_v3_client_simulations_voice_assistant_audio_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/client/simulations/voice/assistant/delta": {
         parameters: {
             query?: never;
@@ -3755,6 +3775,26 @@ export interface paths {
          * @description Client-to-server event: Start grading for a simulation chat.
          */
         post: operations["simulation_grading_start_api_socket_v3_client_simulations_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/simulations/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Grading Tool Audio Api
+         * @description Client-to-server event: Grade audio messages.
+         */
+        post: operations["grading_tool_audio_api_socket_v3_client_simulations_audio_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4981,6 +5021,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/server/simulations/voice/assistant/audio_link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice Assistant Audio Link Server Api
+         * @description Server-to-client event: Audio upload linked to assistant message.
+         */
+        post: operations["simulation_voice_assistant_audio_link_server_api_socket_v3_server_simulations_voice_assistant_audio_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/server/simulations/voice/assistant/tool_call_error": {
         parameters: {
             query?: never;
@@ -5055,6 +5115,46 @@ export interface paths {
          * @description Server-to-client event: Simulation grading progress update.
          */
         post: operations["simulation_grading_progress_api_socket_v3_server_simulations_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/audio_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Audio Tool Complete Api
+         * @description Server-to-client event: Audio tool completed successfully.
+         */
+        post: operations["audio_tool_complete_api_socket_v3_server_simulations_audio_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/audio_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Audio Tool Error Api
+         * @description Server-to-client event: Audio tool error.
+         */
+        post: operations["audio_tool_error_api_socket_v3_server_simulations_audio_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6157,6 +6257,62 @@ export interface components {
             attemptId: string;
             /** Active */
             active: boolean;
+        };
+        /**
+         * AudioToolCompletePayload
+         * @description Response indicating audio tool completed successfully.
+         */
+        AudioToolCompletePayload: {
+            /** Success */
+            success: boolean;
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Analysis */
+            analysis: string;
+            /** Message */
+            message?: string | null;
+        };
+        /**
+         * AudioToolErrorPayload
+         * @description Response indicating an error occurred in audio tool.
+         */
+        AudioToolErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * AudioToolPayload
+         * @description Request to grade audio from grading tool.
+         */
+        AudioToolPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /** Message Numbers */
+            message_numbers: number[];
+            /** What To Analyze */
+            what_to_analyze: string;
+            /** Agent Id */
+            agent_id: string;
+            /** Department Id */
+            department_id: string;
+            /** Message Id Map */
+            message_id_map: {
+                [key: string]: number;
+            };
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Sid */
+            sid?: string | null;
         };
         /** AuthDetailRequest */
         AuthDetailRequest: {
@@ -15209,6 +15365,18 @@ export interface components {
             questions: components["schemas"]["QuestionItem-Output"][];
             /** Showimage */
             showImage: boolean;
+        };
+        /**
+         * VoiceAssistantAudioLinkPayload
+         * @description Request to link audio upload to assistant message.
+         */
+        VoiceAssistantAudioLinkPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Upload Id */
+            upload_id: string;
         };
         /**
          * VoiceDebugInfoErrorPayload
@@ -26362,6 +26530,41 @@ export interface operations {
             };
         };
     };
+    simulation_voice_assistant_audio_link_api_socket_v3_client_simulations_voice_assistant_audio_link_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceAssistantAudioLinkPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     simulation_voice_assistant_delta_api_socket_v3_client_simulations_voice_assistant_delta_post: {
         parameters: {
             query?: never;
@@ -26477,6 +26680,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SimulationGradingStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    grading_tool_audio_api_socket_v3_client_simulations_audio_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioToolPayload"];
             };
         };
         responses: {
@@ -28637,6 +28875,41 @@ export interface operations {
             };
         };
     };
+    simulation_voice_assistant_audio_link_server_api_socket_v3_server_simulations_voice_assistant_audio_link_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceAssistantAudioLinkPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     voice_tool_call_error_api_socket_v3_server_simulations_voice_assistant_tool_call_error_post: {
         parameters: {
             query?: never;
@@ -28752,6 +29025,76 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SimulationGradingProgressPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    audio_tool_complete_api_socket_v3_server_simulations_audio_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioToolCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    audio_tool_error_api_socket_v3_server_simulations_audio_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioToolErrorPayload"];
             };
         };
         responses: {
