@@ -358,11 +358,6 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
                                     )}
                                     <div className="flex-1">
                                       <Markdown>{contentItem.content}</Markdown>
-                                      {contentIdx > 0 && (
-                                        <div className="text-xs text-muted-foreground mt-1 opacity-70">
-                                          Version {contentItem.idx + 1}
-                                        </div>
-                                      )}
                                     </div>
                                   </div>
                                 )
