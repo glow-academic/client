@@ -13,13 +13,16 @@ WITH RECURSIVE scenario_ancestors AS (
     FROM attempt_chats ac
     JOIN chats sc ON sc.id = ac.chat_id
     JOIN grades scg ON EXISTS (
-        SELECT 1 FROM message_runs mr_check
-        JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
-        WHERE mr_check.run_id = scg.run_id AND cm_check.chat_id = sc.id
+        SELECT 1 FROM runs r_check
+        JOIN group_runs gr_check ON gr_check.run_id = r_check.id
+        JOIN groups g_check ON g_check.id = gr_check.group_id
+        JOIN chats c_check ON c_check.group_id = g_check.id
+        WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
     JOIN runs r_scen1 ON r_scen1.id = scg.run_id
-    JOIN message_runs mr_scen1 ON mr_scen1.run_id = r_scen1.id
-    JOIN chat_messages cm_scen1 ON cm_scen1.message_id = mr_scen1.message_id AND cm_scen1.chat_id = sc.id
+    JOIN group_runs gr_scen1 ON gr_scen1.run_id = r_scen1.id
+    JOIN groups g_scen1 ON g_scen1.id = gr_scen1.group_id
+    JOIN chats c_scen1 ON c_scen1.group_id = g_scen1.id AND c_scen1.id = sc.id
     WHERE ac.attempt_id = $1::uuid
     
     UNION ALL
@@ -61,10 +64,17 @@ FROM simulation_scenarios ss
 JOIN simulation_attempts sa ON sa.simulation_id = ss.simulation_id
 JOIN attempt_chats ac ON ac.attempt_id = sa.id
 JOIN chats sc ON sc.id = ac.chat_id
-JOIN grades scg ON scg.eval = false
+JOIN grades scg ON EXISTS (
+    SELECT 1 FROM runs r_check
+    JOIN group_runs gr_check ON gr_check.run_id = r_check.id
+    JOIN groups g_check ON g_check.id = gr_check.group_id
+    JOIN chats c_check ON c_check.group_id = g_check.id AND c_check.id = sc.id
+    WHERE r_check.id = scg.run_id
+)
 JOIN runs r_scen2 ON r_scen2.id = scg.run_id
-JOIN message_runs mr_scen2 ON mr_scen2.run_id = r_scen2.id
-JOIN chat_messages cm_scen2 ON cm_scen2.message_id = mr_scen2.message_id AND cm_scen2.chat_id = sc.id
+JOIN group_runs gr_scen2 ON gr_scen2.run_id = r_scen2.id
+JOIN groups g_scen2 ON g_scen2.id = gr_scen2.group_id
+JOIN chats c_scen2 ON c_scen2.group_id = g_scen2.id AND c_scen2.id = sc.id
 LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
 WHERE sa.id = $1::uuid
   AND (

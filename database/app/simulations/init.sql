@@ -124,8 +124,11 @@ CREATE TABLE chats (
   title      TEXT         NOT NULL,
   scenario_id UUID         NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE,
   completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
-  trace_id   TEXT         NOT NULL -- openai trace id (NOT NULL, no default)
+  trace_id   TEXT         NOT NULL, -- openai trace id (NOT NULL, no default)
+  group_id   UUID         NOT NULL REFERENCES groups(id) ON DELETE CASCADE
 );
+
+CREATE INDEX ON chats (group_id);
 
 -- Simulation attempts ↔ Chats junction table (BCNF normalization - replaces chats.attempt_id)
 CREATE TABLE attempt_chats (
@@ -162,21 +165,8 @@ CREATE INDEX ON group_runs (group_id);
 CREATE INDEX ON group_runs (run_id);
 CREATE INDEX ON group_runs (group_id, run_id);
 
--- Chats ↔ Messages junction table (BCNF normalization)
--- Preserves chat-to-message relationships
-CREATE TABLE chat_messages (
-  chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
-  message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (chat_id, message_id)
-);
-
-CREATE INDEX ON chat_messages (chat_id);
-CREATE INDEX ON chat_messages (message_id);
-CREATE INDEX ON chat_messages (chat_id, message_id);
-
 -- Unified messages table - messages linked to runs via message_runs junction table (BCNF normalization)
+-- Chat-to-message relationships are derived through: chats.group_id → groups → group_runs → runs → message_runs → messages
 CREATE TABLE messages (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),

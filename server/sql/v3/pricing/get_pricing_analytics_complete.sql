@@ -35,14 +35,14 @@ runs_base AS (
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
     LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
-    -- Join to simulations via group_runs → groups, then via chat_messages → chats → attempt_chats → simulation_attempts → simulations
+    -- Join to simulations via group_runs → groups → chats → attempt_chats → simulation_attempts → simulations
     LEFT JOIN group_runs gr ON gr.run_id = mr.id
     LEFT JOIN groups g ON g.id = gr.group_id
     LEFT JOIN LATERAL (
-        SELECT DISTINCT cm.chat_id
-        FROM message_runs mr2
-        JOIN chat_messages cm ON cm.message_id = mr2.message_id
-        WHERE mr2.run_id = mr.id
+        SELECT DISTINCT c.id AS chat_id
+        FROM groups g2
+        JOIN chats c ON c.group_id = g2.id
+        WHERE g2.id = g.id
         LIMIT 1
     ) chat_lookup ON true
     LEFT JOIN chats c ON c.id = chat_lookup.chat_id

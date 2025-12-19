@@ -30,11 +30,12 @@ chats_base AS (
              WHERE sd.scenario_id = c.scenario_id AND sd.active = true),
             ARRAY[]::text[]
         ) as document_ids
-    FROM message_runs mr
-    JOIN chat_messages cm ON cm.message_id = mr.message_id
-    JOIN chats c ON c.id = cm.chat_id
+    FROM runs r
+    JOIN group_runs gr ON gr.run_id = r.id
+    JOIN groups g ON g.id = gr.group_id
+    JOIN chats c ON c.group_id = g.id
     CROSS JOIN run_base rb
-    WHERE mr.run_id = rb.id
+    WHERE r.id = rb.id
     ORDER BY c.created_at
 ),
 chat_ids_list AS (
@@ -73,14 +74,14 @@ scenarios_data AS (
 ),
 messages_grouped AS (
     SELECT 
-        cr.chat_id,
+        c.id AS chat_id,
         COALESCE(
             jsonb_agg(
                 jsonb_build_object(
                     'id', m.id::text,
                     'createdAt', m.created_at,
                     'updatedAt', m.updated_at,
-                    'chatId', cr.chat_id::text,
+                    'chatId', c.id::text,
                     'content', m.content,
                     'type', CASE 
                         WHEN m.role = 'user' THEN 'query'
@@ -92,17 +93,21 @@ messages_grouped AS (
             ),
             '[]'::jsonb
         ) as messages
-    FROM messages m
-    JOIN chat_messages cm ON cm.message_id = m.id
+    FROM chats c
+    JOIN groups g ON g.id = c.group_id
+    JOIN group_runs gr ON gr.group_id = g.id
+    JOIN runs r ON r.id = gr.run_id
+    JOIN message_runs mr ON mr.run_id = r.id
+    JOIN messages m ON m.id = mr.message_id
     CROSS JOIN chat_ids_list cil
     CROSS JOIN run_base rb
-    JOIN message_runs mr ON mr.message_id = m.id AND mr.run_id = rb.id
-    WHERE cm.chat_id = ANY(cil.chat_ids)
-    GROUP BY cm.chat_id
+    WHERE c.id = ANY(cil.chat_ids)
+      AND r.id = rb.id
+    GROUP BY c.id
 ),
 hints_data AS (
     SELECT 
-        cr.chat_id,
+        c.id AS chat_id,
         COALESCE(
             jsonb_agg(
                 jsonb_build_object(
@@ -124,23 +129,27 @@ hints_data AS (
             ) FILTER (WHERE m.role = 'assistant' OR m.role = 'response'),
             '[]'::jsonb
         ) as hints
-    FROM messages m
-    JOIN chat_messages cm ON cm.message_id = m.id
+    FROM chats c
+    JOIN groups g ON g.id = c.group_id
+    JOIN group_runs gr ON gr.group_id = g.id
+    JOIN runs r ON r.id = gr.run_id
+    JOIN message_runs mr ON mr.run_id = r.id
+    JOIN messages m ON m.id = mr.message_id
     CROSS JOIN chat_ids_list cil
     CROSS JOIN run_base rb
-    JOIN message_runs mr ON mr.message_id = m.id AND mr.run_id = rb.id
-    WHERE cm.chat_id = ANY(cil.chat_ids)
+    WHERE c.id = ANY(cil.chat_ids)
+      AND r.id = rb.id
       AND (m.role = 'assistant' OR m.role = 'response')
-    GROUP BY cm.chat_id
+    GROUP BY c.id
 ),
 grades_data AS (
     -- Get latest grade per chat (DISTINCT ON to handle multiple grades)
-    SELECT DISTINCT ON (cm.chat_id)
-        cm.chat_id as chat_id,
+    SELECT DISTINCT ON (c.id)
+        c.id as chat_id,
         jsonb_build_object(
             'id', g.id::text,
             'createdAt', g.created_at,
-            'simulationChatId', cm.chat_id::text,
+            'simulationChatId', c.id::text,
             'rubricId', g.rubric_id::text,
             'description', g.description,
             'passed', g.passed,
@@ -149,14 +158,15 @@ grades_data AS (
         ) as grade
     FROM grades g
     JOIN runs r ON r.id = g.run_id
-    JOIN message_runs mr ON mr.run_id = r.id
-    JOIN chat_messages cm ON cm.message_id = mr.message_id
+    JOIN group_runs gr ON gr.run_id = r.id
+    JOIN groups g2 ON g2.id = gr.group_id
+    JOIN chats c ON c.group_id = g2.id
     CROSS JOIN chat_ids_list cil
     CROSS JOIN run_base rb
     WHERE g.run_id = rb.id
       AND EXISTS (SELECT 1 FROM test_runs tr WHERE tr.run_id = g.run_id)  -- Only eval grades for runs
-      AND cm.chat_id = ANY(cil.chat_ids)
-    ORDER BY cm.chat_id, g.created_at DESC
+      AND c.id = ANY(cil.chat_ids)
+    ORDER BY c.id, g.created_at DESC
 ),
 feedbacks_grouped AS (
     SELECT 

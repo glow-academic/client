@@ -182,25 +182,28 @@ history_chat_rollup AS (
 ),
 -- Get latest grade per chat
 history_chat_grades AS (
-    SELECT DISTINCT ON (cm.chat_id)
-        cm.chat_id,
+    SELECT DISTINCT ON (c.id)
+        c.id AS chat_id,
         scg.score,
         scg.rubric_id
     FROM grades scg
     JOIN runs r ON r.id = scg.run_id
-    JOIN message_runs mr ON mr.run_id = r.id
-    JOIN chat_messages cm ON cm.message_id = mr.message_id
+    JOIN group_runs gr ON gr.run_id = r.id
+    JOIN groups g ON g.id = gr.group_id
+    JOIN chats c ON c.group_id = g.id
     WHERE EXISTS (
-        SELECT 1 FROM message_runs mr_check
-        JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
-        WHERE mr_check.run_id = scg.run_id
+        SELECT 1 FROM runs r_check
+        JOIN group_runs gr_check ON gr_check.run_id = r_check.id
+        JOIN groups g_check ON g_check.id = gr_check.group_id
+        JOIN chats c_check ON c_check.group_id = g_check.id
+        WHERE r_check.id = scg.run_id
     )
-      AND cm.chat_id IN (
+      AND c.id IN (
         SELECT sc.id FROM attempt_chats ac
         JOIN chats sc ON sc.id = ac.chat_id
         WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     )
-    ORDER BY cm.chat_id, scg.created_at DESC
+    ORDER BY c.id, scg.created_at DESC
 ),
 -- Aggregate grades per attempt
 history_grade_rollup AS (
@@ -227,26 +230,32 @@ history_elapsed_time AS (
                     WHEN sc.completed AND hcg.chat_id IS NOT NULL THEN
                         (SELECT scg.time_taken FROM grades scg 
                          JOIN runs r ON r.id = scg.run_id
-                         JOIN message_runs mr ON mr.run_id = r.id
-                         JOIN chat_messages cm ON cm.message_id = mr.message_id
-                         WHERE cm.chat_id = sc.id 
+                         JOIN group_runs gr ON gr.run_id = r.id
+                         JOIN groups g ON g.id = gr.group_id
+                         JOIN chats c ON c.group_id = g.id
+                         WHERE c.id = sc.id 
                            AND EXISTS (
-                               SELECT 1 FROM message_runs mr_check
-                               JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
-                               WHERE mr_check.run_id = scg.run_id
+                               SELECT 1 FROM runs r_check
+                               JOIN group_runs gr_check ON gr_check.run_id = r_check.id
+                               JOIN groups g_check ON g_check.id = gr_check.group_id
+                               JOIN chats c_check ON c_check.group_id = g_check.id
+                               WHERE r_check.id = scg.run_id
                            )
                          ORDER BY scg.created_at DESC LIMIT 1)
                     WHEN sc.completed THEN
                         EXTRACT(EPOCH FROM (
                             (SELECT scg.created_at FROM grades scg 
                              JOIN runs r ON r.id = scg.run_id
-                             JOIN message_runs mr ON mr.run_id = r.id
-                             JOIN chat_messages cm ON cm.message_id = mr.message_id
-                             WHERE cm.chat_id = sc.id 
+                             JOIN group_runs gr ON gr.run_id = r.id
+                             JOIN groups g ON g.id = gr.group_id
+                             JOIN chats c ON c.group_id = g.id
+                             WHERE c.id = sc.id 
                                AND EXISTS (
-                                   SELECT 1 FROM message_runs mr_check
-                                   JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
-                                   WHERE mr_check.run_id = scg.run_id
+                                   SELECT 1 FROM runs r_check
+                                   JOIN group_runs gr_check ON gr_check.run_id = r_check.id
+                                   JOIN groups g_check ON g_check.id = gr_check.group_id
+                                   JOIN chats c_check ON c_check.group_id = g_check.id
+                                   WHERE r_check.id = scg.run_id
                                )
                              ORDER BY scg.created_at DESC LIMIT 1) - sc.created_at
                         ))::integer

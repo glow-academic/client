@@ -18,18 +18,19 @@ root_map AS (
   LEFT JOIN scenario_roots sr ON s.id = sr.id
 ),
 latest_grade AS (
-  SELECT DISTINCT ON (cm.chat_id)
-         cm.chat_id AS simulation_chat_id,
+  SELECT DISTINCT ON (c.id)
+         c.id AS simulation_chat_id,
          g.score::numeric AS score,
          g.time_taken::numeric AS time_taken_seconds,
          g.rubric_id,
          g.created_at
   FROM grades g
   JOIN runs r ON r.id = g.run_id
-  JOIN message_runs mr ON mr.run_id = r.id
-  JOIN chat_messages cm ON cm.message_id = mr.message_id
-  -- Simulation grades only (derive from relationship via chat_messages)
-  ORDER BY cm.chat_id, g.created_at DESC
+  JOIN group_runs gr ON gr.run_id = r.id
+  JOIN groups g2 ON g2.id = gr.group_id
+  JOIN chats c ON c.group_id = g2.id
+  -- Simulation grades only (derive from relationship via chats.group_id → groups → group_runs → runs)
+  ORDER BY c.id, g.created_at DESC
 ),
 -- only ACTIVE simulations
 active_sims AS (
@@ -80,32 +81,39 @@ chat_first_attempt AS (
 -- Message counts per chat (total + by type)
 message_counts AS (
   SELECT
-    cm.chat_id,
+    c.id AS chat_id,
     COUNT(*)::int                                AS num_messages_total,
     COUNT(*) FILTER (WHERE m.role = 'user')::int    AS num_query_messages,
     COUNT(*) FILTER (WHERE m.role = 'assistant')::int AS num_response_messages
-  FROM messages m
-  JOIN chat_messages cm ON cm.message_id = m.id
-  GROUP BY cm.chat_id
+  FROM chats c
+  JOIN groups g ON g.id = c.group_id
+  JOIN group_runs gr ON gr.group_id = g.id
+  JOIN runs r ON r.id = gr.run_id
+  JOIN message_runs mr ON mr.run_id = r.id
+  JOIN messages m ON m.id = mr.message_id
+  GROUP BY c.id
 ),
 -- Per-message time deltas (seconds) computed in-order, then aggregated to int[]
 -- Only measure persona "response → user query" gaps
 message_deltas AS (
   SELECT
-    cm.chat_id,
+    c.id AS chat_id,
     -- only response -> query gaps
     CASE
-      WHEN lag(m.role) OVER (PARTITION BY cm.chat_id ORDER BY m.created_at) = 'assistant'
+      WHEN lag(m.role) OVER (PARTITION BY c.id ORDER BY m.created_at) = 'assistant'
        AND m.role = 'user'
       THEN GREATEST(
              EXTRACT(epoch FROM m.created_at - COALESCE(lag(COALESCE(m.updated_at, m.created_at))
-               OVER (PARTITION BY cm.chat_id ORDER BY m.created_at), c.created_at))::int, 0)
+               OVER (PARTITION BY c.id ORDER BY m.created_at), c.created_at))::int, 0)
       ELSE NULL
     END AS delta_seconds,
     m.created_at
-  FROM messages m
-  JOIN chat_messages cm ON cm.message_id = m.id
-  JOIN chats c ON c.id = cm.chat_id
+  FROM chats c
+  JOIN groups g ON g.id = c.group_id
+  JOIN group_runs gr ON gr.group_id = g.id
+  JOIN runs r ON r.id = gr.run_id
+  JOIN message_runs mr ON mr.run_id = r.id
+  JOIN messages m ON m.id = mr.message_id
 ),
 message_deltas_agg AS (
   SELECT chat_id,
@@ -304,8 +312,8 @@ CREATE INDEX IF NOT EXISTS analytics_attempt_created_at_idx
   ON analytics (attempt_created_at);
 
 -- Performance indexes for analytics functions
--- Latest grade per chat fast path (via chat_messages join)
--- Note: eval column removed - derive from relationships (chat_messages for simulation grades)
+-- Latest grade per chat fast path (via chats.group_id → groups → group_runs → runs)
+-- Note: eval column removed - derive from relationships (chats.group_id for simulation grades)
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
   ON grades (run_id, created_at DESC);
 
@@ -341,7 +349,7 @@ CREATE INDEX IF NOT EXISTS analytics_profile_cohorts_gin
 
 -- Additional indexes for skill performance optimization
 -- Latest grade per (run, rubric) fast path
--- Note: eval column removed - derive from relationships (chat_messages for simulation grades)
+-- Note: eval column removed - derive from relationships (chats.group_id for simulation grades)
 CREATE INDEX IF NOT EXISTS grades_run_rubric_created_idx
   ON grades (run_id, rubric_id, created_at DESC);
 
@@ -368,7 +376,7 @@ CREATE INDEX IF NOT EXISTS analytics_is_archived_true_idx
   ON analytics (attempt_created_at) WHERE is_archived = true;
 
 -- Supporting table indexes for analytics functions
--- Note: eval column removed - derive from relationships (chat_messages for simulation grades)
+-- Note: eval column removed - derive from relationships (chats.group_id for simulation grades)
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
   ON grades (run_id, created_at DESC);
 
@@ -379,11 +387,14 @@ CREATE INDEX IF NOT EXISTS message_runs_run_created_idx
 CREATE INDEX IF NOT EXISTS chats_id_created_idx
   ON chats (id, created_at);
 
-CREATE INDEX IF NOT EXISTS chat_messages_chat_id_idx
-  ON chat_messages (chat_id);
+CREATE INDEX IF NOT EXISTS chats_group_id_idx
+  ON chats (group_id);
 
-CREATE INDEX IF NOT EXISTS chat_messages_message_id_idx
-  ON chat_messages (message_id);
+CREATE INDEX IF NOT EXISTS group_runs_group_id_idx
+  ON group_runs (group_id);
+
+CREATE INDEX IF NOT EXISTS group_runs_run_id_idx
+  ON group_runs (run_id);
 
 CREATE INDEX IF NOT EXISTS simulation_attempts_archived_idx
   ON simulation_attempts (archived);

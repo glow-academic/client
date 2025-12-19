@@ -7,7 +7,7 @@ WITH RECURSIVE message_path AS (
     -- Base case: Start from latest messages (no active children in message_tree)
     SELECT 
         m.id, 
-        cm.chat_id, 
+        c.id AS chat_id, 
         m.role, 
         m.content, 
         m.created_at, 
@@ -15,9 +15,13 @@ WITH RECURSIVE message_path AS (
         m.updated_at,
         0 as depth,
         m.id as path_root_id
-    FROM messages m
-    JOIN chat_messages cm ON cm.message_id = m.id
-    WHERE cm.chat_id = $1::uuid
+    FROM chats c
+    JOIN groups g ON g.id = c.group_id
+    JOIN group_runs gr ON gr.group_id = g.id
+    JOIN runs r ON r.id = gr.run_id
+    JOIN message_runs mr ON mr.run_id = r.id
+    JOIN messages m ON m.id = mr.message_id
+    WHERE c.id = $1::uuid
       AND NOT EXISTS (
           SELECT 1 FROM message_tree mt 
           WHERE mt.parent_id = m.id AND mt.active = true
@@ -28,7 +32,7 @@ WITH RECURSIVE message_path AS (
     -- Recursive case: Traverse up the tree following parent links
     SELECT 
         m.id, 
-        cm.chat_id, 
+        c.id AS chat_id, 
         m.role, 
         m.content, 
         m.created_at, 
@@ -39,17 +43,21 @@ WITH RECURSIVE message_path AS (
     FROM messages m
     JOIN message_tree mt ON mt.child_id = m.id AND mt.active = true
     JOIN message_path mp ON mp.id = mt.parent_id
-    JOIN chat_messages cm ON cm.message_id = m.id
+    JOIN message_runs mr ON mr.message_id = m.id
+    JOIN runs r ON r.id = mr.run_id
+    JOIN group_runs gr ON gr.run_id = r.id
+    JOIN groups g ON g.id = gr.group_id
+    JOIN chats c ON c.group_id = g.id
     
     -- Prevent infinite loops (safety limit)
     WHERE mp.depth < 1000
-      AND cm.chat_id = $1::uuid
+      AND c.id = $1::uuid
 ),
 -- Include messages without parents (backward compatibility for existing messages)
 messages_without_parents AS (
     SELECT 
         m.id, 
-        cm.chat_id, 
+        c.id AS chat_id, 
         m.role, 
         m.content, 
         m.created_at, 
@@ -57,9 +65,13 @@ messages_without_parents AS (
         m.updated_at,
         -1 as depth,  -- Negative depth to sort before tree messages
         m.id as path_root_id
-    FROM messages m
-    JOIN chat_messages cm ON cm.message_id = m.id
-    WHERE cm.chat_id = $1::uuid
+    FROM chats c
+    JOIN groups g ON g.id = c.group_id
+    JOIN group_runs gr ON gr.group_id = g.id
+    JOIN runs r ON r.id = gr.run_id
+    JOIN message_runs mr ON mr.run_id = r.id
+    JOIN messages m ON m.id = mr.message_id
+    WHERE c.id = $1::uuid
       AND NOT EXISTS (
           SELECT 1 FROM message_tree mt 
           WHERE mt.child_id = m.id AND mt.active = true

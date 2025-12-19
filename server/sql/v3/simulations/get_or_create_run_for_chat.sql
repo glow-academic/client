@@ -9,13 +9,12 @@ WITH params AS (
 ),
 -- Get or create group for this chat
 chat_group AS (
-    -- Try to find existing group via chat_messages → any run → group_runs
-    SELECT DISTINCT gr.group_id
-    FROM chat_messages cm
-    JOIN message_runs mr ON mr.message_id = cm.message_id
-    JOIN group_runs gr ON gr.run_id = mr.run_id
+    -- Try to find existing group via chats.group_id
+    SELECT c.group_id
+    FROM chats c
     CROSS JOIN params p
-    WHERE cm.chat_id = p.chat_id
+    WHERE c.id = p.chat_id
+    AND c.group_id IS NOT NULL
     LIMIT 1
 ),
 create_group_if_needed AS (
@@ -26,10 +25,22 @@ create_group_if_needed AS (
     WHERE NOT EXISTS (SELECT 1 FROM chat_group)
     RETURNING id as group_id
 ),
+update_chat_group_id AS (
+    -- Update chats.group_id if we created a new group
+    UPDATE chats
+    SET group_id = cg.group_id
+    FROM create_group_if_needed cg
+    CROSS JOIN params p
+    WHERE chats.id = p.chat_id
+    AND chats.group_id IS NULL
+    RETURNING chats.group_id
+),
 selected_group AS (
     SELECT group_id FROM chat_group
     UNION ALL
     SELECT group_id FROM create_group_if_needed
+    UNION ALL
+    SELECT group_id FROM update_chat_group_id
 ),
 latest_run AS (
     -- Get the latest run for this chat's group

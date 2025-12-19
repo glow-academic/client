@@ -199,7 +199,7 @@ SELECT
     a_voice.id::text as voice_agent_id,
     
     -- Scenario settings (flags moved from scenarios to simulation_scenarios)
-    COALESCE(s.image_enabled, false) as image_input_enabled,
+    COALESCE(s.images_enabled, false) as image_input_enabled,
     COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed,
     
     -- Profile data (via attempt_profiles junction)
@@ -309,7 +309,7 @@ GROUP BY sc.id, sc.title, sc.trace_id,
          pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, COALESCE(mtl_voice.temperature, 0.0), mrl_voice.reasoning_level,
          m_voice.id, m_voice.value, p_voice.value, k_voice.key, me_voice.base_url, a_voice.id, act_s_voice.settings_id,
          -- Other fields
-         s.image_enabled, ss.copy_paste_allowed,
+         s.images_enabled, ss.copy_paste_allowed,
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 

@@ -151,14 +151,17 @@
                     (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
                 FROM grades sg
                 JOIN runs r_bundle ON r_bundle.id = sg.run_id
-                JOIN message_runs mr_bundle ON mr_bundle.run_id = r_bundle.id
-                JOIN chat_messages cm_bundle ON cm_bundle.message_id = mr_bundle.message_id
-                JOIN profile_chats pc ON pc.chat_id = cm_bundle.chat_id
+                JOIN group_runs gr_bundle ON gr_bundle.run_id = r_bundle.id
+                JOIN groups g_bundle ON g_bundle.id = gr_bundle.group_id
+                JOIN chats c_bundle ON c_bundle.group_id = g_bundle.id
+                JOIN profile_chats pc ON pc.chat_id = c_bundle.id
                 JOIN rubrics r ON r.id = sg.rubric_id
                 WHERE EXISTS (
-                    SELECT 1 FROM message_runs mr_check
-                    JOIN chat_messages cm_check ON cm_check.message_id = mr_check.message_id
-                    WHERE mr_check.run_id = sg.run_id
+                    SELECT 1 FROM runs r_check
+                    JOIN group_runs gr_check ON gr_check.run_id = r_check.id
+                    JOIN groups g_check ON g_check.id = gr_check.group_id
+                    JOIN chats c_check ON c_check.group_id = g_check.id
+                    WHERE r_check.id = sg.run_id
                 )
             ),
             ordered_grades_per_profile AS (

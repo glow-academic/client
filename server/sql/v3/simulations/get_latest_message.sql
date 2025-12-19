@@ -4,15 +4,19 @@
 -- Returns NULL if no messages exist
 SELECT 
     m.id,
-    cm.chat_id,
+    c.id AS chat_id,
     m.role,
     m.content,
     m.created_at,
     m.completed,
     m.updated_at
-FROM messages m
-JOIN chat_messages cm ON cm.message_id = m.id
-WHERE cm.chat_id = $1::uuid
+FROM chats c
+JOIN groups g ON g.id = c.group_id
+JOIN group_runs gr ON gr.group_id = g.id
+JOIN runs r ON r.id = gr.run_id
+JOIN message_runs mr ON mr.run_id = r.id
+JOIN messages m ON m.id = mr.message_id
+WHERE c.id = $1::uuid
   AND NOT EXISTS (
       SELECT 1 FROM message_tree mt 
       WHERE mt.parent_id = m.id AND mt.active = true

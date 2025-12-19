@@ -23,11 +23,12 @@ WITH run_info AS (
         COALESCE(
             $2::uuid,
             -- Try to get department from chat
-            (SELECT sd.department_id FROM message_runs mr
-             JOIN chat_messages cm ON cm.message_id = mr.message_id
-             JOIN chats c ON c.id = cm.chat_id
+            (SELECT sd.department_id FROM runs r2
+             JOIN group_runs gr ON gr.run_id = r2.id
+             JOIN groups g ON g.id = gr.group_id
+             JOIN chats c ON c.group_id = g.id
              JOIN scenario_departments sd ON sd.scenario_id = c.scenario_id AND sd.active = true
-             WHERE mr.run_id = r.id LIMIT 1),
+             WHERE r2.id = r.id LIMIT 1),
             -- Try to get department from profile
             (SELECT pd.department_id FROM run_profiles rpf
              JOIN profile_departments pd ON pd.profile_id = rpf.profile_id AND pd.active = true
