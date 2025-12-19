@@ -50,12 +50,13 @@ runs_base AS (
     -- Join to groups via group_runs
     LEFT JOIN group_runs gr ON gr.run_id = mr.id
     LEFT JOIN groups g ON g.id = gr.group_id
-    -- Join to simulations via chats.group_id → groups → group_runs → runs → chats → attempt_chats → simulation_attempts → simulations
+    -- Join to simulations via chat_groups → groups → group_runs → runs → chats → attempt_chats → simulation_attempts → simulations
     -- Get chat_id from any chat in this run's group
     LEFT JOIN LATERAL (
         SELECT DISTINCT c.id AS chat_id
         FROM groups g2
-        JOIN chats c ON c.group_id = g2.id
+        JOIN chat_groups cg ON cg.group_id = g2.id
+        JOIN chats c ON c.id = cg.chat_id
         WHERE g2.id = g.id
         LIMIT 1
     ) chat_lookup ON true

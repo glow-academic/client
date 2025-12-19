@@ -8,7 +8,8 @@ WITH target_message AS (
     JOIN runs r ON r.id = mr.run_id
     JOIN group_runs gr ON gr.run_id = r.id
     JOIN groups g ON g.id = gr.group_id
-    JOIN chats c ON c.group_id = g.id
+    JOIN chat_groups cg ON cg.group_id = g.id
+    JOIN chats c ON c.id = cg.chat_id
     WHERE m.id = $1::uuid AND c.id = $2::uuid
 ),
 chat_info AS (

@@ -31,6 +31,18 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
   CREATE INDEX ON rubric_departments (rubric_id);
   CREATE INDEX ON rubric_departments (department_id);
 
+  -- Rubric → Groups junction table (BCNF normalization)
+  CREATE TABLE rubric_groups (
+    rubric_id UUID NOT NULL REFERENCES rubrics(id) ON DELETE CASCADE,
+    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (rubric_id, group_id)
+  );
+
+  CREATE INDEX ON rubric_groups (rubric_id);
+  CREATE INDEX ON rubric_groups (group_id);
+  CREATE UNIQUE INDEX rubric_groups_one_per_rubric ON rubric_groups(rubric_id);
 
   CREATE TABLE standard_groups (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

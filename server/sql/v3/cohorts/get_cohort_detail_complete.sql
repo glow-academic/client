@@ -91,7 +91,8 @@ cohort_simulation_stats AS (
     LEFT JOIN LATERAL (
         SELECT DISTINCT sc.id AS chat_id, r2.id AS run_id
         FROM chats c
-        JOIN groups g ON g.id = c.group_id
+        JOIN chat_groups cg ON cg.chat_id = c.id
+        JOIN groups g ON g.id = cg.group_id
         JOIN group_runs gr ON gr.group_id = g.id
         JOIN runs r2 ON r2.id = gr.run_id
         WHERE c.id = sc.id
@@ -103,7 +104,8 @@ cohort_simulation_stats AS (
             SELECT 1 FROM runs r_check
             JOIN group_runs gr_check ON gr_check.run_id = r_check.id
             JOIN groups g_check ON g_check.id = gr_check.group_id
-            JOIN chats c_check ON c_check.group_id = g_check.id
+            JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
+            JOIN chats c_check ON c_check.id = cg_check.chat_id
             WHERE r_check.id = scg.run_id
         )
     GROUP BY cs.simulation_id, cs.active, cs.position, s.title, s.description

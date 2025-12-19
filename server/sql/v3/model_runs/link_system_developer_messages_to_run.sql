@@ -23,7 +23,8 @@ WITH run_info AS (
             (SELECT sd.department_id FROM runs r2
              JOIN group_runs gr ON gr.run_id = r2.id
              JOIN groups g ON g.id = gr.group_id
-             JOIN chats c ON c.group_id = g.id
+             JOIN chat_groups cg ON cg.group_id = g.id
+             JOIN chats c ON c.id = cg.chat_id
              JOIN scenario_departments sd ON sd.scenario_id = c.scenario_id AND sd.active = true
              WHERE r2.id = r.id LIMIT 1),
             -- Try to get department from profile
@@ -121,7 +122,8 @@ scenario_developer_content AS (
     FROM run_info ri
     JOIN group_runs gr ON gr.run_id = ri.run_id
     JOIN groups g ON g.id = gr.group_id
-    JOIN chats c ON c.group_id = g.id
+    JOIN chat_groups cg ON cg.group_id = g.id
+    JOIN chats c ON c.id = cg.chat_id
     JOIN scenario_problem_statements sps ON sps.scenario_id = c.scenario_id AND sps.active = true
     JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     WHERE $3::uuid IS NOT NULL

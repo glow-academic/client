@@ -249,13 +249,15 @@
                       JOIN runs r ON r.id = scg.run_id
                       JOIN group_runs gr ON gr.run_id = r.id
                       JOIN groups g ON g.id = gr.group_id
-                      JOIN chats c ON c.group_id = g.id
+                      JOIN chat_groups cg ON cg.group_id = g.id
+                      JOIN chats c ON c.id = cg.chat_id
                       WHERE c.id = sc.id 
                         AND EXISTS (
                             SELECT 1 FROM runs r_check
                             JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                             JOIN groups g_check ON g_check.id = gr_check.group_id
-                            JOIN chats c_check ON c_check.group_id = g_check.id
+                            JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
+                            JOIN chats c_check ON c_check.id = cg_check.chat_id
                             WHERE r_check.id = scg.run_id
                         )
                   )
@@ -524,7 +526,8 @@
                     0 as depth,
                     m.id as path_root_id
                 FROM chats c
-                JOIN groups g ON g.id = c.group_id
+                JOIN chat_groups cg ON cg.chat_id = c.id
+                JOIN groups g ON g.id = cg.group_id
                 JOIN group_runs gr ON gr.group_id = g.id
                 JOIN runs r ON r.id = gr.run_id
                 JOIN message_runs mr ON mr.run_id = r.id
@@ -560,7 +563,8 @@
                 JOIN runs r ON r.id = mr.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN groups g ON g.id = gr.group_id
-                JOIN chats c ON c.group_id = g.id
+                JOIN chat_groups cg ON cg.group_id = g.id
+                JOIN chats c ON c.id = cg.chat_id
                 LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
                 CROSS JOIN chat_ids_list cil
                 WHERE mp.depth < 1000  -- Safety limit
@@ -582,7 +586,8 @@
                     -1 as depth,
                     m.id as path_root_id
                 FROM chats c
-                JOIN groups g ON g.id = c.group_id
+                JOIN chat_groups cg ON cg.chat_id = c.id
+                JOIN groups g ON g.id = cg.group_id
                 JOIN group_runs gr ON gr.group_id = g.id
                 JOIN runs r ON r.id = gr.run_id
                 JOIN message_runs mr ON mr.run_id = r.id
@@ -736,7 +741,8 @@
                     '[]'::jsonb
                 ) as hints
             FROM chats c
-            JOIN groups g ON g.id = c.group_id
+            JOIN chat_groups cg ON cg.chat_id = c.id
+            JOIN groups g ON g.id = cg.group_id
             JOIN group_runs gr ON gr.group_id = g.id
             JOIN runs r ON r.id = gr.run_id
             JOIN message_runs mr ON mr.run_id = r.id
@@ -766,12 +772,14 @@
             JOIN runs r ON r.id = scg.run_id
             JOIN group_runs gr ON gr.run_id = r.id
             JOIN groups g ON g.id = gr.group_id
-            JOIN chats c ON c.group_id = g.id
+            JOIN chat_groups cg ON cg.group_id = g.id
+            JOIN chats c ON c.id = cg.chat_id
             CROSS JOIN chat_ids_list cil
             WHERE EXISTS (
                 SELECT 1 FROM runs r_check
                 JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                 JOIN groups g_check ON g_check.id = gr_check.group_id
+                JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
                 JOIN chats c_check ON c_check.group_id = g_check.id
                 WHERE r_check.id = scg.run_id
             )
@@ -1262,13 +1270,15 @@
                 SELECT 1 FROM runs r_check
                 JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                 JOIN groups g_check ON g_check.id = gr_check.group_id
-                JOIN chats c_check ON c_check.group_id = g_check.id
+                JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
+                JOIN chats c_check ON c_check.id = cg_check.chat_id
                 WHERE r_check.id = scg.run_id
             )
             JOIN runs r_scen ON r_scen.id = scg.run_id
             JOIN group_runs gr_scen ON gr_scen.run_id = r_scen.id
             JOIN groups g_scen ON g_scen.id = gr_scen.group_id
-            JOIN chats c_scen ON c_scen.group_id = g_scen.id AND c_scen.id = sc.id
+            JOIN chat_groups cg_scen ON cg_scen.group_id = g_scen.id
+            JOIN chats c_scen ON c_scen.id = cg_scen.chat_id AND c_scen.id = sc.id
             WHERE ss.simulation_id = ab.simulation_id
               AND ss.active = true
               -- Recursively map child scenario to root parent scenario via scenario_tree

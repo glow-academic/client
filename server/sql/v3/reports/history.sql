@@ -208,12 +208,14 @@ history_chat_grades AS (
     JOIN runs r ON r.id = scg.run_id
     JOIN group_runs gr ON gr.run_id = r.id
     JOIN groups g ON g.id = gr.group_id
-    JOIN chats c ON c.group_id = g.id
+    JOIN chat_groups cg ON cg.group_id = g.id
+    JOIN chats c ON c.id = cg.chat_id
     WHERE EXISTS (
         SELECT 1 FROM runs r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
         JOIN groups g_check ON g_check.id = gr_check.group_id
-        JOIN chats c_check ON c_check.group_id = g_check.id
+        JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
+        JOIN chats c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id
     )
       AND c.id IN (
@@ -250,13 +252,15 @@ history_elapsed_time AS (
                          JOIN runs r ON r.id = scg.run_id
                          JOIN group_runs gr ON gr.run_id = r.id
                          JOIN groups g ON g.id = gr.group_id
-                         JOIN chats c ON c.group_id = g.id
+                         JOIN chat_groups cg ON cg.group_id = g.id
+    JOIN chats c ON c.id = cg.chat_id
                          WHERE c.id = sc.id 
                            AND EXISTS (
                                SELECT 1 FROM runs r_check
                                JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                                JOIN groups g_check ON g_check.id = gr_check.group_id
-                               JOIN chats c_check ON c_check.group_id = g_check.id
+                               JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
+        JOIN chats c_check ON c_check.id = cg_check.chat_id
                                WHERE r_check.id = scg.run_id
                            )
                          ORDER BY scg.created_at DESC LIMIT 1)
@@ -266,13 +270,15 @@ history_elapsed_time AS (
                              JOIN runs r ON r.id = scg.run_id
                              JOIN group_runs gr ON gr.run_id = r.id
                              JOIN groups g ON g.id = gr.group_id
-                             JOIN chats c ON c.group_id = g.id
+                             JOIN chat_groups cg ON cg.group_id = g.id
+    JOIN chats c ON c.id = cg.chat_id
                              WHERE c.id = sc.id 
                                AND EXISTS (
                                    SELECT 1 FROM runs r_check
                                    JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                                    JOIN groups g_check ON g_check.id = gr_check.group_id
-                                   JOIN chats c_check ON c_check.group_id = g_check.id
+                                   JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
+        JOIN chats c_check ON c_check.id = cg_check.chat_id
                                    WHERE r_check.id = scg.run_id
                                )
                              ORDER BY scg.created_at DESC LIMIT 1) - sc.created_at

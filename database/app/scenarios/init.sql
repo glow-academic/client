@@ -235,6 +235,19 @@ CREATE TABLE scenario_documents (
 CREATE INDEX ON scenario_documents (scenario_id);
 CREATE INDEX ON scenario_documents (document_id);
 
+-- Scenarios ↔ Groups junction table (BCNF normalization)
+CREATE TABLE scenario_groups (
+  scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (scenario_id, group_id)
+);
+
+CREATE INDEX ON scenario_groups (scenario_id);
+CREATE INDEX ON scenario_groups (group_id);
+CREATE UNIQUE INDEX scenario_groups_one_per_scenario ON scenario_groups(scenario_id);
+
 -- Scenario → Images junction table (BCNF normalization)
 -- Links scenarios to images (strong entity)
 CREATE TABLE scenario_images (

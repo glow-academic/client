@@ -126,11 +126,8 @@ CREATE TABLE chats (
   title      TEXT         NOT NULL,
   scenario_id UUID         NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE,
   completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
-  trace_id   TEXT         NOT NULL, -- openai trace id (NOT NULL, no default)
-  group_id   UUID         NOT NULL REFERENCES groups(id) ON DELETE CASCADE
+  trace_id   TEXT         NOT NULL -- openai trace id (NOT NULL, no default)
 );
-
-CREATE INDEX ON chats (group_id);
 
 -- Simulation attempts ↔ Chats junction table (BCNF normalization - replaces chats.attempt_id)
 CREATE TABLE attempt_chats (
@@ -154,10 +151,43 @@ CREATE TABLE groups (
 
 CREATE INDEX ON groups (created_at);
 
+-- Chats ↔ Groups junction table (BCNF normalization)
+-- Links chats to groups (for simulation chats)
+CREATE TABLE chat_groups (
+  chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (chat_id, group_id)
+);
+
+CREATE INDEX ON chat_groups (chat_id);
+CREATE INDEX ON chat_groups (group_id);
+CREATE UNIQUE INDEX chat_groups_one_per_chat ON chat_groups(chat_id);
+
+-- Grade groups (for grade-type groups)
+CREATE TABLE grade_groups (
+  chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (chat_id, group_id)
+);
+
+CREATE INDEX ON grade_groups (chat_id);
+CREATE INDEX ON grade_groups (group_id);
+CREATE UNIQUE INDEX grade_groups_one_per_chat ON grade_groups(chat_id);
+
+-- Constraint: one of each type per chat
+CREATE UNIQUE INDEX chat_groups_one_per_type_per_chat 
+  ON chat_groups(chat_id, type);
+
 -- Groups ↔ Runs junction table (BCNF normalization)
+-- idx column represents the position/order of the run within the group (0 = first run)
 CREATE TABLE group_runs (
   group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   run_id UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  idx INTEGER NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (group_id, run_id)
@@ -166,9 +196,10 @@ CREATE TABLE group_runs (
 CREATE INDEX ON group_runs (group_id);
 CREATE INDEX ON group_runs (run_id);
 CREATE INDEX ON group_runs (group_id, run_id);
+CREATE INDEX ON group_runs (group_id, idx);
 
 -- Unified messages table - messages linked to runs via message_runs junction table (BCNF normalization)
--- Chat-to-message relationships are derived through: chats.group_id → groups → group_runs → runs → message_runs → messages
+-- Chat-to-message relationships are derived through: chats → chat_groups/grade_groups → groups → group_runs → runs → message_runs → messages
 CREATE TABLE messages (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),

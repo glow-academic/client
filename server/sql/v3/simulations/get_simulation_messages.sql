@@ -17,7 +17,8 @@ WITH RECURSIVE message_path AS (
         0 as depth,
         m.id as path_root_id
     FROM chats c
-    JOIN groups g ON g.id = c.group_id
+    JOIN chat_groups cg ON cg.chat_id = c.id
+    JOIN groups g ON g.id = cg.group_id
     JOIN group_runs gr ON gr.group_id = g.id
     JOIN runs r ON r.id = gr.run_id
     JOIN message_runs mr ON mr.run_id = r.id
@@ -47,9 +48,10 @@ WITH RECURSIVE message_path AS (
     JOIN message_path mp ON mp.id = mt.parent_id
     JOIN message_runs mr ON mr.message_id = m.id
     JOIN runs r ON r.id = mr.run_id
-    JOIN group_runs gr ON gr.group_id = r.id
+    JOIN group_runs gr ON gr.run_id = r.id
     JOIN groups g ON g.id = gr.group_id
-    JOIN chats c ON c.group_id = g.id
+    JOIN chat_groups cg ON cg.group_id = g.id
+    JOIN chats c ON c.id = cg.chat_id
     
     -- Prevent infinite loops (safety limit)
     WHERE mp.depth < 1000
@@ -69,7 +71,8 @@ messages_without_parents AS (
         -1 as depth,  -- Negative depth to sort before tree messages
         m.id as path_root_id
     FROM chats c
-    JOIN groups g ON g.id = c.group_id
+    JOIN chat_groups cg ON cg.chat_id = c.id
+    JOIN groups g ON g.id = cg.group_id
     JOIN group_runs gr ON gr.group_id = g.id
     JOIN runs r ON r.id = gr.run_id
     JOIN message_runs mr ON mr.run_id = r.id

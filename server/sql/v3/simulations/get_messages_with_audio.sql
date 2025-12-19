@@ -12,9 +12,10 @@ JOIN message_audio ma ON ma.message_id = m.id
 JOIN uploads u ON u.id = ma.upload_id
 JOIN message_runs mr ON mr.message_id = m.id
 JOIN runs r ON r.id = mr.run_id
-JOIN group_runs gr ON gr.group_id = r.id
+JOIN group_runs gr ON gr.run_id = r.id
 JOIN groups g ON g.id = gr.group_id
-JOIN chats c ON c.group_id = g.id
+JOIN chat_groups cg ON cg.group_id = g.id
+JOIN chats c ON c.id = cg.chat_id
 WHERE c.id = $1::uuid
   AND m.id = ANY($2::uuid[])
 

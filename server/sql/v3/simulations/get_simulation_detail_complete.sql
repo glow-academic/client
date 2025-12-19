@@ -160,7 +160,8 @@ user_context AS (
                 SELECT 1 FROM runs r_check
                 JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                 JOIN groups g_check ON g_check.id = gr_check.group_id
-                JOIN chats c_check ON c_check.group_id = g_check.id
+                JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
+                JOIN chats c_check ON c_check.id = cg_check.chat_id
                 WHERE r_check.id = scg.run_id AND c_check.id = sc.id
             )
             LEFT JOIN runs r_detail ON r_detail.id = scg.run_id
@@ -169,7 +170,8 @@ user_context AS (
                 FROM runs r
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN groups g ON g.id = gr.group_id
-                JOIN chats c ON c.group_id = g.id
+                JOIN chat_groups cg ON cg.group_id = g.id
+                JOIN chats c ON c.id = cg.chat_id
                 WHERE r.id = r_detail.id AND c.id = sc.id
                 LIMIT 1
             ) chat_lookup_detail ON true

@@ -99,7 +99,16 @@ run_chats_map AS (
         rg.run_id,
         c.id as chat_id
     FROM run_groups_map rg
-    JOIN chats c ON c.group_id = rg.group_id
+    JOIN chat_groups cg ON cg.group_id = rg.group_id
+    JOIN chats c ON c.id = cg.chat_id
+),
+-- Find first run (idx = 0) for each group
+first_runs_map AS (
+    SELECT DISTINCT
+        gr.group_id,
+        gr.run_id as first_run_id
+    FROM group_runs gr
+    WHERE gr.idx = 0
 ),
 -- Tree traversal for messages: get all messages following conversation flow per run
 messages_with_tree AS (
@@ -123,7 +132,8 @@ messages_with_tree AS (
         JOIN runs r ON r.id = gr.run_id
         JOIN message_runs mr ON mr.run_id = r.id AND mr.run_id = rcm.run_id
         JOIN messages m ON m.id = mr.message_id
-        JOIN chats c ON c.id = rcm.chat_id AND c.group_id = g.id
+        JOIN chat_groups cg ON cg.group_id = g.id
+        JOIN chats c ON c.id = cg.chat_id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_tree mt 
             WHERE mt.parent_id = m.id AND mt.active = true
@@ -133,6 +143,7 @@ messages_with_tree AS (
         
         -- Recursive case: Traverse up the tree following parent links
         -- Find parents (m) of children (mp) already in the path
+        -- For system/developer messages: allow traversing to first run's messages in same group
         SELECT 
             m.id, 
             mp.run_id,
@@ -147,15 +158,31 @@ messages_with_tree AS (
         FROM messages m
         JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
-        JOIN message_runs mr ON mr.message_id = m.id AND mr.run_id = mp.run_id
-        JOIN runs r ON r.id = mr.run_id
-        JOIN group_runs gr ON gr.run_id = r.id
-        JOIN groups g ON g.id = gr.group_id
-        JOIN chats c ON c.group_id = g.id AND c.id = mp.chat_id
+        JOIN run_groups_map rgm ON rgm.run_id = mp.run_id
+        JOIN groups g ON g.id = rgm.group_id
+        JOIN chat_groups cg ON cg.group_id = g.id
+        JOIN chats c ON c.id = cg.chat_id AND c.id = mp.chat_id
+        -- For system/developer messages: check first run in same group
+        -- For other messages: check current run only
+        LEFT JOIN first_runs_map frm ON frm.group_id = g.id
+        LEFT JOIN message_runs mr_current ON mr_current.message_id = m.id AND mr_current.run_id = mp.run_id
+        LEFT JOIN message_runs mr_first ON mr_first.message_id = m.id 
+            AND mr_first.run_id = frm.first_run_id 
+            AND m.role IN ('system', 'developer')
         WHERE mp.depth < 1000  -- Safety limit
+        AND (
+            -- Message is linked to current run (normal case)
+            mr_current.message_id IS NOT NULL
+            OR
+            -- Message is system/developer and linked to first run in same group (deduplication case)
+            (m.role IN ('system', 'developer') AND mr_first.message_id IS NOT NULL)
+        )
     ),
     -- Include messages without parents (backward compatibility for existing messages)
+    -- Assign depth based on role to ensure proper ordering: system (3) -> developer (2) -> user (1) -> assistant (0)
+    -- For system/developer messages: also include those from first run in same group (for deduplication)
     messages_without_parents AS (
+        -- Messages linked to current run
         SELECT 
             m.id, 
             rcm.run_id,
@@ -165,7 +192,13 @@ messages_with_tree AS (
             m.created_at, 
             m.completed, 
             m.updated_at,
-            -1 as depth,
+            CASE 
+                WHEN m.role = 'system' THEN 3
+                WHEN m.role = 'developer' THEN 2
+                WHEN m.role = 'user' THEN 1
+                WHEN m.role = 'assistant' THEN 0
+                ELSE -1
+            END as depth,
             m.id as path_root_id
         FROM run_chats_map rcm
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
@@ -174,7 +207,8 @@ messages_with_tree AS (
         JOIN runs r ON r.id = gr.run_id
         JOIN message_runs mr ON mr.run_id = r.id AND mr.run_id = rcm.run_id
         JOIN messages m ON m.id = mr.message_id
-        JOIN chats c ON c.id = rcm.chat_id AND c.group_id = g.id
+        JOIN chat_groups cg ON cg.group_id = g.id
+        JOIN chats c ON c.id = cg.chat_id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_tree mt 
             WHERE mt.child_id = m.id AND mt.active = true
@@ -182,6 +216,47 @@ messages_with_tree AS (
         AND NOT EXISTS (
             SELECT 1 FROM message_path mp 
             WHERE mp.id = m.id AND mp.run_id = rcm.run_id
+        )
+        
+        UNION
+        
+        -- System/developer messages from first run in same group (for non-first runs)
+        SELECT 
+            m.id, 
+            rcm.run_id,
+            rcm.chat_id,
+            m.role, 
+            m.content, 
+            m.created_at, 
+            m.completed, 
+            m.updated_at,
+            CASE 
+                WHEN m.role = 'system' THEN 3
+                WHEN m.role = 'developer' THEN 2
+                ELSE -1
+            END as depth,
+            m.id as path_root_id
+        FROM run_chats_map rcm
+        JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
+        JOIN groups g ON g.id = rgm.group_id
+        JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
+        JOIN first_runs_map frm ON frm.group_id = g.id AND frm.first_run_id != rcm.run_id
+        JOIN message_runs mr ON mr.run_id = frm.first_run_id
+        JOIN messages m ON m.id = mr.message_id AND m.role IN ('system', 'developer')
+        JOIN chat_groups cg ON cg.group_id = g.id
+        JOIN chats c ON c.id = cg.chat_id AND c.id = rcm.chat_id
+        WHERE NOT EXISTS (
+            SELECT 1 FROM message_tree mt 
+            WHERE mt.child_id = m.id AND mt.active = true
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM message_path mp 
+            WHERE mp.id = m.id AND mp.run_id = rcm.run_id
+        )
+        AND NOT EXISTS (
+            -- Don't include if already linked to current run
+            SELECT 1 FROM message_runs mr2
+            WHERE mr2.message_id = m.id AND mr2.run_id = rcm.run_id
         )
     ),
     -- Combine tree-traversed messages and messages without parents
@@ -191,6 +266,7 @@ messages_with_tree AS (
         SELECT * FROM messages_without_parents
     )
     -- Select distinct messages ordered by conversation flow
+    -- Prefer tree-traversed messages (depth >= 0) over messages without parents (depth = -1)
     SELECT DISTINCT ON (am.id, am.run_id)
         am.id,
         am.run_id,
@@ -202,10 +278,11 @@ messages_with_tree AS (
         am.updated_at,
         am.depth
     FROM all_messages am
-    ORDER BY am.id, am.run_id, am.created_at
+    ORDER BY am.id, am.run_id, am.depth DESC, am.created_at
 ),
 runs_with_messages AS (
-    -- Aggregate messages per run, ordered by chat then by tree traversal order
+    -- Aggregate messages per run, ordered by tree traversal order (depth DESC)
+    -- Order by depth DESC to get: system (3) -> developer (2) -> user (1) -> assistant (0)
     SELECT 
         mwt.run_id,
         COALESCE(
@@ -217,7 +294,9 @@ runs_with_messages AS (
                     'createdAt', mwt.created_at,
                     'updatedAt', mwt.updated_at,
                     'completed', mwt.completed
-                ) ORDER BY mwt.chat_id, mwt.depth DESC, mwt.created_at
+                ) ORDER BY 
+                    mwt.depth DESC,
+                    mwt.created_at
             ),
             '[]'::jsonb
         ) as messages

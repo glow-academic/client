@@ -87,7 +87,8 @@ cohort_simulation_stats AS (
         FROM runs r
         JOIN group_runs gr ON gr.run_id = r.id
         JOIN groups g ON g.id = gr.group_id
-        JOIN chats c ON c.group_id = g.id
+        JOIN chat_groups cg ON cg.group_id = g.id
+        JOIN chats c ON c.id = cg.chat_id
         WHERE r.id = r_cohort_new.id AND c.id = sc.id
         LIMIT 1
     ) chat_lookup_cohort ON true

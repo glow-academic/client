@@ -35,6 +35,19 @@ CREATE TABLE document_departments (
 CREATE INDEX ON document_departments (document_id);
 CREATE INDEX ON document_departments (department_id);
 
+-- Document → Groups junction table (BCNF normalization)
+CREATE TABLE document_groups (
+  document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (document_id, group_id)
+);
+
+CREATE INDEX ON document_groups (document_id);
+CREATE INDEX ON document_groups (group_id);
+CREATE UNIQUE INDEX document_groups_one_per_document ON document_groups(document_id);
+
 -- Document → Uploads junction table (BCNF normalization)
 -- Allows version history of document uploads
 CREATE TABLE document_uploads (

@@ -41,7 +41,8 @@ runs_base AS (
     LEFT JOIN LATERAL (
         SELECT DISTINCT c.id AS chat_id
         FROM groups g2
-        JOIN chats c ON c.group_id = g2.id
+        JOIN chat_groups cg ON cg.group_id = g2.id
+        JOIN chats c ON c.id = cg.chat_id
         WHERE g2.id = g.id
         LIMIT 1
     ) chat_lookup ON true

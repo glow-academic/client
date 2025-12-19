@@ -12,7 +12,8 @@ SELECT
     m.completed,
     m.updated_at
 FROM chats c
-JOIN groups g ON g.id = c.group_id
+JOIN chat_groups cg ON cg.chat_id = c.id
+JOIN groups g ON g.id = cg.group_id
 JOIN group_runs gr ON gr.group_id = g.id
 JOIN runs r ON r.id = gr.run_id
 JOIN message_runs mr ON mr.run_id = r.id
