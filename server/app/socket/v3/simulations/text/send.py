@@ -8,33 +8,24 @@ from typing import Any
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
-from app.main import (
-    get_hint_storage,
-    get_internal_sio,
-    get_pool,
-    get_simulation_tool_calls_dict,
-    sio,
-)
+from app.main import (get_hint_storage, get_internal_sio, get_pool,
+                      get_simulation_tool_calls_dict, sio)
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
-from app.utils.agents.tools.create_persona_tools import (
-    create_persona_tools,
-    find_persona_by_name,
-)
-from app.utils.activity.websocket_logger import log_websocket_activity
+from app.utils.agents.tools.create_persona_tools import (create_persona_tools,
+                                                         find_persona_by_name)
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import (
-    get_simulation_conversation_history,
-)
+from app.utils.chat.get_simulation_conversation_history import \
+    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -821,7 +812,8 @@ async def _simulation_text_send_impl(
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.utils.websocket.store_active_run import store_active_run
+                    from app.utils.websocket.store_active_run import \
+                        store_active_run
 
                     # Fetch context for the chat
                     sql_context = load_sql(
@@ -994,16 +986,46 @@ async def _simulation_text_send_impl(
                     )
                     model_run_id = uuid.UUID(model_run_row["run_id"])
 
-                    # Link run to chat if not already linked
-                    await conn.execute(
+                    # Link run to chat's group if not already linked (now uses groups/group_runs)
+                    # Get or create group for chat, then link run to group
+                    chat_group_row = await conn.fetchrow(
                         """
-                        INSERT INTO chat_runs (run_id, chat_id, created_at, updated_at)
-                        VALUES ($1::uuid, $2::uuid, NOW(), NOW())
-                        ON CONFLICT (run_id, chat_id) DO NOTHING
+                        WITH get_group AS (
+                            SELECT group_id FROM chats WHERE id = $1::uuid AND group_id IS NOT NULL
+                        ),
+                        create_group AS (
+                            INSERT INTO groups (created_at, updated_at)
+                            SELECT NOW(), NOW()
+                            WHERE NOT EXISTS (SELECT 1 FROM get_group)
+                            RETURNING id as group_id
+                        ),
+                        update_chat AS (
+                            UPDATE chats
+                            SET group_id = cg.group_id
+                            FROM create_group cg
+                            WHERE chats.id = $1::uuid AND chats.group_id IS NULL
+                            RETURNING chats.group_id
+                        )
+                        SELECT group_id FROM get_group
+                        UNION ALL
+                        SELECT group_id FROM create_group
+                        UNION ALL
+                        SELECT group_id FROM update_chat
+                        LIMIT 1
                         """,
-                        str(model_run_id),
                         str(chat_id_uuid),
                     )
+                    if chat_group_row:
+                        group_id = chat_group_row["group_id"]
+                        await conn.execute(
+                            """
+                            INSERT INTO group_runs (group_id, run_id, created_at, updated_at)
+                            VALUES ($1::uuid, $2::uuid, NOW(), NOW())
+                            ON CONFLICT (group_id, run_id) DO NOTHING
+                            """,
+                            str(group_id),
+                            str(model_run_id),
+                        )
 
                     # Link system/developer messages to run
                     sql_link_sys_dev = load_sql(
@@ -1235,16 +1257,46 @@ Tool Usage Instructions:
                         tools=persona_tools,
                     )
 
-                    # Link run to chat if not already linked
-                    await conn.execute(
+                    # Link run to chat's group if not already linked (now uses groups/group_runs)
+                    # Get or create group for chat, then link run to group
+                    chat_group_row = await conn.fetchrow(
                         """
-                        INSERT INTO chat_runs (run_id, chat_id, created_at, updated_at)
-                        VALUES ($1::uuid, $2::uuid, NOW(), NOW())
-                        ON CONFLICT (run_id, chat_id) DO NOTHING
+                        WITH get_group AS (
+                            SELECT group_id FROM chats WHERE id = $1::uuid AND group_id IS NOT NULL
+                        ),
+                        create_group AS (
+                            INSERT INTO groups (created_at, updated_at)
+                            SELECT NOW(), NOW()
+                            WHERE NOT EXISTS (SELECT 1 FROM get_group)
+                            RETURNING id as group_id
+                        ),
+                        update_chat AS (
+                            UPDATE chats
+                            SET group_id = cg.group_id
+                            FROM create_group cg
+                            WHERE chats.id = $1::uuid AND chats.group_id IS NULL
+                            RETURNING chats.group_id
+                        )
+                        SELECT group_id FROM get_group
+                        UNION ALL
+                        SELECT group_id FROM create_group
+                        UNION ALL
+                        SELECT group_id FROM update_chat
+                        LIMIT 1
                         """,
-                        str(model_run_id),
                         str(chat_id_uuid),
                     )
+                    if chat_group_row:
+                        group_id = chat_group_row["group_id"]
+                        await conn.execute(
+                            """
+                            INSERT INTO group_runs (group_id, run_id, created_at, updated_at)
+                            VALUES ($1::uuid, $2::uuid, NOW(), NOW())
+                            ON CONFLICT (group_id, run_id) DO NOTHING
+                            """,
+                            str(group_id),
+                            str(model_run_id),
+                        )
 
                     # Link system/developer messages to run
                     sql_link_sys_dev = load_sql(
@@ -2618,9 +2670,8 @@ Tool Usage Instructions:
                             del tool_calls_dict[chat_id_str]
 
                         # Clean up active run
-                        from app.utils.websocket.remove_active_run import (
-                            remove_active_run,
-                        )
+                        from app.utils.websocket.remove_active_run import \
+                            remove_active_run
 
                         await remove_active_run(chat_id_str)
 

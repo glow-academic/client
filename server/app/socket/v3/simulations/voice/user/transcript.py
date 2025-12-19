@@ -76,16 +76,10 @@ async def _simulation_voice_user_transcript_impl(
             return
 
         async with pool.acquire() as conn:
-            # Get latest run for the chat (same pattern as voice_user_message.py)
+            # Get latest run for the chat (now uses groups/group_runs)
+            sql_get_latest_run = load_sql("sql/v3/simulations/get_latest_run_for_chat.sql")
             latest_run_row = await conn.fetchrow(
-                """
-                SELECT rc.run_id::text as run_id
-                FROM chat_runs rc
-                JOIN runs r ON r.id = rc.run_id
-                WHERE rc.chat_id = $1::uuid
-                ORDER BY r.created_at DESC
-                LIMIT 1
-                """,
+                sql_get_latest_run,
                 str(chat_id_uuid),
             )
 
@@ -132,13 +126,17 @@ async def _simulation_voice_user_transcript_impl(
             )
 
             # Create branch from latest message to new user message (if latest exists)
+            # Now uses groups/group_runs pattern (instead of chat_runs)
             latest_message_row = await conn.fetchrow(
                 """
                 SELECT m.id
                 FROM messages m
                 JOIN message_runs mr ON mr.message_id = m.id
-                JOIN chat_runs cr ON cr.run_id = mr.run_id
-                WHERE cr.chat_id = $1::uuid
+                JOIN runs r ON r.id = mr.run_id
+                JOIN group_runs gr ON gr.run_id = r.id
+                JOIN groups g ON g.id = gr.group_id
+                JOIN chats c ON c.group_id = g.id
+                WHERE c.id = $1::uuid
                   AND m.id != $2::uuid
                   AND NOT EXISTS (
                       SELECT 1 FROM message_tree mt 

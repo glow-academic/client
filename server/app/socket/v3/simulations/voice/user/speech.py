@@ -362,16 +362,46 @@ async def _simulation_voice_user_speech_impl(
 
                         run_id = uuid.UUID(run_row["run_id"])
 
-                        # Link run to chat
-                        await conn.execute(
+                        # Link run to chat's group (now uses groups/group_runs)
+                        # Get or create group for chat, then link run to group
+                        chat_group_row = await conn.fetchrow(
                             """
-                            INSERT INTO chat_runs (run_id, chat_id, created_at, updated_at)
-                            VALUES ($1::uuid, $2::uuid, NOW(), NOW())
-                            ON CONFLICT (run_id, chat_id) DO NOTHING
+                            WITH get_group AS (
+                                SELECT group_id FROM chats WHERE id = $1::uuid AND group_id IS NOT NULL
+                            ),
+                            create_group AS (
+                                INSERT INTO groups (created_at, updated_at)
+                                SELECT NOW(), NOW()
+                                WHERE NOT EXISTS (SELECT 1 FROM get_group)
+                                RETURNING id as group_id
+                            ),
+                            update_chat AS (
+                                UPDATE chats
+                                SET group_id = cg.group_id
+                                FROM create_group cg
+                                WHERE chats.id = $1::uuid AND chats.group_id IS NULL
+                                RETURNING chats.group_id
+                            )
+                            SELECT group_id FROM get_group
+                            UNION ALL
+                            SELECT group_id FROM create_group
+                            UNION ALL
+                            SELECT group_id FROM update_chat
+                            LIMIT 1
                             """,
-                            run_id,
-                            chat_id_uuid,
+                            str(chat_id_uuid),
                         )
+                        if chat_group_row:
+                            group_id = chat_group_row["group_id"]
+                            await conn.execute(
+                                """
+                                INSERT INTO group_runs (group_id, run_id, created_at, updated_at)
+                                VALUES ($1::uuid, $2::uuid, NOW(), NOW())
+                                ON CONFLICT (group_id, run_id) DO NOTHING
+                                """,
+                                str(group_id),
+                                str(run_id),
+                            )
 
                         # Link message to run (if message exists)
                         try:

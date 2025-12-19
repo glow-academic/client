@@ -144,16 +144,10 @@ async def _simulation_voice_assistant_delta_impl(
                         )
                         return
 
-                    # Get run_id from chat_runs (voice mode pattern - same as user_message.py)
+                    # Get run_id (now uses groups/group_runs)
+                    sql_get_latest_run = load_sql("sql/v3/simulations/get_latest_run_for_chat.sql")
                     latest_run_row = await conn.fetchrow(
-                        """
-                        SELECT rc.run_id::text as run_id
-                        FROM chat_runs rc
-                        JOIN runs r ON r.id = rc.run_id
-                        WHERE rc.chat_id = $1::uuid
-                        ORDER BY r.created_at DESC
-                        LIMIT 1
-                        """,
+                        sql_get_latest_run,
                         str(chat_id_uuid),
                     )
                     run_id = latest_run_row["run_id"] if latest_run_row else None
@@ -185,8 +179,11 @@ async def _simulation_voice_assistant_delta_impl(
                         SELECT m.id
                         FROM messages m
                         JOIN message_runs mr ON mr.message_id = m.id
-                        JOIN chat_runs cr ON cr.run_id = mr.run_id
-                        WHERE cr.chat_id = $1::uuid
+                        JOIN runs r ON r.id = mr.run_id
+                        JOIN group_runs gr ON gr.run_id = r.id
+                        JOIN groups g ON g.id = gr.group_id
+                        JOIN chats c ON c.group_id = g.id
+                        WHERE c.id = $1::uuid
                           AND NOT EXISTS (
                               SELECT 1 FROM message_tree mt 
                               WHERE mt.parent_id = m.id AND mt.active = true
@@ -310,8 +307,11 @@ async def _simulation_voice_assistant_delta_impl(
                             SELECT m.created_at
                             FROM messages m
                             JOIN message_runs mr ON mr.message_id = m.id
-                            JOIN chat_runs cr ON cr.run_id = mr.run_id
-                            WHERE cr.chat_id = $1::uuid
+                            JOIN runs r ON r.id = mr.run_id
+                            JOIN group_runs gr ON gr.run_id = r.id
+                            JOIN groups g ON g.id = gr.group_id
+                            JOIN chats c ON c.group_id = g.id
+                            WHERE c.id = $1::uuid
                               AND m.role = 'user'
                               AND m.id != $2::uuid
                             ORDER BY m.created_at DESC
@@ -389,8 +389,11 @@ async def _simulation_voice_assistant_delta_impl(
                             SELECT m.id
                             FROM messages m
                             JOIN message_runs mr ON mr.message_id = m.id
-                            JOIN chat_runs cr ON cr.run_id = mr.run_id
-                            WHERE cr.chat_id = $1::uuid
+                            JOIN runs r ON r.id = mr.run_id
+                            JOIN group_runs gr ON gr.run_id = r.id
+                            JOIN groups g ON g.id = gr.group_id
+                            JOIN chats c ON c.group_id = g.id
+                            WHERE c.id = $1::uuid
                               AND m.id != $2::uuid
                               AND NOT EXISTS (
                                   SELECT 1 FROM message_tree mt 

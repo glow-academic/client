@@ -39,6 +39,7 @@ import VoiceWaveform from "./VoiceWaveform";
 //   ServerToClientEvents[T] extends (payload: infer P) => unknown ? P : never;
 // type StartVoiceResponsePayload = EventPayload<"simulation_voice_start_response">;
 import {
+  OpenAIRealtimeWebRTC,
   RealtimeAgent,
   RealtimeSession,
   tool,
@@ -123,6 +124,13 @@ export default function AttemptInput({
   // Map item_id to upload_id for linking audio to messages when transcript arrives
   const audioUploadIdRef = useRef<Map<string, string>>(new Map());
 
+  // Assistant audio recording refs
+  const assistantAudioElementRef = useRef<HTMLAudioElement | null>(null);
+  const assistantAudioStreamRef = useRef<MediaStream | null>(null);
+  const assistantRecorderRef = useRef<MediaRecorder | null>(null);
+  const assistantAudioChunksRef = useRef<BlobPart[]>([]);
+  const assistantRecordingItemIdRef = useRef<string | null>(null);
+
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
 
@@ -162,7 +170,7 @@ export default function AttemptInput({
     e:
       | React.FormEvent<HTMLFormElement>
       | React.KeyboardEvent<HTMLTextAreaElement>
-      | React.MouseEvent<HTMLButtonElement>,
+      | React.MouseEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
@@ -215,7 +223,7 @@ export default function AttemptInput({
   // TUS upload helper for audio files
   const uploadAudioWithTus = async (
     blob: Blob,
-    metadata: Record<string, string> = {},
+    metadata: Record<string, string> = {}
   ): Promise<string> => {
     return new Promise<string>((resolve, reject) => {
       let tusUploadInstance: tus.Upload | null = null;
@@ -246,7 +254,7 @@ export default function AttemptInput({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({}),
-              },
+              }
             );
 
             const json = await res.json();
@@ -298,9 +306,32 @@ export default function AttemptInput({
       userMediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       userMediaStreamRef.current = null;
       userAudioChunksRef.current = [];
+
+      // Cleanup assistant audio recording
+      if (
+        assistantRecorderRef.current &&
+        assistantRecorderRef.current.state !== "inactive"
+      ) {
+        assistantRecorderRef.current.stop();
+      }
+      assistantRecorderRef.current = null;
+      assistantAudioStreamRef.current
+        ?.getTracks()
+        .forEach((track) => track.stop());
+      assistantAudioStreamRef.current = null;
+      assistantAudioChunksRef.current = [];
+      assistantRecordingItemIdRef.current = null;
+
+      // Cleanup assistant audio element
+      if (assistantAudioElementRef.current) {
+        assistantAudioElementRef.current.pause();
+        assistantAudioElementRef.current.srcObject = null;
+        assistantAudioElementRef.current.remove();
+        assistantAudioElementRef.current = null;
+      }
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.warn("[Voice] Error cleaning up user audio recorder:", err);
+      console.warn("[Voice] Error cleaning up audio recorders:", err);
     }
 
     setVoiceModeEnabled(false);
@@ -325,21 +356,24 @@ export default function AttemptInput({
       }>((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(
-            new Error("Timeout waiting for simulation_voice_stop response"),
+            new Error("Timeout waiting for simulation_voice_stop response")
           );
         }, 5000);
 
-        socket.once("simulation_voice_stop_response", (data) => {
+        socket.once("simulations_voice_stop_response", (data) => {
           clearTimeout(timeout);
           // eslint-disable-next-line no-console
-          console.log("[Voice] Received simulation_voice_stop_response:", data);
+          console.log(
+            "[Voice] Received simulations_voice_stop_response:",
+            data
+          );
           resolve(data);
         });
 
-        socket.once("simulation_voice_stop_error", (data) => {
+        socket.once("simulations_voice_stop_error", (data) => {
           clearTimeout(timeout);
           // eslint-disable-next-line no-console
-          console.error("[Voice] Received simulation_voice_stop_error:", data);
+          console.error("[Voice] Received simulations_voice_stop_error:", data);
           reject(new Error(data.message || "Failed to stop voice session"));
         });
 
@@ -408,14 +442,14 @@ export default function AttemptInput({
             reject(new Error("Timeout waiting for voice session start"));
           }, 10000);
 
-          socket.once("simulation_voice_start_response", (data) => {
+          socket.once("simulations_voice_start_response", (data) => {
             clearTimeout(timeout);
             // eslint-disable-next-line no-console
             console.log("[Voice] ===== FULL SERVER RESPONSE =====");
             // eslint-disable-next-line no-console
             console.log(
-              "[Voice] Received simulation_voice_start_response (FULL):",
-              JSON.stringify(data, null, 2),
+              "[Voice] Received simulations_voice_start_response (FULL):",
+              JSON.stringify(data, null, 2)
             );
             // eslint-disable-next-line no-console
             console.log("[Voice] Response summary:", {
@@ -437,21 +471,21 @@ export default function AttemptInput({
               resolve(data);
             } else {
               reject(
-                new Error(data.message || "Failed to start voice session"),
+                new Error(data.message || "Failed to start voice session")
               );
             }
           });
 
-          socket.once("simulation_voice_start_error", (data) => {
+          socket.once("simulations_voice_start_error", (data) => {
             clearTimeout(timeout);
             // eslint-disable-next-line no-console
             console.error(
-              "[Voice] Received simulation_voice_start_error:",
-              data,
+              "[Voice] Received simulations_voice_start_error:",
+              data
             );
             reject(new Error(data.message || "Failed to start voice session"));
           });
-        },
+        }
       );
 
       // Store tool context map for later use
@@ -459,7 +493,7 @@ export default function AttemptInput({
       // eslint-disable-next-line no-console
       console.log(
         "[Voice] Stored tool context map:",
-        toolContextMapRef.current,
+        toolContextMapRef.current
       );
 
       // Convert server tools to RealtimeAgent tools
@@ -482,7 +516,7 @@ export default function AttemptInput({
           // eslint-disable-next-line no-console
           console.log(
             `[Voice] Parsed parameters for ${toolDef.name}:`,
-            paramsJson,
+            paramsJson
           );
 
           // Convert JSON schema to zod schema
@@ -530,7 +564,7 @@ export default function AttemptInput({
               message: z
                 .string()
                 .describe(
-                  `Respond as the persona. This is the message that will be said.`,
+                  `Respond as the persona. This is the message that will be said.`
                 ),
             });
           }
@@ -539,13 +573,13 @@ export default function AttemptInput({
           // eslint-disable-next-line no-console
           console.warn(
             `Failed to parse parameters for tool ${toolDef.name}:`,
-            error,
+            error
           );
           parametersSchema = z.object({
             message: z
               .string()
               .describe(
-                `Respond as the persona. This is the message that will be said.`,
+                `Respond as the persona. This is the message that will be said.`
               ),
           });
         }
@@ -675,10 +709,36 @@ export default function AttemptInput({
         ...(responseData.voice ? { voice: responseData.voice } : {}), // Backwards compatibility
       };
 
-      // Create RealtimeSession with mapped config
+      // Create custom audio element for assistant audio capture
+      const assistantAudioEl = document.createElement("audio");
+      assistantAudioEl.autoplay = true;
+      assistantAudioEl.setAttribute("playsinline", "true");
+      // Optional: append to DOM for debugging (can be removed later)
+      assistantAudioEl.style.display = "none";
+      document.body.appendChild(assistantAudioEl);
+      assistantAudioElementRef.current = assistantAudioEl;
+
+      // Get user media stream for WebRTC transport
+      let userMediaStream: MediaStream;
+      try {
+        userMediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+      } catch {
+        throw new Error("Failed to get microphone access for voice mode");
+      }
+
+      // Create custom WebRTC transport with audioElement for assistant audio capture
+      const transport = new OpenAIRealtimeWebRTC({
+        mediaStream: userMediaStream,
+        audioElement: assistantAudioEl,
+      });
+
+      // Create RealtimeSession with custom transport
       const session = new RealtimeSession(agent, {
         model: responseData.model,
         config,
+        transport,
       });
 
       // eslint-disable-next-line no-console
@@ -696,17 +756,17 @@ export default function AttemptInput({
         .then((actualConfig) => {
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] ===== ACTUAL SESSION CONFIG (what gets sent to API) =====",
+            "[Voice] ===== ACTUAL SESSION CONFIG (what gets sent to API) ====="
           );
           // eslint-disable-next-line no-console
           console.log(
             "[Voice] Actual session config:",
-            JSON.stringify(actualConfig, null, 2),
+            JSON.stringify(actualConfig, null, 2)
           );
           // eslint-disable-next-line no-console
           console.log(
             "[Voice] Config tools count:",
-            actualConfig.tools?.length || 0,
+            actualConfig.tools?.length || 0
           );
           // eslint-disable-next-line no-console
           console.log(
@@ -725,12 +785,12 @@ export default function AttemptInput({
                     "server_label" in t ? t.server_label : undefined,
                 };
               }
-            }) || [],
+            }) || []
           );
           // eslint-disable-next-line no-console
           console.log(
             "[Voice] Config instructions:",
-            actualConfig.instructions,
+            actualConfig.instructions
           );
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END ACTUAL SESSION CONFIG =====");
@@ -767,7 +827,7 @@ export default function AttemptInput({
           console.log("[Voice] Transport event data:", event);
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSPORT EVENT =====");
-        },
+        }
       );
 
       // Listen for speech started event and transport to server
@@ -791,7 +851,7 @@ export default function AttemptInput({
           if (!socket || !currentChat?.id) {
             // eslint-disable-next-line no-console
             console.warn(
-              "[Voice] Missing socket or chat_id, cannot transport event",
+              "[Voice] Missing socket or chat_id, cannot transport event"
             );
             return;
           }
@@ -808,7 +868,7 @@ export default function AttemptInput({
             {
               chat_id: currentChat.id,
               item_id: evt.item_id,
-            },
+            }
           );
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END SPEECH STARTED =====");
@@ -826,7 +886,7 @@ export default function AttemptInput({
                   userMediaStreamRef.current,
                   {
                     mimeType: "audio/webm;codecs=opus",
-                  },
+                  }
                 );
 
                 userRecorderRef.current.ondataavailable = (e) => {
@@ -841,17 +901,17 @@ export default function AttemptInput({
               // eslint-disable-next-line no-console
               console.log(
                 "[Voice] Started user audio recording for item:",
-                evt.item_id,
+                evt.item_id
               );
             } catch (err) {
               // eslint-disable-next-line no-console
               console.error(
                 "[Voice] Failed to start user audio recording:",
-                err,
+                err
               );
             }
           })();
-        },
+        }
       );
 
       // Listen for tool call argument deltas and forward to server
@@ -877,7 +937,7 @@ export default function AttemptInput({
           if (!socket || !currentChat?.id) {
             // eslint-disable-next-line no-console
             console.warn(
-              "[Voice] Missing socket or chat_id, cannot forward delta event",
+              "[Voice] Missing socket or chat_id, cannot forward delta event"
             );
             return;
           }
@@ -895,7 +955,7 @@ export default function AttemptInput({
           console.log("[Voice] Forwarded tool call delta to server");
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TOOL CALL DELTA =====");
-        },
+        }
       );
 
       // Listen for tool call argument completion and forward to server
@@ -921,7 +981,7 @@ export default function AttemptInput({
           if (!socket || !currentChat?.id) {
             // eslint-disable-next-line no-console
             console.warn(
-              "[Voice] Missing socket or chat_id, cannot forward done event",
+              "[Voice] Missing socket or chat_id, cannot forward done event"
             );
             return;
           }
@@ -939,8 +999,40 @@ export default function AttemptInput({
           console.log("[Voice] Forwarded tool call done to server");
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TOOL CALL DONE =====");
-        },
+        }
       );
+
+      // Listen for assistant audio playback start (WebRTC - audio comes as media stream)
+      // Simplified: Just start recording when audio plays, stop when response.done fires
+      // We'll link the response_id from response.done when we stop recording
+      if (assistantAudioEl) {
+        assistantAudioEl.addEventListener("playing", () => {
+          // Start recording if not already recording (record continuously)
+          if (
+            assistantRecorderRef.current &&
+            assistantRecorderRef.current.state === "inactive"
+          ) {
+            try {
+              // If we were recording before, keep the chunks; otherwise start fresh
+              if (!assistantRecordingItemIdRef.current) {
+                assistantAudioChunksRef.current = [];
+              }
+              assistantRecorderRef.current.start();
+
+              // eslint-disable-next-line no-console
+              console.log(
+                "[Voice] Started assistant audio recording (will link response_id from response.done)"
+              );
+            } catch (err) {
+              // eslint-disable-next-line no-console
+              console.error(
+                "[Voice] Failed to start assistant audio recording:",
+                err
+              );
+            }
+          }
+        });
+      }
 
       // Listen for speech stopped event to stop user audio recording
       session.transport.on(
@@ -976,7 +1068,7 @@ export default function AttemptInput({
                 if (!socket || !currentChat?.id) {
                   // eslint-disable-next-line no-console
                   console.warn(
-                    "[Voice] Missing socket or chat_id, cannot upload user audio",
+                    "[Voice] Missing socket or chat_id, cannot upload user audio"
                   );
                   return;
                 }
@@ -1005,7 +1097,7 @@ export default function AttemptInput({
             // eslint-disable-next-line no-console
             console.error("[Voice] Error stopping user audio recorder:", err);
           }
-        },
+        }
       );
 
       // Listen for audio transcription completion events
@@ -1020,7 +1112,7 @@ export default function AttemptInput({
         }) => {
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] ===== INPUT AUDIO TRANSCRIPTION COMPLETED =====",
+            "[Voice] ===== INPUT AUDIO TRANSCRIPTION COMPLETED ====="
           );
           // eslint-disable-next-line no-console
           console.log("[Voice] Transcription event:", {
@@ -1040,7 +1132,7 @@ export default function AttemptInput({
           if (!socket || !currentChat?.id) {
             // eslint-disable-next-line no-console
             console.warn(
-              "[Voice] Missing socket or chat_id, cannot transport transcript",
+              "[Voice] Missing socket or chat_id, cannot transport transcript"
             );
             return;
           }
@@ -1072,11 +1164,11 @@ export default function AttemptInput({
               chat_id: currentChat.id,
               item_id: evt.item_id,
               transcript: transcript.substring(0, 100),
-            },
+            }
           );
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSCRIPTION COMPLETED =====");
-        },
+        }
       );
 
       // Listen for audio transcription delta events (streaming partials)
@@ -1101,7 +1193,7 @@ export default function AttemptInput({
           if (!socket || !currentChat?.id) {
             // eslint-disable-next-line no-console
             console.warn(
-              "[Voice] Missing socket or chat_id, cannot transport delta event",
+              "[Voice] Missing socket or chat_id, cannot transport delta event"
             );
             return;
           }
@@ -1121,11 +1213,11 @@ export default function AttemptInput({
               chat_id: currentChat.id,
               item_id: evt.item_id,
               delta: evt.delta.substring(0, 50),
-            },
+            }
           );
           // eslint-disable-next-line no-console
           console.log("[Voice] ===== END TRANSCRIPTION DELTA =====");
-        },
+        }
       );
 
       // Listen for tool calls using agent_tool_start event
@@ -1159,7 +1251,7 @@ export default function AttemptInput({
               // eslint-disable-next-line no-console
               console.warn(
                 "[Voice] Failed to parse toolCall.arguments as JSON:",
-                e,
+                e
               );
               actualArguments = args as Record<string, unknown>;
             }
@@ -1183,7 +1275,7 @@ export default function AttemptInput({
           if (!content) {
             // eslint-disable-next-line no-console
             console.error(
-              `[Voice] No content in arguments for debug_info tool`,
+              `[Voice] No content in arguments for debug_info tool`
             );
             return;
           }
@@ -1199,7 +1291,7 @@ export default function AttemptInput({
             {
               chat_id: currentChat.id,
               content: content.substring(0, 100),
-            },
+            }
           );
           return;
         }
@@ -1209,7 +1301,7 @@ export default function AttemptInput({
         if (toolDef.name === "speak") {
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] speak tool detected - streaming handled via transport events",
+            "[Voice] speak tool detected - streaming handled via transport events"
           );
           return;
         }
@@ -1228,12 +1320,36 @@ export default function AttemptInput({
             result,
             rawResult,
           });
-        },
+        }
       );
 
       session.on("audio_interrupted", () => {
         // eslint-disable-next-line no-console
         console.log("[Voice] RealtimeSession audio_interrupted event");
+
+        // Stop assistant audio recording if active
+        if (
+          assistantRecorderRef.current &&
+          assistantRecorderRef.current.state !== "inactive"
+        ) {
+          try {
+            assistantRecorderRef.current.stop();
+            assistantRecordingItemIdRef.current = null;
+            assistantAudioChunksRef.current = [];
+
+            // eslint-disable-next-line no-console
+            console.log(
+              "[Voice] Stopped assistant audio recording due to interruption"
+            );
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error(
+              "[Voice] Error stopping assistant audio recorder on interruption:",
+              err
+            );
+          }
+        }
+
         // Notify server of interruption
         socket.emit("simulation_voice_assistant_interrupted", {
           chat_id: currentChat.id,
@@ -1291,6 +1407,67 @@ export default function AttemptInput({
             image_tokens: 0,
           };
 
+          // Stop assistant audio recording if active
+          // Simplified: Just stop any active recording and use this response_id
+          const isRecordingActive =
+            assistantRecorderRef.current &&
+            assistantRecorderRef.current.state !== "inactive";
+
+          if (isRecordingActive && assistantRecorderRef.current) {
+            const recorder = assistantRecorderRef.current;
+
+            // Set response_id for this recording
+            assistantRecordingItemIdRef.current = evt.response.id;
+
+            try {
+              recorder.stop();
+
+              recorder.onstop = async () => {
+                try {
+                  const blob = new Blob(assistantAudioChunksRef.current, {
+                    type: "audio/webm",
+                  });
+                  assistantAudioChunksRef.current = [];
+                  const responseId = assistantRecordingItemIdRef.current;
+                  assistantRecordingItemIdRef.current = null;
+
+                  if (!socket || !currentChat?.id) {
+                    // eslint-disable-next-line no-console
+                    console.warn(
+                      "[Voice] Missing socket or chat_id, cannot upload assistant audio"
+                    );
+                    return;
+                  }
+
+                  const uploadId = await uploadAudioWithTus(blob, {
+                    filename: `assistant-${responseId}.webm`,
+                    filetype: "audio/webm",
+                    role: "assistant",
+                    subfolder: "audio",
+                  });
+
+                  // eslint-disable-next-line no-console
+                  console.log("[Voice] Uploaded assistant audio:", {
+                    response_id: responseId,
+                    upload_id: uploadId,
+                  });
+                } catch (err) {
+                  // eslint-disable-next-line no-console
+                  console.error(
+                    "[Voice] Failed to upload assistant audio:",
+                    err
+                  );
+                }
+              };
+            } catch (err) {
+              // eslint-disable-next-line no-console
+              console.error(
+                "[Voice] Error stopping assistant audio recorder:",
+                err
+              );
+            }
+          }
+
           // Send usage data to backend for run creation and token tracking
           socket.emit("simulation_voice_user_speech", {
             chat_id: currentChat.id,
@@ -1317,7 +1494,7 @@ export default function AttemptInput({
               output_tokens: evt.response.usage.output_tokens,
             },
           });
-        },
+        }
       );
 
       // Unify *all* user messages (typed or microphone transcripts)
@@ -1402,6 +1579,75 @@ export default function AttemptInput({
       // eslint-disable-next-line no-console
       console.log("[Voice] ===== END CONNECTION =====");
 
+      // Set up assistant audio capture from the audio element
+      // Wait a bit for the audio element to start receiving audio
+      setTimeout(() => {
+        try {
+          // Check if captureStream is available
+          const audioElWithCapture = assistantAudioEl as HTMLAudioElement & {
+            captureStream?: () => MediaStream;
+            mozCaptureStream?: () => MediaStream;
+          };
+          const captureStream =
+            audioElWithCapture.captureStream?.() ||
+            audioElWithCapture.mozCaptureStream?.();
+
+          if (!captureStream) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[Voice] captureStream() not supported in this browser"
+            );
+            return;
+          }
+
+          assistantAudioStreamRef.current = captureStream;
+
+          // Create MediaRecorder for assistant audio
+          const assistantRecorder = new MediaRecorder(captureStream, {
+            mimeType: "audio/webm;codecs=opus",
+          });
+
+          assistantRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+              assistantAudioChunksRef.current.push(e.data);
+            }
+          };
+
+          assistantRecorderRef.current = assistantRecorder;
+
+          // If audio is already playing, start recording immediately
+          if (
+            !assistantAudioEl.paused &&
+            assistantRecorderRef.current.state === "inactive"
+          ) {
+            try {
+              assistantAudioChunksRef.current = [];
+              assistantRecorderRef.current.start();
+
+              // eslint-disable-next-line no-console
+              console.log(
+                "[Voice] Started recording immediately (audio was already playing)"
+              );
+            } catch (err) {
+              // eslint-disable-next-line no-console
+              console.error(
+                "[Voice] Failed to start recording immediately:",
+                err
+              );
+            }
+          }
+
+          // eslint-disable-next-line no-console
+          console.log("[Voice] Set up assistant audio capture successfully");
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error(
+            "[Voice] Failed to set up assistant audio capture:",
+            err
+          );
+        }
+      }, 1000); // Wait 1 second for audio to start flowing
+
       // Reset history with existing conversation history after connecting
       // This ensures the RealtimeSession sees the same history as the React chat
       // resetHistory is the officially supported way to load existing chat history
@@ -1411,7 +1657,7 @@ export default function AttemptInput({
         console.log(
           "[Voice] Resetting history with",
           responseData.history.length,
-          "items",
+          "items"
         );
         // eslint-disable-next-line no-console
         console.log("[Voice] History items:", responseData.history);
@@ -1434,14 +1680,14 @@ export default function AttemptInput({
             await navigator.mediaDevices.getUserMedia({ audio: true });
           // eslint-disable-next-line no-console
           console.log(
-            "[Voice] Got microphone stream for waveform visualization",
+            "[Voice] Got microphone stream for waveform visualization"
           );
         }
       } catch (err) {
         // eslint-disable-next-line no-console
         console.warn(
           "[Voice] Failed to get microphone stream for visualization:",
-          err,
+          err
         );
         // Continue anyway - waveform will just not show audio levels
       }
@@ -1453,7 +1699,7 @@ export default function AttemptInput({
         // eslint-disable-next-line no-console
         console.warn(
           "[Voice] mute(false) failed (transport might not support mute):",
-          e,
+          e
         );
       }
       setIsMicMuted(false);
@@ -1469,6 +1715,7 @@ export default function AttemptInput({
       // Log error for debugging (ESLint allows in catch blocks)
       const errorMessage =
         error instanceof Error ? error.message : "Failed to start voice mode";
+
       // eslint-disable-next-line no-console
       console.error("[Voice] Error starting voice mode:", {
         error: errorMessage,
@@ -1541,7 +1788,7 @@ export default function AttemptInput({
         const maxTextareaHeight = 128; // max-h-32 = 8rem = 128px
         const actualTextareaHeight = Math.min(
           textarea.scrollHeight,
-          maxTextareaHeight,
+          maxTextareaHeight
         );
         const totalHeight = actualTextareaHeight + 24; // Add padding (0px top + 8px bottom + 24px for button area)
         const clampedHeight = Math.min(Math.max(totalHeight, 60), 160); // Clamp between 60px and 160px
@@ -1668,7 +1915,7 @@ export default function AttemptInput({
                 value={newMessage}
                 onChange={(e) =>
                   pastePrevention.handleChange(e, (value) =>
-                    setNewMessage(sanitizeInputLength(value)),
+                    setNewMessage(sanitizeInputLength(value))
                   )
                 }
                 placeholder={
