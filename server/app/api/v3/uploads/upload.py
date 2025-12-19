@@ -5,7 +5,7 @@ import json
 import os
 import uuid
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Request, Response
 
 from app.main import TUS_UPLOADS_DIR
 from app.utils.activity.audit import audit_activity, audit_set
@@ -15,9 +15,7 @@ router = APIRouter()
 
 @router.post(
     "/upload",
-    dependencies=[
-        audit_activity("upload.uploaded", "{{ actor.name }} uploaded file")
-    ],
+    dependencies=[audit_activity("upload.uploaded", "{{ actor.name }} uploaded file")],
 )
 async def tus_creation(request: Request) -> Response:
     """Handle POST request for tus protocol - create upload."""
@@ -65,7 +63,11 @@ async def tus_creation(request: Request) -> Response:
         location = f"/api/v3/uploads/upload/{upload_id}"
 
     # Set audit context if profile_id is available
-    profile_id = getattr(request.state, 'profile_id', None) if hasattr(request.state, 'profile_id') else None
+    profile_id = (
+        getattr(request.state, "profile_id", None)
+        if hasattr(request.state, "profile_id")
+        else None
+    )
     if profile_id:
         # Note: We can't fetch actor_name here without database access
         # Activity logging will use profile_id only

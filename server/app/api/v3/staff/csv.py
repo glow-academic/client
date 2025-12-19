@@ -65,9 +65,7 @@ class ProcessCSVResponse(BaseModel):
 @router.post(
     "/csv",
     response_model=ProcessCSVResponse,
-    dependencies=[
-        audit_activity("staff.csv", "{{ actor.name }} processed staff CSV")
-    ],
+    dependencies=[audit_activity("staff.csv", "{{ actor.name }} processed staff CSV")],
 )
 async def process_csv(
     request: ProcessCSVRequest,

@@ -107,7 +107,9 @@ async def get_activity_list(
             activity_items.append(
                 ActivityItem(
                     activity_id=str(row["activity_id"]),
-                    created_at=row["created_at"].isoformat() if row["created_at"] else "",
+                    created_at=row["created_at"].isoformat()
+                    if row["created_at"]
+                    else "",
                     message=row["message"],
                     error=row["error"],
                     profile_name=row["profile_name"],
@@ -144,4 +146,3 @@ async def get_activity_list(
             sql_params=sql_params,
             request=request,
         )
-

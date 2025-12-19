@@ -619,6 +619,55 @@
             FROM all_messages
             ORDER BY id, chat_id, created_at
         ),
+        -- Message feedbacks with replaces and highlights aggregated
+        message_feedbacks_data AS (
+            SELECT 
+                mf.message_id,
+                mf.grade_id,
+                jsonb_build_object(
+                    'id', mf.id::text,
+                    'name', mf.name,
+                    'description', mf.description,
+                    'type', mf.type::text,
+                    'replaces', COALESCE(
+                        (SELECT jsonb_agg(
+                            jsonb_build_object(
+                                'section', mfr.section,
+                                'replace', mfr.replace
+                            ) ORDER BY mfr.idx
+                        )
+                        FROM message_feedback_replace mfr
+                        WHERE mfr.message_feedback_id = mf.id),
+                        '[]'::jsonb
+                    ),
+                    'highlights', COALESCE(
+                        (SELECT jsonb_agg(
+                            jsonb_build_object(
+                                'section', mfh.section
+                            ) ORDER BY mfh.idx
+                        )
+                        FROM message_feedback_highlight mfh
+                        WHERE mfh.message_feedback_id = mf.id),
+                        '[]'::jsonb
+                    )
+                ) as feedback_data
+            FROM message_feedbacks mf
+            WHERE mf.grade_id IN (
+                SELECT (grade->>'id')::uuid
+                FROM grades_data
+            )
+        ),
+        -- Group message feedbacks by message_id
+        message_feedbacks_grouped AS (
+            SELECT 
+                mfd.message_id,
+                COALESCE(
+                    jsonb_agg(mfd.feedback_data ORDER BY (mfd.feedback_data->>'id')),
+                    '[]'::jsonb
+                ) as feedbacks
+            FROM message_feedbacks_data mfd
+            GROUP BY mfd.message_id
+        ),
         messages_grouped AS (
             SELECT 
                 mwt.chat_id,
@@ -632,12 +681,14 @@
                             'content', mwt.content,
                             'type', mwt.type,
                             'completed', mwt.completed,
-                            'personaId', CASE WHEN mwt.persona_id IS NOT NULL THEN mwt.persona_id::text ELSE NULL END
+                            'personaId', CASE WHEN mwt.persona_id IS NOT NULL THEN mwt.persona_id::text ELSE NULL END,
+                            'feedbacks', COALESCE(mfg.feedbacks, '[]'::jsonb)
                         ) ORDER BY mwt.created_at
                     ),
                     '[]'::jsonb
                 ) as messages
             FROM messages_with_tree mwt
+            LEFT JOIN message_feedbacks_grouped mfg ON mfg.message_id = mwt.id
             GROUP BY mwt.chat_id
         ),
         -- Get personas for each chat (from scenario_personas via chat's scenario_id)

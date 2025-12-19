@@ -100,7 +100,13 @@ async def get_create_staff_data(
                 staff=[],
                 department_mapping={},
                 cohort_mapping={},
-                role_options=["superadmin", "admin", "instructional", "member", "guest"],
+                role_options=[
+                    "superadmin",
+                    "admin",
+                    "instructional",
+                    "member",
+                    "guest",
+                ],
             )
 
         # Parse staff JSONB array

@@ -151,7 +151,10 @@ async def _simulation_voice_assistant_audio_link_impl(
                 )
             except Exception as e:
                 # Check if it's a duplicate key error (already linked)
-                if "duplicate key" in str(e).lower() or "unique constraint" in str(e).lower():
+                if (
+                    "duplicate key" in str(e).lower()
+                    or "unique constraint" in str(e).lower()
+                ):
                     logger.info(
                         f"Audio upload {upload_id} already linked to message {message_id}"
                     )
@@ -184,17 +187,13 @@ async def _simulation_voice_assistant_audio_link_impl(
             exc_info=True,
         )
         await voice_assistant_audio_link_error(
-            VoiceAssistantAudioLinkErrorPayload(
-                success=False, message=str(e)
-            ),
+            VoiceAssistantAudioLinkErrorPayload(success=False, message=str(e)),
             room=sid,
         )
 
 
 @sio.event  # type: ignore
-async def simulation_voice_assistant_audio_link(
-    sid: str, data: dict[str, Any]
-) -> None:
+async def simulation_voice_assistant_audio_link(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler."""
     try:
         validated = VoiceAssistantAudioLinkPayload(**data)
@@ -226,4 +225,3 @@ async def simulation_voice_assistant_audio_link_server_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Audio upload linked to assistant message."""
     return {"success": True}
-

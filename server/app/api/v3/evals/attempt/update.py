@@ -90,9 +90,7 @@ async def update_eval_attempt(
             # Validate conversation_max_turns if provided
             if request.conversation_max_turns is not None:
                 if request.conversation_max_turns <= 0:
-                    raise ValueError(
-                        "conversation_max_turns must be greater than 0"
-                    )
+                    raise ValueError("conversation_max_turns must be greater than 0")
 
             # Update eval attempt
             sql_query = load_sql("sql/v3/evals/update_eval_attempt.sql")
@@ -140,4 +138,3 @@ async def update_eval_attempt(
             sql_params=sql_params,
             request=http_request,
         )
-

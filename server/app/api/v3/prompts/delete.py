@@ -59,9 +59,18 @@ async def delete_agent_prompt(
             )
 
         sql_query = load_sql("sql/v3/agents/delete_agent_prompt.sql")
-        sql_params = (request.agentId, request.promptId, request.departmentId, profile_id)
+        sql_params = (
+            request.agentId,
+            request.promptId,
+            request.departmentId,
+            profile_id,
+        )
         result = await conn.fetchrow(
-            sql_query, request.agentId, request.promptId, request.departmentId, profile_id
+            sql_query,
+            request.agentId,
+            request.promptId,
+            request.departmentId,
+            profile_id,
         )
 
         # Set audit context

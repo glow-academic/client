@@ -32,9 +32,7 @@ router = APIRouter()
 @router.post(
     "/new",
     response_model=KeyDetailResponse,
-    dependencies=[
-        audit_activity("key.new", "{{ actor.name }} viewed new key form")
-    ],
+    dependencies=[audit_activity("key.new", "{{ actor.name }} viewed new key form")],
 )
 async def get_key_new(
     request_body: KeyNewRequest,

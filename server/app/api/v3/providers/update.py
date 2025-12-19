@@ -40,7 +40,10 @@ router = APIRouter()
     "/update",
     response_model=UpdateProviderResponse,
     dependencies=[
-        audit_activity("provider.updated", "{{ actor.name }} updated provider '{{ provider.name }}'")
+        audit_activity(
+            "provider.updated",
+            "{{ actor.name }} updated provider '{{ provider.name }}'",
+        )
     ],
 )
 async def update_provider(

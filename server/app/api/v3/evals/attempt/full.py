@@ -195,14 +195,16 @@ async def get_eval_attempt_full(
                     conversation_max_turns_int = int(conversation_max_turns_value)
                 except (ValueError, TypeError):
                     conversation_max_turns_int = None
-        
+
         attempt_item = AttemptItem(
             id=str(attempt_data.get("id", "")),
             created_at=str(attempt_data.get("created_at", "")),
             eval_id=str(attempt_data.get("eval_id", "")),
             archived=bool(attempt_data.get("archived", False)),
             conversation_mode=bool(attempt_data.get("conversation_mode", False)),
-            conversation_agent_id=str(attempt_data.get("conversation_agent_id")) if attempt_data.get("conversation_agent_id") else None,
+            conversation_agent_id=str(attempt_data.get("conversation_agent_id"))
+            if attempt_data.get("conversation_agent_id")
+            else None,
             conversation_max_turns=conversation_max_turns_int,
         )
 
@@ -217,7 +219,9 @@ async def get_eval_attempt_full(
             rubric_name=str(eval_data.get("rubric_name", "")),
             rubric_description=str(eval_data.get("rubric_description", "")),
             system_prompt=str(eval_data.get("system_prompt", "")),
-            conversation_agent_name=str(eval_data.get("conversation_agent_name")) if eval_data.get("conversation_agent_name") else None,
+            conversation_agent_name=str(eval_data.get("conversation_agent_name"))
+            if eval_data.get("conversation_agent_name")
+            else None,
         )
 
         runs_list: list[RunItem] = []
@@ -228,22 +232,48 @@ async def get_eval_attempt_full(
                         RunItem(
                             run_id=str(run.get("run_id", "")),
                             status=str(run.get("status", "not_started")),
-                            test_id=str(run.get("test_id")) if run.get("test_id") else None,
-                            eval_run_completed=bool(run.get("eval_run_completed", False)),
-                            eval_run_assigned_at=str(run.get("eval_run_assigned_at", "")),
+                            test_id=str(run.get("test_id"))
+                            if run.get("test_id")
+                            else None,
+                            eval_run_completed=bool(
+                                run.get("eval_run_completed", False)
+                            ),
+                            eval_run_assigned_at=str(
+                                run.get("eval_run_assigned_at", "")
+                            ),
                             eval_run_updated_at=str(run.get("eval_run_updated_at", "")),
                             run_created_at=str(run.get("run_created_at", "")),
-                            model_id=str(run.get("model_id")) if run.get("model_id") else None,
-                            model_name=str(run.get("model_name")) if run.get("model_name") else None,
-                            agent_id=str(run.get("agent_id")) if run.get("agent_id") else None,
-                            agent_name=str(run.get("agent_name")) if run.get("agent_name") else None,
-                            persona_id=str(run.get("persona_id")) if run.get("persona_id") else None,
-                            persona_name=str(run.get("persona_name")) if run.get("persona_name") else None,
-                            profile_id=str(run.get("profile_id")) if run.get("profile_id") else None,
-                            profile_name=str(run.get("profile_name")) if run.get("profile_name") else None,
+                            model_id=str(run.get("model_id"))
+                            if run.get("model_id")
+                            else None,
+                            model_name=str(run.get("model_name"))
+                            if run.get("model_name")
+                            else None,
+                            agent_id=str(run.get("agent_id"))
+                            if run.get("agent_id")
+                            else None,
+                            agent_name=str(run.get("agent_name"))
+                            if run.get("agent_name")
+                            else None,
+                            persona_id=str(run.get("persona_id"))
+                            if run.get("persona_id")
+                            else None,
+                            persona_name=str(run.get("persona_name"))
+                            if run.get("persona_name")
+                            else None,
+                            profile_id=str(run.get("profile_id"))
+                            if run.get("profile_id")
+                            else None,
+                            profile_name=str(run.get("profile_name"))
+                            if run.get("profile_name")
+                            else None,
                             grade_score=safe_int_convert(run.get("grade_score")),
-                            grade_passed=bool(run.get("grade_passed")) if run.get("grade_passed") is not None else None,
-                            grade_created_at=str(run.get("grade_created_at")) if run.get("grade_created_at") else None,
+                            grade_passed=bool(run.get("grade_passed"))
+                            if run.get("grade_passed") is not None
+                            else None,
+                            grade_created_at=str(run.get("grade_created_at"))
+                            if run.get("grade_created_at")
+                            else None,
                         )
                     )
 
@@ -260,10 +290,18 @@ async def get_eval_attempt_full(
             return default
 
         status_summary_item = StatusSummary(
-            not_started=safe_int(status_summary_data.get("not_started", 0) if status_summary_data else 0),
-            in_progress=safe_int(status_summary_data.get("in_progress", 0) if status_summary_data else 0),
-            completed=safe_int(status_summary_data.get("completed", 0) if status_summary_data else 0),
-            total=safe_int(status_summary_data.get("total", 0) if status_summary_data else 0),
+            not_started=safe_int(
+                status_summary_data.get("not_started", 0) if status_summary_data else 0
+            ),
+            in_progress=safe_int(
+                status_summary_data.get("in_progress", 0) if status_summary_data else 0
+            ),
+            completed=safe_int(
+                status_summary_data.get("completed", 0) if status_summary_data else 0
+            ),
+            total=safe_int(
+                status_summary_data.get("total", 0) if status_summary_data else 0
+            ),
         )
 
         response_data = EvalAttemptFullResponse(
@@ -295,4 +333,3 @@ async def get_eval_attempt_full(
             sql_params=sql_params,
             request=http_request,
         )
-

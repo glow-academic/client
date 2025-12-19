@@ -81,14 +81,14 @@ async def check_keycloak() -> ServiceCheckResult:
     # otherwise, construct from APP_PREFIX to match Makefile configuration
     app_prefix = os.getenv("APP_PREFIX", "")
     explicit_keycloak_url = os.getenv("KEYCLOAK_URL")
-    
+
     if explicit_keycloak_url:
         keycloak_url = explicit_keycloak_url.rstrip("/")
     else:
         # In Docker, use internal service name; otherwise use localhost for local dev
         docker_env = os.getenv("DOCKER_ENV")
         keycloak_internal_url = os.getenv("KEYCLOAK_INTERNAL_URL")
-        
+
         if keycloak_internal_url:
             base_url = keycloak_internal_url.rstrip("/")
         elif docker_env:
@@ -97,9 +97,9 @@ async def check_keycloak() -> ServiceCheckResult:
         else:
             # Local dev: use localhost
             base_url = "http://localhost:8080"
-        
+
         keycloak_url = f"{base_url}{app_prefix}/auth"
-    
+
     realm = os.getenv("KEYCLOAK_REALM", "glow")
     well_known = f"{keycloak_url}/realms/{realm}/.well-known/openid-configuration"
 
@@ -107,7 +107,7 @@ async def check_keycloak() -> ServiceCheckResult:
         async with httpx.AsyncClient(timeout=2.0) as client:
             r = await client.get(well_known)
         latency = (time.perf_counter() - start) * 1000
-        
+
         if r.status_code == 200:
             return ServiceCheckResult(True, latency)
         return ServiceCheckResult(False, latency, f"status={r.status_code}")

@@ -63,7 +63,9 @@ router = APIRouter()
     "/update",
     response_model=UpdateRubricResponse,
     dependencies=[
-        audit_activity("rubric.updated", "{{ actor.name }} updated rubric '{{ rubric.name }}'")
+        audit_activity(
+            "rubric.updated", "{{ actor.name }} updated rubric '{{ rubric.name }}'"
+        )
     ],
 )
 async def update_rubric(

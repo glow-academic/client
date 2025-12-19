@@ -34,7 +34,9 @@ router = APIRouter()
     "/decrypt",
     response_model=DecryptKeyResponse,
     dependencies=[
-        audit_activity("key.decrypted", "{{ actor.name }} decrypted key '{{ key.name }}'")
+        audit_activity(
+            "key.decrypted", "{{ actor.name }} decrypted key '{{ key.name }}'"
+        )
     ],
 )
 async def decrypt_key(
@@ -58,7 +60,11 @@ async def decrypt_key(
 
         # Fetch the encrypted key from database
         sql_query = load_sql("sql/v3/keys/get_key_detail.sql")
-        sql_params = (request.keyId, True, profile_id)  # show_full=True to get encrypted key
+        sql_params = (
+            request.keyId,
+            True,
+            profile_id,
+        )  # show_full=True to get encrypted key
         result = await conn.fetchrow(sql_query, request.keyId, True, profile_id)
 
         if not result:

@@ -281,7 +281,9 @@ async def _simulation_text_practice_impl(
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging practice scenario error activity: {log_error}")
+            logger.warning(
+                f"Error logging practice scenario error activity: {log_error}"
+            )
 
 
 @sio.event  # type: ignore
@@ -309,7 +311,9 @@ async def simulation_text_practice(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging practice scenario validation error activity: {log_error}")
+            logger.warning(
+                f"Error logging practice scenario validation error activity: {log_error}"
+            )
 
 
 # FastAPI endpoint for OpenAPI documentation

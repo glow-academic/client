@@ -34,9 +34,7 @@ router = APIRouter()
 @router.post(
     "/new",
     response_model=AuthDetailResponse,
-    dependencies=[
-        audit_activity("auth.new", "{{ actor.name }} viewed new auth form")
-    ],
+    dependencies=[audit_activity("auth.new", "{{ actor.name }} viewed new auth form")],
 )
 async def get_auth_new(
     request: AuthNewRequest,

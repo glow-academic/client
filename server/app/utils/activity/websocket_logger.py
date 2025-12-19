@@ -34,7 +34,9 @@ async def log_websocket_activity(
         profile_id = await find_profile_by_socket(sid)
         if not profile_id:
             # Skip logging if no profile_id found
-            logger.debug(f"No profile_id found for socket {sid}, skipping activity logging")
+            logger.debug(
+                f"No profile_id found for socket {sid}, skipping activity logging"
+            )
             return
 
         # Get database pool
@@ -52,7 +54,9 @@ async def log_websocket_activity(
             actor_name = actor_name_row["actor_name"] if actor_name_row else None
 
             if not actor_name:
-                logger.debug(f"No actor_name found for profile {profile_id}, skipping activity logging")
+                logger.debug(
+                    f"No actor_name found for profile {profile_id}, skipping activity logging"
+                )
                 return
 
             # Merge actor into context
@@ -91,7 +95,9 @@ async def log_websocket_activity(
 
     except Exception as e:
         # Never break WebSocket handler if activity logging fails
-        logger.warning(f"Error logging WebSocket activity for {event_key}: {e}", exc_info=True)
+        logger.warning(
+            f"Error logging WebSocket activity for {event_key}: {e}", exc_info=True
+        )
 
 
 async def _insert_activity(
@@ -124,4 +130,3 @@ async def _insert_activity(
     except Exception:
         # Never break logging if DB write fails
         pass
-

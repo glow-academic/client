@@ -9,14 +9,14 @@ from enum import Enum
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.main import get_db
-from app.utils.activity.audit import audit_activity, audit_set
-from app.utils.analytics_query_builder import \
-    build_profile_and_analytics_filters
-from app.utils.error.handle_route_error import handle_route_error
-from app.utils.logging.db_logger import get_logger
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
+
+from app.main import get_db
+from app.utils.activity.audit import audit_activity, audit_set
+from app.utils.analytics_query_builder import build_profile_and_analytics_filters
+from app.utils.error.handle_route_error import handle_route_error
+from app.utils.logging.db_logger import get_logger
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -407,7 +407,9 @@ async def export_reports(
 
                 # Set audit context
                 if actor_name:
-                    audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+                    audit_set(
+                        http_request, actor={"name": actor_name, "id": profile_id}
+                    )
 
                 return Response(
                     content=csv_data.encode("utf-8"),
@@ -446,7 +448,9 @@ async def export_reports(
 
                 # Set audit context
                 if actor_name:
-                    audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+                    audit_set(
+                        http_request, actor={"name": actor_name, "id": profile_id}
+                    )
 
                 return Response(
                     content=zip_buffer.read(),

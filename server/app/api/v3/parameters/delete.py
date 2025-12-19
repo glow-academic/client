@@ -35,7 +35,10 @@ router = APIRouter()
     "/delete",
     response_model=DeleteParameterResponse,
     dependencies=[
-        audit_activity("parameter.deleted", "{{ actor.name }} deleted parameter '{{ parameter.name }}'")
+        audit_activity(
+            "parameter.deleted",
+            "{{ actor.name }} deleted parameter '{{ parameter.name }}'",
+        )
     ],
 )
 async def delete_parameter(

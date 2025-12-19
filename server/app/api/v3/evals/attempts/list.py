@@ -130,9 +130,7 @@ async def get_eval_attempts_list(
         result = await conn.fetchrow(sql_query, *sql_params)
 
         if not result:
-            raise HTTPException(
-                status_code=500, detail="Failed to query eval attempts"
-            )
+            raise HTTPException(status_code=500, detail="Failed to query eval attempts")
 
         actor_name = result.get("actor_name")
         if actor_name:
@@ -181,4 +179,3 @@ async def get_eval_attempts_list(
             sql_params=sql_params,
             request=request,
         )
-

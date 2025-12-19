@@ -36,7 +36,8 @@ router = APIRouter()
     response_model=DuplicateRubricResponse,
     dependencies=[
         audit_activity(
-            "rubric.duplicated", "{{ actor.name }} duplicated rubric '{{ rubric.name }}'"
+            "rubric.duplicated",
+            "{{ actor.name }} duplicated rubric '{{ rubric.name }}'",
         )
     ],
 )

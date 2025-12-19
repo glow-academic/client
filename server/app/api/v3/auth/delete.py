@@ -35,7 +35,9 @@ router = APIRouter()
     "/delete",
     response_model=DeleteAuthResponse,
     dependencies=[
-        audit_activity("auth.deleted", "{{ actor.name }} deleted auth '{{ auth.name }}'")
+        audit_activity(
+            "auth.deleted", "{{ actor.name }} deleted auth '{{ auth.name }}'"
+        )
     ],
 )
 async def delete_auth(

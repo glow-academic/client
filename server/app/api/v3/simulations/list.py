@@ -117,7 +117,9 @@ router = APIRouter()
     "/list",
     response_model=SimulationsListResponse,
     dependencies=[
-        audit_activity("simulations.list", "{{ actor.name }} visited the Simulations page")
+        audit_activity(
+            "simulations.list", "{{ actor.name }} visited the Simulations page"
+        )
     ],
 )
 async def get_simulations_list(

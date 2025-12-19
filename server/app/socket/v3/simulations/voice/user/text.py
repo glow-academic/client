@@ -87,7 +87,9 @@ async def _simulation_voice_user_text_impl(
 
         async with pool.acquire() as conn:
             # Get latest run for the chat (now uses groups/group_runs)
-            sql_get_latest_run = load_sql("sql/v3/simulations/get_latest_run_for_chat.sql")
+            sql_get_latest_run = load_sql(
+                "sql/v3/simulations/get_latest_run_for_chat.sql"
+            )
             latest_run_row = await conn.fetchrow(
                 sql_get_latest_run,
                 str(chat_id_uuid),
@@ -121,9 +123,9 @@ async def _simulation_voice_user_text_impl(
             if not db_message_id_str:
                 logger.error("Failed to create user message via unified handler")
                 return
-            
+
             user_message_id = uuid.UUID(db_message_id_str)
-            
+
             # Get created_at for emission
             message_row = await conn.fetchrow(
                 "SELECT created_at FROM messages WHERE id = $1::uuid",
@@ -137,6 +139,7 @@ async def _simulation_voice_user_text_impl(
                 MessageSentPayload,
                 message_sent,
             )
+
             await message_sent(
                 MessageSentPayload(
                     message_id=str(user_message_id),

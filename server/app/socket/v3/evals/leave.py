@@ -66,9 +66,7 @@ async def eval_leave(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in eval_leave for {sid}: {e}")
         await eval_leave_error(
-            EvalLeaveErrorPayload(
-                success=False, message=f"Invalid payload: {str(e)}"
-            ),
+            EvalLeaveErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )
 
@@ -84,4 +82,3 @@ async def eval_leave_api(request: EvalLeavePayload) -> dict[str, bool]:
 async def eval_leave_error_api(request: EvalLeaveErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Error occurred while leaving eval room."""
     return {"success": True}
-

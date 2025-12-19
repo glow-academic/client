@@ -2,22 +2,22 @@
 
 import json
 from enum import Enum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.api.v3.dashboard.bundle import Method, MetricResponse
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
+from app.api.v3.dashboard.bundle import MetricResponse
 from app.api.v3.reports.export import router as export_router
 from app.main import get_db
 from app.utils.activity.audit import audit_activity, audit_set
-from app.utils.analytics_query_builder import \
-    build_profile_and_analytics_filters
+from app.utils.analytics_query_builder import build_profile_and_analytics_filters
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 router.include_router(export_router)
@@ -243,9 +243,7 @@ async def get_reports(
         total_count = parsed_result.get("totalCount", 0) if parsed_result else 0
         page = filters.page or 0
         page_size = filters.pageSize or 100
-        total_pages = (
-            (total_count + page_size - 1) // page_size if page_size > 0 else 0
-        )
+        total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
 
         # Parse filter options
         profile_options_data = parsed_result.get("profileOptions", [])
@@ -320,8 +318,12 @@ async def get_reports(
                         name=sim_data.get("name", ""),
                         description=sim_data.get("description", ""),
                         rubric_id=str(rubric_id) if rubric_id else None,
-                        rubric_points=int(rubric_points) if rubric_points is not None else None,
-                        rubric_pass_points=int(rubric_pass_points) if rubric_pass_points is not None else None,
+                        rubric_points=int(rubric_points)
+                        if rubric_points is not None
+                        else None,
+                        rubric_pass_points=int(rubric_pass_points)
+                        if rubric_pass_points is not None
+                        else None,
                     )
 
         # Build response

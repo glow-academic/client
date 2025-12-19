@@ -70,7 +70,10 @@ router = APIRouter()
     "/detail",
     response_model=ParameterDetailResponse,
     dependencies=[
-        audit_activity("parameter.detail", "{{ actor.name }} viewed parameter '{{ parameter.name }}'")
+        audit_activity(
+            "parameter.detail",
+            "{{ actor.name }} viewed parameter '{{ parameter.name }}'",
+        )
     ],
 )
 async def get_parameter_detail(

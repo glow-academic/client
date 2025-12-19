@@ -32255,6 +32255,85 @@
         "title": "LogsBundleResponse",
         "description": "Logs bundle response."
       },
+      "MessageFeedbackHighlightItem": {
+        "properties": {
+          "section": {
+            "type": "string",
+            "title": "Section"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section"
+        ],
+        "title": "MessageFeedbackHighlightItem"
+      },
+      "MessageFeedbackItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "strength",
+              "improvement"
+            ],
+            "title": "Type"
+          },
+          "replaces": {
+            "items": {
+              "$ref": "#/components/schemas/MessageFeedbackReplaceItem"
+            },
+            "type": "array",
+            "title": "Replaces",
+            "default": []
+          },
+          "highlights": {
+            "items": {
+              "$ref": "#/components/schemas/MessageFeedbackHighlightItem"
+            },
+            "type": "array",
+            "title": "Highlights",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "type"
+        ],
+        "title": "MessageFeedbackItem"
+      },
+      "MessageFeedbackReplaceItem": {
+        "properties": {
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "replace": {
+            "type": "string",
+            "title": "Replace"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section",
+          "replace"
+        ],
+        "title": "MessageFeedbackReplaceItem"
+      },
       "MessageSentPayload": {
         "properties": {
           "message_id": {
@@ -46817,6 +46896,20 @@
               }
             ],
             "title": "Personaid"
+          },
+          "feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/MessageFeedbackItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbacks"
           }
         },
         "type": "object",

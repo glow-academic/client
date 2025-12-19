@@ -12,7 +12,9 @@ from fastapi import Header, Request
 
 async def get_effective_profile_id(
     request: Request,
-    x_effective_profile_id: str | None = Header(default=None, alias="X-Effective-Profile-Id"),
+    x_effective_profile_id: str | None = Header(
+        default=None, alias="X-Effective-Profile-Id"
+    ),
     x_profile_id: str | None = Header(default=None, alias="X-Profile-Id"),
 ) -> str | None:
     """Extract effective_profile_id from X-Effective-Profile-Id header.
@@ -32,7 +34,7 @@ async def get_effective_profile_id(
         Effective Profile ID string or None if not found
     """
     effective_profile_id: str | None = x_effective_profile_id
-    
+
     # Fallback to X-Profile-Id if X-Effective-Profile-Id is not provided
     if not effective_profile_id:
         effective_profile_id = x_profile_id
@@ -41,4 +43,3 @@ async def get_effective_profile_id(
     request.state.effective_profile_id = effective_profile_id
 
     return effective_profile_id
-

@@ -1,15 +1,15 @@
 """Unified message streaming handlers for simulations."""
 
 import uuid
-from datetime import UTC
 from typing import Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -106,10 +106,10 @@ async def _simulation_message_start_impl(
     sid: str, data: dict[str, Any], conn: asyncpg.Connection | None = None
 ) -> str | None:
     """Internal implementation for starting a new message.
-    
+
     Returns the database message.id (UUID) if successful, None otherwise.
     This can be called directly when the ID is needed synchronously.
-    
+
     Args:
         sid: WebSocket session ID
         data: Payload data
@@ -126,7 +126,7 @@ async def _simulation_message_start_impl(
         return None
 
     chat_id = validated.chat_id
-    
+
     # Use provided connection or acquire from pool
     use_provided_conn = conn is not None
     conn_context = None
@@ -137,7 +137,7 @@ async def _simulation_message_start_impl(
             return None
         conn_context = pool.acquire()
         conn = await conn_context.__aenter__()
-    
+
     assert conn is not None  # Type guard
 
     try:
@@ -206,24 +206,24 @@ async def _simulation_message_start_impl(
             )
 
             if latest_user_message_row:
-                    user_created_at = latest_user_message_row["created_at"]
-                    if user_created_at >= message_created_at:
-                        await conn.execute(
-                            """
+                user_created_at = latest_user_message_row["created_at"]
+                if user_created_at >= message_created_at:
+                    await conn.execute(
+                        """
                             UPDATE messages
                             SET created_at = $1::timestamp + INTERVAL '1 millisecond'
                             WHERE id = $2::uuid
                             """,
-                            user_created_at,
-                            db_message_id,
-                        )
-                        # Fetch updated created_at
-                        updated_row = await conn.fetchrow(
-                            "SELECT created_at FROM messages WHERE id = $1::uuid",
-                            db_message_id,
-                        )
-                        if updated_row:
-                            message_created_at = updated_row["created_at"]
+                        user_created_at,
+                        db_message_id,
+                    )
+                    # Fetch updated created_at
+                    updated_row = await conn.fetchrow(
+                        "SELECT created_at FROM messages WHERE id = $1::uuid",
+                        db_message_id,
+                    )
+                    if updated_row:
+                        message_created_at = updated_row["created_at"]
 
         # Link message to run if run_id is provided
         if validated.run_id:
@@ -274,9 +274,7 @@ async def _simulation_message_start_impl(
         if parent_id_str:
             assistant_id_str = str(db_message_id)
             if parent_id_str != assistant_id_str:
-                sql_branch = load_sql(
-                    "sql/v3/simulations/create_message_branch.sql"
-                )
+                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
                 try:
                     await conn.execute(sql_branch, parent_id_str, assistant_id_str)
                     logger.info(
@@ -320,7 +318,7 @@ async def _simulation_message_token_impl(
     sid: str, data: dict[str, Any], conn: asyncpg.Connection | None = None
 ) -> None:
     """Internal implementation for message token update.
-    
+
     Args:
         sid: WebSocket session ID
         data: Payload data
@@ -346,27 +344,27 @@ async def _simulation_message_token_impl(
             return
         conn_context = pool.acquire()
         conn = await conn_context.__aenter__()
-    
+
     assert conn is not None  # Type guard
 
     try:
         # Update message content in database
-            sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
-            await conn.execute(
-                sql_update, validated.accumulated_content, validated.message_id
-            )
+        sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
+        await conn.execute(
+            sql_update, validated.accumulated_content, validated.message_id
+        )
 
-            # Emit token event to clients
-            room = f"simulation_{validated.chat_id}"
-            await simulation_message_token(
-                SimulationMessageTokenPayload(
-                    message_id=validated.message_id,
-                    chat_id=validated.chat_id,
-                    token=validated.token,
-                    accumulated_content=validated.accumulated_content,
-                ),
-                room=room,
-            )
+        # Emit token event to clients
+        room = f"simulation_{validated.chat_id}"
+        await simulation_message_token(
+            SimulationMessageTokenPayload(
+                message_id=validated.message_id,
+                chat_id=validated.chat_id,
+                token=validated.token,
+                accumulated_content=validated.accumulated_content,
+            ),
+            room=room,
+        )
 
     except Exception as e:
         logger.error(
@@ -381,7 +379,7 @@ async def _simulation_message_complete_impl(
     sid: str, data: dict[str, Any], conn: asyncpg.Connection | None = None
 ) -> None:
     """Internal implementation for message completion.
-    
+
     Args:
         sid: WebSocket session ID
         data: Payload data
@@ -407,62 +405,62 @@ async def _simulation_message_complete_impl(
             return
         conn_context = pool.acquire()
         conn = await conn_context.__aenter__()
-    
+
     assert conn is not None  # Type guard
 
     try:
         # Update message content with final content
-            sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
-            await conn.execute(sql_update, validated.final_content, validated.message_id)
+        sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
+        await conn.execute(sql_update, validated.final_content, validated.message_id)
 
-            # Complete message in database
-            sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
-            await conn.execute(sql_complete, validated.final_content, validated.message_id)
+        # Complete message in database
+        sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
+        await conn.execute(sql_complete, validated.final_content, validated.message_id)
 
-            # Emit completion event to clients
-            room = f"simulation_{validated.chat_id}"
-            await simulation_message_complete(
-                SimulationMessageCompletePayload(
-                    message_id=validated.message_id,
-                    chat_id=validated.chat_id,
-                    final_content=validated.final_content,
-                ),
-                room=room,
-            )
+        # Emit completion event to clients
+        room = f"simulation_{validated.chat_id}"
+        await simulation_message_complete(
+            SimulationMessageCompletePayload(
+                message_id=validated.message_id,
+                chat_id=validated.chat_id,
+                final_content=validated.final_content,
+            ),
+            room=room,
+        )
 
-            # Also emit updated message with completed=True
-            message_row = await conn.fetchrow(
-                "SELECT role, created_at FROM messages WHERE id = $1::uuid",
-                validated.message_id,
-            )
-            if message_row:
-                # Try to get persona_id
-                persona_row = await conn.fetchrow(
-                    """
+        # Also emit updated message with completed=True
+        message_row = await conn.fetchrow(
+            "SELECT role, created_at FROM messages WHERE id = $1::uuid",
+            validated.message_id,
+        )
+        if message_row:
+            # Try to get persona_id
+            persona_row = await conn.fetchrow(
+                """
                     SELECT persona_id FROM message_personas 
                     WHERE message_id = $1::uuid 
                     LIMIT 1
                     """,
-                    validated.message_id,
-                )
-                persona_id_str = str(persona_row["persona_id"]) if persona_row else None
-
-                await simulation_new_message(
-                    SimulationNewMessagePayload(
-                        message_id=validated.message_id,
-                        chat_id=validated.chat_id,
-                        role=message_row["role"],
-                        content=validated.final_content,
-                        completed=True,
-                        created_at=message_row["created_at"].isoformat(),
-                        persona_id=persona_id_str,
-                    ),
-                    room=room,
-                )
-
-            logger.info(
-                f"Completed and emitted message {validated.message_id} for chat {validated.chat_id}"
+                validated.message_id,
             )
+            persona_id_str = str(persona_row["persona_id"]) if persona_row else None
+
+            await simulation_new_message(
+                SimulationNewMessagePayload(
+                    message_id=validated.message_id,
+                    chat_id=validated.chat_id,
+                    role=message_row["role"],
+                    content=validated.final_content,
+                    completed=True,
+                    created_at=message_row["created_at"].isoformat(),
+                    persona_id=persona_id_str,
+                ),
+                room=room,
+            )
+
+        logger.info(
+            f"Completed and emitted message {validated.message_id} for chat {validated.chat_id}"
+        )
 
     except Exception as e:
         logger.error(
@@ -528,4 +526,3 @@ async def simulation_message_complete_api(
 ) -> dict[str, bool]:
     """Internal event: Complete a message."""
     return {"success": True}
-

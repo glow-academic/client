@@ -4,13 +4,14 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 from app.main import get_db, transaction
 from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -260,7 +261,9 @@ async def update_profile(
 
             # Set audit context with data from SQL query
             actor_name = row.get("actor_name")
-            profile_name = f"{row.get('first_name', '')} {row.get('last_name', '')}".strip()
+            profile_name = (
+                f"{row.get('first_name', '')} {row.get('last_name', '')}".strip()
+            )
             if actor_name and profile_name:
                 audit_set(
                     http_request,

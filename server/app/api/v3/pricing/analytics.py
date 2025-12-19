@@ -165,7 +165,15 @@ async def get_pricing(
 
         # Execute consolidated SQL query with all filter logic (including role check)
         sql_query = load_sql("sql/v3/pricing/get_pricing_analytics_complete.sql")
-        sql_params = (start_dt, end_dt, department_ids, profile_uuid, roles, cohort_ids, simulation_filters)
+        sql_params = (
+            start_dt,
+            end_dt,
+            department_ids,
+            profile_uuid,
+            roles,
+            cohort_ids,
+            simulation_filters,
+        )
         # Disable JIT compilation for this complex query to avoid re-compilation overhead
         async with conn.transaction():
             await conn.execute("SET LOCAL jit = off;")

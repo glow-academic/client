@@ -641,7 +641,9 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(f"Error logging scenario regeneration activity: {log_error}")
+                logger.warning(
+                    f"Error logging scenario regeneration activity: {log_error}"
+                )
 
     except Exception as e:
         logger.error(f"Error in regenerate_scenario for {sid}: {str(e)}", exc_info=True)
@@ -662,7 +664,9 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging scenario regeneration error activity: {log_error}")
+            logger.warning(
+                f"Error logging scenario regeneration error activity: {log_error}"
+            )
 
 
 @sio.event  # type: ignore

@@ -45,7 +45,10 @@ class CreateOrUpdateProfileResponse(BaseModel):
     "/upsert",
     response_model=CreateOrUpdateProfileResponse,
     dependencies=[
-        audit_activity("profile.upserted", "{{ actor.name }} {{ created }} profile '{{ profile.name }}'")
+        audit_activity(
+            "profile.upserted",
+            "{{ actor.name }} {{ created }} profile '{{ profile.name }}'",
+        )
     ],
 )
 async def create_or_update_profile(
@@ -158,7 +161,10 @@ async def create_or_update_profile(
                     http_request,
                     actor={"name": actor_name, "id": profile_id_for_actor},
                     created="created" if created else "updated",
-                    profile={"name": f"{request.firstName} {request.lastName}", "id": str(profile_id)},
+                    profile={
+                        "name": f"{request.firstName} {request.lastName}",
+                        "id": str(profile_id),
+                    },
                 )
 
         result_data = CreateOrUpdateProfileResponse(

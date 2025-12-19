@@ -693,14 +693,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 # otherwise, construct from APP_PREFIX to match Makefile configuration
                 app_prefix = os.getenv("APP_PREFIX", "")
                 explicit_keycloak_url = os.getenv("KEYCLOAK_URL")
-                
+
                 if explicit_keycloak_url:
                     keycloak_url = explicit_keycloak_url.rstrip("/")
                 else:
                     # In Docker, use internal service name; otherwise use localhost for local dev
                     docker_env = os.getenv("DOCKER_ENV")
                     keycloak_internal_url = os.getenv("KEYCLOAK_INTERNAL_URL")
-                    
+
                     if keycloak_internal_url:
                         base_url = keycloak_internal_url.rstrip("/")
                     elif docker_env:
@@ -709,9 +709,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                     else:
                         # Local dev: use localhost
                         base_url = "http://localhost:8080"
-                    
+
                     keycloak_url = f"{base_url}{app_prefix}/auth"
-                
+
                 keycloak_admin = os.getenv("KEYCLOAK_ADMIN", "admin")
                 keycloak_admin_password = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin")
                 keycloak_realm = os.getenv("KEYCLOAK_REALM", "glow")
@@ -814,13 +814,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
                     # Ensure the target realm exists (create if it doesn't)
                     # Get bootstrap leader identifier (hostname/container id)
-                    bootstrap_leader = socket.gethostname() or os.getenv("HOSTNAME", "unknown")
+                    bootstrap_leader = socket.gethostname() or os.getenv(
+                        "HOSTNAME", "unknown"
+                    )
                     try:
                         realms = kc_admin.get_realms()
                         realm_exists = any(r["realm"] == keycloak_realm for r in realms)
-                        
+
                         if not realm_exists:
-                            logger.info(f"[{bootstrap_leader}] Creating Keycloak realm: {keycloak_realm}")
+                            logger.info(
+                                f"[{bootstrap_leader}] Creating Keycloak realm: {keycloak_realm}"
+                            )
                             try:
                                 kc_admin.create_realm(
                                     payload={
@@ -835,26 +839,30 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                 # Handle KeyError (missing Location header), HTTP 409 Conflict, or duplicate key errors
                                 error_str = str(e).lower()
                                 is_conflict = (
-                                    "location" in error_str or 
-                                    "duplicate" in error_str or 
-                                    "conflict" in error_str or
-                                    "409" in error_str or
-                                    "already exists" in error_str
+                                    "location" in error_str
+                                    or "duplicate" in error_str
+                                    or "conflict" in error_str
+                                    or "409" in error_str
+                                    or "already exists" in error_str
                                 )
-                                
+
                                 if is_conflict:
                                     logger.info(
                                         f"⚠️  [{bootstrap_leader}] Realm '{keycloak_realm}' may have been created by another server, re-checking..."
                                     )
                                     # Re-check if realm now exists
                                     realms = kc_admin.get_realms()
-                                    realm_exists_now = any(r["realm"] == keycloak_realm for r in realms)
-                                    
+                                    realm_exists_now = any(
+                                        r["realm"] == keycloak_realm for r in realms
+                                    )
+
                                     if realm_exists_now:
-                                        logger.info(f"✅ Realm '{keycloak_realm}' now exists")
+                                        logger.info(
+                                            f"✅ Realm '{keycloak_realm}' now exists"
+                                        )
                                     else:
                                         logger.warning(
-                                            f"⚠️  Realm creation conflict but realm not found on re-check"
+                                            "⚠️  Realm creation conflict but realm not found on re-check"
                                         )
                                 else:
                                     raise
@@ -997,12 +1005,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                             # Handle race condition: another server may have updated/deleted the client
                                             error_str = str(e).lower()
                                             is_conflict = (
-                                                "409" in error_str or
-                                                "conflict" in error_str or
-                                                "already exists" in error_str or
-                                                "not found" in error_str
+                                                "409" in error_str
+                                                or "conflict" in error_str
+                                                or "already exists" in error_str
+                                                or "not found" in error_str
                                             )
-                                            
+
                                             if is_conflict:
                                                 logger.info(
                                                     f"⚠️  [{bootstrap_leader}] Client '{target_client_id}' update conflict, re-checking..."
@@ -1013,11 +1021,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                                     (
                                                         c
                                                         for c in clients
-                                                        if c.get("clientId") == target_client_id
+                                                        if c.get("clientId")
+                                                        == target_client_id
                                                     ),
                                                     None,
                                                 )
-                                                
+
                                                 if existing_client_now:
                                                     logger.info(
                                                         f"✅ Client '{target_client_id}' still exists, update may have been applied by another server"
@@ -1054,13 +1063,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                         # Handle KeyError (missing Location header), HTTP 409 Conflict, or duplicate key errors
                                         error_str = str(e).lower()
                                         is_conflict = (
-                                            "location" in error_str or 
-                                            "duplicate" in error_str or 
-                                            "conflict" in error_str or
-                                            "409" in error_str or
-                                            "already exists" in error_str
+                                            "location" in error_str
+                                            or "duplicate" in error_str
+                                            or "conflict" in error_str
+                                            or "409" in error_str
+                                            or "already exists" in error_str
                                         )
-                                        
+
                                         if is_conflict:
                                             logger.info(
                                                 f"⚠️  [{bootstrap_leader}] Client '{target_client_id}' was created by another server, re-checking..."
@@ -1071,17 +1080,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                                 (
                                                     c
                                                     for c in clients
-                                                    if c.get("clientId") == target_client_id
+                                                    if c.get("clientId")
+                                                    == target_client_id
                                                 ),
                                                 None,
                                             )
-                                            
+
                                             if existing_client:
                                                 client_uuid = existing_client.get("id")
                                                 if client_uuid:
                                                     kc_admin.update_client(
                                                         client_id=client_uuid,
-                                                        payload={"secret": target_secret},
+                                                        payload={
+                                                            "secret": target_secret
+                                                        },
                                                     )
                                                     logger.info(
                                                         f"✅ Client '{target_client_id}' found and secret updated"
@@ -1246,13 +1258,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                         except Exception as update_e:
                                             # Handle update conflicts (race condition)
                                             error_str = str(update_e).lower()
-                                            if "409" in error_str or "conflict" in error_str or "already exists" in error_str:
+                                            if (
+                                                "409" in error_str
+                                                or "conflict" in error_str
+                                                or "already exists" in error_str
+                                            ):
                                                 logger.info(
                                                     f"⚠️  [{bootstrap_leader}] Provider '{slug}' update conflict, may have been updated by another server"
                                                 )
                                             else:
                                                 raise
-                                    except Exception as get_e:
+                                    except Exception:
                                         # Provider doesn't exist, try to create it
                                         try:
                                             kc_admin.create_idp(payload=payload)
@@ -1262,7 +1278,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                                         except Exception as create_e:
                                             # Handle create conflicts (race condition: another server created it)
                                             error_str = str(create_e).lower()
-                                            if "409" in error_str or "conflict" in error_str or "already exists" in error_str:
+                                            if (
+                                                "409" in error_str
+                                                or "conflict" in error_str
+                                                or "already exists" in error_str
+                                            ):
                                                 logger.info(
                                                     f"⚠️  [{bootstrap_leader}] Provider '{slug}' was created by another server, updating instead..."
                                                 )

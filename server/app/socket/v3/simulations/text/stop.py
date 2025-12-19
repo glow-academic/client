@@ -158,7 +158,9 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
                         error=False,
                     )
                 except Exception as log_error:
-                    logger.warning(f"Error logging simulation stop activity: {log_error}")
+                    logger.warning(
+                        f"Error logging simulation stop activity: {log_error}"
+                    )
 
             else:
                 logger.warning(f"No active simulation run found for chat {chat_id}")
@@ -219,7 +221,9 @@ async def simulation_text_stop(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation stop validation error activity: {log_error}")
+            logger.warning(
+                f"Error logging simulation stop validation error activity: {log_error}"
+            )
 
 
 # FastAPI endpoint for OpenAPI documentation

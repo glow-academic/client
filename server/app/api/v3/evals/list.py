@@ -87,7 +87,9 @@ class EvalsListResponse(BaseModel):
     agent_mapping: dict[str, dict[str, Any]]
     standard_groups_mapping: StandardGroupsMapping
     standards_mapping: StandardsMapping
-    rubric_standard_groups_mapping: dict[str, dict[str, list[str]]]  # Maps rubric_id to {standard_group_id: [standard_ids]}
+    rubric_standard_groups_mapping: dict[
+        str, dict[str, list[str]]
+    ]  # Maps rubric_id to {standard_group_id: [standard_ids]}
     rubric_options: list[dict[str, str]]  # Array of {value, label}
     department_options: list[dict[str, str]]  # Array of {value, label}
     agent_options: list[dict[str, str]]  # Array of {value, label}

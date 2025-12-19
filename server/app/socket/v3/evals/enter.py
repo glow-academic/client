@@ -41,9 +41,7 @@ class EvalEnterPayload(BaseModel):
 
 
 # Emit helper functions
-async def eval_enter_response(
-    payload: EvalEnterResponsePayload, room: str
-) -> None:
+async def eval_enter_response(payload: EvalEnterResponsePayload, room: str) -> None:
     await sio.emit("evals_enter_response", payload.model_dump(), room=room)
 
 
@@ -68,7 +66,9 @@ async def _eval_enter_impl(sid: str, data: EvalEnterPayload) -> None:
 
         # Parse ISO datetime string
         try:
-            created_at_dt = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+            created_at_dt = datetime.fromisoformat(
+                created_at_str.replace("Z", "+00:00")
+            )
             if created_at_dt.tzinfo is None:
                 created_at_dt = created_at_dt.replace(tzinfo=UTC)
         except (ValueError, AttributeError) as e:
@@ -156,9 +156,7 @@ async def eval_enter(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in eval_enter for {sid}: {e}")
         await eval_enter_error(
-            EvalEnterErrorPayload(
-                success=False, message=f"Invalid payload: {str(e)}"
-            ),
+            EvalEnterErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )
 
@@ -182,4 +180,3 @@ async def eval_enter_response_api(
 async def eval_enter_error_api(request: EvalEnterErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Error occurred while updating test created_at timestamp."""
     return {"success": True}
-

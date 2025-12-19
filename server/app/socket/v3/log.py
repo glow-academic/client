@@ -106,7 +106,10 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                         sid=sid,
                         event_key="websocket.log",
                         template="{{ actor.name }} logged run",
-                        context={"run_id": str(run_id), "operation_type": data.operationType},
+                        context={
+                            "run_id": str(run_id),
+                            "operation_type": data.operationType,
+                        },
                         endpoint="/socket/v3/log",
                         error=False,
                     )

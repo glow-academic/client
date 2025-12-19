@@ -1,6 +1,5 @@
 """Handler for eval_start WebSocket event."""
 
-import uuid
 from typing import Any
 
 from fastapi import APIRouter
@@ -199,9 +198,7 @@ async def eval_start(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in eval_start for {sid}: {e}")
         await eval_start_error(
-            EvalStartErrorPayload(
-                success=False, message=f"Invalid payload: {str(e)}"
-            ),
+            EvalStartErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )
         # Log activity error
@@ -215,7 +212,9 @@ async def eval_start(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging eval start validation error activity: {log_error}")
+            logger.warning(
+                f"Error logging eval start validation error activity: {log_error}"
+            )
 
 
 # FastAPI endpoint for OpenAPI documentation
@@ -235,4 +234,3 @@ async def eval_started_api(request: EvalStartedPayload) -> dict[str, bool]:
 async def eval_start_error_api(request: EvalStartErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Error occurred while starting eval."""
     return {"success": True}
-

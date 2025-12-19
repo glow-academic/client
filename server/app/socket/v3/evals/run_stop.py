@@ -241,4 +241,3 @@ async def eval_run_stop_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred while stopping eval run."""
     return {"success": True}
-

@@ -75,18 +75,24 @@ async def log_activity(
         loop = asyncio.get_event_loop()
         if loop.is_running():
             asyncio.create_task(
-                _insert_activity(message, str(request.url.path), resolved_profile_id, is_error)
+                _insert_activity(
+                    message, str(request.url.path), resolved_profile_id, is_error
+                )
             )
         else:
             asyncio.run(
-                _insert_activity(message, str(request.url.path), resolved_profile_id, is_error)
+                _insert_activity(
+                    message, str(request.url.path), resolved_profile_id, is_error
+                )
             )
     except RuntimeError:
         # No event loop, skip DB write
         pass
 
 
-async def _insert_activity(message: str, endpoint: str, profile_id: str, error: bool = False) -> None:
+async def _insert_activity(
+    message: str, endpoint: str, profile_id: str, error: bool = False
+) -> None:
     """Insert activity record into database.
 
     Args:

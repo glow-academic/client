@@ -16,8 +16,8 @@ from app.main import (
     sio,
 )
 from app.socket.v3.simulations.streaming.message import (
-    _simulation_message_start_impl,
     _simulation_message_complete_impl,
+    _simulation_message_start_impl,
 )
 from app.socket.v3.simulations.streaming.tool_call import (
     _simulation_tool_call_complete_impl,
@@ -182,9 +182,7 @@ async def _simulation_voice_assistant_done_impl(
                             conn=conn,
                         )
                     except Exception as e:
-                        logger.warning(
-                            f"Failed to finalize tool call in database: {e}"
-                        )
+                        logger.warning(f"Failed to finalize tool call in database: {e}")
 
                 # Parse final arguments to extract persona and message
                 try:
@@ -272,7 +270,9 @@ async def _simulation_voice_assistant_done_impl(
                         f"No DB message found for call_id={call_id}, creating one now"
                     )
                     # Get run_id (now uses groups/group_runs)
-                    sql_get_latest_run = load_sql("sql/v3/simulations/get_latest_run_for_chat.sql")
+                    sql_get_latest_run = load_sql(
+                        "sql/v3/simulations/get_latest_run_for_chat.sql"
+                    )
                     latest_run_row = await conn.fetchrow(
                         sql_get_latest_run,
                         str(chat_id_uuid),
@@ -288,7 +288,11 @@ async def _simulation_voice_assistant_done_impl(
                             "role": "assistant",
                             "content": "",
                             "completed": False,
-                            "parent_message_id": str(tool_call_state["parent_message_id"]) if tool_call_state["parent_message_id"] else None,
+                            "parent_message_id": str(
+                                tool_call_state["parent_message_id"]
+                            )
+                            if tool_call_state["parent_message_id"]
+                            else None,
                             "persona_id": persona_id,
                         },
                         conn=conn,

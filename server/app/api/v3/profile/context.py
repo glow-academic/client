@@ -4,28 +4,29 @@ import json
 from typing import Annotated, Any, Literal, cast
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
+
 from app.api.v3.profile.detail import ProfileItem
 from app.main import get_db
 from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.permissions import (ProfileRole,
-                                   get_available_subsections_for_role)
+from app.utils.permissions import ProfileRole, get_available_subsections_for_role
 from app.utils.sql_helper import load_sql
 from app.utils.theme.color_utils import ensure_contrast, shade, tint
 from app.utils.theme.oklch_to_hex import hex_to_oklch
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
 
 router = APIRouter()
 
 
 class ProfileContextRequest(BaseModel):
     """Request to get consolidated profile context.
-    
+
     Note: actualProfileId and effectiveProfileId are now read from headers
     (X-Profile-Id and X-Effective-Profile-Id) instead of request body.
     These fields are kept for backward compatibility but are ignored.
     """
+
     pathname: str  # Current path for breadcrumb generation
 
 
@@ -225,7 +226,9 @@ async def get_profile_context(
         actual_profile_id = getattr(http_request.state, "profile_id", None)
         effective_profile_id = getattr(http_request.state, "effective_profile_id", None)
 
-        logger.info(f"Request: pathname={request.pathname}, actualProfileId={actual_profile_id}, effectiveProfileId={effective_profile_id}")
+        logger.info(
+            f"Request: pathname={request.pathname}, actualProfileId={actual_profile_id}, effectiveProfileId={effective_profile_id}"
+        )
 
         # Read department-id and auth-mode cookies for profile resolution
         # These are used when actualProfileId/effectiveProfileId are null (cookie-based auth)
@@ -243,7 +246,10 @@ async def get_profile_context(
 
         # Validate auth_mode is valid ONLY if it's set (not None)
         # Authenticated users (with profile IDs) don't need auth-mode cookie
-        if auth_mode_cookie is not None and auth_mode_cookie not in ("default-guest", "default-account"):
+        if auth_mode_cookie is not None and auth_mode_cookie not in (
+            "default-guest",
+            "default-account",
+        ):
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid auth-mode: {auth_mode_cookie}. Must be 'default-guest' or 'default-account'",
@@ -367,19 +373,14 @@ async def get_profile_context(
         # This prevents unnecessary SQL execution and provides clearer error messages
         if actual_profile_id:
             profile_check_sql = "SELECT id FROM profiles WHERE id = $1::uuid"
-            actual_exists = await conn.fetchrow(
-                profile_check_sql, actual_profile_id
-            )
+            actual_exists = await conn.fetchrow(profile_check_sql, actual_profile_id)
             if not actual_exists:
                 raise HTTPException(
                     status_code=401,
                     detail=f"Session invalid: Profile {actual_profile_id} not found. Please sign in again.",
                 )
 
-        if (
-            effective_profile_id
-            and effective_profile_id != actual_profile_id
-        ):
+        if effective_profile_id and effective_profile_id != actual_profile_id:
             profile_check_sql = "SELECT id FROM profiles WHERE id = $1::uuid"
             effective_exists = await conn.fetchrow(
                 profile_check_sql, effective_profile_id
@@ -710,7 +711,9 @@ async def get_profile_context(
         )
 
         # Fetch actor_name separately (use effective_profile_id if available, else actual_profile_id)
-        actor_profile_id = effective_profile_id if effective_profile_id else actual_profile_id
+        actor_profile_id = (
+            effective_profile_id if effective_profile_id else actual_profile_id
+        )
         actor_name = None
         if actor_profile_id:
             actor_name_row = await conn.fetchrow(

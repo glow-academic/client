@@ -1508,7 +1508,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(f"Error logging scenario generation activity: {log_error}")
+                logger.warning(
+                    f"Error logging scenario generation activity: {log_error}"
+                )
 
     except Exception as e:
         logger.error(f"Error in generate_scenario for {sid}: {str(e)}", exc_info=True)
@@ -1529,7 +1531,9 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging scenario generation error activity: {log_error}")
+            logger.warning(
+                f"Error logging scenario generation error activity: {log_error}"
+            )
 
 
 @sio.event  # type: ignore

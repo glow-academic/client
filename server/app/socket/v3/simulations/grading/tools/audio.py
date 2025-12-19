@@ -3,7 +3,6 @@
 import uuid
 from typing import Any
 
-import asyncpg  # type: ignore
 from agents import Runner, trace
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
@@ -68,11 +67,9 @@ async def audio_tool_error(payload: AudioToolErrorPayload, room: str) -> None:
     await sio.emit("grading_tools_audio_error", payload.model_dump(), room=room)
 
 
-async def _grading_tool_audio_impl(
-    sid: str, data: dict[str, Any]
-) -> str | None:
+async def _grading_tool_audio_impl(sid: str, data: dict[str, Any]) -> str | None:
     """Internal implementation for audio grading.
-    
+
     Returns:
         Analysis result string if called synchronously (with _result_callback), None otherwise
     """
@@ -80,11 +77,11 @@ async def _grading_tool_audio_impl(
         f"[grading_tool_audio] Handler received event: sid={sid}, "
         f"chat_id={data.get('chat_id', 'unknown')}, trace_id={data.get('trace_id', 'unknown')}"
     )
-    
+
     # Check if this is a synchronous call (for tool result)
     result_callback = data.pop("_result_callback", None)
     is_synchronous = result_callback is not None
-    
+
     try:
         validated = AudioToolPayload(**data)
     except ValidationError as e:
@@ -152,7 +149,9 @@ async def _grading_tool_audio_impl(
                     )
 
             if not message_ids:
-                error_msg = "No valid message IDs found for the specified message numbers"
+                error_msg = (
+                    "No valid message IDs found for the specified message numbers"
+                )
                 if is_synchronous and result_callback:
                     await result_callback(None, error_msg)
                     return None
@@ -171,9 +170,7 @@ async def _grading_tool_audio_impl(
             sql_get_audio = load_sql("sql/v3/simulations/get_messages_with_audio.sql")
             sql_query = sql_get_audio
             sql_params = (str(chat_id_uuid), message_ids)
-            audio_rows = await conn.fetch(
-                sql_get_audio, str(chat_id_uuid), message_ids
-            )
+            audio_rows = await conn.fetch(sql_get_audio, str(chat_id_uuid), message_ids)
 
             if not audio_rows:
                 error_msg = "No audio files found for the specified messages"
@@ -264,7 +261,9 @@ Please provide a detailed analysis based on this request. Consider aspects such 
             # Add audio files to input (format depends on the model API)
             # For OpenAI audio models, we'd add audio input items
             # For now, we'll include file paths in the prompt and let the agent handle it
-            audio_description = f"\n\nAudio files to analyze ({len(audio_files)} files):\n"
+            audio_description = (
+                f"\n\nAudio files to analyze ({len(audio_files)} files):\n"
+            )
             for i, audio_file in enumerate(audio_files, 1):
                 audio_description += f"{i}. Message {audio_file['message_id']}: {audio_file['file_path']}\n"
 
@@ -340,9 +339,7 @@ Please provide a detailed analysis based on this request. Consider aspects such 
             return None
 
     except Exception as e:
-        logger.error(
-            f"Error in grading_tool_audio for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error in grading_tool_audio for {sid}: {str(e)}", exc_info=True)
         error_msg = str(e)
         if is_synchronous and result_callback:
             await result_callback(None, error_msg)
@@ -393,4 +390,3 @@ async def audio_tool_complete_api(
 async def audio_tool_error_api(request: AudioToolErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Audio tool error."""
     return {"success": True}
-

@@ -32,7 +32,9 @@ class BulkDeleteStaffResponse(BaseModel):
     "/delete",
     response_model=BulkDeleteStaffResponse,
     dependencies=[
-        audit_activity("staff.deleted", "{{ actor.name }} deleted {{ count }} staff member(s)")
+        audit_activity(
+            "staff.deleted", "{{ actor.name }} deleted {{ count }} staff member(s)"
+        )
     ],
 )
 async def bulk_delete_staff(

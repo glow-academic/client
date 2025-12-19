@@ -55,7 +55,9 @@ router = APIRouter()
     "/archive",
     response_model=BulkArchiveAttemptsResponse,
     dependencies=[
-        audit_activity("attempt.archived", "{{ actor.name }} archived {{ count }} attempt(s)")
+        audit_activity(
+            "attempt.archived", "{{ actor.name }} archived {{ count }} attempt(s)"
+        )
     ],
 )
 async def bulk_archive_attempts(

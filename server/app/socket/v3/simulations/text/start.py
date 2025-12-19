@@ -410,7 +410,10 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                     sid=sid,
                     event_key="simulations.text.started",
                     template="{{ actor.name }} started simulation",
-                    context={"simulation_id": simulation_id, "attempt_id": start_payload["attempt_id"]},
+                    context={
+                        "simulation_id": simulation_id,
+                        "attempt_id": start_payload["attempt_id"],
+                    },
                     endpoint="/socket/v3/simulations/text/start",
                     error=False,
                 )
@@ -437,7 +440,9 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation start error activity: {log_error}")
+            logger.warning(
+                f"Error logging simulation start error activity: {log_error}"
+            )
 
 
 @sio.event  # type: ignore
@@ -465,7 +470,9 @@ async def simulation_text_start(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation start validation error activity: {log_error}")
+            logger.warning(
+                f"Error logging simulation start validation error activity: {log_error}"
+            )
 
 
 # FastAPI endpoint for OpenAPI documentation

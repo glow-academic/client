@@ -63,7 +63,9 @@ async def delete_document(
 
         sql_query = load_sql("sql/v3/documents/delete_document.sql")
         sql_params = (uuid.UUID(request.documentId), uuid.UUID(profile_id))
-        result_row = await conn.fetchrow(sql_query, uuid.UUID(request.documentId), uuid.UUID(profile_id))
+        result_row = await conn.fetchrow(
+            sql_query, uuid.UUID(request.documentId), uuid.UUID(profile_id)
+        )
 
         if result_row:
             document_name = result_row.get("document_name", "Unknown")

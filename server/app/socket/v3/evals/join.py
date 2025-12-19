@@ -79,9 +79,7 @@ async def eval_join(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in eval_join for {sid}: {e}")
         await eval_join_error(
-            EvalJoinErrorPayload(
-                success=False, message=f"Invalid payload: {str(e)}"
-            ),
+            EvalJoinErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )
 
@@ -103,4 +101,3 @@ async def eval_joined_api(request: EvalJoinedPayload) -> dict[str, bool]:
 async def eval_join_error_api(request: EvalJoinErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Error occurred while joining eval room."""
     return {"success": True}
-

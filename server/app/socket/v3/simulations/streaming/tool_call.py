@@ -1,14 +1,14 @@
 """Unified tool call streaming handlers for simulations."""
 
-import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_internal_sio, get_pool
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -50,7 +50,7 @@ async def _simulation_tool_call_start_impl(
     sid: str, data: dict[str, Any], conn: asyncpg.Connection | None = None
 ) -> str | None:
     """Internal implementation for starting a new tool call.
-    
+
     Returns the database tool_call.id (UUID) if successful, None otherwise.
     This can be called directly when the ID is needed synchronously.
     """
@@ -75,41 +75,39 @@ async def _simulation_tool_call_start_impl(
             return None
         conn_context = pool.acquire()
         conn = await conn_context.__aenter__()
-    
+
     assert conn is not None  # Type guard
 
     try:
-            # Create tool call in database
-            sql_create_tool_call = load_sql("sql/v3/tool_calls/create_tool_call.sql")
-            tool_call_row = await conn.fetchrow(
-                sql_create_tool_call, validated.call_id, validated.tool_name
+        # Create tool call in database
+        sql_create_tool_call = load_sql("sql/v3/tool_calls/create_tool_call.sql")
+        tool_call_row = await conn.fetchrow(
+            sql_create_tool_call, validated.call_id, validated.tool_name
+        )
+
+        if not tool_call_row:
+            logger.error(
+                f"Failed to create tool call for chat {validated.chat_id}, call_id={validated.call_id}"
             )
+            return None
 
-            if not tool_call_row:
-                logger.error(
-                    f"Failed to create tool call for chat {validated.chat_id}, call_id={validated.call_id}"
-                )
-                return None
+        db_tool_call_id = tool_call_row["id"]
 
-            db_tool_call_id = tool_call_row["id"]
-
-            # Link tool call to run
-            sql_link_tool_call = load_sql(
-                "sql/v3/tool_calls/link_tool_call_to_run.sql"
+        # Link tool call to run
+        sql_link_tool_call = load_sql("sql/v3/tool_calls/link_tool_call_to_run.sql")
+        try:
+            await conn.execute(
+                sql_link_tool_call, str(db_tool_call_id), validated.run_id
             )
-            try:
-                await conn.execute(
-                    sql_link_tool_call, str(db_tool_call_id), validated.run_id
-                )
-            except Exception as e:
-                logger.warning(f"Failed to link tool call to run: {e}")
+        except Exception as e:
+            logger.warning(f"Failed to link tool call to run: {e}")
 
-            logger.info(
-                f"Created tool call {db_tool_call_id} for chat {validated.chat_id} "
-                f"(call_id={validated.call_id}, tool_name={validated.tool_name})"
-            )
+        logger.info(
+            f"Created tool call {db_tool_call_id} for chat {validated.chat_id} "
+            f"(call_id={validated.call_id}, tool_name={validated.tool_name})"
+        )
 
-            return str(db_tool_call_id)
+        return str(db_tool_call_id)
 
     except Exception as e:
         logger.error(
@@ -145,22 +143,20 @@ async def _simulation_tool_call_token_impl(
             return
         conn_context = pool.acquire()
         conn = await conn_context.__aenter__()
-    
+
     assert conn is not None  # Type guard
 
     try:
         # Update tool call arguments in database
-            sql_update_args = load_sql(
-                "sql/v3/tool_calls/update_tool_call_arguments.sql"
-            )
-            await conn.execute(
-                sql_update_args, validated.tool_call_id, validated.arguments_raw
-            )
+        sql_update_args = load_sql("sql/v3/tool_calls/update_tool_call_arguments.sql")
+        await conn.execute(
+            sql_update_args, validated.tool_call_id, validated.arguments_raw
+        )
 
-            logger.debug(
-                f"Updated tool call {validated.tool_call_id} arguments "
-                f"(length={len(validated.arguments_raw)})"
-            )
+        logger.debug(
+            f"Updated tool call {validated.tool_call_id} arguments "
+            f"(length={len(validated.arguments_raw)})"
+        )
 
     except Exception as e:
         logger.error(
@@ -182,7 +178,9 @@ async def _simulation_tool_call_complete_impl(
     try:
         validated = SimulationToolCallCompletePayload(**data)
     except ValidationError as e:
-        logger.error(f"Validation error in simulation_tool_call_complete for {sid}: {e}")
+        logger.error(
+            f"Validation error in simulation_tool_call_complete for {sid}: {e}"
+        )
         return
 
     # Use provided connection or acquire from pool
@@ -195,7 +193,7 @@ async def _simulation_tool_call_complete_impl(
             return
         conn_context = pool.acquire()
         conn = await conn_context.__aenter__()
-    
+
     assert conn is not None  # Type guard
 
     try:
@@ -270,4 +268,3 @@ async def simulation_tool_call_complete_api(
 ) -> dict[str, bool]:
     """Internal event: Complete a tool call."""
     return {"success": True}
-

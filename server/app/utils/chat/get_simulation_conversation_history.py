@@ -1,11 +1,11 @@
 """Get conversation history for simulation messages."""
 
-import json
 from datetime import datetime
 from typing import Any
 
 import asyncpg
 from agents.items import TResponseInputItem
+
 from app.utils.sql_helper import load_sql
 
 
@@ -60,21 +60,23 @@ def get_simulation_conversation_history(
         message_id = item.get("id", "")
 
         # Check if this is a user message (type="query" or role="user")
-        is_user_message = (msg_type == "query" or msg_role == "user") and msg_content != ""
-        
+        is_user_message = (
+            msg_type == "query" or msg_role == "user"
+        ) and msg_content != ""
+
         if is_user_message:
             # If we have pending response messages, add the latest one
             if current_response_messages:
                 latest_response = current_response_messages[-1]
                 response_id = latest_response.get("id", "")
                 content = latest_response.get("content", "")
-                
+
                 if include_message_numbers:
                     content = f"[{message_number}] {content}"
                     if response_id:
                         message_id_map[response_id] = message_number
                     message_number += 1
-                
+
                 assistant_message_item: TResponseInputItem = {
                     "role": "assistant",
                     "content": content,
@@ -89,7 +91,7 @@ def get_simulation_conversation_history(
                 if message_id:
                     message_id_map[message_id] = message_number
                 message_number += 1
-            
+
             user_message_item: TResponseInputItem = {
                 "role": "user",
                 "content": content,
@@ -105,13 +107,13 @@ def get_simulation_conversation_history(
         latest_response = current_response_messages[-1]
         response_id = latest_response.get("id", "")
         content = latest_response.get("content", "")
-        
+
         if include_message_numbers:
             content = f"[{message_number}] {content}"
             if response_id:
                 message_id_map[response_id] = message_number
             message_number += 1
-        
+
         current_assistant_message_item: TResponseInputItem = {
             "role": "assistant",
             "content": content,
@@ -157,7 +159,9 @@ async def get_simulation_conversation_history_with_tool_calls(
     # Sort tool calls by creation time
     tool_calls_sorted = sorted(
         tool_calls_data,
-        key=lambda x: x.get("tool_call_created_at", datetime.min) if isinstance(x.get("tool_call_created_at"), datetime) else datetime.min,
+        key=lambda x: x.get("tool_call_created_at", datetime.min)
+        if isinstance(x.get("tool_call_created_at"), datetime)
+        else datetime.min,
     )
 
     # Add tool calls to the conversation history

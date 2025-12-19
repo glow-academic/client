@@ -36,7 +36,10 @@ router = APIRouter()
     "/duplicate",
     response_model=DuplicateParameterResponse,
     dependencies=[
-        audit_activity("parameter.duplicated", "{{ actor.name }} duplicated parameter '{{ parameter.name }}'")
+        audit_activity(
+            "parameter.duplicated",
+            "{{ actor.name }} duplicated parameter '{{ parameter.name }}'",
+        )
     ],
 )
 async def duplicate_parameter(

@@ -45,7 +45,9 @@ router = APIRouter()
     "/detail",
     response_model=ProviderDetailResponse,
     dependencies=[
-        audit_activity("provider.viewed", "{{ actor.name }} viewed provider '{{ provider.name }}'")
+        audit_activity(
+            "provider.viewed", "{{ actor.name }} viewed provider '{{ provider.name }}'"
+        )
     ],
 )
 async def get_provider_detail(

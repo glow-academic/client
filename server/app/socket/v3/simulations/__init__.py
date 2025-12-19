@@ -8,6 +8,12 @@ from .enter import (
 from .enter import (
     server_router as enter_server_router,
 )
+from .grading import (
+    client_router as grading_client_router,
+)
+from .grading import (
+    server_router as grading_server_router,
+)
 from .join import (
     client_router as join_client_router,
 )
@@ -20,6 +26,12 @@ from .leave import (
 from .leave import (
     server_router as leave_server_router,
 )
+from .streaming import (
+    client_router as streaming_client_router,
+)
+from .streaming import (
+    server_router as streaming_server_router,
+)
 from .text import (
     client_router as text_client_router,
 )
@@ -31,16 +43,6 @@ from .voice import (
 )
 from .voice import (
     server_router as voice_server_router,
-)
-from .grading import (
-    client_router as grading_client_router,
-)
-from .grading import (
-    server_router as grading_server_router,
-)
-from .streaming import (
-    client_router as streaming_client_router,
-    server_router as streaming_server_router,
 )
 
 client_router = APIRouter(prefix="/simulations", tags=["socket-client"])

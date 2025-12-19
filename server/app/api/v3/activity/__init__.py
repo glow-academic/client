@@ -10,4 +10,3 @@ router = APIRouter(prefix="/activity", tags=["activity"])
 # Include endpoint routers
 router.include_router(bundle_router)
 router.include_router(list_router)
-

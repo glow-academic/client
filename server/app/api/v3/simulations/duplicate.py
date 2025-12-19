@@ -65,7 +65,9 @@ async def duplicate_simulation(
         # Use single comprehensive SQL file (DHH style)
         sql_query = load_sql("sql/v3/simulations/duplicate_simulation.sql")
         sql_params = (request.simulationId, profile_id)
-        new_simulation_row = await conn.fetchrow(sql_query, request.simulationId, profile_id)
+        new_simulation_row = await conn.fetchrow(
+            sql_query, request.simulationId, profile_id
+        )
 
         if not new_simulation_row:
             raise HTTPException(

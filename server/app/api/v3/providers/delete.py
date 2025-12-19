@@ -36,7 +36,10 @@ router = APIRouter()
     "/delete",
     response_model=DeleteProviderResponse,
     dependencies=[
-        audit_activity("provider.deleted", "{{ actor.name }} deleted provider '{{ provider.name }}'")
+        audit_activity(
+            "provider.deleted",
+            "{{ actor.name }} deleted provider '{{ provider.name }}'",
+        )
     ],
 )
 async def delete_provider(

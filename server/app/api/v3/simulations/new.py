@@ -237,9 +237,7 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     "/new",
     response_model=SimulationDetailResponse,
     dependencies=[
-        audit_activity(
-            "simulation.new", "{{ actor.name }} viewed new simulation form"
-        )
+        audit_activity("simulation.new", "{{ actor.name }} viewed new simulation form")
     ],
 )
 async def get_simulation_new(

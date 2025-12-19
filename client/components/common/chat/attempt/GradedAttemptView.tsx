@@ -786,6 +786,15 @@ export default function GradedAttemptView({
                               ? scenariosByChatId[displayChat.id] || null
                               : scenario
                           }
+                          grade={
+                            displayChat?.id
+                              ? allDynamicRubrics.find(
+                                  (r) => r && r.chatId === displayChat.id
+                                )
+                                ? { id: "graded" }
+                                : null
+                              : null
+                          }
                         />
                       </div>
                     ) : (

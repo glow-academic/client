@@ -59,7 +59,9 @@ router = APIRouter()
     "/update",
     response_model=UpdateModelResponse,
     dependencies=[
-        audit_activity("model.updated", "{{ actor.name }} updated model '{{ model.name }}'")
+        audit_activity(
+            "model.updated", "{{ actor.name }} updated model '{{ model.name }}'"
+        )
     ],
 )
 async def update_model(

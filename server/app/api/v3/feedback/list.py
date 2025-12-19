@@ -96,7 +96,9 @@ async def get_feedback_list(
                     feedback_id=str(row["feedback_id"]),
                     type=row["type"],
                     message=row["message"],
-                    created_at=row["created_at"].isoformat() if row["created_at"] else "",
+                    created_at=row["created_at"].isoformat()
+                    if row["created_at"]
+                    else "",
                     resolved=row["resolved"],
                     author_name=row["author_name"],
                     author_email=row["author_email"],
@@ -128,4 +130,3 @@ async def get_feedback_list(
             sql_params=sql_params,
             request=request,
         )
-

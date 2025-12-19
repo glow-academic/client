@@ -54,9 +54,7 @@ router = APIRouter()
 @router.post(
     "/login",
     response_model=LoginProvidersResponse,
-    dependencies=[
-        audit_activity("auth.login", "User accessed login page")
-    ],
+    dependencies=[audit_activity("auth.login", "User accessed login page")],
 )
 async def get_login_providers(
     request: LoginProvidersRequest,

@@ -96,7 +96,9 @@ router = APIRouter()
     "/detail",
     response_model=ModelDetailResponse,
     dependencies=[
-        audit_activity("model.viewed", "{{ actor.name }} viewed model '{{ model.name }}'")
+        audit_activity(
+            "model.viewed", "{{ actor.name }} viewed model '{{ model.name }}'"
+        )
     ],
 )
 async def get_model_detail(

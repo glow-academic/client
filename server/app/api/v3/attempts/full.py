@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -91,6 +91,24 @@ class ScenarioItem(BaseModel):
     objectives: list[str] | None = None
 
 
+class MessageFeedbackReplaceItem(BaseModel):
+    section: str
+    replace: str
+
+
+class MessageFeedbackHighlightItem(BaseModel):
+    section: str
+
+
+class MessageFeedbackItem(BaseModel):
+    id: str
+    name: str
+    description: str
+    type: Literal["strength", "improvement"]
+    replaces: list[MessageFeedbackReplaceItem] = []
+    highlights: list[MessageFeedbackHighlightItem] = []
+
+
 class MessageItem(BaseModel):
     id: str
     createdAt: str
@@ -100,6 +118,7 @@ class MessageItem(BaseModel):
     type: str  # "query" | "response"
     completed: bool
     personaId: str | None = None
+    feedbacks: list[MessageFeedbackItem] | None = None
 
 
 class PersonaItem(BaseModel):
@@ -367,7 +386,9 @@ router = APIRouter()
     "/full",
     response_model=AttemptFullResponse,
     dependencies=[
-        audit_activity("attempt.viewed", "{{ actor.name }} viewed attempt '{{ attempt.id }}'")
+        audit_activity(
+            "attempt.viewed", "{{ actor.name }} viewed attempt '{{ attempt.id }}'"
+        )
     ],
 )
 async def get_attempt_full(

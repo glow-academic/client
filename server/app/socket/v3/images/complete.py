@@ -81,7 +81,9 @@ async def _image_generation_complete_impl(
                         error=False,
                     )
                 except Exception as log_error:
-                    logger.warning(f"Error logging image completion activity: {log_error}")
+                    logger.warning(
+                        f"Error logging image completion activity: {log_error}"
+                    )
 
             # If this was triggered from scenario tool, emit completion event to client
             if room and trace_id:

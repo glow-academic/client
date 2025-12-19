@@ -53,7 +53,10 @@ router = APIRouter()
     "/update",
     response_model=UpdateParameterResponse,
     dependencies=[
-        audit_activity("parameter.updated", "{{ actor.name }} updated parameter '{{ parameter.name }}'")
+        audit_activity(
+            "parameter.updated",
+            "{{ actor.name }} updated parameter '{{ parameter.name }}'",
+        )
     ],
 )
 async def update_parameter(

@@ -15,7 +15,6 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
 
-
 router = APIRouter()
 
 
@@ -154,7 +153,8 @@ async def get_pricing_run_detail(
                         detail="You don't have access to this group. It may be restricted to other departments.",
                     )
                 raise HTTPException(
-                    status_code=404, detail=f"Group not found: {request_body.groupRunId}"
+                    status_code=404,
+                    detail=f"Group not found: {request_body.groupRunId}",
                 )
 
             # Parse JSONB result (may be string or dict)
@@ -390,4 +390,3 @@ async def get_pricing_run_detail(
             request=request,
         )
         raise
-

@@ -1007,9 +1007,7 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
     "/new",
     response_model=ScenarioDetailResponse,
     dependencies=[
-        audit_activity(
-            "scenario.new", "{{ actor.name }} viewed new scenario form"
-        )
+        audit_activity("scenario.new", "{{ actor.name }} viewed new scenario form")
     ],
 )
 async def get_scenario_new(

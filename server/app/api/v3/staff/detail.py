@@ -81,7 +81,9 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     "/detail",
     response_model=StaffDetailResponse,
     dependencies=[
-        audit_activity("staff.viewed", "{{ actor.name }} viewed staff '{{ staff.name }}'")
+        audit_activity(
+            "staff.viewed", "{{ actor.name }} viewed staff '{{ staff.name }}'"
+        )
     ],
 )
 async def get_staff_detail(

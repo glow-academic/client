@@ -35,7 +35,9 @@ class BulkCreateStaffResponse(BaseModel):
     "/create",
     response_model=BulkCreateStaffResponse,
     dependencies=[
-        audit_activity("staff.created", "{{ actor.name }} created {{ count }} staff member(s)")
+        audit_activity(
+            "staff.created", "{{ actor.name }} created {{ count }} staff member(s)"
+        )
     ],
 )
 async def bulk_create_staff(

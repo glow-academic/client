@@ -7,7 +7,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.api.v3.dashboard.bundle import DataPoint, Method, MetricResponse, TrendData
+from app.api.v3.dashboard.bundle import Method, MetricResponse, TrendData
 from app.main import get_db
 from app.utils.activity.audit import audit_activity
 from app.utils.cache.cache_key import cache_key
@@ -54,7 +54,9 @@ class ActivityBundleResponse(BaseModel):
 router = APIRouter()
 
 
-def compute_status(value: int, threshold_warning: int = 0, threshold_danger: int = 0) -> str:
+def compute_status(
+    value: int, threshold_warning: int = 0, threshold_danger: int = 0
+) -> str:
     """Compute status based on value and thresholds."""
     if value >= threshold_warning:
         return "success"
@@ -107,7 +109,9 @@ async def get_activity_bundle(
         result = await conn.fetchrow(sql_query, *sql_params)
 
         if not result:
-            raise HTTPException(status_code=500, detail="Failed to fetch activity metrics")
+            raise HTTPException(
+                status_code=500, detail="Failed to fetch activity metrics"
+            )
 
         # Extract header metrics
         active_profiles = result["active_profiles_count"] or 0
@@ -123,7 +127,7 @@ async def get_activity_bundle(
                 chart_data_json = json.loads(chart_data_raw)
             else:
                 chart_data_json = chart_data_raw
-            
+
             if isinstance(chart_data_json, list):
                 chart_data = [
                     ActivityChartDataPoint(**item) for item in chart_data_json
@@ -134,10 +138,10 @@ async def get_activity_bundle(
             """Calculate trend data for a metric from chart data."""
             if not chart_data:
                 return []
-            
+
             # Get last 30 days of data
             recent_data = chart_data[-30:] if len(chart_data) > 30 else chart_data
-            
+
             trend_data = []
             for point in recent_data:
                 value = getattr(point, metric_key, 0)
@@ -183,7 +187,9 @@ async def get_activity_bundle(
                 hasData=total_errors > 0,
                 method=Method.COUNT_DISTINCT,
                 currentValue=total_errors,
-                status=compute_status(total_errors, threshold_warning=10, threshold_danger=50),
+                status=compute_status(
+                    total_errors, threshold_warning=10, threshold_danger=50
+                ),
                 trendAnalysis=None,
                 trendData=calculate_trend_data("errors"),
                 dataPoints=[],
@@ -213,4 +219,3 @@ async def get_activity_bundle(
             sql_params=sql_params,
             request=request,
         )
-

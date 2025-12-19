@@ -63,7 +63,9 @@ async def delete_cohort(
         # Delete cohort with usage check (single query)
         sql_query = load_sql("sql/v3/cohorts/delete_cohort_complete.sql")
         sql_params = (uuid.UUID(request.cohortId), uuid.UUID(profile_id))
-        result = await conn.fetchrow(sql_query, uuid.UUID(request.cohortId), uuid.UUID(profile_id))
+        result = await conn.fetchrow(
+            sql_query, uuid.UUID(request.cohortId), uuid.UUID(profile_id)
+        )
 
         if not result:
             # Cohort doesn't exist - idempotent delete

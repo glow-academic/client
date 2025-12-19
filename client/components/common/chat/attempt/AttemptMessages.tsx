@@ -40,6 +40,7 @@ import { LoadingDots } from "@/components/ui/loading-dots";
 import { useProfile } from "@/contexts/profile-context";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export interface AttemptMessagesProps {
   chatId?: string;
@@ -51,6 +52,14 @@ export interface AttemptMessagesProps {
     createdAt: string;
     completed?: boolean;
     personaId?: string;
+    feedbacks?: Array<{
+      id: string;
+      name: string;
+      description: string;
+      type: "strength" | "improvement";
+      replaces: Array<{ section: string; replace: string }>;
+      highlights: Array<{ section: string }>;
+    }>;
   }>;
   currentChat: { id: string; completed?: boolean } | null;
   sendMessage: (message: string, isRetry?: boolean) => void;
@@ -81,6 +90,7 @@ export interface AttemptMessagesProps {
     personaColor?: string | null;
   } | null;
   backgroundImage?: string | null;
+  grade?: { id: string } | null; // Grade exists means we're in graded view
 }
 
 // Utility function to generate gradient from hex color (same as PersonaPicker)
@@ -109,6 +119,118 @@ const normalizeMessageContent = (content: string): string => {
   return content.trim().toLowerCase();
 };
 
+// Component to display message feedback
+function MessageFeedbackDisplay({
+  feedback,
+}: {
+  feedback: {
+    id: string;
+    name: string;
+    description: string;
+    type: "strength" | "improvement";
+  };
+}) {
+  const isStrength = feedback.type === "strength";
+  return (
+    <div
+      className={cn(
+        "mb-2 rounded-lg border p-3",
+        isStrength
+          ? "border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400"
+          : "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400"
+      )}
+    >
+      <div className="text-sm font-semibold mb-1">{feedback.name}</div>
+      <div className="text-sm">{feedback.description}</div>
+    </div>
+  );
+}
+
+// Component to adapt message content with replacements and highlights
+function MessageContentAdapter({
+  content,
+  replaces,
+  highlights,
+}: {
+  content: string;
+  replaces: Array<{ section: string; replace: string }>;
+  highlights: Array<{ section: string }>;
+}) {
+  if (replaces.length === 0 && highlights.length === 0) {
+    return <Markdown>{content}</Markdown>;
+  }
+
+  // Process replacements first (strikethrough + replacement)
+  let adaptedContent = content;
+  const replacementRanges: Array<{
+    start: number;
+    end: number;
+    original: string;
+    replacement: string;
+  }> = [];
+
+  for (const replaceItem of replaces) {
+    const section = replaceItem.section;
+    const index = adaptedContent.indexOf(section);
+    if (index !== -1) {
+      replacementRanges.push({
+        start: index,
+        end: index + section.length,
+        original: section,
+        replacement: replaceItem.replace,
+      });
+    }
+  }
+
+  // Sort by start position (reverse order to avoid index shifting)
+  replacementRanges.sort((a, b) => b.start - a.start);
+
+  // Apply replacements
+  for (const range of replacementRanges) {
+    const before = adaptedContent.substring(0, range.start);
+    const after = adaptedContent.substring(range.end);
+    adaptedContent =
+      before +
+      `<span class="line-through text-muted-foreground">${range.original}</span> <span class="text-green-600 dark:text-green-400">${range.replacement}</span>` +
+      after;
+  }
+
+  // Process highlights
+  const highlightRanges: Array<{ start: number; end: number; text: string }> = [];
+  for (const highlightItem of highlights) {
+    const section = highlightItem.section;
+    const index = adaptedContent.indexOf(section);
+    if (index !== -1) {
+      highlightRanges.push({
+        start: index,
+        end: index + section.length,
+        text: section,
+      });
+    }
+  }
+
+  // Sort by start position (reverse order)
+  highlightRanges.sort((a, b) => b.start - a.start);
+
+  // Apply highlights (only if not already replaced)
+  for (const range of highlightRanges) {
+    // Check if this range overlaps with any replacement
+    const overlapsReplacement = replacementRanges.some(
+      (r) => !(range.end <= r.start || range.start >= r.end)
+    );
+    if (!overlapsReplacement) {
+      const before = adaptedContent.substring(0, range.start);
+      const after = adaptedContent.substring(range.end);
+      adaptedContent =
+        before +
+        `<span class="bg-yellow-200 dark:bg-yellow-900 px-1 rounded">${range.text}</span>` +
+        after;
+    }
+  }
+
+  return <Markdown>{adaptedContent}</Markdown>;
+}
+
 export default function AttemptMessages({
   chatId,
   isAttemptOwner = true,
@@ -122,6 +244,7 @@ export default function AttemptMessages({
   personas,
   scenario: _scenario,
   backgroundImage,
+  grade,
 }: AttemptMessagesProps) {
   const { socket } = useProfile();
   const router = useRouter();
@@ -972,45 +1095,64 @@ export default function AttemptMessages({
                       message.id.startsWith("optimistic-user-voice-") &&
                       message.content === "";
 
+                    // Get feedbacks for this message (only show if grade exists)
+                    const messageFeedbacks = grade && "feedbacks" in message && message.feedbacks ? message.feedbacks : [];
+                    const allReplaces = messageFeedbacks.flatMap((f: { replaces?: Array<{ section: string; replace: string }> }) => f.replaces || []);
+                    const allHighlights = messageFeedbacks.flatMap((f: { highlights?: Array<{ section: string }> }) => f.highlights || []);
+
                     return (
                       <div key={message.id} className="flex justify-end mb-3">
-                        <div className="max-w-[80%] flex items-stretch gap-2">
-                          <div
-                            className={`bg-primary text-primary-foreground rounded-lg p-3 flex-1 ${
-                              isOptimisticVoiceMessage
-                                ? "flex items-center justify-center"
-                                : ""
-                            }`}
-                            data-testid={`message-${message.id}`}
-                            data-message-id={message.id}
-                            data-message-type="user"
-                          >
-                            {isOptimisticVoiceMessage ? (
-                              // Show LoadingDots for optimistic voice messages (same as assistant)
-                              <LoadingDots />
-                            ) : (
-                              <Markdown>{message.content}</Markdown>
-                            )}
-                          </div>
-                          {/* Right-aligned controls */}
-                          <div className="flex flex-col gap-1 w-9 h-[52px] min-h-[52px] max-h-[52px] overflow-hidden">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  aria-label="You"
-                                  className="flex-1 p-0 rounded-md"
-                                  tabIndex={-1}
-                                >
-                                  <User className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>You</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            <div className="flex-1" />
+                        <div className="max-w-[80%] flex flex-col items-end gap-2">
+                          {/* Show feedbacks above message if grade exists */}
+                          {grade && messageFeedbacks.length > 0 && (
+                            <div className="w-full space-y-2">
+                              {messageFeedbacks.map((feedback: { id: string; name: string; description: string; type: "strength" | "improvement" }) => (
+                                <MessageFeedbackDisplay key={feedback.id} feedback={feedback} />
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex items-stretch gap-2 w-full">
+                            <div
+                              className={`bg-primary text-primary-foreground rounded-lg p-3 flex-1 ${
+                                isOptimisticVoiceMessage
+                                  ? "flex items-center justify-center"
+                                  : ""
+                              }`}
+                              data-testid={`message-${message.id}`}
+                              data-message-id={message.id}
+                              data-message-type="user"
+                            >
+                              {isOptimisticVoiceMessage ? (
+                                // Show LoadingDots for optimistic voice messages (same as assistant)
+                                <LoadingDots />
+                              ) : (
+                                <MessageContentAdapter
+                                  content={message.content}
+                                  replaces={allReplaces}
+                                  highlights={allHighlights}
+                                />
+                              )}
+                            </div>
+                            {/* Right-aligned controls */}
+                            <div className="flex flex-col gap-1 w-9 h-[52px] min-h-[52px] max-h-[52px] overflow-hidden">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    aria-label="You"
+                                    className="flex-1 p-0 rounded-md"
+                                    tabIndex={-1}
+                                  >
+                                    <User className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>You</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <div className="flex-1" />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1051,13 +1193,27 @@ export default function AttemptMessages({
                         }
                       : undefined;
 
+                    // Get feedbacks for this message (only show if grade exists)
+                    const messageFeedbacks = grade && "feedbacks" in message && message.feedbacks ? message.feedbacks : [];
+                    const allReplaces = messageFeedbacks.flatMap((f: { replaces?: Array<{ section: string; replace: string }> }) => f.replaces || []);
+                    const allHighlights = messageFeedbacks.flatMap((f: { highlights?: Array<{ section: string }> }) => f.highlights || []);
+
                     return (
                       <div key={message.id} className="flex justify-start mb-3">
-                        <div className="max-w-[80%] flex items-stretch gap-2">
-                          {/* Left-aligned stacked controls (assistant + optional hints) */}
-                          <div
-                            className={`flex flex-col gap-1 w-9 ${containerHeightClass} overflow-visible`}
-                          >
+                        <div className="max-w-[80%] flex flex-col gap-2">
+                          {/* Show feedbacks above message if grade exists */}
+                          {grade && messageFeedbacks.length > 0 && (
+                            <div className="space-y-2">
+                              {messageFeedbacks.map((feedback: { id: string; name: string; description: string; type: "strength" | "improvement" }) => (
+                                <MessageFeedbackDisplay key={feedback.id} feedback={feedback} />
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex items-stretch gap-2">
+                            {/* Left-aligned stacked controls (assistant + optional hints) */}
+                            <div
+                              className={`flex flex-col gap-1 w-9 ${containerHeightClass} overflow-visible`}
+                            >
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -1165,7 +1321,11 @@ export default function AttemptMessages({
                                 data-message-type="assistant"
                               >
                                 <div className="text-destructive pr-12">
-                                  <Markdown>{message.content}</Markdown>
+                                  <MessageContentAdapter
+                                    content={message.content}
+                                    replaces={allReplaces}
+                                    highlights={allHighlights}
+                                  />
                                 </div>
                                 <div className="absolute bottom-2 right-2 flex items-center gap-1">
                                   {/* Report Error Button */}
@@ -1231,7 +1391,11 @@ export default function AttemptMessages({
                                 data-message-id={message.id}
                                 data-message-type="assistant"
                               >
-                                <Markdown>{message.content}</Markdown>
+                                <MessageContentAdapter
+                                  content={message.content}
+                                  replaces={allReplaces}
+                                  highlights={allHighlights}
+                                />
                               </div>
                             )}
                           </div>

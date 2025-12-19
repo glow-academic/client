@@ -95,9 +95,7 @@ async def _eval_stop_impl(sid: str, data: EvalStopPayload) -> None:
             )
 
             if not active_run_row:
-                logger.warning(
-                    f"No active run found for eval attempt {attempt_id}"
-                )
+                logger.warning(f"No active run found for eval attempt {attempt_id}")
                 await eval_stopped(
                     EvalStoppedPayload(
                         attempt_id=attempt_id,
@@ -195,9 +193,7 @@ async def eval_stop(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in eval_stop for {sid}: {e}")
         await eval_stop_error(
-            EvalStopErrorPayload(
-                success=False, message=f"Invalid payload: {str(e)}"
-            ),
+            EvalStopErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )
         # Log activity error
@@ -211,7 +207,9 @@ async def eval_stop(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging eval stop validation error activity: {log_error}")
+            logger.warning(
+                f"Error logging eval stop validation error activity: {log_error}"
+            )
 
 
 # FastAPI endpoint for OpenAPI documentation
@@ -231,4 +229,3 @@ async def eval_stopped_api(request: EvalStoppedPayload) -> dict[str, bool]:
 async def eval_stop_error_api(request: EvalStopErrorPayload) -> dict[str, bool]:
     """Server-to-client event: Error occurred while stopping eval."""
     return {"success": True}
-

@@ -87,7 +87,9 @@ router = APIRouter()
     "/detail",
     response_model=SettingsDetailResponse,
     dependencies=[
-        audit_activity("settings.detail", "{{ actor.name }} viewed settings '{{ settings.name }}'")
+        audit_activity(
+            "settings.detail", "{{ actor.name }} viewed settings '{{ settings.name }}'"
+        )
     ],
 )
 async def get_settings_detail(

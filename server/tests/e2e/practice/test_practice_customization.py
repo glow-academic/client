@@ -26,7 +26,7 @@ def test_practice_customization_dialog(page: Page, base_url: str) -> None:
     # Click customize button
     customize_button = page.get_by_test_id("practice-customize-button")
     customize_button.wait_for(state="visible", timeout=10000)
-    
+
     # Set up navigation promise before clicking
     with page.wait_for_event("framenavigated", timeout=10000):
         customize_button.click()
@@ -34,7 +34,7 @@ def test_practice_customization_dialog(page: Page, base_url: str) -> None:
     # Wait for customize page to load
     page.wait_for_url(f"{base_url}/practice/custom", timeout=10000)
     page.wait_for_load_state("networkidle")
-    
+
     customize_page = page.get_by_test_id("practice-customize-page")
     customize_page.wait_for(state="visible", timeout=10000)
     expect(customize_page).to_be_visible()

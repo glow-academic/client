@@ -71,7 +71,9 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
 
         # Parse ISO datetime string
         try:
-            created_at_dt = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+            created_at_dt = datetime.fromisoformat(
+                created_at_str.replace("Z", "+00:00")
+            )
             if created_at_dt.tzinfo is None:
                 created_at_dt = created_at_dt.replace(tzinfo=UTC)
         except (ValueError, AttributeError) as e:
@@ -122,7 +124,9 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
                         error=False,
                     )
                 except Exception as log_error:
-                    logger.warning(f"Error logging simulation enter activity: {log_error}")
+                    logger.warning(
+                        f"Error logging simulation enter activity: {log_error}"
+                    )
             else:
                 await simulation_enter_error(
                     SimulationEnterErrorPayload(
@@ -152,7 +156,9 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation enter error activity: {log_error}")
+            logger.warning(
+                f"Error logging simulation enter error activity: {log_error}"
+            )
 
 
 @sio.event  # type: ignore
@@ -180,7 +186,9 @@ async def simulation_enter(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation enter validation error activity: {log_error}")
+            logger.warning(
+                f"Error logging simulation enter validation error activity: {log_error}"
+            )
 
 
 # FastAPI endpoint for OpenAPI documentation
@@ -204,4 +212,3 @@ async def simulation_enter_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred while updating chat created_at timestamp."""
     return {"success": True}
-

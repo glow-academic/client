@@ -102,7 +102,9 @@ async def simulation_join(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation join validation error activity: {log_error}")
+            logger.warning(
+                f"Error logging simulation join validation error activity: {log_error}"
+            )
 
 
 # FastAPI endpoint for OpenAPI documentation

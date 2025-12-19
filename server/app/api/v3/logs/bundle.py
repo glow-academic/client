@@ -90,9 +90,7 @@ def _parse_json_strings_recursive(obj: Any) -> Any:
 @router.post(
     "/bundle",
     response_model=LogsBundleResponse,
-    dependencies=[
-        audit_activity("logs.bundle", "{{ actor.name }} viewed logs")
-    ],
+    dependencies=[audit_activity("logs.bundle", "{{ actor.name }} viewed logs")],
 )
 async def get_logs_bundle(
     request: LogsBundleRequest,

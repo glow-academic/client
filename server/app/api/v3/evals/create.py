@@ -26,7 +26,9 @@ class CreateEvalRequest(BaseModel):
     model_run_ids: list[str]
     department_ids: list[str] | None = None
     active: bool = True
-    dynamic: bool = False  # If true, re-run agent being evaluated with modified system prompt
+    dynamic: bool = (
+        False  # If true, re-run agent being evaluated with modified system prompt
+    )
     # profileId removed - comes from X-Profile-Id header
     run: bool = False  # Whether to run the eval immediately after creation
 

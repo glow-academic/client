@@ -80,9 +80,7 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
     Processes next pending run in the eval attempt (recursive)
     """
     try:
-        logger.info(
-            f"Received eval_process_next request from {sid} with data: {data}"
-        )
+        logger.info(f"Received eval_process_next request from {sid} with data: {data}")
 
         attempt_id = data.attempt_id
         eval_id = data.eval_id
@@ -121,10 +119,10 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
                     room=f"eval_{attempt_id}",
                 )
                 return
-            
+
             dynamic = eval_row.get("dynamic", False)
             agent_id = eval_row.get("agent_id")
-            
+
             # Get next pending run for this eval (after current_run_id)
             sql_get_next_run = load_sql("sql/v3/evals/run_eval.sql")
             result = await conn.fetchrow(sql_get_next_run, eval_id)
@@ -152,7 +150,9 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
                             error=False,
                         )
                     except Exception as log_error:
-                        logger.warning(f"Error logging eval process_next activity: {log_error}")
+                        logger.warning(
+                            f"Error logging eval process_next activity: {log_error}"
+                        )
                 return
 
             pending_run_ids = result.get("pending_run_ids") or []
@@ -199,7 +199,9 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
                             error=False,
                         )
                     except Exception as log_error:
-                        logger.warning(f"Error logging eval process_next activity: {log_error}")
+                        logger.warning(
+                            f"Error logging eval process_next activity: {log_error}"
+                        )
                 return
 
             # Get department_id from next run if not provided
@@ -280,7 +282,8 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
 
     except Exception as e:
         logger.error(
-            f"Error processing next run for eval {data.eval_id}: {str(e)}", exc_info=True
+            f"Error processing next run for eval {data.eval_id}: {str(e)}",
+            exc_info=True,
         )
         await eval_process_next_error(
             EvalProcessNextErrorPayload(
@@ -303,7 +306,9 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
                     error=True,
                 )
             except Exception as log_error:
-                logger.warning(f"Error logging eval process_next error activity: {log_error}")
+                logger.warning(
+                    f"Error logging eval process_next error activity: {log_error}"
+                )
 
 
 @sio.event  # type: ignore
@@ -349,4 +354,3 @@ async def eval_process_next_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred while processing next run."""
     return {"success": True}
-

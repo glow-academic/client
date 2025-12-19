@@ -9,7 +9,6 @@ from app.main import get_pool, sio
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.evals.run_eval_single_run import run_eval_single_run
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -228,9 +227,7 @@ async def _eval_run_start_impl(sid: str, data: EvalRunStartPayload) -> None:
                 )
 
             # Process run
-            logger.info(
-                f"Processing run {run_id} for eval attempt {attempt_id}"
-            )
+            logger.info(f"Processing run {run_id} for eval attempt {attempt_id}")
             result = await run_eval_single_run(
                 conn=conn,
                 eval_id=eval_id,
@@ -275,9 +272,7 @@ async def _eval_run_start_impl(sid: str, data: EvalRunStartPayload) -> None:
             )
 
     except Exception as e:
-        logger.error(
-            f"Error starting eval run for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error starting eval run for {sid}: {str(e)}", exc_info=True)
         await eval_run_start_error(
             EvalRunStartErrorPayload(
                 success=False,
@@ -325,4 +320,3 @@ async def eval_run_start_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred while starting eval run."""
     return {"success": True}
-

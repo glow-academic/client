@@ -50,9 +50,7 @@ router = APIRouter()
 @router.post(
     "/list",
     response_model=AuthListResponse,
-    dependencies=[
-        audit_activity("auth.list", "{{ actor.name }} viewed auth list")
-    ],
+    dependencies=[audit_activity("auth.list", "{{ actor.name }} viewed auth list")],
 )
 async def get_auth_list(
     filters: AuthFilters,

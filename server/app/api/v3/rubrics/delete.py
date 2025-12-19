@@ -34,7 +34,9 @@ router = APIRouter()
     "/delete",
     response_model=DeleteRubricResponse,
     dependencies=[
-        audit_activity("rubric.deleted", "{{ actor.name }} deleted rubric '{{ rubric.name }}'")
+        audit_activity(
+            "rubric.deleted", "{{ actor.name }} deleted rubric '{{ rubric.name }}'"
+        )
     ],
 )
 async def delete_rubric(

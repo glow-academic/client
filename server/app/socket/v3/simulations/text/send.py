@@ -8,30 +8,43 @@ from typing import Any
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.main import (get_hint_storage, get_internal_sio, get_pool,
-                      get_simulation_tool_calls_dict, sio)
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
+from app.main import (
+    get_hint_storage,
+    get_internal_sio,
+    get_pool,
+    get_simulation_tool_calls_dict,
+    sio,
+)
 from app.socket.v3.simulations.streaming.message import (
-    _simulation_message_complete_impl, _simulation_message_start_impl,
-    _simulation_message_token_impl)
+    _simulation_message_complete_impl,
+    _simulation_message_start_impl,
+    _simulation_message_token_impl,
+)
 from app.socket.v3.simulations.streaming.tool_call import (
-    _simulation_tool_call_complete_impl, _simulation_tool_call_start_impl,
-    _simulation_tool_call_token_impl)
+    _simulation_tool_call_complete_impl,
+    _simulation_tool_call_start_impl,
+    _simulation_tool_call_token_impl,
+)
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
-from app.utils.agents.tools.create_persona_tools import (create_persona_tools,
-                                                         find_persona_by_name)
+from app.utils.agents.tools.create_persona_tools import (
+    create_persona_tools,
+    find_persona_by_name,
+)
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
+from app.utils.chat.get_simulation_conversation_history import (
+    get_simulation_conversation_history,
+)
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -803,7 +816,9 @@ async def _simulation_text_send_impl(
                                 error=False,
                             )
                         except Exception as log_error:
-                            logger.warning(f"Error logging simulation send activity: {log_error}")
+                            logger.warning(
+                                f"Error logging simulation send activity: {log_error}"
+                            )
                 else:
                     if is_retry:
                         logger.info(
@@ -818,8 +833,7 @@ async def _simulation_text_send_impl(
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.utils.websocket.store_active_run import \
-                        store_active_run
+                    from app.utils.websocket.store_active_run import store_active_run
 
                     # Fetch context for the chat
                     sql_context = load_sql(
@@ -928,7 +942,9 @@ async def _simulation_text_send_impl(
                     messages = [dict(row) for row in message_rows]
 
                     # Prepare conversation history from chat_id
-                    conversation_history, _ = get_simulation_conversation_history(messages)
+                    conversation_history, _ = get_simulation_conversation_history(
+                        messages
+                    )
 
                     # Format chat scenario using the problem statement from context
                     chat_scenario = format_chat_scenario(context["problem_statement"])
@@ -1581,21 +1597,30 @@ Tool Usage Instructions:
                                                         "parent_message_id": parent_message_id_for_branching,
                                                         "completed": False,
                                                     }
-                                                    
+
                                                     # Create tool call in database via unified handler
                                                     try:
                                                         db_tool_call_id_str = await _simulation_tool_call_start_impl(
                                                             sid,
                                                             {
                                                                 "chat_id": chat_id_str,
-                                                                "run_id": str(model_run_id),
-                                                                "call_id": call_id or real_item_id,
+                                                                "run_id": str(
+                                                                    model_run_id
+                                                                ),
+                                                                "call_id": call_id
+                                                                or real_item_id,
                                                                 "tool_name": tool_name,
                                                             },
                                                             conn=conn,
                                                         )
                                                         if db_tool_call_id_str:
-                                                            tool_calls_dict[chat_id_str][real_item_id]["db_tool_call_id"] = uuid.UUID(db_tool_call_id_str)  # type: ignore[assignment]
+                                                            tool_calls_dict[
+                                                                chat_id_str
+                                                            ][real_item_id][
+                                                                "db_tool_call_id"
+                                                            ] = uuid.UUID(
+                                                                db_tool_call_id_str
+                                                            )  # type: ignore[assignment]
                                                     except Exception as e:
                                                         logger.warning(
                                                             f"Failed to create tool call in database: {e}"
@@ -1687,14 +1712,18 @@ Tool Usage Instructions:
                                     prev_raw = tool_call_state["arguments_raw"]
                                     tool_call_state["arguments_raw"] += arguments_delta
                                     new_raw = tool_call_state["arguments_raw"]
-                                    
+
                                     # Update tool call arguments in database via unified handler
                                     if tool_call_state.get("db_tool_call_id"):
                                         try:
                                             await _simulation_tool_call_token_impl(
                                                 sid,
                                                 {
-                                                    "tool_call_id": str(tool_call_state["db_tool_call_id"]),
+                                                    "tool_call_id": str(
+                                                        tool_call_state[
+                                                            "db_tool_call_id"
+                                                        ]
+                                                    ),
                                                     "chat_id": chat_id_str,
                                                     "arguments_raw": new_raw,
                                                 },
@@ -1737,37 +1766,59 @@ Tool Usage Instructions:
                                                     personas,
                                                 )
                                                 if persona_match:
-                                                    persona_id_str = str(persona_match[0])
+                                                    persona_id_str = str(
+                                                        persona_match[0]
+                                                    )
 
                                             # Use unified streaming handler
-                                            db_message_id_str = await _simulation_message_start_impl(
-                                                sid,
-                                                {
-                                                    "chat_id": chat_id_str,
-                                                    "run_id": str(model_run_id),
-                                                    "role": "assistant",
-                                                    "content": "",
-                                                    "completed": False,
-                                                    "parent_message_id": str(tool_call_state["parent_message_id"]) if tool_call_state["parent_message_id"] else None,
-                                                    "persona_id": persona_id_str,
-                                                },
-                                                conn=conn,
+                                            db_message_id_str = (
+                                                await _simulation_message_start_impl(
+                                                    sid,
+                                                    {
+                                                        "chat_id": chat_id_str,
+                                                        "run_id": str(model_run_id),
+                                                        "role": "assistant",
+                                                        "content": "",
+                                                        "completed": False,
+                                                        "parent_message_id": str(
+                                                            tool_call_state[
+                                                                "parent_message_id"
+                                                            ]
+                                                        )
+                                                        if tool_call_state[
+                                                            "parent_message_id"
+                                                        ]
+                                                        else None,
+                                                        "persona_id": persona_id_str,
+                                                    },
+                                                    conn=conn,
+                                                )
                                             )
                                             if db_message_id_str:
-                                                db_message_id = uuid.UUID(db_message_id_str)
-                                                tool_call_state["db_message_id"] = db_message_id
+                                                db_message_id = uuid.UUID(
+                                                    db_message_id_str
+                                                )
+                                                tool_call_state["db_message_id"] = (
+                                                    db_message_id
+                                                )
                                             else:
-                                                logger.error("Failed to create message via unified handler")
+                                                logger.error(
+                                                    "Failed to create message via unified handler"
+                                                )
                                                 continue
 
                                         # Update DB with accumulated content and emit token via unified handler
                                         await _simulation_message_token_impl(
                                             sid,
                                             {
-                                                "message_id": str(tool_call_state["db_message_id"]),
+                                                "message_id": str(
+                                                    tool_call_state["db_message_id"]
+                                                ),
                                                 "chat_id": chat_id_str,
                                                 "token": new_message_chars,
-                                                "accumulated_content": tool_call_state["message_so_far"],
+                                                "accumulated_content": tool_call_state[
+                                                    "message_so_far"
+                                                ],
                                             },
                                             conn=conn,
                                         )
@@ -1845,9 +1896,15 @@ Tool Usage Instructions:
                                                     await _simulation_tool_call_complete_impl(
                                                         sid,
                                                         {
-                                                            "tool_call_id": str(tool_call_state["db_tool_call_id"]),
+                                                            "tool_call_id": str(
+                                                                tool_call_state[
+                                                                    "db_tool_call_id"
+                                                                ]
+                                                            ),
                                                             "chat_id": chat_id_str,
-                                                            "arguments_raw": tool_call_state["arguments_raw"],
+                                                            "arguments_raw": tool_call_state[
+                                                                "arguments_raw"
+                                                            ],
                                                         },
                                                         conn=conn,
                                                     )
@@ -1997,7 +2054,11 @@ Tool Usage Instructions:
                                                     await _simulation_message_complete_impl(
                                                         sid,
                                                         {
-                                                            "message_id": str(tool_call_state["db_message_id"]),
+                                                            "message_id": str(
+                                                                tool_call_state[
+                                                                    "db_message_id"
+                                                                ]
+                                                            ),
                                                             "chat_id": chat_id_str,
                                                             "final_content": final_message,
                                                         },
@@ -2062,9 +2123,15 @@ Tool Usage Instructions:
                                                     await _simulation_tool_call_complete_impl(
                                                         sid,
                                                         {
-                                                            "tool_call_id": str(tool_call_state["db_tool_call_id"]),
+                                                            "tool_call_id": str(
+                                                                tool_call_state[
+                                                                    "db_tool_call_id"
+                                                                ]
+                                                            ),
                                                             "chat_id": chat_id_str,
-                                                            "arguments_raw": tool_call_state["arguments_raw"],
+                                                            "arguments_raw": tool_call_state[
+                                                                "arguments_raw"
+                                                            ],
                                                         },
                                                         conn=conn,
                                                     )
@@ -2214,7 +2281,11 @@ Tool Usage Instructions:
                                                     await _simulation_message_complete_impl(
                                                         sid,
                                                         {
-                                                            "message_id": str(tool_call_state["db_message_id"]),
+                                                            "message_id": str(
+                                                                tool_call_state[
+                                                                    "db_message_id"
+                                                                ]
+                                                            ),
                                                             "chat_id": chat_id_str,
                                                             "final_content": final_message,
                                                         },
@@ -2574,8 +2645,9 @@ Tool Usage Instructions:
                             del tool_calls_dict[chat_id_str]
 
                         # Clean up active run
-                        from app.utils.websocket.remove_active_run import \
-                            remove_active_run
+                        from app.utils.websocket.remove_active_run import (
+                            remove_active_run,
+                        )
 
                         await remove_active_run(chat_id_str)
 
@@ -2815,7 +2887,9 @@ async def simulation_text_send(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation send validation error activity: {log_error}")
+            logger.warning(
+                f"Error logging simulation send validation error activity: {log_error}"
+            )
 
 
 # FastAPI endpoint for OpenAPI documentation

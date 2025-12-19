@@ -6,25 +6,30 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-import asyncpg  # type: ignore
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    trace,
+)
 from agents.items import TResponseInputItem
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_grading_storage, get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
-from app.utils.agents.tools.create_safe_field_name import \
-    create_safe_field_name
+from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
+from app.utils.chat.get_simulation_conversation_history import (
+    get_simulation_conversation_history,
+)
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -268,9 +273,11 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             # Check if any messages have audio and if grade_voice_agent_id is available
             has_audio_messages = any(msg.get("audio", False) for msg in messages)
             grade_voice_agent_id = context_row.get("grade_voice_agent_id")
-            
+
             # Use message numbering if audio messages exist and audio agent is configured
-            include_message_numbers = has_audio_messages and grade_voice_agent_id is not None
+            include_message_numbers = (
+                has_audio_messages and grade_voice_agent_id is not None
+            )
             conversation_history, message_id_map = get_simulation_conversation_history(
                 messages, include_message_numbers=include_message_numbers
             )
@@ -415,15 +422,16 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 emit_progress_wrapper,
                 profile_id=str(profile_id_str) if profile_id_str else None,
             )
-            
+
             # Add audio grading tool if audio messages exist and audio agent is configured
             if has_audio_messages and grade_voice_agent_id:
                 from agents import function_tool
                 from pydantic import Field
+
                 from app.socket.v3.simulations.grading.tools.audio import (
                     _grading_tool_audio_impl,
                 )
-                
+
                 async def grade_audio(
                     message_numbers: list[int] = Field(
                         description="List of message numbers (as shown in conversation history, e.g., [1, 3, 5]) that have audio you want to analyze"
@@ -433,26 +441,28 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                     ),
                 ) -> str:
                     """Grade audio messages from the conversation.
-                    
+
                     This tool allows you to analyze audio messages from the conversation.
                     Specify which messages (by their numbers in the conversation history)
                     you want to analyze and what aspects you want to evaluate.
-                    
+
                     Args:
                         message_numbers: List of message numbers that have audio (e.g., [1, 3, 5])
                         what_to_analyze: Description of what to analyze in the audio
-                    
+
                     Returns:
                         Analysis result from the audio grading agent
                     """
                     # Call the audio handler directly to get synchronous result
                     # We'll use a special flag to return the result instead of emitting events
                     result_container: dict[str, Any] = {"result": None, "error": None}
-                    
-                    async def capture_result(result: str, error: str | None = None) -> None:
+
+                    async def capture_result(
+                        result: str, error: str | None = None
+                    ) -> None:
                         result_container["result"] = result
                         result_container["error"] = error
-                    
+
                     # Call handler with result callback
                     try:
                         result = await _grading_tool_audio_impl(
@@ -469,28 +479,28 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                                 "_result_callback": capture_result,
                             },
                         )
-                        
+
                         # If handler returned result directly, use it
                         if result:
                             return result
-                        
+
                         # Otherwise check callback result
                         if result_container["error"]:
                             return f"Error analyzing audio: {result_container['error']}"
-                        
+
                         if result_container["result"]:
                             return result_container["result"]
-                        
+
                         return "Audio analysis completed but no result was returned."
                     except Exception as e:
                         logger.error(
                             f"Error in grade_audio tool: {str(e)}", exc_info=True
                         )
                         return f"Error analyzing audio: {str(e)}"
-                
+
                 grading_tools.append(function_tool(grade_audio))
                 logger.info("Added grade_audio tool to grading tools")
-            
+
             grading_tools.append(debug_info_tool)
             logger.info(
                 f"Created {len(grading_tools)} grading tools (including debug_info)"
@@ -725,7 +735,9 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 ),
                 room=f"simulation_{simulation_chat_id}",
             )
-            logger.info(f"Emitted grading completion event for chat {simulation_chat_id}")
+            logger.info(
+                f"Emitted grading completion event for chat {simulation_chat_id}"
+            )
 
             logger.info(f"Grading completed successfully with grade ID: {grade_id}")
 
@@ -780,4 +792,3 @@ async def simulation_grading_progress_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Simulation grading progress update."""
     return {"success": True}
-

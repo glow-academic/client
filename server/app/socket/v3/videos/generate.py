@@ -372,7 +372,9 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                             error=False,
                         )
                     except Exception as log_error:
-                        logger.warning(f"Error logging video generation activity: {log_error}")
+                        logger.warning(
+                            f"Error logging video generation activity: {log_error}"
+                        )
                     return
 
                 elif video_status.status == "failed":

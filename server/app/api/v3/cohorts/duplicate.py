@@ -65,7 +65,9 @@ async def duplicate_cohort(
         sql_params = (request.cohortId, profile_id)
 
         async with transaction(conn):
-            result = await conn.fetchrow(sql_query, uuid.UUID(request.cohortId), uuid.UUID(profile_id))
+            result = await conn.fetchrow(
+                sql_query, uuid.UUID(request.cohortId), uuid.UUID(profile_id)
+            )
 
             if not result or not result["id"]:
                 raise HTTPException(status_code=404, detail="Cohort not found")

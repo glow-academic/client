@@ -39,7 +39,9 @@ class SearchSimulatableProfilesResponse(BaseModel):
     "/simulatable",
     response_model=SearchSimulatableProfilesResponse,
     dependencies=[
-        audit_activity("profile.simulatable", "{{ actor.name }} searched simulatable profiles")
+        audit_activity(
+            "profile.simulatable", "{{ actor.name }} searched simulatable profiles"
+        )
     ],
 )
 async def search_simulatable_profiles(

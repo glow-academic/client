@@ -38,7 +38,9 @@ router = APIRouter()
     "/stop",
     response_model=StopEvalResponse,
     dependencies=[
-        audit_activity("eval.stopped", "{{ actor.name }} stopped eval '{{ eval.name }}'")
+        audit_activity(
+            "eval.stopped", "{{ actor.name }} stopped eval '{{ eval.name }}'"
+        )
     ],
 )
 async def stop_eval(

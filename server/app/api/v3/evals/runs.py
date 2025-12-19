@@ -71,7 +71,8 @@ class ModelRunsResponse(BaseModel):
     response_model=ModelRunsResponse,
     dependencies=[
         audit_activity(
-            "eval.runs_queried", "{{ actor.name }} queried model runs for eval selection"
+            "eval.runs_queried",
+            "{{ actor.name }} queried model runs for eval selection",
         )
     ],
 )

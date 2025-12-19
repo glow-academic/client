@@ -7,7 +7,7 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
 
 from app.main import AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
@@ -37,7 +37,9 @@ router = APIRouter()
     "/upload/{upload_id}/finalize",
     response_model=TusFinalizeResponse,
     dependencies=[
-        audit_activity("upload.finalized", "{{ actor.name }} finalized upload '{{ upload.id }}'")
+        audit_activity(
+            "upload.finalized", "{{ actor.name }} finalized upload '{{ upload.id }}'"
+        )
     ],
 )
 async def tus_finalize(
@@ -138,7 +140,11 @@ async def tus_finalize(
         )
 
         # Fetch actor_name separately
-        profile_id = http_request.state.profile_id if hasattr(http_request.state, 'profile_id') else None
+        profile_id = (
+            http_request.state.profile_id
+            if hasattr(http_request.state, "profile_id")
+            else None
+        )
         actor_name_row = None
         if profile_id:
             actor_name_row = await conn.fetchrow(

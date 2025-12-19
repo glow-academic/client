@@ -27,7 +27,9 @@ class UpdateEvalRequest(BaseModel):
     model_run_ids: list[str] | None = None  # If provided, replaces all existing
     department_ids: list[str] | None = None  # If provided, replaces all existing
     active: bool | None = None
-    dynamic: bool | None = None  # If true, re-run agent being evaluated with modified system prompt
+    dynamic: bool | None = (
+        None  # If true, re-run agent being evaluated with modified system prompt
+    )
     # profileId removed - comes from X-Profile-Id header
 
 
@@ -46,7 +48,9 @@ router = APIRouter()
     "/update",
     response_model=UpdateEvalResponse,
     dependencies=[
-        audit_activity("eval.updated", "{{ actor.name }} updated eval '{{ eval.name }}'")
+        audit_activity(
+            "eval.updated", "{{ actor.name }} updated eval '{{ eval.name }}'"
+        )
     ],
 )
 async def update_eval(

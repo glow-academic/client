@@ -1,7 +1,6 @@
 """Rubric detail endpoint - v3 API."""
 
 import json
-import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore

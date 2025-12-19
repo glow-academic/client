@@ -113,7 +113,9 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging voice simulation stop error activity: {log_error}")
+            logger.warning(
+                f"Error logging voice simulation stop error activity: {log_error}"
+            )
 
 
 @sio.event  # type: ignore
@@ -139,7 +141,9 @@ async def simulation_voice_stop(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging voice simulation stop validation error activity: {log_error}")
+            logger.warning(
+                f"Error logging voice simulation stop validation error activity: {log_error}"
+            )
 
 
 # FastAPI endpoint for OpenAPI documentation

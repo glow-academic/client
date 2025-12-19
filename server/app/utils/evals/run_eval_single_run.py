@@ -138,7 +138,7 @@ async def run_eval_single_run(
         if dynamic:
             if not agent_id:
                 raise ValueError("agent_id is required when dynamic is true")
-            
+
             # Get agent being evaluated's context
             sql_get_agent_context = load_sql("sql/v3/evals/get_agent_context.sql")
             agent_context_row = await conn.fetchrow(
@@ -146,13 +146,16 @@ async def run_eval_single_run(
             )
             if not agent_context_row:
                 raise ValueError(f"Agent context not found for agent {agent_id}")
-            
+
             agent_context = dict(agent_context_row)
-            
+
             # Modify system prompt (placeholder - can be replaced via WebSocket)
             # For now, append a note that this is a dynamic evaluation
-            modified_system_prompt = agent_context["system_prompt"] + "\n\n[Note: This is a dynamic evaluation run with modified system prompt]"
-            
+            modified_system_prompt = (
+                agent_context["system_prompt"]
+                + "\n\n[Note: This is a dynamic evaluation run with modified system prompt]"
+            )
+
             # Get department_id from original run if not provided
             if not department_id:
                 dept_row = await conn.fetchrow(
@@ -169,9 +172,11 @@ async def run_eval_single_run(
                 )
                 if dept_row:
                     department_id = dept_row["department_id"]
-            
+
             # Create new run for agent being evaluated
-            sql_create_agent_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+            sql_create_agent_run = load_sql(
+                "sql/v3/model_runs/create_model_run_complete.sql"
+            )
             agent_run_row = await conn.fetchrow(
                 sql_create_agent_run,
                 department_id,
@@ -184,9 +189,9 @@ async def run_eval_single_run(
             )
             if not agent_run_row:
                 raise ValueError("Failed to create agent run for dynamic eval")
-            
+
             agent_run_id = agent_run_row["run_id"]
-            
+
             # Prepare input items from original run (only user messages)
             agent_input_items: list[TResponseInputItem] = []
             for msg in messages_json:
@@ -195,7 +200,7 @@ async def run_eval_single_run(
                 # Only include user messages for the agent being evaluated
                 if role == "user":
                     agent_input_items.append({"role": "user", "content": str(content)})  # type: ignore[list-item]
-            
+
             # Create GenericAgent with modified system prompt
             agent = GenericAgent(
                 agent_name=agent_context["agent_name"],
@@ -204,10 +209,12 @@ async def run_eval_single_run(
                 model_name=agent_context["model_name"],
                 provider=agent_context["provider"],
                 api_key=agent_context["api_key"],
-                base_url=agent_context["base_url"] if agent_context["base_url"] else None,
+                base_url=agent_context["base_url"]
+                if agent_context["base_url"]
+                else None,
                 reasoning=agent_context["reasoning"],
             )
-            
+
             # Log system prompt and messages for agent run
             await log_run_messages(
                 conn=conn,
@@ -216,9 +223,11 @@ async def run_eval_single_run(
                 input_items=agent_input_items,
                 department_id=uuid.UUID(department_id) if department_id else None,
             )
-            
+
             # Run agent being evaluated with modified prompt
-            logger.info(f"Running agent {agent_id} with modified prompt for dynamic eval (run {run_id})")
+            logger.info(
+                f"Running agent {agent_id} with modified prompt for dynamic eval (run {run_id})"
+            )
             with trace(
                 f"Dynamic Agent Run {run_id[:8]}",
                 trace_id=f"dynamic_{attempt_id}_{run_id}",
@@ -229,11 +238,11 @@ async def run_eval_single_run(
                     input=agent_input_items,
                     context=DebugContext(conn=conn, run_id=uuid.UUID(agent_run_id)),
                 )
-            
+
             # Save assistant output from agent run
             agent_usage = agent_result.context_wrapper.usage
             agent_assistant_output = getattr(agent_result, "final_output", None) or ""
-            
+
             if agent_assistant_output:
                 await log_run_messages(
                     conn=conn,
@@ -241,7 +250,7 @@ async def run_eval_single_run(
                     system_prompt=None,  # Already logged above
                     assistant_output=agent_assistant_output,
                 )
-            
+
             # Handle pricing/logs for agent run
             await internal_sio.emit(
                 "log_run",
@@ -256,17 +265,21 @@ async def run_eval_single_run(
                     "departmentId": department_id if department_id else None,
                 },
             )
-            
+
             # Get messages from new agent run
             agent_messages_row = await conn.fetchrow(sql_get_messages, agent_run_id)
             if not agent_messages_row:
-                raise ValueError(f"No messages found for dynamic agent run {agent_run_id}")
-            
+                raise ValueError(
+                    f"No messages found for dynamic agent run {agent_run_id}"
+                )
+
             messages_json = agent_messages_row["messages"]
             if isinstance(messages_json, str):
                 messages_json = json.loads(messages_json)
-            
-            logger.info(f"Completed dynamic agent run {agent_run_id}, proceeding with eval_agent grading")
+
+            logger.info(
+                f"Completed dynamic agent run {agent_run_id}, proceeding with eval_agent grading"
+            )
 
         # 3. Get eval_agent context
         sql_get_context = load_sql("sql/v3/evals/get_eval_agent_context.sql")
@@ -504,7 +517,9 @@ async def run_eval_single_run(
         }
 
     except Exception as e:
-        logger.error(f"Error evaluating run {run_id} for eval {eval_id}: {e}", exc_info=True)
+        logger.error(
+            f"Error evaluating run {run_id} for eval {eval_id}: {e}", exc_info=True
+        )
 
         # Mark test as completed with error if it exists
         if test_id:
@@ -544,4 +559,3 @@ async def run_eval_single_run(
             )
 
         raise
-

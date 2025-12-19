@@ -1,6 +1,6 @@
 """TUS PATCH endpoint - v3 API following DHH principles."""
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Request, Response
 
 from app.main import TUS_UPLOADS_DIR
 from app.utils.activity.audit import audit_activity, audit_set
@@ -11,7 +11,9 @@ router = APIRouter()
 @router.patch(
     "/upload/{upload_id}",
     dependencies=[
-        audit_activity("upload.patched", "{{ actor.name }} patched upload '{{ upload.id }}'")
+        audit_activity(
+            "upload.patched", "{{ actor.name }} patched upload '{{ upload.id }}'"
+        )
     ],
 )
 async def tus_patch(upload_id: str, request: Request) -> Response:
@@ -58,7 +60,11 @@ async def tus_patch(upload_id: str, request: Request) -> Response:
         f.write(f"length:{info.get('length', '0')}\noffset:{new_offset}")
 
     # Set audit context if profile_id is available
-    profile_id = getattr(request.state, 'profile_id', None) if hasattr(request.state, 'profile_id') else None
+    profile_id = (
+        getattr(request.state, "profile_id", None)
+        if hasattr(request.state, "profile_id")
+        else None
+    )
     if profile_id:
         # Note: We can't fetch actor_name here without database access
         # Activity logging will use profile_id only

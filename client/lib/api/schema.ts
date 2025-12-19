@@ -10529,6 +10529,42 @@ export interface components {
             /** Metrics */
             metrics: components["schemas"]["MetricsDataPoint"][];
         };
+        /** MessageFeedbackHighlightItem */
+        MessageFeedbackHighlightItem: {
+            /** Section */
+            section: string;
+        };
+        /** MessageFeedbackItem */
+        MessageFeedbackItem: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "strength" | "improvement";
+            /**
+             * Replaces
+             * @default []
+             */
+            replaces: components["schemas"]["MessageFeedbackReplaceItem"][];
+            /**
+             * Highlights
+             * @default []
+             */
+            highlights: components["schemas"]["MessageFeedbackHighlightItem"][];
+        };
+        /** MessageFeedbackReplaceItem */
+        MessageFeedbackReplaceItem: {
+            /** Section */
+            section: string;
+            /** Replace */
+            replace: string;
+        };
         /**
          * MessageSentPayload
          * @description Response indicating a message was sent.
@@ -15816,6 +15852,8 @@ export interface components {
             completed: boolean;
             /** Personaid */
             personaId?: string | null;
+            /** Feedbacks */
+            feedbacks?: components["schemas"]["MessageFeedbackItem"][] | null;
         };
         /** PersonaItem */
         app__api__v3__attempts__full__PersonaItem: {

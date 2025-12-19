@@ -1,17 +1,17 @@
 """Handler for simulation_text_next WebSocket event."""
 
-import json
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -123,8 +123,7 @@ async def _create_chat_for_scenario_inline(
         return None
 
     # Use randomization function to select attributes and create child scenario
-    from app.utils.scenario.randomize_attributes import \
-        randomize_scenario_attributes
+    from app.utils.scenario.randomize_attributes import randomize_scenario_attributes
 
     # Convert asyncpg UUID to Python UUID
     parent_scenario_id_uuid = uuid.UUID(str(parent_scenario["id"]))
@@ -936,7 +935,9 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                         error=False,
                     )
                 except Exception as log_error:
-                    logger.warning(f"Error logging simulation next activity: {log_error}")
+                    logger.warning(
+                        f"Error logging simulation next activity: {log_error}"
+                    )
 
     except Exception as e:
         logger.error(f"Error continuing simulation for {sid}: {str(e)}", exc_info=True)
@@ -988,7 +989,9 @@ async def simulation_text_next(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation next validation error activity: {log_error}")
+            logger.warning(
+                f"Error logging simulation next validation error activity: {log_error}"
+            )
     except Exception as e:
         logger.error(
             f"Unexpected error in continue_simulation wrapper for {sid}: {str(e)}",
@@ -1011,7 +1014,9 @@ async def simulation_text_next(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging simulation next unexpected error activity: {log_error}")
+            logger.warning(
+                f"Error logging simulation next unexpected error activity: {log_error}"
+            )
 
 
 # FastAPI endpoint for OpenAPI documentation

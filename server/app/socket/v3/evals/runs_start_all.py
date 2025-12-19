@@ -103,9 +103,7 @@ async def _eval_runs_start_all_impl(sid: str, data: EvalRunsStartAllPayload) -> 
 
         async with pool.acquire() as conn:
             # Get pending runs for this attempt
-            sql_get_pending = load_sql(
-                "sql/v3/evals/get_pending_runs_for_attempt.sql"
-            )
+            sql_get_pending = load_sql("sql/v3/evals/get_pending_runs_for_attempt.sql")
             result = await conn.fetchrow(sql_get_pending, attempt_id)
 
             if not result:
@@ -134,8 +132,10 @@ async def _eval_runs_start_all_impl(sid: str, data: EvalRunsStartAllPayload) -> 
                 return
 
             # Import here to avoid circular dependency
-            from app.socket.v3.evals.run_start import EvalRunStartPayload
-            from app.socket.v3.evals.run_start import _eval_run_start_impl
+            from app.socket.v3.evals.run_start import (
+                EvalRunStartPayload,
+                _eval_run_start_impl,
+            )
 
             # Start all runs in parallel (server-to-server events)
             tasks = []
@@ -169,9 +169,7 @@ async def _eval_runs_start_all_impl(sid: str, data: EvalRunsStartAllPayload) -> 
             )
 
     except Exception as e:
-        logger.error(
-            f"Error starting all eval runs for {sid}: {str(e)}", exc_info=True
-        )
+        logger.error(f"Error starting all eval runs for {sid}: {str(e)}", exc_info=True)
         await eval_runs_start_all_error(
             EvalRunsStartAllErrorPayload(
                 success=False,
@@ -223,4 +221,3 @@ async def eval_runs_start_all_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred while starting all eval runs."""
     return {"success": True}
-

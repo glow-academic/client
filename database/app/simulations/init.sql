@@ -7,6 +7,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TYPE message_role AS ENUM ('user', 'assistant', 'system', 'developer');
 
+CREATE TYPE message_feedback_type AS ENUM ('strength', 'improvement');
+
 CREATE TABLE simulations (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -259,6 +261,46 @@ CREATE TABLE feedbacks (
 
 CREATE INDEX ON feedbacks (grade_id);
 CREATE INDEX ON feedbacks (standard_id);
+
+-- Message feedbacks table - links feedback to specific messages within a grade
+CREATE TABLE message_feedbacks (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    grade_id   UUID        NOT NULL REFERENCES grades(id)  ON DELETE CASCADE,
+    message_id UUID        NOT NULL REFERENCES messages(id)  ON DELETE CASCADE,
+    name       TEXT        NOT NULL,
+    description TEXT       NOT NULL DEFAULT 'No description provided',
+    type       message_feedback_type NOT NULL
+);
+
+CREATE INDEX ON message_feedbacks (grade_id);
+CREATE INDEX ON message_feedbacks (message_id);
+CREATE INDEX ON message_feedbacks (grade_id, message_id);
+
+-- Message feedback replace table (BCNF normalization)
+-- Stores replacement suggestions for message sections (strikethrough/replace)
+CREATE TABLE message_feedback_replace (
+    message_feedback_id UUID NOT NULL REFERENCES message_feedbacks(id) ON DELETE CASCADE,
+    idx                  INT  NOT NULL,
+    section              TEXT NOT NULL,
+    replace              TEXT NOT NULL,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (message_feedback_id, idx)
+);
+
+CREATE INDEX ON message_feedback_replace (message_feedback_id);
+
+-- Message feedback highlight table (BCNF normalization)
+-- Stores highlight suggestions for message sections
+CREATE TABLE message_feedback_highlight (
+    message_feedback_id UUID NOT NULL REFERENCES message_feedbacks(id) ON DELETE CASCADE,
+    idx                  INT  NOT NULL,
+    section              TEXT NOT NULL,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (message_feedback_id, idx)
+);
+
+CREATE INDEX ON message_feedback_highlight (message_feedback_id);
 
 -- Message tree for branching conversations (BCNF normalization)
 -- Tracks parent-child relationships between messages for branching functionality

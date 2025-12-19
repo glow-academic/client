@@ -91,9 +91,7 @@ class StaffListResponse(BaseModel):
 @router.post(
     "/list",
     response_model=StaffListResponse,
-    dependencies=[
-        audit_activity("staff.list", "{{ actor.name }} viewed staff list")
-    ],
+    dependencies=[audit_activity("staff.list", "{{ actor.name }} viewed staff list")],
 )
 async def get_profile_list(
     filters: StaffFilters,
@@ -230,7 +228,13 @@ async def get_profile_list(
             if isinstance(trend_data_raw, str):
                 trend_data_raw = json.loads(trend_data_raw)
             if trend_data_raw and isinstance(trend_data_raw, dict):
-                for key in ["active", "admin", "instructional", "member", "total_requests"]:
+                for key in [
+                    "active",
+                    "admin",
+                    "instructional",
+                    "member",
+                    "total_requests",
+                ]:
                     trend_array = trend_data_raw.get(key, [])
                     if isinstance(trend_array, list):
                         trend_data[key] = [

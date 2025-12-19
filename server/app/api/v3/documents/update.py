@@ -105,7 +105,9 @@ async def update_document(
             result_row = await conn.fetchrow(sql_query, *sql_params)
 
             if result_row:
-                document_name = result_row.get("document_name", request.name or "Unknown")
+                document_name = result_row.get(
+                    "document_name", request.name or "Unknown"
+                )
                 actor_name = result_row.get("actor_name")
 
                 # Set audit context with data from SQL query

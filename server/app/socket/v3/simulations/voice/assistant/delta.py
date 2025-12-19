@@ -149,7 +149,9 @@ async def _simulation_voice_assistant_delta_impl(
                         return
 
                     # Get run_id (now uses groups/group_runs)
-                    sql_get_latest_run = load_sql("sql/v3/simulations/get_latest_run_for_chat.sql")
+                    sql_get_latest_run = load_sql(
+                        "sql/v3/simulations/get_latest_run_for_chat.sql"
+                    )
                     latest_run_row = await conn.fetchrow(
                         sql_get_latest_run,
                         str(chat_id_uuid),
@@ -221,22 +223,26 @@ async def _simulation_voice_assistant_delta_impl(
                         "personas": personas,  # Cache personas
                         "completed": False,
                     }
-                    
+
                     # Create tool call in database via unified handler
                     if run_id:
                         try:
-                            db_tool_call_id_str = await _simulation_tool_call_start_impl(
-                                sid,
-                                {
-                                    "chat_id": chat_id_str,
-                                    "run_id": str(run_id),
-                                    "call_id": call_id,
-                                    "tool_name": "speak",
-                                },
-                                conn=conn,
+                            db_tool_call_id_str = (
+                                await _simulation_tool_call_start_impl(
+                                    sid,
+                                    {
+                                        "chat_id": chat_id_str,
+                                        "run_id": str(run_id),
+                                        "call_id": call_id,
+                                        "tool_name": "speak",
+                                    },
+                                    conn=conn,
+                                )
                             )
                             if db_tool_call_id_str:
-                                tool_calls_dict[chat_id_str][call_id]["db_tool_call_id"] = uuid.UUID(db_tool_call_id_str)  # type: ignore[assignment]
+                                tool_calls_dict[chat_id_str][call_id][
+                                    "db_tool_call_id"
+                                ] = uuid.UUID(db_tool_call_id_str)  # type: ignore[assignment]
                         except Exception as e:
                             logger.warning(
                                 f"Failed to create tool call in database: {e}"
@@ -252,7 +258,7 @@ async def _simulation_voice_assistant_delta_impl(
                 prev_raw = tool_call_state["arguments_raw"]
                 tool_call_state["arguments_raw"] += delta
                 new_raw = tool_call_state["arguments_raw"]
-                
+
                 # Update tool call arguments in database via unified handler
                 if tool_call_state.get("db_tool_call_id"):
                     try:
@@ -303,11 +309,17 @@ async def _simulation_voice_assistant_delta_impl(
                             sid,
                             {
                                 "chat_id": chat_id_str,
-                                "run_id": str(tool_call_state["run_id"]) if tool_call_state.get("run_id") else None,
+                                "run_id": str(tool_call_state["run_id"])
+                                if tool_call_state.get("run_id")
+                                else None,
                                 "role": "assistant",
                                 "content": "",
                                 "completed": False,
-                                "parent_message_id": str(tool_call_state["parent_message_id"]) if tool_call_state["parent_message_id"] else None,
+                                "parent_message_id": str(
+                                    tool_call_state["parent_message_id"]
+                                )
+                                if tool_call_state["parent_message_id"]
+                                else None,
                                 "persona_id": persona_id_str,
                             },
                             conn=conn,
@@ -328,7 +340,9 @@ async def _simulation_voice_assistant_delta_impl(
                                 "message_id": str(tool_call_state["db_message_id"]),
                                 "chat_id": chat_id_str,
                                 "token": new_message_chars,
-                                "accumulated_content": tool_call_state["message_so_far"],
+                                "accumulated_content": tool_call_state[
+                                    "message_so_far"
+                                ],
                             },
                             conn=conn,
                         )

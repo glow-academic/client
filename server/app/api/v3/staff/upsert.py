@@ -38,7 +38,10 @@ class BulkCreateOrUpdateStaffResponse(BaseModel):
     "/upsert",
     response_model=BulkCreateOrUpdateStaffResponse,
     dependencies=[
-        audit_activity("staff.upserted", "{{ actor.name }} {{ action }} {{ count }} staff member(s)")
+        audit_activity(
+            "staff.upserted",
+            "{{ actor.name }} {{ action }} {{ count }} staff member(s)",
+        )
     ],
 )
 async def bulk_create_or_update_staff(

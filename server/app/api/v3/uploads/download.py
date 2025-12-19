@@ -27,7 +27,9 @@ router = APIRouter()
     "/download/{upload_id}",
     response_model=None,
     dependencies=[
-        audit_activity("upload.downloaded", "{{ actor.name }} downloaded upload '{{ upload.id }}'")
+        audit_activity(
+            "upload.downloaded", "{{ actor.name }} downloaded upload '{{ upload.id }}'"
+        )
     ],
 )
 async def download_upload(
@@ -49,7 +51,11 @@ async def download_upload(
             raise HTTPException(status_code=404, detail="Upload not found")
 
         # Fetch actor_name separately
-        profile_id = http_request.state.profile_id if hasattr(http_request.state, 'profile_id') else None
+        profile_id = (
+            http_request.state.profile_id
+            if hasattr(http_request.state, "profile_id")
+            else None
+        )
         actor_name_row = None
         if profile_id:
             actor_name_row = await conn.fetchrow(

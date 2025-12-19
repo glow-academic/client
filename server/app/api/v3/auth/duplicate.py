@@ -36,7 +36,9 @@ router = APIRouter()
     "/duplicate",
     response_model=DuplicateAuthResponse,
     dependencies=[
-        audit_activity("auth.duplicated", "{{ actor.name }} duplicated auth '{{ auth.name }}'")
+        audit_activity(
+            "auth.duplicated", "{{ actor.name }} duplicated auth '{{ auth.name }}'"
+        )
     ],
 )
 async def duplicate_auth(

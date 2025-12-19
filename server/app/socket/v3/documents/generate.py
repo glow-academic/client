@@ -473,12 +473,17 @@ async def _document_generate_impl(
                     sid=sid,
                     event_key="documents.generated",
                     template="{{ actor.name }} generated document template",
-                    context={"department_id": str(department_id), "upload_id": upload_id},
+                    context={
+                        "department_id": str(department_id),
+                        "upload_id": upload_id,
+                    },
                     endpoint="/socket/v3/documents/generate",
                     error=False,
                 )
             except Exception as log_error:
-                logger.warning(f"Error logging document generation activity: {log_error}")
+                logger.warning(
+                    f"Error logging document generation activity: {log_error}"
+                )
 
     except Exception as e:
         logger.error(f"Error in document_generate for {sid}: {str(e)}", exc_info=True)
@@ -499,7 +504,9 @@ async def _document_generate_impl(
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging document generation error activity: {log_error}")
+            logger.warning(
+                f"Error logging document generation error activity: {log_error}"
+            )
 
 
 @sio.event  # type: ignore
@@ -527,7 +534,9 @@ async def document_generate(sid: str, data: dict[str, Any]) -> None:
                 error=True,
             )
         except Exception as log_error:
-            logger.warning(f"Error logging document generation validation error activity: {log_error}")
+            logger.warning(
+                f"Error logging document generation validation error activity: {log_error}"
+            )
 
 
 # FastAPI endpoint for OpenAPI documentation

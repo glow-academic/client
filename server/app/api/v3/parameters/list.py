@@ -131,7 +131,9 @@ def disambiguate_documents(dmap: DocumentMapping) -> list[dict[str, str]]:
     "/list",
     response_model=ParametersListResponse,
     dependencies=[
-        audit_activity("parameters.list", "{{ actor.name }} visited the Parameters page")
+        audit_activity(
+            "parameters.list", "{{ actor.name }} visited the Parameters page"
+        )
     ],
 )
 async def get_parameters_list(

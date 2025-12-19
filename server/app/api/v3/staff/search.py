@@ -59,9 +59,7 @@ class SearchStaffResponse(BaseModel):
 @router.post(
     "/search",
     response_model=SearchStaffResponse,
-    dependencies=[
-        audit_activity("staff.searched", "{{ actor.name }} searched staff")
-    ],
+    dependencies=[audit_activity("staff.searched", "{{ actor.name }} searched staff")],
 )
 async def search_staff(
     request: SearchStaffRequest,

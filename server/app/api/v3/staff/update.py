@@ -40,7 +40,9 @@ class BulkUpdateStaffResponse(BaseModel):
     "/update",
     response_model=BulkUpdateStaffResponse,
     dependencies=[
-        audit_activity("staff.updated", "{{ actor.name }} updated {{ count }} staff member(s)")
+        audit_activity(
+            "staff.updated", "{{ actor.name }} updated {{ count }} staff member(s)"
+        )
     ],
 )
 async def bulk_update_staff(

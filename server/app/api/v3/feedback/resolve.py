@@ -71,9 +71,7 @@ async def resolve_feedback(
 
             uuid.UUID(request_body.feedback_id)
         except ValueError:
-            raise HTTPException(
-                status_code=400, detail="Invalid feedback_id format"
-            )
+            raise HTTPException(status_code=400, detail="Invalid feedback_id format")
 
         # Load SQL query
         sql_query = load_sql("sql/v3/feedback/resolve_feedback.sql")
@@ -84,9 +82,7 @@ async def resolve_feedback(
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
-                raise HTTPException(
-                    status_code=404, detail="Feedback entry not found"
-                )
+                raise HTTPException(status_code=404, detail="Feedback entry not found")
 
             # Set audit context
             audit_set(
@@ -118,4 +114,3 @@ async def resolve_feedback(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -71,9 +71,7 @@ router = APIRouter()
     "/new",
     response_model=DepartmentDetailResponse,
     dependencies=[
-        audit_activity(
-            "department.new", "{{ actor.name }} opened new department form"
-        )
+        audit_activity("department.new", "{{ actor.name }} opened new department form")
     ],
 )
 async def get_department_new(

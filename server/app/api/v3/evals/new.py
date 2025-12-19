@@ -144,9 +144,7 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:  # noqa: ANN401
 @router.post(
     "/new",
     response_model=EvalDetailResponse,
-    dependencies=[
-        audit_activity("eval.new", "{{ actor.name }} opened new eval form")
-    ],
+    dependencies=[audit_activity("eval.new", "{{ actor.name }} opened new eval form")],
 )
 async def get_eval_new(
     request_body: EvalNewRequest,

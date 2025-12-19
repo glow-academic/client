@@ -54,7 +54,9 @@ class ClassifyUploadResponse(BaseModel):
     "/upload/{upload_id}/classify",
     response_model=ClassifyUploadResponse,
     dependencies=[
-        audit_activity("upload.classified", "{{ actor.name }} classified upload '{{ upload.id }}'")
+        audit_activity(
+            "upload.classified", "{{ actor.name }} classified upload '{{ upload.id }}'"
+        )
     ],
 )
 async def classify_upload(
