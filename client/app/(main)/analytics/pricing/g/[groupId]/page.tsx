@@ -1,12 +1,12 @@
 /**
- * app/(main)/analytics/pricing/g/[groupRunId]/page.tsx
+ * app/(main)/analytics/pricing/g/[groupId]/page.tsx
  * Pricing group detail page - shows multiple runs stacked.
  * @AshokSaravanan222 & @siladiea
  * 01/XX/2025
  */
 
 import { getSession } from "@/auth";
-import GroupRunMessages from "@/components/pricing/GroupRunMessages";
+import GroupMessages from "@/components/pricing/GroupMessages";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -36,13 +36,13 @@ const getPricingGroupDetail = async (
 };
 
 export async function generateMetadata(
-  { params }: { params: Promise<{ groupRunId: string }> },
+  { params }: { params: Promise<{ groupId: string }> },
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const { groupRunId } = await params;
+  const { groupId } = await params;
 
   return {
-    title: `Group ${groupRunId.substring(0, 8)}...`,
+    title: `Group ${groupId.substring(0, 8)}...`,
     description:
       "Group run details for teaching assistant training platform. Review cost analysis, usage metrics, and pricing data for educational institutions and L&D programs.",
   };
@@ -51,16 +51,16 @@ export async function generateMetadata(
 export default async function PricingGroupPage({
   params,
 }: {
-  params: Promise<{ groupRunId: string }>;
+  params: Promise<{ groupId: string }>;
 }) {
-  const { groupRunId } = await params;
+  const { groupId } = await params;
 
   // Access control is handled server-side in layout
   // Get profileId from session
   const session = await getSession();
   const profileId = session?.effectiveProfileId;
 
-  if (!profileId) {
+  if (!profileId || !groupId) {
     // This should not happen due to server-side access control, but handle gracefully
     return null;
   }
@@ -68,17 +68,16 @@ export default async function PricingGroupPage({
   // Fetch group detail data
   const groupDetail = await getPricingGroupDetail({
     body: {
-      groupRunId,
+      groupId,
     },
   });
 
   return (
     <div className="space-y-6">
-      <GroupRunMessages groupDetail={groupDetail} />
+      <GroupMessages groupDetail={groupDetail} />
     </div>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type { PricingGroupDetailIn, PricingGroupDetailOut };
-

@@ -1,5 +1,5 @@
 /**
- * GroupRunMessages.tsx
+ * GroupMessages.tsx
  * Display multiple runs with messages stacked vertically.
  * Each run is shown in its own section with summary and messages.
  * @AshokSaravanan222 & @siladiea
@@ -7,17 +7,17 @@
  */
 "use client";
 
+import type { PricingGroupDetailOut } from "@/app/(main)/analytics/pricing/g/[groupId]/page";
+import Markdown from "@/components/common/chat/markdown/Markdown";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import Markdown from "@/components/common/chat/markdown/Markdown";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, User, Code, Settings } from "lucide-react";
+import { Code, MessageSquare, Settings, User } from "lucide-react";
 import { useMemo } from "react";
-import type { PricingGroupDetailOut } from "@/app/(main)/analytics/pricing/g/[groupRunId]/page";
 
-export interface GroupRunMessagesProps {
+export interface GroupMessagesProps {
   groupDetail: PricingGroupDetailOut;
 }
 
@@ -69,9 +69,7 @@ const formatCost = (cost: number): string => {
   return `$${cost.toFixed(6)}`;
 };
 
-export default function GroupRunMessages({
-  groupDetail,
-}: GroupRunMessagesProps) {
+export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
   const { runs, modelMapping, agentMapping, profileMapping } = groupDetail;
 
   // Sort runs chronologically
@@ -91,8 +89,7 @@ export default function GroupRunMessages({
         // Sort messages chronologically
         const sortedMessages = [...messages].sort(
           (a, b) =>
-            new Date(a.createdAt).getTime() -
-            new Date(b.createdAt).getTime()
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
 
         const modelName =
@@ -111,7 +108,7 @@ export default function GroupRunMessages({
         return (
           <div
             key={run.id}
-            className="flex flex-col border rounded-lg p-6 bg-card"
+            className="flex flex-col border rounded-lg p-6 bg-card min-h-0"
           >
             {/* Run header */}
             <div className="mb-4">
@@ -166,13 +163,15 @@ export default function GroupRunMessages({
                 </div>
                 <div>
                   <span className="text-muted-foreground">Created: </span>
-                  <span className="font-medium">{formatDate(run.createdAt)}</span>
+                  <span className="font-medium">
+                    {formatDate(run.createdAt)}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Messages list */}
-            <ScrollArea className="flex-1 border rounded-lg min-h-[400px] max-h-[600px]">
+            <ScrollArea className="flex-1 border rounded-lg max-h-[600px] min-h-0">
               <div className="space-y-4 p-4">
                 {sortedMessages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-muted-foreground">
@@ -252,4 +251,3 @@ export default function GroupRunMessages({
     </div>
   );
 }
-

@@ -11991,10 +11991,8 @@ export interface components {
          * @description Request schema for pricing run detail.
          */
         PricingRunDetailRequest: {
-            /** Runid */
-            runId?: string | null;
-            /** Grouprunid */
-            groupRunId?: string | null;
+            /** Groupid */
+            groupId: string;
         };
         /**
          * PricingRunDetailResponse

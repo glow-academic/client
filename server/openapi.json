@@ -36196,30 +36196,15 @@
       },
       "PricingRunDetailRequest": {
         "properties": {
-          "runId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Runid"
-          },
-          "groupRunId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grouprunid"
+          "groupId": {
+            "type": "string",
+            "title": "Groupid"
           }
         },
         "type": "object",
+        "required": [
+          "groupId"
+        ],
         "title": "PricingRunDetailRequest",
         "description": "Request schema for pricing run detail."
       },
