@@ -83,24 +83,145 @@ run_costs AS (
     JOIN group_runs_list grl ON grl.run_id = rpu.run_id
     GROUP BY rpu.run_id
 ),
--- Get all messages for each run
-runs_with_messages AS (
-    SELECT 
+-- Get all messages for each run using message_tree ordering (source of truth)
+-- For each run, traverse message_tree to get messages in conversation flow order
+run_groups_map AS (
+    -- Map each run to its group
+    SELECT DISTINCT
         rm.run_id,
-        jsonb_agg(
-            jsonb_build_object(
-                'id', m.id::text,
-                'role', m.role,
-                'content', m.content,
-                'createdAt', m.created_at,
-                'updatedAt', m.updated_at,
-                'completed', m.completed
-            ) ORDER BY m.created_at
-        ) as messages
+        gr.group_id
     FROM runs_metadata rm
-    LEFT JOIN message_runs mr ON mr.run_id = rm.run_id
-    LEFT JOIN messages m ON m.id = mr.message_id
-    GROUP BY rm.run_id
+    JOIN group_runs gr ON gr.run_id = rm.run_id
+),
+run_chats_map AS (
+    -- Map each run to all chats in its group
+    SELECT DISTINCT
+        rg.run_id,
+        c.id as chat_id
+    FROM run_groups_map rg
+    JOIN chats c ON c.group_id = rg.group_id
+),
+-- Tree traversal for messages: get all messages following conversation flow per run
+messages_with_tree AS (
+    WITH RECURSIVE message_path AS (
+        -- Base case: Start from latest messages (no active children in message_tree)
+        SELECT 
+            m.id, 
+            rcm.run_id,
+            rcm.chat_id,
+            m.role, 
+            m.content, 
+            m.created_at, 
+            m.completed, 
+            m.updated_at,
+            0 as depth,
+            m.id as path_root_id
+        FROM run_chats_map rcm
+        JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
+        JOIN groups g ON g.id = rgm.group_id
+        JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
+        JOIN runs r ON r.id = gr.run_id
+        JOIN message_runs mr ON mr.run_id = r.id AND mr.run_id = rcm.run_id
+        JOIN messages m ON m.id = mr.message_id
+        JOIN chats c ON c.id = rcm.chat_id AND c.group_id = g.id
+        WHERE NOT EXISTS (
+            SELECT 1 FROM message_tree mt 
+            WHERE mt.parent_id = m.id AND mt.active = true
+        )
+        
+        UNION ALL
+        
+        -- Recursive case: Traverse up the tree following parent links
+        -- Find parents (m) of children (mp) already in the path
+        SELECT 
+            m.id, 
+            mp.run_id,
+            mp.chat_id,
+            m.role, 
+            m.content, 
+            m.created_at, 
+            m.completed, 
+            m.updated_at,
+            mp.depth + 1 as depth,
+            mp.path_root_id
+        FROM messages m
+        JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
+        JOIN message_path mp ON mp.id = mt.child_id
+        JOIN message_runs mr ON mr.message_id = m.id AND mr.run_id = mp.run_id
+        JOIN runs r ON r.id = mr.run_id
+        JOIN group_runs gr ON gr.run_id = r.id
+        JOIN groups g ON g.id = gr.group_id
+        JOIN chats c ON c.group_id = g.id AND c.id = mp.chat_id
+        WHERE mp.depth < 1000  -- Safety limit
+    ),
+    -- Include messages without parents (backward compatibility for existing messages)
+    messages_without_parents AS (
+        SELECT 
+            m.id, 
+            rcm.run_id,
+            rcm.chat_id,
+            m.role, 
+            m.content, 
+            m.created_at, 
+            m.completed, 
+            m.updated_at,
+            -1 as depth,
+            m.id as path_root_id
+        FROM run_chats_map rcm
+        JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
+        JOIN groups g ON g.id = rgm.group_id
+        JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
+        JOIN runs r ON r.id = gr.run_id
+        JOIN message_runs mr ON mr.run_id = r.id AND mr.run_id = rcm.run_id
+        JOIN messages m ON m.id = mr.message_id
+        JOIN chats c ON c.id = rcm.chat_id AND c.group_id = g.id
+        WHERE NOT EXISTS (
+            SELECT 1 FROM message_tree mt 
+            WHERE mt.child_id = m.id AND mt.active = true
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM message_path mp 
+            WHERE mp.id = m.id AND mp.run_id = rcm.run_id
+        )
+    ),
+    -- Combine tree-traversed messages and messages without parents
+    all_messages AS (
+        SELECT * FROM message_path
+        UNION ALL
+        SELECT * FROM messages_without_parents
+    )
+    -- Select distinct messages ordered by conversation flow
+    SELECT DISTINCT ON (am.id, am.run_id)
+        am.id,
+        am.run_id,
+        am.chat_id,
+        am.role,
+        am.content,
+        am.created_at,
+        am.completed,
+        am.updated_at
+    FROM all_messages am
+    ORDER BY am.id, am.run_id, am.created_at
+),
+runs_with_messages AS (
+    -- Aggregate messages per run, ordered by chat then by tree traversal order
+    SELECT 
+        mwt.run_id,
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', mwt.id::text,
+                    'role', mwt.role,
+                    'content', mwt.content,
+                    'createdAt', mwt.created_at,
+                    'updatedAt', mwt.updated_at,
+                    'completed', mwt.completed
+                ) ORDER BY mwt.chat_id, mwt.created_at
+            ),
+            '[]'::jsonb
+        ) as messages
+    FROM messages_with_tree mwt
+    GROUP BY mwt.run_id
 ),
 -- Build run details with messages
 runs_detail AS (

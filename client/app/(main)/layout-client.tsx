@@ -58,14 +58,14 @@ function MainLayoutContent({
   children: React.ReactNode;
   attemptData: AttemptFullOut | null;
   switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams,
+    input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn,
+    input: RefreshAnalyticsIn
   ) => Promise<RefreshAnalyticsOut>;
   searchSimulatableProfilesAction: (
-    input: SearchSimulatableProfilesIn,
+    input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
 }) {
   const pathname = usePathname() || "/";
@@ -119,6 +119,10 @@ function MainLayoutContent({
     return pathname === "/practice";
   }, [pathname]);
 
+  const isPricingGroupPage = useMemo(() => {
+    return pathname.startsWith("/analytics/pricing/g");
+  }, [pathname]);
+
   const canShowAnalyticsFilters = useMemo(() => {
     // Show filters on leaderboard page for all authorized users
     if (pathname === "/leaderboard") {
@@ -132,7 +136,8 @@ function MainLayoutContent({
       effectiveProfile?.role &&
       allowedRoles.includes(effectiveProfile.role) &&
       (isAnalyticsPage || isHomePage || isPracticePage) &&
-      !pathname.includes("/edit")
+      !pathname.includes("/edit") &&
+      !isPricingGroupPage
     );
   }, [
     effectiveProfile?.role,
@@ -140,6 +145,7 @@ function MainLayoutContent({
     pathname,
     isHomePage,
     isPracticePage,
+    isPricingGroupPage,
   ]);
 
   const handleSectionChange = createSectionChangeHandler(router, pathname);
@@ -319,7 +325,6 @@ function MainLayoutContent({
     pathname.match(/\/home\/a\/([^/]+)/) ||
     pathname.match(/\/practice\/a\/([^/]+)/);
   const attemptId = attemptMatch ? attemptMatch[1] : null;
-
   // Check if we should show SimulationControls
   // Only show if we have attemptData, attemptId, and the attempt belongs to the active profile
   const shouldShowSimulationControls = useMemo(() => {
@@ -418,14 +423,14 @@ export function MainLayoutClient({
   attemptData: AttemptFullOut | null;
   activeSettings: SettingsActiveClient | null;
   switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams,
+    input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn,
+    input: RefreshAnalyticsIn
   ) => Promise<RefreshAnalyticsOut>;
   searchSimulatableProfilesAction: (
-    input: SearchSimulatableProfilesIn,
+    input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
 }) {
   const pathname = usePathname();
@@ -434,13 +439,13 @@ export function MainLayoutClient({
   useEffect(() => {
     const checkAccessDenied = () => {
       const accessDeniedElement = document.querySelector(
-        '[data-access-denied="true"]',
+        '[data-access-denied="true"]'
       );
       const wrapperElement = document.querySelector(
-        `[data-route-pathname="${pathname}"]`,
+        `[data-route-pathname="${pathname}"]`
       );
       const wrapperPathname = wrapperElement?.getAttribute(
-        "data-route-pathname",
+        "data-route-pathname"
       );
 
       // If we're on an allowed route but see access denied component, force refresh

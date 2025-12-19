@@ -73,7 +73,7 @@ export default async function PricingGroupPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
       <GroupMessages groupDetail={groupDetail} />
     </div>
   );
