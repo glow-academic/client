@@ -3741,6 +3741,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/client/simulations/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Grading Start Api
+         * @description Client-to-server event: Start grading for a simulation chat.
+         */
+        post: operations["simulation_grading_start_api_socket_v3_client_simulations_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/client/scenarios/generate": {
         parameters: {
             query?: never;
@@ -4321,26 +4341,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/text/grading_progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Simulation Grading Progress Api
-         * @description Server-to-client event: Simulation grading progress update.
-         */
-        post: operations["simulation_grading_progress_api_socket_v3_server_simulations_text_grading_progress_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v3/server/simulations/text/continued": {
         parameters: {
             query?: never;
@@ -4915,6 +4915,26 @@ export interface paths {
          * @description Server-to-client event: Signal that assistant was interrupted in voice simulation.
          */
         post: operations["simulation_voice_assistant_interrupted_server_api_socket_v3_server_simulations_voice_assistant_interrupted_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Grading Progress Api
+         * @description Server-to-client event: Simulation grading progress update.
+         */
+        post: operations["simulation_grading_progress_api_socket_v3_server_simulations_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13340,6 +13360,18 @@ export interface components {
             total_count?: number | null;
             /** Summary Preview */
             summary_preview?: string | null;
+        };
+        /**
+         * SimulationGradingStartPayload
+         * @description Request to start grading for a simulation chat.
+         */
+        SimulationGradingStartPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Department Id */
+            department_id: string;
+            /** Sid */
+            sid?: string | null;
         };
         /**
          * SimulationInCohort
@@ -26225,6 +26257,41 @@ export interface operations {
             };
         };
     };
+    simulation_grading_start_api_socket_v3_client_simulations_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationGradingStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     generate_scenario_api_socket_v3_client_scenarios_generate_post: {
         parameters: {
             query?: never;
@@ -27240,41 +27307,6 @@ export interface operations {
             };
         };
     };
-    simulation_grading_progress_api_socket_v3_server_simulations_text_grading_progress_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationGradingProgressPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     simulation_continued_api_socket_v3_server_simulations_text_continued_post: {
         parameters: {
             query?: never;
@@ -28265,6 +28297,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["VoiceInterruptedPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_grading_progress_api_socket_v3_server_simulations_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationGradingProgressPayload"];
             };
         };
         responses: {

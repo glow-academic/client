@@ -14671,6 +14671,59 @@
         ]
       }
     },
+    "/socket/v3/client/simulations/start": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Simulation Grading Start Api",
+        "description": "Client-to-server event: Start grading for a simulation chat.",
+        "operationId": "simulation_grading_start_api_socket_v3_client_simulations_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationGradingStartPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Grading Start Api Socket V3 Client Simulations Start Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
     "/socket/v3/client/scenarios/generate": {
       "post": {
         "tags": [
@@ -16201,61 +16254,6 @@
                   },
                   "type": "object",
                   "title": "Response Simulation Text Next Error Api Socket V3 Server Simulations Text Next Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v3/server/simulations/text/grading_progress": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Simulation Grading Progress Api",
-        "description": "Server-to-client event: Simulation grading progress update.",
-        "operationId": "simulation_grading_progress_api_socket_v3_server_simulations_text_grading_progress_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SimulationGradingProgressPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Simulation Grading Progress Api Socket V3 Server Simulations Text Grading Progress Post"
                 }
               }
             }
@@ -17883,6 +17881,59 @@
           "socket",
           "socket-server",
           "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Simulation Grading Progress Api",
+        "description": "Server-to-client event: Simulation grading progress update.",
+        "operationId": "simulation_grading_progress_api_socket_v3_server_simulations_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationGradingProgressPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Grading Progress Api Socket V3 Server Simulations Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
           "socket-server",
           "socket-server"
         ]
@@ -40257,6 +40308,36 @@
         ],
         "title": "SimulationGradingProgressPayload",
         "description": "Response indicating progress in simulation grading."
+      },
+      "SimulationGradingStartPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "department_id": {
+            "type": "string",
+            "title": "Department Id"
+          },
+          "sid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "department_id"
+        ],
+        "title": "SimulationGradingStartPayload",
+        "description": "Request to start grading for a simulation chat."
       },
       "SimulationInCohort": {
         "properties": {
