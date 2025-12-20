@@ -65,7 +65,7 @@ done
 
 ADMIN_CONN="postgresql://postgres@${DB_HOST}:${DB_PORT}/postgres"
 USER_CONN="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
-INIT_SQL=${INIT_SQL:-app/init.sql}
+SEED_FILE=${SEED_FILE:-}
 
 # --- CHECK POSTGRESQL ------------------------------------------------
 # Prefer PostgreSQL 18 if available (required for uuidv7 support)
@@ -392,32 +392,33 @@ restore_from_backup() {
   " > /dev/null 2>&1 || true
 }
 
-start_fresh_from_init() {
-  echo "🆕 Starting fresh database from init.sql"
+start_fresh_from_seed() {
+  echo "🆕 Starting fresh database from seed file"
   
-  # Generate all seed data from CS folder
-  if [[ -f "seed/init.sh" ]]; then
-    echo "🌱 Generating all CS seed data..."
-    if ./seed/init.sh; then
-      echo "✅ All CS seed data generated successfully"
+  # If SEED_FILE is provided, use it; otherwise look for latest seed file
+  if [[ -z "$SEED_FILE" ]]; then
+    SEEDS_DIR="seeds"
+    if [[ -d "$SEEDS_DIR" ]] && ls "$SEEDS_DIR"/seed_*.sql 1> /dev/null 2>&1; then
+      SEED_FILE=$(ls -t "$SEEDS_DIR"/seed_*.sql | head -1)
+      echo "📁 Using latest seed file: $(basename "$SEED_FILE")"
     else
-      echo "⚠️  CS seed generation had issues, but continuing..."
+      echo "❌ No seed file found!"
+      echo "💡 Please run 'make fresh-db' first to generate a seed file, or provide SEED_FILE environment variable"
+      return 1
     fi
-  else
-    echo "⚠️  CS seed initialization script not found, using existing SQL"
   fi
   
-  if [[ ! -f "$INIT_SQL" ]]; then
-    echo "❌ Init file '$INIT_SQL' not found!"
+  if [[ ! -f "$SEED_FILE" ]]; then
+    echo "❌ Seed file '$SEED_FILE' not found!"
     return 1
   fi
   
   export PGPASSWORD="$DB_PASSWORD"
-  echo "🔍 Running: psql $USER_CONN -v ON_ERROR_STOP=1 -f $INIT_SQL"
-  if psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL"; then
-    echo "✅ Fresh database created from init.sql"
+  echo "🔍 Running: psql $USER_CONN -v ON_ERROR_STOP=1 -f $SEED_FILE"
+  if psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$SEED_FILE"; then
+    echo "✅ Fresh database created from seed file"
   else
-    echo "❌ Failed to create database from init.sql"
+    echo "❌ Failed to create database from seed file"
     echo "💡 Check the error output above for details"
     return 1
   fi
@@ -486,7 +487,7 @@ if [[ "$MIGRATE_DB" == true ]]; then
       else
         echo "📝 No backups found, starting fresh..."
         setup_database
-        start_fresh_from_init
+        start_fresh_from_seed
       fi
       
       # Apply all migration files in order (sorted by filename)
@@ -540,7 +541,7 @@ if [[ "$MIGRATE_DB" == true ]]; then
         else
           echo "📝 No backups found, starting fresh..."
           setup_database
-          start_fresh_from_init
+          start_fresh_from_seed
         fi
         
         # Step 2: Apply migration
@@ -574,7 +575,7 @@ if [[ "$CLEAN_DB" == true ]]; then
   
   # Setup fresh database
   setup_database
-  start_fresh_from_init
+  start_fresh_from_seed
   
   echo "✅ Clean database setup completed!"
   exit 0
@@ -596,13 +597,13 @@ if [[ -n "$LATEST_BACKUP" ]]; then
   if restore_from_backup "$LATEST_BACKUP"; then
     echo "✅ Database restored and ready"
   else
-    echo "⚠️  Backup restoration failed, falling back to init.sql"
-    start_fresh_from_init
+    echo "⚠️  Backup restoration failed, falling back to seed file"
+    start_fresh_from_seed
   fi
 else
-  echo "📝 No backups found, starting fresh from init.sql"
+  echo "📝 No backups found, starting fresh from seed file"
   setup_database
-  start_fresh_from_init
+  start_fresh_from_seed
 fi
 
 echo "✅ Database setup completed!"

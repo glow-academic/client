@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-db typecheck-client build-client openapi-gen gen-client-types
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -326,11 +326,24 @@ connect-db:
 	@cd database && yarn connect
 	@echo "✅ Connected to database"
 
-# Start database with fresh data (clean start)
+# Export database (schema, base, university, or organization)
+export-db:
+	@if [ -z "$(ARGS)" ]; then \
+		echo "Usage: make export-db {schema|base|university|organization}"; \
+		exit 1; \
+	fi
+	@echo "Exporting database: $(ARGS)..."
+	@cd database/scripts && bash export-db.sh $(ARGS)
+	@echo "✅ Database export completed"
+
+# Start database with fresh data (interactive setup)
 fresh-db:
-	@echo "Starting database with fresh data..."
-	@cd database && yarn start:clean
-	@echo "✅ Fresh database started"
+	@echo "Starting interactive database setup..."
+	@cd database/scripts && bash setup-fresh-db.sh
+	@echo "✅ Interactive setup completed"
+	@echo ""
+	@echo "To load the generated seed file, run:"
+	@echo "  cd database && yarn start:clean"
 
 
 # Show help
@@ -350,7 +363,8 @@ help:
 	@echo "  migrate-db     - Run most recent database migration"
 	@echo "  migrate-db-all - Run all database migrations"
 	@echo "  connect-db     - Connect to database"
-	@echo "  fresh-db       - Start database with fresh data"
+	@echo "  fresh-db       - Interactive setup for fresh database"
+	@echo "  export-db      - Export database (schema|base|university|organization)"
 	@echo ""
 	@echo "Services:"
 	@echo "  run          - Start all services in foreground (Ctrl+C to stop)"
