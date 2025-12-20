@@ -6,11 +6,13 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.main import get_db, transaction
+from app.main import get_db, get_internal_sio, transaction
 from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+
+internal_sio = get_internal_sio()
 
 
 # Inline request/response schemas
@@ -207,6 +209,15 @@ async def update_settings(
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+            # Trigger Keycloak sync for affected departments
+            if request.department_ids:
+                # Sync each affected department realm
+                for dept_id in request.department_ids:
+                    await internal_sio.emit("keycloak_sync", {"department_id": dept_id})
+            else:
+                # Global settings - sync default department (None)
+                await internal_sio.emit("keycloak_sync", {"department_id": None})
 
             return result_data
     except HTTPException:

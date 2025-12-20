@@ -100,7 +100,8 @@ async def check_keycloak() -> ServiceCheckResult:
 
         keycloak_url = f"{base_url}{app_prefix}/auth"
 
-    realm = os.getenv("KEYCLOAK_REALM", "glow")
+    # Check master realm (default department) - always exists
+    realm = "master"
     well_known = f"{keycloak_url}/realms/{realm}/.well-known/openid-configuration"
 
     try:

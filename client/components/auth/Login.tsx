@@ -22,7 +22,7 @@ import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 // Provider icon component - renders icon from URL or fallback
@@ -245,6 +245,7 @@ interface LoginProps {
   initialDepartmentId?: string | undefined; // Initial department ID from query parameter
   activeSettings?: SettingsActiveClient | null; // Active settings for theme application
   defaultDepartmentId?: string | null; // Default department ID from settings_default_department table
+  realmName?: string; // Realm name for the selected department (master for default, department_id otherwise)
   redirectPath?: string; // Redirect path after login
 }
 
@@ -256,6 +257,7 @@ export default function Login({
   initialDepartmentId,
   activeSettings,
   defaultDepartmentId,
+  realmName: _realmName = "master", // Received from server but calculated client-side instead
   redirectPath: redirectPathProp,
 }: LoginProps) {
   const [loadingGuest, setLoadingGuest] = useState(false);
@@ -315,6 +317,22 @@ export default function Login({
     },
   };
 
+  // Calculate realm name based on selected department and set cookie on mount/change
+  const currentRealmName = React.useMemo(() => {
+    if (!selectedDepartmentId) {
+      return "master";
+    }
+    if (defaultDepartmentId && selectedDepartmentId === defaultDepartmentId) {
+      return "master";
+    }
+    return selectedDepartmentId;
+  }, [selectedDepartmentId, defaultDepartmentId]);
+
+  // Set realm-name cookie when department changes
+  useEffect(() => {
+    document.cookie = `realm-name=${currentRealmName}; path=/; max-age=3600; SameSite=Lax`;
+  }, [currentRealmName]);
+
   // Generic handler for ANY SSO provider (data-agnostic)
   const handleSSOLogin = async (provider: ProviderOption) => {
     try {
@@ -323,6 +341,9 @@ export default function Login({
       // Clear guest mode and simulated profile from localStorage
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedProfileId");
+
+      // Realm-name cookie is already set by useEffect when department changes
+      // This allows dynamic realm selection based on department
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
@@ -335,6 +356,7 @@ export default function Login({
       // Use NextAuth's signIn with "keycloak" provider (our only provider in auth.ts)
       // Pass kc_idp_hint to force Keycloak to skip login page and redirect to the specified provider
       // The provider.id is the slug (already lowercase from database)
+      // Realm selection is handled via realm-name cookie read in auth.ts authorization callback
       await signIn(
         "keycloak",
         {
@@ -597,6 +619,15 @@ export default function Login({
                       : {})}
                     onValueChange={(value) => {
                       setSelectedDepartmentId(value);
+
+                      // Calculate and set realm-name cookie for dynamic realm selection
+                      const realmNameForDept =
+                        !value ||
+                        (defaultDepartmentId && value === defaultDepartmentId)
+                          ? "master"
+                          : value;
+                      document.cookie = `realm-name=${realmNameForDept}; path=/; max-age=3600; SameSite=Lax`;
+
                       // Update URL with department parameter and trigger server-side refetch
                       // If selected department is the default, remove query param to keep URL clean
                       // The server will still use the default department ID for the API call

@@ -10924,6 +10924,8 @@ export interface components {
             show_default_account: boolean;
             /** Default Department Id */
             default_department_id: string | null;
+            /** Realm Name */
+            realm_name: string;
         };
         /**
          * LogsBundleRequest

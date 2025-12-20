@@ -122,13 +122,25 @@ departments_with_default AS (
     UNION ALL
     SELECT '[]'::json WHERE NOT EXISTS (SELECT 1 FROM departments_data)
 )
+-- Calculate realm name for the requested department
+-- Master realm for default department, department_id otherwise
+realm_name_calc AS (
+    SELECT 
+        CASE 
+            WHEN $1::uuid IS NULL THEN 'master'::text
+            WHEN $1::uuid = (SELECT department_id FROM default_department_from_settings LIMIT 1) THEN 'master'::text
+            ELSE $1::text
+        END as realm_name
+)
 -- Cross join ensures we always get exactly one row
 SELECT 
     p.providers_json,
     d.departments_json,
     COALESCE((SELECT guest_login_enabled FROM active_settings LIMIT 1), true) as guest_login_enabled,
-    (SELECT department_id::text FROM default_department_from_settings LIMIT 1) as default_department_id
+    (SELECT department_id::text FROM default_department_from_settings LIMIT 1) as default_department_id,
+    (SELECT realm_name FROM realm_name_calc LIMIT 1) as realm_name
 FROM providers_with_default p
 CROSS JOIN departments_with_default d
+CROSS JOIN realm_name_calc
 LIMIT 1;
 

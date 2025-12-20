@@ -6,11 +6,13 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.main import get_db, transaction
+from app.main import get_db, get_internal_sio, transaction
 from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+
+internal_sio = get_internal_sio()
 
 
 class CreateDepartmentRequest(BaseModel):
@@ -102,6 +104,9 @@ async def create_department(
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+        # Trigger Keycloak sync for the new department
+        await internal_sio.emit("keycloak_sync", {"department_id": department_id})
 
         return result
     except HTTPException:

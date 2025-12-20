@@ -3,7 +3,7 @@ import { api } from "@/lib/api/client";
 import { createTestSession, validateTestHeaders } from "@/lib/auth-helpers";
 import NextAuth from "next-auth";
 import Keycloak from "next-auth/providers/keycloak";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { cache } from "react";
 
 const appPrefix = process.env["APP_PREFIX"] || "";
@@ -13,10 +13,11 @@ const secret = process.env["AUTH_SECRET"] || "";
 // Use localhost (Node.js will resolve to IPv4 via NODE_OPTIONS in Makefile)
 const keycloakPublicUrl =
   process.env["KEYCLOAK_PUBLIC_URL"] || "http://localhost:8080";
-const keycloakRealm = process.env["KEYCLOAK_REALM"] || "glow";
 const keycloakClientId = process.env["AUTH_KEYCLOAK_ID"] || "glow-client";
 const keycloakClientSecret = process.env["AUTH_KEYCLOAK_SECRET"] || "";
-const issuer = `${keycloakPublicUrl}/realms/${keycloakRealm}`;
+
+// Default issuer (master realm) - used as fallback
+const defaultIssuer = `${keycloakPublicUrl}/realms/master`;
 
 // Helper function to parse name into firstName and lastName
 function parseName(name: string | null | undefined): {
@@ -72,11 +73,52 @@ export const {
   basePath: `${appPrefix}/api/auth`,
   providers: [
     // Single Keycloak provider - frontend controls which identity provider via kc_idp_hint
+    // Realm selection: Dynamic based on realm-name cookie set by Login component
+    // Each department gets its own realm (master for default, department_id for others)
     Keycloak({
       clientId: keycloakClientId,
       clientSecret: keycloakClientSecret,
-      issuer: issuer,
+      issuer: defaultIssuer, // Base issuer (master realm), overridden in authorization callback
       allowDangerousEmailAccountLinking: true, // Allow merging Google/MS accounts with same email
+      authorization: async ({
+        params,
+      }: {
+        params: Record<string, string | undefined>;
+      }) => {
+        // Read realm-name from cookie to determine which realm to use
+        const cookieStore = await cookies();
+        const realmNameCookie = cookieStore.get("realm-name")?.value;
+        const realmName = realmNameCookie || "master";
+
+        // Construct authorization URL with correct realm
+        const realmIssuer = `${keycloakPublicUrl}/realms/${realmName}`;
+        const authorizationUrl = new URL(
+          `${realmIssuer}/protocol/openid-connect/auth`
+        );
+
+        // Add standard OAuth parameters
+        authorizationUrl.searchParams.set("client_id", keycloakClientId);
+        const redirectUri = params["redirect_uri"];
+        if (redirectUri) {
+          authorizationUrl.searchParams.set("redirect_uri", redirectUri);
+        }
+        authorizationUrl.searchParams.set("response_type", "code");
+        authorizationUrl.searchParams.set(
+          "scope",
+          params["scope"] || "openid profile email"
+        );
+        const state = params["state"];
+        if (state) {
+          authorizationUrl.searchParams.set("state", state);
+        }
+        const codeChallenge = params["code_challenge"];
+        if (codeChallenge) {
+          authorizationUrl.searchParams.set("code_challenge", codeChallenge);
+          authorizationUrl.searchParams.set("code_challenge_method", "S256");
+        }
+
+        return authorizationUrl.toString();
+      },
     }),
   ],
   secret,

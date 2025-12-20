@@ -46,6 +46,7 @@ class LoginProvidersResponse(BaseModel):
     default_department_id: (
         str | None
     )  # Default department ID from settings_default_department table
+    realm_name: str  # Realm name for the requested department (master for default, department_id otherwise)
 
 
 router = APIRouter()
@@ -73,6 +74,7 @@ async def get_login_providers(
             guest_login_enabled=True,
             show_default_account=False,
             default_department_id=None,
+            realm_name="master",  # Default to master realm
         )
 
     # Parse JSON fields - asyncpg may return JSON as strings
@@ -126,6 +128,11 @@ async def get_login_providers(
         default_department_id = default_department_id.strip() or None
     else:
         default_department_id = None
+
+    # Get realm name from SQL query result
+    realm_name = row.get("realm_name", "master")
+    if not isinstance(realm_name, str):
+        realm_name = "master"
 
     # Show "continue as default account" if:
     # 1. No providers exist for this department, AND
@@ -186,4 +193,5 @@ async def get_login_providers(
         guest_login_enabled=guest_login_enabled,
         show_default_account=show_default_account,
         default_department_id=default_department_id,
+        realm_name=realm_name,
     )

@@ -48,6 +48,7 @@ async function getLoginData(departmentId?: string): Promise<LoginDataOut> {
       guest_login_enabled: true,
       show_default_account: false,
       default_department_id: null,
+      realm_name: "master",
     } as LoginDataOut;
   }
 }
@@ -65,7 +66,7 @@ async function getLoginData(departmentId?: string): Promise<LoginDataOut> {
  * - If no auth-mode: defaults to "default-account" on server
  */
 async function getProfileContext(
-  departmentIdFromQuery?: string,
+  departmentIdFromQuery?: string
 ): Promise<ProfileContextOut | null> {
   try {
     // Forward cookies from server component context to API request
@@ -106,7 +107,7 @@ async function getProfileContext(
             headers: {
               "X-Bypass-Cache": "1",
             },
-          },
+          }
     )) as ProfileContextOut;
   } catch {
     // If profile context fetch fails, return null - theme will use defaults
@@ -183,6 +184,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       initialDepartmentId={initialDepartmentId}
       activeSettings={activeSettings}
       defaultDepartmentId={loginData.default_department_id || null}
+      realmName={loginData.realm_name || "master"}
       {...(redirectPath && { redirectPath })}
     />
   );

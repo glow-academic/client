@@ -503,6 +503,7 @@ export async function clearGuestSessionCookies(): Promise<void> {
     const cookieStore = await cookies();
     cookieStore.delete("department-id");
     cookieStore.delete("auth-mode");
+    cookieStore.delete("realm-name");
   } catch {
     // Ignore errors - cookies might not exist
   }
