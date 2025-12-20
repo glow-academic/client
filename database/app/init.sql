@@ -2,8 +2,7 @@
 -- This script orchestrates the execution of all modular SQL files
 -- in the correct order based on dependencies
 
--- Enable the gen_random_uuid() function (needed by all modules)
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UUIDv7 support is built into PostgreSQL 18+ (no extension needed)
 
 -- ============================================================================
 -- EXECUTION ORDER BASED ON DEPENDENCIES

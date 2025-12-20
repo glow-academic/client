@@ -1,5 +1,4 @@
--- Enable the gen_random_uuid() function
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UUIDv7 support is built into PostgreSQL 18+ (no extension needed)
 
 -- ============================================================================
 -- ENUM TYPES
@@ -27,7 +26,7 @@ CREATE TYPE agent_role AS ENUM (
 -- ============================================================================
 
 CREATE TABLE agents (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
@@ -40,7 +39,7 @@ CREATE TABLE agents (
 );
 
 CREATE TABLE runs (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   input_tokens INTEGER     NOT NULL DEFAULT 0,
@@ -93,7 +92,7 @@ CREATE UNIQUE INDEX one_profile_per_run ON run_profiles(run_id);
 CREATE INDEX ON run_profiles (profile_id);
 
 CREATE TABLE debug_info (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   run_id   UUID        NOT NULL REFERENCES runs(id),
   content TEXT        NOT NULL

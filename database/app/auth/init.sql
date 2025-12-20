@@ -1,12 +1,11 @@
--- Enable the gen_random_uuid() function
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UUIDv7 support is built into PostgreSQL 18+ (no extension needed)
 
 -- ============================================================================
 -- TABLE DEFINITIONS
 -- ============================================================================
 
 CREATE TABLE auth (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
@@ -25,7 +24,7 @@ CREATE INDEX auth_slug_idx ON auth(slug);
 
 -- Auth items child table (one-to-many relationship with auth)
 CREATE TABLE auth_items (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   auth_id    UUID        NOT NULL REFERENCES auth(id) ON DELETE CASCADE,

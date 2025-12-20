@@ -1,5 +1,4 @@
--- Enable the gen_random_uuid() function
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UUIDv7 support is built into PostgreSQL 18+ (no extension needed)
 
 -- ============================================================================
 -- ENUM TYPES
@@ -15,7 +14,7 @@ CREATE TYPE quality AS ENUM ('low', 'medium', 'high');
 -- ============================================================================
 
 CREATE TABLE models (
-  id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID         PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
   name       TEXT         NOT NULL,
@@ -50,7 +49,7 @@ CREATE INDEX ON model_departments (active);
 
 -- Units reference table
 CREATE TABLE units (
-  id            UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  id            UUID          PRIMARY KEY DEFAULT uuidv7(),
   name          TEXT          NOT NULL,
   unit_category unit_category NOT NULL,
   value         INTEGER       NOT NULL,
@@ -70,7 +69,7 @@ CREATE INDEX ON units (active);
 
 -- Model reasoning levels junction table
 CREATE TABLE model_reasoning_levels (
-  id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+  id              UUID            PRIMARY KEY DEFAULT uuidv7(),
   model_id        UUID            NOT NULL REFERENCES models(id) ON DELETE CASCADE,
   reasoning_level reasoning_effort NOT NULL,
   active          BOOLEAN         NOT NULL DEFAULT TRUE,
@@ -85,7 +84,7 @@ CREATE INDEX ON model_reasoning_levels (active);
 
 -- Model temperature levels junction table (with range support)
 CREATE TABLE model_temperature_levels (
-  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id          UUID        PRIMARY KEY DEFAULT uuidv7(),
   model_id    UUID        NOT NULL REFERENCES models(id) ON DELETE CASCADE,
   temperature REAL        NOT NULL,
   is_upper    BOOLEAN     NOT NULL,
@@ -135,7 +134,7 @@ CREATE INDEX ON model_qualities (active);
 
 -- Model voices junction table (uses voice enum from personas)
 CREATE TABLE model_voices (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   model_id   UUID        NOT NULL REFERENCES models(id) ON DELETE CASCADE,
   voice      voice       NOT NULL,
   active     BOOLEAN     NOT NULL DEFAULT TRUE,

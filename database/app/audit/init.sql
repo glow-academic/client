@@ -3,7 +3,7 @@ CREATE SCHEMA IF NOT EXISTS audit;
 
 -- Row change journal -------------------------------------------------
 CREATE TABLE IF NOT EXISTS audit.row_changes (
-  id            bigserial PRIMARY KEY,
+  id            UUID PRIMARY KEY DEFAULT uuidv7(),
   table_name    text NOT NULL,
   op            text NOT NULL,                 -- INSERT | UPDATE | DELETE
   changed_at    timestamptz NOT NULL DEFAULT now(),

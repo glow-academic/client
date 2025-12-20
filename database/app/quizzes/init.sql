@@ -1,5 +1,4 @@
--- Enable the gen_random_uuid() function
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UUIDv7 support is built into PostgreSQL 18+ (no extension needed)
 
 -- ============================================================================
 -- ENUM TYPES
@@ -12,7 +11,7 @@ CREATE TYPE option_type AS ENUM ('discrete', 'freeform');
 -- ============================================================================
 
 CREATE TABLE quizzes (
-  id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID         PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
   title      TEXT         NOT NULL,
@@ -35,7 +34,7 @@ CREATE INDEX ON attempt_quizzes (attempt_id, quiz_id);
 
 -- Standalone questions table (reusable across videos)
 CREATE TABLE questions (
-  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id           UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   question_text TEXT NOT NULL,
@@ -47,7 +46,7 @@ CREATE INDEX ON questions (active);
 
 -- Standalone options table (reusable across questions)
 CREATE TABLE options (
-  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id           UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   option_text  TEXT NOT NULL,
@@ -125,7 +124,7 @@ CREATE INDEX ON question_answers (option_id);
 -- Simple structure: question_id and option_id (both NOT NULL)
 -- Can evaluate correctness afterward by checking question_answers junction table
 CREATE TABLE quiz_responses (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   quiz_id    UUID        NOT NULL REFERENCES quizzes(id)  ON DELETE CASCADE,

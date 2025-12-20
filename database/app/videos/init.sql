@@ -1,12 +1,11 @@
--- Enable the gen_random_uuid() function
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UUIDv7 support is built into PostgreSQL 18+ (no extension needed)
 
 -- ============================================================================
 -- TABLE DEFINITIONS
 -- ============================================================================
 
 CREATE TABLE videos (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
@@ -20,7 +19,7 @@ CREATE TABLE videos (
 -- Generations table (standalone, can exist independently)
 -- Strong entity for video file generations
 CREATE TABLE generations (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   file_path  TEXT        NOT NULL,

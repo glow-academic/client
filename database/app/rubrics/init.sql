@@ -1,12 +1,11 @@
--- Enable the gen_random_uuid() function
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UUIDv7 support is built into PostgreSQL 18+ (no extension needed)
 
 -- ============================================================================
 -- TABLE DEFINITIONS
 -- ============================================================================
 
   CREATE TABLE rubrics (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id         UUID        PRIMARY KEY DEFAULT uuidv7(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
@@ -45,7 +44,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
   CREATE UNIQUE INDEX rubric_groups_one_per_rubric ON rubric_groups(rubric_id);
 
   CREATE TABLE standard_groups (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id         UUID        PRIMARY KEY DEFAULT uuidv7(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
     short_name TEXT        NOT NULL,
@@ -60,7 +59,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
   CREATE UNIQUE INDEX standard_groups_position_uniq ON standard_groups(rubric_id, position);
 
   CREATE TABLE standards (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id         UUID        PRIMARY KEY DEFAULT uuidv7(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
     description TEXT        NOT NULL,

@@ -1,12 +1,11 @@
--- Enable the gen_random_uuid() function
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UUIDv7 support is built into PostgreSQL 18+ (no extension needed)
 
 -- ============================================================================
 -- TABLE DEFINITIONS
 -- ============================================================================
 
 CREATE TABLE evals (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   rubric_id   UUID        NOT NULL REFERENCES rubrics(id)  ON DELETE CASCADE,
@@ -57,7 +56,7 @@ CREATE INDEX ON eval_departments (department_id);
 -- ============================================================================
 
 CREATE TABLE eval_attempts (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   eval_id    UUID        NOT NULL REFERENCES evals(id) ON DELETE CASCADE,
   archived   BOOLEAN    NOT NULL DEFAULT FALSE,
@@ -71,7 +70,7 @@ CREATE INDEX ON eval_attempts (archived);
 CREATE INDEX ON eval_attempts (conversation_mode);
 
 CREATE TABLE tests (
-  id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID         PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   title      TEXT         NOT NULL,

@@ -293,8 +293,15 @@ restore_from_backup() {
   export PGPASSWORD="$DB_PASSWORD"
   if [[ "$backup_file" == *.gz ]]; then
     # Check if it's a custom format (pg_dump -F c) or plain SQL (pg_dump | gzip)
-    if pg_restore -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -F c "$backup_file" > /dev/null 2>&1; then
-      echo "✅ Backup restored successfully (custom format)"
+    # First try custom format (pg_restore)
+    if file "$backup_file" | grep -q "PostgreSQL custom database dump"; then
+      # It's a custom format dump - use pg_restore
+      if pg_restore -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -F c "$backup_file" > /dev/null 2>&1; then
+        echo "✅ Backup restored successfully (custom format)"
+      else
+        echo "⚠️  Backup restoration had some conflicts, but data may still be restored"
+        echo "💡 This is normal when schema has changed since backup was created"
+      fi
     elif gunzip -c "$backup_file" | psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; then
       echo "✅ Backup restored successfully (plain SQL)"
     else

@@ -1,5 +1,4 @@
--- Enable the gen_random_uuid() function
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UUIDv7 support is built into PostgreSQL 18+ (no extension needed)
 
 -- ============================================================================
 -- TABLE DEFINITIONS
@@ -7,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Problem Statements table (standalone, can exist independently)
 CREATE TABLE problem_statements (
-  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id              UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at      TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name            TEXT        NOT NULL,
@@ -19,7 +18,7 @@ CREATE INDEX ON problem_statements (created_at);
 
 -- Objectives table (standalone, can exist independently)
 CREATE TABLE objectives (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   objective  TEXT        NOT NULL
@@ -28,7 +27,7 @@ CREATE TABLE objectives (
 CREATE INDEX ON objectives (created_at);
 
 CREATE TABLE parameters (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
@@ -42,7 +41,7 @@ CREATE TABLE parameters (
 );
 
 CREATE TABLE fields (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
@@ -134,7 +133,7 @@ CREATE INDEX ON scenario_parameters (parameter_id);
 
   
 CREATE TABLE scenarios (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,

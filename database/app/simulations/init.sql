@@ -1,5 +1,4 @@
--- Enable the gen_random_uuid() function
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UUIDv7 support is built into PostgreSQL 18+ (no extension needed)
 
 -- ============================================================================
 -- TABLE DEFINITIONS
@@ -10,7 +9,7 @@ CREATE TYPE message_role AS ENUM ('user', 'assistant', 'system', 'developer');
 CREATE TYPE message_feedback_type AS ENUM ('strength', 'improvement');
 
 CREATE TABLE simulations (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   title      TEXT        NOT NULL,
@@ -93,7 +92,7 @@ CREATE INDEX ON scenario_time_limits (scenario_id);
 -- have been removed as part of BCNF migration
 
 CREATE TABLE simulation_attempts (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   simulation_id    UUID        NOT NULL REFERENCES simulations(id)  ON DELETE CASCADE,
   infinite_mode BOOLEAN     NOT NULL           DEFAULT FALSE,  -- If true, ignores all time limits
@@ -119,7 +118,7 @@ CREATE INDEX ON attempt_profiles (profile_id);
 CREATE INDEX ON attempt_profiles (attempt_id, active);
 
 CREATE TABLE chats (
-  id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID         PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
   -- completed_at removed (use grades.time_taken as source of truth)
@@ -144,7 +143,7 @@ CREATE INDEX ON attempt_chats (attempt_id, chat_id);
 
 -- Groups table - groups runs together (replacing chat-based grouping)
 CREATE TABLE groups (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -201,7 +200,7 @@ CREATE INDEX ON group_runs (group_id, idx);
 -- Unified messages table - messages linked to runs via message_runs junction table (BCNF normalization)
 -- Chat-to-message relationships are derived through: chats → chat_groups/grade_groups → groups → group_runs → runs → message_runs → messages
 CREATE TABLE messages (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   role       message_role NOT NULL,
@@ -283,7 +282,7 @@ CREATE INDEX ON simulation_hints (simulation_message_id);
 --   - Eval grades: run_id exists in test_runs → tests → attempt_tests → eval_attempts → evals
 --   - Simulation grades: run_id exists in chat_runs → chats → attempt_chats → simulation_attempts
 CREATE TABLE grades (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id         UUID        PRIMARY KEY DEFAULT uuidv7(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     description TEXT        NOT NULL DEFAULT 'No description provided',
     passed     BOOLEAN     NOT NULL,
@@ -298,7 +297,7 @@ CREATE INDEX ON grades (run_id, created_at DESC);
 
 -- Unified feedbacks table
 CREATE TABLE feedbacks (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id         UUID        PRIMARY KEY DEFAULT uuidv7(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     standard_id   UUID        NOT NULL REFERENCES standards(id)  ON DELETE CASCADE,
     grade_id   UUID        NOT NULL REFERENCES grades(id)  ON DELETE CASCADE,
@@ -311,7 +310,7 @@ CREATE INDEX ON feedbacks (standard_id);
 
 -- Message feedbacks table - links feedback to specific messages within a grade
 CREATE TABLE message_feedbacks (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id         UUID        PRIMARY KEY DEFAULT uuidv7(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     grade_id   UUID        NOT NULL REFERENCES grades(id)  ON DELETE CASCADE,
     message_id UUID        NOT NULL REFERENCES messages(id)  ON DELETE CASCADE,

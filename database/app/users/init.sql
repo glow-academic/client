@@ -1,6 +1,5 @@
 -- For Auth.js - JWT-only authentication (no database adapter)
--- Enable the gen_random_uuid() function
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UUIDv7 support is built into PostgreSQL 18+ (no extension needed)
 
 -- ============================================================================
 -- TABLE DEFINITIONS
@@ -9,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TYPE profile_role AS ENUM ('superadmin', 'admin', 'instructional', 'member', 'guest');
 
 CREATE TABLE profiles (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   last_login TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   first_name TEXT        NOT NULL,
@@ -81,7 +80,7 @@ CREATE INDEX ON profile_request_limits (profile_id);
 
 -- Profile activity junction table (tracks activity history)
 CREATE TABLE profile_activity (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY DEFAULT uuidv7(),
   profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   last_active TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

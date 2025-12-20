@@ -3,7 +3,7 @@ CREATE TYPE feedback_type AS ENUM ('feature', 'bug', 'question', 'other');
 -- Activity table (Chris Date: No Nulls, BCNF)
 -- Simple activity logging with semantic audit events
 CREATE TABLE activity (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id          UUID PRIMARY KEY DEFAULT uuidv7(),
   created_at  timestamptz NOT NULL DEFAULT now(),
   message     text NOT NULL,                    -- fully rendered activity message (no placeholders)
   endpoint    text NOT NULL,                    -- route path
@@ -44,7 +44,7 @@ CREATE INDEX ON service_health (service, ts);
 -- Feedback table (Chris Date: No Nulls, BCNF)
 -- Application feedback with direct profile_id reference
 CREATE TABLE feedback (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id          UUID PRIMARY KEY DEFAULT uuidv7(),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   type        feedback_type NOT NULL,
   message     TEXT NOT NULL DEFAULT 'No message provided',
@@ -64,7 +64,7 @@ CREATE INDEX ON feedback (resolved);
 
 -- Prompts table (shared system resource for agents and personas)
 CREATE TABLE prompts (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   name       TEXT        NOT NULL,
@@ -100,7 +100,7 @@ CREATE INDEX ON prompt_departments (active);
 -- Only one active settings row allowed (enforced via UNIQUE INDEX)
 -- Following Chris Date principles: BCNF, No Nulls
 CREATE TABLE settings (
-  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id              UUID        PRIMARY KEY DEFAULT uuidv7(),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   active          BOOLEAN     NOT NULL,
   name            TEXT        NOT NULL,

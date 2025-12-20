@@ -377,7 +377,7 @@ async def init_db_pool() -> None:
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
         from testcontainers.postgres import PostgresContainer  # type: ignore[import]
 
-        _test_container = PostgresContainer("postgres:16")
+        _test_container = PostgresContainer("postgres:18")
         _test_container.start()
 
         raw_url = _test_container.get_connection_url()
