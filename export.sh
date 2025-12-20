@@ -195,10 +195,15 @@ copy_with_gitignore() {
     mkdir -p "$dest_dir"
     
     # Use git ls-files to get tracked files (respects .gitignore automatically)
-    # This is the most reliable way to respect .gitignore
+    # Also include untracked files that aren't ignored by .gitignore
+    # This is the most reliable way to respect .gitignore while including all relevant files
     if git rev-parse --git-dir > /dev/null 2>&1; then
-        # Get all tracked files in this directory, explicitly excluding .git directory
-        git ls-files "$src_dir" | while IFS= read -r file; do
+        # Combine tracked and untracked files, sort and remove duplicates
+        # Use process substitution to avoid subshell issues
+        {
+            git ls-files "$src_dir"
+            git ls-files --others --exclude-standard "$src_dir"
+        } | sort -u | while IFS= read -r file; do
             # Skip .git directory (but keep .gitignore files as they're needed)
             if [[ "$file" == *"/.git/"* ]] || [[ "$file" == ".git/"* ]] || \
                [[ "$file" == *"/.git" ]] || [[ "$file" == ".git" ]]; then
@@ -327,11 +332,14 @@ else
     warning "history directory does not exist, skipping..."
 fi
 
-# Copy root files (all tracked files at root level)
+# Copy root files (all tracked and untracked files at root level)
 info "Copying root files..."
 if git rev-parse --git-dir > /dev/null 2>&1; then
-    # Get all tracked files at root level
-    git ls-files | grep -E '^[^/]+$' | while IFS= read -r file; do
+    # Get all tracked and untracked files at root level, remove duplicates
+    {
+        git ls-files | grep -E '^[^/]+$'
+        git ls-files --others --exclude-standard | grep -E '^[^/]+$'
+    } | sort -u | while IFS= read -r file; do
         if [ -f "$file" ]; then
             cp "$file" "$EXPORT_DIR/"
             success "Copied $file"
@@ -419,29 +427,83 @@ fi
 info "Ensuring destination directory exists on remote machine..."
 info "Creating directory: $SCP_PATH on $SCP_USER_HOST"
 
-# Create directory with proper error handling
 # Escape the path properly for SSH command
-if ! ssh "$SCP_USER_HOST" "mkdir -p $(printf '%q' "$SCP_PATH")"; then
-    error "Failed to create destination directory on remote machine"
-    error "Path: $SCP_PATH"
-    error "Host: $SCP_USER_HOST"
-    error "Please ensure you have write permissions and the path is valid"
-    exit 1
+ESCAPED_PATH=$(printf '%q' "$SCP_PATH")
+
+# Check if directory already exists
+if ssh "$SCP_USER_HOST" "test -d $ESCAPED_PATH" 2>/dev/null; then
+    info "Directory already exists: $SCP_PATH"
+else
+    # Create directory with proper error handling
+    info "Creating directory..."
+    CREATE_OUTPUT=$(ssh "$SCP_USER_HOST" "mkdir -p $ESCAPED_PATH && echo 'Directory created successfully'" 2>&1)
+    CREATE_EXIT_CODE=$?
+    
+    if [ $CREATE_EXIT_CODE -ne 0 ]; then
+        error "Failed to create destination directory on remote machine"
+        error "Path: $SCP_PATH"
+        error "Host: $SCP_USER_HOST"
+        error "SSH output: $CREATE_OUTPUT"
+        error "Exit code: $CREATE_EXIT_CODE"
+        error ""
+        error "Troubleshooting:"
+        error "  1. Test SSH connection: ssh $SCP_USER_HOST 'echo test'"
+        error "  2. Check parent directory exists: ssh $SCP_USER_HOST 'ls -ld $(dirname $ESCAPED_PATH)'"
+        error "  3. Check write permissions: ssh $SCP_USER_HOST 'test -w $(dirname $ESCAPED_PATH) && echo writable || echo not writable'"
+        exit 1
+    fi
+    
+    info "Directory creation output: $CREATE_OUTPUT"
 fi
 
 # Verify the directory was actually created
-if ! ssh "$SCP_USER_HOST" "test -d $(printf '%q' "$SCP_PATH")"; then
+info "Verifying directory exists..."
+VERIFY_OUTPUT=$(ssh "$SCP_USER_HOST" "test -d $ESCAPED_PATH && ls -ld $ESCAPED_PATH" 2>&1)
+VERIFY_EXIT_CODE=$?
+
+if [ $VERIFY_EXIT_CODE -ne 0 ]; then
     error "Directory creation verification failed - directory may not exist"
     error "Path: $SCP_PATH"
+    error "Verification output: $VERIFY_OUTPUT"
+    error "Exit code: $VERIFY_EXIT_CODE"
     exit 1
 fi
 
+info "Directory verified: $VERIFY_OUTPUT"
 success "Destination directory ready: $SCP_PATH"
 
 # Transfer via SCP
 info "Transferring archive via SCP..."
-if ! scp "$ZIP_PATH" "$scp_dest/"; then
-    error "SCP transfer failed"
+info "Source: $ZIP_PATH"
+info "Destination: $scp_dest/"
+
+# Verify directory exists one more time before SCP
+info "Verifying destination directory exists before transfer..."
+if ! ssh "$SCP_USER_HOST" "test -d $ESCAPED_PATH" 2>/dev/null; then
+    error "Destination directory does not exist: $SCP_PATH"
+    error "Directory creation may have failed. Please check SSH connection and permissions."
+    exit 1
+fi
+
+# Transfer with error capture
+info "Starting SCP transfer..."
+SCP_OUTPUT=$(scp "$ZIP_PATH" "$scp_dest/" 2>&1)
+SCP_EXIT_CODE=$?
+
+if [ $SCP_EXIT_CODE -ne 0 ]; then
+    error "SCP transfer failed with exit code: $SCP_EXIT_CODE"
+    if [ -n "$SCP_OUTPUT" ]; then
+        error "SCP error output:"
+        echo "$SCP_OUTPUT" | while IFS= read -r line; do
+            error "  $line"
+        done
+    fi
+    error ""
+    error "Troubleshooting:"
+    error "  1. Verify SSH connection works: ssh $SCP_USER_HOST"
+    error "  2. Verify directory exists: ssh $SCP_USER_HOST 'ls -ld $ESCAPED_PATH'"
+    error "  3. Verify write permissions: ssh $SCP_USER_HOST 'test -w $ESCAPED_PATH && echo writable || echo not writable'"
+    error "  4. Check disk space: ssh $SCP_USER_HOST 'df -h $(dirname $ESCAPED_PATH)'"
     exit 1
 fi
 
