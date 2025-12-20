@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict CdJcTO6cex69zWjMJ7yMqfhyn0YndBiTaXxezHwLH7PlYN4HM7E4njN3iFh6aJw
+\restrict y9BtUgMZVUnfdAIhZ5hmsSoNWah9dWG77faLRlaFPSMqy60t5KZwcJMCA0ZV0ue
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -82,13 +82,6 @@ CREATE TYPE public.agent_role AS ENUM (
     'scenario-image-templates',
     'scenario-objectives-templates',
     'scenario-image-objectives-templates',
-    'outline-questions',
-    'outline-image',
-    'outline-templates',
-    'outline-questions-image',
-    'outline-questions-templates',
-    'outline-image-templates',
-    'outline-questions-image-templates',
     'member',
     'rubric'
 );
@@ -1019,18 +1012,6 @@ CREATE TABLE public.fields (
     description text NOT NULL,
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT fields_id_v7_not_null NOT NULL
-);
-
-
---
--- Name: generation_runs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.generation_runs (
-    generation_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    run_id uuid
 );
 
 
@@ -2613,6 +2594,14 @@ ALTER TABLE ONLY public.auth
 
 
 --
+-- Name: chats chats_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.chats
+    ADD CONSTRAINT chats_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: cohorts cohorts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2877,6 +2866,14 @@ ALTER TABLE ONLY public.rubrics
 
 
 --
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: scenario_question_times scenario_question_times_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3039,13 +3036,6 @@ CREATE INDEX activity_error_idx ON public.activity USING btree (error);
 
 
 --
--- Name: activity_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX activity_id_v7_uk ON public.activity USING btree (id);
-
-
---
 -- Name: activity_profile_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3172,13 +3162,6 @@ CREATE INDEX agent_voices_model_voice_id_v7_idx ON public.agent_voices USING btr
 
 
 --
--- Name: agents_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX agents_id_v7_uk ON public.agents USING btree (id);
-
-
---
 -- Name: agents_model_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3256,13 +3239,6 @@ CREATE INDEX auth_active_idx ON public.auth USING btree (active);
 
 
 --
--- Name: auth_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX auth_id_v7_uk ON public.auth USING btree (id);
-
-
---
 -- Name: auth_items_auth_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3274,13 +3250,6 @@ CREATE INDEX auth_items_auth_id_v7_idx ON public.auth_items USING btree (auth_id
 --
 
 CREATE INDEX auth_items_encrypted_idx ON public.auth_items USING btree (encrypted);
-
-
---
--- Name: auth_items_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX auth_items_id_v7_uk ON public.auth_items USING btree (id);
 
 
 --
@@ -3309,13 +3278,6 @@ CREATE INDEX chat_groups_chat_id_v7_idx ON public.chat_groups USING btree (chat_
 --
 
 CREATE INDEX chat_groups_group_id_v7_idx ON public.chat_groups USING btree (group_id);
-
-
---
--- Name: chats_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX chats_id_v7_uk ON public.chats USING btree (id);
 
 
 --
@@ -3368,20 +3330,6 @@ CREATE INDEX cohort_simulations_simulation_id_v7_idx ON public.cohort_simulation
 
 
 --
--- Name: cohorts_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX cohorts_id_v7_uk ON public.cohorts USING btree (id);
-
-
---
--- Name: debug_info_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX debug_info_id_v7_uk ON public.debug_info USING btree (id);
-
-
---
 -- Name: debug_info_run_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3407,13 +3355,6 @@ CREATE INDEX department_settings_department_id_v7_idx ON public.department_setti
 --
 
 CREATE INDEX department_settings_settings_id_v7_idx ON public.department_settings USING btree (settings_id);
-
-
---
--- Name: departments_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX departments_id_v7_uk ON public.departments USING btree (id);
 
 
 --
@@ -3515,13 +3456,6 @@ CREATE INDEX documents_document_agent_id_v7_idx ON public.documents USING btree 
 
 
 --
--- Name: documents_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX documents_id_v7_uk ON public.documents USING btree (id);
-
-
---
 -- Name: eval_attempts_archived_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3547,13 +3481,6 @@ CREATE INDEX eval_attempts_conversation_mode_idx ON public.eval_attempts USING b
 --
 
 CREATE INDEX eval_attempts_eval_id_v7_idx ON public.eval_attempts USING btree (eval_id);
-
-
---
--- Name: eval_attempts_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX eval_attempts_id_v7_uk ON public.eval_attempts USING btree (id);
 
 
 --
@@ -3599,13 +3526,6 @@ CREATE INDEX evals_eval_agent_id_v7_idx ON public.evals USING btree (eval_agent_
 
 
 --
--- Name: evals_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX evals_id_v7_uk ON public.evals USING btree (id);
-
-
---
 -- Name: evals_rubric_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3620,24 +3540,10 @@ CREATE INDEX examples_created_at_idx ON public.examples USING btree (created_at)
 
 
 --
--- Name: examples_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX examples_id_v7_uk ON public.examples USING btree (id);
-
-
---
 -- Name: feedback_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX feedback_created_at_idx ON public.feedback USING btree (created_at);
-
-
---
--- Name: feedback_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX feedback_id_v7_uk ON public.feedback USING btree (id);
 
 
 --
@@ -3666,13 +3572,6 @@ CREATE INDEX feedback_type_idx ON public.feedback USING btree (type);
 --
 
 CREATE INDEX feedbacks_grade_id_v7_idx ON public.feedbacks USING btree (grade_id);
-
-
---
--- Name: feedbacks_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX feedbacks_id_v7_uk ON public.feedbacks USING btree (id);
 
 
 --
@@ -3711,27 +3610,6 @@ CREATE INDEX field_departments_field_id_v7_idx ON public.field_departments USING
 
 
 --
--- Name: fields_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX fields_id_v7_uk ON public.fields USING btree (id);
-
-
---
--- Name: generation_runs_generation_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX generation_runs_generation_id_idx ON public.generation_runs USING btree (generation_id);
-
-
---
--- Name: generation_runs_run_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX generation_runs_run_id_v7_idx ON public.generation_runs USING btree (run_id);
-
-
---
 -- Name: grade_groups_chat_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3743,13 +3621,6 @@ CREATE INDEX grade_groups_chat_id_v7_idx ON public.grade_groups USING btree (cha
 --
 
 CREATE INDEX grade_groups_group_id_v7_idx ON public.grade_groups USING btree (group_id);
-
-
---
--- Name: grades_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX grades_id_v7_uk ON public.grades USING btree (id);
 
 
 --
@@ -3785,13 +3656,6 @@ CREATE INDEX group_runs_run_id_v7_idx ON public.group_runs USING btree (run_id);
 --
 
 CREATE INDEX groups_created_at_idx ON public.groups USING btree (created_at);
-
-
---
--- Name: groups_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX groups_id_v7_uk ON public.groups USING btree (id);
 
 
 --
@@ -3865,13 +3729,6 @@ CREATE INDEX images_created_at_idx ON public.images USING btree (created_at);
 
 
 --
--- Name: images_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX images_id_v7_uk ON public.images USING btree (id);
-
-
---
 -- Name: images_name_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3883,13 +3740,6 @@ CREATE INDEX images_name_idx ON public.images USING btree (name);
 --
 
 CREATE INDEX keys_active_idx ON public.keys USING btree (active);
-
-
---
--- Name: keys_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX keys_id_v7_uk ON public.keys USING btree (id);
 
 
 --
@@ -3939,13 +3789,6 @@ CREATE INDEX message_feedback_replace_message_feedback_id_v7_idx ON public.messa
 --
 
 CREATE INDEX message_feedbacks_grade_id_v7_idx ON public.message_feedbacks USING btree (grade_id);
-
-
---
--- Name: message_feedbacks_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX message_feedbacks_id_v7_uk ON public.message_feedbacks USING btree (id);
 
 
 --
@@ -4002,13 +3845,6 @@ CREATE INDEX message_tree_child_id_v7_idx ON public.message_tree USING btree (ch
 --
 
 CREATE INDEX message_tree_parent_id_v7_idx ON public.message_tree USING btree (parent_id);
-
-
---
--- Name: messages_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX messages_id_v7_uk ON public.messages USING btree (id);
 
 
 --
@@ -4131,13 +3967,6 @@ CREATE INDEX model_reasoning_levels_active_idx ON public.model_reasoning_levels 
 
 
 --
--- Name: model_reasoning_levels_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX model_reasoning_levels_id_v7_uk ON public.model_reasoning_levels USING btree (id);
-
-
---
 -- Name: model_reasoning_levels_model_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4166,13 +3995,6 @@ CREATE INDEX model_temperature_levels_active_idx ON public.model_temperature_lev
 
 
 --
--- Name: model_temperature_levels_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX model_temperature_levels_id_v7_uk ON public.model_temperature_levels USING btree (id);
-
-
---
 -- Name: model_temperature_levels_model_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4194,13 +4016,6 @@ CREATE INDEX model_voices_active_idx ON public.model_voices USING btree (active)
 
 
 --
--- Name: model_voices_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX model_voices_id_v7_uk ON public.model_voices USING btree (id);
-
-
---
 -- Name: model_voices_model_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4212,13 +4027,6 @@ CREATE INDEX model_voices_model_id_v7_idx ON public.model_voices USING btree (mo
 --
 
 CREATE INDEX model_voices_voice_idx ON public.model_voices USING btree (voice);
-
-
---
--- Name: models_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX models_id_v7_uk ON public.models USING btree (id);
 
 
 --
@@ -4250,24 +4058,10 @@ CREATE INDEX objectives_created_at_idx ON public.objectives USING btree (created
 
 
 --
--- Name: objectives_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX objectives_id_v7_uk ON public.objectives USING btree (id);
-
-
---
 -- Name: options_active_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX options_active_idx ON public.options USING btree (active);
-
-
---
--- Name: options_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX options_id_v7_uk ON public.options USING btree (id);
 
 
 --
@@ -4296,13 +4090,6 @@ CREATE INDEX parameter_fields_field_id_v7_idx ON public.parameter_fields USING b
 --
 
 CREATE INDEX parameter_fields_parameter_id_v7_idx ON public.parameter_fields USING btree (parameter_id);
-
-
---
--- Name: parameters_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX parameters_id_v7_uk ON public.parameters USING btree (id);
 
 
 --
@@ -4355,13 +4142,6 @@ CREATE INDEX persona_fields_persona_id_v7_idx ON public.persona_fields USING btr
 
 
 --
--- Name: personas_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX personas_id_v7_uk ON public.personas USING btree (id);
-
-
---
 -- Name: problem_statement_runs_problem_statement_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4383,13 +4163,6 @@ CREATE INDEX problem_statements_created_at_idx ON public.problem_statements USIN
 
 
 --
--- Name: problem_statements_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX problem_statements_id_v7_uk ON public.problem_statements USING btree (id);
-
-
---
 -- Name: problem_statements_name_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4401,13 +4174,6 @@ CREATE INDEX problem_statements_name_idx ON public.problem_statements USING btre
 --
 
 CREATE INDEX profile_activity_created_at_idx ON public.profile_activity USING btree (created_at);
-
-
---
--- Name: profile_activity_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX profile_activity_id_v7_uk ON public.profile_activity USING btree (id);
 
 
 --
@@ -4460,13 +4226,6 @@ CREATE INDEX profile_request_limits_profile_id_v7_idx ON public.profile_request_
 
 
 --
--- Name: profiles_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX profiles_id_v7_uk ON public.profiles USING btree (id);
-
-
---
 -- Name: prompt_departments_active_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4495,13 +4254,6 @@ CREATE INDEX prompts_created_at_idx ON public.prompts USING btree (created_at);
 
 
 --
--- Name: prompts_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX prompts_id_v7_uk ON public.prompts USING btree (id);
-
-
---
 -- Name: provider_endpoints_provider_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4513,13 +4265,6 @@ CREATE INDEX provider_endpoints_provider_id_v7_idx ON public.provider_endpoints 
 --
 
 CREATE INDEX providers_active_idx ON public.providers USING btree (active);
-
-
---
--- Name: providers_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX providers_id_v7_uk ON public.providers USING btree (id);
 
 
 --
@@ -4565,20 +4310,6 @@ CREATE INDEX questions_active_idx ON public.questions USING btree (active);
 
 
 --
--- Name: questions_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX questions_id_v7_uk ON public.questions USING btree (id);
-
-
---
--- Name: quiz_responses_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX quiz_responses_id_v7_uk ON public.quiz_responses USING btree (id);
-
-
---
 -- Name: quiz_responses_option_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4597,13 +4328,6 @@ CREATE INDEX quiz_responses_question_id_v7_idx ON public.quiz_responses USING bt
 --
 
 CREATE INDEX quiz_responses_quiz_id_v7_idx ON public.quiz_responses USING btree (quiz_id);
-
-
---
--- Name: quizzes_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX quizzes_id_v7_uk ON public.quizzes USING btree (id);
 
 
 --
@@ -4639,13 +4363,6 @@ CREATE INDEX rubric_groups_group_id_v7_idx ON public.rubric_groups USING btree (
 --
 
 CREATE INDEX rubric_groups_rubric_id_v7_idx ON public.rubric_groups USING btree (rubric_id);
-
-
---
--- Name: rubrics_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX rubrics_id_v7_uk ON public.rubrics USING btree (id);
 
 
 --
@@ -4723,13 +4440,6 @@ CREATE INDEX run_profiles_run_id_v7_idx ON public.run_profiles USING btree (run_
 --
 
 CREATE INDEX runs_agent_id_v7_idx ON public.runs USING btree (agent_id);
-
-
---
--- Name: runs_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX runs_id_v7_uk ON public.runs USING btree (id);
 
 
 --
@@ -4999,13 +4709,6 @@ CREATE INDEX scenario_videos_video_id_v7_idx ON public.scenario_videos USING btr
 
 
 --
--- Name: scenarios_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX scenarios_id_v7_uk ON public.scenarios USING btree (id);
-
-
---
 -- Name: scenarios_image_agent_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5237,13 +4940,6 @@ CREATE INDEX settings_default_guest_settings_id_v7_idx ON public.settings_defaul
 
 
 --
--- Name: settings_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX settings_id_v7_uk ON public.settings USING btree (id);
-
-
---
 -- Name: simulation_attempts_archived_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5255,13 +4951,6 @@ CREATE INDEX simulation_attempts_archived_idx ON public.simulation_attempts USIN
 --
 
 CREATE INDEX simulation_attempts_created_at_idx ON public.simulation_attempts USING btree (created_at);
-
-
---
--- Name: simulation_attempts_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX simulation_attempts_id_v7_uk ON public.simulation_attempts USING btree (id);
 
 
 --
@@ -5335,13 +5024,6 @@ CREATE INDEX simulations_hint_agent_id_v7_idx ON public.simulations USING btree 
 
 
 --
--- Name: simulations_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX simulations_id_v7_uk ON public.simulations USING btree (id);
-
-
---
 -- Name: simulations_simulation_text_agent_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5356,24 +5038,10 @@ CREATE INDEX simulations_simulation_voice_agent_id_v7_idx ON public.simulations 
 
 
 --
--- Name: standard_groups_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX standard_groups_id_v7_uk ON public.standard_groups USING btree (id);
-
-
---
 -- Name: standard_groups_rubric_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX standard_groups_rubric_id_v7_idx ON public.standard_groups USING btree (rubric_id);
-
-
---
--- Name: standards_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX standards_id_v7_uk ON public.standards USING btree (id);
 
 
 --
@@ -5405,13 +5073,6 @@ CREATE INDEX templates_created_at_idx ON public.templates USING btree (created_a
 
 
 --
--- Name: templates_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX templates_id_v7_uk ON public.templates USING btree (id);
-
-
---
 -- Name: templates_name_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5437,13 +5098,6 @@ CREATE INDEX test_runs_run_id_v7_idx ON public.test_runs USING btree (run_id);
 --
 
 CREATE INDEX test_runs_test_id_v7_idx ON public.test_runs USING btree (test_id);
-
-
---
--- Name: tests_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX tests_id_v7_uk ON public.tests USING btree (id);
 
 
 --
@@ -5496,13 +5150,6 @@ CREATE INDEX tool_calls_created_at_idx ON public.tool_calls USING btree (created
 
 
 --
--- Name: tool_calls_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX tool_calls_id_v7_uk ON public.tool_calls USING btree (id);
-
-
---
 -- Name: tool_calls_tool_name_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5514,13 +5161,6 @@ CREATE INDEX tool_calls_tool_name_idx ON public.tool_calls USING btree (tool_nam
 --
 
 CREATE INDEX units_active_idx ON public.units USING btree (active);
-
-
---
--- Name: units_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX units_id_v7_uk ON public.units USING btree (id);
 
 
 --
@@ -5559,13 +5199,6 @@ CREATE INDEX uploads_file_path_idx ON public.uploads USING btree (file_path);
 
 
 --
--- Name: uploads_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX uploads_id_v7_uk ON public.uploads USING btree (id);
-
-
---
 -- Name: video_uploads_upload_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5577,13 +5210,6 @@ CREATE INDEX video_uploads_upload_id_v7_idx ON public.video_uploads USING btree 
 --
 
 CREATE INDEX video_uploads_video_id_v7_idx ON public.video_uploads USING btree (video_id);
-
-
---
--- Name: videos_id_v7_uk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX videos_id_v7_uk ON public.videos USING btree (id);
 
 
 --
@@ -6280,14 +5906,6 @@ ALTER TABLE ONLY public.field_departments
 
 ALTER TABLE ONLY public.field_departments
     ADD CONSTRAINT field_departments_field_id_fkey FOREIGN KEY (field_id) REFERENCES public.fields(id);
-
-
---
--- Name: generation_runs generation_runs_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.generation_runs
-    ADD CONSTRAINT generation_runs_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(id);
 
 
 --
@@ -7566,5 +7184,5 @@ ALTER TABLE ONLY public.video_uploads
 -- PostgreSQL database dump complete
 --
 
-\unrestrict CdJcTO6cex69zWjMJ7yMqfhyn0YndBiTaXxezHwLH7PlYN4HM7E4njN3iFh6aJw
+\unrestrict y9BtUgMZVUnfdAIhZ5hmsSoNWah9dWG77faLRlaFPSMqy60t5KZwcJMCA0ZV0ue
 
