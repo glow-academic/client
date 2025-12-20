@@ -375,7 +375,8 @@ async def init_db_pool() -> None:
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
-        from testcontainers.postgres import PostgresContainer  # type: ignore[import]
+        from testcontainers.postgres import \
+            PostgresContainer  # type: ignore[import]
 
         _test_container = PostgresContainer("postgres:18")
         _test_container.start()
@@ -512,31 +513,28 @@ async def transaction(
 
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
-from app.socket.v3.images.complete import image_generation_complete  # noqa: F401
-
+from app.socket.v3.images.complete import \
+    image_generation_complete  # noqa: F401
 # Import image modules to register internal_sio handlers
 from app.socket.v3.images.generate import generate_image  # noqa: F401
-
 # Import log module to register internal_sio handler
 from app.socket.v3.log import log_run  # noqa: F401
-
 # Import quiz handlers
 # Note: Quiz events removed - questions now handled through scenarios
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.scenarios.tools.document import scenario_tool_document  # noqa: F401
-from app.socket.v3.scenarios.tools.image import scenario_tool_image  # noqa: F401
-from app.socket.v3.scenarios.tools.objectives import (
-    scenario_tool_objectives,  # noqa: F401
-)
-from app.socket.v3.scenarios.tools.questions import (
-    scenario_tool_questions,  # noqa: F401
-)
-from app.socket.v3.scenarios.tools.statement import (
-    scenario_tool_problem_statement,  # noqa: F401
-)
-
+from app.socket.v3.scenarios.tools.document import \
+    scenario_tool_document  # noqa: F401
+from app.socket.v3.scenarios.tools.image import \
+    scenario_tool_image  # noqa: F401
+from app.socket.v3.scenarios.tools.objectives import \
+    scenario_tool_objectives  # noqa: F401
+from app.socket.v3.scenarios.tools.questions import \
+    scenario_tool_questions  # noqa: F401
+from app.socket.v3.scenarios.tools.statement import \
+    scenario_tool_problem_statement  # noqa: F401
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.scenarios.tools.video import scenario_tool_video  # noqa: F401
+from app.socket.v3.scenarios.tools.video import \
+    scenario_tool_video  # noqa: F401
 
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]
@@ -663,7 +661,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             logger.info("Database logger initialized")
 
             # Setup activity logger
-            from app.utils.activity.logger import setup_activity_logger  # noqa: E402
+            from app.utils.activity.logger import \
+                setup_activity_logger  # noqa: E402
 
             setup_activity_logger(pool)
             logger.info("Activity logger initialized")
@@ -716,6 +715,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 keycloak_admin_password = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin")
                 keycloak_realm = os.getenv("KEYCLOAK_REALM", "glow")
 
+                # For local dev, ensure master realm SSL requirement is set to NONE in database
+                # This must be done BEFORE attempting to connect via HTTP
+                origin_check = os.getenv("ORIGIN", "http://localhost:3000")
+                is_local_dev = "localhost" in origin_check.lower()
+                
+                if is_local_dev and pool:
+                    try:
+                        async with pool.acquire() as conn:
+                            # Update master realm SSL requirement directly in database
+                            await conn.execute(
+                                "UPDATE keycloak.realm SET ssl_required = 'NONE' WHERE name = 'master'"
+                            )
+                            logger.info("✅ Set master realm SSL requirement to NONE in database")
+                    except Exception as e:
+                        logger.warning(f"Could not update master realm SSL in database: {e}")
+
                 # Retry configuration
                 MAX_RETRIES = 10
                 INITIAL_RETRY_DELAY = 2.0  # seconds
@@ -738,16 +753,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                         return None
 
                     retry_delay = INITIAL_RETRY_DELAY
+                    
+                    # Check if we're in local dev mode
+                    origin_check = os.getenv("ORIGIN", "http://localhost:3000")
+                    is_local_dev = "localhost" in origin_check.lower()
 
                     for attempt in range(1, max_retries + 1):
                         try:
                             logger.info(
                                 f"Attempting to connect to Keycloak (attempt {attempt}/{max_retries})..."
                             )
+                            
                             # Disable SSL verification for non-production environments
-                            # Check if ORIGIN contains localhost (dev) vs real domain (prod)
-                            origin_check = os.getenv("ORIGIN", "http://localhost:3000")
-                            is_prod = "localhost" not in origin_check.lower()
+                            is_prod = not is_local_dev
                             verify_ssl = is_prod  # Only verify SSL in production
 
                             kc_admin = KeycloakAdmin(
@@ -760,6 +778,27 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                             # Test the connection by getting realms
                             kc_admin.get_realms()
                             logger.info("✅ Successfully connected to Keycloak")
+                            
+                            # Fix master realm SSL requirement for local development (fallback)
+                            # This must be done immediately after connecting, before any other operations
+                            try:
+                                if is_local_dev:
+                                    master_realm = kc_admin.get_realm("master")
+                                    current_ssl_required = master_realm.get("sslRequired", "EXTERNAL")
+                                    
+                                    if current_ssl_required != "NONE":
+                                        kc_admin.update_realm(
+                                            realm_name="master",
+                                            payload={"sslRequired": "NONE"},
+                                        )
+                                        logger.info(
+                                            f"✅ Disabled SSL requirement for master realm (was: {current_ssl_required})"
+                                        )
+                            except Exception as e:
+                                logger.warning(
+                                    f"Could not update master realm SSL setting: {e}. Continuing..."
+                                )
+                            
                             return kc_admin
                         except Exception as e:
                             if attempt < max_retries:
@@ -1116,7 +1155,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
                         # Sync all active identity providers from database
                         async with pool.acquire() as conn:
-                            from app.utils.auth.decrypt_api_key import decrypt_api_key
+                            from app.utils.auth.decrypt_api_key import \
+                                decrypt_api_key
 
                             providers_query = """
                                 SELECT id, slug, auth_type as provider_id, name 
@@ -1307,9 +1347,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Initialize metrics collector
         from app.utils.metrics.collector import (  # noqa: E402
-            initialize_metrics,
-            snapshot_metrics,
-        )
+            initialize_metrics, snapshot_metrics)
 
         if pool:
             await initialize_metrics(pool, redis_client)
