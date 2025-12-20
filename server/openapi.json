@@ -54772,6 +54772,17 @@
               }
             ],
             "title": "Runidx"
+          },
+          "depth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depth"
           }
         },
         "type": "object",

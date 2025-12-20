@@ -44,6 +44,7 @@ class MessageItem(BaseModel):
     updatedAt: str
     completed: bool
     runIdx: int | None = None
+    depth: int | None = None  # Depth from message_tree (0 = root, increases toward latest message)
 
 
 class RunMetadata(BaseModel):
@@ -222,6 +223,7 @@ async def get_pricing_run_detail(
                                 updatedAt=msg["updatedAt"],
                                 completed=msg["completed"],
                                 runIdx=msg.get("runIdx"),
+                                depth=msg.get("depth"),
                             )
                         )
 

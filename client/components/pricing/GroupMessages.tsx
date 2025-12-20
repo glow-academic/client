@@ -9,12 +9,17 @@
 
 import type { PricingGroupDetailOut } from "@/app/(main)/analytics/pricing/g/[groupId]/page";
 import Markdown from "@/components/common/chat/markdown/Markdown";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { components } from "@/lib/api/schema";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -281,127 +286,129 @@ export default function GroupMessages({ groupDetail }: GroupMessagesProps) {
 
         {/* Messages list */}
         <ScrollArea className="border rounded-lg h-[500px] min-h-0">
-          <div className="space-y-4 p-4">
-            {filteredMessages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-muted-foreground">
-                <MessageSquare className="h-12 w-12 mb-4 opacity-50" />
-                <p className="text-sm">No messages found for this run</p>
-              </div>
-            ) : (
-              filteredMessages.map((message: MessageItem) => {
-                const isUser = message.role.toLowerCase() === "user";
-                const RoleIcon = getRoleIcon(message.role);
-                const roleLabel = getRoleLabel(message.role);
+          <TooltipProvider>
+            <div className="space-y-4 p-4">
+              {filteredMessages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-muted-foreground">
+                  <MessageSquare className="h-12 w-12 mb-4 opacity-50" />
+                  <p className="text-sm">No messages found for this run</p>
+                </div>
+              ) : (
+                filteredMessages.map((message: MessageItem) => {
+                  const isUser = message.role.toLowerCase() === "user";
+                  const RoleIcon = getRoleIcon(message.role);
+                  const roleLabel = getRoleLabel(message.role);
 
-                // Check if this is the boundary between previous context and current run
-                // Find the original index in the unfiltered messages array
-                const originalIndex = currentRun.messages.findIndex(
-                  (m) => m.id === message.id
-                );
-                const isPreviousContextBoundary =
-                  currentRun.previousContextStartIndex !== null &&
-                  currentRun.previousContextStartIndex !== undefined &&
-                  originalIndex === currentRun.previousContextStartIndex &&
-                  showPreviousContext; // Only show boundary when previous context is visible
+                  // Check if this is the boundary between previous context and current run
+                  // Find the original index in the unfiltered messages array
+                  const originalIndex = currentRun.messages.findIndex(
+                    (m) => m.id === message.id
+                  );
+                  const isPreviousContextBoundary =
+                    currentRun.previousContextStartIndex !== null &&
+                    currentRun.previousContextStartIndex !== undefined &&
+                    originalIndex === currentRun.previousContextStartIndex &&
+                    showPreviousContext; // Only show boundary when previous context is visible
 
-                return (
-                  <div key={message.id}>
-                    {isPreviousContextBoundary && (
-                      <div className="relative my-4">
-                        <div className="absolute inset-0 flex items-center">
-                          <div className="w-full border-t border-dashed border-muted-foreground/30" />
-                        </div>
-                        <div className="relative flex justify-center text-xs">
-                          <span className="bg-card px-2 text-muted-foreground">
-                            Previous context
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    <div
-                      className={cn(
-                        "flex gap-3",
-                        isUser ? "justify-end" : "justify-start"
-                      )}
-                    >
-                      {!isUser && (
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
-                            <RoleIcon className="h-4 w-4" />
+                  return (
+                    <div key={message.id}>
+                      {isPreviousContextBoundary && (
+                        <div className="relative my-4">
+                          <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-dashed border-muted-foreground/30" />
+                          </div>
+                          <div className="relative flex justify-center text-xs">
+                            <span className="bg-card px-2 text-muted-foreground">
+                              Previous context
+                            </span>
                           </div>
                         </div>
                       )}
                       <div
                         className={cn(
-                          "flex flex-col gap-1 max-w-[80%]",
-                          isUser ? "items-end" : "items-start"
+                          "flex gap-3",
+                          isUser ? "justify-end" : "justify-start"
                         )}
                       >
+                        {!isUser && (
+                          <div className="flex-shrink-0">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
+                                  <RoleIcon className="h-4 w-4" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{roleLabel}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        )}
                         <div
                           className={cn(
-                            "rounded-lg p-3",
-                            isUser
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
+                            "flex flex-col gap-1 max-w-[80%]",
+                            isUser ? "items-end" : "items-start"
                           )}
                         >
-                          {message.contents && message.contents.length > 0 ? (
-                            <div className="space-y-2">
-                              {message.contents.map(
-                                (contentItem, contentIdx) => (
-                                  <div
-                                    key={contentIdx}
-                                    className="flex items-start gap-2"
-                                  >
-                                    {contentIdx > 0 && (
-                                      <div className="w-0.5 h-full bg-border mt-1.5 min-h-[1rem]" />
-                                    )}
-                                    <div className="flex-1">
-                                      <Markdown>{contentItem.content}</Markdown>
+                          <div
+                            className={cn(
+                              "rounded-lg p-3",
+                              isUser
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                            )}
+                          >
+                            {message.contents && message.contents.length > 0 ? (
+                              <div className="space-y-2">
+                                {message.contents.map(
+                                  (contentItem, contentIdx) => (
+                                    <div
+                                      key={contentIdx}
+                                      className="flex items-start gap-2"
+                                    >
+                                      {contentIdx > 0 && (
+                                        <div className="w-0.5 h-full bg-border mt-1.5 min-h-[1rem]" />
+                                      )}
+                                      <div className="flex-1">
+                                        <Markdown>
+                                          {contentItem.content}
+                                        </Markdown>
+                                      </div>
                                     </div>
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          ) : (
-                            // Fallback for backward compatibility
-                            <Markdown>
-                              {message.contents && message.contents.length > 0
-                                ? message.contents[0]?.content || ""
-                                : ""}
-                            </Markdown>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
-                          <Badge variant="outline" className="text-xs">
-                            {roleLabel}
-                          </Badge>
-                          <span>{formatDate(message.createdAt)}</span>
-                          {message.updatedAt !== message.createdAt && (
-                            <span className="text-muted-foreground/70">
-                              (updated {formatDate(message.updatedAt)})
-                            </span>
-                          )}
-                          {message.completed && (
-                            <Badge variant="secondary" className="text-xs">
-                              Completed
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      {isUser && (
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-                            <User className="h-4 w-4 text-primary-foreground" />
+                                  )
+                                )}
+                              </div>
+                            ) : (
+                              // Fallback for backward compatibility
+                              <Markdown>
+                                {message.contents && message.contents.length > 0
+                                  ? message.contents[0]?.content || ""
+                                  : ""}
+                              </Markdown>
+                            )}
                           </div>
                         </div>
-                      )}
+                        {isUser && (
+                          <div className="flex-shrink-0">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+                                  <User className="h-4 w-4 text-primary-foreground" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{roleLabel}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                  );
+                })
+              )}
+            </div>
+          </TooltipProvider>
         </ScrollArea>
       </div>
 

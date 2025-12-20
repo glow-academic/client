@@ -18786,6 +18786,8 @@ export interface components {
             completed: boolean;
             /** Runidx */
             runIdx?: number | null;
+            /** Depth */
+            depth?: number | null;
         };
         /**
          * DebugInfoItem
