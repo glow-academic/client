@@ -64,11 +64,12 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
 
-      # DB connection (uses existing database service, separate keycloak database)
+      # DB connection (uses existing database service, keycloak schema in same database)
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://database:5432/keycloak
+      KC_DB_URL: jdbc:postgresql://database:5432/${DB_NAME}?currentSchema=keycloak
       KC_DB_USERNAME: ${DB_USER}
       KC_DB_PASSWORD: ${DB_PASSWORD}
+      KC_DB_SCHEMA: keycloak
 
       # IMPORTANT: run behind nginx at ${APP_PREFIX}/auth
       KC_PROXY: edge

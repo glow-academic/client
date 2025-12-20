@@ -68,21 +68,37 @@ USER_CONN="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAM
 INIT_SQL=${INIT_SQL:-app/init.sql}
 
 # --- CHECK POSTGRESQL ------------------------------------------------
+# Prefer PostgreSQL 18 if available (required for uuidv7 support)
+if [[ -d "/opt/homebrew/opt/postgresql@18/bin" ]]; then
+  export PATH="/opt/homebrew/opt/postgresql@18/bin:$PATH"
+elif [[ -d "/usr/local/opt/postgresql@18/bin" ]]; then
+  export PATH="/usr/local/opt/postgresql@18/bin:$PATH"
+fi
+
 if ! command -v psql &>/dev/null; then
   echo "❌ PostgreSQL client not found!"
-  echo "Please install PostgreSQL first:"
-  echo "  macOS: brew install postgresql@15"
-  echo "  Ubuntu: sudo apt-get install postgresql postgresql-contrib"
-  echo "  CentOS: sudo yum install postgresql-server postgresql-contrib"
+  echo "Please install PostgreSQL 18 first:"
+  echo "  macOS: brew install postgresql@18"
+  echo "  Ubuntu: sudo apt-get install postgresql-18 postgresql-contrib-18"
+  echo "  CentOS: sudo yum install postgresql18-server postgresql18-contrib"
   exit 1
+fi
+
+# Verify PostgreSQL version is 18+
+PG_VERSION=$(psql --version | grep -oE '[0-9]+\.[0-9]+' | head -1 | cut -d. -f1)
+if [[ -z "$PG_VERSION" ]] || [[ "$PG_VERSION" -lt 18 ]]; then
+  echo "⚠️  Warning: PostgreSQL 18+ required for uuidv7() support"
+  echo "   Current version: $(psql --version)"
+  echo "   Please ensure PostgreSQL 18 is in PATH:"
+  echo "   export PATH=\"/opt/homebrew/opt/postgresql@18/bin:\$PATH\""
 fi
 
 # Ensure server is running ---------------------------------------------
 if ! pg_isready -q; then
   echo "❌ PostgreSQL server is not running!"
   echo "Please start PostgreSQL first:"
-  echo "  macOS: brew services start postgresql@15"
-  echo "  Linux: sudo systemctl start postgresql"
+  echo "  macOS: brew services start postgresql@18"
+  echo "  Linux: sudo systemctl start postgresql-18"
   exit 1
 fi
 
@@ -282,6 +298,8 @@ setup_database() {
 # Function to restore from backup
 restore_from_backup() {
   local backup_file="$1"
+  local temp_error_file=$(mktemp)
+  
   echo "🔄 Restoring from backup: $(basename "$backup_file")"
   
   # Drop and recreate database using admin connection (no init.sql)
@@ -295,26 +313,73 @@ restore_from_backup() {
     # Check if it's a custom format (pg_dump -F c) or plain SQL (pg_dump | gzip)
     # First try custom format (pg_restore)
     if file "$backup_file" | grep -q "PostgreSQL custom database dump"; then
-      # It's a custom format dump - use pg_restore
-      if pg_restore -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -F c "$backup_file" > /dev/null 2>&1; then
+      # It's a custom format dump - use pg_restore with --no-owner to avoid permission issues
+      if pg_restore -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -F c --no-owner "$backup_file" > /dev/null 2>"$temp_error_file"; then
         echo "✅ Backup restored successfully (custom format)"
+        rm -f "$temp_error_file"
       else
-        echo "⚠️  Backup restoration had some conflicts, but data may still be restored"
-        echo "💡 This is normal when schema has changed since backup was created"
+        # Check if data was actually restored despite errors
+        local table_count=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc \
+          "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'" 2>/dev/null || echo "0")
+        
+        if [[ "$table_count" -gt 100 ]]; then
+          # Data was restored, check error type
+          local error_count=$(grep -c "ERROR" "$temp_error_file" 2>/dev/null || echo "0")
+          if [[ "$error_count" -gt 0 ]]; then
+            echo "⚠️  Backup restored with $error_count constraint warnings (non-fatal)"
+            echo "💡 This is normal - constraints may already exist in the dump"
+          else
+            echo "✅ Backup restored successfully (with warnings)"
+          fi
+        else
+          # Real failure - show errors
+          echo "❌ Backup restoration failed"
+          echo "Errors:"
+          head -20 "$temp_error_file"
+          rm -f "$temp_error_file"
+          return 1
+        fi
+        rm -f "$temp_error_file"
       fi
-    elif gunzip -c "$backup_file" | psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; then
+    elif gunzip -c "$backup_file" 2>"$temp_error_file" | psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; then
       echo "✅ Backup restored successfully (plain SQL)"
+      rm -f "$temp_error_file"
     else
-      echo "⚠️  Backup restoration had some conflicts, but data may still be restored"
-      echo "💡 This is normal when schema has changed since backup was created"
+      # Check if data was actually restored
+      local table_count=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc \
+        "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'" 2>/dev/null || echo "0")
+      
+      if [[ "$table_count" -gt 100 ]]; then
+        echo "✅ Backup restored successfully (with warnings)"
+      else
+        echo "❌ Backup restoration failed"
+        echo "Errors:"
+        cat "$temp_error_file" | head -20
+        rm -f "$temp_error_file"
+        return 1
+      fi
+      rm -f "$temp_error_file"
     fi
   else
     # Fallback for non-compressed backups
-  if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$backup_file" > /dev/null 2>&1; then
-    echo "✅ Backup restored successfully"
-  else
-    echo "⚠️  Backup restoration had some conflicts, but data may still be restored"
-    echo "💡 This is normal when schema has changed since backup was created"
+    if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$backup_file" > /dev/null 2>"$temp_error_file"; then
+      echo "✅ Backup restored successfully"
+      rm -f "$temp_error_file"
+    else
+      # Check if data was actually restored
+      local table_count=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc \
+        "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'" 2>/dev/null || echo "0")
+      
+      if [[ "$table_count" -gt 100 ]]; then
+        echo "✅ Backup restored successfully (with warnings)"
+      else
+        echo "❌ Backup restoration failed"
+        echo "Errors:"
+        cat "$temp_error_file" | head -20
+        rm -f "$temp_error_file"
+        return 1
+      fi
+      rm -f "$temp_error_file"
     fi
   fi
   
@@ -439,8 +504,19 @@ if [[ "$MIGRATE_DB" == true ]]; then
       # Create backup after all migrations succeed (no migration number prefix for migrate-all)
       create_backup
     else
-      # Get the most recent migration file (sorted by modification time, newest first)
-      migration_file=$(ls -t migrate/*.sql 2>/dev/null | head -1)
+      # Get the most recent migration file (sorted by migration number, highest first)
+      # Extract migration numbers, sort numerically, get highest, then find the file
+      migration_file=$(ls migrate/*.sql 2>/dev/null | while read f; do
+        num=$(extract_migration_number "$f")
+        if [[ -n "$num" ]]; then
+          printf "%05d %s\n" "$num" "$f"
+        fi
+      done | sort -rn | head -1 | awk '{print $2}')
+      
+      # Fallback to modification time if no numbered migrations found
+      if [[ -z "$migration_file" ]]; then
+        migration_file=$(ls -t migrate/*.sql 2>/dev/null | head -1)
+      fi
       
       if [[ -n "$migration_file" ]]; then
         migration_num=$(extract_migration_number "$migration_file")

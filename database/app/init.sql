@@ -28,6 +28,9 @@
 
 \i app/system/init.sql
 
+-- Keycloak schema (independent, can be created early)
+\i app/keycloak/init.sql
+
 \i app/uploads/init.sql
 
 -- 2. Personas and Agents

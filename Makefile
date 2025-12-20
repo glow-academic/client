@@ -223,9 +223,10 @@ run: check-venv
 			-e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
 			-e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
 			-e KC_DB=postgres \
-			-e KC_DB_URL=jdbc:postgresql://host.docker.internal:5432/keycloak \
+			-e KC_DB_URL=jdbc:postgresql://host.docker.internal:5432/mydb?currentSchema=keycloak \
 			-e KC_DB_USERNAME=$$DB_USER \
 			-e KC_DB_PASSWORD=$$DB_PASSWORD \
+			-e KC_DB_SCHEMA=keycloak \
 			-e KC_PROXY=none \
 			-e KC_HTTP_ENABLED=true \
 			-e KC_HTTP_RELATIVE_PATH=$${APP_PREFIX}/auth \
