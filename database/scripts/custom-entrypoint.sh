@@ -15,7 +15,7 @@ DB_USER=${POSTGRES_USER:-myuser}
 DB_PASSWORD=${POSTGRES_PASSWORD:-mypassword}
 DB_NAME=${POSTGRES_DB:-mydb}
 HISTORY_DIR=${HISTORY_DIR:-/database/history}
-DB_OPERATION=${DB_OPERATION:-RESTORE}
+DB_OPERATION=${DB_OPERATION:-}
 
 # --- LOGGING FUNCTIONS -----------------------------------------------
 log_info() {
@@ -84,15 +84,12 @@ trap cleanup SIGTERM SIGINT SIGQUIT
 log_info "🐳 Starting Glow Database (Docker)"
 log_info "DB_USER: $DB_USER"
 log_info "DB_NAME: $DB_NAME"
-log_info "DB_OPERATION: ${DB_OPERATION:-RESTORE}"
+log_info "DB_OPERATION: ${DB_OPERATION:-<unset>}"
 
 # Handle DB_OPERATION modes
-if [ "$DB_OPERATION" = "CLEAN" ]; then
-  log_warning "🧹 DB_OPERATION=CLEAN - Cleaning database..."
-  rm -rf /var/lib/postgresql/data/*
-  log_success "Database data directory cleaned."
-elif [ "$DB_OPERATION" = "" ]; then
-  log_info "⏭️  DB_OPERATION is empty - Skipping initialization, using existing database"
+# Empty string or unset means skip initialization, continue with existing database
+if [ "$DB_OPERATION" = "" ]; then
+  log_info "⏭️  DB_OPERATION is empty/unset - Skipping initialization, using existing database"
   # Skip all initialization setup and go straight to starting PostgreSQL
   # We'll handle this after the initialization directory setup
 fi
@@ -104,25 +101,6 @@ if [ "$DB_OPERATION" != "" ]; then
   
   # Create the initialization directory
   mkdir -p /docker-entrypoint-initdb.d
-  
-  # --- GENERATE ALL CS SEED DATA --------------------------------------
-  # Only generate seed data when DB_OPERATION=CLEAN (not during RESTORE)
-  if [ "$DB_OPERATION" = "CLEAN" ]; then
-    log_info "🌱 Generating all CS seed data..."
-    if [ -f "/docker-entrypoint-initdb.d/seed/init.sh" ]; then
-      cd /docker-entrypoint-initdb.d/seed
-      if ./init.sh; then
-        log_success "✅ All CS seed data generated successfully"
-      else
-        log_warning "⚠️  CS seed generation had issues, but continuing..."
-      fi
-      cd - > /dev/null
-    else
-      log_warning "⚠️  CS seed initialization script not found, using existing SQL"
-    fi
-  else
-    log_info "⏭️  Skipping seed data generation (DB_OPERATION=$DB_OPERATION)"
-  fi
   
   # Create the main initialization script with extensions
   cat > /docker-entrypoint-initdb.d/00-glow-init.sql << 'EOF'
@@ -142,45 +120,35 @@ EOF
 fi
 
 # Handle DB_OPERATION modes for initialization
-if [ "$DB_OPERATION" = "CLEAN" ]; then
-  log_info "🧹 DB_OPERATION=CLEAN - Starting with fresh database (skipping backup restoration)"
-  
-  # Copy the main initialization script for fresh database
-  log_info "📋 Setting up main database schema..."
-  if [ -f "/docker-entrypoint-initdb.d/app/init.sql" ]; then
-    # Transform all relative paths to absolute paths for Docker context
-    # This handles both top-level includes and nested includes within subdirectories
-    log_info "🔄 Generating Docker-specific init.sql with absolute paths..."
-    
-    # First transform top-level app/init.sql
-    sed -e 's|\\i app/|\\i /docker-entrypoint-initdb.d/app/|g' \
-        -e 's|\\i seed/|\\i /docker-entrypoint-initdb.d/seed/|g' \
-      /docker-entrypoint-initdb.d/app/init.sql > /docker-entrypoint-initdb.d/10-main-init.sql
-    
-    # Then transform all nested SQL files that contain \i directives
-    find /docker-entrypoint-initdb.d/app -name "*.sql" -type f | while read -r sqlfile; do
-      # Skip if already processed
-      if [ "$sqlfile" = "/docker-entrypoint-initdb.d/app/init.sql" ]; then
-        continue
-      fi
-      
-      # Transform paths in-place for nested files
-      sed -i.bak \
-        -e 's|\\i app/|\\i /docker-entrypoint-initdb.d/app/|g' \
-        -e 's|\\i seed/|\\i /docker-entrypoint-initdb.d/seed/|g' \
-        "$sqlfile"
-      rm -f "${sqlfile}.bak"
-    done
-    
-    log_success "✅ Docker-specific initialization script prepared"
-  else
-    log_warning "⚠️  Main init.sql not found"
-  fi
-elif [ "$DB_OPERATION" = "" ]; then
-  log_info "⏭️  DB_OPERATION is empty - Skipping all initialization scripts"
+if [ "$DB_OPERATION" = "" ]; then
+  log_info "⏭️  DB_OPERATION is empty/unset - Skipping all initialization scripts"
   # Don't create any initialization scripts, just use existing database
-else
-  # DB_OPERATION=RESTORE or unset (defaults to RESTORE)
+elif [[ "$DB_OPERATION" =~ ^seed_.*\.sql$ ]]; then
+  # DB_OPERATION is a seed filename (e.g., seed_20250115_143022.sql)
+  SEED_FILE="/database/seeds/$DB_OPERATION"
+  log_info "🌱 DB_OPERATION=$DB_OPERATION - Loading seed file..."
+  
+  # Validate seed file exists
+  if [ ! -f "$SEED_FILE" ]; then
+    log_error "❌ Seed file not found: $SEED_FILE"
+    log_error "Available seed files in /database/seeds/:"
+    ls -la /database/seeds/ 2>/dev/null || log_error "  (seeds directory is empty or doesn't exist)"
+    exit 1
+  fi
+  
+  log_warning "🧹 Cleaning database before loading seed file..."
+  rm -rf /var/lib/postgresql/data/*
+  log_success "Database data directory cleaned."
+  
+  # Copy seed file to initialization directory
+  log_info "📋 Copying seed file to initialization directory..."
+  cp "$SEED_FILE" /docker-entrypoint-initdb.d/20-load-seed.sql
+  chmod 644 /docker-entrypoint-initdb.d/20-load-seed.sql
+  chown postgres:postgres /docker-entrypoint-initdb.d/20-load-seed.sql
+  
+  log_success "✅ Seed file prepared for initialization: $DB_OPERATION"
+elif [ "$DB_OPERATION" = "RESTORE" ]; then
+  # DB_OPERATION=RESTORE (explicitly set)
   log_info "🔄 DB_OPERATION=RESTORE - Looking for backup files..."
   
   # Look for restore_*.sql.gz files in history volume
@@ -261,6 +229,14 @@ EOF
     log_error "Backup is required when DB_OPERATION=RESTORE. Please ensure restore_*.sql.gz files exist in the history volume."
     exit 1
   fi
+else
+  # Invalid DB_OPERATION value
+  log_error "❌ Invalid DB_OPERATION value: $DB_OPERATION"
+  log_error "Valid values are:"
+  log_error "  - RESTORE: Restore from latest backup"
+  log_error "  - \"\" (empty string) or unset: Skip initialization, use existing database"
+  log_error "  - seed_*.sql: Clean database and load specified seed file from seeds/ directory"
+  exit 1
 fi
 
 # --- FINALIZATION SCRIPT ---------------------------------------------

@@ -415,6 +415,29 @@ if ! ssh -o BatchMode=yes -o ConnectTimeout=5 "$SCP_USER_HOST" "echo 'Connection
     warning "Note: If using an SSH alias, make sure it's configured in ~/.ssh/config"
 fi
 
+# Create destination directory on remote machine if it doesn't exist
+info "Ensuring destination directory exists on remote machine..."
+info "Creating directory: $SCP_PATH on $SCP_USER_HOST"
+
+# Create directory with proper error handling
+# Escape the path properly for SSH command
+if ! ssh "$SCP_USER_HOST" "mkdir -p $(printf '%q' "$SCP_PATH")"; then
+    error "Failed to create destination directory on remote machine"
+    error "Path: $SCP_PATH"
+    error "Host: $SCP_USER_HOST"
+    error "Please ensure you have write permissions and the path is valid"
+    exit 1
+fi
+
+# Verify the directory was actually created
+if ! ssh "$SCP_USER_HOST" "test -d $(printf '%q' "$SCP_PATH")"; then
+    error "Directory creation verification failed - directory may not exist"
+    error "Path: $SCP_PATH"
+    exit 1
+fi
+
+success "Destination directory ready: $SCP_PATH"
+
 # Transfer via SCP
 info "Transferring archive via SCP..."
 if ! scp "$ZIP_PATH" "$scp_dest/"; then
@@ -430,8 +453,10 @@ info "Extracting archive on remote machine..."
 # Check if unzip is available on remote machine
 # Full rewrite: remove directories and root files that will be replaced
 # Handle permission errors gracefully (e.g., web/generated files created by docker-gen)
-EXTRACT_CMD="cd $SCP_PATH && \
-    if [ ! -d \"$SCP_PATH\" ]; then mkdir -p \"$SCP_PATH\"; fi && \
+# Escape the path for safe use in SSH command
+ESCAPED_PATH=$(printf '%q' "$SCP_PATH")
+EXTRACT_CMD="mkdir -p $ESCAPED_PATH && \
+    cd $ESCAPED_PATH && \
     if ! command -v unzip >/dev/null 2>&1; then \
         echo 'Error: unzip not found on remote machine'; \
         exit 1; \

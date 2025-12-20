@@ -19,10 +19,10 @@ services:
   # --------------------
   # Database Service
   # --------------------
-  # DB_OPERATION environment variable (optional, defaults to RESTORE):
-  #   - RESTORE (or unset): Restore from latest backup in history volume
-  #   - CLEAN: Clean database and start fresh from init.sql
-  #   - "" (empty string): Skip initialization, use existing database
+  # DB_OPERATION environment variable (optional, defaults to empty/unset):
+  #   - RESTORE: Restore from latest backup in history volume (must be explicitly set)
+  #   - "" (empty string) OR unset: Skip initialization, use existing database (default behavior)
+  #   - seed_*.sql: Clean database and load specified seed file from seeds/ directory
   database:
     build:
       context: ./database

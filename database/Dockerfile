@@ -27,18 +27,19 @@ VOLUME ["/var/lib/postgresql/data"]
 # • Every file ending in .sql, .sql.gz, or .sh placed inside
 #   /docker-entrypoint-initdb.d is executed *once* on first-time
 #   container start (not on restart). No extra entrypoint needed.
-COPY app/                           /docker-entrypoint-initdb.d/app/
-COPY seed/                          /docker-entrypoint-initdb.d/seed/
+# Copy seeds directory (creates /database/seeds/ automatically)
+# If seeds/ doesn't exist in build context, this will fail
+# Ensure seeds/ directory exists in database/ folder before building
+COPY seeds/ /database/seeds/
 COPY scripts/sql-helpers.sh         /docker-entrypoint-initdb.d/
 COPY scripts/custom-entrypoint.sh   /usr/local/bin/custom-entrypoint.sh
 
 # Make scripts executable in a single layer
 RUN chmod +x /usr/local/bin/custom-entrypoint.sh && \
     chmod +x /docker-entrypoint-initdb.d/sql-helpers.sh && \
-    find /docker-entrypoint-initdb.d/app -name "*.sh" -exec chmod +x {} \; && \
-    find /docker-entrypoint-initdb.d/seed -name "*.sh" -exec chmod +x {} \; && \
     chown -R postgres:postgres /docker-entrypoint-initdb.d/ && \
-    chown -R postgres:postgres /database/
+    chown -R postgres:postgres /database/ && \
+    chown -R postgres:postgres /database/seeds/
 
 # Set default environment variables for development
 # (These can be overridden at runtime via docker run -e or docker-compose)
