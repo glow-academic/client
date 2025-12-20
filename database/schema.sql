@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict y9BtUgMZVUnfdAIhZ5hmsSoNWah9dWG77faLRlaFPSMqy60t5KZwcJMCA0ZV0ue
+\restrict npIRtTh3jpd5S72xkMG3lxls9HJf2WDyUZNczv50MOhMBv1bfbj6xmYNq8QiMaZ
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -62,8 +62,6 @@ CREATE TYPE public.agent_role AS ENUM (
     'classify',
     'grade',
     'hint',
-    'input_guardrail',
-    'output_guardrail',
     'scenario',
     'title',
     'image',
@@ -75,13 +73,6 @@ CREATE TYPE public.agent_role AS ENUM (
     'document',
     'grade-text',
     'grade-voice',
-    'scenario-image',
-    'scenario-objectives',
-    'scenario-templates',
-    'scenario-image-objectives',
-    'scenario-image-templates',
-    'scenario-objectives-templates',
-    'scenario-image-objectives-templates',
     'member',
     'rubric'
 );
@@ -188,16 +179,6 @@ CREATE TYPE public.reasoning_effort AS ENUM (
     'medium',
     'high',
     'none'
-);
-
-
---
--- Name: simulation_message_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.simulation_message_type AS ENUM (
-    'query',
-    'response'
 );
 
 
@@ -2998,13 +2979,6 @@ ALTER TABLE ONLY public.videos
 --
 
 CREATE INDEX row_changes_changed_at_idx ON audit.row_changes USING btree (changed_at DESC);
-
-
---
--- Name: row_changes_id_v7_uk; Type: INDEX; Schema: audit; Owner: -
---
-
-CREATE UNIQUE INDEX row_changes_id_v7_uk ON audit.row_changes USING btree (id);
 
 
 --
@@ -7184,5 +7158,5 @@ ALTER TABLE ONLY public.video_uploads
 -- PostgreSQL database dump complete
 --
 
-\unrestrict y9BtUgMZVUnfdAIhZ5hmsSoNWah9dWG77faLRlaFPSMqy60t5KZwcJMCA0ZV0ue
+\unrestrict npIRtTh3jpd5S72xkMG3lxls9HJf2WDyUZNczv50MOhMBv1bfbj6xmYNq8QiMaZ
 
