@@ -80,8 +80,7 @@ export default function Activity({
   // Extract data
   const metrics = activityData.bundleData?.metrics;
   const feedback = activityData.feedbackData?.feedback || [];
-  const activityList = activityData.activityData?.data || [];
-  const activityTotalCount = activityData.activityData?.totalCount || 0;
+  const activityList = useMemo(() => activityData.activityData?.data || [], [activityData.activityData?.data]);
   const activityPage = activityData.activityData?.page || 0;
   const activityPageSize = activityData.activityData?.pageSize || 50;
   const activityTotalPages = activityData.activityData?.totalPages || 0;
@@ -168,10 +167,11 @@ export default function Activity({
           toast.error(result.message || "Failed to resolve feedback");
         }
         router.refresh();
-      } catch (error: any) {
-        const errorMessage = error?.response?.data?.detail || error?.message || "Failed to resolve feedback";
+      } catch (error: unknown) {
+        const errorMessage = (error as { response?: { data?: { detail?: string } }; message?: string })?.response?.data?.detail || 
+          (error as { message?: string })?.message || 
+          "Failed to resolve feedback";
         toast.error(errorMessage);
-        console.error("Feedback resolve error:", error);
       }
     },
     [router]

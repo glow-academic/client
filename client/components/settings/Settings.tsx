@@ -402,7 +402,7 @@ export default function Settings({
       );
       setSelectedProviderIds(enabledProviderIds);
     }
-  }, [settingsDetail, selectedSettingsId]);
+  }, [settingsDetail, selectedSettingsId, originalFormData, originalSelectedSettingsId]);
 
   // Sync originalSelectedSettingsId when selectedSettingsId changes from null to a value
   // This handles the case where auto-select sets selectedSettingsId after settingsDetail loads

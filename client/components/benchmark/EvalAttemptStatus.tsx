@@ -27,7 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import GenericPicker from "@/components/common/forms/GenericPicker";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { useProfile } from "@/contexts/profile-context";
 import type { OutputOf } from "@/lib/api/types";
 import { AlertCircle, CheckCircle2, Clock, Play, Square, PlaySquare, Check } from "lucide-react";
@@ -62,7 +62,7 @@ export default function EvalAttemptStatus({
   // Conversation settings state
   const attempt = attemptData.attempt;
   const evalInfo = attemptData.eval;
-  const [conversationMode, setConversationMode] = useState(attempt.conversation_mode || false);
+  const [conversationMode] = useState(attempt.conversation_mode || false);
   const [conversationAgentId, setConversationAgentId] = useState<string | null>(
     attempt.conversation_agent_id || null
   );
@@ -81,7 +81,7 @@ export default function EvalAttemptStatus({
       mapping[agent.agent_id] = {
         id: agent.agent_id,
         name: agent.name,
-        description: agent.description || undefined,
+        ...(agent.description && { description: agent.description }),
       };
     });
     return mapping;
@@ -114,7 +114,7 @@ export default function EvalAttemptStatus({
             return {
               ...run,
               status: data.status || run.status,
-              test_id: data.test_id || run.test_id,
+              test_id: data.test_id ?? run.test_id ?? null,
             };
           }
           return run;
@@ -375,14 +375,13 @@ export default function EvalAttemptStatus({
         body: {
           attemptId,
           conversation_mode: conversationMode,
-          conversation_agent_id: conversationAgentId || undefined,
-          conversation_max_turns: conversationMaxTurns || undefined,
+          conversation_agent_id: conversationAgentId ?? null,
+          conversation_max_turns: conversationMaxTurns ?? null,
         },
       });
       toast.success("Settings updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update settings");
-      console.error(error);
     } finally {
       setIsUpdating(false);
     }
@@ -525,11 +524,11 @@ export default function EvalAttemptStatus({
                         items={agentMapping}
                         itemIds={validAgentIds}
                         selectedIds={conversationAgentId ? [conversationAgentId] : []}
-                        onSelect={(ids) => setConversationAgentId(ids[0] || null)}
-                        getId={(item) => (item as { id: string }).id}
-                        getLabel={(item) => (item as { name: string }).name}
-                        getSearchText={(item) =>
-                          `${(item as { name: string }).name} ${(item as { description?: string }).description || ""}`
+                        onSelect={(ids: string[]) => setConversationAgentId(ids[0] || null)}
+                        getId={(item: { id: string }) => item.id}
+                        getLabel={(item: { name: string }) => item.name}
+                        getSearchText={(item: { name: string; description?: string }) =>
+                          `${item.name} ${item.description || ""}`
                         }
                         placeholder="Select conversation agent..."
                         disabled={isUpdating}

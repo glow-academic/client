@@ -40,11 +40,11 @@ export default function AccoladeCard({
   user,
   details,
   onClick,
-  layoutId,
+  layoutId: _layoutId,
   disabled,
   "data-testid": dataTestId,
-  gradientStartColor = "rgba(59, 130, 246, 0.8)",
-  gradientEndColor = "rgba(59, 130, 246, 0.8)",
+  gradientStartColor: _gradientStartColor = "rgba(59, 130, 246, 0.8)",
+  gradientEndColor: _gradientEndColor = "rgba(59, 130, 246, 0.8)",
 }: AccoladeCardProps) {
   const asButton = !!onClick && !disabled;
 

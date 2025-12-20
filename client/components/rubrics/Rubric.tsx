@@ -748,7 +748,7 @@ export default function Rubric({
               resolve({
                 success: true,
                 message: data.message,
-                trace_id: data.trace_id,
+                ...(data.trace_id && { trace_id: data.trace_id }),
               });
             } else {
               reject(new Error(data.message || "Rubric generation failed"));
@@ -794,10 +794,14 @@ export default function Rubric({
                       c.standardId === desc.standard_id,
                   );
                   if (cellIndex >= 0) {
-                    updatedCells[cellIndex] = {
-                      ...updatedCells[cellIndex],
-                      description: desc.description,
-                    };
+                    const existingCell = updatedCells[cellIndex];
+                    if (existingCell) {
+                      updatedCells[cellIndex] = {
+                        standardGroupId: existingCell.standardGroupId,
+                        standardId: existingCell.standardId,
+                        description: desc.description,
+                      };
+                    }
                   } else {
                     updatedCells.push({
                       standardGroupId: desc.standard_group_id,

@@ -99,14 +99,14 @@ export default function ActivityMetricsGraph({
     "activityEntries",
     "errors",
   ]);
-  const [isMobile, setIsMobile] = useState(false);
+  // Note: isMobile state removed as it was unused
 
   // Get chart colors 1-5 from CSS variables
   const chartColors = useChartColors();
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+      // Note: isMobile state removed as it was unused
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);

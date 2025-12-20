@@ -10,7 +10,6 @@ import {
   getFacetedUniqueValues,
   useReactTable,
 } from "@tanstack/react-table";
-import { Bug } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 
@@ -20,15 +19,9 @@ import { DataTablePagination } from "@/components/common/table/DataTablePaginati
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
 
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfile } from "@/contexts/profile-context";
 import { format } from "date-fns";
 import { X } from "lucide-react";
 
@@ -51,6 +44,23 @@ const currency = (value: number) =>
     currency: "USD",
     maximumFractionDigits: 4,
   }).format(value);
+
+export interface ModelRunRow {
+  id: string;
+  createdAt: string;
+  modelId: string | null;
+  modelName: string;
+  agentId: string | null;
+  agentName: string;
+  personaId: string | null;
+  personaName: string;
+  profileId: string | null;
+  profileName: string;
+  inputTokens: number;
+  outputTokens: number;
+  cost: number;
+  debugInfo?: DebugInfoItem[];
+}
 
 export interface GroupRunRow {
   groupId: string;
@@ -102,8 +112,6 @@ export function RunsDataTable({
 }: RunsDataTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { effectiveProfile } = useProfile();
-  const isSuperadmin = effectiveProfile?.role === "superadmin";
 
   // Ref for the search input
   const searchInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -405,7 +413,7 @@ export function RunsDataTable({
     ];
 
     return cols;
-  }, [isSuperadmin, router]);
+  }, [router]);
 
   // Extract pagination metadata from URL params
   const pricingPage = searchParams.get("pricingPage")

@@ -28,9 +28,9 @@ interface BenchmarkZoneProps {
   evals: EvalItem[];
   profile: ProfileItem | null;
   onStartEval: (evalId: string) => void;
-  onStartConversationMode?: (evalId: string) => void;
+  onStartConversationMode?: ((evalId: string) => void) | undefined;
   loadingEval: string | null;
-  rubricMappings?: Record<string, RubricMapping>; // keyed by rubric_id
+  rubricMappings?: Record<string, RubricMapping> | undefined; // keyed by rubric_id
 }
 
 export default function BenchmarkZone({
@@ -123,12 +123,12 @@ export default function BenchmarkZone({
                 pendingRuns={evalItem.pending_runs}
                 rubricName={evalItem.rubric_name}
                 onStartEval={onStartEval}
-                onStartConversationMode={onStartConversationMode}
+                {...(onStartConversationMode && { onStartConversationMode })}
                 loadingEval={loadingEval}
                 effectiveProfile={profile}
-                standard_groups={rubricMapping?.standard_groups}
-                standardGroupsMapping={rubricMapping?.standardGroupsMapping}
-                standardsMapping={rubricMapping?.standardsMapping}
+                {...(rubricMapping?.standard_groups && { standard_groups: rubricMapping.standard_groups })}
+                {...(rubricMapping?.standardGroupsMapping && { standardGroupsMapping: rubricMapping.standardGroupsMapping })}
+                {...(rubricMapping?.standardsMapping && { standardsMapping: rubricMapping.standardsMapping })}
               />
             )
           );

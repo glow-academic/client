@@ -12,18 +12,8 @@ import { toast } from "sonner";
 
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
-import type { OutputOf } from "@/lib/api/types";
 import type { PracticeOut } from "@/app/(main)/practice/page";
 import { useProfile } from "@/contexts/profile-context";
-
-// Extract types from API response (single source of truth)
-type PracticeOverviewOut = OutputOf<"/api/v3/practice/overview", "post">;
-type ScenarioMapping = PracticeOverviewOut["scenario_mapping"];
-type PersonaMapping = PracticeOverviewOut["persona_mapping"];
-type ParameterMapping = PracticeOverviewOut["parameter_mapping"];
-type ParameterItemMapping = PracticeOverviewOut["field_mapping"];
-type SimulationMapping = PracticeOverviewOut["simulation_mapping"];
-type DepartmentMapping = PracticeOverviewOut["department_mapping"];
 
 interface PracticeCustomizeProps {
   practiceData: PracticeOut;
@@ -36,7 +26,7 @@ export default function PracticeCustomize({
   practiceData,
   effectiveProfile,
   activeProfile,
-  isGuest = false,
+  isGuest: _isGuest = false,
 }: PracticeCustomizeProps) {
   const router = useRouter();
   const {

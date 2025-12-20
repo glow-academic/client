@@ -20,9 +20,6 @@ export function PricingRunsClient({
   runsData,
   isLoading,
 }: PricingRunsClientProps) {
-  const { model_mapping, agent_mapping, persona_mapping, profile_mapping } =
-    runsData;
-
   const rows = useMemo<GroupRunRow[]>(() => {
     return (runsData?.data || []).map((group) => {
       const row: GroupRunRow = {
@@ -42,7 +39,7 @@ export function PricingRunsClient({
           inputTokens: run.input_tokens,
           outputTokens: run.output_tokens,
           cost: run.cost,
-          debugInfo: run.debug_info,
+          ...(run.debug_info && { debugInfo: run.debug_info }),
         })),
       };
 

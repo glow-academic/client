@@ -36,7 +36,7 @@ import {
 
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
-import { RunsDataTable, type ModelRunRow } from "./RunsDataTable";
+import { RunsDataTable } from "./RunsDataTable";
 
 const currency = (value: number) =>
   new Intl.NumberFormat(undefined, {
@@ -159,18 +159,7 @@ export default function Pricing({
     () => pricingData?.model_mapping || {},
     [pricingData],
   );
-  const profileMapping = useMemo(
-    () => pricingData?.profile_mapping || {},
-    [pricingData],
-  );
-  const agentMapping = useMemo(
-    () => pricingData?.agent_mapping || {},
-    [pricingData],
-  );
-  const personaMapping = useMemo(
-    () => pricingData?.persona_mapping || {},
-    [pricingData],
-  );
+  // Note: profileMapping, agentMapping, personaMapping removed as unused in this component
 
   // Get chart colors from CSS variables
   const chartColors = useChartColors();
@@ -276,52 +265,29 @@ export default function Pricing({
   }, [modelRuns, modelMapping, chartColors, mutedColor]);
 
   // Build rows for runs table from runsData (server-driven, paginated)
+  // Convert GroupRunItem[] to GroupRunRow[] format for RunsDataTable
   const runRows = useMemo(() => {
-    return (runsData?.data || []).map((run) => {
-      const modelId = run.model_id ?? null;
-      const agentId = run.agent_id ?? null;
-      const personaId = run.persona_id ?? null;
-      const profileId = run.profile_id ?? null;
-
-      const modelInfo = modelId ? modelMapping[modelId] : undefined;
-      const inputCost =
-        (run.input_tokens / 1_000_000) * (modelInfo?.input_ppm || 0);
-      const outputCost =
-        (run.output_tokens / 1_000_000) * (modelInfo?.output_ppm || 0);
-      const cost = Number((inputCost + outputCost).toFixed(6));
-
-      const row: ModelRunRow = {
-        id: run.model_run_id,
+    return (runsData?.data || []).map((group) => ({
+      groupId: group.group_id,
+      createdAt: group.created_at,
+      runCount: group.run_count,
+      totalInputTokens: group.total_input_tokens,
+      totalOutputTokens: group.total_output_tokens,
+      totalCost: group.total_cost,
+      runs: (group.runs || []).map((run) => ({
+        runId: run.run_id,
         createdAt: run.created_at,
-        modelId,
-        modelName: (modelId && modelMapping[modelId]?.name) || modelId || "",
-        agentId: agentId ?? null,
-        agentName: (agentId && agentMapping[agentId]) || agentId || "",
-        personaId: personaId ?? null,
-        personaName:
-          (personaId && personaMapping[personaId]) || personaId || "",
-        profileId: profileId ?? null,
-        profileName:
-          (profileId && profileMapping[profileId]) || profileId || "",
+        modelId: run.model_id ?? null,
+        agentId: run.agent_id ?? null,
+        personaId: run.persona_id ?? null,
+        profileId: run.profile_id ?? null,
         inputTokens: run.input_tokens,
         outputTokens: run.output_tokens,
-        cost,
-      };
-
-      // Conditionally include debugInfo if present
-      if (run.debug_info) {
-        row.debugInfo = run.debug_info;
-      }
-
-      return row;
-    });
-  }, [
-    runsData?.data,
-    modelMapping,
-    agentMapping,
-    personaMapping,
-    profileMapping,
-  ]);
+        cost: run.cost,
+        ...(run.debug_info && { debugInfo: run.debug_info }),
+      })),
+    }));
+  }, [runsData?.data]);
 
   return (
     <div className="flex flex-col gap-4" data-testid="pricing-container">

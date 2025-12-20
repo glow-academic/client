@@ -49,7 +49,7 @@ export interface EvalCardProps {
   pendingRuns: number;
   rubricName: string;
   onStartEval: (evalId: string) => void;
-  onStartConversationMode?: (evalId: string) => void;
+  onStartConversationMode?: ((evalId: string) => void) | undefined;
   loadingEval: string | null;
   effectiveProfile: ProfileItem;
   // Rubric data for dialog
@@ -68,11 +68,11 @@ export default function EvalCard({
   evalId,
   name,
   description,
-  status,
-  totalRuns,
-  completedRuns,
-  pendingRuns,
-  rubricName,
+  status: _status,
+  totalRuns: _totalRuns,
+  completedRuns: _completedRuns,
+  pendingRuns: _pendingRuns,
+  rubricName: _rubricName,
   onStartEval,
   onStartConversationMode,
   loadingEval,

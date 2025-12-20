@@ -9,7 +9,6 @@ import {
   GraduationCap,
   Shield,
   User,
-  Users,
 } from "lucide-react";
 
 // Utility function to generate gradient from hex color

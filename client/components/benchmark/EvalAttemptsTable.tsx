@@ -150,8 +150,7 @@ export default function EvalAttemptsTable({
         const data = await getEvalAttempts(filters);
         setAttempts(data.attempts);
         setTotalCount(data.total_count);
-      } catch (error) {
-        console.error("Failed to fetch eval attempts:", error);
+      } catch {
         setAttempts([]);
         setTotalCount(0);
       } finally {
@@ -290,7 +289,7 @@ export default function EvalAttemptsTable({
 
       updateAttemptsParams({
         page: 0,
-        status,
+        ...(status !== undefined && { status: status ?? null }),
       });
     },
     [columnFilters, updateAttemptsParams]
@@ -535,7 +534,7 @@ export default function EvalAttemptsTable({
   // Memoize table rows
   const tableRows = React.useMemo(() => {
     return table.getRowModel().rows;
-  }, [table, attempts.length, page, pageSize]);
+  }, [table]);
 
   return (
     <div className="space-y-4">
