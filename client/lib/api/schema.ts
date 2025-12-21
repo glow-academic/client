@@ -6504,6 +6504,33 @@ export interface components {
             defaultScenario: boolean;
             /** Copypasteallowed */
             copyPasteAllowed: boolean;
+            /**
+             * Textenabled
+             * @default true
+             */
+            textEnabled: boolean;
+            /**
+             * Audioenabled
+             * @default false
+             */
+            audioEnabled: boolean;
+            /**
+             * Showproblemstatement
+             * @default true
+             */
+            showProblemStatement: boolean;
+            /**
+             * Showobjectives
+             * @default true
+             */
+            showObjectives: boolean;
+            /**
+             * Showimages
+             * @default true
+             */
+            showImages: boolean;
+            /** Backgroundimage */
+            backgroundImage?: string | null;
             /** Objectives */
             objectives?: string[] | null;
             /**
@@ -16605,6 +16632,33 @@ export interface components {
             defaultScenario: boolean;
             /** Copypasteallowed */
             copyPasteAllowed: boolean;
+            /**
+             * Textenabled
+             * @default true
+             */
+            textEnabled: boolean;
+            /**
+             * Audioenabled
+             * @default false
+             */
+            audioEnabled: boolean;
+            /**
+             * Showproblemstatement
+             * @default true
+             */
+            showProblemStatement: boolean;
+            /**
+             * Showobjectives
+             * @default true
+             */
+            showObjectives: boolean;
+            /**
+             * Showimages
+             * @default true
+             */
+            showImages: boolean;
+            /** Backgroundimage */
+            backgroundImage?: string | null;
             /** Objectives */
             objectives?: string[] | null;
         };

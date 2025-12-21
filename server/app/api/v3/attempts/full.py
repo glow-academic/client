@@ -88,6 +88,12 @@ class ScenarioItem(BaseModel):
     generated: bool
     defaultScenario: bool
     copyPasteAllowed: bool
+    textEnabled: bool = True
+    audioEnabled: bool = False
+    showProblemStatement: bool = True
+    showObjectives: bool = True
+    showImages: bool = True
+    backgroundImage: str | None = None
     objectives: list[str] | None = None
 
 
@@ -286,6 +292,12 @@ class AllSimulationScenarioItem(BaseModel):
     generated: bool
     defaultScenario: bool
     copyPasteAllowed: bool
+    textEnabled: bool = True
+    audioEnabled: bool = False
+    showProblemStatement: bool = True
+    showObjectives: bool = True
+    showImages: bool = True
+    backgroundImage: str | None = None
     objectives: list[str] | None = None
     previousChats: list[PreviousChat] = []
 

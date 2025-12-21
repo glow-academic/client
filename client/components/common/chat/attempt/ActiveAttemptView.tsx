@@ -192,11 +192,24 @@ export default function ActiveAttemptView({
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-4">
                             <div className="flex items-start gap-2">
-                              <span className="font-medium">
-                                {scenario?.problemStatement ||
-                                  scenario?.name ||
-                                  currentChat?.title}
-                              </span>
+                              {(() => {
+                                const currentScenario = displayChat?.id
+                                  ? scenariosByChatId[displayChat.id]
+                                  : scenario;
+                                const shouldShowProblemStatement =
+                                  currentScenario?.showProblemStatement !== false;
+                                return shouldShowProblemStatement ? (
+                                  <span className="font-medium">
+                                    {scenario?.problemStatement ||
+                                      scenario?.name ||
+                                      currentChat?.title}
+                                  </span>
+                                ) : (
+                                  <span className="font-medium">
+                                    {scenario?.name || currentChat?.title}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </div>
                           <div className="flex items-start justify-end gap-2">
@@ -212,16 +225,18 @@ export default function ActiveAttemptView({
                             </div>
 
                             <div className="flex items-center gap-2">
-                              {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives */}
+                              {/* Objectives Toggle - only show if simulation has objectives enabled, scenario has showObjectives enabled, and current chat scenario has objectives */}
                               {simulation?.objectivesEnabled &&
                                 (() => {
                                   const currentScenario = displayChat?.id
                                     ? scenariosByChatId[displayChat.id]
-                                    : null;
+                                    : scenario;
+                                  const shouldShowObjectives =
+                                    currentScenario?.showObjectives !== false;
                                   const hasObjectives =
                                     currentScenario?.objectives &&
                                     currentScenario.objectives.length > 0;
-                                  return hasObjectives;
+                                  return shouldShowObjectives && hasObjectives;
                                 })() && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -374,9 +389,11 @@ export default function ActiveAttemptView({
                         (() => {
                           const currentScenario = displayChat?.id
                             ? scenariosByChatId[displayChat.id]
-                            : null;
+                            : scenario;
+                          const shouldShowObjectives =
+                            currentScenario?.showObjectives !== false;
                           const objectives = currentScenario?.objectives || [];
-                          return objectives.length > 0;
+                          return shouldShowObjectives && objectives.length > 0;
                         })() &&
                         !showGrades && (
                           <CollapsibleContent className="pt-2">
@@ -433,9 +450,17 @@ export default function ActiveAttemptView({
                       personas={personas ?? []}
                       scenario={scenario}
                       backgroundImage={
-                        // TODO: Determine background image dynamically here
-                        // Example:  scenario?.imageUrl || '/classroom.jpg' || null
-                        "/classroom.jpg"
+                        (() => {
+                          const currentScenario = displayChat?.id
+                            ? scenariosByChatId[displayChat.id]
+                            : scenario;
+                          const shouldShowImages =
+                            currentScenario?.showImages !== false;
+                          return shouldShowImages &&
+                            currentScenario?.backgroundImage
+                            ? currentScenario.backgroundImage
+                            : null;
+                        })()
                       }
                     />
                   </div>

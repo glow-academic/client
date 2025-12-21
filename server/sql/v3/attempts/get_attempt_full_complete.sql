@@ -419,6 +419,23 @@
             LEFT JOIN previous_attempt_rubric_points parp ON parp.simulation_id = pwg.simulation_id
             GROUP BY pwg.parent_scenario_id
         ),
+        -- Get images for all scenarios in the simulation (for allSimulationScenarios)
+        -- Must be defined before all_simulation_scenarios_with_previous_chats since it's used there
+        scenario_background_images_for_simulation AS (
+            SELECT DISTINCT ON (si.scenario_id)
+                si.scenario_id,
+                u.file_path as background_image_path
+            FROM scenario_images si
+            JOIN images i ON i.id = si.image_id AND i.active = true
+            LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
+            LEFT JOIN uploads u ON u.id = iu.upload_id
+            CROSS JOIN attempt_base ab
+            JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id AND ss.active = true
+            WHERE si.scenario_id = ss.scenario_id
+              AND si.active = true
+              AND u.file_path IS NOT NULL
+            ORDER BY si.scenario_id, si.created_at ASC
+        ),
         -- All simulation scenarios with their previous chats (for permutation generation)
         -- This MUST include ALL scenarios, even if they have no previous chats
         all_simulation_scenarios_with_previous_chats AS (
@@ -440,6 +457,12 @@
                     'generated', s.generated,
                     'defaultScenario', false,
                     'copyPasteAllowed', COALESCE(ss.copy_paste_allowed, false),
+                    'textEnabled', COALESCE(ss.text_enabled, true),
+                    'audioEnabled', COALESCE(ss.audio_enabled, false),
+                    'showProblemStatement', COALESCE(ss.show_problem_statement, true),
+                    'showObjectives', COALESCE(ss.show_objectives, true),
+                    'showImages', COALESCE(ss.show_images, true),
+                    'backgroundImage', CASE WHEN sbi.background_image_path IS NOT NULL THEN sbi.background_image_path ELSE NULL END,
                     'objectives', COALESCE(
                         (SELECT jsonb_agg(o.objective ORDER BY so.idx)
                          FROM scenario_objectives so
@@ -456,6 +479,7 @@
             LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             LEFT JOIN personas p ON p.id = sp.persona_id
+            LEFT JOIN scenario_background_images_for_simulation sbi ON sbi.scenario_id = s.id
             LEFT JOIN previous_chats_for_scenarios pcf ON pcf.scenario_id = ssl.scenario_id
             ORDER BY ssl.position
         ),
@@ -466,6 +490,22 @@
         scenario_ids_list AS (
             SELECT array_agg(DISTINCT scenario_id) as scenario_ids
             FROM chats_base
+        ),
+        -- Get background image for each scenario (first image ordered by created_at)
+        -- Get images for scenarios in current attempt's chats
+        scenario_background_images_for_chats AS (
+            SELECT DISTINCT ON (si.scenario_id)
+                si.scenario_id,
+                u.file_path as background_image_path
+            FROM scenario_images si
+            JOIN images i ON i.id = si.image_id AND i.active = true
+            LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
+            LEFT JOIN uploads u ON u.id = iu.upload_id
+            CROSS JOIN scenario_ids_list sil
+            WHERE si.scenario_id = ANY(sil.scenario_ids) 
+              AND si.active = true
+              AND u.file_path IS NOT NULL
+            ORDER BY si.scenario_id, si.created_at ASC
         ),
         scenarios_data AS (
             SELECT 
@@ -485,6 +525,12 @@
                     'generated', s.generated,
                     'defaultScenario', false,
                     'copyPasteAllowed', COALESCE(ss.copy_paste_allowed, false),
+                    'textEnabled', COALESCE(ss.text_enabled, true),
+                    'audioEnabled', COALESCE(ss.audio_enabled, false),
+                    'showProblemStatement', COALESCE(ss.show_problem_statement, true),
+                    'showObjectives', COALESCE(ss.show_objectives, true),
+                    'showImages', COALESCE(ss.show_images, true),
+                    'backgroundImage', CASE WHEN sbi.background_image_path IS NOT NULL THEN sbi.background_image_path ELSE NULL END,
                     'objectives', COALESCE(
                         (SELECT jsonb_agg(o.objective ORDER BY so.idx)
                          FROM scenario_objectives so
@@ -505,6 +551,7 @@
             LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             LEFT JOIN personas p ON p.id = sp.persona_id
+            LEFT JOIN scenario_background_images_for_chats sbi ON sbi.scenario_id = s.id
             WHERE s.id = ANY(sil.scenario_ids)
         ),
         simulation_flags AS (
@@ -1537,6 +1584,12 @@
                             'generated', (scenario_data->>'generated')::boolean,
                             'defaultScenario', (scenario_data->>'defaultScenario')::boolean,
                             'copyPasteAllowed', (scenario_data->>'copyPasteAllowed')::boolean,
+                            'textEnabled', (scenario_data->>'textEnabled')::boolean,
+                            'audioEnabled', (scenario_data->>'audioEnabled')::boolean,
+                            'showProblemStatement', (scenario_data->>'showProblemStatement')::boolean,
+                            'showObjectives', (scenario_data->>'showObjectives')::boolean,
+                            'showImages', (scenario_data->>'showImages')::boolean,
+                            'backgroundImage', CASE WHEN scenario_data->>'backgroundImage' != '' THEN scenario_data->>'backgroundImage' ELSE NULL END,
                             'objectives', scenario_data->'objectives',
                             'previousChats', previous_chats
                         ) ORDER BY position

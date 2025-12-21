@@ -21926,6 +21926,42 @@
             "type": "boolean",
             "title": "Copypasteallowed"
           },
+          "textEnabled": {
+            "type": "boolean",
+            "title": "Textenabled",
+            "default": true
+          },
+          "audioEnabled": {
+            "type": "boolean",
+            "title": "Audioenabled",
+            "default": false
+          },
+          "showProblemStatement": {
+            "type": "boolean",
+            "title": "Showproblemstatement",
+            "default": true
+          },
+          "showObjectives": {
+            "type": "boolean",
+            "title": "Showobjectives",
+            "default": true
+          },
+          "showImages": {
+            "type": "boolean",
+            "title": "Showimages",
+            "default": true
+          },
+          "backgroundImage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backgroundimage"
+          },
           "objectives": {
             "anyOf": [
               {
@@ -48873,6 +48909,42 @@
           "copyPasteAllowed": {
             "type": "boolean",
             "title": "Copypasteallowed"
+          },
+          "textEnabled": {
+            "type": "boolean",
+            "title": "Textenabled",
+            "default": true
+          },
+          "audioEnabled": {
+            "type": "boolean",
+            "title": "Audioenabled",
+            "default": false
+          },
+          "showProblemStatement": {
+            "type": "boolean",
+            "title": "Showproblemstatement",
+            "default": true
+          },
+          "showObjectives": {
+            "type": "boolean",
+            "title": "Showobjectives",
+            "default": true
+          },
+          "showImages": {
+            "type": "boolean",
+            "title": "Showimages",
+            "default": true
+          },
+          "backgroundImage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backgroundimage"
           },
           "objectives": {
             "anyOf": [

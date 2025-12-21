@@ -74,7 +74,11 @@ export interface AttemptInputProps {
     practiceSimulation?: boolean;
     copyPasteAllowed?: boolean;
   } | null;
-  scenario: { copyPasteAllowed?: boolean } | null;
+  scenario: {
+    copyPasteAllowed?: boolean;
+    textEnabled?: boolean;
+    audioEnabled?: boolean;
+  } | null;
   readOnly?: boolean;
 }
 
@@ -1981,6 +1985,13 @@ export default function AttemptInput({
   // Hide input if not the attempt owner or if read-only/completed
   if (readOnly || currentChat?.completed || !isAttemptOwner) return null;
 
+  // Get settings from scenario (defaults to true/false if not provided)
+  const textEnabled = scenario?.textEnabled !== false; // Default true
+  const audioEnabled = scenario?.audioEnabled === true; // Default false
+
+  // Hide input entirely if both text and audio are disabled
+  if (!textEnabled && !audioEnabled) return null;
+
   return (
     <TooltipProvider>
       <CardFooter
@@ -1989,8 +2000,8 @@ export default function AttemptInput({
       >
         {/* --- Dynamic Input Area --- */}
         <div className="w-full flex items-end gap-2 shrink-0">
-          {/* Voice toggle button - only show when voice mode is disabled */}
-          {!voiceModeEnabled && (
+          {/* Voice toggle button - only show when voice mode is disabled, audio is enabled, and text is enabled */}
+          {!voiceModeEnabled && audioEnabled && textEnabled && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -2054,55 +2065,72 @@ export default function AttemptInput({
           {/* Wrap both the Waveform and Textarea in a container that enforces the
               "Input Box" look (Border, Radius, Background) */}
           <div className="flex-1 relative min-h-[40px] max-h-32 flex items-center">
-            {voiceModeEnabled && !isMicMuted ? (
-              <div className="w-full h-[40px] rounded-md border border-input bg-background px-3 py-2 flex items-center justify-center ring-offset-background overflow-hidden">
-                <VoiceWaveform
-                  mediaStream={userMediaStreamRef.current}
-                  className="w-full h-full"
+            {(() => {
+              // If text is disabled but audio is enabled, show waveform (read-only, no input)
+              if (!textEnabled && audioEnabled) {
+                return (
+                  <div className="w-full h-[40px] rounded-md border border-input bg-background px-3 py-2 flex items-center justify-center ring-offset-background overflow-hidden">
+                    <VoiceWaveform
+                      mediaStream={null}
+                      className="w-full h-full"
+                    />
+                  </div>
+                );
+              }
+              // If voice mode is enabled and not muted, show waveform
+              if (voiceModeEnabled && !isMicMuted) {
+                return (
+                  <div className="w-full h-[40px] rounded-md border border-input bg-background px-3 py-2 flex items-center justify-center ring-offset-background overflow-hidden">
+                    <VoiceWaveform
+                      mediaStream={userMediaStreamRef.current}
+                      className="w-full h-full"
+                    />
+                  </div>
+                );
+              }
+              // Otherwise show textarea (when voice mode is disabled OR when muted)
+              return (
+                <Textarea
+                  ref={textareaRef}
+                  value={newMessage}
+                  onChange={(e) =>
+                    pastePrevention.handleChange(e, (value) =>
+                      setNewMessage(sanitizeInputLength(value))
+                    )
+                  }
+                  placeholder={
+                    voiceModeEnabled
+                      ? "Voice mode active – mute to type and send"
+                      : "Type your message (LaTeX supported)"
+                  }
+                  disabled={readOnly ? true : false}
+                  className="w-full text-md resize-none overflow-y-auto text-base max-h-32 min-h-[40px]"
+                  rows={1}
+                  maxLength={MAX_INPUT_CHARS}
+                  data-testid="attempt-chat-input"
+                  // Block paste/drop at the earliest stage
+                  onBeforeInput={pastePrevention.handleBeforeInput}
+                  onPaste={pastePrevention.handlePaste}
+                  onPasteCapture={pastePrevention.handlePasteCapture}
+                  onDrop={pastePrevention.handleDrop}
+                  // Kill context menu (mouse + long-press)
+                  onContextMenu={pastePrevention.handleContextMenu}
+                  // Block middle-click paste (Linux/X11 primary selection)
+                  onMouseDown={pastePrevention.handleMouseDown}
+                  onKeyDown={(e) =>
+                    pastePrevention.handleKeyDown(e, handleSendMessage)
+                  }
+                  // IME composition support
+                  onCompositionStart={pastePrevention.handleCompositionStart}
+                  onCompositionEnd={pastePrevention.handleCompositionEnd}
+                  // Reduce "smart" automatic inserts that look like paste/autofill
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
                 />
-              </div>
-            ) : (
-              /* Show textarea when voice mode is disabled OR when muted */
-              <Textarea
-                ref={textareaRef}
-                value={newMessage}
-                onChange={(e) =>
-                  pastePrevention.handleChange(e, (value) =>
-                    setNewMessage(sanitizeInputLength(value))
-                  )
-                }
-                placeholder={
-                  voiceModeEnabled
-                    ? "Voice mode active – mute to type and send"
-                    : "Type your message (LaTeX supported)"
-                }
-                disabled={readOnly ? true : false}
-                className="w-full text-md resize-none overflow-y-auto text-base max-h-32 min-h-[40px]"
-                rows={1}
-                maxLength={MAX_INPUT_CHARS}
-                data-testid="attempt-chat-input"
-                // Block paste/drop at the earliest stage
-                onBeforeInput={pastePrevention.handleBeforeInput}
-                onPaste={pastePrevention.handlePaste}
-                onPasteCapture={pastePrevention.handlePasteCapture}
-                onDrop={pastePrevention.handleDrop}
-                // Kill context menu (mouse + long-press)
-                onContextMenu={pastePrevention.handleContextMenu}
-                // Block middle-click paste (Linux/X11 primary selection)
-                onMouseDown={pastePrevention.handleMouseDown}
-                onKeyDown={(e) =>
-                  pastePrevention.handleKeyDown(e, handleSendMessage)
-                }
-                // IME composition support
-                onCompositionStart={pastePrevention.handleCompositionStart}
-                onCompositionEnd={pastePrevention.handleCompositionEnd}
-                // Reduce "smart" automatic inserts that look like paste/autofill
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-              />
-            )}
+              );
+            })()}
           </div>
 
           <div className="flex gap-2">
@@ -2137,8 +2165,8 @@ export default function AttemptInput({
                   </TooltipContent>
                 </Tooltip>
               </motion.div>
-            ) : voiceModeEnabled && !hasTextMessage ? (
-              /* Show mute/unmute button in send position when voice mode enabled and no text */
+            ) : voiceModeEnabled && !hasTextMessage && textEnabled ? (
+              /* Show mute/unmute button in send position when voice mode enabled, no text, and text is enabled */
               <motion.div
                 layout
                 key="mute-btn"
@@ -2176,8 +2204,8 @@ export default function AttemptInput({
                   </TooltipContent>
                 </Tooltip>
               </motion.div>
-            ) : (
-              /* Show send button when text is present or voice mode is disabled */
+            ) : textEnabled ? (
+              /* Show send button when text is enabled (text is present or voice mode is disabled) */
               <motion.div
                 layout
                 key="send-btn-short"
@@ -2205,7 +2233,7 @@ export default function AttemptInput({
                   )}
                 </Tooltip>
               </motion.div>
-            )}
+            ) : null}
           </div>
         </div>
 
