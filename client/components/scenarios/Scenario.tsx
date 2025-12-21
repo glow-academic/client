@@ -625,6 +625,11 @@ export default function Scenario({
     const useQuestionsFromUrl = searchParams.get("useQuestions");
     return useQuestionsFromUrl === "true";
   });
+  // Use Problem Statement flag - initialized from URL params (DHH-style: URL as source of truth)
+  const [useProblemStatement, setUseProblemStatement] = useState(() => {
+    const useProblemStatementFromUrl = searchParams.get("useProblemStatement");
+    return useProblemStatementFromUrl === "true";
+  });
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
   >(null);
@@ -963,6 +968,11 @@ export default function Scenario({
       );
     }
 
+    // Problem statement flag - no server-side enabled flag, so only include when true
+    if (useProblemStatement) {
+      params.set("useProblemStatement", "true");
+    }
+
     // Note: randomize param is set separately by randomize handlers, not here
     // This function builds the base URL state (filters, searches, ranges)
 
@@ -988,6 +998,7 @@ export default function Scenario({
     useImage, // Include useImage for useImage flag
     useVideo, // Include useVideo for video flag
     useQuestions, // Include useQuestions for questions flag
+    useProblemStatement, // Include useProblemStatement for problem statement flag
     queryParamConfig, // Include queryParamConfig for server value comparisons
     fieldMapping, // Used for field ranges comparison
     // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
@@ -1678,6 +1689,17 @@ export default function Scenario({
     // Only update if different from current state
     if (useQuestions !== urlUseQuestions) {
       setUseQuestions(urlUseQuestions);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Sync useProblemStatement from URL params
+  useEffect(() => {
+    const useProblemStatementFromUrl = searchParams.get("useProblemStatement");
+    const urlUseProblemStatement = useProblemStatementFromUrl === "true";
+    // Only update if different from current state
+    if (useProblemStatement !== urlUseProblemStatement) {
+      setUseProblemStatement(urlUseProblemStatement);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
@@ -4029,6 +4051,7 @@ export default function Scenario({
               originalProblemStatement={
                 originalFormData?.problemStatement || ""
               }
+              useProblemStatement={useProblemStatement}
               objectives={currentObjectives}
               objectivesHistory={objectivesHistory}
               useObjectives={useObjectives}
@@ -4074,6 +4097,12 @@ export default function Scenario({
                   originalFormData?.problemStatement || ""
                 )
               }
+              onUseProblemStatementChange={(enabled) => {
+                setUseProblemStatement(enabled);
+                if (!enabled) {
+                  handleInputChange("problemStatement", "");
+                }
+              }}
               onObjectivesChange={setCurrentObjectives}
               onAddObjective={addObjective}
               onRemoveObjective={removeObjective}

@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ChevronUp,
   Eye,
+  FileText,
   GripVertical,
   Image,
   Loader2,
@@ -233,6 +234,7 @@ export interface ContentSectionProps {
   selectedProblemStatementId?: string | undefined;
   hasProblemStatementChanges: boolean;
   originalProblemStatement: string;
+  useProblemStatement: boolean;
 
   // Objectives
   objectives: string[];
@@ -294,6 +296,7 @@ export interface ContentSectionProps {
   onProblemStatementChange: (value: string) => void;
   onProblemStatementVersionSelect: (id: string) => void;
   onResetProblemStatement: () => void;
+  onUseProblemStatementChange: (enabled: boolean) => void;
   onObjectivesChange: (objectives: string[]) => void;
   onAddObjective: () => void;
   onRemoveObjective: (index: number) => void;
@@ -406,6 +409,7 @@ export function ContentSection({
   selectedProblemStatementId,
   hasProblemStatementChanges,
   originalProblemStatement: _originalProblemStatement,
+  useProblemStatement,
   objectives,
   objectivesHistory,
   useObjectives,
@@ -430,6 +434,7 @@ export function ContentSection({
   onProblemStatementChange,
   onProblemStatementVersionSelect: _onProblemStatementVersionSelect,
   onResetProblemStatement,
+  onUseProblemStatementChange,
   onObjectivesChange: _onObjectivesChange,
   onAddObjective,
   onRemoveObjective,
@@ -928,117 +933,174 @@ export function ContentSection({
           </div>
         )}
 
-        {/* Problem Statement */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>Problem Statement</Label>
-            {Object.keys(problemStatementMapping).length > 0 && (
+        {/* Problem Statement Switch */}
+        {!useProblemStatement ? (
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <GenericPicker
-                  items={problemStatementMapping}
-                  itemIds={Object.keys(problemStatementMapping)}
-                  selectedIds={
-                    selectedProblemStatementId
-                      ? [selectedProblemStatementId]
-                      : []
-                  }
-                  onSelect={(ids) => {
-                    const id = ids[0] || null;
-                    if (id && problemStatementMapping[id]) {
-                      onProblemStatementChange(
-                        problemStatementMapping[id].problem_statement
-                      );
-                    } else if (!id) {
-                      // Clear selection - show blank problem statement
+                <Label
+                  htmlFor="use-problem-statement"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <FileText
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-label="Problem Statement icon"
+                  />
+                  Problem Statement
+                </Label>
+                <Switch
+                  id="use-problem-statement"
+                  checked={useProblemStatement}
+                  onCheckedChange={(checked) => {
+                    onUseProblemStatementChange(checked);
+                    if (!checked) {
                       onProblemStatementChange("");
                     }
                   }}
-                  getId={(item) => (item as unknown as { id: string }).id}
-                  getLabel={(item) => {
-                    const date = new Date(item.updated_at);
-                    return `Version ${date.toLocaleDateString()}`;
-                  }}
-                  getSearchText={(item) => {
-                    const date = new Date(item.updated_at);
-                    const preview = item.problem_statement.substring(0, 100);
-                    return `${date.toLocaleDateString()} ${preview}`;
-                  }}
-                  renderButton={(selectedItems) => {
-                    if (selectedItems.length === 0) {
-                      return "New Problem Statement";
+                  disabled={isReadonly}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                Define the problem or scenario context
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {/* Problem Statement Label, Switch, and Picker - Horizontal Layout */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="use-problem-statement"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <FileText
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-label="Problem Statement icon"
+                  />
+                  Problem Statement
+                </Label>
+                <Switch
+                  id="use-problem-statement"
+                  checked={useProblemStatement}
+                  onCheckedChange={(checked) => {
+                    onUseProblemStatementChange(checked);
+                    if (!checked) {
+                      onProblemStatementChange("");
                     }
-                    const problemStatement = selectedItems[0];
-                    const date = problemStatement?.updated_at
-                      ? new Date(problemStatement.updated_at)
-                      : new Date();
-                    return `Version ${date.toLocaleDateString()}`;
-                  }}
-                  renderItem={(item, isSelected) => {
-                    const date = new Date(item.updated_at);
-                    const preview = item.problem_statement.substring(0, 100);
-                    return (
-                      <div className="flex flex-col items-start py-3 w-full">
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2">
-                            <Check
-                              className={cn(
-                                "h-4 w-4",
-                                isSelected ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <span className="font-medium">
-                              {date.toLocaleDateString()}{" "}
-                              {date.toLocaleTimeString()}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-xs mt-1 line-clamp-2">
-                          {preview}
-                          {item.problem_statement.length > 100 ? "..." : ""}
-                        </span>
-                      </div>
-                    );
                   }}
                   disabled={isReadonly}
-                  multiSelect={false}
-                  hideSelectedChips={true}
-                  buttonClassName="h-8 justify-between"
-                  groupHeading="Version History"
-                  placeholder="Select problem statement version..."
-                  clearActionLabel="New Statement"
                 />
-                {hasProblemStatementChanges && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={onResetProblemStatement}
-                        className="h-8 w-8 p-0"
-                        data-testid="btn-reset-problem-statement"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Reset to saved problem statement</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
               </div>
-            )}
+              {Object.keys(problemStatementMapping).length > 0 && (
+                <div className="flex items-center gap-2">
+                  <GenericPicker
+                    items={problemStatementMapping}
+                    itemIds={Object.keys(problemStatementMapping)}
+                    selectedIds={
+                      selectedProblemStatementId
+                        ? [selectedProblemStatementId]
+                        : []
+                    }
+                    onSelect={(ids) => {
+                      const id = ids[0] || null;
+                      if (id && problemStatementMapping[id]) {
+                        onProblemStatementChange(
+                          problemStatementMapping[id].problem_statement
+                        );
+                      } else if (!id) {
+                        // Clear selection - show blank problem statement
+                        onProblemStatementChange("");
+                      }
+                    }}
+                    getId={(item) => (item as unknown as { id: string }).id}
+                    getLabel={(item) => {
+                      const date = new Date(item.updated_at);
+                      return `Version ${date.toLocaleDateString()}`;
+                    }}
+                    getSearchText={(item) => {
+                      const date = new Date(item.updated_at);
+                      const preview = item.problem_statement.substring(0, 100);
+                      return `${date.toLocaleDateString()} ${preview}`;
+                    }}
+                    renderButton={(selectedItems) => {
+                      if (selectedItems.length === 0) {
+                        return "New Problem Statement";
+                      }
+                      const problemStatement = selectedItems[0];
+                      const date = problemStatement?.updated_at
+                        ? new Date(problemStatement.updated_at)
+                        : new Date();
+                      return `Version ${date.toLocaleDateString()}`;
+                    }}
+                    renderItem={(item, isSelected) => {
+                      const date = new Date(item.updated_at);
+                      const preview = item.problem_statement.substring(0, 100);
+                      return (
+                        <div className="flex flex-col items-start py-3 w-full">
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2">
+                              <Check
+                                className={cn(
+                                  "h-4 w-4",
+                                  isSelected ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="font-medium">
+                                {date.toLocaleDateString()}{" "}
+                                {date.toLocaleTimeString()}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-xs mt-1 line-clamp-2">
+                            {preview}
+                            {item.problem_statement.length > 100 ? "..." : ""}
+                          </span>
+                        </div>
+                      );
+                    }}
+                    disabled={isReadonly}
+                    multiSelect={false}
+                    hideSelectedChips={true}
+                    buttonClassName="h-8 justify-between"
+                    groupHeading="Version History"
+                    placeholder="Select problem statement version..."
+                    clearActionLabel="New Statement"
+                  />
+                  {hasProblemStatementChanges && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={onResetProblemStatement}
+                          className="h-8 w-8 p-0"
+                          data-testid="btn-reset-problem-statement"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Reset to saved problem statement</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* Textarea for problem statement input */}
+            <Textarea
+              id="description"
+              data-testid="input-scenario-problem-statement"
+              value={problemStatement || ""}
+              onChange={(e) => onProblemStatementChange(e.target.value)}
+              placeholder="Enter a custom problem statement or leave blank to auto-generate..."
+              className="min-h-[120px]"
+              disabled={isReadonly}
+            />
           </div>
-          <Textarea
-            id="description"
-            data-testid="input-scenario-problem-statement"
-            value={problemStatement || ""}
-            onChange={(e) => onProblemStatementChange(e.target.value)}
-            placeholder="Enter a custom problem statement or leave blank to auto-generate..."
-            className="min-h-[120px]"
-            disabled={isReadonly}
-          />
-        </div>
+        )}
 
         {/* Objectives Switch (only when video is disabled) */}
         {!useVideo && (
