@@ -670,6 +670,264 @@ export function ContentSection({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Use Image/Images Switch */}
+        {!useImage ? (
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="use-image"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <Image
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-label="Image icon"
+                  />
+                  {useVideo ? "Images" : "Image"}
+                </Label>
+                <Switch
+                  id="use-image"
+                  checked={useImage}
+                  onCheckedChange={(checked) => {
+                    onUseImageChange(checked);
+                    if (!checked) {
+                      onImageSelect(null);
+                    }
+                  }}
+                  disabled={isReadonly}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                {useVideo
+                  ? "Add images alongside video content"
+                  : "Use scenario background image"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          /* Image Picker and Preview Section (horizontal scrollable) */
+          <div className="space-y-2">
+            {/* Images Label, Switch, and Picker - Horizontal Layout */}
+            {Object.keys(imageMapping).length > 0 && (
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="use-image"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Image
+                      className="h-3.5 w-3.5 text-muted-foreground"
+                      aria-label="Image icon"
+                    />
+                    {useVideo ? "Images" : "Image"}
+                  </Label>
+                  <Switch
+                    id="use-image"
+                    checked={useImage}
+                    onCheckedChange={(checked) => {
+                      onUseImageChange(checked);
+                      if (!checked) {
+                        onImageSelect(null);
+                      }
+                    }}
+                    disabled={isReadonly}
+                  />
+                </div>
+                <GenericPicker
+                  items={imageMapping}
+                  itemIds={Object.keys(imageMapping)}
+                  selectedIds={
+                    useVideo
+                      ? selectedImages.map((img) => img.id)
+                      : image
+                        ? [image.id]
+                        : []
+                  }
+                  onSelect={(ids) => {
+                    if (useVideo) {
+                      // Multi-select mode: update local state
+                      const newImages = ids
+                        .map((id) => {
+                          const imgItem = imageMapping[id];
+                          if (imgItem) {
+                            return {
+                              id: imgItem.upload_id || imgItem.id,
+                              name: imgItem.name,
+                              upload_id: imgItem.upload_id || imgItem.id,
+                            };
+                          }
+                          return null;
+                        })
+                        .filter(
+                          (
+                            img
+                          ): img is {
+                            id: string;
+                            name: string;
+                            upload_id: string;
+                          } => img !== null
+                        );
+                      setSelectedImages(newImages);
+                      // Call onImageSelect with first image for backward compatibility
+                      if (newImages.length > 0 && newImages[0]) {
+                        onImageSelect(newImages[0]);
+                      } else {
+                        onImageSelect(null);
+                      }
+                    } else {
+                      // Single select mode
+                      const imageId = ids[0] || null;
+                      if (imageId && imageMapping[imageId]) {
+                        const selectedImage = imageMapping[imageId];
+                        onImageSelect({
+                          id: selectedImage.upload_id || selectedImage.id,
+                          name: selectedImage.name,
+                          upload_id:
+                            selectedImage.upload_id || selectedImage.id,
+                        });
+                      } else if (!imageId) {
+                        onImageSelect(null);
+                      }
+                    }
+                  }}
+                  getId={(item) => {
+                    const imgItem = item as unknown as ImageMappingItem;
+                    return imgItem.id;
+                  }}
+                  getLabel={(item) => {
+                    const imgItem = item as unknown as ImageMappingItem;
+                    const date = new Date(imgItem.updated_at);
+                    return `${imgItem.name} - ${date.toLocaleDateString()}`;
+                  }}
+                  getSearchText={(item) => {
+                    const imgItem = item as unknown as ImageMappingItem;
+                    const date = new Date(imgItem.updated_at);
+                    return `${imgItem.name} ${date.toLocaleDateString()}`;
+                  }}
+                  renderButton={(selectedItems) => {
+                    if (selectedItems.length === 0) {
+                      return "Select image...";
+                    }
+                    if (useVideo && selectedItems.length > 1) {
+                      return `${selectedItems.length} images selected`;
+                    }
+                    const selectedImage =
+                      selectedItems[0] as unknown as ImageMappingItem;
+                    return selectedImage?.name || "Select image...";
+                  }}
+                  renderItem={(item, isSelected) => {
+                    const imgItem = item as unknown as ImageMappingItem;
+                    const date = new Date(imgItem.updated_at);
+                    return (
+                      <div className="flex flex-col items-start py-3 w-full">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <Check
+                              className={cn(
+                                "h-4 w-4",
+                                isSelected ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <span className="font-medium">{imgItem.name}</span>
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          {date.toLocaleDateString()}{" "}
+                          {date.toLocaleTimeString()}
+                        </span>
+                      </div>
+                    );
+                  }}
+                  disabled={isReadonly}
+                  multiSelect={useVideo}
+                  hideSelectedChips={true}
+                  buttonClassName="h-8 justify-between"
+                  compact={true}
+                  groupHeading="Images"
+                  placeholder="Select image..."
+                  clearActionLabel="New Image"
+                />
+              </div>
+            )}
+
+            {/* Image Grid - Horizontal Scrollable Row */}
+            <div className="overflow-x-auto">
+              <div className="flex gap-2 pb-2">
+                {/* Display selected images */}
+                {(useVideo ? selectedImages : image ? [image] : []).map(
+                  (img) => (
+                    <div
+                      key={img.id}
+                      className="relative aspect-square w-32 min-w-[8rem] border rounded-lg overflow-hidden bg-muted/20 shrink-0"
+                    >
+                      {/* Preview button - top left */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewImageId(img.id);
+                        }}
+                        className="absolute top-1 left-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                        disabled={isReadonly}
+                      >
+                        <Eye className="h-3.5 w-3.5 text-primary-foreground" />
+                      </button>
+                      {/* Delete button - top right */}
+                      {useVideo && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newImages = selectedImages.filter(
+                              (i) => i.id !== img.id
+                            );
+                            setSelectedImages(newImages);
+                            if (newImages.length > 0 && newImages[0]) {
+                              onImageSelect(newImages[0]);
+                            } else {
+                              onImageSelect(null);
+                            }
+                          }}
+                          className="absolute top-1 right-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                          disabled={isReadonly}
+                        >
+                          <X className="h-3.5 w-3.5 text-primary-foreground" />
+                        </button>
+                      )}
+                      <ImageViewer
+                        imageId={img.id}
+                        name={img.name}
+                        bare={true}
+                      />
+                      {/* Image name at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1 z-10">
+                        <span className="truncate block">{img.name}</span>
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {/* Add Image Box - Show until max (10, same as max questions) */}
+                {(useVideo ? selectedImages.length : image ? 1 : 0) < 10 && (
+                  <div
+                    onClick={() => {
+                      if (!isReadonly && !isUploadingImage) {
+                        imageInputRef.current?.click();
+                      }
+                    }}
+                    className="aspect-square w-32 min-w-[8rem] border-2 border-dashed border-muted-foreground/50 rounded-lg cursor-pointer bg-muted/20 hover:border-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center justify-center shrink-0"
+                  >
+                    <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                    <p className="text-xs text-muted-foreground text-center px-2">
+                      Add image
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Problem Statement */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -1313,221 +1571,12 @@ export function ContentSection({
 
         {/* Documents and Preview Section */}
         <div className="flex gap-4 items-stretch">
-          {/* Images Section (left column - only when both video and image are enabled) */}
-          {useVideo && useImage && (
-            <div className="w-[25%] min-w-[25%] max-w-[25%] space-y-2 flex flex-col self-stretch">
-              {/* Images Label and Picker - Horizontal Layout */}
-              {Object.keys(imageMapping).length > 0 && (
-                <div className="flex items-center justify-between">
-                  <Label>Images</Label>
-                  <GenericPicker
-                    items={imageMapping}
-                    itemIds={Object.keys(imageMapping)}
-                    selectedIds={
-                      useVideo
-                        ? selectedImages.map((img) => img.id)
-                        : image
-                          ? [image.id]
-                          : []
-                    }
-                    onSelect={(ids) => {
-                      if (useVideo) {
-                        // Multi-select mode: update local state
-                        const newImages = ids
-                          .map((id) => {
-                            const imgItem = imageMapping[id];
-                            if (imgItem) {
-                              return {
-                                id: imgItem.upload_id || imgItem.id,
-                                name: imgItem.name,
-                                upload_id: imgItem.upload_id || imgItem.id,
-                              };
-                            }
-                            return null;
-                          })
-                          .filter(
-                            (
-                              img
-                            ): img is {
-                              id: string;
-                              name: string;
-                              upload_id: string;
-                            } => img !== null
-                          );
-                        setSelectedImages(newImages);
-                        // Call onImageSelect with first image for backward compatibility
-                        if (newImages.length > 0 && newImages[0]) {
-                          onImageSelect(newImages[0]);
-                        } else {
-                          onImageSelect(null);
-                        }
-                      } else {
-                        // Single select mode
-                        const imageId = ids[0] || null;
-                        if (imageId && imageMapping[imageId]) {
-                          const selectedImage = imageMapping[imageId];
-                          onImageSelect({
-                            id: selectedImage.upload_id || selectedImage.id,
-                            name: selectedImage.name,
-                            upload_id:
-                              selectedImage.upload_id || selectedImage.id,
-                          });
-                        } else if (!imageId) {
-                          onImageSelect(null);
-                        }
-                      }
-                    }}
-                    getId={(item) => {
-                      const imgItem = item as unknown as ImageMappingItem;
-                      return imgItem.id;
-                    }}
-                    getLabel={(item) => {
-                      const imgItem = item as unknown as ImageMappingItem;
-                      const date = new Date(imgItem.updated_at);
-                      return `${imgItem.name} - ${date.toLocaleDateString()}`;
-                    }}
-                    getSearchText={(item) => {
-                      const imgItem = item as unknown as ImageMappingItem;
-                      const date = new Date(imgItem.updated_at);
-                      return `${imgItem.name} ${date.toLocaleDateString()}`;
-                    }}
-                    renderButton={(selectedItems) => {
-                      if (selectedItems.length === 0) {
-                        return "Select image...";
-                      }
-                      if (useVideo && selectedItems.length > 1) {
-                        return `${selectedItems.length} images selected`;
-                      }
-                      const selectedImage =
-                        selectedItems[0] as unknown as ImageMappingItem;
-                      return selectedImage?.name || "Select image...";
-                    }}
-                    renderItem={(item, isSelected) => {
-                      const imgItem = item as unknown as ImageMappingItem;
-                      const date = new Date(imgItem.updated_at);
-                      return (
-                        <div className="flex flex-col items-start py-3 w-full">
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-2">
-                              <Check
-                                className={cn(
-                                  "h-4 w-4",
-                                  isSelected ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <span className="font-medium">
-                                {imgItem.name}
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-xs text-muted-foreground mt-1">
-                            {date.toLocaleDateString()}{" "}
-                            {date.toLocaleTimeString()}
-                          </span>
-                        </div>
-                      );
-                    }}
-                    disabled={isReadonly}
-                    multiSelect={useVideo}
-                    hideSelectedChips={true}
-                    buttonClassName="h-8 justify-between"
-                    compact={true}
-                    groupHeading="Images"
-                    placeholder="Select image..."
-                    clearActionLabel="New Image"
-                  />
-                </div>
-              )}
-              {Object.keys(imageMapping).length === 0 && <Label>Images</Label>}
-
-              {/* Image Grid - Single Column, Scrollable */}
-              <div className="flex-1 overflow-auto max-h-[500px]">
-                <div className="flex flex-col gap-2">
-                  {/* Display selected images */}
-                  {(useVideo ? selectedImages : image ? [image] : []).map(
-                    (img) => (
-                      <div
-                        key={img.id}
-                        className="relative aspect-square border rounded-lg overflow-hidden bg-muted/20"
-                      >
-                        {/* Preview button - top left */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPreviewImageId(img.id);
-                          }}
-                          className="absolute top-1 left-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
-                          disabled={isReadonly}
-                        >
-                          <Eye className="h-3.5 w-3.5 text-primary-foreground" />
-                        </button>
-                        {/* Delete button - top right */}
-                        {useVideo && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const newImages = selectedImages.filter(
-                                (i) => i.id !== img.id
-                              );
-                              setSelectedImages(newImages);
-                              if (newImages.length > 0 && newImages[0]) {
-                                onImageSelect(newImages[0]);
-                              } else {
-                                onImageSelect(null);
-                              }
-                            }}
-                            className="absolute top-1 right-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
-                            disabled={isReadonly}
-                          >
-                            <X className="h-3.5 w-3.5 text-primary-foreground" />
-                          </button>
-                        )}
-                        <ImageViewer
-                          imageId={img.id}
-                          name={img.name}
-                          bare={true}
-                        />
-                        {/* Image name at bottom */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1 z-10">
-                          <span className="truncate block">{img.name}</span>
-                        </div>
-                      </div>
-                    )
-                  )}
-
-                  {/* Add Image Box - Show until max (10, same as max questions) */}
-                  {(useVideo ? selectedImages.length : image ? 1 : 0) < 10 && (
-                    <div
-                      onClick={() => {
-                        if (!isReadonly && !isUploadingImage) {
-                          imageInputRef.current?.click();
-                        }
-                      }}
-                      className="aspect-square border-2 border-dashed border-muted-foreground/50 rounded-lg cursor-pointer bg-muted/20 hover:border-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center justify-center"
-                    >
-                      <Upload className="h-6 w-6 text-muted-foreground mb-1" />
-                      <p className="text-xs text-muted-foreground text-center px-2">
-                        Add image
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Video/Image Preview Section */}
           <div
             className={
-              useVideo && useImage
-                ? allPreviewDocumentIds.length > 0
-                  ? "w-[40%] space-y-2 flex flex-col"
-                  : "w-[75%] space-y-2 flex flex-col"
-                : allPreviewDocumentIds.length > 0
-                  ? "w-[70%] space-y-2 flex flex-col"
-                  : "w-full space-y-2 flex flex-col"
+              allPreviewDocumentIds.length > 0
+                ? "w-[70%] space-y-2 flex flex-col"
+                : "w-full space-y-2 flex flex-col"
             }
           >
             {/* Video Picker (when video enabled) */}
@@ -1882,13 +1931,7 @@ export function ContentSection({
 
           {/* Documents Preview Section */}
           {allPreviewDocumentIds.length > 0 && (
-            <div
-              className={
-                useVideo && useImage
-                  ? "w-[35%] min-w-[35%] max-w-[35%] space-y-2 flex flex-col self-stretch"
-                  : "w-[30%] min-w-[30%] max-w-[30%] space-y-2 flex flex-col self-stretch"
-              }
-            >
+            <div className="w-[30%] min-w-[30%] max-w-[30%] space-y-2 flex flex-col self-stretch">
               {/* Document Navigation - Top Right */}
               {scenarioPreviewDocumentId &&
                 allPreviewDocumentIds.length > 1 && (
@@ -2108,40 +2151,6 @@ export function ContentSection({
                 })()}
             </div>
           )}
-        </div>
-
-        {/* Use Image/Images Switch (at the bottom of all switches) */}
-        <div className="space-y-4 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="use-image"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Image
-                  className="h-3.5 w-3.5 text-muted-foreground"
-                  aria-label="Image icon"
-                />
-                {useVideo ? "Images" : "Image"}
-              </Label>
-              <Switch
-                id="use-image"
-                checked={useImage}
-                onCheckedChange={(checked) => {
-                  onUseImageChange(checked);
-                  if (!checked) {
-                    onImageSelect(null);
-                  }
-                }}
-                disabled={isReadonly}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              {useVideo
-                ? "Add images alongside video content"
-                : "Use scenario background image"}
-            </p>
-          </div>
         </div>
 
         {/* Document Preview Dialog */}
