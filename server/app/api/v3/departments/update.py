@@ -102,7 +102,9 @@ async def update_department(
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         # Trigger Keycloak sync for the updated department
-        await internal_sio.emit("keycloak_sync", {"department_id": request.departmentId})
+        await internal_sio.emit(
+            "keycloak_sync", {"department_id": request.departmentId}
+        )
 
         return result
     except HTTPException:

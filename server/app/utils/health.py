@@ -7,8 +7,9 @@ from typing import Any
 
 import asyncpg  # type: ignore
 import httpx  # type: ignore
-from app.main import get_pool, get_redis_client, get_sio_instance
 from fastapi import status  # type: ignore
+
+from app.main import get_pool, get_redis_client, get_sio_instance
 
 
 @dataclass
@@ -113,7 +114,7 @@ async def check_keycloak() -> ServiceCheckResult:
 
         if r.status_code == 200:
             return ServiceCheckResult(True, latency)
-        
+
         # Keycloak might return 403 with "HTTPS required" during startup or before SSL is disabled
         # This means Keycloak is running but not yet configured for HTTP
         # We consider this as "available but not ready" rather than "unavailable"
@@ -124,10 +125,12 @@ async def check_keycloak() -> ServiceCheckResult:
                 if error_body.get("error_description") == "HTTPS required":
                     # Keycloak is running but requires HTTPS - this is expected before sync
                     # Return as available but with a warning
-                    return ServiceCheckResult(True, latency, "HTTPS required (will be fixed by sync)")
+                    return ServiceCheckResult(
+                        True, latency, "HTTPS required (will be fixed by sync)"
+                    )
             except Exception:
                 pass
-        
+
         return ServiceCheckResult(False, latency, f"status={r.status_code}")
     except Exception as e:
         latency = (time.perf_counter() - start) * 1000

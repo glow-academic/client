@@ -180,7 +180,9 @@ async def _simulation_voice_assistant_delta_impl(
                     personas = [dict(row) for row in persona_rows]
 
                     # Get latest message in chat to use as parent for message_tree
-                    sql_get_latest_message = load_sql("sql/v3/simulations/get_latest_message.sql")
+                    sql_get_latest_message = load_sql(
+                        "sql/v3/simulations/get_latest_message.sql"
+                    )
                     latest_message_row = await conn.fetchrow(
                         sql_get_latest_message,
                         str(chat_id_uuid),

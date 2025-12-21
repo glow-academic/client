@@ -708,17 +708,11 @@ async def _simulation_text_send_impl(
                 )
                 # We need context to create a run, so we'll get it first
                 # For now, get the latest run for the chat's group
+                sql_get_latest_run = load_sql(
+                    "sql/v3/simulations/get_latest_run_for_chat.sql"
+                )
                 latest_run_row = await conn.fetchrow(
-                    """
-                    SELECT gr.run_id::text as run_id
-                    FROM chat_messages cm
-                    JOIN message_runs mr ON mr.message_id = cm.message_id
-                    JOIN group_runs gr ON gr.run_id = mr.run_id
-                    JOIN runs r ON r.id = gr.run_id
-                    WHERE cm.chat_id = $1::uuid
-                    ORDER BY r.created_at DESC
-                    LIMIT 1
-                    """,
+                    sql_get_latest_run,
                     str(chat_id_uuid),
                 )
 
@@ -1981,13 +1975,22 @@ Tool Usage Instructions:
                                                         str(db_message_id),
                                                     )
 
+                                                    # Update final content
+                                                    sql_update_final = load_sql(
+                                                        "sql/v3/simulations/update_message_content_final.sql"
+                                                    )
+                                                    await conn.execute(
+                                                        sql_update_final,
+                                                        final_message,
+                                                        str(db_message_id),
+                                                    )
+
                                                     # Complete message
                                                     sql_complete = load_sql(
                                                         "sql/v3/simulations/complete_message.sql"
                                                     )
                                                     await conn.execute(
                                                         sql_complete,
-                                                        final_message,
                                                         str(db_message_id),
                                                     )
 
@@ -2208,13 +2211,22 @@ Tool Usage Instructions:
                                                         str(db_message_id),
                                                     )
 
+                                                    # Update final content
+                                                    sql_update_final = load_sql(
+                                                        "sql/v3/simulations/update_message_content_final.sql"
+                                                    )
+                                                    await conn.execute(
+                                                        sql_update_final,
+                                                        final_message,
+                                                        str(db_message_id),
+                                                    )
+
                                                     # Complete message
                                                     sql_complete = load_sql(
                                                         "sql/v3/simulations/complete_message.sql"
                                                     )
                                                     await conn.execute(
                                                         sql_complete,
-                                                        final_message,
                                                         str(db_message_id),
                                                     )
 
@@ -2429,13 +2441,22 @@ Tool Usage Instructions:
                                                             str(db_message_id),
                                                         )
 
+                                                        # Update final content
+                                                        sql_update_final = load_sql(
+                                                            "sql/v3/simulations/update_message_content_final.sql"
+                                                        )
+                                                        await conn.execute(
+                                                            sql_update_final,
+                                                            final_message,
+                                                            str(db_message_id),
+                                                        )
+
                                                         # Complete message
                                                         sql_complete = load_sql(
                                                             "sql/v3/simulations/complete_message.sql"
                                                         )
                                                         await conn.execute(
                                                             sql_complete,
-                                                            final_message,
                                                             str(db_message_id),
                                                         )
 
@@ -2629,12 +2650,20 @@ Tool Usage Instructions:
                                                         str(db_message_id),
                                                     )
 
+                                                    sql_update_final = load_sql(
+                                                        "sql/v3/simulations/update_message_content_final.sql"
+                                                    )
+                                                    await cleanup_conn.execute(
+                                                        sql_update_final,
+                                                        final_message,
+                                                        str(db_message_id),
+                                                    )
+
                                                     sql_complete = load_sql(
                                                         "sql/v3/simulations/complete_message.sql"
                                                     )
                                                     await cleanup_conn.execute(
                                                         sql_complete,
-                                                        final_message,
                                                         str(db_message_id),
                                                     )
 

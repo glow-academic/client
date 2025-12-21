@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict hxp7GXfhxsfXDM0YkCpgtf1sBVLgb9kDPJX5sUhITUDSkWdeOeVo4azbspu3mrM
+\restrict zHBD2TT4yL3Byyk4mNysoeEYJYpqHFQ7TTYVsThE686TDI8n4ikWZrrLokHcPpM
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -373,6 +373,31 @@ BEGIN
         WHERE m.id = message_id 
         AND m.role IN ('user', 'assistant')
     );
+END;
+$$;
+
+
+--
+-- Name: safe_jsonb_parse(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.safe_jsonb_parse(input_text text) RETURNS jsonb
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+BEGIN
+    -- If input is NULL or empty, return NULL
+    IF input_text IS NULL OR trim(input_text) = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Try to parse as JSONB
+    BEGIN
+        RETURN input_text::jsonb;
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- Return NULL if parsing fails (invalid JSON)
+            RETURN NULL;
+    END;
 END;
 $$;
 
@@ -917,8 +942,8 @@ CREATE TABLE public.simulation_scenarios (
     audio_enabled boolean DEFAULT false NOT NULL,
     text_enabled boolean DEFAULT true NOT NULL,
     rubric_id uuid,
-    scenario_id uuid,
-    simulation_id uuid,
+    scenario_id uuid NOT NULL,
+    simulation_id uuid NOT NULL,
     show_problem_statement boolean DEFAULT true NOT NULL,
     show_objectives boolean DEFAULT true NOT NULL,
     show_images boolean DEFAULT true NOT NULL
@@ -1624,7 +1649,7 @@ CREATE TABLE public.message_content (
     content text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    message_id uuid,
+    message_id uuid NOT NULL,
     CONSTRAINT message_content_idx_check CHECK ((idx >= 0))
 );
 
@@ -1637,7 +1662,7 @@ CREATE TABLE public.message_feedback_highlight (
     idx integer NOT NULL,
     section text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    message_feedback_id uuid
+    message_feedback_id uuid NOT NULL
 );
 
 
@@ -1650,7 +1675,7 @@ CREATE TABLE public.message_feedback_replace (
     section text NOT NULL,
     replace text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    message_feedback_id uuid
+    message_feedback_id uuid NOT NULL
 );
 
 
@@ -1716,7 +1741,7 @@ CREATE TABLE public.model_endpoints (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    model_id uuid,
+    model_id uuid NOT NULL,
     CONSTRAINT model_endpoints_base_url_check CHECK ((base_url <> ''::text))
 );
 
@@ -1731,7 +1756,7 @@ CREATE TABLE public.model_modalities (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    model_id uuid
+    model_id uuid NOT NULL
 );
 
 
@@ -1745,8 +1770,8 @@ CREATE TABLE public.model_pricing (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    model_id uuid,
-    unit_id uuid
+    model_id uuid NOT NULL,
+    unit_id uuid NOT NULL
 );
 
 
@@ -1759,7 +1784,7 @@ CREATE TABLE public.model_qualities (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    model_id uuid
+    model_id uuid NOT NULL
 );
 
 
@@ -1979,7 +2004,7 @@ CREATE TABLE public.profile_emails (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    profile_id uuid
+    profile_id uuid NOT NULL
 );
 
 
@@ -1992,7 +2017,7 @@ CREATE TABLE public.profile_request_limits (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    profile_id uuid,
+    profile_id uuid NOT NULL,
     CONSTRAINT profile_request_limits_requests_per_day_check CHECK ((requests_per_day > 0))
 );
 
@@ -2041,7 +2066,7 @@ CREATE TABLE public.provider_endpoints (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    provider_id uuid,
+    provider_id uuid NOT NULL,
     CONSTRAINT provider_endpoints_base_url_check CHECK ((base_url <> ''::text))
 );
 
@@ -2177,8 +2202,8 @@ CREATE TABLE public.run_pricing_usage (
     count integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    run_id uuid,
-    unit_id uuid
+    run_id uuid NOT NULL,
+    unit_id uuid NOT NULL
 );
 
 
@@ -2204,7 +2229,7 @@ CREATE TABLE public.scenario_document_ranges (
     max_count integer DEFAULT 3 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    scenario_id uuid,
+    scenario_id uuid NOT NULL,
     CONSTRAINT scenario_document_ranges_min_max_check CHECK (((min_count >= 0) AND (max_count >= min_count)))
 );
 
@@ -2231,8 +2256,8 @@ CREATE TABLE public.scenario_field_ranges (
     max_count integer DEFAULT 3 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    parameter_id uuid,
-    scenario_id uuid,
+    parameter_id uuid NOT NULL,
+    scenario_id uuid NOT NULL,
     CONSTRAINT scenario_field_ranges_min_max_check CHECK (((min_count >= 1) AND (max_count >= min_count)))
 );
 
@@ -2296,7 +2321,7 @@ CREATE TABLE public.scenario_parameter_ranges (
     max_count integer DEFAULT 3 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    scenario_id uuid,
+    scenario_id uuid NOT NULL,
     CONSTRAINT scenario_parameter_ranges_min_max_check CHECK (((min_count >= 0) AND (max_count >= min_count)))
 );
 
@@ -2323,7 +2348,7 @@ CREATE TABLE public.scenario_persona_ranges (
     max_count integer DEFAULT 3 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    scenario_id uuid,
+    scenario_id uuid NOT NULL,
     CONSTRAINT scenario_persona_ranges_min_max_check CHECK (((min_count >= 1) AND (max_count >= min_count)))
 );
 
@@ -2572,7 +2597,7 @@ CREATE TABLE public.simulation_hints (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     hint text NOT NULL,
     idx integer NOT NULL,
-    simulation_message_id uuid
+    simulation_message_id uuid NOT NULL
 );
 
 
@@ -2669,7 +2694,7 @@ CREATE TABLE public.tool_call_arguments (
     arguments_json jsonb NOT NULL,
     arguments_raw text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tool_call_id uuid
+    tool_call_id uuid NOT NULL
 );
 
 
@@ -2681,7 +2706,7 @@ CREATE TABLE public.tool_call_results (
     result_content text NOT NULL,
     result_json jsonb,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tool_call_id uuid
+    tool_call_id uuid NOT NULL
 );
 
 
@@ -3179,6 +3204,30 @@ ALTER TABLE ONLY public.message_audio
 
 
 --
+-- Name: message_content message_content_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_content
+    ADD CONSTRAINT message_content_pkey PRIMARY KEY (message_id, idx);
+
+
+--
+-- Name: message_feedback_highlight message_feedback_highlight_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_feedback_highlight
+    ADD CONSTRAINT message_feedback_highlight_pkey PRIMARY KEY (message_feedback_id, idx);
+
+
+--
+-- Name: message_feedback_replace message_feedback_replace_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_feedback_replace
+    ADD CONSTRAINT message_feedback_replace_pkey PRIMARY KEY (message_feedback_id, idx);
+
+
+--
 -- Name: message_feedbacks message_feedbacks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3224,6 +3273,38 @@ ALTER TABLE ONLY public.messages
 
 ALTER TABLE ONLY public.model_departments
     ADD CONSTRAINT model_departments_pkey PRIMARY KEY (model_id, department_id);
+
+
+--
+-- Name: model_endpoints model_endpoints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_endpoints
+    ADD CONSTRAINT model_endpoints_pkey PRIMARY KEY (model_id);
+
+
+--
+-- Name: model_modalities model_modalities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_modalities
+    ADD CONSTRAINT model_modalities_pkey PRIMARY KEY (model_id, modality, is_input);
+
+
+--
+-- Name: model_pricing model_pricing_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_pricing
+    ADD CONSTRAINT model_pricing_pkey PRIMARY KEY (model_id, pricing_type, unit_id);
+
+
+--
+-- Name: model_qualities model_qualities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_qualities
+    ADD CONSTRAINT model_qualities_pkey PRIMARY KEY (model_id, quality);
 
 
 --
@@ -3371,6 +3452,22 @@ ALTER TABLE ONLY public.profile_departments
 
 
 --
+-- Name: profile_emails profile_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_emails
+    ADD CONSTRAINT profile_emails_pkey PRIMARY KEY (profile_id, email);
+
+
+--
+-- Name: profile_request_limits profile_request_limits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_request_limits
+    ADD CONSTRAINT profile_request_limits_pkey PRIMARY KEY (profile_id);
+
+
+--
 -- Name: profiles profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3392,6 +3489,14 @@ ALTER TABLE ONLY public.prompt_departments
 
 ALTER TABLE ONLY public.prompts
     ADD CONSTRAINT prompts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: provider_endpoints provider_endpoints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider_endpoints
+    ADD CONSTRAINT provider_endpoints_pkey PRIMARY KEY (provider_id);
 
 
 --
@@ -3483,6 +3588,14 @@ ALTER TABLE ONLY public.run_personas
 
 
 --
+-- Name: run_pricing_usage run_pricing_usage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.run_pricing_usage
+    ADD CONSTRAINT run_pricing_usage_pkey PRIMARY KEY (run_id, pricing_type, unit_id);
+
+
+--
 -- Name: run_profiles run_profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3507,11 +3620,27 @@ ALTER TABLE ONLY public.scenario_departments
 
 
 --
+-- Name: scenario_document_ranges scenario_document_ranges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_document_ranges
+    ADD CONSTRAINT scenario_document_ranges_pkey PRIMARY KEY (scenario_id);
+
+
+--
 -- Name: scenario_documents scenario_documents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.scenario_documents
     ADD CONSTRAINT scenario_documents_pkey PRIMARY KEY (scenario_id, document_id);
+
+
+--
+-- Name: scenario_field_ranges scenario_field_ranges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_field_ranges
+    ADD CONSTRAINT scenario_field_ranges_pkey PRIMARY KEY (scenario_id, parameter_id);
 
 
 --
@@ -3547,11 +3676,27 @@ ALTER TABLE ONLY public.scenario_objectives
 
 
 --
+-- Name: scenario_parameter_ranges scenario_parameter_ranges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_parameter_ranges
+    ADD CONSTRAINT scenario_parameter_ranges_pkey PRIMARY KEY (scenario_id);
+
+
+--
 -- Name: scenario_parameters scenario_parameters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.scenario_parameters
     ADD CONSTRAINT scenario_parameters_pkey PRIMARY KEY (scenario_id, parameter_id);
+
+
+--
+-- Name: scenario_persona_ranges scenario_persona_ranges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_persona_ranges
+    ADD CONSTRAINT scenario_persona_ranges_pkey PRIMARY KEY (scenario_id);
 
 
 --
@@ -3723,6 +3868,22 @@ ALTER TABLE ONLY public.simulation_departments
 
 
 --
+-- Name: simulation_hints simulation_hints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulation_hints
+    ADD CONSTRAINT simulation_hints_pkey PRIMARY KEY (simulation_message_id, idx);
+
+
+--
+-- Name: simulation_scenarios simulation_scenarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulation_scenarios
+    ADD CONSTRAINT simulation_scenarios_pkey PRIMARY KEY (simulation_id, scenario_id);
+
+
+--
 -- Name: simulations simulations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3776,6 +3937,22 @@ ALTER TABLE ONLY public.test_runs
 
 ALTER TABLE ONLY public.tests
     ADD CONSTRAINT tests_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tool_call_arguments tool_call_arguments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tool_call_arguments
+    ADD CONSTRAINT tool_call_arguments_pkey PRIMARY KEY (tool_call_id);
+
+
+--
+-- Name: tool_call_results tool_call_results_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tool_call_results
+    ADD CONSTRAINT tool_call_results_pkey PRIMARY KEY (tool_call_id);
 
 
 --
@@ -8318,5 +8495,5 @@ ALTER TABLE ONLY public.video_uploads
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hxp7GXfhxsfXDM0YkCpgtf1sBVLgb9kDPJX5sUhITUDSkWdeOeVo4azbspu3mrM
+\unrestrict zHBD2TT4yL3Byyk4mNysoeEYJYpqHFQ7TTYVsThE686TDI8n4ikWZrrLokHcPpM
 

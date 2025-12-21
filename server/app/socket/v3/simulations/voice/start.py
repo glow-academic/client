@@ -8,14 +8,15 @@ from datetime import datetime
 from typing import Any, get_type_hints
 
 import httpx
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+
 from app.main import _voice_sessions, get_pool, sio
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.agents.tools.create_persona_tools import create_persona_tools
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -120,7 +121,9 @@ async def simulation_voice_start_response(
                         if content_item.get("audio") is not None:
                             cleaned_content_item["audio"] = content_item["audio"]
                         if content_item.get("transcript") is not None:
-                            cleaned_content_item["transcript"] = content_item["transcript"]
+                            cleaned_content_item["transcript"] = content_item[
+                                "transcript"
+                            ]
                     else:
                         cleaned_content_item = content_item
                     cleaned_content.append(cleaned_content_item)
@@ -456,9 +459,12 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             # Import emit functions from send_message
             from app.socket.v3.simulations.text.send import (
                 SimulationMessageCompletePayload,
-                SimulationMessageTokenPayload, SimulationNewMessagePayload,
-                simulation_message_complete, simulation_message_token,
-                simulation_new_message)
+                SimulationMessageTokenPayload,
+                SimulationNewMessagePayload,
+                simulation_message_complete,
+                simulation_message_token,
+                simulation_new_message,
+            )
 
             # Create emit wrapper functions for persona tools
             async def emit_new_message_wrapper(event_data: dict[str, Any]) -> None:
@@ -872,9 +878,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 cleaned_item_dict = {**item, "content": cleaned_content}
                 cleaned_history_dicts.append(cleaned_item_dict)
 
-            realtime_history = [
-                RealtimeItem(**item) for item in cleaned_history_dicts
-            ]
+            realtime_history = [RealtimeItem(**item) for item in cleaned_history_dicts]
 
             logger.info(
                 f"Started voice session for chat {chat_id} with {len(persona_tools)} persona tools and {len(realtime_history)} history items"

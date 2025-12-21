@@ -1,6 +1,5 @@
 """Metrics collector for FastAPI application metrics (Redis-backed for multi-instance)."""
 
-import os
 import time
 from collections import deque
 from datetime import UTC

@@ -326,18 +326,8 @@ async def _simulation_voice_assistant_done_impl(
                 if str(db_message_id) not in _voice_message_ids[chat_id_str]:
                     _voice_message_ids[chat_id_str].append(str(db_message_id))
 
-                await simulation_new_message(
-                    SimulationNewMessagePayload(
-                        message_id=str(db_message_id),
-                        chat_id=chat_id_str,
-                        role="assistant",
-                        content=final_content,
-                        completed=True,
-                        created_at=created_at_iso,
-                        persona_id=persona_id,
-                    ),
-                    room=f"simulation_{chat_id_uuid}",
-                )
+                # Note: simulation_new_message is already emitted by _simulation_message_complete_impl
+                # No need to emit again here
 
                 # Clean up state and locks
                 del tool_calls_dict[chat_id_str][call_id]

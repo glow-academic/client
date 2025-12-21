@@ -1,17 +1,20 @@
 """Auth sync endpoint - triggers Keycloak sync for identity providers."""
 
-from typing import Annotated, Any
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
 
 from app.utils.activity.audit import audit_activity
 from app.utils.auth.keycloak_sync import perform_keycloak_sync
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
 
 
 class SyncKeycloakRequest(BaseModel):
     """Request to sync Keycloak identity providers."""
 
-    department_id: str | None = None  # Optional department ID to sync specific department
+    department_id: str | None = (
+        None  # Optional department ID to sync specific department
+    )
 
 
 class SyncKeycloakResponse(BaseModel):
@@ -41,27 +44,27 @@ async def sync_keycloak(
     http_request: Request,
 ) -> SyncKeycloakResponse:
     """Trigger Keycloak sync to update identity providers from database.
-    
+
     This endpoint performs the Keycloak sync process synchronously and returns
     the actual result. The sync process:
     - Creates/updates department realms
     - Syncs identity providers (Microsoft, Google, etc.) with credentials from database
     - Updates client configurations
-    
+
     Args:
         request: Optional department_id to sync specific department, or None to sync all
         http_request: FastAPI request object
-        
+
     Returns:
         SyncKeycloakResponse with success status, message, and optional error details
     """
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Perform sync directly and get result
         result = await perform_keycloak_sync(department_id=request.department_id)
-        
+
         # Return response based on result
         if result.success:
             return SyncKeycloakResponse(
@@ -81,7 +84,7 @@ async def sync_keycloak(
         raise
     except Exception as e:
         from app.utils.error_handler import handle_route_error
-        
+
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
@@ -94,4 +97,3 @@ async def sync_keycloak(
             status_code=500,
             detail=f"Failed to trigger Keycloak sync: {str(e)}",
         )
-

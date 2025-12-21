@@ -1,12 +1,10 @@
 """Keycloak sync handler - syncs identity providers from database to Keycloak."""
 
 import asyncio
-import logging
 import os
 import socket
 from typing import Any
 
-import httpx
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
@@ -41,7 +39,7 @@ async def wait_for_keycloak(
     is_local_dev = "localhost" in origin_check.lower()
 
     last_error: Exception | None = None
-    
+
     for attempt in range(1, max_retries + 1):
         try:
             logger.info(
@@ -56,13 +54,15 @@ async def wait_for_keycloak(
             # The database update sets SSL requirement to NONE, but Keycloak needs time to pick it up
             # Trying HTTPS will fail with SSL errors in local dev, so just wait and retry with HTTP
             connection_url = url
-            
+
             kc_admin = KeycloakAdmin(
                 server_url=f"{connection_url}/",
                 username=admin,
                 password=password,
                 realm_name="master",
-                verify=False if is_local_dev else verify_ssl,  # Disable SSL verification for local dev
+                verify=False
+                if is_local_dev
+                else verify_ssl,  # Disable SSL verification for local dev
             )
             # Test the connection by getting realms
             kc_admin.get_realms()
@@ -93,13 +93,15 @@ async def wait_for_keycloak(
             last_error = e
             error_str = str(e).lower()
             is_https_required = "https required" in error_str
-            
+
             if attempt < max_retries:
                 if is_https_required and is_local_dev:
                     # In local dev, HTTPS required means Keycloak hasn't picked up database change yet
                     # Keycloak caches realm settings in memory, cache refresh can take 15-30+ seconds
                     # Wait longer and retry with HTTP (don't try HTTPS - it will fail)
-                    wait_time = min(retry_delay * 3, MAX_RETRY_DELAY)  # Wait even longer (3x delay)
+                    wait_time = min(
+                        retry_delay * 3, MAX_RETRY_DELAY
+                    )  # Wait even longer (3x delay)
                     logger.info(
                         f"Keycloak requires HTTPS (attempt {attempt}/{max_retries}), "
                         f"waiting {wait_time:.1f}s for cache refresh, retrying with HTTP..."
@@ -123,21 +125,19 @@ async def wait_for_keycloak(
     return None
 
 
-async def get_realm_name_for_department(
-    department_id: str | None, pool: Any
-) -> str:
+async def get_realm_name_for_department(department_id: str | None, pool: Any) -> str:
     """Get realm name for a department based on which settings has keys.
-    
+
     Args:
         department_id: Department ID (None for no department)
         pool: Database connection pool
-        
+
     Returns:
         Realm name: settings_id if department-specific settings has keys, "master" otherwise
     """
     if department_id is None:
         return "master"  # No department → master realm (default settings)
-    
+
     try:
         async with pool.acquire() as conn:
             realm_sql = load_sql("sql/v3/keycloak/get_realm_name_for_department.sql")
@@ -148,17 +148,19 @@ async def get_realm_name_for_department(
         return "master"  # Fallback to master on error
 
 
-def get_realm_name(department_id: str | None, default_dept_id: str | None, has_departments: bool = True) -> str:
+def get_realm_name(
+    department_id: str | None, default_dept_id: str | None, has_departments: bool = True
+) -> str:
     """Get realm name for a department (synchronous version - deprecated).
-    
+
     This function is kept for backward compatibility but should be replaced with
     get_realm_name_for_department() which checks settings for keys.
-    
+
     Args:
         department_id: Department ID (None for master realm)
         default_dept_id: Default department ID from settings (unused)
         has_departments: Whether any departments exist (unused)
-        
+
     Returns:
         Realm name: "master" when department_id is None, otherwise department_id
     """
@@ -170,7 +172,7 @@ def get_realm_name(department_id: str | None, default_dept_id: str | None, has_d
 
 async def delete_department_realm(department_id: str) -> None:
     """Delete a department realm from Keycloak.
-    
+
     Args:
         department_id: Department ID to delete realm for
     """
@@ -247,12 +249,12 @@ async def sync_department_realm(
     department_id: str | None, kc_admin: Any, pool: Any
 ) -> None:
     """Sync a department realm (now settings-based, not department-based).
-    
+
     Args:
         department_id: Department ID (None for master realm with default settings)
         kc_admin: KeycloakAdmin instance
         pool: Database connection pool
-        
+
     Note:
         - Realms are now based on settings (credential sources), not departments
         - Determines which settings the department uses (checks for keys)
@@ -260,18 +262,16 @@ async def sync_department_realm(
     """
     # Determine which settings this department uses (check for keys)
     realm_name = await get_realm_name_for_department(department_id, pool)
-    
+
     # Call the settings-based sync function
-    await sync_department_realm_by_settings(
-        realm_name, department_id, kc_admin, pool
-    )
+    await sync_department_realm_by_settings(realm_name, department_id, kc_admin, pool)
 
 
 async def sync_department_realm_by_settings(
     realm_name: str, department_id: str | None, kc_admin: Any, pool: Any
 ) -> None:
     """Sync a realm based on settings_id (realm_name).
-    
+
     Args:
         realm_name: Realm name (settings_id or "master" for default settings)
         department_id: Department ID for provider sync logic (can be None)
@@ -286,9 +286,7 @@ async def sync_department_realm_by_settings(
         realm_exists = any(r["realm"] == realm_name for r in realms)
 
         if not realm_exists:
-            logger.info(
-                f"[{bootstrap_leader}] Creating Keycloak realm: {realm_name}"
-            )
+            logger.info(f"[{bootstrap_leader}] Creating Keycloak realm: {realm_name}")
             try:
                 kc_admin.create_realm(
                     payload={"realm": realm_name, "enabled": True},
@@ -310,9 +308,7 @@ async def sync_department_realm_by_settings(
                         f"⚠️  [{bootstrap_leader}] Realm '{realm_name}' may have been created by another server, re-checking..."
                     )
                     realms = kc_admin.get_realms()
-                    realm_exists_now = any(
-                        r["realm"] == realm_name for r in realms
-                    )
+                    realm_exists_now = any(r["realm"] == realm_name for r in realms)
 
                     if realm_exists_now:
                         logger.info(f"✅ Realm '{realm_name}' now exists")
@@ -350,9 +346,7 @@ async def sync_department_realm_by_settings(
                 "frontendUrl": "",
             }
             needs_update = True
-            logger.info(
-                f"Fixing realm frontend URL (was: {current_frontend_url})"
-            )
+            logger.info(f"Fixing realm frontend URL (was: {current_frontend_url})")
         elif not current_frontend_url and update_payload.get("attributes") is None:
             update_payload["attributes"] = attributes
 
@@ -366,9 +360,7 @@ async def sync_department_realm_by_settings(
             )
 
         if needs_update:
-            kc_admin.update_realm(
-                realm_name=realm_name, payload=update_payload
-            )
+            kc_admin.update_realm(realm_name=realm_name, payload=update_payload)
             logger.info("✅ Realm settings updated")
     except Exception as e:
         logger.warning(f"Could not update realm settings: {e}. Continuing...")
@@ -387,18 +379,12 @@ async def sync_department_realm_by_settings(
         try:
             origin = os.getenv("ORIGIN", f"http://localhost:{client_port}")
             base_url = origin.rstrip("/")
-            redirect_uri = (
-                f"{base_url}{app_prefix}/api/auth/callback/keycloak"
-            )
+            redirect_uri = f"{base_url}{app_prefix}/api/auth/callback/keycloak"
             redirect_uris = [redirect_uri, f"{base_url}{app_prefix}/*"]
 
             clients = kc_admin.get_clients()
             existing_client = next(
-                (
-                    c
-                    for c in clients
-                    if c.get("clientId") == target_client_id
-                ),
+                (c for c in clients if c.get("clientId") == target_client_id),
                 None,
             )
 
@@ -536,13 +522,11 @@ async def sync_department_realm_by_settings(
         else:
             # Settings-based realm uses the settings_id as realm_name
             settings_id = realm_name
-        
+
         # Get providers for this settings (not department)
         # We need to update get_auth_providers_complete.sql to accept settings_id
         # For now, if we have department_id, use it; otherwise use NULL for default settings
-        providers_sql = load_sql(
-            "sql/v3/keycloak/get_auth_providers_complete.sql"
-        )
+        providers_sql = load_sql("sql/v3/keycloak/get_auth_providers_complete.sql")
         # Pass department_id for backward compatibility, but logic will be updated
         providers = await conn.fetch(providers_sql, department_id)
 
@@ -553,30 +537,36 @@ async def sync_department_realm_by_settings(
         try:
             existing_idps = kc_admin.get_idps()
             existing_provider_slugs = {idp.get("alias", "") for idp in existing_idps}
-            
+
             # Delete providers that shouldn't be in this realm
             providers_to_delete = existing_provider_slugs - expected_provider_slugs
             for slug_to_delete in providers_to_delete:
                 try:
                     kc_admin.delete_idp(idp_alias=slug_to_delete)
-                    logger.info(f"🗑️  Deleted provider '{slug_to_delete}' from realm '{realm_name}' (not in database)")
+                    logger.info(
+                        f"🗑️  Deleted provider '{slug_to_delete}' from realm '{realm_name}' (not in database)"
+                    )
                 except Exception as delete_e:
                     error_str = str(delete_e).lower()
                     if "not found" in error_str or "404" in error_str:
-                        logger.info(f"Provider '{slug_to_delete}' already deleted from realm '{realm_name}'")
+                        logger.info(
+                            f"Provider '{slug_to_delete}' already deleted from realm '{realm_name}'"
+                        )
                     else:
-                        logger.warning(f"Failed to delete provider '{slug_to_delete}' from realm '{realm_name}': {delete_e}")
+                        logger.warning(
+                            f"Failed to delete provider '{slug_to_delete}' from realm '{realm_name}': {delete_e}"
+                        )
         except Exception as list_e:
-            logger.warning(f"Failed to list existing providers in realm '{realm_name}': {list_e}")
+            logger.warning(
+                f"Failed to list existing providers in realm '{realm_name}': {list_e}"
+            )
 
         if not providers:
             logger.info(
                 f"No active providers found for department {department_id or 'default'}, skipping sync"
             )
         else:
-            items_sql = load_sql(
-                "sql/v3/keycloak/get_auth_items_complete.sql"
-            )
+            items_sql = load_sql("sql/v3/keycloak/get_auth_items_complete.sql")
 
             for p in providers:
                 auth_id = p["id"]
@@ -616,21 +606,19 @@ async def sync_department_realm_by_settings(
 
                 if provider_id == "saml":
                     if "ssoUrl" in config_map:
-                        payload["config"][
-                            "singleSignOnServiceUrl"
-                        ] = config_map["ssoUrl"]
-                    if "entityId" in config_map:
-                        payload["config"]["entityId"] = config_map[
-                            "entityId"
+                        payload["config"]["singleSignOnServiceUrl"] = config_map[
+                            "ssoUrl"
                         ]
+                    if "entityId" in config_map:
+                        payload["config"]["entityId"] = config_map["entityId"]
                     if "metadataUrl" in config_map:
-                        payload["config"]["importFromIdpUrl"] = (
-                            config_map["metadataUrl"]
-                        )
+                        payload["config"]["importFromIdpUrl"] = config_map[
+                            "metadataUrl"
+                        ]
                     if "certificate" in config_map:
-                        payload["config"]["signingCertificate"] = (
-                            config_map["certificate"]
-                        )
+                        payload["config"]["signingCertificate"] = config_map[
+                            "certificate"
+                        ]
                     if "nameIDPolicyFormat" not in payload["config"]:
                         payload["config"]["nameIDPolicyFormat"] = (
                             "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
@@ -653,9 +641,7 @@ async def sync_department_realm_by_settings(
                 try:
                     kc_admin.get_idp(idp_alias=slug)
                     try:
-                        kc_admin.update_idp(
-                            idp_alias=slug, payload=payload
-                        )
+                        kc_admin.update_idp(idp_alias=slug, payload=payload)
                         logger.info(f"✅ Synced Keycloak provider: {slug}")
                     except Exception as update_e:
                         error_str = str(update_e).lower()
@@ -684,12 +670,8 @@ async def sync_department_realm_by_settings(
                                 f"⚠️  [{bootstrap_leader}] Provider '{slug}' was created by another server, updating instead..."
                             )
                             try:
-                                kc_admin.update_idp(
-                                    idp_alias=slug, payload=payload
-                                )
-                                logger.info(
-                                    f"✅ Synced Keycloak provider: {slug}"
-                                )
+                                kc_admin.update_idp(idp_alias=slug, payload=payload)
+                                logger.info(f"✅ Synced Keycloak provider: {slug}")
                             except Exception as update_retry_e:
                                 logger.warning(
                                     f"⚠️  Failed to update provider '{slug}' after create conflict: {update_retry_e}"
@@ -700,7 +682,7 @@ async def sync_department_realm_by_settings(
 
 async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
     """Ensure glow-client exists in master realm with correct configuration.
-    
+
     Args:
         kc_admin: KeycloakAdmin instance
     """
@@ -708,34 +690,26 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
     target_secret: str | None = os.getenv("AUTH_KEYCLOAK_SECRET")
     client_port = os.getenv("CLIENT_PORT", "3000")
     app_prefix = os.getenv("APP_PREFIX", "")
-    
+
     if not target_secret:
-        logger.warning(
-            "⚠️  AUTH_KEYCLOAK_SECRET is missing. Cannot create glow-client."
-        )
+        logger.warning("⚠️  AUTH_KEYCLOAK_SECRET is missing. Cannot create glow-client.")
         return
-    
+
     try:
         # Switch to master realm to ensure client is created there
         kc_admin.change_current_realm(realm_name="master")
-        
+
         origin = os.getenv("ORIGIN", f"http://localhost:{client_port}")
         base_url = origin.rstrip("/")
-        redirect_uri = (
-            f"{base_url}{app_prefix}/api/auth/callback/keycloak"
-        )
+        redirect_uri = f"{base_url}{app_prefix}/api/auth/callback/keycloak"
         redirect_uris = [redirect_uri, f"{base_url}{app_prefix}/*"]
-        
+
         clients = kc_admin.get_clients()
         existing_client = next(
-            (
-                c
-                for c in clients
-                if c.get("clientId") == target_client_id
-            ),
+            (c for c in clients if c.get("clientId") == target_client_id),
             None,
         )
-        
+
         client_payload: dict[str, Any] = {
             "clientId": target_client_id,
             "name": "Glow App",
@@ -752,7 +726,7 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
             "clientAuthenticatorType": "client-secret",
             "secret": target_secret,
         }
-        
+
         if existing_client:
             client_uuid = existing_client.get("id")
             if client_uuid:
@@ -762,20 +736,24 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
                     )
                     logger.info(f"✅ Master realm: Client '{target_client_id}' updated")
                 except Exception as e:
-                    logger.warning(f"Failed to update master realm client '{target_client_id}': {e}")
+                    logger.warning(
+                        f"Failed to update master realm client '{target_client_id}': {e}"
+                    )
         else:
             try:
                 new_client_uuid = kc_admin.create_client(
                     payload=client_payload, skip_exists=True
                 )
                 logger.info(f"✅ Master realm: Client '{target_client_id}' created")
-                
+
                 if new_client_uuid:
                     kc_admin.update_client(
                         client_id=new_client_uuid,
                         payload={"secret": target_secret},
                     )
-                    logger.info(f"✅ Master realm: Client secret enforced for '{target_client_id}'")
+                    logger.info(
+                        f"✅ Master realm: Client secret enforced for '{target_client_id}'"
+                    )
             except Exception as e:
                 error_str = str(e).lower()
                 is_conflict = (
@@ -785,18 +763,22 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
                     or "409" in error_str
                     or "already exists" in error_str
                 )
-                
+
                 if is_conflict:
-                    logger.info(f"⚠️  Master realm: Client '{target_client_id}' already exists")
+                    logger.info(
+                        f"⚠️  Master realm: Client '{target_client_id}' already exists"
+                    )
                 else:
-                    logger.warning(f"Failed to create master realm client '{target_client_id}': {e}")
+                    logger.warning(
+                        f"Failed to create master realm client '{target_client_id}': {e}"
+                    )
     except Exception as e:
         logger.warning(f"Could not ensure glow-client in master realm: {e}")
 
 
 async def sync_keycloak(department_id: str | None = None) -> None:
     """Sync Keycloak identity providers from database to Keycloak.
-    
+
     Args:
         department_id: Optional department ID to sync. If None, syncs all active departments.
     """
@@ -844,17 +826,23 @@ async def sync_keycloak(department_id: str | None = None) -> None:
                     await conn.execute(
                         "UPDATE keycloak.realm SET ssl_required = 'NONE' WHERE name = 'master'"
                     )
-                    logger.info("✅ Set master realm SSL requirement to NONE in database")
-                
+                    logger.info(
+                        "✅ Set master realm SSL requirement to NONE in database"
+                    )
+
                 # Note: Keycloak caches realm settings in memory, so database updates take time to take effect
                 # The Admin API also requires HTTPS when realm requires HTTPS, so we can't use it to force a reload
                 # We need to wait for Keycloak's cache to expire and pick up the database change
                 # Keycloak's cache typically refreshes every 5-10 seconds, so we wait a bit longer
-                logger.info("Waiting for Keycloak to pick up database change (cache refresh ~5-10s)...")
+                logger.info(
+                    "Waiting for Keycloak to pick up database change (cache refresh ~5-10s)..."
+                )
                 await asyncio.sleep(10)
             except Exception as e:
                 logger.warning(f"Could not update master realm SSL in database: {e}")
-                logger.warning("Note: If Keycloak still requires HTTPS, you may need to restart Keycloak")
+                logger.warning(
+                    "Note: If Keycloak still requires HTTPS, you may need to restart Keycloak"
+                )
 
         # Connect to Keycloak Admin API with retry logic
         kc_admin = await wait_for_keycloak(
@@ -923,7 +911,9 @@ async def sync_keycloak(department_id: str | None = None) -> None:
                           WHERE sak.settings_id = s.id AND sak.active = true
                       )
                 """)
-                settings_to_sync = [row["realm_name"] for row in settings_to_sync_result]
+                settings_to_sync = [
+                    row["realm_name"] for row in settings_to_sync_result
+                ]
 
         # Sync each settings realm (settings-based, not department-based)
         for settings_id in settings_to_sync:
@@ -934,14 +924,17 @@ async def sync_keycloak(department_id: str | None = None) -> None:
                 department_id_for_sync = None
                 if settings_id != "master":
                     async with pool.acquire() as conn:
-                        dept_result = await conn.fetchval("""
+                        dept_result = await conn.fetchval(
+                            """
                             SELECT ds.department_id::text
                             FROM department_settings ds
                             WHERE ds.settings_id = $1::uuid AND ds.active = true
                             LIMIT 1
-                        """, settings_id)
+                        """,
+                            settings_id,
+                        )
                         department_id_for_sync = dept_result
-                
+
                 # Sync the realm using settings_id as realm_name
                 await sync_department_realm_by_settings(
                     settings_id, department_id_for_sync, kc_admin, pool
@@ -959,7 +952,7 @@ async def sync_keycloak(department_id: str | None = None) -> None:
             async with pool.acquire() as conn:
                 # Get list of valid realm names (master + settings_ids with keys)
                 valid_realm_names = set(settings_to_sync)
-                
+
                 # Get all existing realms
                 existing_realms = kc_admin.get_realms()
                 for realm in existing_realms:
@@ -967,23 +960,28 @@ async def sync_keycloak(department_id: str | None = None) -> None:
                     # Skip master realm
                     if realm_name == "master":
                         continue
-                    
+
                     # If realm is not in valid list and looks like a UUID (old department-based realm),
                     # delete it
                     if realm_name not in valid_realm_names:
                         # Check if it's a UUID format (old department-based realm)
                         import re
-                        uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+
+                        uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
                         if re.match(uuid_pattern, realm_name.lower()):
                             try:
                                 kc_admin.delete_realm(realm_name=realm_name)
-                                logger.info(f"✅ Deleted old department-based realm: {realm_name}")
+                                logger.info(
+                                    f"✅ Deleted old department-based realm: {realm_name}"
+                                )
                             except Exception as e:
                                 error_str = str(e).lower()
                                 if "not found" in error_str or "404" in error_str:
                                     logger.info(f"Realm '{realm_name}' already deleted")
                                 else:
-                                    logger.warning(f"Failed to delete old realm '{realm_name}': {e}")
+                                    logger.warning(
+                                        f"Failed to delete old realm '{realm_name}': {e}"
+                                    )
         except Exception as e:
             logger.warning(f"Failed to clean up old realms: {e}", exc_info=True)
 
@@ -997,10 +995,10 @@ async def keycloak_sync(sid: str, data: dict[str, Any]) -> None:
     """WebSocket event handler for manual Keycloak sync trigger."""
     logger.info(f"Keycloak sync requested via WebSocket from {sid}")
     department_id = data.get("department_id") if isinstance(data, dict) else None
-    
+
     # Use utility function for consistent behavior
     from app.utils.auth.keycloak_sync import perform_keycloak_sync
-    
+
     result = await perform_keycloak_sync(department_id=department_id)
     if not result.success:
         logger.warning(f"Keycloak sync failed via WebSocket: {result.message}")
@@ -1009,17 +1007,16 @@ async def keycloak_sync(sid: str, data: dict[str, Any]) -> None:
 @internal_sio.on("keycloak_sync")
 async def keycloak_sync_internal(data: dict[str, Any]) -> None:
     """Internal event handler for API-triggered Keycloak syncs.
-    
+
     DEPRECATED: This handler is kept for backward compatibility but is no longer
     used by the sync endpoint. The endpoint now calls perform_keycloak_sync() directly.
     """
     logger.info("Keycloak sync requested via internal event")
     department_id = data.get("department_id") if isinstance(data, dict) else None
-    
+
     # Use utility function for consistent behavior
     from app.utils.auth.keycloak_sync import perform_keycloak_sync
-    
+
     result = await perform_keycloak_sync(department_id=department_id)
     if not result.success:
         logger.warning(f"Keycloak sync failed via internal event: {result.message}")
-

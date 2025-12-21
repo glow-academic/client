@@ -197,10 +197,16 @@ async def _simulation_tool_call_complete_impl(
     assert conn is not None  # Type guard
 
     try:
-        # Finalize tool call in database
-        sql_finalize = load_sql("sql/v3/tool_calls/finalize_tool_call.sql")
+        # Finalize tool call in database (mark as completed)
+        sql_update_completed = load_sql(
+            "sql/v3/tool_calls/update_tool_call_completed.sql"
+        )
+        await conn.execute(sql_update_completed, validated.tool_call_id)
+
+        # Update arguments with final version
+        sql_update_args = load_sql("sql/v3/tool_calls/update_tool_call_arguments.sql")
         await conn.execute(
-            sql_finalize, validated.tool_call_id, validated.arguments_raw
+            sql_update_args, validated.tool_call_id, validated.arguments_raw
         )
 
         logger.info(

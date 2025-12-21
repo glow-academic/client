@@ -387,14 +387,14 @@ link_system_to_developer AS (
 assistant_message AS (
     INSERT INTO messages (role, completed, audio, created_at, updated_at)
     SELECT 'assistant'::message_role, true, false, NOW(), NOW()
-    WHERE $11 IS NOT NULL AND trim($11) != ''
+    WHERE $11::text IS NOT NULL AND trim($11::text) != ''
     RETURNING id as assistant_message_id, created_at, updated_at
 ),
 insert_assistant_content AS (
     INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
-    SELECT am.assistant_message_id, 0, trim($11), am.created_at, am.updated_at
+    SELECT am.assistant_message_id, 0, trim($11::text), am.created_at, am.updated_at
     FROM assistant_message am
-    WHERE $11 IS NOT NULL AND trim($11) != ''
+    WHERE $11::text IS NOT NULL AND trim($11::text) != ''
 ),
 link_assistant AS (
     INSERT INTO message_runs (message_id, run_id, created_at, updated_at)

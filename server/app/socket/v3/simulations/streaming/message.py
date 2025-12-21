@@ -415,9 +415,17 @@ async def _simulation_message_complete_impl(
         sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
         await conn.execute(sql_update, validated.final_content, validated.message_id)
 
+        # Update final content in message_content
+        sql_update_final = load_sql(
+            "sql/v3/simulations/update_message_content_final.sql"
+        )
+        await conn.execute(
+            sql_update_final, validated.final_content, validated.message_id
+        )
+
         # Complete message in database
         sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
-        await conn.execute(sql_complete, validated.final_content, validated.message_id)
+        await conn.execute(sql_complete, validated.message_id)
 
         # Emit completion event to clients
         room = f"simulation_{validated.chat_id}"

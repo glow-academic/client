@@ -63,7 +63,7 @@ async def get_login_providers(
 ) -> LoginProvidersResponse:
     """Get list of active auth provider options and departments for login page."""
     department_id = UUID(request.departmentId) if request.departmentId else None
-    
+
     sql_query = load_sql("sql/v3/auth/get_login_data_complete.sql")
     row = await conn.fetchrow(sql_query, department_id)
 

@@ -5,9 +5,8 @@ module-based logger names and guest profile ID resolution (Chris Date: No Nulls)
 """
 
 import contextvars
-import json
 import logging
-from typing import Any, cast
+from typing import Any
 
 import asyncpg  # type: ignore
 
@@ -121,7 +120,7 @@ async def resolve_profile_from_department_cookies(
 
 class DBLogHandler(logging.Handler):
     """Custom logging handler (database writing removed - app_logs table no longer exists).
-    
+
     This handler is kept for compatibility but does not write to database.
     Console logging still works via logger.propagate = True.
     Activity logging uses the activity table via app.utils.activity.logger instead.

@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import platform
-import socket
 import sys
 import time
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
@@ -375,8 +374,7 @@ async def init_db_pool() -> None:
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
-        from testcontainers.postgres import \
-            PostgresContainer  # type: ignore[import]
+        from testcontainers.postgres import PostgresContainer  # type: ignore[import]
 
         _test_container = PostgresContainer("postgres:18")
         _test_container.start()
@@ -513,30 +511,34 @@ async def transaction(
 
 # Import Keycloak sync module to register event handlers
 from app.socket.v3.actions import keycloak  # noqa: F401
+
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
-from app.socket.v3.images.complete import \
-    image_generation_complete  # noqa: F401
+from app.socket.v3.images.complete import image_generation_complete  # noqa: F401
+
 # Import image modules to register internal_sio handlers
 from app.socket.v3.images.generate import generate_image  # noqa: F401
+
 # Import log module to register internal_sio handler
 from app.socket.v3.log import log_run  # noqa: F401
+
 # Import quiz handlers
 # Note: Quiz events removed - questions now handled through scenarios
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.scenarios.tools.document import \
-    scenario_tool_document  # noqa: F401
-from app.socket.v3.scenarios.tools.image import \
-    scenario_tool_image  # noqa: F401
-from app.socket.v3.scenarios.tools.objectives import \
-    scenario_tool_objectives  # noqa: F401
-from app.socket.v3.scenarios.tools.questions import \
-    scenario_tool_questions  # noqa: F401
-from app.socket.v3.scenarios.tools.statement import \
-    scenario_tool_problem_statement  # noqa: F401
+from app.socket.v3.scenarios.tools.document import scenario_tool_document  # noqa: F401
+from app.socket.v3.scenarios.tools.image import scenario_tool_image  # noqa: F401
+from app.socket.v3.scenarios.tools.objectives import (
+    scenario_tool_objectives,  # noqa: F401
+)
+from app.socket.v3.scenarios.tools.questions import (
+    scenario_tool_questions,  # noqa: F401
+)
+from app.socket.v3.scenarios.tools.statement import (
+    scenario_tool_problem_statement,  # noqa: F401
+)
+
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.scenarios.tools.video import \
-    scenario_tool_video  # noqa: F401
+from app.socket.v3.scenarios.tools.video import scenario_tool_video  # noqa: F401
 
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]
@@ -663,8 +665,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             logger.info("Database logger initialized")
 
             # Setup activity logger
-            from app.utils.activity.logger import \
-                setup_activity_logger  # noqa: E402
+            from app.utils.activity.logger import setup_activity_logger  # noqa: E402
 
             setup_activity_logger(pool)
             logger.info("Activity logger initialized")
@@ -691,8 +692,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             # Sync is triggered via WebSocket events and after auth mutations
 
         # Initialize metrics collector
-        from app.utils.metrics.collector import \
-            initialize_metrics  # noqa: E402
+        from app.utils.metrics.collector import initialize_metrics  # noqa: E402
 
         if pool:
             await initialize_metrics(pool, redis_client)

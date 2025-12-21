@@ -1,12 +1,9 @@
 """Unit tests for app.utils.logging.db_logger."""
 
-import asyncio
 import logging
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import asyncpg  # type: ignore
-import pytest
 
 from app.utils.logging.db_logger import (
     DBLogHandler,

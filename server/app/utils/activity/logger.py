@@ -117,7 +117,7 @@ async def _insert_activity(
                 if profile_exists:
                     profile_id_uuid = profile_id
                 # If profile doesn't exist, profile_id_uuid remains None (NULL in database)
-            
+
             await conn.execute(
                 """
                 INSERT INTO activity (message, endpoint, profile_id, error, created_at)
