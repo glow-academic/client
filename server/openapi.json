@@ -3172,7 +3172,7 @@
           "auth"
         ],
         "summary": "Sync Keycloak",
-        "description": "Trigger Keycloak sync to update identity providers from database.\n\nThis endpoint performs the Keycloak sync process synchronously and returns\nthe actual result. The sync process:\n- Creates/updates department realms\n- Syncs identity providers (Microsoft, Google, etc.) with credentials from database\n- Updates client configurations\n\nArgs:\n    request: Optional department_id to sync specific department, or None to sync all\n    http_request: FastAPI request object\n    \nReturns:\n    SyncKeycloakResponse with success status, message, and optional error details",
+        "description": "Trigger Keycloak sync to update identity providers from database.\n\nThis endpoint performs the Keycloak sync process synchronously and returns\nthe actual result. The sync process:\n- Creates/updates department realms\n- Syncs identity providers (Microsoft, Google, etc.) with credentials from database\n- Updates client configurations\n\nArgs:\n    request: Optional department_id to sync specific department, or None to sync all\n    http_request: FastAPI request object\n\nReturns:\n    SyncKeycloakResponse with success status, message, and optional error details",
         "operationId": "sync_keycloak_api_v3_auth_sync_post",
         "parameters": [
           {
