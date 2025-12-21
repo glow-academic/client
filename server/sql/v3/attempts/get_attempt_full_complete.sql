@@ -329,13 +329,15 @@
                 SELECT 1 FROM runs r_check
                 JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                 JOIN groups g_check ON g_check.id = gr_check.group_id
-                JOIN chats c_check ON c_check.group_id = g_check.id
+                JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
+                JOIN chats c_check ON c_check.id = cg_check.chat_id
                 WHERE r_check.id = scg.run_id
             )
             LEFT JOIN runs r_prev ON r_prev.id = scg.run_id
             LEFT JOIN group_runs gr_prev ON gr_prev.run_id = r_prev.id
             LEFT JOIN groups g_prev ON g_prev.id = gr_prev.group_id
-            LEFT JOIN chats c_prev ON c_prev.group_id = g_prev.id AND c_prev.id = sc.id
+            LEFT JOIN chat_groups cg_prev ON cg_prev.group_id = g_prev.id
+            LEFT JOIN chats c_prev ON c_prev.id = cg_prev.chat_id AND c_prev.id = sc.id
             WHERE ap2.profile_id = cap.profile_id
               AND sc.completed = true
               AND c_prev.id IS NOT NULL
@@ -362,13 +364,15 @@
             JOIN runs r_agg ON EXISTS (
                 SELECT 1 FROM group_runs gr_agg
                 JOIN groups g_agg ON g_agg.id = gr_agg.group_id
-                JOIN chats c_agg ON c_agg.group_id = g_agg.id AND c_agg.id = sc.id
+                JOIN chat_groups cg_agg ON cg_agg.group_id = g_agg.id
+                JOIN chats c_agg ON c_agg.id = cg_agg.chat_id AND c_agg.id = sc.id
                 WHERE gr_agg.run_id = r_agg.id
             )
             JOIN grades scg ON scg.run_id = r_agg.id
             JOIN group_runs gr_agg ON gr_agg.run_id = r_agg.id
             JOIN groups g_agg ON g_agg.id = gr_agg.group_id
-            JOIN chats c_agg ON c_agg.group_id = g_agg.id AND c_agg.id = sc.id
+            JOIN chat_groups cg_agg ON cg_agg.group_id = g_agg.id
+            JOIN chats c_agg ON c_agg.id = cg_agg.chat_id AND c_agg.id = sc.id
             WHERE ac.attempt_id IN (SELECT DISTINCT attempt_id FROM previous_chats_with_grades)
               AND sc.completed = true
               AND c_agg.id IS NOT NULL
@@ -783,7 +787,7 @@
                 JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                 JOIN groups g_check ON g_check.id = gr_check.group_id
                 JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-                JOIN chats c_check ON c_check.group_id = g_check.id
+                JOIN chats c_check ON c_check.id = cg_check.chat_id
                 WHERE r_check.id = scg.run_id
             )
               AND c.id = ANY(cil.chat_ids)

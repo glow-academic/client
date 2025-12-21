@@ -267,6 +267,9 @@ copy_with_gitignore "database" "$EXPORT_DIR/database"
 # Copy web directory
 copy_with_gitignore "web" "$EXPORT_DIR/web"
 
+# Copy notify directory
+copy_with_gitignore "notify" "$EXPORT_DIR/notify"
+
 # Copy uploads directory selectively
 info "Copying uploads directory (selective)..."
 if [ -d "uploads" ]; then
@@ -523,7 +526,7 @@ EXTRACT_CMD="mkdir -p $ESCAPED_PATH && \
         echo 'Error: unzip not found on remote machine'; \
         exit 1; \
     fi && \
-    rm -rf client server database web 2>/dev/null || true && \
+    rm -rf client server database web notify 2>/dev/null || true && \
     rm -rf uploads history 2>/dev/null || true && \
     rm -f .gitignore .cursorignore AGENTS.md Makefile docker-compose.yml pyproject.toml README.md .env.example export.sh 2>/dev/null || true && \
     unzip -q -o \"$ZIP_NAME\" && \
