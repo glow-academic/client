@@ -8,11 +8,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.main import get_db, get_internal_sio
+from app.main import get_db
 from app.utils.activity.audit import audit_activity
 from app.utils.sql_helper import load_sql
-
-internal_sio = get_internal_sio()
 
 
 class ProviderOption(BaseModel):
@@ -65,14 +63,6 @@ async def get_login_providers(
 ) -> LoginProvidersResponse:
     """Get list of active auth provider options and departments for login page."""
     department_id = UUID(request.departmentId) if request.departmentId else None
-    
-    # Trigger Keycloak sync on login page access (fire-and-forget)
-    # This ensures Keycloak is properly configured with SSL settings and glow-client
-    try:
-        await internal_sio.emit("keycloak_sync", {})
-    except Exception:
-        # Non-blocking - if sync fails, continue with login page
-        pass
     
     sql_query = load_sql("sql/v3/auth/get_login_data_complete.sql")
     row = await conn.fetchrow(sql_query, department_id)
