@@ -285,39 +285,6 @@ log_success "PostgreSQL is ready"
 # Give it a moment for any init scripts to finish
 sleep 3
 
-# Create keycloak database if it doesn't exist (works for both fresh and restored databases)
-# This MUST happen before database is marked healthy, so Keycloak can start
-DB_SUPERUSER="$DB_USER"
-log_info "🔑 Ensuring Keycloak database exists..."
-MAX_RETRIES=10
-RETRY_COUNT=0
-KEYCLOAK_CREATED=false
-
-while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-  if psql -U "$DB_SUPERUSER" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'keycloak'" 2>/dev/null | grep -q 1; then
-    log_success "✅ Keycloak database already exists"
-    KEYCLOAK_CREATED=true
-    break
-  else
-    log_info "🔑 Creating Keycloak database (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)..."
-    if psql -U "$DB_SUPERUSER" -d postgres -c "CREATE DATABASE keycloak;" 2>&1; then
-      log_success "✅ Keycloak database created successfully"
-      KEYCLOAK_CREATED=true
-      break
-    else
-      RETRY_COUNT=$((RETRY_COUNT + 1))
-      if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-        sleep 2
-      fi
-    fi
-  fi
-done
-
-if [ "$KEYCLOAK_CREATED" = false ]; then
-  log_error "❌ Failed to create keycloak database after $MAX_RETRIES attempts"
-  exit 1
-fi
-
 log_success "🎉 Database is ready! Use 'yarn migrate' for schema changes."
 
 
