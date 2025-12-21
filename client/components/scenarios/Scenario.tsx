@@ -136,6 +136,53 @@ export default function Scenario({
   // Use edit detail when editing, default detail when creating
   const scenarioData = isEditMode ? scenarioDetail : scenarioDetailDefault;
 
+  // Centralized query parameter configuration (DHH-style: URL as source of truth)
+  // Only include params in URL when they differ from defaults
+  const queryParamConfig = useMemo(() => {
+    const serverCurrentValues = scenarioData as
+      | (ScenarioNewOut & {
+          objectives_enabled?: boolean;
+          images_enabled?: boolean;
+          video_enabled?: boolean;
+          questions_enabled?: boolean;
+        })
+      | undefined;
+
+    // Default values (from server defaults)
+    const defaults = {
+      objectives_enabled: true,
+      images_enabled: false,
+      video_enabled: false,
+      questions_enabled: false,
+    };
+
+    // Get current server values (edit mode) or defaults (create mode)
+    const getServerValue = (
+      field: "objectives_enabled" | "images_enabled" | "video_enabled" | "questions_enabled",
+    ): boolean => {
+      if (isEditMode && serverCurrentValues) {
+        // Edit mode: compare against server's current value
+        if (field === "images_enabled") {
+          return (serverCurrentValues as ScenarioNewOut).image_input_enabled ?? defaults[field];
+        }
+        return serverCurrentValues[field] ?? defaults[field];
+      }
+      // Create mode: compare against defaults
+      return defaults[field];
+    };
+
+    return {
+      defaults,
+      getServerValue,
+      urlParamNames: {
+        objectives_enabled: "useObjectives",
+        images_enabled: "useImage",
+        video_enabled: "useVideo",
+        questions_enabled: "useQuestions",
+      },
+    };
+  }, [scenarioData, isEditMode]);
+
   // Set breadcrumb context when scenario data is loaded
   useEffect(() => {
     if (scenarioDetail?.name && scenarioId && isEditMode) {
@@ -871,11 +918,26 @@ export default function Scenario({
       }
     });
 
-    // Use Image flag - compare against server's current value
-    const serverImageEnabled =
-      serverCurrentValues?.image_input_enabled ?? false;
+    // Feature flags - compare against server's current values (edit mode) or defaults (create mode)
+    // Only include in URL params if they differ from defaults/current values (DHH-style)
+    const serverObjectivesEnabled = queryParamConfig.getServerValue("objectives_enabled");
+    if (useObjectives !== serverObjectivesEnabled) {
+      params.set(queryParamConfig.urlParamNames.objectives_enabled, useObjectives ? "true" : "false");
+    }
+
+    const serverImageEnabled = queryParamConfig.getServerValue("images_enabled");
     if (useImage !== serverImageEnabled) {
-      params.set("useImage", useImage ? "true" : "false");
+      params.set(queryParamConfig.urlParamNames.images_enabled, useImage ? "true" : "false");
+    }
+
+    const serverVideoEnabled = queryParamConfig.getServerValue("video_enabled");
+    if (useVideo !== serverVideoEnabled) {
+      params.set(queryParamConfig.urlParamNames.video_enabled, useVideo ? "true" : "false");
+    }
+
+    const serverQuestionsEnabled = queryParamConfig.getServerValue("questions_enabled");
+    if (useQuestions !== serverQuestionsEnabled) {
+      params.set(queryParamConfig.urlParamNames.questions_enabled, useQuestions ? "true" : "false");
     }
 
     // Note: randomize param is set separately by randomize handlers, not here
@@ -899,7 +961,11 @@ export default function Scenario({
     documentMinMax,
     parameterSelectionMinMax,
     fieldMinMax,
+    useObjectives, // Include useObjectives for objectives flag
     useImage, // Include useImage for useImage flag
+    useVideo, // Include useVideo for video flag
+    useQuestions, // Include useQuestions for questions flag
+    queryParamConfig, // Include queryParamConfig for server value comparisons
     fieldMapping, // Used for field ranges comparison
     // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
     searchParams,
@@ -1539,15 +1605,50 @@ export default function Scenario({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
 
-  // Sync useImage from URL params (DHH-style: URL as source of truth)
+  // Sync feature flags from URL params (DHH-style: URL as source of truth)
   // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
   // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
+
+  // Sync useObjectives from URL params
+  useEffect(() => {
+    const useObjectivesFromUrl = searchParams.get("useObjectives");
+    const urlUseObjectives = useObjectivesFromUrl === "true";
+    // Only update if different from current state
+    if (useObjectives !== urlUseObjectives) {
+      setUseObjectives(urlUseObjectives);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Sync useImage from URL params
   useEffect(() => {
     const useImageFromUrl = searchParams.get("useImage");
     const urlUseImage = useImageFromUrl === "true";
     // Only update if different from current state
     if (useImage !== urlUseImage) {
       setUseImage(urlUseImage);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Sync useVideo from URL params
+  useEffect(() => {
+    const useVideoFromUrl = searchParams.get("useVideo");
+    const urlUseVideo = useVideoFromUrl === "true";
+    // Only update if different from current state
+    if (useVideo !== urlUseVideo) {
+      setUseVideo(urlUseVideo);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Sync useQuestions from URL params
+  useEffect(() => {
+    const useQuestionsFromUrl = searchParams.get("useQuestions");
+    const urlUseQuestions = useQuestionsFromUrl === "true";
+    // Only update if different from current state
+    if (useQuestions !== urlUseQuestions) {
+      setUseQuestions(urlUseQuestions);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
@@ -1919,7 +2020,10 @@ export default function Scenario({
     documentMinMax,
     parameterSelectionMinMax,
     fieldMinMax,
+    useObjectives, // Include useObjectives to trigger URL updates when useObjectives changes
     useImage, // Include useImage to trigger URL updates when useImage changes
+    useVideo, // Include useVideo to trigger URL updates when useVideo changes
+    useQuestions, // Include useQuestions to trigger URL updates when useQuestions changes
     pathname,
   ]);
 

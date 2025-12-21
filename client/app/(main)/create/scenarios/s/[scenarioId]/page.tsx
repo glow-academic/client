@@ -73,6 +73,7 @@ const getScenario = async (
     randomizeParameters?: string;
     randomizeParameterItems?: Record<string, string>;
     useImage?: boolean;
+    useVideo?: boolean;
     imageIds?: string[];
     objectiveIds?: string[];
     problemStatementIds?: string[];
@@ -211,6 +212,9 @@ export default async function EditScenarioPage({
   const useImage = searchParamsObj.get("useImage")
     ? searchParamsObj.get("useImage") === "true"
     : undefined;
+  const useVideo = searchParamsObj.get("useVideo")
+    ? searchParamsObj.get("useVideo") === "true"
+    : undefined;
 
   // Parse parameter item ranges
   const parameterItemRanges:
@@ -283,6 +287,7 @@ export default async function EditScenarioPage({
       randomizeParameters?: string;
       randomizeParameterItems?: Record<string, string>;
       useImage?: boolean;
+      useVideo?: boolean;
       imageIds?: string[];
       objectiveIds?: string[];
       problemStatementIds?: string[];
@@ -316,6 +321,7 @@ export default async function EditScenarioPage({
     if (randomizeParameterItems)
       filterParams.randomizeParameterItems = randomizeParameterItems;
     if (useImage !== undefined) filterParams.useImage = useImage;
+    if (useVideo !== undefined) filterParams.useVideo = useVideo;
     if (imageIds) filterParams.imageIds = imageIds;
     if (objectiveIds) filterParams.objectiveIds = objectiveIds;
     if (problemStatementIds)

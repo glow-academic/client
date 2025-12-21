@@ -128,6 +128,9 @@ export default async function NewScenarioPage({
   const useImage = searchParamsObj.get("useImage")
     ? searchParamsObj.get("useImage") === "true"
     : undefined;
+  const useVideo = searchParamsObj.get("useVideo")
+    ? searchParamsObj.get("useVideo") === "true"
+    : undefined;
 
   // Parse field ranges (format: fieldMin_{paramId}, fieldMax_{paramId})
   const fieldRanges: // Renamed from parameterItemRanges
@@ -182,6 +185,7 @@ export default async function NewScenarioPage({
       fieldRanges: fieldRanges || null, // Renamed from parameterItemRanges
       randomize: randomize || null,
       useImage: useImage || null,
+      useVideo: useVideo || null,
       imageIds: imageIds || null,
       objectiveIds: objectiveIds || null,
       problemStatementIds: problemStatementIds || null,
