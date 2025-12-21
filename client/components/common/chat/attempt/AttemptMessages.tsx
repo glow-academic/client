@@ -1038,9 +1038,13 @@ export default function AttemptMessages({
   }, [socket, simulation?.practiceSimulation, targetChatId, router]);
 
   // Determine background image style dynamically
-  const backgroundStyle = backgroundImage
+  // backgroundImage is now an upload_id, so construct the download URL
+  const backgroundImageUrl = backgroundImage
+    ? `/api/uploads/download/${backgroundImage}`
+    : null;
+  const backgroundStyle = backgroundImageUrl
     ? {
-        "--bg-image-url": `url('${backgroundImage}')`,
+        "--bg-image-url": `url('${backgroundImageUrl}')`,
         backgroundSize: "cover" as const,
         backgroundPosition: "center" as const,
         backgroundRepeat: "no-repeat" as const,
@@ -1049,7 +1053,7 @@ export default function AttemptMessages({
 
   return (
     <div
-      className={`flex-1 flex flex-col p-0 min-h-0 relative ${backgroundImage ? "attempt-messages-background" : ""}`}
+      className={`flex-1 flex flex-col p-0 min-h-0 relative ${backgroundImageUrl ? "attempt-messages-background" : ""}`}
       data-testid="attempt-messages-container"
       style={backgroundStyle}
     >

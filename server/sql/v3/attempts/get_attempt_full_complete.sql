@@ -424,7 +424,7 @@
         scenario_background_images_for_simulation AS (
             SELECT DISTINCT ON (si.scenario_id)
                 si.scenario_id,
-                u.file_path as background_image_path
+                iu.upload_id as background_image_upload_id
             FROM scenario_images si
             JOIN images i ON i.id = si.image_id AND i.active = true
             LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
@@ -433,7 +433,7 @@
             JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id AND ss.active = true
             WHERE si.scenario_id = ss.scenario_id
               AND si.active = true
-              AND u.file_path IS NOT NULL
+              AND iu.upload_id IS NOT NULL
             ORDER BY si.scenario_id, si.created_at ASC
         ),
         -- All simulation scenarios with their previous chats (for permutation generation)
@@ -462,7 +462,7 @@
                     'showProblemStatement', COALESCE(ss.show_problem_statement, true),
                     'showObjectives', COALESCE(ss.show_objectives, true),
                     'showImages', COALESCE(ss.show_images, true),
-                    'backgroundImage', CASE WHEN sbi.background_image_path IS NOT NULL THEN sbi.background_image_path ELSE NULL END,
+                    'backgroundImage', CASE WHEN sbi.background_image_upload_id IS NOT NULL THEN sbi.background_image_upload_id::text ELSE NULL END,
                     'objectives', COALESCE(
                         (SELECT jsonb_agg(o.objective ORDER BY so.idx)
                          FROM scenario_objectives so
@@ -496,7 +496,7 @@
         scenario_background_images_for_chats AS (
             SELECT DISTINCT ON (si.scenario_id)
                 si.scenario_id,
-                u.file_path as background_image_path
+                iu.upload_id as background_image_upload_id
             FROM scenario_images si
             JOIN images i ON i.id = si.image_id AND i.active = true
             LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
@@ -504,7 +504,7 @@
             CROSS JOIN scenario_ids_list sil
             WHERE si.scenario_id = ANY(sil.scenario_ids) 
               AND si.active = true
-              AND u.file_path IS NOT NULL
+              AND iu.upload_id IS NOT NULL
             ORDER BY si.scenario_id, si.created_at ASC
         ),
         scenarios_data AS (
@@ -530,7 +530,7 @@
                     'showProblemStatement', COALESCE(ss.show_problem_statement, true),
                     'showObjectives', COALESCE(ss.show_objectives, true),
                     'showImages', COALESCE(ss.show_images, true),
-                    'backgroundImage', CASE WHEN sbi.background_image_path IS NOT NULL THEN sbi.background_image_path ELSE NULL END,
+                    'backgroundImage', CASE WHEN sbi.background_image_upload_id IS NOT NULL THEN sbi.background_image_upload_id::text ELSE NULL END,
                     'objectives', COALESCE(
                         (SELECT jsonb_agg(o.objective ORDER BY so.idx)
                          FROM scenario_objectives so

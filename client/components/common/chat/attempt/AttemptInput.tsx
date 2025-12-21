@@ -1992,6 +1992,9 @@ export default function AttemptInput({
   // Hide input entirely if both text and audio are disabled
   if (!textEnabled && !audioEnabled) return null;
 
+  // When text is disabled but audio is enabled, show disabled textarea with voice mode prompt
+  const showDisabledTextForVoice = !textEnabled && audioEnabled;
+
   return (
     <TooltipProvider>
       <CardFooter
@@ -2000,8 +2003,8 @@ export default function AttemptInput({
       >
         {/* --- Dynamic Input Area --- */}
         <div className="w-full flex items-end gap-2 shrink-0">
-          {/* Voice toggle button - only show when voice mode is disabled, audio is enabled, and text is enabled */}
-          {!voiceModeEnabled && audioEnabled && textEnabled && (
+          {/* Voice toggle button - show when voice mode is disabled and audio is enabled */}
+          {!voiceModeEnabled && audioEnabled && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -2066,17 +2069,6 @@ export default function AttemptInput({
               "Input Box" look (Border, Radius, Background) */}
           <div className="flex-1 relative min-h-[40px] max-h-32 flex items-center">
             {(() => {
-              // If text is disabled but audio is enabled, show waveform (read-only, no input)
-              if (!textEnabled && audioEnabled) {
-                return (
-                  <div className="w-full h-[40px] rounded-md border border-input bg-background px-3 py-2 flex items-center justify-center ring-offset-background overflow-hidden">
-                    <VoiceWaveform
-                      mediaStream={null}
-                      className="w-full h-full"
-                    />
-                  </div>
-                );
-              }
               // If voice mode is enabled and not muted, show waveform
               if (voiceModeEnabled && !isMicMuted) {
                 return (
@@ -2099,11 +2091,15 @@ export default function AttemptInput({
                     )
                   }
                   placeholder={
-                    voiceModeEnabled
-                      ? "Voice mode active – mute to type and send"
-                      : "Type your message (LaTeX supported)"
+                    showDisabledTextForVoice
+                      ? voiceModeEnabled && isMicMuted
+                        ? "Unmute to start talking"
+                        : "Turn on voice mode to start talking"
+                      : voiceModeEnabled
+                        ? "Voice mode active – mute to type and send"
+                        : "Type your message (LaTeX supported)"
                   }
-                  disabled={readOnly ? true : false}
+                  disabled={readOnly || showDisabledTextForVoice}
                   className="w-full text-md resize-none overflow-y-auto text-base max-h-32 min-h-[40px]"
                   rows={1}
                   maxLength={MAX_INPUT_CHARS}
@@ -2204,8 +2200,8 @@ export default function AttemptInput({
                   </TooltipContent>
                 </Tooltip>
               </motion.div>
-            ) : textEnabled ? (
-              /* Show send button when text is enabled (text is present or voice mode is disabled) */
+            ) : textEnabled && !showDisabledTextForVoice ? (
+              /* Show send button when text is enabled and not in disabled-for-voice mode */
               <motion.div
                 layout
                 key="send-btn-short"
