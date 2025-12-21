@@ -226,13 +226,13 @@ run: check-venv
 			-e KC_DB_URL=jdbc:postgresql://host.docker.internal:5432/mydb?currentSchema=keycloak \
 			-e KC_DB_USERNAME=$$DB_USER \
 			-e KC_DB_PASSWORD=$$DB_PASSWORD \
-			-e KC_DB_SCHEMA=keycloak \
-			-e KC_PROXY=none \
-			-e KC_HTTP_ENABLED=true \
-			-e KC_HTTP_RELATIVE_PATH=$${APP_PREFIX}/auth \
-			-e KC_HOSTNAME=http://localhost:$(KEYCLOAK_PORT)$${APP_PREFIX}/auth \
-			-e KC_HOSTNAME_STRICT=false \
-			-e KC_HOSTNAME_STRICT_BACKCHANNEL=false \
+		-e KC_DB_SCHEMA=keycloak \
+		-e KC_PROXY=none \
+		-e KC_HTTP_ENABLED=true \
+		-e KC_HTTP_RELATIVE_PATH=/auth \
+		-e KC_HOSTNAME=http://localhost:$(KEYCLOAK_PORT)/auth \
+		-e KC_HOSTNAME_STRICT=false \
+		-e KC_HOSTNAME_STRICT_BACKCHANNEL=false \
 			quay.io/keycloak/keycloak:26.0 start-dev >/dev/null 2>&1; \
 		sleep 1; \
 		(docker logs --tail 0 -f glow-keycloak 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;34m[KEYCLOAK]\033[0m %s' "$$line")"; done) & \
@@ -240,7 +240,7 @@ run: check-venv
 	(cd server && redis-server --port $(REDIS_PORT) --dir . --dbfilename dump.rdb 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;31m[REDIS]\033[0m %s' "$$line")"; done) & \
 	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn watch:openapi 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[OPENAPI]\033[0m %s' "$$line")"; done) & \
-	(cd client && APP_PREFIX=$${APP_PREFIX:-}; KEYCLOAK_PUBLIC_URL=http://localhost:8080$${APP_PREFIX}/auth NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080$${APP_PREFIX}/auth NODE_OPTIONS='--dns-result-order=ipv4first' yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
+	(cd client && APP_PREFIX=$${APP_PREFIX:-}; KEYCLOAK_PUBLIC_URL=http://localhost:8080/auth NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080/auth NODE_OPTIONS='--dns-result-order=ipv4first' yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
 	(cd database && READS=1 MIN_MS=0 SAMPLE_MS=150 DEBUG_READS=1 yarn logs 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;33m[DATABASE]\033[0m %s' "$$line")"; done) & \
 	wait
 

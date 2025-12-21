@@ -7,9 +7,8 @@ from typing import Any
 
 import asyncpg  # type: ignore
 import httpx  # type: ignore
-from fastapi import status  # type: ignore
-
 from app.main import get_pool, get_redis_client, get_sio_instance
+from fastapi import status  # type: ignore
 
 
 @dataclass
@@ -98,6 +97,9 @@ async def check_keycloak() -> ServiceCheckResult:
             # Local dev: use localhost
             base_url = "http://localhost:8080"
 
+        # Health check uses public discovery endpoint
+        # For local dev: Keycloak serves at /auth (KC_HTTP_RELATIVE_PATH=/auth)
+        # For Docker/production: Keycloak is behind nginx at /auth
         keycloak_url = f"{base_url}{app_prefix}/auth"
 
     # Check master realm (used when no departments exist) - always exists

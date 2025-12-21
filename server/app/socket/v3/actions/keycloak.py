@@ -206,6 +206,9 @@ async def delete_department_realm(department_id: str) -> None:
             else:
                 base_url = "http://localhost:8080"
 
+            # Keycloak admin API: use /auth path for consistency
+            # For local dev: Keycloak serves at /auth (KC_HTTP_RELATIVE_PATH=/auth)
+            # For Docker/production: Keycloak is behind nginx at /auth
             keycloak_url = f"{base_url}{app_prefix}/auth"
 
         keycloak_admin = os.getenv("KEYCLOAK_ADMIN", "admin")
@@ -830,6 +833,9 @@ async def sync_keycloak(department_id: str | None = None) -> None:
             else:
                 base_url = "http://localhost:8080"
 
+            # Keycloak admin API: use /auth path for consistency
+            # For local dev: Keycloak serves at /auth (KC_HTTP_RELATIVE_PATH=/auth)
+            # For Docker/production: Keycloak is behind nginx at /auth
             keycloak_url = f"{base_url}{app_prefix}/auth"
 
         keycloak_admin = os.getenv("KEYCLOAK_ADMIN", "admin")
