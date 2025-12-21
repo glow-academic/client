@@ -1,7 +1,10 @@
--- Get active auth providers for Keycloak sync filtered by department
+-- Get active auth providers for Keycloak sync filtered by settings
 -- Parameters: $1 = department_id (optional UUID, NULL for default settings)
+--             Note: This is kept for backward compatibility, but logic determines settings based on keys
 -- Returns: id, slug, auth_type (as provider_id), name
--- Filters providers by department-specific settings, falls back to default settings
+-- Strategy: Determine which settings has keys, then return providers for that settings
+--           If department-specific settings has keys → use that settings
+--           If not → use default settings (master realm)
 WITH dept_settings AS (
     -- Get department-specific settings if department_id provided
     SELECT DISTINCT s.id as settings_id
@@ -9,6 +12,7 @@ WITH dept_settings AS (
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE ($1::uuid IS NOT NULL AND ds.department_id = $1::uuid)
       AND s.active = true
+    LIMIT 1
 ),
 default_settings AS (
     -- Get default settings (no department links)
@@ -21,41 +25,46 @@ default_settings AS (
       )
     LIMIT 1
 ),
+-- Check if department-specific settings has keys for any provider
+dept_settings_has_keys AS (
+    SELECT 
+        (SELECT settings_id FROM dept_settings LIMIT 1) as settings_id,
+        EXISTS (
+            SELECT 1 
+            FROM setting_auth_keys sak
+            JOIN dept_settings ds ON ds.settings_id = sak.settings_id
+            WHERE sak.active = true
+        ) as has_keys
+),
+-- Determine which settings to use (settings-based realm selection)
 selected_settings AS (
-    -- Priority: department-specific settings, then default settings
-    SELECT COALESCE(
-        (SELECT settings_id FROM dept_settings LIMIT 1),
-        (SELECT settings_id FROM default_settings LIMIT 1)
-    ) as settings_id
+    SELECT 
+        CASE 
+            -- If department_id is NULL, use default settings (master realm)
+            WHEN $1::uuid IS NULL THEN (SELECT settings_id FROM default_settings)
+            -- If department-specific settings has keys, use it
+            WHEN (SELECT has_keys FROM dept_settings_has_keys) = true 
+                THEN (SELECT settings_id FROM dept_settings LIMIT 1)
+            -- Otherwise, fallback to default settings (master realm)
+            ELSE (SELECT settings_id FROM default_settings)
+        END as settings_id
 ),
-dept_auths AS (
-    -- Get auths linked to department-specific settings
+settings_auths AS (
+    -- Get auths linked to the selected settings
     SELECT DISTINCT a.id
     FROM auth a
     JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
-    JOIN dept_settings ds ON ds.settings_id = sa.settings_id
-    WHERE a.active = true
-),
-default_auths AS (
-    -- Get auths linked to default settings
-    SELECT DISTINCT a.id
-    FROM auth a
-    JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
-    JOIN default_settings ds ON ds.settings_id = sa.settings_id
+    JOIN selected_settings ss ON sa.settings_id = ss.settings_id
     WHERE a.active = true
 )
-SELECT 
+-- Return providers for the selected settings
+SELECT DISTINCT
     a.id, 
     a.slug, 
     a.auth_type as provider_id, 
     a.name 
 FROM auth a
 WHERE a.active = true
-  AND (
-      -- If department_id provided, only include department-specific auths
-      ($1::uuid IS NOT NULL AND EXISTS (SELECT 1 FROM dept_auths da WHERE da.id = a.id))
-      -- If no department_id, include all auths from default settings
-      OR ($1::uuid IS NULL AND EXISTS (SELECT 1 FROM default_auths da WHERE da.id = a.id))
-  )
+  AND EXISTS (SELECT 1 FROM settings_auths sa WHERE sa.id = a.id)
 ORDER BY a.slug;
 

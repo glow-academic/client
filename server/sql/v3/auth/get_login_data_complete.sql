@@ -121,15 +121,31 @@ departments_with_default AS (
     SELECT departments_json FROM departments_data
     UNION ALL
     SELECT '[]'::json WHERE NOT EXISTS (SELECT 1 FROM departments_data)
-)
--- Calculate realm name for the requested department
--- Master realm for default department, department_id otherwise
+),
+-- Calculate realm name: use settings_id if dept settings has keys, else 'master'
+-- Simplified: Check if dept settings has keys, if yes use settings_id, else 'master'
 realm_name_calc AS (
     SELECT 
         CASE 
+            -- No department → master realm
             WHEN $1::uuid IS NULL THEN 'master'::text
-            WHEN $1::uuid = (SELECT department_id FROM default_department_from_settings LIMIT 1) THEN 'master'::text
-            ELSE $1::text
+            -- Check if department-specific settings has keys
+            WHEN EXISTS (
+                SELECT 1 
+                FROM department_settings ds
+                JOIN settings s ON s.id = ds.settings_id AND s.active = true
+                JOIN setting_auth_keys sak ON sak.settings_id = s.id AND sak.active = true
+                WHERE ds.department_id = $1::uuid AND ds.active = true
+            ) THEN (
+                -- Department settings has keys → use settings_id as realm
+                SELECT s.id::text
+                FROM department_settings ds
+                JOIN settings s ON s.id = ds.settings_id AND s.active = true
+                WHERE ds.department_id = $1::uuid AND ds.active = true
+                LIMIT 1
+            )
+            -- No keys in dept settings → use master realm
+            ELSE 'master'::text
         END as realm_name
 )
 -- Cross join ensures we always get exactly one row

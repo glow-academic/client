@@ -633,12 +633,12 @@ export default function Info() {
                 {
                   num: 2,
                   title: "Combine Scenarios into Simulations",
-                  desc: "Simulations are created by combining multiple scenarios that Teaching Assistants need to accomplish within a given time period. These comprehensive simulations test GTAs' ability to manage multiple student interactions consecutively.",
+                  desc: "Simulations are created by combining multiple scenarios that Teaching Assistants need to accomplish within a given time period. These comprehensive simulations test Teaching Assistants' ability to manage multiple student interactions consecutively.",
                   icon: Layers,
                 },
                 {
                   num: 3,
-                  title: "GTAs Practice with AI Students",
+                  title: "Teaching Assistants Practice with AI Students",
                   desc: "As a Graduate Teaching Assistant, engage in realistic conversations through text-to-text interactions with AI-powered students. Receive hints when needed, and practice adapting your communication style in real-time across multiple scenarios.",
                   icon: MessageSquare,
                 },
@@ -703,7 +703,7 @@ export default function Info() {
               Features
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Experience the future of GTA training with our sophisticated AI technology that adapts to your learning style
+              Experience the future of Teaching Assistant training with our sophisticated AI technology that adapts to your learning style
             </p>
           </motion.div>
 
@@ -886,14 +886,9 @@ export default function Info() {
               >
                 Alex Siladie
               </a>{" "}
-              and initially piloted in Purdue's GTA program in Fall 2025.
+              and initially piloted in Purdue's Teaching Assistant program in Fall 2025.
               Results pending.
             </p>
-            <div className="mt-8 pt-8 border-t border-white/20">
-              <p className="text-sm text-white/90">
-                &copy; {new Date().getFullYear()} GLOW. All rights reserved.
-              </p>
-            </div>
           </motion.div>
         </div>
       </section>

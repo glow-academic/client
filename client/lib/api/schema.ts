@@ -784,6 +784,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/auth/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sync Keycloak
+         * @description Trigger Keycloak sync to update identity providers from database.
+         *
+         *     This endpoint triggers the Keycloak sync process which:
+         *     - Creates/updates department realms
+         *     - Syncs identity providers (Microsoft, Google, etc.) with credentials from database
+         *     - Updates client configurations
+         *
+         *     Args:
+         *         request: Optional department_id to sync specific department, or None to sync all
+         *         http_request: FastAPI request object
+         *
+         *     Returns:
+         *         SyncKeycloakResponse with success status and message
+         */
+        post: operations["sync_keycloak_api_v3_auth_sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/departments/list": {
         parameters: {
             query?: never;
@@ -15046,6 +15078,26 @@ export interface components {
             replace: string;
         };
         /**
+         * SyncKeycloakRequest
+         * @description Request to sync Keycloak identity providers.
+         */
+        SyncKeycloakRequest: {
+            /** Department Id */
+            department_id?: string | null;
+        };
+        /**
+         * SyncKeycloakResponse
+         * @description Response from Keycloak sync trigger.
+         */
+        SyncKeycloakResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Department Id */
+            department_id?: string | null;
+        };
+        /**
          * TemplateInfo
          * @description Template version information.
          */
@@ -21968,6 +22020,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LoginProvidersResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_keycloak_api_v3_auth_sync_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncKeycloakRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncKeycloakResponse"];
                 };
             };
             /** @description Validation Error */

@@ -257,7 +257,7 @@ export default function Login({
   initialDepartmentId,
   activeSettings,
   defaultDepartmentId,
-  realmName: _realmName = "master", // Received from server but calculated client-side instead
+  realmName = "master", // Realm name from API (settings-based)
   redirectPath: redirectPathProp,
 }: LoginProps) {
   const [loadingGuest, setLoadingGuest] = useState(false);
@@ -317,18 +317,16 @@ export default function Login({
     },
   };
 
-  // Calculate realm name based on selected department and set cookie on mount/change
+  // Use realm_name from API response (settings-based, not department-based)
+  // Realm name is calculated server-side based on which settings has keys for providers
+  // If department-specific settings has keys → realm = settings_id
+  // If not → realm = "master" (default settings)
   const currentRealmName = React.useMemo(() => {
-    if (!selectedDepartmentId) {
-      return "master";
-    }
-    if (defaultDepartmentId && selectedDepartmentId === defaultDepartmentId) {
-      return "master";
-    }
-    return selectedDepartmentId;
-  }, [selectedDepartmentId, defaultDepartmentId]);
+    // Use realm_name from API if available, otherwise fallback to master
+    return realmName || "master";
+  }, [realmName]);
 
-  // Set realm-name cookie when department changes
+  // Set realm-name cookie when realm changes
   useEffect(() => {
     document.cookie = `realm-name=${currentRealmName}; path=/; max-age=3600; SameSite=Lax`;
   }, [currentRealmName]);
@@ -621,12 +619,10 @@ export default function Login({
                       setSelectedDepartmentId(value);
 
                       // Calculate and set realm-name cookie for dynamic realm selection
-                      const realmNameForDept =
-                        !value ||
-                        (defaultDepartmentId && value === defaultDepartmentId)
-                          ? "master"
-                          : value;
-                      document.cookie = `realm-name=${realmNameForDept}; path=/; max-age=3600; SameSite=Lax`;
+                      // All departments (including default) use their department_id as realm name
+                      // Realm name will be updated via API call when department changes
+                      // The API response includes the correct realm_name based on settings
+                      // Cookie will be set by the useEffect hook when realmName prop updates
 
                       // Update URL with department parameter and trigger server-side refetch
                       // If selected department is the default, remove query param to keep URL clean

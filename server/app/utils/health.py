@@ -100,7 +100,7 @@ async def check_keycloak() -> ServiceCheckResult:
 
         keycloak_url = f"{base_url}{app_prefix}/auth"
 
-    # Check master realm (default department) - always exists
+    # Check master realm (used when no departments exist) - always exists
     realm = "master"
     well_known = f"{keycloak_url}/realms/{realm}/.well-known/openid-configuration"
 

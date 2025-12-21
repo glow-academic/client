@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict npIRtTh3jpd5S72xkMG3lxls9HJf2WDyUZNczv50MOhMBv1bfbj6xmYNq8QiMaZ
+\restrict nYNj7ZgfOHfXAdqs6NDTFoHIWRVt3mAzjxogx2XGdcbVAAhYC4rjh6ZBYTpPVEj
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -2212,7 +2212,10 @@ CREATE TABLE public.settings (
     guest_login_enabled boolean NOT NULL,
     name text DEFAULT ''::text NOT NULL,
     description text DEFAULT ''::text NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT settings_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT settings_id_v7_not_null NOT NULL,
+    success_threshold integer NOT NULL,
+    warning_threshold integer NOT NULL,
+    danger_threshold integer NOT NULL
 );
 
 
@@ -7158,5 +7161,5 @@ ALTER TABLE ONLY public.video_uploads
 -- PostgreSQL database dump complete
 --
 
-\unrestrict npIRtTh3jpd5S72xkMG3lxls9HJf2WDyUZNczv50MOhMBv1bfbj6xmYNq8QiMaZ
+\unrestrict nYNj7ZgfOHfXAdqs6NDTFoHIWRVt3mAzjxogx2XGdcbVAAhYC4rjh6ZBYTpPVEj
 
