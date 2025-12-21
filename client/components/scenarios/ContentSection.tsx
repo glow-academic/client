@@ -31,6 +31,7 @@ import DocumentViewer, {
 import ImageViewer from "@/components/common/chat/viewers/ImageViewer";
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { RangeSlider } from "@/components/common/forms/RangeSlider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -536,15 +537,16 @@ export function ContentSection({
   };
 
   // Helper function to handle question time change
-  const handleQuestionTimeChange = (index: number, timeStr: string) => {
+  const handleQuestionTimeChange = (index: number, range: [number, number]) => {
     if (!onQuestionTimesChange) return;
-    const time = parseInt(timeStr, 10);
+    // Extract the second value (the actual question time) from the range
+    const time = range[1];
     // Estimate video length from selected video or default to 8 seconds
     const estimatedVideoLength = selectedVideo?.length_seconds || 8;
     if (isNaN(time) || time < 0 || time > estimatedVideoLength) {
       return;
     }
-    const newTimes = timeStr === "" ? [] : [time];
+    const newTimes = [time];
     onQuestionTimesChange(index, newTimes);
   };
 
@@ -1290,36 +1292,6 @@ export function ContentSection({
                         </div>
                       )}
 
-                      {/* Question Text Input */}
-                      <div className="flex-1">
-                        <Input
-                          value={question.question_text}
-                          onChange={(e) =>
-                            handleQuestionTextChange(index, e.target.value)
-                          }
-                          placeholder="Enter question text"
-                          className="flex-1"
-                          disabled={isReadonly}
-                          onDragStart={(e) => e.preventDefault()}
-                        />
-                      </div>
-
-                      {/* Time Input */}
-                      {selectedVideo && (
-                        <Input
-                          type="number"
-                          min="0"
-                          max={selectedVideo.length_seconds}
-                          value={question.times?.[0] ?? ""}
-                          onChange={(e) =>
-                            handleQuestionTimeChange(index, e.target.value)
-                          }
-                          placeholder="Time"
-                          className="w-20"
-                          disabled={isReadonly}
-                        />
-                      )}
-
                       {/* Accordion Toggle */}
                       {question.options.length > 0 && (
                         <Button
@@ -1336,6 +1308,45 @@ export function ContentSection({
                             <ChevronUp className="h-4 w-4" />
                           )}
                         </Button>
+                      )}
+
+                      {/* Question Text Input */}
+                      <div className="flex-1">
+                        <Input
+                          value={question.question_text}
+                          onChange={(e) =>
+                            handleQuestionTextChange(index, e.target.value)
+                          }
+                          placeholder="Enter question text"
+                          className="flex-1"
+                          disabled={isReadonly}
+                          onDragStart={(e) => e.preventDefault()}
+                        />
+                      </div>
+
+                      {/* Time Slider */}
+                      {selectedVideo && (
+                        <div className="w-48 shrink-0">
+                          <RangeSlider
+                            min={0}
+                            max={selectedVideo.length_seconds}
+                            value={[
+                              0,
+                              Math.max(
+                                0,
+                                Math.min(
+                                  selectedVideo.length_seconds,
+                                  question.times?.[0] ?? 0
+                                )
+                              ),
+                            ]}
+                            onValueChange={(range) =>
+                              handleQuestionTimeChange(index, range)
+                            }
+                            disabled={isReadonly}
+                            className="space-y-0"
+                          />
+                        </div>
                       )}
 
                       {/* Delete Button */}
