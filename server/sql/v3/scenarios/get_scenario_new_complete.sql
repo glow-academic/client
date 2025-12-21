@@ -1071,11 +1071,16 @@ SELECT
                 'length_seconds', v.length_seconds,
                 'completed', v.completed,
                 'active', v.active,
-                'image_enabled', v.image_enabled
+                'image_enabled', v.image_enabled,
+                'file_path', u.file_path,
+                'mime_type', u.mime_type,
+                'upload_id', u.id::text
             )
             ORDER BY v.created_at DESC
         )
         FROM videos v
+        LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
+        LEFT JOIN uploads u ON u.id = vu.upload_id
         WHERE v.active = true),
         '[]'::jsonb
     ) as scenario_videos,

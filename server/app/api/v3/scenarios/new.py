@@ -2019,6 +2019,9 @@ async def get_scenario_new(
                     "completed": vid.get("completed", False),
                     "active": vid.get("active", True),
                     "image_enabled": vid.get("image_enabled", False),
+                    "file_path": vid.get("file_path"),
+                    "mime_type": vid.get("mime_type"),
+                    "upload_id": vid.get("upload_id"),
                 }
                 for vid in scenario_videos_data
                 if isinstance(vid, dict)

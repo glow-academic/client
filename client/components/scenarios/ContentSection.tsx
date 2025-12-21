@@ -254,7 +254,7 @@ export interface ContentSectionProps {
   } | null;
   videoMapping: Record<
     string,
-    { id: string; name: string; length_seconds: number }
+    { id: string; name: string; length_seconds: number; upload_id?: string }
   >;
   activeVideoId: string | null;
 
@@ -984,7 +984,7 @@ export function ContentSection({
               {Object.keys(imageMapping).length === 0 && <Label>Images</Label>}
 
               {/* Image Grid - Single Column, Scrollable */}
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-auto max-h-[500px]">
                 <div className="flex flex-col gap-2">
                   {/* Display selected images */}
                   {(useVideo ? selectedImages : image ? [image] : []).map(
@@ -1078,6 +1078,7 @@ export function ContentSection({
                             id: selectedVideoItem.id,
                             name: selectedVideoItem.name,
                             length_seconds: selectedVideoItem.length_seconds,
+                            upload_id: selectedVideoItem.upload_id,
                           });
                         } else if (!videoId) {
                           onVideoSelect(null);
