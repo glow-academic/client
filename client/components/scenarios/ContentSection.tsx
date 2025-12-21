@@ -49,6 +49,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -261,6 +268,8 @@ export interface ContentSectionProps {
     { id: string; name: string; length_seconds: number; upload_id?: string }
   >;
   activeVideoId: string | null;
+  selectedVideoLength: number | null;
+  onVideoLengthChange: (length: number | null) => void;
 
   // Questions
   useQuestions: boolean;
@@ -422,6 +431,8 @@ export function ContentSection({
   selectedVideo,
   videoMapping,
   activeVideoId: _activeVideoId,
+  selectedVideoLength,
+  onVideoLengthChange,
   useQuestions,
   questions,
   currentQuestionIds: _currentQuestionIds,
@@ -522,6 +533,37 @@ export function ContentSection({
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(
     new Set()
   );
+
+  // Compute max images/questions based on selected video length
+  const maxImages = useMemo(() => {
+    if (!useVideo) return 1; // Single image mode
+    if (selectedVideoLength === 4) return 2;
+    if (selectedVideoLength === 8) return 3;
+    if (selectedVideoLength === 12) return 4;
+    return 4; // Default when no length selected
+  }, [useVideo, selectedVideoLength]);
+
+  const maxQuestions = useMemo(() => {
+    if (!useVideo) return 0; // No questions when video disabled
+    if (selectedVideoLength === 4) return 2;
+    if (selectedVideoLength === 8) return 3;
+    if (selectedVideoLength === 12) return 4;
+    return 4; // Default when no length selected
+  }, [useVideo, selectedVideoLength]);
+
+  // Filter videos by selected length (only if length is selected)
+  const filteredVideoMapping = useMemo(() => {
+    if (selectedVideoLength === null) {
+      return videoMapping; // Show all videos when no length selected
+    }
+    const filtered: typeof videoMapping = {};
+    Object.entries(videoMapping).forEach(([id, video]) => {
+      if (video.length_seconds === selectedVideoLength) {
+        filtered[id] = video;
+      }
+    });
+    return filtered;
+  }, [videoMapping, selectedVideoLength]);
 
   // Helper function to toggle question expansion
   const toggleQuestionExpanded = (index: number) => {
@@ -638,6 +680,36 @@ export function ContentSection({
             disabled={isUploadingImage || isReadonly}
             className="hidden"
           />
+          {useVideo && (
+            <Select
+              value={
+                selectedVideoLength !== null
+                  ? String(selectedVideoLength)
+                  : "none"
+              }
+              onValueChange={(value) => {
+                if (value === "none") {
+                  onVideoLengthChange(null);
+                } else {
+                  const parsed = parseInt(value, 10);
+                  if ([4, 8, 12].includes(parsed)) {
+                    onVideoLengthChange(parsed);
+                  }
+                }
+              }}
+              disabled={isReadonly}
+            >
+              <SelectTrigger className="w-[100px] h-8">
+                <SelectValue placeholder="Length" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="4">4s</SelectItem>
+                <SelectItem value="8">8s</SelectItem>
+                <SelectItem value="12">12s</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           <Button
             variant="default"
             size="sm"
@@ -914,8 +986,9 @@ export function ContentSection({
                   )
                 )}
 
-                {/* Add Image Box - Show until max (10, same as max questions) */}
-                {(useVideo ? selectedImages.length : image ? 1 : 0) < 10 && (
+                {/* Add Image Box - Show until max */}
+                {(useVideo ? selectedImages.length : image ? 1 : 0) <
+                  maxImages && (
                   <div
                     onClick={() => {
                       if (!isReadonly && !isUploadingImage) {
@@ -1601,7 +1674,7 @@ export function ContentSection({
               </div>
             )}
 
-            {questions.length < 10 && questions.length > 0 && (
+            {questions.length < maxQuestions && questions.length > 0 && (
               <div>
                 <Button
                   type="button"
@@ -1655,17 +1728,18 @@ export function ContentSection({
             {/* Video Picker (when video enabled) */}
             {useVideo && (
               <>
-                {Object.keys(videoMapping).length > 0 ? (
+                {Object.keys(filteredVideoMapping).length > 0 ? (
                   <div className="flex items-center justify-between">
                     <Label>Video</Label>
                     <GenericPicker
-                      items={videoMapping}
-                      itemIds={Object.keys(videoMapping)}
+                      items={filteredVideoMapping}
+                      itemIds={Object.keys(filteredVideoMapping)}
                       selectedIds={selectedVideo ? [selectedVideo.id] : []}
                       onSelect={(ids) => {
                         const videoId = ids[0] || null;
-                        if (videoId && videoMapping[videoId]) {
-                          const selectedVideoItem = videoMapping[videoId];
+                        if (videoId && filteredVideoMapping[videoId]) {
+                          const selectedVideoItem =
+                            filteredVideoMapping[videoId];
                           onVideoSelect({
                             id: selectedVideoItem.id,
                             name: selectedVideoItem.name,

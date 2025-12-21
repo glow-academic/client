@@ -26188,6 +26188,17 @@
               }
             ],
             "title": "Question Timestamps"
+          },
+          "video_length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Length"
           }
         },
         "type": "object",
@@ -31269,6 +31280,17 @@
             "type": "boolean",
             "title": "Questionsenabled",
             "default": false
+          },
+          "videoLength": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Videolength"
           }
         },
         "type": "object",
@@ -46837,6 +46859,17 @@
               }
             ],
             "title": "Question Timestamps"
+          },
+          "video_length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Length"
           }
         },
         "type": "object",

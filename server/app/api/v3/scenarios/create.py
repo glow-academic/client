@@ -41,6 +41,7 @@ class CreateScenarioRequest(BaseModel):
     active_video_id: str | None = None
     question_ids: list[str] | None = None
     question_timestamps: dict[str, dict[str, list[int]]] | None = None
+    video_length: int | None = None  # Optional: Video length in seconds (4, 8, or 12)
     # profileId removed - comes from X-Profile-Id header
 
 

@@ -525,6 +525,7 @@ export default function Scenario({
         videoEnabled: useVideo,
         objectivesEnabled: useObjectives,
         questionsEnabled: useQuestions,
+        videoLength: selectedVideoLength || undefined,
       });
     });
   };
@@ -620,6 +621,19 @@ export default function Scenario({
     const useVideoFromUrl = searchParams.get("useVideo");
     return useVideoFromUrl === "true";
   });
+  // Video length - initialized from URL params (DHH-style: URL as source of truth)
+  const [selectedVideoLength, setSelectedVideoLength] = useState<number | null>(
+    () => {
+      const videoLengthFromUrl = searchParams.get("videoLength");
+      if (videoLengthFromUrl) {
+        const parsed = parseInt(videoLengthFromUrl, 10);
+        if ([4, 8, 12].includes(parsed)) {
+          return parsed;
+        }
+      }
+      return null;
+    }
+  );
   // Use Questions flag - initialized from URL params
   const [useQuestions, setUseQuestions] = useState(() => {
     const useQuestionsFromUrl = searchParams.get("useQuestions");
@@ -1678,6 +1692,23 @@ export default function Scenario({
     // Only update if different from current state
     if (useVideo !== urlUseVideo) {
       setUseVideo(urlUseVideo);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Sync video length from URL params
+  useEffect(() => {
+    const videoLengthFromUrl = searchParams.get("videoLength");
+    let urlVideoLength: number | null = null;
+    if (videoLengthFromUrl) {
+      const parsed = parseInt(videoLengthFromUrl, 10);
+      if ([4, 8, 12].includes(parsed)) {
+        urlVideoLength = parsed;
+      }
+    }
+    // Only update if different from current state
+    if (selectedVideoLength !== urlVideoLength) {
+      setSelectedVideoLength(urlVideoLength);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
@@ -3625,6 +3656,7 @@ export default function Scenario({
         active_video_id?: string | null;
         question_ids?: string[] | null;
         question_timestamps?: Record<string, Record<string, number[]>> | null;
+        video_length?: number | null;
       } = {
         name: formData.name?.trim() || "",
         description:
@@ -3665,6 +3697,7 @@ export default function Scenario({
                 {} as Record<string, Record<string, number[]>>
               )
             : null,
+        video_length: selectedVideoLength || null,
       };
 
       // Include problem_statement_versions if in create mode and we have local versions
@@ -4134,6 +4167,13 @@ export default function Scenario({
               onVideoSelect={(video) => {
                 setSelectedVideo(video);
                 setActiveVideoId(video?.id || null);
+              }}
+              selectedVideoLength={selectedVideoLength}
+              onVideoLengthChange={(length) => {
+                setSelectedVideoLength(length);
+                updateUrlParams({
+                  videoLength: length !== null ? String(length) : null,
+                });
               }}
               useQuestions={useQuestions}
               questions={questions}

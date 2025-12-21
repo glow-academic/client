@@ -115,6 +115,7 @@ class GenerateScenarioAIPayload(BaseModel):
     videoEnabled: bool = False  # Flag to enable video generation
     objectivesEnabled: bool = False  # Flag to enable objectives generation
     questionsEnabled: bool = False  # Flag to enable questions generation
+    videoLength: int | None = None  # Optional: Video length in seconds (4, 8, or 12)
 
 
 # Emit helper functions

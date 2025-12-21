@@ -8141,6 +8141,8 @@ export interface components {
                     [key: string]: number[];
                 };
             } | null;
+            /** Video Length */
+            video_length?: number | null;
         };
         /**
          * CreateScenarioResponse
@@ -10238,6 +10240,8 @@ export interface components {
              * @default false
              */
             questionsEnabled: boolean;
+            /** Videolength */
+            videoLength?: number | null;
         };
         /**
          * GenerateVideoPayload
@@ -15909,6 +15913,8 @@ export interface components {
                     [key: string]: number[];
                 };
             } | null;
+            /** Video Length */
+            video_length?: number | null;
         };
         /**
          * UpdateScenarioResponse
