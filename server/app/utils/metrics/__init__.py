@@ -3,16 +3,18 @@
 from app.utils.metrics.collector import (
     get_current_metrics,
     initialize_metrics,
+    log_health_checks,
+    log_metrics_snapshot,
     record_error,
     record_request,
-    snapshot_metrics,
 )
 
 __all__ = [
     "initialize_metrics",
     "record_request",
     "record_error",
-    "snapshot_metrics",
+    "log_metrics_snapshot",
+    "log_health_checks",
     "get_current_metrics",
 ]
 

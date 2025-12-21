@@ -200,10 +200,11 @@ run: check-venv
 	@echo "  Client:   http://localhost:$(CLIENT_PORT)"
 	@echo "  Database: localhost:$(DATABASE_PORT)"
 	@echo "  Keycloak: http://localhost:$(KEYCLOAK_PORT)"
+	@echo "  Notify:   (periodic tasks)"
 	@echo ""
 	@echo "Press Ctrl+C to stop all services"
 	@echo "----------------------------------------"
-	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; pkill -f "docker logs.*glow-keycloak" 2>/dev/null || true; echo "✅ All services stopped (Keycloak remains running)"; exit 0' INT; \
+	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; pkill -f "notify.sh" 2>/dev/null || true; pkill -f "docker logs.*glow-keycloak" 2>/dev/null || true; echo "✅ All services stopped (Keycloak remains running)"; exit 0' INT; \
 	exec 2>/dev/null; \
 	if docker ps --filter name=glow-keycloak --format "{{.Names}}" | grep -q "^glow-keycloak$$"; then \
 		echo "✅ Keycloak already running, attaching to logs..."; \
@@ -242,6 +243,8 @@ run: check-venv
 	(cd client && yarn watch:openapi 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[OPENAPI]\033[0m %s' "$$line")"; done) & \
 	(cd client && APP_PREFIX=$${APP_PREFIX:-}; KEYCLOAK_PUBLIC_URL=http://localhost:8080/auth NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080/auth NODE_OPTIONS='--dns-result-order=ipv4first' yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
 	(cd database && READS=1 MIN_MS=0 SAMPLE_MS=150 DEBUG_READS=1 yarn logs 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;33m[DATABASE]\033[0m %s' "$$line")"; done) & \
+	sleep 3; \
+	(SERVER_URL=http://localhost:$(SERVER_PORT) APP_PREFIX=$${APP_PREFIX:-} $(PWD)/notify/notify.sh 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;37m%s\033[0m' "$$line")"; done) & \
 	wait
 
 run-test:
@@ -271,6 +274,8 @@ stop:
 	fi
 	@echo "Stopping Database logs..."
 	@pkill -f "stream-logs.js" 2>/dev/null && echo "✅ Database logs stopped" || echo "⚠️  Database logs process not found"
+	@echo "Stopping Notify service..."
+	@pkill -f "notify.sh" 2>/dev/null && echo "✅ Notify service stopped" || echo "⚠️  Notify service process not found"
 	@echo "✅ All services stopped (Keycloak remains running)"
 
 # Stop Keycloak container

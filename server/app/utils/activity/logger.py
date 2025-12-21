@@ -98,7 +98,7 @@ async def _insert_activity(
     Args:
         message: Fully rendered activity message
         endpoint: Route path
-        profile_id: Profile UUID
+        profile_id: Profile UUID (can be None if profile doesn't exist)
         error: Whether this activity represents an error (HTTP status >= 400 or template rendering failed)
     """
     if _db_pool is None:
@@ -106,6 +106,18 @@ async def _insert_activity(
 
     try:
         async with _db_pool.acquire() as conn:
+            # Check if profile exists, set profile_id to NULL if it doesn't
+            # This prevents foreign key violations for test profiles that don't exist in production
+            profile_id_uuid = None
+            if profile_id:
+                profile_exists = await conn.fetchval(
+                    "SELECT EXISTS(SELECT 1 FROM profiles WHERE id = $1::uuid)",
+                    profile_id,
+                )
+                if profile_exists:
+                    profile_id_uuid = profile_id
+                # If profile doesn't exist, profile_id_uuid remains None (NULL in database)
+            
             await conn.execute(
                 """
                 INSERT INTO activity (message, endpoint, profile_id, error, created_at)
@@ -113,7 +125,7 @@ async def _insert_activity(
                 """,
                 message,
                 endpoint,
-                profile_id,
+                profile_id_uuid,
                 error,
             )
     except Exception:

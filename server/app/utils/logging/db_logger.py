@@ -7,7 +7,7 @@ module-based logger names and guest profile ID resolution (Chris Date: No Nulls)
 import contextvars
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 import asyncpg  # type: ignore
 
@@ -105,8 +105,11 @@ async def resolve_profile_from_department_cookies(
                 SELECT resolved_profile_id::text FROM resolve_profile_from_department
                 WHERE resolved_profile_id IS NOT NULL
             """
-            result = await conn.fetchval(sql, department_id, auth_mode)
-            return result
+            result: Any = await conn.fetchval(sql, department_id, auth_mode)
+            if result is None:
+                return None
+            # fetchval returns UUID object, convert to string
+            return str(result)  # type: ignore[return-value]
     except Exception:
         # Log error but don't break request processing
         logger = logging.getLogger("app.utils.logging.db_logger")
@@ -117,92 +120,19 @@ async def resolve_profile_from_department_cookies(
 
 
 class DBLogHandler(logging.Handler):
-    """Custom logging handler that writes to database asynchronously."""
+    """Custom logging handler (database writing removed - app_logs table no longer exists).
+    
+    This handler is kept for compatibility but does not write to database.
+    Console logging still works via logger.propagate = True.
+    Activity logging uses the activity table via app.utils.activity.logger instead.
+    """
 
     def emit(self, record: logging.LogRecord) -> None:
-        """Emit a log record to the database (non-blocking)."""
-        if _db_pool is None:
-            return  # DB not initialized, skip
-
-        try:
-            # Get profile_id from context or record
-            profile_id = profile_id_context.get(None)
-            if not profile_id:
-                # Try to get from record if set
-                profile_id = getattr(record, "profile_id", None)
-
-            # If no profile_id, skip DB write (use standard logger only)
-            if not profile_id:
-                return
-
-            # Schedule async write (fire and forget)
-            import asyncio
-
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # If loop is running, schedule as task
-                    asyncio.create_task(self._write_to_db(record, profile_id))
-                else:
-                    # If no loop running, create new one
-                    asyncio.run(self._write_to_db(record, profile_id))
-            except RuntimeError:
-                # No event loop, skip DB write (fallback to console only)
-                pass
-        except Exception:
-            # Never break logging if DB write fails
-            pass
-
-    async def _write_to_db(
-        self, record: logging.LogRecord, profile_id: str | None
-    ) -> None:
-        """Write log record to database."""
-        if _db_pool is None:
-            return
-
-        try:
-            # Prepare extra data
-            extra_data: dict[str, Any] = {}
-            if hasattr(record, "extra_data"):
-                extra_data = record.extra_data
-            elif record.exc_info:
-                import traceback
-
-                extra_data["exception"] = traceback.format_exception(*record.exc_info)
-
-            # Write to database
-            # Inserts into both app_logs and app_logs_profiles junction table
-            async with _db_pool.acquire() as conn:
-                await conn.execute(
-                    """
-                    WITH insert_log AS (
-                        INSERT INTO app_logs (level, logger_name, message, extra, ts)
-                        SELECT 
-                            $1::text,
-                            $2::text,
-                            $3::text,
-                            $5::jsonb,
-                            now()
-                        RETURNING id
-                    )
-                    INSERT INTO app_logs_profiles (app_log_id, profile_id, created_at, updated_at)
-                    SELECT 
-                        il.id,
-                        $4::uuid,
-                        now(),
-                        now()
-                    FROM insert_log il
-                    WHERE $4::uuid IS NOT NULL
-                    """,
-                    record.levelname.lower(),
-                    record.name,
-                    record.getMessage(),
-                    profile_id,
-                    json.dumps(extra_data) if extra_data else None,
-                )
-        except Exception:
-            # Never break logging if DB write fails
-            pass
+        """Emit a log record (no-op - database writing removed)."""
+        # Database writing removed - app_logs table was replaced by activity table
+        # Console logging still works via logger.propagate = True
+        # Activity logging is handled by app.utils.activity.logger
+        pass
 
 
 def get_logger(name: str) -> logging.Logger:

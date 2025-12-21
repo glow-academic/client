@@ -691,37 +691,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             # Sync is triggered via WebSocket events and after auth mutations
 
         # Initialize metrics collector
-        from app.utils.metrics.collector import (  # noqa: E402
-            initialize_metrics, snapshot_metrics)
+        from app.utils.metrics.collector import \
+            initialize_metrics  # noqa: E402
 
         if pool:
             await initialize_metrics(pool, redis_client)
             logger.info("Metrics collector initialized")
-
-            # Start periodic metrics snapshot task (every 60 seconds)
-            async def metrics_task() -> None:
-                """Periodic task to snapshot metrics."""
-                while True:
-                    try:
-                        await asyncio.sleep(60)  # Wait 60 seconds
-                        await snapshot_metrics()
-                    except asyncio.CancelledError:
-                        break
-                    except Exception as e:
-                        logger.error(f"Error in metrics task: {e}")
-
-            metrics_task_handle = asyncio.create_task(metrics_task())
-
-            # Register cleanup callback
-            async def cleanup_metrics_task() -> None:
-                metrics_task_handle.cancel()
-                try:
-                    await metrics_task_handle
-                except asyncio.CancelledError:
-                    pass
-
-            stack.push_async_callback(cleanup_metrics_task)
-            logger.info("Metrics snapshot task started (60s interval)")
+            logger.info(
+                "Metrics snapshot and health logging now handled by notify service"
+            )
 
         await stack.enter_async_context(server.session_manager.run())
 
@@ -929,10 +907,19 @@ async def health_services() -> JSONResponse:
     """Rich health endpoint for dashboard.
 
     Returns per-service status + latencies.
+    Automatically logs health checks to database when called by notify service.
     """
     from app.utils.health import run_service_checks
+    from app.utils.metrics.collector import log_health_checks
 
     checks = await run_service_checks()
+
+    # Log health checks to database (non-blocking, fire-and-forget)
+    try:
+        asyncio.create_task(log_health_checks())
+    except Exception:
+        # Don't fail health endpoint if logging fails
+        pass
 
     # Convert ServiceCheckResult dataclasses to dicts
     services = {
@@ -954,6 +941,37 @@ async def health_services() -> JSONResponse:
             "services": services,
         }
     )
+
+
+@fastapi_app.post("/metrics/snapshot")
+async def metrics_snapshot() -> JSONResponse:
+    """Trigger metrics snapshot to database.
+
+    Called by notify service to log metrics snapshot.
+    No leader election needed since notify service is single instance.
+    """
+    from app.utils.metrics.collector import log_metrics_snapshot
+
+    try:
+        await log_metrics_snapshot()
+        return JSONResponse(
+            content={
+                "success": True,
+                "message": "Metrics snapshot logged",
+            }
+        )
+    except Exception as e:
+        from app.utils.logging.db_logger import get_logger
+
+        logger = get_logger("app.main")
+        logger.error(f"Error logging metrics snapshot: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "message": f"Failed to log metrics snapshot: {str(e)}",
+            },
+        )
 
 
 if __name__ == "__main__":

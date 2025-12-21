@@ -1,13 +1,11 @@
 """Auth sync endpoint - triggers Keycloak sync for identity providers."""
 
-import os
 from typing import Annotated, Any
 
+from app.utils.activity.audit import audit_activity
+from app.utils.auth.keycloak_sync import perform_keycloak_sync
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-
-from app.main import get_internal_sio, get_pool
-from app.utils.activity.audit import audit_activity
 
 
 class SyncKeycloakRequest(BaseModel):
@@ -22,10 +20,10 @@ class SyncKeycloakResponse(BaseModel):
     success: bool
     message: str
     department_id: str | None = None
+    error: str | None = None
 
 
 router = APIRouter()
-internal_sio = get_internal_sio()
 
 
 @router.post(
@@ -44,7 +42,8 @@ async def sync_keycloak(
 ) -> SyncKeycloakResponse:
     """Trigger Keycloak sync to update identity providers from database.
     
-    This endpoint triggers the Keycloak sync process which:
+    This endpoint performs the Keycloak sync process synchronously and returns
+    the actual result. The sync process:
     - Creates/updates department realms
     - Syncs identity providers (Microsoft, Google, etc.) with credentials from database
     - Updates client configurations
@@ -54,47 +53,30 @@ async def sync_keycloak(
         http_request: FastAPI request object
         
     Returns:
-        SyncKeycloakResponse with success status and message
+        SyncKeycloakResponse with success status, message, and optional error details
     """
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        department_id = request.department_id
+        # Perform sync directly and get result
+        result = await perform_keycloak_sync(department_id=request.department_id)
         
-        # For local dev, ensure master realm SSL requirement is set to NONE in database
-        # This must be done before triggering sync to avoid HTTPS errors
-        origin_check = os.getenv("ORIGIN", "http://localhost:3000")
-        is_local_dev = "localhost" in origin_check.lower()
-        
-        pool = get_pool()
-        if is_local_dev and pool:
-            try:
-                async with pool.acquire() as conn:
-                    await conn.execute(
-                        "UPDATE keycloak.realm SET ssl_required = 'NONE' WHERE name = 'master'"
-                    )
-            except Exception:
-                # Non-blocking - continue even if database update fails
-                pass
-        
-        # Trigger sync via internal event system
-        # The sync handler will ensure glow-client exists in master realm
-        await internal_sio.emit(
-            "keycloak_sync",
-            {"department_id": department_id} if department_id else {},
-        )
-        
-        if department_id:
-            message = f"Keycloak sync triggered for department {department_id}"
+        # Return response based on result
+        if result.success:
+            return SyncKeycloakResponse(
+                success=True,
+                message=result.message,
+                department_id=result.department_id,
+            )
         else:
-            message = "Keycloak sync triggered for all departments"
-        
-        return SyncKeycloakResponse(
-            success=True,
-            message=message,
-            department_id=department_id,
-        )
+            # Sync failed - return error response with error details
+            return SyncKeycloakResponse(
+                success=False,
+                message=result.message,
+                department_id=result.department_id,
+                error=result.error,
+            )
     except HTTPException:
         raise
     except Exception as e:

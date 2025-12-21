@@ -217,6 +217,32 @@ services:
       - internal
       - public_net
   # --------------------
+  # Notify Service - triggers Keycloak sync and periodic health/metrics logging
+  # --------------------
+  notify:
+    build:
+      context: ./notify
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - SERVER_URL=http://server:8000
+      - APP_PREFIX=${APP_PREFIX}
+      - INTERVAL=60
+      - SYNC_RETRIES=15
+      - SYNC_INITIAL_DELAY=15
+      - HEALTH_RETRIES=3
+      - METRICS_RETRIES=3
+      - WAIT_MAX_RETRIES=30
+      - WAIT_DELAY=2
+    depends_on:
+      server:
+        condition: service_healthy
+    networks:
+      - internal
+
+  # --------------------
   # Next.js Client
   # --------------------
   client:

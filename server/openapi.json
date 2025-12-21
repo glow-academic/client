@@ -3172,7 +3172,7 @@
           "auth"
         ],
         "summary": "Sync Keycloak",
-        "description": "Trigger Keycloak sync to update identity providers from database.\n\nThis endpoint triggers the Keycloak sync process which:\n- Creates/updates department realms\n- Syncs identity providers (Microsoft, Google, etc.) with credentials from database\n- Updates client configurations\n\nArgs:\n    request: Optional department_id to sync specific department, or None to sync all\n    http_request: FastAPI request object\n    \nReturns:\n    SyncKeycloakResponse with success status and message",
+        "description": "Trigger Keycloak sync to update identity providers from database.\n\nThis endpoint performs the Keycloak sync process synchronously and returns\nthe actual result. The sync process:\n- Creates/updates department realms\n- Syncs identity providers (Microsoft, Google, etc.) with credentials from database\n- Updates client configurations\n\nArgs:\n    request: Optional department_id to sync specific department, or None to sync all\n    http_request: FastAPI request object\n    \nReturns:\n    SyncKeycloakResponse with success status, message, and optional error details",
         "operationId": "sync_keycloak_api_v3_auth_sync_post",
         "parameters": [
           {
@@ -21464,8 +21464,25 @@
     "/health": {
       "get": {
         "summary": "Health Services",
-        "description": "Rich health endpoint for dashboard.\n\nReturns per-service status + latencies.",
+        "description": "Rich health endpoint for dashboard.\n\nReturns per-service status + latencies.\nAutomatically logs health checks to database when called by notify service.",
         "operationId": "health_services_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics/snapshot": {
+      "post": {
+        "summary": "Metrics Snapshot",
+        "description": "Trigger metrics snapshot to database.\n\nCalled by notify service to log metrics snapshot.\nNo leader election needed since notify service is single instance.",
+        "operationId": "metrics_snapshot_metrics_snapshot_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -44587,6 +44604,17 @@
               }
             ],
             "title": "Department Id"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
           }
         },
         "type": "object",

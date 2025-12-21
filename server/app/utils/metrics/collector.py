@@ -15,7 +15,6 @@ _errors_count = 0
 _latency_samples: deque[float] = deque(maxlen=1000)  # Keep last 1000 samples
 _db_pool: asyncpg.Pool | None = None
 _redis_client: Any | None = None
-_instance_id: str = os.urandom(8).hex()  # Unique instance ID for leader election
 
 
 async def initialize_metrics(
@@ -102,36 +101,13 @@ async def record_error() -> None:
         _errors_count += 1
 
 
-async def snapshot_metrics() -> None:
-    """Take a snapshot of current metrics and write to database.
+async def log_metrics_snapshot() -> None:
+    """Log metrics snapshot to database (no leader election).
 
-    Uses leader election via Redis SET NX to ensure only one instance writes snapshots.
-    This function should be called periodically (e.g., every 60 seconds).
+    This function is called by the notify service endpoint.
+    No leader election needed since notify service is single instance.
     """
     if _db_pool is None:
-        return
-
-    # Leader election: only one instance should write snapshots
-    lock_acquired = False
-    if _redis_client:
-        try:
-            # Try to acquire lock (SET NX with 70s TTL)
-            lock_acquired = await _redis_client.set(
-                "metrics:snapshot_lock",
-                _instance_id,
-                nx=True,
-                ex=70,
-            )
-        except Exception:
-            # If Redis fails, proceed anyway (fallback mode)
-            lock_acquired = True
-
-    # If Redis unavailable, proceed (single instance or fallback mode)
-    if not _redis_client:
-        lock_acquired = True
-
-    if not lock_acquired:
-        # Another instance is handling snapshots, skip
         return
 
     try:
@@ -227,40 +203,60 @@ async def snapshot_metrics() -> None:
                     cpu_percent,
                     memory_bytes,
                 )
-
-                # Run service health checks and write to service_health table
-                try:
-                    from app.utils.health import run_service_checks
-
-                    checks = await run_service_checks()
-                    for service, result in checks.items():
-                        await conn.execute(
-                            """
-                            INSERT INTO service_health (ts, service, ok, latency_ms, error)
-                            VALUES ($1, $2, $3, $4, $5)
-                            ON CONFLICT (ts, service) DO UPDATE
-                            SET ok = EXCLUDED.ok,
-                                latency_ms = EXCLUDED.latency_ms,
-                                error = EXCLUDED.error
-                            """,
-                            ts,
-                            service,
-                            result.ok,
-                            result.latency_ms,
-                            result.error,
-                        )
-                except Exception as health_error:
-                    # Log health check errors but don't break metrics collection
-                    from app.utils.logging.db_logger import get_logger
-
-                    logger = get_logger("app.utils.metrics.collector")
-                    logger.warning(f"Error running health checks: {health_error}")
     except Exception as e:
         # Log error but don't break metrics collection
         from app.utils.logging.db_logger import get_logger
 
         logger = get_logger("app.utils.metrics.collector")
-        logger.error(f"Error snapshotting metrics: {e}")
+        logger.error(f"Error logging metrics snapshot: {e}")
+
+
+async def log_health_checks() -> None:
+    """Log health checks to database (no leader election).
+
+    This function is called by the health endpoint.
+    No leader election needed since notify service is single instance.
+    """
+    if _db_pool is None:
+        return
+
+    try:
+        from app.utils.health import run_service_checks
+
+        checks = await run_service_checks()
+
+        # Round timestamp to minute
+        now = time.time()
+        rounded_minute = int(now // 60) * 60
+        from datetime import datetime
+
+        ts = datetime.fromtimestamp(rounded_minute, tz=UTC)
+
+        # Write to database
+        async with _db_pool.acquire() as conn:
+            async with conn.transaction():
+                for service, result in checks.items():
+                    await conn.execute(
+                        """
+                        INSERT INTO service_health (ts, service, ok, latency_ms, error)
+                        VALUES ($1, $2, $3, $4, $5)
+                        ON CONFLICT (ts, service) DO UPDATE
+                        SET ok = EXCLUDED.ok,
+                            latency_ms = EXCLUDED.latency_ms,
+                            error = EXCLUDED.error
+                        """,
+                        ts,
+                        service,
+                        result.ok,
+                        result.latency_ms,
+                        result.error,
+                    )
+    except Exception as e:
+        # Log error but don't break health endpoint
+        from app.utils.logging.db_logger import get_logger
+
+        logger = get_logger("app.utils.metrics.collector")
+        logger.warning(f"Error logging health checks: {e}")
 
 
 async def get_current_metrics() -> dict[str, Any]:

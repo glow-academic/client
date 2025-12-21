@@ -797,7 +797,8 @@ export interface paths {
          * Sync Keycloak
          * @description Trigger Keycloak sync to update identity providers from database.
          *
-         *     This endpoint triggers the Keycloak sync process which:
+         *     This endpoint performs the Keycloak sync process synchronously and returns
+         *     the actual result. The sync process:
          *     - Creates/updates department realms
          *     - Syncs identity providers (Microsoft, Google, etc.) with credentials from database
          *     - Updates client configurations
@@ -807,7 +808,7 @@ export interface paths {
          *         http_request: FastAPI request object
          *
          *     Returns:
-         *         SyncKeycloakResponse with success status and message
+         *         SyncKeycloakResponse with success status, message, and optional error details
          */
         post: operations["sync_keycloak_api_v3_auth_sync_post"];
         delete?: never;
@@ -6285,10 +6286,34 @@ export interface paths {
          * @description Rich health endpoint for dashboard.
          *
          *     Returns per-service status + latencies.
+         *     Automatically logs health checks to database when called by notify service.
          */
         get: operations["health_services_health_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/metrics/snapshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Metrics Snapshot
+         * @description Trigger metrics snapshot to database.
+         *
+         *     Called by notify service to log metrics snapshot.
+         *     No leader election needed since notify service is single instance.
+         */
+        post: operations["metrics_snapshot_metrics_snapshot_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -15096,6 +15121,8 @@ export interface components {
             message: string;
             /** Department Id */
             department_id?: string | null;
+            /** Error */
+            error?: string | null;
         };
         /**
          * TemplateInfo
@@ -31768,6 +31795,26 @@ export interface operations {
         };
     };
     health_services_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    metrics_snapshot_metrics_snapshot_post: {
         parameters: {
             query?: never;
             header?: never;

@@ -113,6 +113,21 @@ async def check_keycloak() -> ServiceCheckResult:
 
         if r.status_code == 200:
             return ServiceCheckResult(True, latency)
+        
+        # Keycloak might return 403 with "HTTPS required" during startup or before SSL is disabled
+        # This means Keycloak is running but not yet configured for HTTP
+        # We consider this as "available but not ready" rather than "unavailable"
+        if r.status_code == 403:
+            # Check if it's the HTTPS required error
+            try:
+                error_body = r.json()
+                if error_body.get("error_description") == "HTTPS required":
+                    # Keycloak is running but requires HTTPS - this is expected before sync
+                    # Return as available but with a warning
+                    return ServiceCheckResult(True, latency, "HTTPS required (will be fixed by sync)")
+            except Exception:
+                pass
+        
         return ServiceCheckResult(False, latency, f"status={r.status_code}")
     except Exception as e:
         latency = (time.perf_counter() - start) * 1000
