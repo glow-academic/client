@@ -78,7 +78,8 @@ cohort_simulation_stats AS (
         SELECT 1 FROM runs r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
         JOIN groups g_check ON g_check.id = gr_check.group_id
-        JOIN chats c_check ON c_check.group_id = g_check.id
+        JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
+        JOIN chats c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
     LEFT JOIN runs r_cohort_new ON r_cohort_new.id = scg.run_id

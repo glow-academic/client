@@ -180,24 +180,10 @@ async def _simulation_voice_assistant_delta_impl(
                     personas = [dict(row) for row in persona_rows]
 
                     # Get latest message in chat to use as parent for message_tree
+                    sql_get_latest_message = load_sql("sql/v3/simulations/get_latest_message.sql")
                     latest_message_row = await conn.fetchrow(
-                        """
-                        SELECT m.id
-                        FROM messages m
-                        JOIN message_runs mr ON mr.message_id = m.id
-                        JOIN runs r ON r.id = mr.run_id
-                        JOIN group_runs gr ON gr.run_id = r.id
-                        JOIN groups g ON g.id = gr.group_id
-                        JOIN chats c ON c.group_id = g.id
-                        WHERE c.id = $1::uuid
-                          AND NOT EXISTS (
-                              SELECT 1 FROM message_tree mt 
-                              WHERE mt.parent_id = m.id AND mt.active = true
-                          )
-                        ORDER BY m.created_at DESC
-                        LIMIT 1
-                        """,
-                        chat_id_uuid,
+                        sql_get_latest_message,
+                        str(chat_id_uuid),
                     )
 
                     parent_message_id = (

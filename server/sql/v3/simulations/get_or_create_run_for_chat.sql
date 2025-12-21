@@ -98,8 +98,13 @@ link_profile AS (
 ),
 link_group AS (
     -- Link run to group if it's a new run
-    INSERT INTO group_runs (group_id, run_id, created_at, updated_at)
-    SELECT sg.group_id, sr.id, NOW(), NOW()
+    INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
+    SELECT 
+        sg.group_id, 
+        sr.id, 
+        COALESCE((SELECT MAX(idx) FROM group_runs WHERE group_id = sg.group_id), -1) + 1,
+        NOW(), 
+        NOW()
     FROM selected_run sr
     CROSS JOIN selected_group sg
     WHERE NOT EXISTS (SELECT 1 FROM latest_run)
