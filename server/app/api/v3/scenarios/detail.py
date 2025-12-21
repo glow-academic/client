@@ -198,6 +198,7 @@ class ScenarioDetailRequest(BaseModel):
     randomize: str | None = None
     # Agent filtering parameters
     useImage: bool | None = None
+    useVideo: bool | None = None
     # URL parameters for linking generated resources
     imageIds: list[str] | None = None
     objectiveIds: list[str] | None = None
@@ -1024,6 +1025,9 @@ async def get_scenario_detail(
             document_ids_uuid,
             problem_statement_ids_uuid,
             template_document_ids_uuid,
+            request_data.useVideo
+            if request_data.useVideo is not None
+            else False,  # $8: boolean (for video parameter filtering)
         )
 
         # Execute query
@@ -1081,6 +1085,9 @@ async def get_scenario_detail(
                         "completed": vid.get("completed", False),
                         "active": vid.get("active", True),
                         "image_enabled": vid.get("image_enabled", False),
+                        "file_path": vid.get("file_path"),
+                        "mime_type": vid.get("mime_type"),
+                        "upload_id": vid.get("upload_id"),
                     }
                     for vid in videos_data
                     if isinstance(vid, dict)
@@ -1325,8 +1332,15 @@ async def get_scenario_detail(
                         )
                     )
 
-        # Derive document_ids from document_details
-        document_ids = [doc.document_id for doc in document_details if doc.document_id]
+        # Use document_ids from SQL (linked documents only), not from document_details
+        # document_details may include provided documentIds, but document_ids should only be linked ones
+        document_ids_raw = scenario.get("document_ids")
+        if isinstance(document_ids_raw, list):
+            document_ids = [str(did) for did in document_ids_raw if did]
+        elif document_ids_raw:
+            document_ids = [str(document_ids_raw)]
+        else:
+            document_ids = []
 
         # Compute permissions
         in_use_by_active = scenario["active_usage_count"] > 0

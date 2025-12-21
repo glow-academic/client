@@ -1,5 +1,5 @@
 -- Get scenario detail with departments, problem statements, and access control
--- Parameters: $1 = scenario_id (uuid), $2 = profile_id (uuid), $3 = use_image (bool, nullable), $4 = use_objectives (bool, nullable), $5 = document_ids (uuid[], nullable), $6 = problem_statement_ids (uuid[], nullable), $7 = template_document_ids (uuid[], nullable)
+-- Parameters: $1 = scenario_id (uuid), $2 = profile_id (uuid), $3 = use_image (bool, nullable), $4 = use_objectives (bool, nullable), $5 = document_ids (uuid[], nullable), $6 = problem_statement_ids (uuid[], nullable), $7 = template_document_ids (uuid[], nullable), $8 = use_video (bool, nullable, for video parameter filtering)
 
 WITH resolve_profile_id AS (
     -- Resolve profile ID from parameter
@@ -168,22 +168,31 @@ scenario_documents_agg AS (
     WHERE scenario_id = $1 AND active = true
 ),
 scenario_videos_data AS (
-    SELECT COALESCE(
-        jsonb_agg(
-            jsonb_build_object(
-                'id', v.id::text,
-                'name', v.name,
-                'length_seconds', v.length_seconds,
-                'completed', v.completed,
-                'active', sv.active,
-                'image_enabled', v.image_enabled
-            )
-        ),
-        '[]'::jsonb
-    ) as scenario_videos
-    FROM scenario_videos sv
-    JOIN videos v ON v.id = sv.video_id
-    WHERE sv.scenario_id = $1 AND sv.active = true
+    SELECT 
+        COALESCE(
+            (
+                SELECT jsonb_agg(
+                    jsonb_build_object(
+                        'id', v.id::text,
+                        'name', v.name,
+                        'length_seconds', v.length_seconds,
+                        'completed', v.completed,
+                        'active', sv.active,
+                        'image_enabled', v.image_enabled,
+                        'file_path', u.file_path,
+                        'mime_type', u.mime_type,
+                        'upload_id', u.id::text
+                    )
+                )
+                FROM scenario_videos sv
+                JOIN videos v ON v.id = sv.video_id
+                LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
+                LEFT JOIN uploads u ON u.id = vu.upload_id
+                WHERE sv.scenario_id = $1 AND sv.active = true
+            ),
+            '[]'::jsonb
+        ) as scenario_videos
+    FROM (SELECT 1) AS _dummy
 ),
 scenario_questions_data AS (
     SELECT 
@@ -341,16 +350,79 @@ valid_personas_filtered AS (
             COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
             OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
         )
-        AND NOT EXISTS (
-            SELECT 1 
-            FROM persona_fields pf
-            JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
-            JOIN parameters param ON param.id = pfield.parameter_id
-            WHERE pf.persona_id = p.id
-            AND pf.active = true
-            AND pfield.active = true
-            AND param.active = true
-            AND param.video_parameter = true
+        AND (
+            CASE 
+                WHEN $8::boolean = true THEN
+                    -- Include video_parameter OR general parameters
+                    EXISTS (
+                        SELECT 1 
+                        FROM persona_fields pf
+                        JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
+                        JOIN parameters param ON param.id = pfield.parameter_id
+                        WHERE pf.persona_id = p.id
+                        AND pf.active = true
+                        AND pfield.active = true
+                        AND param.active = true
+                        AND param.video_parameter = true
+                    )
+                    OR EXISTS (
+                        SELECT 1 
+                        FROM persona_fields pf
+                        JOIN field_conditional_parameters fcp ON fcp.field_id = pf.field_id
+                        JOIN parameters cp ON cp.id = fcp.conditional_parameter_id
+                        WHERE pf.persona_id = p.id
+                        AND pf.active = true
+                        AND fcp.active = true
+                        AND cp.video_parameter = true
+                    )
+                    OR EXISTS (
+                        SELECT 1 
+                        FROM persona_fields pf
+                        JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
+                        JOIN parameters param ON param.id = pfield.parameter_id
+                        WHERE pf.persona_id = p.id
+                        AND pf.active = true
+                        AND pfield.active = true
+                        AND param.active = true
+                        AND param.video_parameter = false
+                        AND param.scenario_parameter = false
+                    )
+                ELSE
+                    -- Include scenario_parameter OR general parameters
+                    EXISTS (
+                        SELECT 1 
+                        FROM persona_fields pf
+                        JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
+                        JOIN parameters param ON param.id = pfield.parameter_id
+                        WHERE pf.persona_id = p.id
+                        AND pf.active = true
+                        AND pfield.active = true
+                        AND param.active = true
+                        AND param.scenario_parameter = true
+                    )
+                    OR EXISTS (
+                        SELECT 1 
+                        FROM persona_fields pf
+                        JOIN field_conditional_parameters fcp ON fcp.field_id = pf.field_id
+                        JOIN parameters cp ON cp.id = fcp.conditional_parameter_id
+                        WHERE pf.persona_id = p.id
+                        AND pf.active = true
+                        AND fcp.active = true
+                        AND cp.scenario_parameter = true
+                    )
+                    OR EXISTS (
+                        SELECT 1 
+                        FROM persona_fields pf
+                        JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
+                        JOIN parameters param ON param.id = pfield.parameter_id
+                        WHERE pf.persona_id = p.id
+                        AND pf.active = true
+                        AND pfield.active = true
+                        AND param.active = true
+                        AND param.video_parameter = false
+                        AND param.scenario_parameter = false
+                    )
+            END
         )
 ),
 persona_data AS (
@@ -456,16 +528,68 @@ valid_documents_filtered AS (
             COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY(ud.dept_ids)) > 0
             OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
         )
-        AND NOT EXISTS (
-            SELECT 1 
-            FROM document_fields df
-            JOIN parameter_fields pfield ON pfield.field_id = df.field_id
-            JOIN parameters param ON param.id = pfield.parameter_id
-            WHERE df.document_id = d.id
-            AND df.active = true
-            AND pfield.active = true
-            AND param.active = true
-            AND param.video_parameter = true
+        AND (
+            CASE 
+                WHEN $8::boolean = true THEN
+                    -- Include ONLY video_parameter relationships (direct or conditional)
+                    -- Do NOT include general parameters for documents
+                    EXISTS (
+                        SELECT 1 
+                        FROM document_fields df
+                        JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+                        JOIN parameters param ON param.id = pfield.parameter_id
+                        WHERE df.document_id = d.id
+                        AND df.active = true
+                        AND pfield.active = true
+                        AND param.active = true
+                        AND param.video_parameter = true
+                    )
+                    OR EXISTS (
+                        SELECT 1 
+                        FROM document_fields df
+                        JOIN field_conditional_parameters fcp ON fcp.field_id = df.field_id
+                        JOIN parameters cp ON cp.id = fcp.conditional_parameter_id
+                        WHERE df.document_id = d.id
+                        AND df.active = true
+                        AND fcp.active = true
+                        AND cp.video_parameter = true
+                    )
+                ELSE
+                    -- Include scenario_parameter OR general parameters
+                    EXISTS (
+                        SELECT 1 
+                        FROM document_fields df
+                        JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+                        JOIN parameters param ON param.id = pfield.parameter_id
+                        WHERE df.document_id = d.id
+                        AND df.active = true
+                        AND pfield.active = true
+                        AND param.active = true
+                        AND param.scenario_parameter = true
+                    )
+                    OR EXISTS (
+                        SELECT 1 
+                        FROM document_fields df
+                        JOIN field_conditional_parameters fcp ON fcp.field_id = df.field_id
+                        JOIN parameters cp ON cp.id = fcp.conditional_parameter_id
+                        WHERE df.document_id = d.id
+                        AND df.active = true
+                        AND fcp.active = true
+                        AND cp.scenario_parameter = true
+                    )
+                    OR EXISTS (
+                        SELECT 1 
+                        FROM document_fields df
+                        JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+                        JOIN parameters param ON param.id = pfield.parameter_id
+                        WHERE df.document_id = d.id
+                        AND df.active = true
+                        AND pfield.active = true
+                        AND param.active = true
+                        AND param.video_parameter = false
+                        AND param.scenario_parameter = false
+                    )
+            END
         )
 ),
 document_data AS (
@@ -504,16 +628,68 @@ document_data AS (
     AND $5::uuid[] IS NOT NULL
     AND array_length($5::uuid[], 1) > 0
     AND d3.id = ANY($5::uuid[])
-    AND NOT EXISTS (
-        SELECT 1 
-        FROM document_fields df
-        JOIN parameter_fields pfield ON pfield.field_id = df.field_id
-        JOIN parameters param ON param.id = pfield.parameter_id
-        WHERE df.document_id = d3.id
-        AND df.active = true
-        AND pfield.active = true
-        AND param.active = true
-        AND param.video_parameter = true
+    AND (
+        CASE 
+            WHEN $8::boolean = true THEN
+                -- Include ONLY video_parameter relationships (direct or conditional)
+                -- Do NOT include general parameters for documents
+                EXISTS (
+                    SELECT 1 
+                    FROM document_fields df
+                    JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+                    JOIN parameters param ON param.id = pfield.parameter_id
+                    WHERE df.document_id = d3.id
+                    AND df.active = true
+                    AND pfield.active = true
+                    AND param.active = true
+                    AND param.video_parameter = true
+                )
+                OR EXISTS (
+                    SELECT 1 
+                    FROM document_fields df
+                    JOIN field_conditional_parameters fcp ON fcp.field_id = df.field_id
+                    JOIN parameters cp ON cp.id = fcp.conditional_parameter_id
+                    WHERE df.document_id = d3.id
+                    AND df.active = true
+                    AND fcp.active = true
+                    AND cp.video_parameter = true
+                )
+            ELSE
+                -- Include scenario_parameter OR general parameters
+                EXISTS (
+                    SELECT 1 
+                    FROM document_fields df
+                    JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+                    JOIN parameters param ON param.id = pfield.parameter_id
+                    WHERE df.document_id = d3.id
+                    AND df.active = true
+                    AND pfield.active = true
+                    AND param.active = true
+                    AND param.scenario_parameter = true
+                )
+                OR EXISTS (
+                    SELECT 1 
+                    FROM document_fields df
+                    JOIN field_conditional_parameters fcp ON fcp.field_id = df.field_id
+                    JOIN parameters cp ON cp.id = fcp.conditional_parameter_id
+                    WHERE df.document_id = d3.id
+                    AND df.active = true
+                    AND fcp.active = true
+                    AND cp.scenario_parameter = true
+                )
+                OR EXISTS (
+                    SELECT 1 
+                    FROM document_fields df
+                    JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+                    JOIN parameters param ON param.id = pfield.parameter_id
+                    WHERE df.document_id = d3.id
+                    AND df.active = true
+                    AND pfield.active = true
+                    AND param.active = true
+                    AND param.video_parameter = false
+                    AND param.scenario_parameter = false
+                )
+        END
     )
 ),
 -- Document parameter relationships: via fields (document_fields → parameter_fields) and document_parameter flag
@@ -650,28 +826,17 @@ document_details_data AS (
                 ) ORDER BY d.name
             )
             FROM (
-                -- Documents linked to scenario
-                SELECT d.id, d.name, d.updated_at, d.active, d.template, u.file_path, u.mime_type, u.id as upload_id
-            FROM scenario_documents sd
-            JOIN documents d ON d.id = sd.document_id
-            LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-            LEFT JOIN uploads u ON u.id = du.upload_id
-                WHERE sd.scenario_id = $1 AND sd.active = true AND d.active = true
-                UNION
-                -- Provided documentIds not already linked to scenario
-                SELECT d.id, d.name, d.updated_at, d.active, d.template, u.file_path, u.mime_type, u.id as upload_id
-                FROM documents d
-                LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-                LEFT JOIN uploads u ON u.id = du.upload_id
-                WHERE d.active = true
-                AND $5::uuid[] IS NOT NULL
-                AND array_length($5::uuid[], 1) > 0
-                AND d.id = ANY($5::uuid[])
-                AND d.id NOT IN (
-                    SELECT document_id 
-                    FROM scenario_documents 
-                    WHERE scenario_id = $1 AND active = true
-                )
+                SELECT 
+                    dd.id,
+                    d.name,
+                    d.updated_at,
+                    d.active,
+                    d.template,
+                    dd.file_path,
+                    dd.mime_type,
+                    (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = dd.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id
+                FROM document_data dd
+                JOIN documents d ON d.id = dd.id
             ) d
         ),
         '[]'::jsonb
@@ -1263,5 +1428,5 @@ CROSS JOIN scenario_persona_ranges_data sprd
 CROSS JOIN scenario_document_ranges_data sdrd
 CROSS JOIN scenario_parameter_ranges_data sprd2
 LEFT JOIN scenario_field_ranges_data sfrd ON sfrd.scenario_id = sc.id
-WHERE ($3::boolean IS NOT NULL OR TRUE) AND ($4::boolean IS NOT NULL OR TRUE) AND ($7::uuid[] IS NOT NULL OR TRUE)
+WHERE ($3::boolean IS NOT NULL OR TRUE) AND ($4::boolean IS NOT NULL OR TRUE) AND ($7::uuid[] IS NOT NULL OR TRUE) AND ($8::boolean IS NOT NULL OR TRUE)
 

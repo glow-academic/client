@@ -1947,7 +1947,8 @@ export default function Scenario({
       setSelectedPersonaIds(scenarioData.persona_ids || []);
       // Clear local versions when loading existing scenario (edit mode)
       setLocalProblemStatementVersions([]);
-      setCurrentDocumentIds(scenarioData.document_ids || []);
+      const docIds = scenarioData.document_ids || [];
+      setCurrentDocumentIds(docIds);
       // Extract template document IDs from documentDetails (is_template field) for edit mode
       const templateDocIds =
         scenarioData.document_details
@@ -2047,13 +2048,16 @@ export default function Scenario({
           id?: string;
           name?: string;
           length_seconds?: number;
+          upload_id?: string;
         };
         const videoId = activeVideoTyped["id"];
+        const uploadId = activeVideoTyped["upload_id"];
         if (videoId) {
           setSelectedVideo({
             id: videoId,
             name: activeVideoTyped["name"] || "",
             length_seconds: activeVideoTyped["length_seconds"] || 0,
+            upload_id: uploadId || undefined,
           });
           setActiveVideoId(videoId);
         } else {
@@ -3787,19 +3791,22 @@ export default function Scenario({
           templateDocumentIds={templateDocumentIds}
           {...(scenarioData?.document_details
             ? {
-                documentDetails: scenarioData.document_details as Array<{
-                  document_id: string;
-                  name: string;
-                  updatedAt: string;
-                  extension: string;
-                  scenario_ids: string[];
-                  can_edit: boolean;
-                  can_delete: boolean;
-                  active: boolean;
-                  department_ids: string[] | null;
-                  upload_id: string | null;
-                  field_ids: string[];
-                }>,
+                documentDetails: (() => {
+                  const details = scenarioData.document_details as Array<{
+                    document_id: string;
+                    name: string;
+                    updatedAt: string;
+                    extension: string;
+                    scenario_ids: string[];
+                    can_edit: boolean;
+                    can_delete: boolean;
+                    active: boolean;
+                    department_ids: string[] | null;
+                    upload_id: string | null;
+                    field_ids: string[];
+                  }>;
+                  return details;
+                })(),
               }
             : {})}
           searchTerm={documentSearchTerm}

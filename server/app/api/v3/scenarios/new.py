@@ -179,6 +179,7 @@ class ScenarioNewRequest(BaseModel):
     randomize: str | None = None
     # Agent filtering parameters
     useImage: bool | None = None
+    useVideo: bool | None = None
     # URL parameters for linking generated resources
     imageIds: list[str] | None = None
     objectiveIds: list[str] | None = None
@@ -1127,6 +1128,9 @@ async def get_scenario_new(
             template_document_ids_uuid,  # $6
             objective_ids_uuid,  # $7
             image_ids_uuid,  # $8
+            request_data.useVideo
+            if request_data.useVideo is not None
+            else False,  # $9: boolean (for video parameter filtering)
         )
 
         # Execute query

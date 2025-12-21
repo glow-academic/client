@@ -40397,6 +40397,17 @@
             ],
             "title": "Useimage"
           },
+          "useVideo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usevideo"
+          },
           "imageIds": {
             "anyOf": [
               {
@@ -40963,6 +40974,17 @@
               }
             ],
             "title": "Useimage"
+          },
+          "useVideo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usevideo"
           },
           "imageIds": {
             "anyOf": [

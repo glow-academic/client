@@ -13502,6 +13502,8 @@ export interface components {
             randomize?: string | null;
             /** Useimage */
             useImage?: boolean | null;
+            /** Usevideo */
+            useVideo?: boolean | null;
             /** Imageids */
             imageIds?: string[] | null;
             /** Objectiveids */
@@ -13660,6 +13662,8 @@ export interface components {
             randomize?: string | null;
             /** Useimage */
             useImage?: boolean | null;
+            /** Usevideo */
+            useVideo?: boolean | null;
             /** Imageids */
             imageIds?: string[] | null;
             /** Objectiveids */

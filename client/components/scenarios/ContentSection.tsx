@@ -247,7 +247,7 @@ export interface ContentSectionProps {
 
   // Videos
   useVideo: boolean;
-  selectedVideo: { id: string; name: string; length_seconds: number } | null;
+  selectedVideo: { id: string; name: string; length_seconds: number; upload_id?: string } | null;
   videoMapping: Record<
     string,
     { id: string; name: string; length_seconds: number }
@@ -309,7 +309,7 @@ export interface ContentSectionProps {
   onImageRemove: () => void;
   onUseVideoChange: (enabled: boolean) => void;
   onVideoSelect: (
-    video: { id: string; name: string; length_seconds: number } | null
+    video: { id: string; name: string; length_seconds: number; upload_id?: string } | null
   ) => void;
   onUseQuestionsChange: (enabled: boolean) => void;
   onQuestionsChange: (
@@ -1170,11 +1170,18 @@ export function ContentSection({
             {useVideo && (
               <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1 bg-black flex items-center justify-center">
                 {selectedVideo ? (
-                  <video
-                    src={`/api/v3/videos/${selectedVideo.id}/stream`}
-                    controls
-                    className="w-full h-full object-contain"
-                  />
+                  selectedVideo.upload_id ? (
+                    <video
+                      src={`/api/uploads/download/${selectedVideo.upload_id}`}
+                      controls
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-white/70">
+                      <Video className="h-12 w-12 mb-2" />
+                      <p className="text-sm">Video upload not available</p>
+                    </div>
+                  )
                 ) : (
                   <div className="flex flex-col items-center justify-center text-white/70">
                     <Video className="h-12 w-12 mb-2" />
