@@ -8,15 +8,14 @@ from datetime import datetime
 from typing import Any, get_type_hints
 
 import httpx
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
 from app.main import _voice_sessions, get_pool, sio
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.agents.tools.create_persona_tools import create_persona_tools
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 
 logger = get_logger(__name__)
 
@@ -90,44 +89,6 @@ class StartVoiceResponsePayload(BaseModel):
     history: list[RealtimeItem] = []  # Conversation history in RealtimeItem format
 
 
-async def _generate_ephemeral_key_internal() -> tuple[str, int]:
-    """Internal function to generate ephemeral key using OpenAI REST API.
-
-    Returns:
-        Tuple of (ephemeral_key, expires_in)
-    """
-    # Get OpenAI API key from environment
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        raise ValueError("OPENAI_API_KEY not configured")
-
-    # Use direct REST API call (OpenAI SDK doesn't support this endpoint yet)
-    async with httpx.AsyncClient() as http_client:
-        response = await http_client.post(
-            "https://api.openai.com/v1/realtime/client_secrets",
-            headers={
-                "Authorization": f"Bearer {openai_api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "session": {
-                    "type": "realtime",
-                    "model": "gpt-realtime-mini",
-                }
-            },
-            timeout=30.0,
-        )
-        response.raise_for_status()
-        data = response.json()
-        ephemeral_key = data.get("value")
-        expires_in = data.get("expires_in", 3600)
-
-        if not ephemeral_key:
-            raise ValueError("No ephemeral key in response")
-
-        return ephemeral_key, expires_in
-
-
 # Emit helper functions
 async def simulation_voice_start_error(
     payload: StartVoiceErrorPayload, room: str
@@ -138,7 +99,35 @@ async def simulation_voice_start_error(
 async def simulation_voice_start_response(
     payload: StartVoiceResponsePayload, room: str
 ) -> None:
-    await sio.emit("simulations_voice_start_response", payload.model_dump(), room=room)
+    # Serialize payload, excluding None values and cleaning history items
+    payload_dict = payload.model_dump(exclude_none=True)
+    # Further clean history items to ensure no invalid fields
+    if "history" in payload_dict:
+        cleaned_history = []
+        for item in payload_dict["history"]:
+            cleaned_item = {**item}
+            if "content" in cleaned_item:
+                cleaned_content = []
+                for content_item in cleaned_item["content"]:
+                    content_type = content_item.get("type", "")
+                    cleaned_content_item = {"type": content_type}
+                    # For text types, only include text field
+                    if content_type in ("input_text", "output_text"):
+                        if content_item.get("text") is not None:
+                            cleaned_content_item["text"] = content_item["text"]
+                    # For audio types, include audio and transcript fields
+                    elif content_type in ("input_audio", "output_audio"):
+                        if content_item.get("audio") is not None:
+                            cleaned_content_item["audio"] = content_item["audio"]
+                        if content_item.get("transcript") is not None:
+                            cleaned_content_item["transcript"] = content_item["transcript"]
+                    else:
+                        cleaned_content_item = content_item
+                    cleaned_content.append(cleaned_content_item)
+                cleaned_item["content"] = cleaned_content
+            cleaned_history.append(cleaned_item)
+        payload_dict["history"] = cleaned_history
+    await sio.emit("simulations_voice_start_response", payload_dict, room=room)
 
 
 async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> None:
@@ -171,23 +160,6 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             return
 
         async with pool.acquire() as conn:
-            # Generate ephemeral key first
-            try:
-                ephemeral_key, expires_in = await _generate_ephemeral_key_internal()
-                logger.info(
-                    f"Generated ephemeral key for chat {chat_id} (expires in {expires_in}s)"
-                )
-            except Exception as e:
-                logger.error(f"Failed to generate ephemeral key: {e}", exc_info=True)
-                await simulation_voice_start_error(
-                    StartVoiceErrorPayload(
-                        success=False,
-                        message=f"Failed to generate ephemeral key: {str(e)}",
-                    ),
-                    room=sid,
-                )
-                return
-
             # Get chat context (similar to send_message)
             sql_context = load_sql("sql/v3/agents/get_simulation_run_context.sql")
             context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
@@ -220,9 +192,11 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
             # Build context for voice agent (use voice fields with fallback to text fields)
             voice_temperature = context_row.get("voice_temperature")
+            model_name = context_row.get("voice_model_name") or context_row.get(
+                "model_name"
+            )
             context = {
-                "model_name": context_row.get("voice_model_name")
-                or context_row.get("model_name"),
+                "model_name": model_name,
                 "provider_name": context_row.get("voice_provider")
                 or context_row.get("provider"),
                 "base_url": context_row.get("voice_base_url")
@@ -237,6 +211,53 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 "reasoning": context_row.get("voice_reasoning")
                 or context_row.get("reasoning"),
             }
+
+            # Generate ephemeral key using model from database context
+            # Model defaults to "gpt-realtime-mini" if not specified
+            ephemeral_model = model_name or "gpt-realtime-mini"
+            try:
+                # Get OpenAI API key from environment
+                openai_api_key = os.getenv("OPENAI_API_KEY")
+                if not openai_api_key:
+                    raise ValueError("OPENAI_API_KEY not configured")
+
+                # Use direct REST API call (OpenAI SDK doesn't support this endpoint yet)
+                async with httpx.AsyncClient() as http_client:
+                    response = await http_client.post(
+                        "https://api.openai.com/v1/realtime/client_secrets",
+                        headers={
+                            "Authorization": f"Bearer {openai_api_key}",
+                            "Content-Type": "application/json",
+                        },
+                        json={
+                            "session": {
+                                "type": "realtime",
+                                "model": ephemeral_model,
+                            }
+                        },
+                        timeout=30.0,
+                    )
+                    response.raise_for_status()
+                    response_data = response.json()
+                    ephemeral_key = response_data.get("value")
+                    expires_in = response_data.get("expires_in", 3600)
+
+                    if not ephemeral_key:
+                        raise ValueError("No ephemeral key in response")
+
+                logger.info(
+                    f"Generated ephemeral key for chat {chat_id} with model {ephemeral_model} (expires in {expires_in}s)"
+                )
+            except Exception as e:
+                logger.error(f"Failed to generate ephemeral key: {e}", exc_info=True)
+                await simulation_voice_start_error(
+                    StartVoiceErrorPayload(
+                        success=False,
+                        message=f"Failed to generate ephemeral key: {str(e)}",
+                    ),
+                    room=sid,
+                )
+                return
 
             # Get or create run_id for persona tools
             # We need: department_id, model_id, persona_id, agent_id, key_id, profile_id
@@ -435,12 +456,9 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             # Import emit functions from send_message
             from app.socket.v3.simulations.text.send import (
                 SimulationMessageCompletePayload,
-                SimulationMessageTokenPayload,
-                SimulationNewMessagePayload,
-                simulation_message_complete,
-                simulation_message_token,
-                simulation_new_message,
-            )
+                SimulationMessageTokenPayload, SimulationNewMessagePayload,
+                simulation_message_complete, simulation_message_token,
+                simulation_new_message)
 
             # Create emit wrapper functions for persona tools
             async def emit_new_message_wrapper(event_data: dict[str, Any]) -> None:
@@ -740,8 +758,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 )
 
             # Build session config with simple typed fields
-            # Model defaults to "gpt-realtime-mini" if not specified in context
-            model_name = context.get("model_name", "gpt-realtime-mini")
+            # model_name already extracted from context above (line 196)
 
             # Default transcription model
             transcription_model_default = "gpt-4o-mini-transcribe"
@@ -831,7 +848,33 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 realtime_history_dicts.append(final_assistant_item)
 
             # Convert dicts to RealtimeItem Pydantic models
-            realtime_history = [RealtimeItem(**item) for item in realtime_history_dicts]
+            # Clean content items to exclude invalid fields based on content type
+            cleaned_history_dicts = []
+            for item in realtime_history_dicts:
+                cleaned_content = []
+                for content_item in item.get("content", []):
+                    content_type = content_item.get("type", "")
+                    cleaned_item = {"type": content_type}
+                    # For text types, only include text field
+                    if content_type in ("input_text", "output_text"):
+                        if "text" in content_item:
+                            cleaned_item["text"] = content_item["text"]
+                    # For audio types, include audio and transcript fields
+                    elif content_type in ("input_audio", "output_audio"):
+                        if "audio" in content_item:
+                            cleaned_item["audio"] = content_item["audio"]
+                        if "transcript" in content_item:
+                            cleaned_item["transcript"] = content_item["transcript"]
+                    else:
+                        # Unknown type, include all fields
+                        cleaned_item = content_item
+                    cleaned_content.append(cleaned_item)
+                cleaned_item_dict = {**item, "content": cleaned_content}
+                cleaned_history_dicts.append(cleaned_item_dict)
+
+            realtime_history = [
+                RealtimeItem(**item) for item in cleaned_history_dicts
+            ]
 
             logger.info(
                 f"Started voice session for chat {chat_id} with {len(persona_tools)} persona tools and {len(realtime_history)} history items"
