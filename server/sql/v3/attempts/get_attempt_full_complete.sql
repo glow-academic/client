@@ -631,6 +631,38 @@
             FROM all_messages
             ORDER BY id, chat_id, created_at
         ),
+        grades_data AS (
+            -- Get latest grade per chat (DISTINCT ON to handle multiple grades)
+            SELECT DISTINCT ON (c.id)
+                c.id as chat_id,
+                jsonb_build_object(
+                    'id', scg.id::text,
+                    'createdAt', scg.created_at,
+                    'simulationChatId', c.id::text,
+                    'rubricId', scg.rubric_id::text,
+                    'description', scg.description,
+                    'passed', scg.passed,
+                    'score', scg.score,
+                    'timeTaken', scg.time_taken
+                ) as grade
+            FROM grades scg
+            JOIN runs r ON r.id = scg.run_id
+            JOIN group_runs gr ON gr.run_id = r.id
+            JOIN groups g ON g.id = gr.group_id
+            JOIN chat_groups cg ON cg.group_id = g.id
+            JOIN chats c ON c.id = cg.chat_id
+            CROSS JOIN chat_ids_list cil
+            WHERE EXISTS (
+                SELECT 1 FROM runs r_check
+                JOIN group_runs gr_check ON gr_check.run_id = r_check.id
+                JOIN groups g_check ON g_check.id = gr_check.group_id
+                JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
+                JOIN chats c_check ON c_check.id = cg_check.chat_id
+                WHERE r_check.id = scg.run_id
+            )
+              AND c.id = ANY(cil.chat_ids)
+            ORDER BY c.id, scg.created_at DESC
+        ),
         -- Message feedbacks with replaces and highlights aggregated
         message_feedbacks_data AS (
             SELECT 
@@ -760,38 +792,6 @@
               AND m.role IN ('user', 'assistant')
               AND ab.sim_practice_simulation = true
             GROUP BY c.id
-        ),
-        grades_data AS (
-            -- Get latest grade per chat (DISTINCT ON to handle multiple grades)
-            SELECT DISTINCT ON (c.id)
-                c.id as chat_id,
-                jsonb_build_object(
-                    'id', scg.id::text,
-                    'createdAt', scg.created_at,
-                    'simulationChatId', c.id::text,
-                    'rubricId', scg.rubric_id::text,
-                    'description', scg.description,
-                    'passed', scg.passed,
-                    'score', scg.score,
-                    'timeTaken', scg.time_taken
-                ) as grade
-            FROM grades scg
-            JOIN runs r ON r.id = scg.run_id
-            JOIN group_runs gr ON gr.run_id = r.id
-            JOIN groups g ON g.id = gr.group_id
-            JOIN chat_groups cg ON cg.group_id = g.id
-            JOIN chats c ON c.id = cg.chat_id
-            CROSS JOIN chat_ids_list cil
-            WHERE EXISTS (
-                SELECT 1 FROM runs r_check
-                JOIN group_runs gr_check ON gr_check.run_id = r_check.id
-                JOIN groups g_check ON g_check.id = gr_check.group_id
-                JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-                JOIN chats c_check ON c_check.id = cg_check.chat_id
-                WHERE r_check.id = scg.run_id
-            )
-              AND c.id = ANY(cil.chat_ids)
-            ORDER BY c.id, scg.created_at DESC
         ),
         feedbacks_grouped AS (
             SELECT 
