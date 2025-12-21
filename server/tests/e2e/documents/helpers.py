@@ -222,7 +222,7 @@ def create_document_api(
     )
 
     init_response = request.post(
-        f"{API_BASE}/upload",
+        f"{API_BASE}/api/v3/uploads/upload",
         headers=headers,
     )
 

@@ -54,7 +54,7 @@ def cleanup_uploads() -> None:
 @pytest.mark.asyncio
 async def test_tus_options_discovery(client: httpx.AsyncClient) -> None:
     """Test TUS OPTIONS request for protocol discovery."""
-    response = await client.options("/upload")
+    response = await client.options("/api/v3/uploads/upload")
 
     assert response.status_code == 200
     assert response.headers["Tus-Resumable"] == "1.0.0"
@@ -75,7 +75,7 @@ async def test_tus_post_create_upload(client: httpx.AsyncClient) -> None:
     )
 
     response = await client.post(
-        "/upload",
+        "/api/v3/uploads/upload",
         headers={
             "Tus-Resumable": "1.0.0",
             "Upload-Length": "1024",
@@ -120,7 +120,7 @@ async def test_tus_post_create_with_upload(client: httpx.AsyncClient) -> None:
     chunk_data = b"test chunk data"
 
     response = await client.post(
-        "/upload",
+        "/api/v3/uploads/upload",
         headers={
             "Tus-Resumable": "1.0.0",
             "Upload-Length": "1024",
@@ -154,7 +154,7 @@ async def test_tus_post_create_with_upload(client: httpx.AsyncClient) -> None:
 async def test_tus_post_missing_upload_length(client: httpx.AsyncClient) -> None:
     """Test TUS POST request without Upload-Length header."""
     response = await client.post(
-        "/upload",
+        "/api/v3/uploads/upload",
         headers={"Tus-Resumable": "1.0.0"},
     )
 
@@ -166,7 +166,7 @@ async def test_tus_post_missing_upload_length(client: httpx.AsyncClient) -> None
 async def test_tus_post_wrong_version(client: httpx.AsyncClient) -> None:
     """Test TUS POST request with wrong TUS version."""
     response = await client.post(
-        "/upload",
+        "/api/v3/uploads/upload",
         headers={
             "Tus-Resumable": "0.9.0",
             "Upload-Length": "1024",
@@ -187,7 +187,7 @@ async def test_tus_head_get_upload_info(client: httpx.AsyncClient) -> None:
     )
 
     create_response = await client.post(
-        "/upload",
+        "/api/v3/uploads/upload",
         headers={
             "Tus-Resumable": "1.0.0",
             "Upload-Length": "1024",
@@ -198,7 +198,7 @@ async def test_tus_head_get_upload_info(client: httpx.AsyncClient) -> None:
 
     # Now get upload info
     response = await client.head(
-        f"/upload/{upload_id}",
+        f"/api/v3/uploads/upload/{upload_id}",
         headers={"Tus-Resumable": "1.0.0"},
     )
 
@@ -213,7 +213,7 @@ async def test_tus_head_get_upload_info(client: httpx.AsyncClient) -> None:
 async def test_tus_head_nonexistent_upload(client: httpx.AsyncClient) -> None:
     """Test TUS HEAD request for non-existent upload."""
     response = await client.head(
-        "/upload/nonexistent-id",
+        "/api/v3/uploads/upload/nonexistent-id",
         headers={"Tus-Resumable": "1.0.0"},
     )
 
@@ -230,7 +230,7 @@ async def test_tus_patch_upload_chunk(client: httpx.AsyncClient) -> None:
     )
 
     create_response = await client.post(
-        "/upload",
+        "/api/v3/uploads/upload",
         headers={
             "Tus-Resumable": "1.0.0",
             "Upload-Length": "1024",
@@ -242,7 +242,7 @@ async def test_tus_patch_upload_chunk(client: httpx.AsyncClient) -> None:
     # Upload first chunk
     chunk1 = b"chunk 1 data"
     response = await client.patch(
-        f"/upload/{upload_id}",
+        f"/api/v3/uploads/upload/{upload_id}",
         headers={
             "Tus-Resumable": "1.0.0",
             "Content-Type": "application/offset+octet-stream",
@@ -258,7 +258,7 @@ async def test_tus_patch_upload_chunk(client: httpx.AsyncClient) -> None:
     # Upload second chunk
     chunk2 = b"chunk 2 data"
     response = await client.patch(
-        f"/upload/{upload_id}",
+        f"/api/v3/uploads/upload/{upload_id}",
         headers={
             "Tus-Resumable": "1.0.0",
             "Content-Type": "application/offset+octet-stream",
@@ -287,7 +287,7 @@ async def test_tus_patch_wrong_offset(client: httpx.AsyncClient) -> None:
     )
 
     create_response = await client.post(
-        "/upload",
+        "/api/v3/uploads/upload",
         headers={
             "Tus-Resumable": "1.0.0",
             "Upload-Length": "1024",
@@ -298,7 +298,7 @@ async def test_tus_patch_wrong_offset(client: httpx.AsyncClient) -> None:
 
     # Try to upload with wrong offset
     response = await client.patch(
-        f"/upload/{upload_id}",
+        f"/api/v3/uploads/upload/{upload_id}",
         headers={
             "Tus-Resumable": "1.0.0",
             "Content-Type": "application/offset+octet-stream",
@@ -320,7 +320,7 @@ async def test_tus_patch_missing_content_type(client: httpx.AsyncClient) -> None
     )
 
     create_response = await client.post(
-        "/upload",
+        "/api/v3/uploads/upload",
         headers={
             "Tus-Resumable": "1.0.0",
             "Upload-Length": "1024",
@@ -331,7 +331,7 @@ async def test_tus_patch_missing_content_type(client: httpx.AsyncClient) -> None
 
     # Try to upload without correct Content-Type
     response = await client.patch(
-        f"/upload/{upload_id}",
+        f"/api/v3/uploads/upload/{upload_id}",
         headers={
             "Tus-Resumable": "1.0.0",
             "Content-Type": "application/json",  # Wrong content type
@@ -346,7 +346,7 @@ async def test_tus_patch_missing_content_type(client: httpx.AsyncClient) -> None
 @pytest.mark.asyncio
 async def test_tus_options_upload_id(client: httpx.AsyncClient) -> None:
     """Test TUS OPTIONS request for specific upload."""
-    response = await client.options("/upload/test-upload-id")
+    response = await client.options("/api/v3/uploads/upload/test-upload-id")
 
     assert response.status_code == 200
     assert response.headers["Tus-Resumable"] == "1.0.0"
