@@ -49,13 +49,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -534,6 +527,49 @@ export function ContentSection({
     new Set()
   );
 
+  // Refs to measure question text input widths for option alignment
+  const questionInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const [optionMaxWidths, setOptionMaxWidths] = useState<
+    Record<number, number | undefined>
+  >({});
+
+  // Update option max widths when question inputs resize
+  useEffect(() => {
+    const updateWidths = () => {
+      const widths: Record<number, number | undefined> = {};
+      Object.entries(questionInputRefs.current).forEach(([indexStr, el]) => {
+        if (el) {
+          const index = parseInt(indexStr, 10);
+          widths[index] = el.offsetWidth;
+        }
+      });
+      setOptionMaxWidths(widths);
+    };
+
+    // Initial update
+    updateWidths();
+
+    // Set up ResizeObserver for each question input
+    const observers: ResizeObserver[] = [];
+    Object.values(questionInputRefs.current).forEach((el) => {
+      if (el) {
+        const observer = new ResizeObserver(() => {
+          updateWidths();
+        });
+        observer.observe(el);
+        observers.push(observer);
+      }
+    });
+
+    // Update on window resize as fallback
+    window.addEventListener("resize", updateWidths);
+
+    return () => {
+      observers.forEach((observer) => observer.disconnect());
+      window.removeEventListener("resize", updateWidths);
+    };
+  }, [questions.length, selectedVideoLength, expandedQuestions]); // Recalculate when questions, video length, or expansion changes
+
   // Compute max images/questions based on selected video length
   const maxImages = useMemo(() => {
     if (!useVideo) return 1; // Single image mode
@@ -583,8 +619,9 @@ export function ContentSection({
     if (!onQuestionTimesChange) return;
     // Extract the second value (the actual question time) from the range
     const time = range[1];
-    // Estimate video length from selected video or default to 8 seconds
-    const estimatedVideoLength = selectedVideo?.length_seconds || 8;
+    // Use selectedVideoLength if available, otherwise fall back to selectedVideo length, or default to 8 seconds
+    const estimatedVideoLength =
+      selectedVideoLength || selectedVideo?.length_seconds || 8;
     if (isNaN(time) || time < 0 || time > estimatedVideoLength) {
       return;
     }
@@ -681,13 +718,22 @@ export function ContentSection({
             className="hidden"
           />
           {useVideo && (
-            <Select
-              value={
+            <GenericPicker
+              items={[
+                { value: null, label: "None" },
+                { value: 4, label: "4s" },
+                { value: 8, label: "8s" },
+                { value: 12, label: "12s" },
+              ]}
+              itemIds={["none", "4", "8", "12"]}
+              selectedIds={
                 selectedVideoLength !== null
-                  ? String(selectedVideoLength)
-                  : "none"
+                  ? [String(selectedVideoLength)]
+                  : ["none"]
               }
-              onValueChange={(value) => {
+              onSelect={(ids) => {
+                const value = ids[0];
+                if (!value) return;
                 if (value === "none") {
                   onVideoLengthChange(null);
                 } else {
@@ -697,18 +743,45 @@ export function ContentSection({
                   }
                 }
               }}
+              getId={(item) => {
+                if (item.value === null) return "none";
+                return String(item.value);
+              }}
+              getLabel={(item) => item.label}
+              getSearchText={(item) => item.label}
+              renderButton={(selectedItems) => {
+                if (selectedItems.length === 0) {
+                  return "Length";
+                }
+                const selectedItem = selectedItems[0] as
+                  | { value: number | null; label: string }
+                  | undefined;
+                return selectedItem?.label || "Length";
+              }}
+              renderItem={(item, isSelected) => {
+                const itemTyped = item as {
+                  value: number | null;
+                  label: string;
+                };
+                return (
+                  <div className="flex items-center gap-2 py-3 w-full">
+                    <Check
+                      className={cn(
+                        "h-4 w-4",
+                        isSelected ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <span className="font-medium">{itemTyped.label}</span>
+                  </div>
+                );
+              }}
               disabled={isReadonly}
-            >
-              <SelectTrigger className="w-[100px] h-8">
-                <SelectValue placeholder="Length" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                <SelectItem value="4">4s</SelectItem>
-                <SelectItem value="8">8s</SelectItem>
-                <SelectItem value="12">12s</SelectItem>
-              </SelectContent>
-            </Select>
+              multiSelect={false}
+              hideSelectedChips={true}
+              buttonClassName="h-8 w-[100px] justify-between"
+              compact={true}
+              placeholder="Length"
+            />
           )}
           <Button
             variant="default"
@@ -1384,31 +1457,34 @@ export function ContentSection({
                       )}
 
                       {/* Question Text Input */}
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <Input
+                          ref={(el) => {
+                            questionInputRefs.current[index] = el;
+                          }}
                           value={question.question_text}
                           onChange={(e) =>
                             handleQuestionTextChange(index, e.target.value)
                           }
                           placeholder="Enter question text"
-                          className="flex-1"
+                          className="flex-1 w-full"
                           disabled={isReadonly}
                           onDragStart={(e) => e.preventDefault()}
                         />
                       </div>
 
                       {/* Time Slider */}
-                      {selectedVideo && (
+                      {selectedVideoLength && (
                         <div className="w-48 shrink-0">
                           <RangeSlider
                             min={0}
-                            max={selectedVideo.length_seconds}
+                            max={selectedVideoLength}
                             value={[
                               0,
                               Math.max(
                                 0,
                                 Math.min(
-                                  selectedVideo.length_seconds,
+                                  selectedVideoLength,
                                   question.times?.[0] ?? 0
                                 )
                               ),
@@ -1513,7 +1589,13 @@ export function ContentSection({
                                   }
                                 }}
                                 placeholder="Option text"
-                                className="flex-1"
+                                className="flex-1 min-w-0"
+                                style={{
+                                  maxWidth:
+                                    optionMaxWidths[index] !== undefined
+                                      ? `${optionMaxWidths[index]}px`
+                                      : undefined,
+                                }}
                                 disabled={isReadonly}
                                 onDragStart={(e) => e.preventDefault()}
                               />
@@ -1630,7 +1712,7 @@ export function ContentSection({
                           {question.options.length < 5 && (
                             <Button
                               type="button"
-                              variant="outline"
+                              variant="secondary"
                               size="sm"
                               onClick={() => {
                                 if (onAddOption) {
@@ -1660,7 +1742,6 @@ export function ContentSection({
                                   onQuestionsChange(updatedQuestions);
                                 }
                               }}
-                              className="w-full"
                               disabled={isReadonly}
                             >
                               <PlusCircle className="h-4 w-4 mr-2" />
