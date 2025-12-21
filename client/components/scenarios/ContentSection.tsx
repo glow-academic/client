@@ -537,15 +537,21 @@ export function ContentSection({
   useEffect(() => {
     const updateWidths = () => {
       const widths: Record<number, number | undefined> = {};
-      // Gap before delete (gap-2 = 8px) + delete button width (w-8 = 32px) = 40px
-      // Adding checkbox width (w-8 = 32px) to account for checkbox taking space in option row
-      // Option delete button should align with end of question input text
-      const deleteButtonSpace = 40 + 40; // gap + delete button + checkbox width
+      // Base space: gap (gap-2 = 8px) + checkbox width (w-8 = 32px) = 40px
+      // Extra space (only if delete button is shown): gap (gap-2 = 8px) + delete button width (w-8 = 32px) = 40px
+      // Delete button is only shown when question.options.length > 2
       Object.entries(questionInputRefs.current).forEach(([indexStr, el]) => {
         if (el) {
           const index = parseInt(indexStr, 10);
-          // Calculate option input max width: question input width - gap - delete button width
-          const calculatedWidth = el.offsetWidth - deleteButtonSpace;
+          const question = questions[index];
+          // Base subtraction: gap + checkbox = 40px
+          // Extra subtraction (only if delete button shown): gap + delete button = 40px
+          const baseSpace = 40; // gap + checkbox
+          const deleteButtonSpace =
+            question && question.options.length > 2 ? 40 : 0; // gap + delete button (only if shown)
+          const totalSpace = baseSpace + deleteButtonSpace;
+          // Calculate option input max width: question input width - total space
+          const calculatedWidth = el.offsetWidth - totalSpace;
           widths[index] = calculatedWidth > 0 ? calculatedWidth : undefined;
         }
       });
@@ -574,7 +580,7 @@ export function ContentSection({
       observers.forEach((observer) => observer.disconnect());
       window.removeEventListener("resize", updateWidths);
     };
-  }, [questions.length, selectedVideoLength, expandedQuestions]); // Recalculate when questions, video length, or expansion changes
+  }, [questions, selectedVideoLength, expandedQuestions]); // Recalculate when questions, video length, or expansion changes
 
   // Compute max images/questions based on selected video length
   const maxImages = useMemo(() => {
