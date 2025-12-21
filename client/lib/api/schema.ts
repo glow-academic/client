@@ -8127,6 +8127,11 @@ export interface components {
              * @default false
              */
             questions_enabled: boolean;
+            /**
+             * Problem Statement Enabled
+             * @default true
+             */
+            problem_statement_enabled: boolean;
             /** Video Agent Id */
             video_agent_id?: string | null;
             /** Video Ids */
@@ -15895,6 +15900,11 @@ export interface components {
              * @default false
              */
             questions_enabled: boolean;
+            /**
+             * Problem Statement Enabled
+             * @default true
+             */
+            problem_statement_enabled: boolean;
             /** Scenario Agent Id */
             scenario_agent_id?: string | null;
             /** Image Agent Id */

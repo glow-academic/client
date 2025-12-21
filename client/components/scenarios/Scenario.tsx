@@ -946,14 +946,16 @@ export default function Scenario({
     });
 
     // Feature flags - compare against server's current values (edit mode) or defaults (create mode)
-    // Only include in URL params if they differ from defaults/current values (DHH-style)
-    const serverObjectivesEnabled =
-      queryParamConfig.getServerValue("objectives_enabled");
-    if (useObjectives !== serverObjectivesEnabled) {
-      params.set(
-        queryParamConfig.urlParamNames.objectives_enabled,
-        useObjectives ? "true" : "false"
-      );
+    // Objectives flag - always include when true to preserve user intent, only include false if it differs from default
+    if (useObjectives) {
+      params.set(queryParamConfig.urlParamNames.objectives_enabled, "true");
+    } else {
+      // Only include false if it differs from the default (for edit mode when server value was true)
+      const serverObjectivesEnabled =
+        queryParamConfig.getServerValue("objectives_enabled");
+      if (useObjectives !== serverObjectivesEnabled) {
+        params.set(queryParamConfig.urlParamNames.objectives_enabled, "false");
+      }
     }
 
     const serverImageEnabled =
@@ -2120,6 +2122,7 @@ export default function Scenario({
         images_enabled?: boolean;
         video_enabled?: boolean;
         questions_enabled?: boolean;
+        problem_statement_enabled?: boolean;
         scenario_images?: Array<{
           id?: string;
           name?: string;
@@ -2151,6 +2154,10 @@ export default function Scenario({
       // Load images_enabled flag
       const imagesEnabled = scenarioDataWithFlags.images_enabled ?? false;
       setUseImage(imagesEnabled);
+      // Load problem_statement_enabled flag
+      const problemStatementEnabled =
+        scenarioDataWithFlags.problem_statement_enabled ?? true;
+      setUseProblemStatement(problemStatementEnabled);
       // In edit mode, load saved images from scenario (scenario_images represents saved images)
       // In create mode, don't auto-select - user must explicitly choose or upload via picker
       const scenarioImages = scenarioDataWithFlags.scenario_images;
@@ -2936,6 +2943,19 @@ export default function Scenario({
       isResettingRef.current = false;
       toast.error("Failed to reset documents");
     }
+  };
+
+  // Document removal handler - removes document from selection
+  const handleDocumentRemove = (docId: string) => {
+    // Check if document is in currentDocumentIds (could be regular or child document)
+    if (currentDocumentIds.includes(docId)) {
+      setCurrentDocumentIds((prev) => prev.filter((id) => id !== docId));
+    }
+    // Check if document is in templateDocumentIds (template document)
+    if (templateDocumentIds.includes(docId)) {
+      setTemplateDocumentIds((prev) => prev.filter((id) => id !== docId));
+    }
+    // Note: URL params are automatically updated via useEffect that watches currentDocumentIds and templateDocumentIds
   };
 
   // Parameters actions - Server-side randomization
@@ -3726,6 +3746,7 @@ export default function Scenario({
             images_enabled: useImage,
             video_enabled: useVideo,
             questions_enabled: useQuestions,
+            problem_statement_enabled: useProblemStatement,
           });
           toast.success("Scenario updated successfully!");
           router.push("/create/scenarios");
@@ -3744,6 +3765,7 @@ export default function Scenario({
             images_enabled: useImage,
             video_enabled: useVideo,
             questions_enabled: useQuestions,
+            problem_statement_enabled: useProblemStatement,
           });
           // Clear local versions after successful creation
           setLocalProblemStatementVersions([]);
@@ -4230,6 +4252,7 @@ export default function Scenario({
               draggedQuestionIndex={draggedQuestionIndex}
               draggedOptionIndex={draggedOptionIndex}
               onScenarioPreviewDocumentChange={setScenarioPreviewDocumentId}
+              onDocumentRemove={handleDocumentRemove}
               onGenerate={handleGenerateScenario}
               onResetContent={handleResetContent}
               onShowRegenerationDialog={() => setShowRegenerationDialog(true)}

@@ -36,6 +36,7 @@ class UpdateScenarioRequest(BaseModel):
     images_enabled: bool = False
     video_enabled: bool = False
     questions_enabled: bool = False
+    problem_statement_enabled: bool = True
     scenario_agent_id: str | None = None
     image_agent_id: str | None = None
     video_agent_id: str | None = None
@@ -195,6 +196,7 @@ async def update_scenario(
             request.images_enabled,
             request.video_enabled,
             request.questions_enabled,
+            request.problem_statement_enabled,
             request.video_agent_id,  # video_agent_id (required if video_enabled)
             request.problem_statement,
             request.problem_statement_name,  # Optional problem statement name

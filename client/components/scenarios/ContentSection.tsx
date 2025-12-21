@@ -386,6 +386,7 @@ export interface ContentSectionProps {
   ) => void;
   onToggleOptionCorrect?: (questionIndex: number, optionIndex: number) => void;
   onScenarioPreviewDocumentChange: (docId: string | null) => void;
+  onDocumentRemove: (docId: string) => void;
   onGenerate: (instructions?: string, regenerateObjectives?: boolean) => void;
   onResetContent: () => void;
   onShowRegenerationDialog: () => void;
@@ -468,6 +469,7 @@ export function ContentSection({
   onOptionChange,
   onToggleOptionCorrect,
   onScenarioPreviewDocumentChange,
+  onDocumentRemove,
   onGenerate,
   onResetContent,
   onShowRegenerationDialog,
@@ -1037,11 +1039,12 @@ export function ContentSection({
                         <Eye className="h-3.5 w-3.5 text-primary-foreground" />
                       </button>
                       {/* Delete button - top right */}
-                      {useVideo && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (useVideo) {
+                            // Multi-image mode: update selectedImages state
                             const newImages = selectedImages.filter(
                               (i) => i.id !== img.id
                             );
@@ -1051,13 +1054,16 @@ export function ContentSection({
                             } else {
                               onImageSelect(null);
                             }
-                          }}
-                          className="absolute top-1 right-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
-                          disabled={isReadonly}
-                        >
-                          <X className="h-3.5 w-3.5 text-primary-foreground" />
-                        </button>
-                      )}
+                          } else {
+                            // Single image mode: call onImageRemove
+                            _onImageRemove();
+                          }
+                        }}
+                        className="absolute top-1 right-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                        disabled={isReadonly}
+                      >
+                        <X className="h-3.5 w-3.5 text-primary-foreground" />
+                      </button>
                       <ImageViewer
                         imageId={img.id}
                         name={img.name}
@@ -1929,95 +1935,7 @@ export function ContentSection({
               </>
             )}
 
-            {/* ImagePicker (when image enabled and video not enabled) */}
-            {!useVideo && useImage && (
-              <>
-                {Object.keys(imageMapping).length > 0 ? (
-                  <div className="flex items-center justify-between">
-                    <Label>Preview</Label>
-                    <GenericPicker
-                      items={imageMapping}
-                      itemIds={Object.keys(imageMapping)}
-                      selectedIds={image ? [image.id] : []}
-                      onSelect={(ids) => {
-                        const imageId = ids[0] || null;
-                        if (imageId && imageMapping[imageId]) {
-                          const selectedImage = imageMapping[imageId];
-                          onImageSelect({
-                            id: selectedImage.upload_id || selectedImage.id,
-                            name: selectedImage.name,
-                            upload_id:
-                              selectedImage.upload_id || selectedImage.id,
-                          });
-                        } else if (!imageId) {
-                          // Clear selection - show upload UI
-                          onImageSelect(null);
-                        }
-                      }}
-                      getId={(item) => {
-                        const imgItem = item as unknown as ImageMappingItem;
-                        return imgItem.id;
-                      }}
-                      getLabel={(item) => {
-                        const imgItem = item as unknown as ImageMappingItem;
-                        const date = new Date(imgItem.updated_at);
-                        return `${imgItem.name} - ${date.toLocaleDateString()}`;
-                      }}
-                      getSearchText={(item) => {
-                        const imgItem = item as unknown as ImageMappingItem;
-                        const date = new Date(imgItem.updated_at);
-                        return `${imgItem.name} ${date.toLocaleDateString()}`;
-                      }}
-                      renderButton={(selectedItems) => {
-                        if (selectedItems.length === 0) {
-                          return "Select image...";
-                        }
-                        const selectedImage =
-                          selectedItems[0] as unknown as ImageMappingItem;
-                        return selectedImage?.name || "Select image...";
-                      }}
-                      renderItem={(item, isSelected) => {
-                        const imgItem = item as unknown as ImageMappingItem;
-                        const date = new Date(imgItem.updated_at);
-                        return (
-                          <div className="flex flex-col items-start py-3 w-full">
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex items-center gap-2">
-                                <Check
-                                  className={cn(
-                                    "h-4 w-4",
-                                    isSelected ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                <span className="font-medium">
-                                  {imgItem.name}
-                                </span>
-                              </div>
-                            </div>
-                            <span className="text-xs text-muted-foreground mt-1">
-                              {date.toLocaleDateString()}{" "}
-                              {date.toLocaleTimeString()}
-                            </span>
-                          </div>
-                        );
-                      }}
-                      disabled={isReadonly}
-                      multiSelect={false}
-                      hideSelectedChips={true}
-                      buttonClassName="h-8 justify-between"
-                      compact={true}
-                      groupHeading="Images"
-                      placeholder="Select image..."
-                      clearActionLabel="New Image"
-                    />
-                  </div>
-                ) : (
-                  <Label>Preview</Label>
-                )}
-              </>
-            )}
-
-            {!useVideo && !useImage && <Label>Preview</Label>}
+            {!useVideo && <Label>Preview</Label>}
 
             {/* Video Preview Container (when video enabled) */}
             {useVideo && (
@@ -2047,8 +1965,8 @@ export function ContentSection({
             {/* Combined Image and Chat Preview Container (when video not enabled) */}
             {!useVideo && (
               <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1">
-                {/* Background Image */}
-                {useImage && image && (
+                {/* Background Image - only show if image exists */}
+                {image && (
                   <div className="absolute inset-0 w-full h-full">
                     <ImageViewer
                       imageId={image.id}
@@ -2058,115 +1976,95 @@ export function ContentSection({
                   </div>
                 )}
 
-                {/* Upload Area */}
-                {useImage && !image && (
-                  <div
-                    onClick={() => {
-                      if (!isReadonly && !isUploadingImage) {
-                        imageInputRef.current?.click();
-                      }
-                    }}
-                    className="absolute inset-0 w-full h-full flex flex-col items-center justify-center cursor-pointer bg-muted/20 border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:bg-muted/50 transition-colors"
-                  >
-                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground text-center px-4">
-                      Click to upload image or leave blank to auto generate
-                    </p>
-                  </div>
-                )}
-
-                {/* Background when useImage is false */}
-                {!useImage && (
+                {/* Background when no image */}
+                {!image && (
                   <div className="absolute inset-0 w-full h-full bg-muted/20" />
                 )}
 
-                {/* Chat Preview Overlay */}
-                {(!useImage || (useImage && image)) && (
-                  <div className="relative z-10 p-4 h-full min-h-[400px] flex flex-col justify-start">
-                    <div className="space-y-3">
-                      {/* TA/User message */}
-                      <div className="flex justify-end mb-3">
-                        <div className="max-w-[80%]">
-                          <div className="bg-primary text-primary-foreground rounded-lg p-3 shadow-lg">
-                            <p className="text-sm">Hi, how can I help you?</p>
-                          </div>
+                {/* Chat Preview Overlay - always show */}
+                <div className="relative z-10 p-4 h-full min-h-[400px] flex flex-col justify-start">
+                  <div className="space-y-3">
+                    {/* TA/User message */}
+                    <div className="flex justify-end mb-3">
+                      <div className="max-w-[80%]">
+                        <div className="bg-primary text-primary-foreground rounded-lg p-3 shadow-lg">
+                          <p className="text-sm">Hi, how can I help you?</p>
                         </div>
                       </div>
+                    </div>
 
-                      {/* Assistant messages */}
-                      {selectedPersonaIds.map((personaId) => {
-                        const persona = personaMapping[personaId];
-                        if (!persona) return null;
+                    {/* Assistant messages */}
+                    {selectedPersonaIds.map((personaId) => {
+                      const persona = personaMapping[personaId];
+                      if (!persona) return null;
 
-                        const IconComponent =
-                          getPersonaIconComponent(persona.icon) ||
-                          MessageSquare;
-                        const hexColor = persona.color || "#64748b";
-                        const buttonStyle = {
-                          background: generateGradientFromHex(hexColor),
-                        };
+                      const IconComponent =
+                        getPersonaIconComponent(persona.icon) || MessageSquare;
+                      const hexColor = persona.color || "#64748b";
+                      const buttonStyle = {
+                        background: generateGradientFromHex(hexColor),
+                      };
 
-                        return (
-                          <div
-                            key={personaId}
-                            className="flex justify-start mb-3"
-                          >
-                            <div className="max-w-[80%] flex items-stretch gap-2">
-                              <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="secondary"
-                                      size="sm"
-                                      aria-label={persona.name}
-                                      className="flex-1 p-0 rounded-md shadow-md"
-                                      style={buttonStyle}
-                                      tabIndex={-1}
-                                    >
-                                      <IconComponent className="h-4 w-4 text-white" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>{persona.name}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
-                              <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
-                                <p className="text-sm">
-                                  {persona.example ||
-                                    "I'd be happy to help you with that. Let me provide some guidance..."}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Show placeholder if no personas selected */}
-                      {selectedPersonaIds.length === 0 && (
-                        <div className="flex justify-start mb-3">
+                      return (
+                        <div
+                          key={personaId}
+                          className="flex justify-start mb-3"
+                        >
                           <div className="max-w-[80%] flex items-stretch gap-2">
                             <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="flex-1 p-0 rounded-md shadow-md"
-                                tabIndex={-1}
-                              >
-                                <MessageSquare className="h-4 w-4" />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    aria-label={persona.name}
+                                    className="flex-1 p-0 rounded-md shadow-md"
+                                    style={buttonStyle}
+                                    tabIndex={-1}
+                                  >
+                                    <IconComponent className="h-4 w-4 text-white" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{persona.name}</p>
+                                </TooltipContent>
+                              </Tooltip>
                             </div>
                             <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
-                              <p className="text-sm text-muted-foreground italic">
-                                Select personas to see preview messages
+                              <p className="text-sm">
+                                {persona.example ||
+                                  "I'd be happy to help you with that. Let me provide some guidance..."}
                               </p>
                             </div>
                           </div>
                         </div>
-                      )}
-                    </div>
+                      );
+                    })}
+
+                    {/* Show placeholder if no personas selected */}
+                    {selectedPersonaIds.length === 0 && (
+                      <div className="flex justify-start mb-3">
+                        <div className="max-w-[80%] flex items-stretch gap-2">
+                          <div className="flex flex-col gap-1 w-9 h-[26px] min-h-[26px] max-h-[26px] overflow-visible">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="flex-1 p-0 rounded-md shadow-md"
+                              tabIndex={-1}
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="bg-muted/95 backdrop-blur-sm rounded-lg p-3 flex-1 shadow-lg">
+                            <p className="text-sm text-muted-foreground italic">
+                              Select personas to see preview messages
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             )}
           </div>
@@ -2303,6 +2201,9 @@ export function ContentSection({
 
                   const handleDocumentDelete = () => {
                     if (isReadonly) return;
+                    // Remove document from selection (updates currentDocumentIds or templateDocumentIds)
+                    onDocumentRemove(docId);
+                    // Handle preview switching
                     const currentIndex = allPreviewDocumentIds.indexOf(docId);
                     if (currentIndex >= 0) {
                       if (allPreviewDocumentIds.length > 1) {

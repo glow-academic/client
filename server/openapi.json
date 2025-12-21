@@ -26119,6 +26119,11 @@
             "title": "Questions Enabled",
             "default": false
           },
+          "problem_statement_enabled": {
+            "type": "boolean",
+            "title": "Problem Statement Enabled",
+            "default": true
+          },
           "video_agent_id": {
             "anyOf": [
               {
@@ -46767,6 +46772,11 @@
             "type": "boolean",
             "title": "Questions Enabled",
             "default": false
+          },
+          "problem_statement_enabled": {
+            "type": "boolean",
+            "title": "Problem Statement Enabled",
+            "default": true
           },
           "scenario_agent_id": {
             "anyOf": [

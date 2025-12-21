@@ -138,6 +138,7 @@ scenario_core AS (
         s.images_enabled,
         s.video_enabled,
         s.questions_enabled,
+        s.problem_statement_enabled,
         s.scenario_agent_id::text,
         s.image_agent_id::text,
         s.video_agent_id::text
@@ -1384,6 +1385,7 @@ SELECT
     COALESCE((SELECT questions FROM scenario_questions_data), '[]'::jsonb) as questions,
     sc.video_enabled,
     sc.questions_enabled,
+    sc.problem_statement_enabled,
     sc.scenario_agent_id,
     sc.image_agent_id,
     sc.video_agent_id,
