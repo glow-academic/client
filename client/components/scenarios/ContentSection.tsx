@@ -537,10 +537,16 @@ export function ContentSection({
   useEffect(() => {
     const updateWidths = () => {
       const widths: Record<number, number | undefined> = {};
+      // Gap before delete (gap-2 = 8px) + delete button width (w-8 = 32px) = 40px
+      // Adding checkbox width (w-8 = 32px) to account for checkbox taking space in option row
+      // Option delete button should align with end of question input text
+      const deleteButtonSpace = 40 + 40; // gap + delete button + checkbox width
       Object.entries(questionInputRefs.current).forEach(([indexStr, el]) => {
         if (el) {
           const index = parseInt(indexStr, 10);
-          widths[index] = el.offsetWidth;
+          // Calculate option input max width: question input width - gap - delete button width
+          const calculatedWidth = el.offsetWidth - deleteButtonSpace;
+          widths[index] = calculatedWidth > 0 ? calculatedWidth : undefined;
         }
       });
       setOptionMaxWidths(widths);
@@ -1432,7 +1438,7 @@ export function ContentSection({
                         <div
                           draggable={!isReadonly}
                           onDragStart={(e) => onDragStartQuestion(e, index)}
-                          className="cursor-grab active:cursor-grabbing shrink-0"
+                          className="cursor-grab active:cursor-grabbing w-8 shrink-0 flex items-center justify-center"
                         >
                           <GripVertical className="h-4 w-4 text-muted-foreground" />
                         </div>
@@ -1442,7 +1448,9 @@ export function ContentSection({
                       {question.options.length > 0 && (
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant={
+                            expandedQuestions.has(index) ? "default" : "outline"
+                          }
                           size="icon"
                           onClick={() => toggleQuestionExpanded(index)}
                           className="h-8 w-8 shrink-0"
@@ -1518,7 +1526,7 @@ export function ContentSection({
                     {/* Options (shown when expanded) */}
                     {expandedQuestions.has(index) &&
                       question.options.length > 0 && (
-                        <div className="pl-6 space-y-2 border-l-2 border-muted ml-2">
+                        <div className="pl-10 space-y-2 border-l-2 border-muted">
                           {question.options.map((option, optIndex) => (
                             <div
                               key={option.id || optIndex}
@@ -1539,66 +1547,11 @@ export function ContentSection({
                                   onDragStart={(e) =>
                                     onDragStartOption(e, index, optIndex)
                                   }
-                                  className="cursor-grab active:cursor-grabbing shrink-0"
+                                  className="cursor-grab active:cursor-grabbing w-8 shrink-0 flex items-center justify-center"
                                 >
                                   <GripVertical className="h-4 w-4 text-muted-foreground" />
                                 </div>
                               )}
-
-                              {/* Option Text Input */}
-                              <Input
-                                value={option.option_text}
-                                onChange={(e) => {
-                                  if (onOptionChange) {
-                                    onOptionChange(index, optIndex, {
-                                      ...option,
-                                      option_text: e.target.value,
-                                    });
-                                  } else {
-                                    // Fallback: update entire questions array
-                                    const updatedQuestions = [...questions];
-                                    const currentQuestion =
-                                      updatedQuestions[index];
-                                    if (!currentQuestion) return;
-                                    const updatedOptions = [
-                                      ...currentQuestion.options,
-                                    ];
-                                    const currentOption =
-                                      updatedOptions[optIndex];
-                                    if (!currentOption) return;
-                                    updatedOptions[optIndex] = {
-                                      id: currentOption.id,
-                                      option_text: e.target.value,
-                                      ...(currentOption.type && {
-                                        type: currentOption.type,
-                                      }),
-                                      is_correct: currentOption.is_correct,
-                                    };
-                                    updatedQuestions[index] = {
-                                      id: currentQuestion.id,
-                                      question_text:
-                                        currentQuestion.question_text,
-                                      allow_multiple:
-                                        currentQuestion.allow_multiple,
-                                      options: updatedOptions,
-                                      ...(currentQuestion.times && {
-                                        times: currentQuestion.times,
-                                      }),
-                                    };
-                                    onQuestionsChange(updatedQuestions);
-                                  }
-                                }}
-                                placeholder="Option text"
-                                className="flex-1 min-w-0"
-                                style={{
-                                  maxWidth:
-                                    optionMaxWidths[index] !== undefined
-                                      ? `${optionMaxWidths[index]}px`
-                                      : undefined,
-                                }}
-                                disabled={isReadonly}
-                                onDragStart={(e) => e.preventDefault()}
-                              />
 
                               {/* Correct Checkbox */}
                               {option.type !== "freeform" && (
@@ -1669,6 +1622,61 @@ export function ContentSection({
                                   </TooltipContent>
                                 </Tooltip>
                               )}
+
+                              {/* Option Text Input */}
+                              <Input
+                                value={option.option_text}
+                                onChange={(e) => {
+                                  if (onOptionChange) {
+                                    onOptionChange(index, optIndex, {
+                                      ...option,
+                                      option_text: e.target.value,
+                                    });
+                                  } else {
+                                    // Fallback: update entire questions array
+                                    const updatedQuestions = [...questions];
+                                    const currentQuestion =
+                                      updatedQuestions[index];
+                                    if (!currentQuestion) return;
+                                    const updatedOptions = [
+                                      ...currentQuestion.options,
+                                    ];
+                                    const currentOption =
+                                      updatedOptions[optIndex];
+                                    if (!currentOption) return;
+                                    updatedOptions[optIndex] = {
+                                      id: currentOption.id,
+                                      option_text: e.target.value,
+                                      ...(currentOption.type && {
+                                        type: currentOption.type,
+                                      }),
+                                      is_correct: currentOption.is_correct,
+                                    };
+                                    updatedQuestions[index] = {
+                                      id: currentQuestion.id,
+                                      question_text:
+                                        currentQuestion.question_text,
+                                      allow_multiple:
+                                        currentQuestion.allow_multiple,
+                                      options: updatedOptions,
+                                      ...(currentQuestion.times && {
+                                        times: currentQuestion.times,
+                                      }),
+                                    };
+                                    onQuestionsChange(updatedQuestions);
+                                  }
+                                }}
+                                placeholder="Option text"
+                                className="flex-1 min-w-0"
+                                style={{
+                                  maxWidth:
+                                    optionMaxWidths[index] !== undefined
+                                      ? `${optionMaxWidths[index]}px`
+                                      : undefined,
+                                }}
+                                disabled={isReadonly}
+                                onDragStart={(e) => e.preventDefault()}
+                              />
 
                               {/* Delete Option Button */}
                               {question.options.length > 2 && (
