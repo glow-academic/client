@@ -390,7 +390,7 @@ export function ScenarioBasicInfoSection({
                 className="text-sm flex items-center gap-1.5"
               >
                 <Video className="h-3.5 w-3.5 text-muted-foreground" />
-                Use Video
+                Video
               </Label>
               <Switch
                 id="use-video"

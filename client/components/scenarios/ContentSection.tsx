@@ -20,6 +20,7 @@ import {
   Trash2,
   Upload,
   Video,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -508,6 +509,9 @@ export function ContentSection({
     null
   );
 
+  // State for image preview dialog
+  const [previewImageId, setPreviewImageId] = useState<string | null>(null);
+
   // State for expanded questions (which questions have their options visible)
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(
     new Set()
@@ -778,84 +782,529 @@ export function ContentSection({
           />
         </div>
 
-        {/* Objectives Switch */}
-        <div className="space-y-2 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="objectives"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                Objectives
-              </Label>
-              <Switch
-                id="objectives"
-                checked={useObjectives}
-                onCheckedChange={(checked) => {
-                  onUseObjectivesChange(checked);
-                  if (!checked) {
-                    _onObjectivesChange([]);
-                  }
-                }}
-                disabled={isReadonly}
-              />
+        {/* Objectives Switch (only when video is disabled) */}
+        {!useVideo && (
+          <>
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="objectives"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                    Objectives
+                  </Label>
+                  <Switch
+                    id="objectives"
+                    checked={useObjectives}
+                    onCheckedChange={(checked) => {
+                      onUseObjectivesChange(checked);
+                      if (!checked) {
+                        _onObjectivesChange([]);
+                      }
+                    }}
+                    disabled={isReadonly}
+                  />
+                </div>
+                {!useObjectives && (
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Define specific learning objectives for the scenario
+                  </p>
+                )}
+              </div>
             </div>
-            {!useObjectives && (
-              <p className="text-xs text-muted-foreground pl-5">
-                Define specific learning objectives for the scenario
-              </p>
-            )}
-          </div>
-        </div>
 
-        {/* Objectives List (shown when useObjectives is true) */}
-        {useObjectives && (
+            {/* Objectives List (shown when useObjectives is true) */}
+            {useObjectives && (
+              <div className="space-y-2">
+                {objectives.length === 0 && (
+                  <div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={onAddObjective}
+                      disabled={isReadonly}
+                      size="sm"
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                    </Button>
+                  </div>
+                )}
+                {objectives.map((objective, index) => (
+                  <ObjectiveInputWithAutocomplete
+                    key={`objective-${index}`}
+                    index={index}
+                    value={objective || ""}
+                    onChange={(value) => onUpdateObjective(index, value)}
+                    placeholder={`Learning objective ${index + 1}`}
+                    suggestions={objectivesHistory}
+                    disabled={isReadonly}
+                    draggedObjectiveIndex={draggedObjectiveIndex}
+                    onDragStart={(e) => onDragStartObjective(e, index)}
+                    onDragOver={onDragOverObjective}
+                    onDrop={(e) => onDropObjective(e, index)}
+                    {...(objectives.length > 1 && {
+                      onRemove: () => onRemoveObjective(index),
+                    })}
+                    totalObjectives={objectives.length}
+                    maxObjectives={3}
+                  />
+                ))}
+
+                {objectives.length < 3 && objectives.length > 0 && (
+                  <div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={onAddObjective}
+                      disabled={isReadonly}
+                      size="sm"
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Questions Switch (only when video is enabled) */}
+        {useVideo && (
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="questions"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <MessageSquare
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-label="Questions icon"
+                  />
+                  Questions
+                </Label>
+                <Switch
+                  id="questions"
+                  checked={useQuestions}
+                  onCheckedChange={(checked) => {
+                    onUseQuestionsChange(checked);
+                    if (!checked) {
+                      onQuestionsChange([]);
+                    }
+                  }}
+                  disabled={isReadonly}
+                />
+              </div>
+              {!useQuestions && (
+                <p className="text-xs text-muted-foreground pl-5">
+                  Add questions below the video
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Questions List (when video and questions are enabled) */}
+        {useVideo && useQuestions && (
           <div className="space-y-2">
-            {objectives.length === 0 && (
+            {questions.length === 0 && (
               <div>
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={onAddObjective}
+                  onClick={() => {
+                    onQuestionsChange([
+                      {
+                        id: "",
+                        question_text: "",
+                        allow_multiple: false,
+                        options: [
+                          {
+                            id: "",
+                            option_text: "",
+                            type: "discrete",
+                            is_correct: false,
+                          },
+                          {
+                            id: "",
+                            option_text: "",
+                            type: "discrete",
+                            is_correct: false,
+                          },
+                        ],
+                        times: [],
+                      },
+                    ]);
+                  }}
                   disabled={isReadonly}
                   size="sm"
                 >
-                  <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Question
                 </Button>
               </div>
             )}
-            {objectives.map((objective, index) => (
-              <ObjectiveInputWithAutocomplete
-                key={`objective-${index}`}
-                index={index}
-                value={objective || ""}
-                onChange={(value) => onUpdateObjective(index, value)}
-                placeholder={`Learning objective ${index + 1}`}
-                suggestions={objectivesHistory}
-                disabled={isReadonly}
-                draggedObjectiveIndex={draggedObjectiveIndex}
-                onDragStart={(e) => onDragStartObjective(e, index)}
-                onDragOver={onDragOverObjective}
-                onDrop={(e) => onDropObjective(e, index)}
-                {...(objectives.length > 1 && {
-                  onRemove: () => onRemoveObjective(index),
-                })}
-                totalObjectives={objectives.length}
-                maxObjectives={3}
-              />
-            ))}
+            {questions.length > 0 && (
+              <div className="space-y-2">
+                {questions.map((question, index) => (
+                  <div
+                    key={question.id || index}
+                    className={cn(
+                      "space-y-2",
+                      draggedQuestionIndex === index && "opacity-50"
+                    )}
+                    onDragOver={onDragOverQuestion}
+                    onDrop={(e) => onDropQuestion?.(e, index)}
+                  >
+                    <div className="flex items-center gap-2">
+                      {/* Drag Handle */}
+                      {onDragStartQuestion && (
+                        <div
+                          draggable={!isReadonly}
+                          onDragStart={(e) => onDragStartQuestion(e, index)}
+                          className="cursor-grab active:cursor-grabbing shrink-0"
+                        >
+                          <GripVertical className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
 
-            {objectives.length < 3 && objectives.length > 0 && (
+                      {/* Question Text Input */}
+                      <div className="flex-1">
+                        <Input
+                          value={question.question_text}
+                          onChange={(e) =>
+                            handleQuestionTextChange(index, e.target.value)
+                          }
+                          placeholder="Enter question text"
+                          className="flex-1"
+                          disabled={isReadonly}
+                          onDragStart={(e) => e.preventDefault()}
+                        />
+                      </div>
+
+                      {/* Time Input */}
+                      {selectedVideo && (
+                        <Input
+                          type="number"
+                          min="0"
+                          max={selectedVideo.length_seconds}
+                          value={question.times?.[0] ?? ""}
+                          onChange={(e) =>
+                            handleQuestionTimeChange(index, e.target.value)
+                          }
+                          placeholder="Time"
+                          className="w-20"
+                          disabled={isReadonly}
+                        />
+                      )}
+
+                      {/* Accordion Toggle */}
+                      {question.options.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleQuestionExpanded(index)}
+                          className="h-8 w-8 shrink-0"
+                          disabled={isReadonly}
+                        >
+                          {expandedQuestions.has(index) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronUp className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+
+                      {/* Delete Button */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          onQuestionsChange(
+                            questions.filter((_, i) => i !== index)
+                          );
+                        }}
+                        className="h-8 w-8 shrink-0"
+                        disabled={isReadonly}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* Options (shown when expanded) */}
+                    {expandedQuestions.has(index) &&
+                      question.options.length > 0 && (
+                        <div className="pl-6 space-y-2 border-l-2 border-muted ml-2">
+                          {question.options.map((option, optIndex) => (
+                            <div
+                              key={option.id || optIndex}
+                              className={cn(
+                                "flex items-center gap-2",
+                                draggedOptionIndex?.questionIndex === index &&
+                                  draggedOptionIndex?.optionIndex ===
+                                    optIndex &&
+                                  "opacity-50"
+                              )}
+                              onDragOver={onDragOverOption}
+                              onDrop={(e) => onDropOption?.(e, index, optIndex)}
+                            >
+                              {/* Option Drag Handle */}
+                              {onDragStartOption && (
+                                <div
+                                  draggable={!isReadonly}
+                                  onDragStart={(e) =>
+                                    onDragStartOption(e, index, optIndex)
+                                  }
+                                  className="cursor-grab active:cursor-grabbing shrink-0"
+                                >
+                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+
+                              {/* Option Text Input */}
+                              <Input
+                                value={option.option_text}
+                                onChange={(e) => {
+                                  if (onOptionChange) {
+                                    onOptionChange(index, optIndex, {
+                                      ...option,
+                                      option_text: e.target.value,
+                                    });
+                                  } else {
+                                    // Fallback: update entire questions array
+                                    const updatedQuestions = [...questions];
+                                    const currentQuestion =
+                                      updatedQuestions[index];
+                                    if (!currentQuestion) return;
+                                    const updatedOptions = [
+                                      ...currentQuestion.options,
+                                    ];
+                                    const currentOption =
+                                      updatedOptions[optIndex];
+                                    if (!currentOption) return;
+                                    updatedOptions[optIndex] = {
+                                      id: currentOption.id,
+                                      option_text: e.target.value,
+                                      ...(currentOption.type && {
+                                        type: currentOption.type,
+                                      }),
+                                      is_correct: currentOption.is_correct,
+                                    };
+                                    updatedQuestions[index] = {
+                                      id: currentQuestion.id,
+                                      question_text:
+                                        currentQuestion.question_text,
+                                      allow_multiple:
+                                        currentQuestion.allow_multiple,
+                                      options: updatedOptions,
+                                      ...(currentQuestion.times && {
+                                        times: currentQuestion.times,
+                                      }),
+                                    };
+                                    onQuestionsChange(updatedQuestions);
+                                  }
+                                }}
+                                placeholder="Option text"
+                                className="flex-1"
+                                disabled={isReadonly}
+                                onDragStart={(e) => e.preventDefault()}
+                              />
+
+                              {/* Correct Checkbox */}
+                              {option.type !== "freeform" && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant={
+                                        option.is_correct
+                                          ? "default"
+                                          : "outline"
+                                      }
+                                      size="icon"
+                                      onClick={() => {
+                                        if (onToggleOptionCorrect) {
+                                          onToggleOptionCorrect(
+                                            index,
+                                            optIndex
+                                          );
+                                        } else {
+                                          // Fallback: update entire questions array
+                                          const updatedQuestions = [
+                                            ...questions,
+                                          ];
+                                          const currentQuestion =
+                                            updatedQuestions[index];
+                                          if (!currentQuestion) return;
+                                          const updatedOptions = [
+                                            ...currentQuestion.options,
+                                          ];
+                                          const currentOption =
+                                            updatedOptions[optIndex];
+                                          if (!currentOption) return;
+                                          updatedOptions[optIndex] = {
+                                            id: currentOption.id,
+                                            option_text:
+                                              currentOption.option_text,
+                                            ...(currentOption.type && {
+                                              type: currentOption.type,
+                                            }),
+                                            is_correct:
+                                              !currentOption.is_correct,
+                                          };
+                                          updatedQuestions[index] = {
+                                            id: currentQuestion.id,
+                                            question_text:
+                                              currentQuestion.question_text,
+                                            allow_multiple:
+                                              currentQuestion.allow_multiple,
+                                            options: updatedOptions,
+                                            ...(currentQuestion.times && {
+                                              times: currentQuestion.times,
+                                            }),
+                                          };
+                                          onQuestionsChange(updatedQuestions);
+                                        }
+                                      }}
+                                      className="h-8 w-8 shrink-0"
+                                      disabled={isReadonly}
+                                    >
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {option.is_correct
+                                      ? "Mark as incorrect"
+                                      : "Mark as correct"}
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              {/* Delete Option Button */}
+                              {question.options.length > 2 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    if (onRemoveOption) {
+                                      onRemoveOption(index, optIndex);
+                                    } else {
+                                      // Fallback: update entire questions array
+                                      const updatedQuestions = [...questions];
+                                      const currentQuestion =
+                                        updatedQuestions[index];
+                                      if (!currentQuestion) return;
+                                      updatedQuestions[index] = {
+                                        id: currentQuestion.id,
+                                        question_text:
+                                          currentQuestion.question_text,
+                                        allow_multiple:
+                                          currentQuestion.allow_multiple,
+                                        options: currentQuestion.options.filter(
+                                          (_, i) => i !== optIndex
+                                        ),
+                                        ...(currentQuestion.times && {
+                                          times: currentQuestion.times,
+                                        }),
+                                      };
+                                      onQuestionsChange(updatedQuestions);
+                                    }
+                                  }}
+                                  className="h-8 w-8 shrink-0"
+                                  disabled={isReadonly}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                          {question.options.length < 5 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (onAddOption) {
+                                  onAddOption(index);
+                                } else {
+                                  // Fallback: update entire questions array
+                                  const updatedQuestions = [...questions];
+                                  const currentQuestion =
+                                    updatedQuestions[index];
+                                  if (!currentQuestion) return;
+                                  updatedQuestions[index] = {
+                                    id: currentQuestion.id,
+                                    question_text:
+                                      currentQuestion.question_text,
+                                    allow_multiple:
+                                      currentQuestion.allow_multiple,
+                                    options: [
+                                      ...currentQuestion.options,
+                                      {
+                                        id: "",
+                                        option_text: "",
+                                        type: "discrete",
+                                        is_correct: false,
+                                      },
+                                    ],
+                                  };
+                                  onQuestionsChange(updatedQuestions);
+                                }
+                              }}
+                              className="w-full"
+                              disabled={isReadonly}
+                            >
+                              <PlusCircle className="h-4 w-4 mr-2" />
+                              Add Option
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {questions.length < 10 && questions.length > 0 && (
               <div>
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={onAddObjective}
+                  onClick={() => {
+                    onQuestionsChange([
+                      ...questions,
+                      {
+                        id: "",
+                        question_text: "",
+                        allow_multiple: false,
+                        options: [
+                          {
+                            id: "",
+                            option_text: "",
+                            type: "discrete",
+                            is_correct: false,
+                          },
+                          {
+                            id: "",
+                            option_text: "",
+                            type: "discrete",
+                            is_correct: false,
+                          },
+                        ],
+                        times: [],
+                      },
+                    ]);
+                  }}
                   disabled={isReadonly}
                   size="sm"
                 >
-                  <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Question
                 </Button>
               </div>
             )}
@@ -897,12 +1346,17 @@ export function ContentSection({
                             return null;
                           })
                           .filter(
-                            (img): img is { id: string; name: string; upload_id: string } =>
-                              img !== null
+                            (
+                              img
+                            ): img is {
+                              id: string;
+                              name: string;
+                              upload_id: string;
+                            } => img !== null
                           );
                         setSelectedImages(newImages);
                         // Call onImageSelect with first image for backward compatibility
-                        if (newImages.length > 0) {
+                        if (newImages.length > 0 && newImages[0]) {
                           onImageSelect(newImages[0]);
                         } else {
                           onImageSelect(null);
@@ -915,7 +1369,8 @@ export function ContentSection({
                           onImageSelect({
                             id: selectedImage.upload_id || selectedImage.id,
                             name: selectedImage.name,
-                            upload_id: selectedImage.upload_id || selectedImage.id,
+                            upload_id:
+                              selectedImage.upload_id || selectedImage.id,
                           });
                         } else if (!imageId) {
                           onImageSelect(null);
@@ -960,7 +1415,9 @@ export function ContentSection({
                                   isSelected ? "opacity-100" : "opacity-0"
                                 )}
                               />
-                              <span className="font-medium">{imgItem.name}</span>
+                              <span className="font-medium">
+                                {imgItem.name}
+                              </span>
                             </div>
                           </div>
                           <span className="text-xs text-muted-foreground mt-1">
@@ -993,11 +1450,19 @@ export function ContentSection({
                         key={img.id}
                         className="relative aspect-square border rounded-lg overflow-hidden bg-muted/20"
                       >
-                        <ImageViewer
-                          imageId={img.id}
-                          name={img.name}
-                          bare={true}
-                        />
+                        {/* Preview button - top left */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewImageId(img.id);
+                          }}
+                          className="absolute top-1 left-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                          disabled={isReadonly}
+                        >
+                          <Eye className="h-3.5 w-3.5 text-primary-foreground" />
+                        </button>
+                        {/* Delete button - top right */}
                         {useVideo && (
                           <button
                             type="button"
@@ -1007,28 +1472,33 @@ export function ContentSection({
                                 (i) => i.id !== img.id
                               );
                               setSelectedImages(newImages);
-                              if (newImages.length > 0) {
+                              if (newImages.length > 0 && newImages[0]) {
                                 onImageSelect(newImages[0]);
                               } else {
                                 onImageSelect(null);
                               }
                             }}
-                            className="absolute top-1 right-1 h-6 w-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
+                            className="absolute top-1 right-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
                             disabled={isReadonly}
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <X className="h-3.5 w-3.5 text-primary-foreground" />
                           </button>
                         )}
+                        <ImageViewer
+                          imageId={img.id}
+                          name={img.name}
+                          bare={true}
+                        />
+                        {/* Image name at bottom */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1 z-10">
+                          <span className="truncate block">{img.name}</span>
+                        </div>
                       </div>
                     )
                   )}
 
                   {/* Add Image Box - Show until max (10, same as max questions) */}
-                  {(useVideo
-                    ? selectedImages.length
-                    : image
-                      ? 1
-                      : 0) < 10 && (
+                  {(useVideo ? selectedImages.length : image ? 1 : 0) < 10 && (
                     <div
                       onClick={() => {
                         if (!isReadonly && !isUploadingImage) {
@@ -1078,7 +1548,9 @@ export function ContentSection({
                             id: selectedVideoItem.id,
                             name: selectedVideoItem.name,
                             length_seconds: selectedVideoItem.length_seconds,
-                            upload_id: selectedVideoItem.upload_id,
+                            ...(selectedVideoItem.upload_id && {
+                              upload_id: selectedVideoItem.upload_id,
+                            }),
                           });
                         } else if (!videoId) {
                           onVideoSelect(null);
@@ -1539,6 +2011,30 @@ export function ContentSection({
                         upload_id: null,
                       } as DocumentItem);
 
+                  const documentName =
+                    docForViewer.name ||
+                    documentMapping[docId]?.name ||
+                    "Document";
+
+                  const handleDocumentDelete = () => {
+                    if (isReadonly) return;
+                    const currentIndex = allPreviewDocumentIds.indexOf(docId);
+                    if (currentIndex >= 0) {
+                      if (allPreviewDocumentIds.length > 1) {
+                        // Switch to next document, or previous if this is the last one
+                        const nextIndex =
+                          currentIndex < allPreviewDocumentIds.length - 1
+                            ? currentIndex + 1
+                            : currentIndex - 1;
+                        const nextDocId = allPreviewDocumentIds[nextIndex];
+                        onScenarioPreviewDocumentChange(nextDocId ?? null);
+                      } else {
+                        // Last document, clear preview
+                        onScenarioPreviewDocumentChange(null);
+                      }
+                    }
+                  };
+
                   return (
                     <div className="relative border rounded-lg overflow-hidden flex-1 min-h-[400px]">
                       {/* Preview button - top left */}
@@ -1560,6 +2056,19 @@ export function ContentSection({
                       >
                         <Eye className="h-3.5 w-3.5 text-primary-foreground" />
                       </div>
+                      {/* Delete button - top right */}
+                      {!isReadonly && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDocumentDelete();
+                          }}
+                          className="absolute top-1 right-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                        >
+                          <X className="h-3.5 w-3.5 text-primary-foreground" />
+                        </button>
+                      )}
                       <>
                         <div
                           className={cn(
@@ -1590,453 +2099,16 @@ export function ContentSection({
                           </div>
                         )}
                       </>
+                      {/* Document name at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1 z-10">
+                        <span className="truncate block">{documentName}</span>
+                      </div>
                     </div>
                   );
                 })()}
             </div>
           )}
         </div>
-
-        {/* Questions Switch (only when video is enabled) */}
-        {useVideo && (
-          <div className="space-y-4 pt-2">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="questions"
-                  className="text-sm flex items-center gap-1.5"
-                >
-                  <MessageSquare
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-label="Questions icon"
-                  />
-                  Questions
-                </Label>
-                <Switch
-                  id="questions"
-                  checked={useQuestions}
-                  onCheckedChange={(checked) => {
-                    onUseQuestionsChange(checked);
-                    if (!checked) {
-                      onQuestionsChange([]);
-                    }
-                  }}
-                  disabled={isReadonly}
-                />
-              </div>
-              {!useQuestions && (
-                <p className="text-xs text-muted-foreground pl-5">
-                  Add questions below the video
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Questions List (when video and questions are enabled) */}
-        {useVideo && useQuestions && (
-          <div className="space-y-2">
-            {questions.length === 0 && (
-              <div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    onQuestionsChange([
-                      {
-                        id: "",
-                        question_text: "",
-                        allow_multiple: false,
-                        options: [
-                          {
-                            id: "",
-                            option_text: "",
-                            type: "discrete",
-                            is_correct: false,
-                          },
-                          {
-                            id: "",
-                            option_text: "",
-                            type: "discrete",
-                            is_correct: false,
-                          },
-                        ],
-                        times: [],
-                      },
-                    ]);
-                  }}
-                  disabled={isReadonly}
-                  size="sm"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add Question
-                </Button>
-              </div>
-            )}
-            {questions.length > 0 && (
-              <div className="space-y-2">
-                {questions.map((question, index) => (
-                  <div
-                    key={question.id || index}
-                    className={cn(
-                      "space-y-2",
-                      draggedQuestionIndex === index && "opacity-50"
-                    )}
-                    onDragOver={onDragOverQuestion}
-                    onDrop={(e) => onDropQuestion?.(e, index)}
-                  >
-                    <div className="flex items-center gap-2">
-                      {/* Drag Handle */}
-                      {onDragStartQuestion && (
-                        <div
-                          draggable={!isReadonly}
-                          onDragStart={(e) => onDragStartQuestion(e, index)}
-                          className="cursor-grab active:cursor-grabbing shrink-0"
-                        >
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      )}
-
-                      {/* Question Text Input */}
-                      <div className="flex-1">
-                        <Input
-                          value={question.question_text}
-                          onChange={(e) =>
-                            handleQuestionTextChange(index, e.target.value)
-                          }
-                          placeholder="Enter question text"
-                          className="flex-1"
-                          disabled={isReadonly}
-                          onDragStart={(e) => e.preventDefault()}
-                        />
-                      </div>
-
-                      {/* Time Input */}
-                      {selectedVideo && (
-                        <Input
-                          type="number"
-                          min="0"
-                          max={selectedVideo.length_seconds}
-                          value={question.times?.[0] ?? ""}
-                          onChange={(e) =>
-                            handleQuestionTimeChange(index, e.target.value)
-                          }
-                          placeholder="Time"
-                          className="w-20"
-                          disabled={isReadonly}
-                        />
-                      )}
-
-                      {/* Accordion Toggle */}
-                      {question.options.length > 0 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => toggleQuestionExpanded(index)}
-                          className="h-8 w-8 shrink-0"
-                          disabled={isReadonly}
-                        >
-                          {expandedQuestions.has(index) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronUp className="h-4 w-4" />
-                          )}
-                        </Button>
-                      )}
-
-                      {/* Delete Button */}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          onQuestionsChange(
-                            questions.filter((_, i) => i !== index)
-                          );
-                        }}
-                        className="h-8 w-8 shrink-0"
-                        disabled={isReadonly}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    {/* Options (shown when expanded) */}
-                    {expandedQuestions.has(index) &&
-                      question.options.length > 0 && (
-                        <div className="pl-6 space-y-2 border-l-2 border-muted ml-2">
-                          {question.options.map((option, optIndex) => (
-                            <div
-                              key={option.id || optIndex}
-                              className={cn(
-                                "flex items-center gap-2",
-                                draggedOptionIndex?.questionIndex === index &&
-                                  draggedOptionIndex?.optionIndex ===
-                                    optIndex &&
-                                  "opacity-50"
-                              )}
-                              onDragOver={onDragOverOption}
-                              onDrop={(e) => onDropOption?.(e, index, optIndex)}
-                            >
-                              {/* Option Drag Handle */}
-                              {onDragStartOption && (
-                                <div
-                                  draggable={!isReadonly}
-                                  onDragStart={(e) =>
-                                    onDragStartOption(e, index, optIndex)
-                                  }
-                                  className="cursor-grab active:cursor-grabbing shrink-0"
-                                >
-                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                              )}
-
-                              {/* Option Text Input */}
-                              <Input
-                                value={option.option_text}
-                                onChange={(e) => {
-                                  if (onOptionChange) {
-                                    onOptionChange(index, optIndex, {
-                                      ...option,
-                                      option_text: e.target.value,
-                                    });
-                                  } else {
-                                    // Fallback: update entire questions array
-                                    const updatedQuestions = [...questions];
-                                    const currentQuestion =
-                                      updatedQuestions[index];
-                                    if (!currentQuestion) return;
-                                    const updatedOptions = [
-                                      ...currentQuestion.options,
-                                    ];
-                                    const currentOption =
-                                      updatedOptions[optIndex];
-                                    if (!currentOption) return;
-                                    updatedOptions[optIndex] = {
-                                      id: currentOption.id,
-                                      option_text: e.target.value,
-                                      ...(currentOption.type && {
-                                        type: currentOption.type,
-                                      }),
-                                      is_correct: currentOption.is_correct,
-                                    };
-                                    updatedQuestions[index] = {
-                                      id: currentQuestion.id,
-                                      question_text:
-                                        currentQuestion.question_text,
-                                      allow_multiple:
-                                        currentQuestion.allow_multiple,
-                                      options: updatedOptions,
-                                      ...(currentQuestion.times && {
-                                        times: currentQuestion.times,
-                                      }),
-                                    };
-                                    onQuestionsChange(updatedQuestions);
-                                  }
-                                }}
-                                placeholder="Option text"
-                                className="flex-1"
-                                disabled={isReadonly}
-                                onDragStart={(e) => e.preventDefault()}
-                              />
-
-                              {/* Correct Checkbox */}
-                              {option.type !== "freeform" && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      type="button"
-                                      variant={
-                                        option.is_correct
-                                          ? "default"
-                                          : "outline"
-                                      }
-                                      size="icon"
-                                      onClick={() => {
-                                        if (onToggleOptionCorrect) {
-                                          onToggleOptionCorrect(
-                                            index,
-                                            optIndex
-                                          );
-                                        } else {
-                                          // Fallback: update entire questions array
-                                          const updatedQuestions = [
-                                            ...questions,
-                                          ];
-                                          const currentQuestion =
-                                            updatedQuestions[index];
-                                          if (!currentQuestion) return;
-                                          const updatedOptions = [
-                                            ...currentQuestion.options,
-                                          ];
-                                          const currentOption =
-                                            updatedOptions[optIndex];
-                                          if (!currentOption) return;
-                                          updatedOptions[optIndex] = {
-                                            id: currentOption.id,
-                                            option_text:
-                                              currentOption.option_text,
-                                            ...(currentOption.type && {
-                                              type: currentOption.type,
-                                            }),
-                                            is_correct:
-                                              !currentOption.is_correct,
-                                          };
-                                          updatedQuestions[index] = {
-                                            id: currentQuestion.id,
-                                            question_text:
-                                              currentQuestion.question_text,
-                                            allow_multiple:
-                                              currentQuestion.allow_multiple,
-                                            options: updatedOptions,
-                                            ...(currentQuestion.times && {
-                                              times: currentQuestion.times,
-                                            }),
-                                          };
-                                          onQuestionsChange(updatedQuestions);
-                                        }
-                                      }}
-                                      className="h-8 w-8 shrink-0"
-                                      disabled={isReadonly}
-                                    >
-                                      <Check className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    {option.is_correct
-                                      ? "Mark as incorrect"
-                                      : "Mark as correct"}
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-
-                              {/* Delete Option Button */}
-                              {question.options.length > 2 && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    if (onRemoveOption) {
-                                      onRemoveOption(index, optIndex);
-                                    } else {
-                                      // Fallback: update entire questions array
-                                      const updatedQuestions = [...questions];
-                                      const currentQuestion =
-                                        updatedQuestions[index];
-                                      if (!currentQuestion) return;
-                                      updatedQuestions[index] = {
-                                        id: currentQuestion.id,
-                                        question_text:
-                                          currentQuestion.question_text,
-                                        allow_multiple:
-                                          currentQuestion.allow_multiple,
-                                        options: currentQuestion.options.filter(
-                                          (_, i) => i !== optIndex
-                                        ),
-                                        ...(currentQuestion.times && {
-                                          times: currentQuestion.times,
-                                        }),
-                                      };
-                                      onQuestionsChange(updatedQuestions);
-                                    }
-                                  }}
-                                  className="h-8 w-8 shrink-0"
-                                  disabled={isReadonly}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          ))}
-                          {question.options.length < 5 && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                if (onAddOption) {
-                                  onAddOption(index);
-                                } else {
-                                  // Fallback: update entire questions array
-                                  const updatedQuestions = [...questions];
-                                  const currentQuestion =
-                                    updatedQuestions[index];
-                                  if (!currentQuestion) return;
-                                  updatedQuestions[index] = {
-                                    id: currentQuestion.id,
-                                    question_text:
-                                      currentQuestion.question_text,
-                                    allow_multiple:
-                                      currentQuestion.allow_multiple,
-                                    options: [
-                                      ...currentQuestion.options,
-                                      {
-                                        id: "",
-                                        option_text: "",
-                                        type: "discrete",
-                                        is_correct: false,
-                                      },
-                                    ],
-                                  };
-                                  onQuestionsChange(updatedQuestions);
-                                }
-                              }}
-                              className="w-full"
-                              disabled={isReadonly}
-                            >
-                              <PlusCircle className="h-4 w-4 mr-2" />
-                              Add Option
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {questions.length < 10 && questions.length > 0 && (
-              <div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    onQuestionsChange([
-                      ...questions,
-                      {
-                        id: "",
-                        question_text: "",
-                        allow_multiple: false,
-                        options: [
-                          {
-                            id: "",
-                            option_text: "",
-                            type: "discrete",
-                            is_correct: false,
-                          },
-                          {
-                            id: "",
-                            option_text: "",
-                            type: "discrete",
-                            is_correct: false,
-                          },
-                        ],
-                        times: [],
-                      },
-                    ]);
-                  }}
-                  disabled={isReadonly}
-                  size="sm"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add Question
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Use Image/Images Switch (at the bottom of all switches) */}
         <div className="space-y-4 pt-2">
@@ -2050,7 +2122,7 @@ export function ContentSection({
                   className="h-3.5 w-3.5 text-muted-foreground"
                   aria-label="Image icon"
                 />
-                {useVideo ? "Use Images" : "Use Image"}
+                {useVideo ? "Images" : "Image"}
               </Label>
               <Switch
                 id="use-image"
@@ -2157,6 +2229,71 @@ export function ContentSection({
                   </div>
                 );
               })()}
+          </DialogContent>
+        </Dialog>
+
+        {/* Image Preview Dialog */}
+        <Dialog
+          open={previewImageId !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPreviewImageId(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-4xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>
+                {previewImageId
+                  ? (() => {
+                      const previewImage =
+                        useVideo && selectedImages.length > 0
+                          ? selectedImages.find(
+                              (img) => img.id === previewImageId
+                            )
+                          : image?.id === previewImageId
+                            ? image
+                            : imageMapping[previewImageId]
+                              ? {
+                                  id: previewImageId,
+                                  name:
+                                    imageMapping[previewImageId]?.name ||
+                                    "Image",
+                                  upload_id: previewImageId,
+                                }
+                              : null;
+                      return previewImage?.name || "Image Preview";
+                    })()
+                  : "Image Preview"}
+              </DialogTitle>
+              <DialogDescription>Preview image content</DialogDescription>
+            </DialogHeader>
+            {previewImageId && (
+              <div className="w-full h-[calc(90vh-120px)] overflow-auto flex items-center justify-center bg-black">
+                <ImageViewer
+                  imageId={previewImageId}
+                  name={(() => {
+                    const previewImage =
+                      useVideo && selectedImages.length > 0
+                        ? selectedImages.find(
+                            (img) => img.id === previewImageId
+                          )
+                        : image?.id === previewImageId
+                          ? image
+                          : imageMapping[previewImageId]
+                            ? {
+                                id: previewImageId,
+                                name:
+                                  imageMapping[previewImageId]?.name || "Image",
+                                upload_id: previewImageId,
+                              }
+                            : null;
+                    return previewImage?.name || "Image";
+                  })()}
+                  bare={false}
+                />
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </CardContent>
