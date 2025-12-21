@@ -51,7 +51,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { components } from "@/lib/api/schema";
@@ -247,7 +246,12 @@ export interface ContentSectionProps {
 
   // Videos
   useVideo: boolean;
-  selectedVideo: { id: string; name: string; length_seconds: number; upload_id?: string } | null;
+  selectedVideo: {
+    id: string;
+    name: string;
+    length_seconds: number;
+    upload_id?: string;
+  } | null;
   videoMapping: Record<
     string,
     { id: string; name: string; length_seconds: number }
@@ -309,7 +313,12 @@ export interface ContentSectionProps {
   onImageRemove: () => void;
   onUseVideoChange: (enabled: boolean) => void;
   onVideoSelect: (
-    video: { id: string; name: string; length_seconds: number; upload_id?: string } | null
+    video: {
+      id: string;
+      name: string;
+      length_seconds: number;
+      upload_id?: string;
+    } | null
   ) => void;
   onUseQuestionsChange: (enabled: boolean) => void;
   onQuestionsChange: (
@@ -464,6 +473,36 @@ export function ContentSection({
   imageInputRef,
   isEditMode = false,
 }: ContentSectionProps) {
+  // Local state for multiple images when useVideo is true
+  const [selectedImages, setSelectedImages] = useState<
+    Array<{ id: string; name: string; upload_id: string }>
+  >(image ? [image] : []);
+
+  // Update local state when image prop changes
+  useEffect(() => {
+    if (useVideo) {
+      // Multi-select mode: add image if not already in array
+      if (image) {
+        setSelectedImages((prev) => {
+          const exists = prev.some((img) => img.id === image.id);
+          if (exists) {
+            return prev; // Already in array, don't change
+          }
+          return [...prev, image]; // Add new image
+        });
+      }
+      // Note: When image is null in multi-select mode, we don't clear selectedImages
+      // because users remove images individually via the trash button
+    } else {
+      // Single select mode: replace array
+      if (image) {
+        setSelectedImages([image]);
+      } else {
+        setSelectedImages([]);
+      }
+    }
+  }, [image, useVideo]);
+
   // State for document preview dialog
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
     null
@@ -533,36 +572,6 @@ export function ContentSection({
     const index = allPreviewDocumentIds.indexOf(scenarioPreviewDocumentId);
     return index >= 0 ? index : 0;
   }, [scenarioPreviewDocumentId, allPreviewDocumentIds]);
-
-  // State for document name truncation
-  const documentNameRef = useRef<HTMLSpanElement>(null);
-  const [isDocumentNameTruncated, setIsDocumentNameTruncated] = useState(false);
-
-  const currentDocumentName =
-    documentMapping[scenarioPreviewDocumentId || ""]?.name || "Document";
-
-  useEffect(() => {
-    const checkTruncation = () => {
-      if (documentNameRef.current) {
-        const isOverflowing =
-          documentNameRef.current.scrollWidth >
-          documentNameRef.current.clientWidth;
-        setIsDocumentNameTruncated(isOverflowing);
-      }
-    };
-
-    // Use setTimeout to ensure DOM is fully rendered
-    const timeoutId = setTimeout(() => {
-      checkTruncation();
-    }, 0);
-
-    // Recheck on window resize and when document changes
-    window.addEventListener("resize", checkTruncation);
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener("resize", checkTruncation);
-    };
-  }, [currentDocumentName, scenarioPreviewDocumentId]);
 
   const goToPreviousDocument = () => {
     if (currentDocumentIndex > 0) {
@@ -858,103 +867,183 @@ export function ContentSection({
           {/* Images Section (left column - only when both video and image are enabled) */}
           {useVideo && useImage && (
             <div className="w-[25%] min-w-[25%] max-w-[25%] space-y-2 flex flex-col self-stretch">
-              <Label>Images</Label>
+              {/* Images Label and Picker - Horizontal Layout */}
               {Object.keys(imageMapping).length > 0 && (
-                <GenericPicker
-                  items={imageMapping}
-                  itemIds={Object.keys(imageMapping)}
-                  selectedIds={image ? [image.id] : []}
-                  onSelect={(ids) => {
-                    const imageId = ids[0] || null;
-                    if (imageId && imageMapping[imageId]) {
-                      const selectedImage = imageMapping[imageId];
-                      onImageSelect({
-                        id: selectedImage.upload_id || selectedImage.id,
-                        name: selectedImage.name,
-                        upload_id: selectedImage.upload_id || selectedImage.id,
-                      });
-                    } else if (!imageId) {
-                      onImageSelect(null);
+                <div className="flex items-center justify-between">
+                  <Label>Images</Label>
+                  <GenericPicker
+                    items={imageMapping}
+                    itemIds={Object.keys(imageMapping)}
+                    selectedIds={
+                      useVideo
+                        ? selectedImages.map((img) => img.id)
+                        : image
+                          ? [image.id]
+                          : []
                     }
-                  }}
-                  getId={(item) => {
-                    const imgItem = item as unknown as ImageMappingItem;
-                    return imgItem.id;
-                  }}
-                  getLabel={(item) => {
-                    const imgItem = item as unknown as ImageMappingItem;
-                    const date = new Date(imgItem.updated_at);
-                    return `${imgItem.name} - ${date.toLocaleDateString()}`;
-                  }}
-                  getSearchText={(item) => {
-                    const imgItem = item as unknown as ImageMappingItem;
-                    const date = new Date(imgItem.updated_at);
-                    return `${imgItem.name} ${date.toLocaleDateString()}`;
-                  }}
-                  renderButton={(selectedItems) => {
-                    if (selectedItems.length === 0) {
-                      return "Select image...";
-                    }
-                    const selectedImage =
-                      selectedItems[0] as unknown as ImageMappingItem;
-                    return selectedImage?.name || "Select image...";
-                  }}
-                  renderItem={(item, isSelected) => {
-                    const imgItem = item as unknown as ImageMappingItem;
-                    const date = new Date(imgItem.updated_at);
-                    return (
-                      <div className="flex flex-col items-start py-3 w-full">
-                        <div className="flex items-center justify-between w-full">
-                          <div className="flex items-center gap-2">
-                            <Check
-                              className={cn(
-                                "h-4 w-4",
-                                isSelected ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <span className="font-medium">{imgItem.name}</span>
+                    onSelect={(ids) => {
+                      if (useVideo) {
+                        // Multi-select mode: update local state
+                        const newImages = ids
+                          .map((id) => {
+                            const imgItem = imageMapping[id];
+                            if (imgItem) {
+                              return {
+                                id: imgItem.upload_id || imgItem.id,
+                                name: imgItem.name,
+                                upload_id: imgItem.upload_id || imgItem.id,
+                              };
+                            }
+                            return null;
+                          })
+                          .filter(
+                            (img): img is { id: string; name: string; upload_id: string } =>
+                              img !== null
+                          );
+                        setSelectedImages(newImages);
+                        // Call onImageSelect with first image for backward compatibility
+                        if (newImages.length > 0) {
+                          onImageSelect(newImages[0]);
+                        } else {
+                          onImageSelect(null);
+                        }
+                      } else {
+                        // Single select mode
+                        const imageId = ids[0] || null;
+                        if (imageId && imageMapping[imageId]) {
+                          const selectedImage = imageMapping[imageId];
+                          onImageSelect({
+                            id: selectedImage.upload_id || selectedImage.id,
+                            name: selectedImage.name,
+                            upload_id: selectedImage.upload_id || selectedImage.id,
+                          });
+                        } else if (!imageId) {
+                          onImageSelect(null);
+                        }
+                      }
+                    }}
+                    getId={(item) => {
+                      const imgItem = item as unknown as ImageMappingItem;
+                      return imgItem.id;
+                    }}
+                    getLabel={(item) => {
+                      const imgItem = item as unknown as ImageMappingItem;
+                      const date = new Date(imgItem.updated_at);
+                      return `${imgItem.name} - ${date.toLocaleDateString()}`;
+                    }}
+                    getSearchText={(item) => {
+                      const imgItem = item as unknown as ImageMappingItem;
+                      const date = new Date(imgItem.updated_at);
+                      return `${imgItem.name} ${date.toLocaleDateString()}`;
+                    }}
+                    renderButton={(selectedItems) => {
+                      if (selectedItems.length === 0) {
+                        return "Select image...";
+                      }
+                      if (useVideo && selectedItems.length > 1) {
+                        return `${selectedItems.length} images selected`;
+                      }
+                      const selectedImage =
+                        selectedItems[0] as unknown as ImageMappingItem;
+                      return selectedImage?.name || "Select image...";
+                    }}
+                    renderItem={(item, isSelected) => {
+                      const imgItem = item as unknown as ImageMappingItem;
+                      const date = new Date(imgItem.updated_at);
+                      return (
+                        <div className="flex flex-col items-start py-3 w-full">
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2">
+                              <Check
+                                className={cn(
+                                  "h-4 w-4",
+                                  isSelected ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="font-medium">{imgItem.name}</span>
+                            </div>
                           </div>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            {date.toLocaleDateString()}{" "}
+                            {date.toLocaleTimeString()}
+                          </span>
                         </div>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {date.toLocaleDateString()}{" "}
-                          {date.toLocaleTimeString()}
-                        </span>
-                      </div>
-                    );
-                  }}
-                  disabled={isReadonly}
-                  multiSelect={false}
-                  hideSelectedChips={true}
-                  buttonClassName="h-8 justify-between"
-                  compact={true}
-                  groupHeading="Images"
-                  placeholder="Select image..."
-                  clearActionLabel="New Image"
-                />
-              )}
-              {/* Image Upload Area */}
-              <div
-                onClick={() => {
-                  if (!isReadonly && !isUploadingImage) {
-                    imageInputRef.current?.click();
-                  }
-                }}
-                className="relative border rounded-lg overflow-hidden min-h-[200px] flex-1 cursor-pointer bg-muted/20 border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center justify-center"
-              >
-                {image ? (
-                  <ImageViewer
-                    imageId={image.id}
-                    name={image.name}
-                    bare={true}
+                      );
+                    }}
+                    disabled={isReadonly}
+                    multiSelect={useVideo}
+                    hideSelectedChips={true}
+                    buttonClassName="h-8 justify-between"
+                    compact={true}
+                    groupHeading="Images"
+                    placeholder="Select image..."
+                    clearActionLabel="New Image"
                   />
-                ) : (
-                  <>
-                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground text-center px-4">
-                      Click to upload image
-                    </p>
-                  </>
-                )}
+                </div>
+              )}
+              {Object.keys(imageMapping).length === 0 && <Label>Images</Label>}
+
+              {/* Image Grid - Single Column, Scrollable */}
+              <div className="flex-1 overflow-auto">
+                <div className="flex flex-col gap-2">
+                  {/* Display selected images */}
+                  {(useVideo ? selectedImages : image ? [image] : []).map(
+                    (img) => (
+                      <div
+                        key={img.id}
+                        className="relative aspect-square border rounded-lg overflow-hidden bg-muted/20"
+                      >
+                        <ImageViewer
+                          imageId={img.id}
+                          name={img.name}
+                          bare={true}
+                        />
+                        {useVideo && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const newImages = selectedImages.filter(
+                                (i) => i.id !== img.id
+                              );
+                              setSelectedImages(newImages);
+                              if (newImages.length > 0) {
+                                onImageSelect(newImages[0]);
+                              } else {
+                                onImageSelect(null);
+                              }
+                            }}
+                            className="absolute top-1 right-1 h-6 w-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
+                            disabled={isReadonly}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )
+                  )}
+
+                  {/* Add Image Box - Show until max (10, same as max questions) */}
+                  {(useVideo
+                    ? selectedImages.length
+                    : image
+                      ? 1
+                      : 0) < 10 && (
+                    <div
+                      onClick={() => {
+                        if (!isReadonly && !isUploadingImage) {
+                          imageInputRef.current?.click();
+                        }
+                      }}
+                      className="aspect-square border-2 border-dashed border-muted-foreground/50 rounded-lg cursor-pointer bg-muted/20 hover:border-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center justify-center"
+                    >
+                      <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                      <p className="text-xs text-muted-foreground text-center px-2">
+                        Add image
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1327,7 +1416,44 @@ export function ContentSection({
                   : "w-[30%] min-w-[30%] max-w-[30%] space-y-2 flex flex-col self-stretch"
               }
             >
-              <Label>Documents</Label>
+              {/* Document Navigation - Top Right */}
+              {scenarioPreviewDocumentId &&
+                allPreviewDocumentIds.length > 1 && (
+                  <div className="flex items-center justify-between">
+                    <Label>Documents</Label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-8 w-8 p-0 shrink-0"
+                        onClick={goToPreviousDocument}
+                        disabled={currentDocumentIndex === 0 || isReadonly}
+                      >
+                        <span className="sr-only">Go to previous document</span>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">
+                        {currentDocumentIndex + 1}/
+                        {allPreviewDocumentIds.length}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-8 w-8 p-0 shrink-0"
+                        onClick={goToNextDocument}
+                        disabled={
+                          currentDocumentIndex >=
+                            allPreviewDocumentIds.length - 1 || isReadonly
+                        }
+                      >
+                        <span className="sr-only">Go to next document</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              {(!scenarioPreviewDocumentId ||
+                allPreviewDocumentIds.length <= 1) && <Label>Documents</Label>}
 
               {/* Document Preview Container */}
               {scenarioPreviewDocumentId &&
@@ -1466,71 +1592,6 @@ export function ContentSection({
                     </div>
                   );
                 })()}
-
-              {/* Document Navigation */}
-              {scenarioPreviewDocumentId &&
-                allPreviewDocumentIds.length > 1 && (
-                  <div className="px-4 py-2 flex items-center gap-2 bg-background">
-                    {/* Left - Previous Button */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-8 w-8 p-0 shrink-0"
-                      onClick={goToPreviousDocument}
-                      disabled={currentDocumentIndex === 0 || isReadonly}
-                    >
-                      <span className="sr-only">Go to previous document</span>
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-
-                    {/* Center - Document Name + Count */}
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      {isDocumentNameTruncated ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span
-                                ref={documentNameRef}
-                                className="text-sm font-medium truncate cursor-help"
-                              >
-                                {currentDocumentName}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-sm">{currentDocumentName}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <span
-                          ref={documentNameRef}
-                          className="text-sm font-medium truncate"
-                        >
-                          {currentDocumentName}
-                        </span>
-                      )}
-                      <span className="text-sm text-muted-foreground shrink-0 whitespace-nowrap">
-                        ({currentDocumentIndex + 1}/
-                        {allPreviewDocumentIds.length})
-                      </span>
-                    </div>
-
-                    {/* Right - Next Button */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-8 w-8 p-0 shrink-0"
-                      onClick={goToNextDocument}
-                      disabled={
-                        currentDocumentIndex >=
-                          allPreviewDocumentIds.length - 1 || isReadonly
-                      }
-                    >
-                      <span className="sr-only">Go to next document</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
             </div>
           )}
         </div>

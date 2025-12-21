@@ -1041,7 +1041,7 @@ SELECT
         AND o.id = ANY($7::uuid[])),
         '{}'::jsonb
     ) as objective_mapping,
-    -- Scenario images from provided image IDs
+    -- Scenario images (list of available images for selection)
     COALESCE(
         (SELECT jsonb_agg(
             jsonb_build_object(
@@ -1054,14 +1054,12 @@ SELECT
                 'created_at', i.created_at::text,
                 'updated_at', i.updated_at::text
             )
+            ORDER BY i.created_at DESC
         )
         FROM images i
         LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
         LEFT JOIN uploads u ON u.id = iu.upload_id
-        WHERE $8::uuid[] IS NOT NULL
-        AND array_length($8::uuid[], 1) > 0
-        AND i.id = ANY($8::uuid[])
-        AND i.active = true),
+        WHERE i.active = true),
         '[]'::jsonb
     ) as scenario_images,
     -- Scenario videos (list of available videos for selection)
