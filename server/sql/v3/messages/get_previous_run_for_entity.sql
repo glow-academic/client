@@ -3,25 +3,28 @@
 -- Returns: run_id, latest_message_id (assistant if exists, otherwise developer/system, otherwise null)
 -- Latest message is the one with no active children in message_tree (leaf node)
 WITH previous_runs AS (
-    -- Get previous runs for scenario via problem_statement_runs
-    SELECT DISTINCT psr.run_id, psr.created_at
-    FROM problem_statement_runs psr
-    JOIN problem_statements ps ON ps.id = psr.problem_statement_id
+    -- Get previous runs for scenario via derived path: problem_statements → tool_call → tool_call_runs → run
+    SELECT DISTINCT tcr.run_id, tcr.created_at
+    FROM problem_statements ps
+    JOIN tool_calls tc ON tc.id = ps.tool_call_id
+    JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
     JOIN scenario_problem_statements sps ON sps.problem_statement_id = ps.id AND sps.active = true
     WHERE sps.scenario_id = $1::uuid
     AND $2::text = 'scenario'
     
     UNION ALL
     
-    -- Get previous runs for template via template_runs
-    SELECT DISTINCT tr.run_id, tr.created_at
-    FROM template_runs tr
-    WHERE tr.template_id = $1::uuid
+    -- Get previous runs for template via derived path: templates → tool_call → tool_call_runs → run
+    SELECT DISTINCT tcr.run_id, tcr.created_at
+    FROM templates t
+    JOIN tool_calls tc ON tc.id = t.tool_call_id
+    JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
+    WHERE t.id = $1::uuid
     AND $2::text = 'template'
     
     UNION ALL
     
-    -- Get previous runs for outline via outline_runs
+    -- Get previous runs for outline via outline_runs (outlines are not created by tool_calls, so keep original)
     SELECT DISTINCT or_.run_id, or_.created_at
     FROM outline_runs or_
     WHERE or_.outline_id = $1::uuid

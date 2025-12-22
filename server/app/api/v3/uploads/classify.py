@@ -20,10 +20,11 @@ from pydantic import BaseModel
 from app.main import TUS_UPLOADS_DIR, classification_results, get_db
 from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_classification_tools import (
-    create_classification_tools,
-)
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.tools.load_agent_tools import load_agent_tools
+from app.utils.tools.build_pydantic_fields import build_function_signature_string
+from agents import Tool, function_tool
+from pydantic import Field
 from app.utils.debug_info import DebugContext
 from app.utils.logging.db_logger import get_logger
 from app.utils.messages.log_run_messages import log_run_messages
@@ -211,8 +212,54 @@ async def classify_upload(
                 suggestedParameterItemIds={},
             )
 
-        # Create classification tools from parameter items
-        classification_tools = create_classification_tools(parameter_items)
+        # Load agent tools from database
+        agent_id_uuid = uuid.UUID(context["agent_id"])
+        agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+        tool_config_map_classify: dict[str, dict[str, Any]] = {
+            tool_config["name"]: tool_config for tool_config in agent_tools_config
+        }
+        
+        # Get base classification tool config
+        base_classification_config = tool_config_map_classify.get("classification")
+        
+        # Create classification tools inline for each parameter item
+        classification_tools: list[Tool] = []
+        for item in parameter_items:
+            # Get descriptions from database config if available
+            if base_classification_config:
+                file_names_desc = base_classification_config.get("argument_descriptions", {}).get("file_names", f"List of file names (from the file list above) that match the parameter item '{item['name']}'")
+            else:
+                file_names_desc = f"List of file names (from the file list above) that match the parameter item '{item['name']}'"
+            
+            # Create function with proper closure capture
+            def make_classification_function(item_dict: dict[str, Any], file_names_descr: str):
+                async def classify_parameter_item(
+                    file_names: list[str] = Field(description=file_names_descr),
+                ) -> str:
+                    """Classify files by matching them to the parameter item: {item_name}
+
+                    Args:
+                        file_names: List of file names that match this parameter item
+
+                    Returns:
+                        Confirmation message
+                    """.format(item_name=item_dict["name"])
+                    # Store classification result
+                    if item_dict["id"] not in classification_results:
+                        classification_results[item_dict["id"]] = []
+                    classification_results[item_dict["id"]].extend(file_names)
+                    logger.info(f"✓ Classified {len(file_names)} files for {item_dict['name']}")
+                    return f"Classified {len(file_names)} file(s) for {item_dict['name']}"
+                
+                # Set unique function name
+                safe_name = "".join(c if c.isalnum() or c == "_" else "_" for c in item_dict["name"].lower())
+                classify_parameter_item.__name__ = f"classify_{safe_name}"
+                return classify_parameter_item
+            
+            classify_func = make_classification_function(item, file_names_desc)
+            classification_tools.append(function_tool(classify_func))
+        
+        logger.info(f"Created {len(classification_tools)} classification tools")
 
         # Create tool use behavior - allow agent to finish after tool calls
         classification_progress_tracker: dict[str, bool] = {}

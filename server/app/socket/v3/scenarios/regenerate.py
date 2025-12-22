@@ -19,7 +19,6 @@ from pydantic import BaseModel, ValidationError
 from app.main import get_internal_sio, get_pool, get_scenario_storage, sio
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
@@ -30,6 +29,10 @@ from app.utils.scenario.image_generation import (
 )
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
+from app.utils.tools.load_agent_tools import load_agent_tools
+from app.utils.tools.build_pydantic_fields import build_function_signature_string
+from agents import Tool, function_tool
+from pydantic import Field
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -321,6 +324,14 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 else context_row["parameter_items"] or []
             )
 
+            # Load agent tools from database
+            agent_id_uuid = uuid.UUID(context_row["agent_id"])
+            agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+            # Create mapping of tool name -> tool config for quick lookup
+            tool_config_map: dict[str, dict[str, Any]] = {
+                tool_config["name"]: tool_config for tool_config in agent_tools_config
+            }
+
             # Build context dict (same structure as generate_ai)
             context = {
                 "agent_id": context_row["agent_id"],
@@ -440,15 +451,119 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                     room=sid,  # WebSocket room for emitting events
                 )
 
-            scenario_tools = create_scenario_tools(
-                group_id,
-                objectives_enabled=objectives_enabled,
-                documents_enabled=documents_enabled,
-                images_enabled=images_enabled,
-                profile_id=str(final_profile_id) if final_profile_id else None,
-                trace_id=primary_id,  # Use scenario_id as trace_id for regeneration
-                document_templates=context["document_templates"],
-            )
+            # Create scenario generation tools inline (same as generate handler)
+            scenario_tools: list[Tool] = []
+            
+            # 1. Title and Description Tool (always included)
+            title_desc_config = tool_config_map.get("set_title_and_description")
+            if title_desc_config:
+                title_desc = title_desc_config.get("argument_descriptions", {}).get("title", "Short, descriptive title for the scenario (5-10 words)")
+                scenario_desc = title_desc_config.get("argument_descriptions", {}).get("scenario", "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it")
+            else:
+                title_desc = "Short, descriptive title for the scenario (5-10 words)"
+                scenario_desc = "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it"
+            
+            async def set_title_description(
+                title: str = Field(description=title_desc),
+                scenario: str = Field(description=scenario_desc),
+            ) -> str:
+                """Set the title and description for the scenario."""
+                await internal_sio.emit(
+                    "scenario_tool_problem_statement",
+                    {
+                        "sid": sid,
+                        "trace_id": trace_id,
+                        "title": title,
+                        "description": scenario,
+                        "scenario_id": str(scenario_id),
+                    },
+                )
+                logger.info(f"[regenerate_scenario] Emitted problem statement: title={title}")
+                return "Set title and description successfully"
+            
+            scenario_tools.append(function_tool(set_title_description))
+            
+            # 2. Objectives Tool (if enabled)
+            if objectives_enabled:
+                objectives_config = tool_config_map.get("set_objectives")
+                if objectives_config:
+                    objectives_desc = objectives_config.get("argument_descriptions", {}).get("objectives", "List of 1-3 specific learning objectives that GTAs should achieve in this scenario")
+                else:
+                    objectives_desc = "List of 1-3 specific learning objectives that GTAs should achieve in this scenario"
+                
+                async def set_objectives(
+                    objectives: list[str] = Field(description=objectives_desc),
+                ) -> str:
+                    """Set the learning objectives for this scenario."""
+                    objectives = objectives[:3]  # Limit to 3
+                    await internal_sio.emit(
+                        "scenario_tool_objectives",
+                        {
+                            "sid": sid,
+                            "trace_id": trace_id,
+                            "objectives": objectives,
+                            "scenario_id": str(scenario_id),
+                        },
+                    )
+                    logger.info(f"[regenerate_scenario] Emitted objectives: {len(objectives)} objectives")
+                    return f"Set {len(objectives)} learning objectives successfully"
+                
+                scenario_tools.append(function_tool(set_objectives))
+            
+            # 3. Dynamic Document Tool (if enabled) - simplified version for regeneration
+            if documents_enabled and context["document_templates"]:
+                # For regeneration, use a simpler fallback approach
+                async def create_document_fallback(
+                    template_args: dict[str, Any],
+                ) -> str:
+                    """Create a dynamic child document from the available template document."""
+                    await internal_sio.emit(
+                        "scenario_tool_document",
+                        {
+                            "sid": sid,
+                            "trace_id": trace_id,
+                            "template_args": template_args,
+                            "scenario_id": str(scenario_id),
+                        },
+                    )
+                    logger.info("[regenerate_scenario] Emitted document creation")
+                    return "Dynamic document creation queued"
+                
+                scenario_tools.append(function_tool(create_document_fallback))  # type: ignore[arg-type]
+            
+            # 4. Image Generation Tool (if enabled)
+            if images_enabled:
+                image_config = tool_config_map.get("generate_image")
+                if image_config:
+                    name_desc = image_config.get("argument_descriptions", {}).get("name", "Descriptive name for the generated image")
+                    prompt_desc = image_config.get("argument_descriptions", {}).get("prompt", "Detailed, descriptive prompt for image generation")
+                else:
+                    name_desc = "Descriptive name for the generated image"
+                    prompt_desc = "Detailed, descriptive prompt for image generation"
+                
+                async def generate_image(
+                    name: str = Field(description=name_desc),
+                    prompt: str = Field(description=prompt_desc),
+                ) -> str:
+                    """Generate an image from a detailed prompt."""
+                    await internal_sio.emit(
+                        "scenario_tool_image",
+                        {
+                            "sid": sid,
+                            "trace_id": trace_id,
+                            "name": name,
+                            "prompt": prompt,
+                            "agent_id": context["agent_id"],
+                            "department_id": str(department_id) if department_id else None,
+                            "profile_id": str(final_profile_id) if final_profile_id else None,
+                            "scenario_id": str(scenario_id),
+                        },
+                    )
+                    logger.info(f"[regenerate_scenario] Emitted image: name={name}")
+                    return f"Image generation initiated for '{name}'"
+                
+                scenario_tools.append(function_tool(generate_image))
+            
             scenario_tools.append(debug_info_tool)
 
             # Check if template documents are available (require create_document if so)

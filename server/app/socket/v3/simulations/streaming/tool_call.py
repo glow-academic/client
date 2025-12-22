@@ -9,6 +9,7 @@ from pydantic import BaseModel, ValidationError
 from app.main import get_internal_sio, get_pool
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from app.utils.tools.get_tool_id_by_name import get_tool_id_by_name
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -79,10 +80,18 @@ async def _simulation_tool_call_start_impl(
     assert conn is not None  # Type guard
 
     try:
+        # Look up tool_id by tool_name
+        tool_id = await get_tool_id_by_name(conn, validated.tool_name)
+        if not tool_id:
+            logger.error(
+                f"Tool not found: {validated.tool_name} for chat {validated.chat_id}, call_id={validated.call_id}"
+            )
+            return None
+
         # Create tool call in database
         sql_create_tool_call = load_sql("sql/v3/tool_calls/create_tool_call.sql")
         tool_call_row = await conn.fetchrow(
-            sql_create_tool_call, validated.call_id, validated.tool_name
+            sql_create_tool_call, validated.call_id, str(tool_id)
         )
 
         if not tool_call_row:
@@ -104,7 +113,7 @@ async def _simulation_tool_call_start_impl(
 
         logger.info(
             f"Created tool call {db_tool_call_id} for chat {validated.chat_id} "
-            f"(call_id={validated.call_id}, tool_name={validated.tool_name})"
+            f"(call_id={validated.call_id}, tool_name={validated.tool_name}, tool_id={tool_id})"
         )
 
         return str(db_tool_call_id)

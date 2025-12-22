@@ -12,13 +12,11 @@ from pydantic import BaseModel, ValidationError
 
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.activity.websocket_logger import log_websocket_activity
-from app.utils.agents.build_document_agent import build_document_agent
-from app.utils.agents.tools.create_document_tools import (
-    create_document_tools,
-    document_progress,
-    document_results,
-)
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.tools.load_agent_tools import load_agent_tools
+from app.utils.tools.build_pydantic_fields import build_function_signature_string
+from agents import Tool, function_tool, FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResult
+from pydantic import Field
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_template_context import (
     format_document_template_context,
@@ -219,13 +217,87 @@ async def _document_generate_impl(
             # Extract run_id from context (created in same transaction)
             model_run_id = uuid.UUID(context_row["run_id"])
 
-            # Clear previous results
-            document_results.clear()
-            document_progress.clear()
+            # Module-level storage for document generation results
+            document_results: dict[str, Any] = {}
+            document_progress: dict[str, bool] = {}
 
-            # Build document agent with tools
-            document_tools = create_document_tools()
-            document_agent = build_document_agent(context, document_tools)
+            # Load agent tools from database
+            agent_id_uuid = uuid.UUID(context["agent_id"])
+            agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+            tool_config_map_doc: dict[str, dict[str, Any]] = {
+                tool_config["name"]: tool_config for tool_config in agent_tools_config
+            }
+
+            # Build document tools inline
+            document_tools: list[Tool] = []
+            
+            # Generate template HTML tool
+            html_config = tool_config_map_doc.get("generate_template_html")
+            if html_config:
+                html_desc = html_config.get("argument_descriptions", {}).get("template_html", "Jinja template HTML content with placeholders like {{ variable_name }}")
+            else:
+                html_desc = "Jinja template HTML content with placeholders like {{ variable_name }}"
+            
+            async def generate_template_html(
+                template_html: str = Field(description=html_desc),
+            ) -> str:
+                """Generate the Jinja template HTML for the document."""
+                document_results["template_html"] = template_html
+                document_progress["template_html"] = True
+                logger.info(f"✓ Generated template HTML ({len(template_html)} chars)")
+                return "Generated template HTML successfully"
+            
+            document_tools.append(function_tool(generate_template_html))
+            logger.info("Created template HTML generation tool")
+            
+            # Generate template schema tool
+            schema_config = tool_config_map_doc.get("generate_template_schema")
+            if schema_config:
+                schema_desc = schema_config.get("argument_descriptions", {}).get("schema_json", "JSON string in TemplateSchema format describing the template context fields and types. Must have structure: { 'name': string, 'fields': [{ 'name': string, 'type': 'string'|'number'|'boolean'|'array'|'object', 'required': bool (optional), 'item': {...} (optional for arrays), 'fields': [...] (optional for objects) }] }")
+            else:
+                schema_desc = "JSON string in TemplateSchema format describing the template context fields and types. Must have structure: { 'name': string, 'fields': [{ 'name': string, 'type': 'string'|'number'|'boolean'|'array'|'object', 'required': bool (optional), 'item': {...} (optional for arrays), 'fields': [...] (optional for objects) }] }"
+            
+            async def generate_template_schema(
+                schema_json: str = Field(description=schema_desc),
+            ) -> str:
+                """Generate the TemplateSchema JSON for template context."""
+                document_results["template_schema"] = schema_json
+                document_progress["template_schema"] = True
+                logger.info(f"✓ Generated template schema ({len(schema_json)} chars)")
+                return "Generated template schema successfully"
+            
+            document_tools.append(function_tool(generate_template_schema))
+            logger.info("Created template schema generation tool")
+            
+            # Create tool use behavior to wait for both tools to be called
+            def tool_use_behavior(
+                tool_context: RunContextWrapper[Any],
+                tool_results: list[FunctionToolResult],
+            ) -> ToolsToFinalOutputResult:
+                template_html_complete = document_progress.get("template_html", False)
+                template_schema_complete = document_progress.get("template_schema", False)
+                both_complete = template_html_complete and template_schema_complete
+                logger.info(
+                    f"Tool use behavior check: template_html={template_html_complete}, "
+                    f"template_schema={template_schema_complete}, both_complete={both_complete}"
+                )
+                return ToolsToFinalOutputResult(is_final_output=both_complete)
+            
+            # Build document agent inline
+            from app.utils.agents.generic_agent import GenericAgent
+            document_agent = GenericAgent(
+                agent_name=context["agent_name"],
+                system_prompt=context["system_prompt"],
+                temperature=context["temperature"],
+                model_name=context["model_name"],
+                provider=context["provider"],
+                base_url=context["base_url"],
+                api_key=context["api_key"],
+                reasoning=context["reasoning"],
+                tools=document_tools,
+                parallel_tool_calls=False,
+                tool_use_behavior=tool_use_behavior,
+            )
 
             # Fetch fields information if fieldIds provided
             fields_data: list[dict[str, Any]] | None = None

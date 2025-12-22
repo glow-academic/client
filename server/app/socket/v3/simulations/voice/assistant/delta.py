@@ -25,7 +25,7 @@ from app.socket.v3.simulations.text.send import (
     extract_new_message_chars,
     extract_persona_from_json,
 )
-from app.utils.agents.tools.create_persona_tools import find_persona_by_name
+from app.utils.personas.find_persona_by_name import find_persona_by_name
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 

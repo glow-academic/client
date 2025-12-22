@@ -19,9 +19,12 @@ from pydantic import BaseModel, ValidationError
 
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_grading_tools import create_grading_tools
 from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario
+from app.utils.tools.load_agent_tools import load_agent_tools
+from app.utils.tools.build_pydantic_fields import build_function_signature_string
+from agents import Tool, function_tool
+from pydantic import Field
 from app.utils.chat.get_simulation_conversation_history import (
     get_simulation_conversation_history,
 )
@@ -444,35 +447,248 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 f"Created grade record {grade_id} for chat {simulation_chat_id}"
             )
 
-            # Create grading tools for each standard group
+            # Load agent tools from database
+            agent_id_uuid = uuid.UUID(context["agent"]["id"])
+            agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+            tool_config_map_grading: dict[str, dict[str, Any]] = {
+                tool_config["name"]: tool_config for tool_config in agent_tools_config
+            }
+
+            # Create grading tools inline for each standard group
             profile_id_str = context.get("profile_id")
-            grading_tools = create_grading_tools(
-                list(standard_groups),
-                list(standards),
-                simulation_chat_id,
-                emit_progress_wrapper,
-                profile_id=str(profile_id_str) if profile_id_str else None,
-                grade_id=str(grade_id),
-                message_id_map=message_id_map,
-                trace_id=chat["trace_id"],
-            )
+            grading_tools: list[Tool] = []
+            total_standard_groups = len(standard_groups)
+            
+            # Get base grading tool config from database
+            base_grading_config = tool_config_map_grading.get("grade_standard_group")
+            
+            for group in standard_groups:
+                safe_name = create_safe_field_name(group["short_name"])
+                
+                # Get standards for this group and build rating scale
+                group_standards = [
+                    s for s in standards if s["standard_group_id"] == group["id"]
+                ]
+                group_standards.sort(key=lambda x: x["points"], reverse=True)
+                
+                rating_scale = "\n".join(
+                    [
+                        f"  {std['points']} - {std['name']}: {std.get('description', '')}"
+                        for std in group_standards
+                    ]
+                )
+                
+                full_description = (
+                    f"{group.get('description', '')}\n\nRating Scale:\n{rating_scale}"
+                )
+                
+                # Get descriptions from database config if available
+                if base_grading_config:
+                    score_desc = base_grading_config.get("argument_descriptions", {}).get("score", f"Score for {group['name']} (1-5)")
+                    feedback_desc = base_grading_config.get("argument_descriptions", {}).get("feedback", f"Feedback explaining the score for {group['name']}")
+                else:
+                    score_desc = f"Score for {group['name']} (1-5)"
+                    feedback_desc = f"Feedback explaining the score for {group['name']}"
+                
+                # Create function with proper closure capture
+                def make_grading_function(
+                    group_dict: dict[str, Any],
+                    full_desc: str,
+                    score_descr: str,
+                    feedback_descr: str,
+                ):
+                    async def grade_standard_group(
+                        score: int = Field(ge=1, le=5, description=score_descr),
+                        feedback: str = Field(default="", description=feedback_descr),
+                    ) -> str:
+                        """Grade the conversation on: {group_name}
+
+                        {full_description}
+
+                        Args:
+                            score: Integer score from 1-5 based on the rubric criteria above
+                            feedback: Brief feedback explaining the score with specific examples
+
+                        Returns:
+                            Confirmation message
+                        """.format(
+                            group_name=group_dict["name"],
+                            full_description=full_desc,
+                        )
+                        if not grade_id:
+                            return "Error: Grade ID not available"
+                        
+                        from app.main import get_internal_sio
+                        internal_sio = get_internal_sio()
+                        
+                        # Call feedback tool handler via internal WebSocket
+                        await internal_sio.emit(
+                            "grading_tool_feedback",
+                            {
+                                "chat_id": str(simulation_chat_id),
+                                "trace_id": chat["trace_id"] or "grading",
+                                "grade_id": str(grade_id),
+                                "standard_group_id": str(group_dict["id"]),
+                                "score": score,
+                                "feedback": feedback,
+                                "profile_id": profile_id_str,
+                            },
+                        )
+                        
+                        # Emit progress event
+                        await emit_progress_wrapper(
+                            {
+                                "type": "standard_graded",
+                                "chat_id": str(simulation_chat_id),
+                                "standard_group_name": group_dict["name"],
+                                "standard_group_short_name": group_dict["short_name"],
+                                "score": score,
+                                "feedback_preview": feedback[:100] + "..."
+                                if len(feedback) > 100
+                                else feedback,
+                                "completed_count": 0,
+                                "total_count": total_standard_groups,
+                            }
+                        )
+                        
+                        logger.info(
+                            f"✓ Graded {group_dict['name']}: {score}/5 - {feedback[:50]}..."
+                        )
+                        return f"Graded {group_dict['name']} with score {score}"
+                    
+                    grade_standard_group.__name__ = f"grade_{safe_name}"
+                    return grade_standard_group
+                
+                grade_func = make_grading_function(group, full_description, score_desc, feedback_desc)
+                grading_tools.append(function_tool(grade_func))
+                logger.info(f"Created grading tool for: {group['name']}")
+            
+            # Add message_strength tool if grade_id and message_id_map are available
+            if grade_id and message_id_map:
+                message_strength_config = tool_config_map_grading.get("message_strength")
+                if message_strength_config:
+                    message_num_desc = message_strength_config.get("argument_descriptions", {}).get("message_number", "Message number (as shown in conversation history, e.g., 1, 3, 5) to add strength feedback to")
+                    feedback_desc = message_strength_config.get("argument_descriptions", {}).get("feedback", "Description of what was strong about this message")
+                    highlight_desc = message_strength_config.get("argument_descriptions", {}).get("highlight", "List of sections to highlight as strengths (e.g., ['section1', 'section2'])")
+                else:
+                    message_num_desc = "Message number (as shown in conversation history, e.g., 1, 3, 5) to add strength feedback to"
+                    feedback_desc = "Description of what was strong about this message"
+                    highlight_desc = "List of sections to highlight as strengths (e.g., ['section1', 'section2'])"
+                
+                async def message_strength(
+                    message_number: int = Field(description=message_num_desc),
+                    feedback: str = Field(description=feedback_desc),
+                    highlight: list[str] | None = Field(default=None, description=highlight_desc),
+                ) -> str:
+                    """Add strength feedback to a specific message."""
+                    if not grade_id or not message_id_map:
+                        return "Error: Grade ID or message map not available"
+                    
+                    from app.main import get_internal_sio
+                    internal_sio = get_internal_sio()
+                    
+                    await internal_sio.emit(
+                        "grading_tool_message_strength",
+                        {
+                            "chat_id": str(simulation_chat_id),
+                            "trace_id": chat["trace_id"] or "grading",
+                            "grade_id": str(grade_id),
+                            "message_number": message_number,
+                            "feedback": feedback,
+                            "highlight": highlight or [],
+                            "message_id_map": message_id_map,
+                            "profile_id": profile_id_str,
+                        },
+                    )
+                    
+                    await emit_progress_wrapper(
+                        {
+                            "type": "message_strength_added",
+                            "chat_id": str(simulation_chat_id),
+                            "message_number": message_number,
+                            "feedback_preview": feedback[:100] + "..."
+                            if len(feedback) > 100
+                            else feedback,
+                        }
+                    )
+                    
+                    logger.info(f"✓ Added strength feedback to message {message_number}")
+                    return f"Strength feedback added to message {message_number}"
+                
+                grading_tools.append(function_tool(message_strength))
+                logger.info("Created message_strength tool")
+                
+                # Add message_improvement tool
+                message_improvement_config = tool_config_map_grading.get("message_improvement")
+                if message_improvement_config:
+                    message_num_desc = message_improvement_config.get("argument_descriptions", {}).get("message_number", "Message number (as shown in conversation history, e.g., 1, 3, 5) to add improvement feedback to")
+                    feedback_desc = message_improvement_config.get("argument_descriptions", {}).get("feedback", "Description of what could be improved about this message")
+                    strike_desc = message_improvement_config.get("argument_descriptions", {}).get("strike", "List of find/replace pairs for strikethrough suggestions (e.g., [{'find': 'keyword', 'replace': 'better keyword'}])")
+                else:
+                    message_num_desc = "Message number (as shown in conversation history, e.g., 1, 3, 5) to add improvement feedback to"
+                    feedback_desc = "Description of what could be improved about this message"
+                    strike_desc = "List of find/replace pairs for strikethrough suggestions (e.g., [{'find': 'keyword', 'replace': 'better keyword'}])"
+                
+                async def message_improvement(
+                    message_number: int = Field(description=message_num_desc),
+                    feedback: str = Field(description=feedback_desc),
+                    strike: list[dict[str, str]] | None = Field(default=None, description=strike_desc),
+                ) -> str:
+                    """Add improvement feedback to a specific message."""
+                    if not grade_id or not message_id_map:
+                        return "Error: Grade ID or message map not available"
+                    
+                    from app.main import get_internal_sio
+                    internal_sio = get_internal_sio()
+                    
+                    await internal_sio.emit(
+                        "grading_tool_message_improvement",
+                        {
+                            "chat_id": str(simulation_chat_id),
+                            "trace_id": chat["trace_id"] or "grading",
+                            "grade_id": str(grade_id),
+                            "message_number": message_number,
+                            "feedback": feedback,
+                            "strike": strike or [],
+                            "message_id_map": message_id_map,
+                            "profile_id": profile_id_str,
+                        },
+                    )
+                    
+                    await emit_progress_wrapper(
+                        {
+                            "type": "message_improvement_added",
+                            "chat_id": str(simulation_chat_id),
+                            "message_number": message_number,
+                            "feedback_preview": feedback[:100] + "..."
+                            if len(feedback) > 100
+                            else feedback,
+                        }
+                    )
+                    
+                    logger.info(f"✓ Added improvement feedback to message {message_number}")
+                    return f"Improvement feedback added to message {message_number}"
+                
+                grading_tools.append(function_tool(message_improvement))
+                logger.info("Created message_improvement tool")
 
             # Add audio grading tool if audio messages exist and audio agent is configured
             if has_audio_messages and grade_voice_agent_id:
-                from agents import function_tool
-                from pydantic import Field
-
                 from app.socket.v3.simulations.grading.tools.audio import (
                     _grading_tool_audio_impl,
                 )
 
+                grade_audio_config = tool_config_map_grading.get("grade_audio")
+                if grade_audio_config:
+                    message_nums_desc = grade_audio_config.get("argument_descriptions", {}).get("message_numbers", "List of message numbers (as shown in conversation history, e.g., [1, 3, 5]) that have audio you want to analyze")
+                    what_to_analyze_desc = grade_audio_config.get("argument_descriptions", {}).get("what_to_analyze", "Description of what you want to analyze in the audio (e.g., 'tone and clarity', 'emotional state', 'speech patterns')")
+                else:
+                    message_nums_desc = "List of message numbers (as shown in conversation history, e.g., [1, 3, 5]) that have audio you want to analyze"
+                    what_to_analyze_desc = "Description of what you want to analyze in the audio (e.g., 'tone and clarity', 'emotional state', 'speech patterns')"
+
                 async def grade_audio(
-                    message_numbers: list[int] = Field(
-                        description="List of message numbers (as shown in conversation history, e.g., [1, 3, 5]) that have audio you want to analyze"
-                    ),
-                    what_to_analyze: str = Field(
-                        description="Description of what you want to analyze in the audio (e.g., 'tone and clarity', 'emotional state', 'speech patterns')"
-                    ),
+                    message_numbers: list[int] = Field(description=message_nums_desc),
+                    what_to_analyze: str = Field(description=what_to_analyze_desc),
                 ) -> str:
                     """Grade audio messages from the conversation.
 

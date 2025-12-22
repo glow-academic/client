@@ -5,20 +5,10 @@ import os
 import uuid
 from typing import Any
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    Tool,
-    ToolsToFinalOutputResult,
-    function_tool,
-    gen_trace_id,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, gen_trace_id,
+                    trace)
 from agents.items import TResponseInputItem
-from fastapi import APIRouter
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
-
 from app.api.v3.settings.active import ThemePrimitives, derive_theme_tokens
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.activity.websocket_logger import log_websocket_activity
@@ -30,6 +20,12 @@ from app.utils.jinja_renderer import render_template
 from app.utils.logging.db_logger import get_logger
 from app.utils.scenario.image_generation import set_image_generation_context
 from app.utils.sql_helper import load_sql
+from app.utils.tools.build_pydantic_fields import \
+    build_function_signature_string
+from app.utils.tools.load_agent_tools import load_agent_tools
+from fastapi import APIRouter
+from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
+                      create_model)
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -480,6 +476,14 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             # Extract run_id from context (created in same transaction)
             model_run_id = uuid.UUID(context_row["run_id"])
 
+            # Load agent tools from database
+            agent_id_uuid = uuid.UUID(context_row["agent_id"])
+            agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+            # Create mapping of tool name -> tool config for quick lookup
+            tool_config_map: dict[str, dict[str, Any]] = {
+                tool_config["name"]: tool_config for tool_config in agent_tools_config
+            }
+
             context = {
                 "agent_id": context_row["agent_id"],
                 "agent_name": context_row["agent_name"],
@@ -669,13 +673,20 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 )
 
             # 1. Title and Description Tool (always included)
+            # Build signature from database config if available
+            title_desc_config = tool_config_map.get("set_title_and_description")
+            if title_desc_config:
+                # Get field descriptions from config
+                title_desc = title_desc_config.get("argument_descriptions", {}).get("title", "Short, descriptive title for the scenario (5-10 words)")
+                scenario_desc = title_desc_config.get("argument_descriptions", {}).get("scenario", "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it")
+            else:
+                # Fallback to hardcoded descriptions
+                title_desc = "Short, descriptive title for the scenario (5-10 words)"
+                scenario_desc = "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it"
+            
             async def set_title_description(
-                title: str = Field(
-                    description="Short, descriptive title for the scenario (5-10 words)"
-                ),
-                scenario: str = Field(
-                    description="Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it"
-                ),
+                title: str = Field(description=title_desc),
+                scenario: str = Field(description=scenario_desc),
             ) -> str:
                 """Set the title and description for the scenario.
 
@@ -716,11 +727,15 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
             # 2. Objectives Tool (if enabled)
             if objectives_enabled:
+                # Build signature from database config if available
+                objectives_config = tool_config_map.get("set_objectives")
+                if objectives_config:
+                    objectives_desc = objectives_config.get("argument_descriptions", {}).get("objectives", "List of 1-3 specific learning objectives that GTAs should achieve in this scenario")
+                else:
+                    objectives_desc = "List of 1-3 specific learning objectives that GTAs should achieve in this scenario"
 
                 async def set_objectives(
-                    objectives: list[str] = Field(
-                        description="List of 1-3 specific learning objectives that GTAs should achieve in this scenario"
-                    ),
+                    objectives: list[str] = Field(description=objectives_desc),
                 ) -> str:
                     """Set the learning objectives for this scenario.
 
@@ -1128,15 +1143,19 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     )
                 else:
                     video_agent_id = uuid.UUID(data.videoAgentId)
+                    
+                    # Build signature from database config if available
+                    video_config = tool_config_map.get("generate_video")
+                    if video_config:
+                        prompt_desc = video_config.get("argument_descriptions", {}).get("prompt", "Detailed prompt describing the video to generate. Include specific details about the scenario, setting, characters, and actions.")
+                        image_ids_desc = video_config.get("argument_descriptions", {}).get("image_ids", "Optional list of image IDs to use as reference for video generation. If provided, video generation will wait for these images to be ready.")
+                    else:
+                        prompt_desc = "Detailed prompt describing the video to generate. Include specific details about the scenario, setting, characters, and actions."
+                        image_ids_desc = "Optional list of image IDs to use as reference for video generation. If provided, video generation will wait for these images to be ready."
 
                     async def generate_video(
-                        prompt: str = Field(
-                            description="Detailed prompt describing the video to generate. Include specific details about the scenario, setting, characters, and actions."
-                        ),
-                        image_ids: list[str] | None = Field(
-                            default=None,
-                            description="Optional list of image IDs to use as reference for video generation. If provided, video generation will wait for these images to be ready.",
-                        ),
+                        prompt: str = Field(description=prompt_desc),
+                        image_ids: list[str] | None = Field(default=None, description=image_ids_desc),
                     ) -> str:
                         """Generate a video for this scenario.
 
@@ -1182,15 +1201,18 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
             # 5. Questions Generation Tool (if enabled)
             if questions_enabled:
+                # Build signature from database config if available
+                questions_config = tool_config_map.get("create_questions")
+                if questions_config:
+                    questions_desc = questions_config.get("argument_descriptions", {}).get("questions", "List of questions to create. Each question should be a dict with 'question_text' (string), 'allow_multiple' (boolean), and 'options' (list of dicts with 'option_text' and 'is_correct' boolean). Example: [{'question_text': 'What is the main issue?', 'allow_multiple': False, 'options': [{'option_text': 'Option A', 'is_correct': True}, {'option_text': 'Option B', 'is_correct': False}]}]")
+                    timestamps_desc = questions_config.get("argument_descriptions", {}).get("question_timestamps", "Optional dictionary mapping question indices (as strings: '0', '1', '2', etc.) to lists of timestamps (in seconds) where each question should appear in the video. Only used if video is also generated. Example: {'0': [10, 30], '1': [45]}")
+                else:
+                    questions_desc = "List of questions to create. Each question should be a dict with 'question_text' (string), 'allow_multiple' (boolean), and 'options' (list of dicts with 'option_text' and 'is_correct' boolean). Example: [{'question_text': 'What is the main issue?', 'allow_multiple': False, 'options': [{'option_text': 'Option A', 'is_correct': True}, {'option_text': 'Option B', 'is_correct': False}]}]"
+                    timestamps_desc = "Optional dictionary mapping question indices (as strings: '0', '1', '2', etc.) to lists of timestamps (in seconds) where each question should appear in the video. Only used if video is also generated. Example: {'0': [10, 30], '1': [45]}"
 
                 async def create_questions(
-                    questions: list[dict[str, Any]] = Field(
-                        description="List of questions to create. Each question should be a dict with 'question_text' (string), 'allow_multiple' (boolean), and 'options' (list of dicts with 'option_text' and 'is_correct' boolean). Example: [{'question_text': 'What is the main issue?', 'allow_multiple': False, 'options': [{'option_text': 'Option A', 'is_correct': True}, {'option_text': 'Option B', 'is_correct': False}]}]"
-                    ),
-                    question_timestamps: dict[str, list[int]] | None = Field(
-                        default=None,
-                        description="Optional dictionary mapping question indices (as strings: '0', '1', '2', etc.) to lists of timestamps (in seconds) where each question should appear in the video. Only used if video is also generated. Example: {'0': [10, 30], '1': [45]}",
-                    ),
+                    questions: list[dict[str, Any]] = Field(description=questions_desc),
+                    question_timestamps: dict[str, list[int]] | None = Field(default=None, description=timestamps_desc),
                 ) -> str:
                     """Create questions for this scenario.
 
@@ -1243,14 +1265,18 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         "profile_id required for image generation, skipping tool"
                     )
                 else:
+                    # Build signature from database config if available
+                    image_config = tool_config_map.get("generate_image")
+                    if image_config:
+                        name_desc = image_config.get("argument_descriptions", {}).get("name", "Descriptive name for the generated image")
+                        prompt_desc = image_config.get("argument_descriptions", {}).get("prompt", "Detailed, descriptive prompt for image generation")
+                    else:
+                        name_desc = "Descriptive name for the generated image"
+                        prompt_desc = "Detailed, descriptive prompt for image generation"
 
                     async def generate_image(
-                        name: str = Field(
-                            description="Descriptive name for the generated image"
-                        ),
-                        prompt: str = Field(
-                            description="Detailed, descriptive prompt for image generation"
-                        ),
+                        name: str = Field(description=name_desc),
+                        prompt: str = Field(description=prompt_desc),
                     ) -> str:
                         """Generate an image from a detailed prompt.
 

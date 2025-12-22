@@ -291,28 +291,40 @@ link_images AS (
         updated_at = NOW()
 ),
 link_problem_statements_to_runs AS (
-    -- Link problem statements to run if run_id provided
-    INSERT INTO problem_statement_runs (problem_statement_id, run_id, created_at, updated_at)
+    -- Link problem statements to run via tool_call if run_id provided
+    -- Note: This assumes problem_statements have tool_call_id set (via tool_calls)
+    -- The run relationship is derived via problem_statements → tool_call → tool_call_runs → run
+    -- This CTE is kept for backward compatibility but no longer inserts into problem_statement_runs
     SELECT DISTINCT
         cps.problem_statement_id,
-        $24::uuid,
-        NOW(),
-        NOW()
+        $24::uuid as run_id
     FROM create_problem_statements cps
     WHERE $24::uuid IS NOT NULL
-    ON CONFLICT (problem_statement_id, run_id) DO NOTHING
+    AND EXISTS (
+        SELECT 1 FROM problem_statements ps
+        JOIN tool_calls tc ON tc.id = ps.tool_call_id
+        JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
+        WHERE ps.id = cps.problem_statement_id
+        AND tcr.run_id = $24::uuid
+    )
 ),
 link_objectives_to_runs AS (
-    -- Link objectives to run if run_id provided
-    INSERT INTO objective_runs (objective_id, run_id, created_at, updated_at)
+    -- Link objectives to run via tool_call if run_id provided
+    -- Note: This assumes objectives have tool_call_id set (via tool_calls)
+    -- The run relationship is derived via objectives → tool_call → tool_call_runs → run
+    -- This CTE is kept for backward compatibility but no longer inserts into objective_runs
     SELECT DISTINCT
         ao.objective_id,
-        $24::uuid,
-        NOW(),
-        NOW()
+        $24::uuid as run_id
     FROM all_objectives ao
     WHERE $24::uuid IS NOT NULL
-    ON CONFLICT (objective_id, run_id) DO NOTHING
+    AND EXISTS (
+        SELECT 1 FROM objectives o
+        JOIN tool_calls tc ON tc.id = o.tool_call_id
+        JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
+        WHERE o.id = ao.objective_id
+        AND tcr.run_id = $24::uuid
+    )
 ),
 link_videos AS (
     -- Link videos to scenario via junction table

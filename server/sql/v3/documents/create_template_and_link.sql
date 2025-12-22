@@ -53,17 +53,21 @@ link_to_document AS (
     RETURNING template_id
 ),
 link_to_run AS (
-    -- Link template to run if run_id provided
-    INSERT INTO template_runs (template_id, run_id, created_at, updated_at)
+    -- Link template to run via tool_call if run_id provided
+    -- Note: This assumes templates have tool_call_id set (via tool_calls)
+    -- The run relationship is derived via templates → tool_call → tool_call_runs → run
+    -- This CTE verifies the relationship exists but no longer inserts into template_runs
     SELECT 
-        ltd.template_id,
-        $6::uuid,
-        NOW(),
-        NOW()
+        ltd.template_id
     FROM link_to_document ltd
     WHERE $6::uuid IS NOT NULL
-    ON CONFLICT (template_id, run_id) DO NOTHING
-    RETURNING template_id
+    AND EXISTS (
+        SELECT 1 FROM templates t
+        JOIN tool_calls tc ON tc.id = t.tool_call_id
+        JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
+        WHERE t.id = ltd.template_id
+        AND tcr.run_id = $6::uuid
+    )
 )
 SELECT template_id FROM link_to_document LIMIT 1;
 

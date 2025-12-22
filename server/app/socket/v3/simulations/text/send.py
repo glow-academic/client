@@ -5,46 +5,34 @@ import json
 import uuid
 from typing import Any
 
-from agents import Runner, trace
+from agents import Runner, Tool, function_tool, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
-from app.main import (
-    get_hint_storage,
-    get_internal_sio,
-    get_pool,
-    get_simulation_tool_calls_dict,
-    sio,
-)
+from app.main import (get_hint_storage, get_internal_sio, get_pool,
+                      get_simulation_tool_calls_dict, sio)
 from app.socket.v3.simulations.streaming.message import (
-    _simulation_message_complete_impl,
-    _simulation_message_start_impl,
-    _simulation_message_token_impl,
-)
+    _simulation_message_complete_impl, _simulation_message_start_impl,
+    _simulation_message_token_impl)
 from app.socket.v3.simulations.streaming.tool_call import (
-    _simulation_tool_call_complete_impl,
-    _simulation_tool_call_start_impl,
-    _simulation_tool_call_token_impl,
-)
+    _simulation_tool_call_complete_impl, _simulation_tool_call_start_impl,
+    _simulation_tool_call_token_impl)
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_hint_tools import create_hint_tools
-from app.utils.agents.tools.create_persona_tools import (
-    create_persona_tools,
-    find_persona_by_name,
-)
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import (
-    get_simulation_conversation_history,
-)
+from app.utils.chat.get_simulation_conversation_history import \
+    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
+from app.utils.personas.find_persona_by_name import find_persona_by_name
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
+from app.utils.tools.build_pydantic_fields import \
+    build_function_signature_string
+from app.utils.tools.load_agent_tools import load_agent_tools
+from fastapi import APIRouter
+from pydantic import BaseModel, Field, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -479,10 +467,51 @@ async def _generate_hints_background_inline(
 
             # Build hint agent from context
             profile_id_str = context.get("profile_id")
-            hint_tools = create_hint_tools(
-                profile_id=str(profile_id_str) if profile_id_str else None,
-                primary_id=str(chat_id),
-            )
+            
+            # Load agent tools from database
+            agent_id_uuid = uuid.UUID(context["agent_id"])
+            agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+            tool_config_map: dict[str, dict[str, Any]] = {
+                tool_config["name"]: tool_config for tool_config in agent_tools_config
+            }
+            
+            # Create hint tools inline
+            hint_tools: list[Tool] = []
+            for i in range(1, 4):  # 1, 2, 3
+                tool_name = f"provide_hint_{i}"
+                hint_config = tool_config_map.get(tool_name)
+                if hint_config:
+                    hint_desc = hint_config.get("argument_descriptions", {}).get("hint", f"A concise, practical teaching strategy or communication tip for the GTA. This is hint #{i} of 3 required hints.")
+                else:
+                    hint_desc = f"A concise, practical teaching strategy or communication tip for the GTA. This is hint #{i} of 3 required hints."
+                
+                # Create function with proper closure capture
+                def make_hint_function(hint_number: int, description: str):
+                    async def provide_hint(hint: str = Field(description=description)) -> str:
+                        """Provide a strategic hint for the GTA."""
+                        if not profile_id_str or not chat_id:
+                            return "Error: Storage configuration missing"
+                        from app.main import get_hint_storage
+                        storage = get_hint_storage()
+                        storage_key = build_storage_key(
+                            operation_type="hint_generation",
+                            profile_id=str(profile_id_str),
+                            primary_id=str(chat_id),
+                        )
+                        await storage.set(storage_key, f"hint_{hint_number}", hint)
+                        await storage.set(storage_key, f"hint_{hint_number}_progress", True)
+                        logger.info(f"✓ Hint {hint_number} recorded: {hint[:80]}...")
+                        return f"Hint {hint_number} recorded successfully. Continue until all 3 hints are provided."
+                    provide_hint.__name__ = tool_name
+                    return provide_hint
+                
+                provide_hint_func = make_hint_function(i, hint_desc)
+                hint_tools.append(function_tool(provide_hint_func))
+            
+            # Add debug_info tool
+            from app.utils.debug_info import debug_info
+            hint_tools.append(debug_info)
+            
             hint_agent = build_hint_agent(context, hint_tools)
 
             # Create model run with all junction records using SQL file
@@ -827,7 +856,8 @@ async def _simulation_text_send_impl(
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.utils.websocket.store_active_run import store_active_run
+                    from app.utils.websocket.store_active_run import \
+                        store_active_run
 
                     # Fetch context for the chat
                     sql_context = load_sql(
@@ -1199,19 +1229,56 @@ async def _simulation_text_send_impl(
                     # Create persona tools if personas exist
                     persona_tools = []
                     if personas:
-                        persona_tools = create_persona_tools(
-                            personas,
-                            chat_id_uuid,
-                            conn,
-                            model_run_id,
-                            emit_new_message_wrapper,
-                            emit_token_wrapper,
-                            emit_complete_with_tracking,
-                            parent_message_id_for_branching,
-                        )
-                        logger.info(
-                            f"Created {len(persona_tools)} persona tools for chat {chat_id_uuid}"
-                        )
+                        # Load agent tools from database
+                        simulation_agent_id_uuid = uuid.UUID(simulation_agent_id)
+                        agent_tools_config = await load_agent_tools(conn, simulation_agent_id_uuid)
+                        tool_config_map_persona: dict[str, dict[str, Any]] = {
+                            tool_config["name"]: tool_config for tool_config in agent_tools_config
+                        }
+                        
+                        # Build speak tool inline
+                        speak_config = tool_config_map_persona.get("speak")
+                        if speak_config:
+                            persona_desc = speak_config.get("argument_descriptions", {}).get("persona", "The name of the persona that should speak")
+                            message_desc = speak_config.get("argument_descriptions", {}).get("message", "The message content that the persona should say")
+                        else:
+                            # Build list of available persona names for tool description
+                            persona_names = []
+                            for persona in personas:
+                                persona_name = persona.get("persona_name") or persona.get("name", "")
+                                if persona_name:
+                                    persona_names.append(persona_name)
+                            
+                            if persona_names:
+                                persona_names_str = ", ".join(f'"{name}"' for name in persona_names)
+                                persona_desc = f"The name of the persona that should speak. Must be one of: {persona_names_str}."
+                            else:
+                                persona_desc = "The name of the persona that should speak"
+                            message_desc = "The message content that the persona should say"
+                        
+                        async def speak(
+                            persona: str = Field(description=persona_desc),
+                            message: str = Field(description=message_desc),
+                        ) -> str:
+                            """Make a persona speak by calling this tool with the persona name and message."""
+                            logger.info(f"Speak tool called: persona={persona}, message_length={len(message)}")
+                            
+                            # Find persona by name
+                            persona_match = find_persona_by_name(persona.strip() if persona else "", personas)
+                            if not persona_match:
+                                available_list = "\n".join(f"  - {p.get('persona_name') or p.get('name', '')}" for p in personas)
+                                error_msg = f"Persona '{persona}' not found. Available personas:\n{available_list}"
+                                logger.error(error_msg)
+                                return f"Error: {error_msg}"
+                            
+                            persona_id, persona_display_name = persona_match
+                            logger.info(f"Matched persona '{persona}' to {persona_display_name} (ID: {str(persona_id)})")
+                            
+                            # Tool call validation only - actual DB operations happen in streaming handler
+                            return f"Tool call confirmed for {persona_display_name}"
+                        
+                        persona_tools.append(function_tool(speak))
+                        logger.info(f"Created {len(persona_tools)} persona tools for chat {chat_id_uuid}")
 
                         # Get persona instructions for developer message
                         sql_get_persona_instructions = load_sql(
@@ -2700,9 +2767,8 @@ Tool Usage Instructions:
                             del tool_calls_dict[chat_id_str]
 
                         # Clean up active run
-                        from app.utils.websocket.remove_active_run import (
-                            remove_active_run,
-                        )
+                        from app.utils.websocket.remove_active_run import \
+                            remove_active_run
 
                         await remove_active_run(chat_id_str)
 

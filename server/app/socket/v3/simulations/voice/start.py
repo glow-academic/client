@@ -14,9 +14,12 @@ from pydantic import BaseModel, ValidationError
 from app.main import _voice_sessions, get_pool, sio
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_voice_agent import build_voice_agent
-from app.utils.agents.tools.create_persona_tools import create_persona_tools
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from app.utils.tools.load_agent_tools import load_agent_tools
+from app.utils.personas.find_persona_by_name import find_persona_by_name
+from agents import function_tool
+from pydantic import Field
 
 logger = get_logger(__name__)
 
@@ -485,17 +488,55 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                     room=f"simulation_{chat_id_uuid}",
                 )
 
-            # Create persona tools with all required arguments
-            persona_tools = create_persona_tools(
-                personas,
-                chat_id_uuid,
-                conn,
-                model_run_id,
-                emit_new_message_wrapper,
-                emit_token_wrapper,
-                emit_complete_wrapper,
-                parent_message_id=None,  # No parent message during initialization
-            )
+            # Create persona tools inline
+            # Load agent tools from database
+            agent_tools_config = await load_agent_tools(conn, simulation_agent_id)
+            tool_config_map_voice: dict[str, dict[str, Any]] = {
+                tool_config["name"]: tool_config for tool_config in agent_tools_config
+            }
+            
+            # Build speak tool inline
+            speak_config = tool_config_map_voice.get("speak")
+            if speak_config:
+                persona_desc = speak_config.get("argument_descriptions", {}).get("persona", "The name of the persona that should speak")
+                message_desc = speak_config.get("argument_descriptions", {}).get("message", "The message content that the persona should say")
+            else:
+                # Build list of available persona names for tool description
+                persona_names = []
+                for persona in personas:
+                    persona_name = persona.get("persona_name") or persona.get("name", "")
+                    if persona_name:
+                        persona_names.append(persona_name)
+                
+                if persona_names:
+                    persona_names_str = ", ".join(f'"{name}"' for name in persona_names)
+                    persona_desc = f"The name of the persona that should speak. Must be one of: {persona_names_str}."
+                else:
+                    persona_desc = "The name of the persona that should speak"
+                message_desc = "The message content that the persona should say"
+            
+            async def speak(
+                persona: str = Field(description=persona_desc),
+                message: str = Field(description=message_desc),
+            ) -> str:
+                """Make a persona speak by calling this tool with the persona name and message."""
+                logger.info(f"Speak tool called: persona={persona}, message_length={len(message)}")
+                
+                # Find persona by name
+                persona_match = find_persona_by_name(persona.strip() if persona else "", personas)
+                if not persona_match:
+                    available_list = "\n".join(f"  - {p.get('persona_name') or p.get('name', '')}" for p in personas)
+                    error_msg = f"Persona '{persona}' not found. Available personas:\n{available_list}"
+                    logger.error(error_msg)
+                    return f"Error: {error_msg}"
+                
+                persona_id, persona_display_name = persona_match
+                logger.info(f"Matched persona '{persona}' to {persona_display_name} (ID: {str(persona_id)})")
+                
+                # Tool call validation only - actual DB operations happen in streaming handler
+                return f"Tool call confirmed for {persona_display_name}"
+            
+            persona_tools = [function_tool(speak)]
 
             # Tool context map is no longer needed since we have a single speak tool
             # The persona is determined from the tool arguments, not the tool name

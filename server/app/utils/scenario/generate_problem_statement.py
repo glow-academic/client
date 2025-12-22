@@ -16,7 +16,6 @@ from agents.items import TResponseInputItem
 
 from app.main import get_scenario_storage
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
@@ -27,6 +26,10 @@ from app.utils.scenario.image_generation import (
 )
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
+from app.utils.tools.load_agent_tools import load_agent_tools
+from app.utils.tools.build_pydantic_fields import build_function_signature_string
+from agents import Tool, function_tool
+from pydantic import Field
 
 logger = get_logger(__name__)
 
@@ -204,13 +207,99 @@ async def generate_scenario_problem_statement(
             room=None,  # API endpoint - no WebSocket room
         )
 
-    scenario_tools = create_scenario_tools(
-        group_id,
-        objectives_enabled=objectives_enabled,
-        images_enabled=images_enabled,
-        profile_id=str(final_profile_id) if final_profile_id else None,
-        trace_id=primary_id,
-    )
+    # Load agent tools from database
+    agent_id_uuid = uuid.UUID(context["agent_id"])
+    agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+    tool_config_map: dict[str, dict[str, Any]] = {
+        tool_config["name"]: tool_config for tool_config in agent_tools_config
+    }
+
+    # Create scenario generation tools inline
+    scenario_tools: list[Tool] = []
+    
+    # 1. Title and Description Tool (always included)
+    title_desc_config = tool_config_map.get("set_title_and_description")
+    if title_desc_config:
+        title_desc = title_desc_config.get("argument_descriptions", {}).get("title", "Short, descriptive title for the scenario (5-10 words)")
+        scenario_desc = title_desc_config.get("argument_descriptions", {}).get("scenario", "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it")
+    else:
+        title_desc = "Short, descriptive title for the scenario (5-10 words)"
+        scenario_desc = "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it"
+    
+    async def set_title_description(
+        title: str = Field(description=title_desc),
+        scenario: str = Field(description=scenario_desc),
+    ) -> str:
+        """Set the title and description for the scenario."""
+        storage = get_scenario_storage()
+        storage_key = build_storage_key(
+            operation_type="scenario_generation",
+            profile_id=str(final_profile_id) if final_profile_id else "",
+            primary_id=primary_id,
+        )
+        await storage.set(storage_key, "title", title)
+        await storage.set(storage_key, "description", scenario)
+        await storage.set(storage_key, "title_description_progress", True)
+        logger.info(f"✓ Set title: {title}")
+        return "Set title and description successfully"
+    
+    scenario_tools.append(function_tool(set_title_description))
+    
+    # 2. Objectives Tool (if enabled)
+    if objectives_enabled:
+        objectives_config = tool_config_map.get("set_objectives")
+        if objectives_config:
+            objectives_desc = objectives_config.get("argument_descriptions", {}).get("objectives", "List of 1-3 specific learning objectives that GTAs should achieve in this scenario")
+        else:
+            objectives_desc = "List of 1-3 specific learning objectives that GTAs should achieve in this scenario"
+        
+        async def set_objectives(
+            objectives: list[str] = Field(description=objectives_desc),
+        ) -> str:
+            """Set the learning objectives for this scenario."""
+            objectives = objectives[:3]  # Limit to 3
+            storage = get_scenario_storage()
+            storage_key = build_storage_key(
+                operation_type="scenario_generation",
+                profile_id=str(final_profile_id) if final_profile_id else "",
+                primary_id=primary_id,
+            )
+            await storage.set(storage_key, "objectives", objectives)
+            await storage.set(storage_key, "objectives_progress", True)
+            logger.info(f"✓ Set {len(objectives)} objectives")
+            return f"Set {len(objectives)} learning objectives successfully"
+        
+        scenario_tools.append(function_tool(set_objectives))
+    
+    # 3. Image Generation Tool (if enabled)
+    if images_enabled:
+        image_config = tool_config_map.get("generate_image")
+        if image_config:
+            name_desc = image_config.get("argument_descriptions", {}).get("name", "Descriptive name for the generated image")
+            prompt_desc = image_config.get("argument_descriptions", {}).get("prompt", "Detailed, descriptive prompt for image generation")
+        else:
+            name_desc = "Descriptive name for the generated image"
+            prompt_desc = "Detailed, descriptive prompt for image generation"
+        
+        async def generate_image(
+            name: str = Field(description=name_desc),
+            prompt: str = Field(description=prompt_desc),
+        ) -> str:
+            """Generate an image from a detailed prompt."""
+            # For API endpoints, image generation happens via storage context
+            storage = get_scenario_storage()
+            storage_key = build_storage_key(
+                operation_type="image_generation",
+                profile_id=str(final_profile_id) if final_profile_id else "",
+                primary_id=primary_id,
+            )
+            # Store image generation request
+            await storage.set(storage_key, f"image_{name}", prompt)
+            logger.info(f"✓ Queued image generation: {name}")
+            return f"Image generation queued for '{name}'"
+        
+        scenario_tools.append(function_tool(generate_image))
+    
     scenario_tools.append(debug_info_tool)
     logger.info(f"Created {len(scenario_tools)} scenario tools (including debug_info)")
 

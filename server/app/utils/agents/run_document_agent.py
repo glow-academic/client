@@ -5,19 +5,28 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-from agents import Runner, trace
-from agents.items import TResponseInputItem
-
-from app.utils.agents.build_document_agent import build_document_agent
-from app.utils.agents.tools.create_document_tools import (
-    create_document_tools,
-    document_progress,
-    document_results,
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    function_tool,
+    trace,
 )
+from agents.items import TResponseInputItem
+from pydantic import Field
+
+from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.logging.db_logger import get_logger
 from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
+from app.utils.tools.load_agent_tools import load_agent_tools
+
+# Module-level storage for document generation results (moved from create_document_tools)
+document_results: dict[str, Any] = {}
+document_progress: dict[str, bool] = {}
 
 logger = get_logger(__name__)
 
@@ -133,9 +142,80 @@ async def run_document_agent_with_ai(
     document_results.clear()
     document_progress.clear()
 
-    # Build document agent from context
-    document_tools = create_document_tools()
-    document_agent = build_document_agent(context, document_tools)
+    # Load agent tools from database
+    agent_id_uuid = uuid.UUID(context["agent_id"])
+    agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+    tool_config_map_doc: dict[str, dict[str, Any]] = {
+        tool_config["name"]: tool_config for tool_config in agent_tools_config
+    }
+
+    # Build document tools inline
+    document_tools: list[Tool] = []
+    
+    # Generate template HTML tool
+    html_config = tool_config_map_doc.get("generate_template_html")
+    if html_config:
+        html_desc = html_config.get("argument_descriptions", {}).get("template_html", "Jinja template HTML content with placeholders like {{ variable_name }}")
+    else:
+        html_desc = "Jinja template HTML content with placeholders like {{ variable_name }}"
+    
+    async def generate_template_html(
+        template_html: str = Field(description=html_desc),
+    ) -> str:
+        """Generate the Jinja template HTML for the document."""
+        document_results["template_html"] = template_html
+        document_progress["template_html"] = True
+        logger.info(f"✓ Generated template HTML ({len(template_html)} chars)")
+        return "Generated template HTML successfully"
+    
+    document_tools.append(function_tool(generate_template_html))
+    
+    # Generate template schema tool
+    schema_config = tool_config_map_doc.get("generate_template_schema")
+    if schema_config:
+        schema_desc = schema_config.get("argument_descriptions", {}).get("schema_json", "JSON string in TemplateSchema format describing the template context fields and types.")
+    else:
+        schema_desc = "JSON string in TemplateSchema format describing the template context fields and types."
+    
+    async def generate_template_schema(
+        schema_json: str = Field(description=schema_desc),
+    ) -> str:
+        """Generate the TemplateSchema JSON for template context."""
+        document_results["template_schema"] = schema_json
+        document_progress["template_schema"] = True
+        logger.info(f"✓ Generated template schema ({len(schema_json)} chars)")
+        return "Generated template schema successfully"
+    
+    document_tools.append(function_tool(generate_template_schema))
+    
+    # Create tool use behavior
+    def tool_use_behavior(
+        tool_context: RunContextWrapper[Any],
+        tool_results: list[FunctionToolResult],
+    ) -> ToolsToFinalOutputResult:
+        template_html_complete = document_progress.get("template_html", False)
+        template_schema_complete = document_progress.get("template_schema", False)
+        both_complete = template_html_complete and template_schema_complete
+        logger.info(
+            f"Tool use behavior check: template_html={template_html_complete}, "
+            f"template_schema={template_schema_complete}, both_complete={both_complete}"
+        )
+        return ToolsToFinalOutputResult(is_final_output=both_complete)
+    
+    # Build document agent inline
+    document_agent = GenericAgent(
+        agent_name=context["agent_name"],
+        system_prompt=context["system_prompt"],
+        temperature=context["temperature"],
+        model_name=context["model_name"],
+        provider=context["provider"],
+        base_url=context["base_url"],
+        api_key=context["api_key"],
+        reasoning=context["reasoning"],
+        tools=document_tools,
+        parallel_tool_calls=False,
+        tool_use_behavior=tool_use_behavior,
+    )
 
     # Check rate limit (already included in context query)
     final_profile_id = profile_id or uuid.UUID(context["profile_id"])
