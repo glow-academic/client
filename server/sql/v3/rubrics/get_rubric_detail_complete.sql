@@ -3,11 +3,7 @@
 
 WITH resolve_profile_id AS (
     -- Resolve profile ID from parameter
-    SELECT 
-        CASE 
-            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
-            ELSE $2::uuid
-        END as resolved_profile_id
+    SELECT $2::uuid as resolved_profile_id
 ),
 rubric_data AS (
     SELECT 
@@ -75,7 +71,8 @@ user_has_rubric_access AS (
 user_departments_for_agents AS (
     SELECT DISTINCT department_id
     FROM profile_departments
-    WHERE profile_id = $2 AND active = true
+    JOIN resolve_profile_id rpi ON profile_id = rpi.resolved_profile_id
+    WHERE active = true
 ),
 valid_agents AS (
     -- Get agents with role 'rubric'

@@ -82,7 +82,7 @@ LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AN
 LEFT JOIN models m ON m.id = a.model_id
 CROSS JOIN department_mapping_data dmd
 GROUP BY a.id, a.name, a.description, mrl.reasoning_level, COALESCE(mtl.temperature, 0.0), a.model_id, a.role, a.updated_at,
-         addd.department_ids, adl.total_links, up.role, m.name, m.description, dmd.mapping
+         addd.department_ids, adl.total_links, up.role, up.actor_name, m.name, m.description, dmd.mapping
 HAVING 
     -- Include if has matching department link OR has no department links at all (cross-dept)
     COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0

@@ -58,6 +58,12 @@ export const scenarioSearchParams = {
   useQuestions: parseAsBoolean,
   useProblemStatement: parseAsBoolean,
 
+  // Text fields
+  name: parseAsString,
+  problemStatement: parseAsString,
+  objectives: parseAsString, // JSON-encoded array: string[]
+  videoLength: parseAsInteger, // 4, 8, or 12
+
   // Create mode: single randomize param
   randomize: parseAsString,
 
@@ -106,6 +112,12 @@ export const scenarioSearchParamsClient = {
   useObjectives: parseAsBooleanClient,
   useQuestions: parseAsBooleanClient,
   useProblemStatement: parseAsBooleanClient,
+
+  // Text fields
+  name: parseAsStringClient,
+  problemStatement: parseAsStringClient,
+  objectives: parseAsStringClient, // JSON-encoded array: string[]
+  videoLength: parseAsIntegerClient, // 4, 8, or 12
 
   randomize: parseAsStringClient,
   randomizePersonas: parseAsStringClient,

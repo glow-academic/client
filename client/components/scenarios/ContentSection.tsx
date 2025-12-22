@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import DocumentViewer, {
   type DocumentItem,
@@ -238,19 +239,19 @@ export interface ContentSectionProps {
   useProblemStatement: boolean;
 
   // Objectives
-  objectives: string[];
+  initialObjectives?: string[];
   objectivesHistory: string[];
   useObjectives: boolean;
 
   // Images
   useImage: boolean;
-  image: { id: string; name: string; upload_id: string } | null;
+  initialImage?: { id: string; name: string; upload_id: string } | null;
   imageMapping: Record<string, ImageMappingItem>;
   isUploadingImage: boolean;
 
   // Videos
   useVideo: boolean;
-  selectedVideo: {
+  initialSelectedVideo?: {
     id: string;
     name: string;
     length_seconds: number;
@@ -260,13 +261,13 @@ export interface ContentSectionProps {
     string,
     { id: string; name: string; length_seconds: number; upload_id?: string }
   >;
-  activeVideoId: string | null;
+  initialActiveVideoId?: string | null;
   selectedVideoLength: number | null;
   onVideoLengthChange: (length: number | null) => void;
 
   // Questions
   useQuestions: boolean;
-  questions: Array<{
+  initialQuestions?: Array<{
     id: string;
     question_text: string;
     allow_multiple: boolean;
@@ -278,12 +279,12 @@ export interface ContentSectionProps {
     }>;
     times?: number[];
   }>;
-  currentQuestionIds: string[];
+  initialCurrentQuestionIds?: string[];
 
   // Documents Preview
   allPreviewDocumentIds: string[];
   documentMapping: Record<string, DocumentMappingItem>;
-  scenarioPreviewDocumentId: string | null;
+  initialScenarioPreviewDocumentId?: string | null;
   documentDetails?: Array<{
     document_id: string;
     upload_id?: string | null;
@@ -300,35 +301,20 @@ export interface ContentSectionProps {
   onProblemStatementVersionSelect: (id: string) => void;
   onResetProblemStatement: () => void;
   onUseProblemStatementChange: (enabled: boolean) => void;
-  onObjectivesChange: (objectives: string[]) => void;
-  onAddObjective: () => void;
-  onRemoveObjective: (index: number) => void;
-  onUpdateObjective: (index: number, value: string) => void;
-  onDragStartObjective: (e: React.DragEvent, index: number) => void;
-  onDragOverObjective: (e: React.DragEvent) => void;
-  onDropObjective: (e: React.DragEvent, targetIndex: number) => void;
   onUseObjectivesChange: (enabled: boolean) => void;
   onUseImageChange: (enabled: boolean) => void;
-  onImageSelect: (
-    image: {
-      id: string;
-      name: string;
-      upload_id: string;
-    } | null
-  ) => void;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onImageRemove: () => void;
   onUseVideoChange: (enabled: boolean) => void;
-  onVideoSelect: (
-    video: {
+  onUseQuestionsChange: (enabled: boolean) => void;
+  onStateChange?: (state: {
+    image: { id: string; name: string; upload_id: string } | null;
+    selectedVideo: {
       id: string;
       name: string;
       length_seconds: number;
       upload_id?: string;
-    } | null
-  ) => void;
-  onUseQuestionsChange: (enabled: boolean) => void;
-  onQuestionsChange: (
+    } | null;
+    activeVideoId: string | null;
     questions: Array<{
       id: string;
       question_text: string;
@@ -340,52 +326,12 @@ export interface ContentSectionProps {
         is_correct: boolean;
       }>;
       times?: number[];
-    }>
-  ) => void;
-  onDragStartQuestion?: (e: React.DragEvent, index: number) => void;
-  onDragOverQuestion?: (e: React.DragEvent) => void;
-  onDropQuestion?: (e: React.DragEvent, targetIndex: number) => void;
-  onDragStartOption?: (
-    e: React.DragEvent,
-    questionIndex: number,
-    optionIndex: number
-  ) => void;
-  onDragOverOption?: (e: React.DragEvent) => void;
-  onDropOption?: (
-    e: React.DragEvent,
-    questionIndex: number,
-    targetOptionIndex: number
-  ) => void;
-  onUpdateQuestion?: (
-    index: number,
-    question: {
-      id: string;
-      question_text: string;
-      allow_multiple: boolean;
-      options: Array<{
-        id: string;
-        option_text: string;
-        type?: "discrete" | "freeform";
-        is_correct: boolean;
-      }>;
-      times?: number[];
-    }
-  ) => void;
-  onQuestionTimesChange?: (index: number, times: number[]) => void;
-  onAddOption?: (questionIndex: number) => void;
-  onRemoveOption?: (questionIndex: number, optionIndex: number) => void;
-  onOptionChange?: (
-    questionIndex: number,
-    optionIndex: number,
-    option: {
-      id: string;
-      option_text: string;
-      type?: "discrete" | "freeform";
-      is_correct: boolean;
-    }
-  ) => void;
-  onToggleOptionCorrect?: (questionIndex: number, optionIndex: number) => void;
-  onScenarioPreviewDocumentChange: (docId: string | null) => void;
+    }>;
+    currentQuestionIds: string[];
+    objectives: string[];
+    scenarioPreviewDocumentId: string | null;
+  }) => void;
+  onScenarioPreviewDocumentChange?: (docId: string | null) => void;
   onDocumentRemove: (docId: string) => void;
   onGenerate: (instructions?: string, regenerateObjectives?: boolean) => void;
   onResetContent: () => void;
@@ -399,9 +345,6 @@ export interface ContentSectionProps {
   isReadonly: boolean;
   isGeneratingScenario: boolean;
   isSubmitting: boolean;
-  draggedObjectiveIndex: number | null;
-  draggedQuestionIndex?: number | null;
-  draggedOptionIndex?: { questionIndex: number; optionIndex: number } | null;
   imageInputRef: React.RefObject<HTMLInputElement>;
   isEditMode?: boolean;
 }
@@ -414,25 +357,25 @@ export function ContentSection({
   hasProblemStatementChanges,
   originalProblemStatement: _originalProblemStatement,
   useProblemStatement,
-  objectives,
+  initialObjectives = [],
   objectivesHistory,
   useObjectives,
   useImage,
-  image,
+  initialImage = null,
   imageMapping,
   isUploadingImage,
   useVideo,
-  selectedVideo,
+  initialSelectedVideo = null,
   videoMapping,
-  activeVideoId: _activeVideoId,
+  initialActiveVideoId = null,
   selectedVideoLength,
   onVideoLengthChange,
   useQuestions,
-  questions,
-  currentQuestionIds: _currentQuestionIds,
+  initialQuestions = [],
+  initialCurrentQuestionIds = [],
   allPreviewDocumentIds,
   documentMapping,
-  scenarioPreviewDocumentId,
+  initialScenarioPreviewDocumentId = null,
   documentDetails,
   templateDocumentIds: _templateDocumentIds,
   selectedPersonaIds,
@@ -441,33 +384,12 @@ export function ContentSection({
   onProblemStatementVersionSelect: _onProblemStatementVersionSelect,
   onResetProblemStatement,
   onUseProblemStatementChange,
-  onObjectivesChange: _onObjectivesChange,
-  onAddObjective,
-  onRemoveObjective,
-  onUpdateObjective,
-  onDragStartObjective,
-  onDragOverObjective,
-  onDropObjective,
   onUseObjectivesChange,
   onUseImageChange,
-  onImageSelect,
   onImageUpload,
-  onImageRemove: _onImageRemove,
-  onVideoSelect,
+  onUseVideoChange,
   onUseQuestionsChange,
-  onQuestionsChange,
-  onDragStartQuestion,
-  onDragOverQuestion,
-  onDropQuestion,
-  onDragStartOption,
-  onDragOverOption,
-  onDropOption,
-  onUpdateQuestion,
-  onQuestionTimesChange,
-  onAddOption,
-  onRemoveOption,
-  onOptionChange,
-  onToggleOptionCorrect,
+  onStateChange,
   onScenarioPreviewDocumentChange,
   onDocumentRemove,
   onGenerate,
@@ -480,12 +402,120 @@ export function ContentSection({
   isReadonly,
   isGeneratingScenario,
   isSubmitting,
-  draggedObjectiveIndex,
-  draggedQuestionIndex,
-  draggedOptionIndex,
   imageInputRef,
   isEditMode = false,
 }: ContentSectionProps) {
+  // Internal state for content section
+  const [image, setImage] = useState<{
+    id: string;
+    name: string;
+    upload_id: string;
+  } | null>(initialImage ?? null);
+  const [selectedVideo, setSelectedVideo] = useState<{
+    id: string;
+    name: string;
+    length_seconds: number;
+    upload_id?: string;
+  } | null>(initialSelectedVideo ?? null);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(
+    initialActiveVideoId ?? null
+  );
+  const [questions, setQuestions] = useState<
+    Array<{
+      id: string;
+      question_text: string;
+      allow_multiple: boolean;
+      options: Array<{
+        id: string;
+        option_text: string;
+        type?: "discrete" | "freeform";
+        is_correct: boolean;
+      }>;
+      times?: number[];
+    }>
+  >(initialQuestions ?? []);
+  const [currentQuestionIds, setCurrentQuestionIds] = useState<string[]>(
+    initialCurrentQuestionIds ?? []
+  );
+  const [scenarioPreviewDocumentId, setScenarioPreviewDocumentId] = useState<
+    string | null
+  >(initialScenarioPreviewDocumentId ?? null);
+  const [objectives, setObjectives] = useState<string[]>(initialObjectives ?? []);
+  const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
+    number | null
+  >(null);
+  const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
+    number | null
+  >(null);
+  const [draggedOptionIndex, setDraggedOptionIndex] = useState<{
+    questionIndex: number;
+    optionIndex: number;
+  } | null>(null);
+
+  // Initialize from props when they change (for edit mode)
+  useEffect(() => {
+    if (initialImage !== undefined) {
+      setImage(initialImage);
+    }
+  }, [initialImage]);
+
+  useEffect(() => {
+    if (initialSelectedVideo !== undefined) {
+      setSelectedVideo(initialSelectedVideo);
+    }
+  }, [initialSelectedVideo]);
+
+  useEffect(() => {
+    if (initialActiveVideoId !== undefined) {
+      setActiveVideoId(initialActiveVideoId);
+    }
+  }, [initialActiveVideoId]);
+
+  useEffect(() => {
+    if (initialQuestions !== undefined) {
+      setQuestions(initialQuestions);
+    }
+  }, [initialQuestions]);
+
+  useEffect(() => {
+    if (initialCurrentQuestionIds !== undefined) {
+      setCurrentQuestionIds(initialCurrentQuestionIds);
+    }
+  }, [initialCurrentQuestionIds]);
+
+  useEffect(() => {
+    if (initialScenarioPreviewDocumentId !== undefined) {
+      setScenarioPreviewDocumentId(initialScenarioPreviewDocumentId);
+    }
+  }, [initialScenarioPreviewDocumentId]);
+
+  useEffect(() => {
+    if (initialObjectives !== undefined) {
+      setObjectives(initialObjectives);
+    }
+  }, [initialObjectives]);
+
+  // Notify parent of state changes
+  useEffect(() => {
+    onStateChange?.({
+      image,
+      selectedVideo,
+      activeVideoId,
+      questions,
+      currentQuestionIds,
+      objectives,
+      scenarioPreviewDocumentId,
+    });
+  }, [
+    image,
+    selectedVideo,
+    activeVideoId,
+    questions,
+    currentQuestionIds,
+    objectives,
+    scenarioPreviewDocumentId,
+    onStateChange,
+  ]);
   // Local state for multiple images when useVideo is true
   const [selectedImages, setSelectedImages] = useState<
     Array<{ id: string; name: string; upload_id: string }>
@@ -628,9 +658,273 @@ export function ContentSection({
     });
   };
 
+  // Objective handlers (moved from Scenario.tsx)
+  const addObjective = () => {
+    const maxObjectives = 3; // Hardcoded max of 3
+    if (objectives.length >= maxObjectives) {
+      toast.error(`Maximum ${maxObjectives} objectives allowed`);
+      return;
+    }
+    setObjectives((prev) => [...prev, ""]);
+  };
+
+  const removeObjective = (index: number) => {
+    setObjectives((prev) => {
+      const next = [...prev];
+      next.splice(index, 1);
+      return next;
+    });
+  };
+
+  const updateObjective = (index: number, value: string) => {
+    setObjectives((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const handleDragStartObjective = (e: React.DragEvent, index: number) => {
+    setDraggedObjectiveIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOverObjective = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropObjective = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedObjectiveIndex === null) return;
+    setObjectives((prev) => {
+      const next = [...prev];
+      const [removed] = next.splice(draggedObjectiveIndex, 1);
+      next.splice(targetIndex, 0, removed || "");
+      return next;
+    });
+    setDraggedObjectiveIndex(null);
+  };
+
+  // Question handlers (moved from Scenario.tsx)
+  const handleDragStartQuestion = (e: React.DragEvent, index: number) => {
+    setDraggedQuestionIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOverQuestion = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropQuestion = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedQuestionIndex === null) return;
+    setQuestions((prev) => {
+      const next = [...prev];
+      const removed = next[draggedQuestionIndex];
+      if (!removed) return next;
+      next.splice(draggedQuestionIndex, 1);
+      next.splice(targetIndex, 0, removed);
+      return next;
+    });
+    setDraggedQuestionIndex(null);
+  };
+
+  const handleDragStartOption = (
+    e: React.DragEvent,
+    questionIndex: number,
+    optionIndex: number
+  ) => {
+    setDraggedOptionIndex({ questionIndex, optionIndex });
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOverOption = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropOption = (
+    e: React.DragEvent,
+    questionIndex: number,
+    targetOptionIndex: number
+  ) => {
+    e.preventDefault();
+    if (draggedOptionIndex === null) return;
+    if (
+      draggedOptionIndex.questionIndex !== questionIndex ||
+      draggedOptionIndex.optionIndex === targetOptionIndex
+    ) {
+      setDraggedOptionIndex(null);
+      return;
+    }
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[draggedOptionIndex.questionIndex];
+      if (!question) return next;
+      const options = [...question.options];
+      const removed = options[draggedOptionIndex.optionIndex];
+      if (!removed) return next;
+      options.splice(draggedOptionIndex.optionIndex, 1);
+      options.splice(targetOptionIndex, 0, removed);
+      next[draggedOptionIndex.questionIndex] = {
+        ...question,
+        options,
+      };
+      return next;
+    });
+    setDraggedOptionIndex(null);
+  };
+
+  const handleUpdateQuestion = (
+    index: number,
+    question: {
+      id: string;
+      question_text: string;
+      allow_multiple: boolean;
+      options: Array<{
+        id: string;
+        option_text: string;
+        type?: "discrete" | "freeform";
+        is_correct: boolean;
+      }>;
+      times?: number[];
+    }
+  ) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      next[index] = question;
+      return next;
+    });
+  };
+
+  const handleQuestionTimesChange = (index: number, times: number[]) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[index];
+      if (!question) return next;
+      next[index] = {
+        ...question,
+        times,
+      };
+      return next;
+    });
+  };
+
+  const handleAddOption = (questionIndex: number) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[questionIndex];
+      if (!question) return next;
+      next[questionIndex] = {
+        ...question,
+        options: [
+          ...question.options,
+          {
+            id: "",
+            option_text: "",
+            type: "discrete",
+            is_correct: false,
+          },
+        ],
+      };
+      return next;
+    });
+  };
+
+  const handleRemoveOption = (questionIndex: number, optionIndex: number) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[questionIndex];
+      if (!question) return next;
+      next[questionIndex] = {
+        ...question,
+        options: question.options.filter((_, i) => i !== optionIndex),
+      };
+      return next;
+    });
+  };
+
+  const handleOptionChange = (
+    questionIndex: number,
+    optionIndex: number,
+    option: {
+      id: string;
+      option_text: string;
+      type?: "discrete" | "freeform";
+      is_correct: boolean;
+    }
+  ) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[questionIndex];
+      if (!question) return next;
+      const options = [...question.options];
+      const existingOption = options[optionIndex];
+      if (!existingOption) return next;
+      options[optionIndex] = option;
+      next[questionIndex] = {
+        ...question,
+        options,
+      };
+      return next;
+    });
+  };
+
+  const handleToggleOptionCorrect = (
+    questionIndex: number,
+    optionIndex: number
+  ) => {
+    setQuestions((prev) => {
+      const next = [...prev];
+      const question = next[questionIndex];
+      if (!question) return next;
+      const options = [...question.options];
+      const existingOption = options[optionIndex];
+      if (!existingOption) return next;
+      options[optionIndex] = {
+        ...existingOption,
+        is_correct: !existingOption.is_correct,
+      };
+      next[questionIndex] = {
+        ...question,
+        options,
+      };
+      return next;
+    });
+  };
+
+  // Image/video handlers
+  const handleImageSelect = (
+    selectedImage: {
+      id: string;
+      name: string;
+      upload_id: string;
+    } | null
+  ) => {
+    setImage(selectedImage);
+  };
+
+  const handleVideoSelect = (
+    video: {
+      id: string;
+      name: string;
+      length_seconds: number;
+      upload_id?: string;
+    } | null
+  ) => {
+    setSelectedVideo(video);
+    setActiveVideoId(video?.id || null);
+  };
+
+  // Update currentQuestionIds when questions change
+  useEffect(() => {
+    setCurrentQuestionIds(questions.map((q) => q.id));
+  }, [questions]);
+
   // Helper function to handle question time change
   const handleQuestionTimeChange = (index: number, range: [number, number]) => {
-    if (!onQuestionTimesChange) return;
     // Extract the second value (the actual question time) from the range
     const time = range[1];
     // Use selectedVideoLength if available, otherwise fall back to selectedVideo length, or default to 8 seconds
@@ -640,7 +934,7 @@ export function ContentSection({
       return;
     }
     const newTimes = [time];
-    onQuestionTimesChange(index, newTimes);
+    handleQuestionTimesChange(index, newTimes);
   };
 
   // Helper function to handle question text change
@@ -657,12 +951,18 @@ export function ContentSection({
         options: currentQuestion.options,
         ...(currentQuestion.times && { times: currentQuestion.times }),
       };
-      onQuestionsChange(updatedQuestions);
+      handleUpdateQuestion(index, {
+        id: currentQuestion.id,
+        question_text: text,
+        allow_multiple: currentQuestion.allow_multiple,
+        options: currentQuestion.options,
+        ...(currentQuestion.times && { times: currentQuestion.times }),
+      });
       return;
     }
     const currentQuestion = questions[index];
     if (!currentQuestion) return;
-    onUpdateQuestion(index, {
+    handleUpdateQuestion(index, {
       ...currentQuestion,
       question_text: text,
     });
@@ -687,7 +987,8 @@ export function ContentSection({
   const goToNextDocument = () => {
     if (currentDocumentIndex < allPreviewDocumentIds.length - 1) {
       const nextDocId = allPreviewDocumentIds[currentDocumentIndex + 1];
-      onScenarioPreviewDocumentChange(nextDocId ?? null);
+      setScenarioPreviewDocumentId(nextDocId ?? null);
+      onScenarioPreviewDocumentChange?.(nextDocId ?? null);
     }
   };
 
@@ -893,7 +1194,7 @@ export function ContentSection({
                     onCheckedChange={(checked) => {
                       onUseImageChange(checked);
                       if (!checked) {
-                        onImageSelect(null);
+                        handleImageSelect(null);
                       }
                     }}
                     disabled={isReadonly}
@@ -934,25 +1235,25 @@ export function ContentSection({
                           } => img !== null
                         );
                       setSelectedImages(newImages);
-                      // Call onImageSelect with first image for backward compatibility
+                      // Update image state with first image
                       if (newImages.length > 0 && newImages[0]) {
-                        onImageSelect(newImages[0]);
+                        handleImageSelect(newImages[0]);
                       } else {
-                        onImageSelect(null);
+                        handleImageSelect(null);
                       }
                     } else {
                       // Single select mode
                       const imageId = ids[0] || null;
                       if (imageId && imageMapping[imageId]) {
                         const selectedImage = imageMapping[imageId];
-                        onImageSelect({
+                        handleImageSelect({
                           id: selectedImage.upload_id || selectedImage.id,
                           name: selectedImage.name,
                           upload_id:
                             selectedImage.upload_id || selectedImage.id,
                         });
                       } else if (!imageId) {
-                        onImageSelect(null);
+                        handleImageSelect(null);
                       }
                     }
                   }}
@@ -1050,13 +1351,13 @@ export function ContentSection({
                             );
                             setSelectedImages(newImages);
                             if (newImages.length > 0 && newImages[0]) {
-                              onImageSelect(newImages[0]);
+                              handleImageSelect(newImages[0]);
                             } else {
-                              onImageSelect(null);
+                              handleImageSelect(null);
                             }
                           } else {
-                            // Single image mode: call onImageRemove
-                            _onImageRemove();
+                            // Single image mode: clear image
+                            handleImageSelect(null);
                           }
                         }}
                         className="absolute top-1 right-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
@@ -1309,7 +1610,7 @@ export function ContentSection({
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={onAddObjective}
+                      onClick={addObjective}
                       disabled={isReadonly}
                       size="sm"
                     >
@@ -1322,16 +1623,16 @@ export function ContentSection({
                     key={`objective-${index}`}
                     index={index}
                     value={objective || ""}
-                    onChange={(value) => onUpdateObjective(index, value)}
+                    onChange={(value) => updateObjective(index, value)}
                     placeholder={`Learning objective ${index + 1}`}
                     suggestions={objectivesHistory}
                     disabled={isReadonly}
                     draggedObjectiveIndex={draggedObjectiveIndex}
-                    onDragStart={(e) => onDragStartObjective(e, index)}
-                    onDragOver={onDragOverObjective}
-                    onDrop={(e) => onDropObjective(e, index)}
+                    onDragStart={(e) => handleDragStartObjective(e, index)}
+                    onDragOver={handleDragOverObjective}
+                    onDrop={(e) => handleDropObjective(e, index)}
                     {...(objectives.length > 1 && {
-                      onRemove: () => onRemoveObjective(index),
+                      onRemove: () => removeObjective(index),
                     })}
                     totalObjectives={objectives.length}
                     maxObjectives={3}
@@ -1343,7 +1644,7 @@ export function ContentSection({
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={onAddObjective}
+                      onClick={addObjective}
                       disabled={isReadonly}
                       size="sm"
                     >
@@ -1377,7 +1678,7 @@ export function ContentSection({
                   onCheckedChange={(checked) => {
                     onUseQuestionsChange(checked);
                     if (!checked) {
-                      onQuestionsChange([]);
+                      setQuestions([]);
                     }
                   }}
                   disabled={isReadonly}
@@ -1400,8 +1701,8 @@ export function ContentSection({
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => {
-                    onQuestionsChange([
+                    onClick={() => {
+                    setQuestions([
                       {
                         id: "",
                         question_text: "",
@@ -1441,15 +1742,14 @@ export function ContentSection({
                       "space-y-2",
                       draggedQuestionIndex === index && "opacity-50"
                     )}
-                    onDragOver={onDragOverQuestion}
-                    onDrop={(e) => onDropQuestion?.(e, index)}
+                    onDragOver={handleDragOverQuestion}
+                    onDrop={(e) => handleDropQuestion(e, index)}
                   >
                     <div className="flex items-center gap-2">
                       {/* Drag Handle */}
-                      {onDragStartQuestion && (
-                        <div
-                          draggable={!isReadonly}
-                          onDragStart={(e) => onDragStartQuestion(e, index)}
+                      <div
+                        draggable={!isReadonly}
+                        onDragStart={(e) => handleDragStartQuestion(e, index)}
                           className="cursor-grab active:cursor-grabbing w-8 shrink-0 flex items-center justify-center"
                         >
                           <GripVertical className="h-4 w-4 text-muted-foreground" />
@@ -1524,7 +1824,7 @@ export function ContentSection({
                         variant="ghost"
                         size="icon"
                         onClick={() => {
-                          onQuestionsChange(
+                          setQuestions(
                             questions.filter((_, i) => i !== index)
                           );
                         }}
@@ -1578,48 +1878,10 @@ export function ContentSection({
                                       }
                                       size="icon"
                                       onClick={() => {
-                                        if (onToggleOptionCorrect) {
-                                          onToggleOptionCorrect(
-                                            index,
-                                            optIndex
-                                          );
-                                        } else {
-                                          // Fallback: update entire questions array
-                                          const updatedQuestions = [
-                                            ...questions,
-                                          ];
-                                          const currentQuestion =
-                                            updatedQuestions[index];
-                                          if (!currentQuestion) return;
-                                          const updatedOptions = [
-                                            ...currentQuestion.options,
-                                          ];
-                                          const currentOption =
-                                            updatedOptions[optIndex];
-                                          if (!currentOption) return;
-                                          updatedOptions[optIndex] = {
-                                            id: currentOption.id,
-                                            option_text:
-                                              currentOption.option_text,
-                                            ...(currentOption.type && {
-                                              type: currentOption.type,
-                                            }),
-                                            is_correct:
-                                              !currentOption.is_correct,
-                                          };
-                                          updatedQuestions[index] = {
-                                            id: currentQuestion.id,
-                                            question_text:
-                                              currentQuestion.question_text,
-                                            allow_multiple:
-                                              currentQuestion.allow_multiple,
-                                            options: updatedOptions,
-                                            ...(currentQuestion.times && {
-                                              times: currentQuestion.times,
-                                            }),
-                                          };
-                                          onQuestionsChange(updatedQuestions);
-                                        }
+                                        handleToggleOptionCorrect(
+                                          index,
+                                          optIndex
+                                        );
                                       }}
                                       className="h-8 w-8 shrink-0"
                                       disabled={isReadonly}
@@ -1640,7 +1902,7 @@ export function ContentSection({
                                 value={option.option_text}
                                 onChange={(e) => {
                                   if (onOptionChange) {
-                                    onOptionChange(index, optIndex, {
+                                    handleOptionChange(index, optIndex, {
                                       ...option,
                                       option_text: e.target.value,
                                     });
@@ -1675,7 +1937,15 @@ export function ContentSection({
                                         times: currentQuestion.times,
                                       }),
                                     };
-                                    onQuestionsChange(updatedQuestions);
+                                    handleUpdateQuestion(index, {
+                                      id: currentQuestion.id,
+                                      question_text: currentQuestion.question_text,
+                                      allow_multiple: currentQuestion.allow_multiple,
+                                      options: updatedOptions,
+                                      ...(currentQuestion.times && {
+                                        times: currentQuestion.times,
+                                      }),
+                                    });
                                   }
                                 }}
                                 placeholder="Option text"
@@ -1697,29 +1967,7 @@ export function ContentSection({
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => {
-                                    if (onRemoveOption) {
-                                      onRemoveOption(index, optIndex);
-                                    } else {
-                                      // Fallback: update entire questions array
-                                      const updatedQuestions = [...questions];
-                                      const currentQuestion =
-                                        updatedQuestions[index];
-                                      if (!currentQuestion) return;
-                                      updatedQuestions[index] = {
-                                        id: currentQuestion.id,
-                                        question_text:
-                                          currentQuestion.question_text,
-                                        allow_multiple:
-                                          currentQuestion.allow_multiple,
-                                        options: currentQuestion.options.filter(
-                                          (_, i) => i !== optIndex
-                                        ),
-                                        ...(currentQuestion.times && {
-                                          times: currentQuestion.times,
-                                        }),
-                                      };
-                                      onQuestionsChange(updatedQuestions);
-                                    }
+                                    handleRemoveOption(index, optIndex);
                                   }}
                                   className="h-8 w-8 shrink-0"
                                   disabled={isReadonly}
@@ -1781,7 +2029,7 @@ export function ContentSection({
                   type="button"
                   variant="secondary"
                   onClick={() => {
-                    onQuestionsChange([
+                    setQuestions([
                       ...questions,
                       {
                         id: "",
@@ -1841,7 +2089,7 @@ export function ContentSection({
                         if (videoId && filteredVideoMapping[videoId]) {
                           const selectedVideoItem =
                             filteredVideoMapping[videoId];
-                          onVideoSelect({
+                          handleVideoSelect({
                             id: selectedVideoItem.id,
                             name: selectedVideoItem.name,
                             length_seconds: selectedVideoItem.length_seconds,
@@ -1850,7 +2098,7 @@ export function ContentSection({
                             }),
                           });
                         } else if (!videoId) {
-                          onVideoSelect(null);
+                          handleVideoSelect(null);
                         }
                       }}
                       getId={(item) => {
@@ -2213,7 +2461,8 @@ export function ContentSection({
                             ? currentIndex + 1
                             : currentIndex - 1;
                         const nextDocId = allPreviewDocumentIds[nextIndex];
-                        onScenarioPreviewDocumentChange(nextDocId ?? null);
+                        setScenarioPreviewDocumentId(nextDocId ?? null);
+      onScenarioPreviewDocumentChange?.(nextDocId ?? null);
                       } else {
                         // Last document, clear preview
                         onScenarioPreviewDocumentChange(null);

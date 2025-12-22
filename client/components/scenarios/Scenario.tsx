@@ -231,7 +231,7 @@ export default function Scenario({
     }
 
     // Determine if we're regenerating (problem statement exists) or generating new
-    const isRegenerating = !!formData.problemStatement?.trim();
+    const isRegenerating = !!problemStatement?.trim();
     const initialMessage = isRegenerating
       ? "Regenerating scenario..."
       : "Generating scenario...";
@@ -494,7 +494,7 @@ export default function Scenario({
 
       // Emit the event
       // scenarioAgentId is required - UI filters and selects appropriate agent for scenario generation
-      if (!formData.scenarioAgentId) {
+      if (!basicInfoState.scenarioAgentId) {
         toast.error("Please select a scenario agent before generating");
         reject(new Error("Scenario agent ID is required"));
         return;
@@ -502,9 +502,9 @@ export default function Scenario({
 
       socket.emit("generate_scenario", {
         departmentId: body.departmentId,
-        scenarioAgentId: formData.scenarioAgentId, // Required: selected scenario agent ID
-        imageAgentId: formData.imageAgentId || undefined, // Optional: selected image agent ID
-        videoAgentId: formData.videoAgentId || undefined, // Optional: selected video agent ID
+        scenarioAgentId: basicInfoState.scenarioAgentId, // Required: selected scenario agent ID
+        imageAgentId: basicInfoState.imageAgentId || undefined, // Optional: selected image agent ID
+        videoAgentId: basicInfoState.videoAgentId || undefined, // Optional: selected video agent ID
         personaIds: body.personaIds,
         documentIds: body.documentIds,
         fieldIds: body.fieldIds, // Renamed from parameterItemIds
@@ -534,21 +534,28 @@ export default function Scenario({
   // defaultParameterIds removed - not used (empty array means "all parameters")
 
   const initialFormData = useMemo(() => {
-    // Read text fields from URL params (in addition to IDs)
-    const problemStatementFromUrl = searchParams.get("problemStatement") || "";
-    const nameFromUrl = searchParams.get("name") || "";
-
     return {
-      name: nameFromUrl || "New Scenario",
-      problemStatement: problemStatementFromUrl,
       departmentIds: defaultDepartmentIds,
-      active: true,
-      scenarioAgentId: null as string | null,
-      imageAgentId: null as string | null,
-      videoAgentId: null as string | null,
       parameterIds: [] as string[], // Empty means "all parameters"
     };
-  }, [defaultDepartmentIds, searchParams]);
+  }, [defaultDepartmentIds]);
+
+  // State for basic info section (agents and active)
+  const [basicInfoState, setBasicInfoState] = useState<{
+    scenarioAgentId: string | null;
+    imageAgentId: string | null;
+    videoAgentId: string | null;
+    active: boolean;
+  }>({
+    scenarioAgentId: null,
+    imageAgentId: null,
+    videoAgentId: null,
+    active: true,
+  });
+
+  // Derived values from nuqs (name and problemStatement now managed by nuqs)
+  const name = q.name ?? "New Scenario";
+  const problemStatement = q.problemStatement ?? "";
 
   const [formData, setFormData] = useState(initialFormData);
 
@@ -562,9 +569,16 @@ export default function Scenario({
   // Event handler for form input changes (defined early for use in useEffect)
   const handleInputChange = useCallback(
     (field: string, value: string | string[] | boolean | null) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
+      // Handle name and problemStatement via nuqs
+      if (field === "name") {
+        setQ({ name: (value as string) || null });
+      } else if (field === "problemStatement") {
+        setQ({ problemStatement: (value as string) || null });
+      } else {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+      }
     },
-    []
+    [setQ]
   );
 
   // URL-backed state is now managed by nuqs (q object above)
@@ -643,30 +657,15 @@ export default function Scenario({
   const useQuestions = q.useQuestions ?? false;
   const useProblemStatement = q.useProblemStatement ?? false;
 
-  // Video length - still needs custom handling (not in nuqs schema yet)
-  const [selectedVideoLength, setSelectedVideoLength] = useState<number | null>(
-    () => {
-      const videoLengthFromUrl = searchParams.get("videoLength");
-      if (videoLengthFromUrl) {
-        const parsed = parseInt(videoLengthFromUrl, 10);
-        if ([4, 8, 12].includes(parsed)) {
-          return parsed;
-        }
-      }
-      return null;
-    }
-  );
-  const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
-    number | null
-  >(null);
+  // Video length - now managed by nuqs
+  const selectedVideoLength = q.videoLength ?? null;
 
   // State for junction data (managed separately from scenario)
-  // Initialize objectives from URL params (JSON array) if present
-  const [currentObjectives, setCurrentObjectives] = useState<string[]>(() => {
-    const objectivesParam = searchParams.get("objectives");
-    if (objectivesParam) {
+  // Objectives now managed by nuqs
+  const currentObjectives = useMemo(() => {
+    if (q.objectives) {
       try {
-        const parsed = JSON.parse(objectivesParam);
+        const parsed = JSON.parse(q.objectives);
         if (Array.isArray(parsed)) {
           return parsed;
         }
@@ -675,31 +674,18 @@ export default function Scenario({
       }
     }
     return [];
-  });
-  const [scenarioPreviewDocumentId, setScenarioPreviewDocumentId] = useState<
-    string | null
-  >(null);
-  const [image, setImage] = useState<{
-    id: string;
-    name: string;
-    upload_id: string;
-  } | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-
-  // Video state
-  const [selectedVideo, setSelectedVideo] = useState<{
-    id: string;
-    name: string;
-    length_seconds: number;
-    upload_id?: string;
-  } | null>(null);
-  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
-
-  // Questions state
-  const [currentQuestionIds, setCurrentQuestionIds] = useState<string[]>([]);
-  const [questions, setQuestions] = useState<
-    Array<{
+  }, [q.objectives]);
+  // State for content section (image, video, questions, objectives)
+  const [contentState, setContentState] = useState<{
+    image: { id: string; name: string; upload_id: string } | null;
+    selectedVideo: {
+      id: string;
+      name: string;
+      length_seconds: number;
+      upload_id?: string;
+    } | null;
+    activeVideoId: string | null;
+    questions: Array<{
       id: string;
       question_text: string;
       allow_multiple: boolean;
@@ -710,15 +696,22 @@ export default function Scenario({
         is_correct: boolean;
       }>;
       times?: number[];
-    }>
-  >([]);
-  const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
-    number | null
-  >(null);
-  const [draggedOptionIndex, setDraggedOptionIndex] = useState<{
-    questionIndex: number;
-    optionIndex: number;
-  } | null>(null);
+    }>;
+    currentQuestionIds: string[];
+    objectives: string[];
+    scenarioPreviewDocumentId: string | null;
+  }>({
+    image: null,
+    selectedVideo: null,
+    activeVideoId: null,
+    questions: [],
+    currentQuestionIds: [],
+    objectives: [],
+    scenarioPreviewDocumentId: null,
+  });
+
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Use transition for smooth UI updates during randomization
   // This ensures the old UI stays visible while new randomized selections are being applied
@@ -849,6 +842,31 @@ export default function Scenario({
       setQ({ objectiveIds: newIds.length > 0 ? newIds : null });
     },
     [currentObjectiveIds, setQ]
+  );
+
+  // Helper to update objectives (JSON-encoded array) via nuqs
+  const updateObjectives = useCallback(
+    (objectives: string[] | ((prev: string[]) => string[])) => {
+      const newObjectives =
+        typeof objectives === "function"
+          ? objectives(currentObjectives)
+          : objectives;
+      const objectivesJson = JSON.stringify(newObjectives);
+      setQ({ objectives: objectivesJson || null });
+    },
+    [currentObjectives, setQ]
+  );
+
+  // Helper to update videoLength via nuqs
+  const updateVideoLength = useCallback(
+    (length: number | null) => {
+      // Validate length is 4, 8, or 12, or null
+      if (length !== null && ![4, 8, 12].includes(length)) {
+        return;
+      }
+      setQ({ videoLength: length });
+    },
+    [setQ]
   );
 
   const updateFieldShowSelected = useCallback(
@@ -1088,20 +1106,20 @@ export default function Scenario({
     }
 
     // Add text fields when they differ from server values
-    // Problem statement text
+    // Problem statement text (now managed by nuqs)
     const serverProblemStatement =
       isEditMode && scenarioData && "problem_statement" in scenarioData
         ? (scenarioData as ScenarioDetailOut).problem_statement || ""
         : "";
     if (
-      formData.problemStatement &&
-      formData.problemStatement.trim() !== "" &&
-      formData.problemStatement.trim() !== serverProblemStatement
+      problemStatement &&
+      problemStatement.trim() !== "" &&
+      problemStatement.trim() !== serverProblemStatement
     ) {
-      params.set("problemStatement", formData.problemStatement);
+      params.set("problemStatement", problemStatement);
     }
 
-    // Objectives text (JSON-encoded array)
+    // Objectives text (JSON-encoded array, now managed by nuqs)
     // Include all objectives (even empty strings) to preserve the count of enabled objective slots
     const serverObjectives =
       isEditMode && scenarioData && "objectives_history" in scenarioData
@@ -1116,18 +1134,18 @@ export default function Scenario({
       params.set("objectives", currentObjectivesString);
     }
 
-    // Name text
+    // Name text (now managed by nuqs)
     const serverName =
       isEditMode && scenarioData && "name" in scenarioData
         ? (scenarioData as ScenarioDetailOut).name || ""
         : "New Scenario";
     if (
-      formData.name &&
-      formData.name.trim() !== "" &&
-      formData.name !== "New Scenario" &&
-      formData.name !== serverName
+      name &&
+      name.trim() !== "" &&
+      name !== "New Scenario" &&
+      name !== serverName
     ) {
-      params.set("name", formData.name);
+      params.set("name", name);
     }
 
     // Note: randomize param is set separately by randomize handlers, not here
@@ -1164,10 +1182,10 @@ export default function Scenario({
     queryParamConfig, // Include queryParamConfig for server value comparisons
     // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
     searchParams,
-    // Text fields for URL sync
-    formData.problemStatement,
+    // Text fields for URL sync (now managed by nuqs)
+    problemStatement,
     currentObjectives,
-    formData.name,
+    name,
     isEditMode,
   ]);
 
@@ -1255,18 +1273,14 @@ export default function Scenario({
       return currentProblemStatementIds[0];
     }
     // Otherwise, find the ID that matches the current problem statement text
-    if (formData.problemStatement && formData.problemStatement.trim()) {
+    if (problemStatement && problemStatement.trim()) {
       const matchingId = Object.entries(problemStatementMapping).find(
-        ([_id, info]) => info.problem_statement === formData.problemStatement
+        ([_id, info]) => info.problem_statement === problemStatement
       )?.[0];
       return matchingId;
     }
     return undefined;
-  }, [
-    currentProblemStatementIds,
-    formData.problemStatement,
-    problemStatementMapping,
-  ]);
+  }, [currentProblemStatementIds, problemStatement, problemStatementMapping]);
 
   // Combine currentDocumentIds and templateDocumentIds for preview
   // Filter out parent template documents if we have their children (dynamic documents)
@@ -1760,17 +1774,25 @@ export default function Scenario({
       // If current preview is not in the preview documents, or no preview is set, select the first one
       const firstDocId = allPreviewDocumentIds[0];
       if (
-        !scenarioPreviewDocumentId ||
+        !contentState.scenarioPreviewDocumentId ||
         (firstDocId &&
-          !allPreviewDocumentIds.includes(scenarioPreviewDocumentId))
+          !allPreviewDocumentIds.includes(
+            contentState.scenarioPreviewDocumentId
+          ))
       ) {
-        setScenarioPreviewDocumentId(firstDocId || null);
+        setContentState((prev) => ({
+          ...prev,
+          scenarioPreviewDocumentId: firstDocId || null,
+        }));
       }
     } else {
       // No documents selected, clear preview
-      setScenarioPreviewDocumentId(null);
+      setContentState((prev) => ({
+        ...prev,
+        scenarioPreviewDocumentId: null,
+      }));
     }
-  }, [allPreviewDocumentIds, scenarioPreviewDocumentId]);
+  }, [allPreviewDocumentIds, contentState.scenarioPreviewDocumentId]);
 
   // Note: Document/persona parameter syncing removed - parameters are now selected independently
   // Filtering happens automatically via validGeneralParameterItemIds based on selected personas/documents
@@ -1795,91 +1817,8 @@ export default function Scenario({
   // Note: problemStatementIds, objectiveIds, and templateDocumentIds are now derived from URL params
   // No need for sync effects - they're automatically synced via nuqs
 
-  // Sync problem statement text from URL params (DHH-style: compute when needed, not in effects)
-  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
-  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
-  useEffect(() => {
-    const problemStatementFromUrl = searchParams.get("problemStatement") || "";
-    if (problemStatementFromUrl !== formData.problemStatement) {
-      handleInputChange("problemStatement", problemStatementFromUrl);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
-
-  // Sync objectives text from URL params (DHH-style: compute when needed, not in effects)
-  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
-  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
-  // Preserves empty strings to maintain the count of enabled objective slots
-  useEffect(() => {
-    const objectivesParam = searchParams.get("objectives");
-    if (objectivesParam) {
-      try {
-        const parsed = JSON.parse(objectivesParam);
-        if (Array.isArray(parsed)) {
-          // Preserve empty strings - they indicate enabled but empty objective slots
-          const currentObjectivesString = JSON.stringify(currentObjectives);
-          const urlObjectivesString = JSON.stringify(parsed);
-          if (currentObjectivesString !== urlObjectivesString) {
-            setCurrentObjectives(parsed);
-          }
-        }
-      } catch {
-        // Invalid JSON - ignore
-      }
-    } else if (currentObjectives.length > 0) {
-      // URL doesn't have objectives param but state does (including arrays with empty strings)
-      // Clear state if URL explicitly cleared (has "objectives" param but empty value)
-      // or if URL has no objectives param at all
-      const hasOtherParams = Array.from(searchParams.keys()).length > 0;
-      if (!hasOtherParams || searchParams.has("objectives")) {
-        // URL explicitly cleared objectives or has empty objectives param
-        setCurrentObjectives([]);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
-
-  // Sync name text from URL params (DHH-style: compute when needed, not in effects)
-  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
-  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
-  useEffect(() => {
-    const nameFromUrl = searchParams.get("name") || "";
-    // Only update if URL has a name and it's different from current state
-    // Don't update if URL name is empty and current is "New Scenario" (default)
-    if (nameFromUrl && nameFromUrl !== formData.name) {
-      handleInputChange("name", nameFromUrl);
-    } else if (
-      !nameFromUrl &&
-      formData.name !== "New Scenario" &&
-      searchParams.has("name")
-    ) {
-      // URL explicitly cleared name (has "name" param but empty value)
-      handleInputChange("name", "New Scenario");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
-
-  // Sync feature flags from URL params (DHH-style: URL as source of truth)
-  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
-  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
-
-  // Note: URL sync is now handled automatically by nuqs - no useEffect needed
-  // Video length still needs custom handling (not in nuqs schema yet)
-  useEffect(() => {
-    const videoLengthFromUrl = searchParams.get("videoLength");
-    let urlVideoLength: number | null = null;
-    if (videoLengthFromUrl) {
-      const parsed = parseInt(videoLengthFromUrl, 10);
-      if ([4, 8, 12].includes(parsed)) {
-        urlVideoLength = parsed;
-      }
-    }
-    // Only update if different from current state
-    if (selectedVideoLength !== urlVideoLength) {
-      setSelectedVideoLength(urlVideoLength);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+  // Note: name, problemStatement, objectives, and videoLength are now managed by nuqs
+  // No manual URL sync effects needed - nuqs handles URL sync automatically
 
   // Don't auto-select images - user must explicitly choose or upload via picker
 
@@ -1909,10 +1848,11 @@ export default function Scenario({
         objectiveMapping
       );
       // Only update if different (avoid unnecessary re-renders)
-      const currentObjectivesString = JSON.stringify(currentObjectives);
+      const currentObjectivesString = JSON.stringify(contentState.objectives);
       const newObjectivesString = JSON.stringify(objectivesFromIds);
       if (currentObjectivesString !== newObjectivesString) {
-        setCurrentObjectives(objectivesFromIds);
+        updateObjectives(objectivesFromIds);
+        setContentState((prev) => ({ ...prev, objectives: objectivesFromIds }));
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2261,9 +2201,9 @@ export default function Scenario({
     useImage, // Include useImage to trigger URL updates when useImage changes
     useVideo, // Include useVideo to trigger URL updates when useVideo changes
     useQuestions, // Include useQuestions to trigger URL updates when useQuestions changes
-    formData.problemStatement, // Include problemStatement to trigger URL updates when text changes
+    problemStatement, // Include problemStatement to trigger URL updates when text changes
     currentObjectives, // Include objectives to trigger URL updates when text changes
-    formData.name, // Include name to trigger URL updates when text changes
+    name, // Include name to trigger URL updates when text changes
     pathname,
   ]);
 
@@ -2272,16 +2212,22 @@ export default function Scenario({
     if (scenarioData && isEditMode && !formDataInitializedRef.current) {
       // Edit mode: load existing scenario data (only once)
       const deptIds = scenarioData.department_ids || [];
-      setFormData({
-        name: scenarioData.name,
-        problemStatement: scenarioData.problem_statement,
-        departmentIds: deptIds,
-        active: scenarioData.active ?? true,
+      // Initialize name and problemStatement via nuqs
+      setQ({
+        name: scenarioData.name || null,
+        problemStatement: scenarioData.problem_statement || null,
+      });
+      // Initialize basic info state
+      setBasicInfoState({
         scenarioAgentId: scenarioData.scenario_agent_id || null,
         imageAgentId: scenarioData.image_agent_id || null,
         videoAgentId:
           (scenarioData as ScenarioDetailOut & { video_agent_id?: string })
             .video_agent_id || null,
+        active: scenarioData.active ?? true,
+      });
+      setFormData({
+        departmentIds: deptIds,
         parameterIds: scenarioData.scenario_parameter_ids || [],
       });
       // Initialize previousDepartmentIds when loading scenario data
@@ -2300,7 +2246,7 @@ export default function Scenario({
           .map((doc) => doc.document_id) || [];
       updateTemplateDocumentIds(templateDocIds);
       updateFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
-      setCurrentObjectives(
+      updateObjectives(
         getObjectivesFromMapping(
           scenarioData.objective_ids,
           (scenarioData.objective_mapping || {}) as Record<
@@ -2373,17 +2319,20 @@ export default function Scenario({
         };
         const uploadId = firstImage.upload_id || firstImage.id;
         if (uploadId) {
-          setImage({
-            id: uploadId,
-            name: firstImage.name || "",
-            upload_id: uploadId,
-          });
+          setContentState((prev) => ({
+            ...prev,
+            image: {
+              id: uploadId,
+              name: firstImage.name || "",
+              upload_id: uploadId,
+            },
+          }));
         } else {
-          setImage(null);
+          setContentState((prev) => ({ ...prev, image: null }));
         }
       } else {
         // Create mode or no saved images - don't auto-select
-        setImage(null);
+        setContentState((prev) => ({ ...prev, image: null }));
       }
 
       // Load video_enabled and scenario video (only active video)
@@ -2411,20 +2360,29 @@ export default function Scenario({
         const videoId = activeVideoTyped["id"];
         const uploadId = activeVideoTyped["upload_id"];
         if (videoId) {
-          setSelectedVideo({
-            id: videoId,
-            name: activeVideoTyped["name"] || "",
-            length_seconds: activeVideoTyped["length_seconds"] || 0,
-            ...(uploadId ? { upload_id: uploadId } : {}),
-          });
-          setActiveVideoId(videoId);
+          setContentState((prev) => ({
+            ...prev,
+            selectedVideo: {
+              id: videoId,
+              name: activeVideoTyped["name"] || "",
+              length_seconds: activeVideoTyped["length_seconds"] || 0,
+              ...(uploadId ? { upload_id: uploadId } : {}),
+            },
+            activeVideoId: videoId,
+          }));
         } else {
-          setSelectedVideo(null);
-          setActiveVideoId(null);
+          setContentState((prev) => ({
+            ...prev,
+            selectedVideo: null,
+            activeVideoId: null,
+          }));
         }
       } else {
-        setSelectedVideo(null);
-        setActiveVideoId(null);
+        setContentState((prev) => ({
+          ...prev,
+          selectedVideo: null,
+          activeVideoId: null,
+        }));
       }
 
       // Load questions_enabled and questions
@@ -2432,54 +2390,53 @@ export default function Scenario({
       setQ({ useQuestions: questionsEnabled || null });
       const questionIds = scenarioDataWithFlags.question_ids || [];
       const questionsData = scenarioDataWithFlags.questions || [];
-      setCurrentQuestionIds(questionIds);
       if (
         questionsData &&
         Array.isArray(questionsData) &&
         questionsData.length > 0
       ) {
-        setQuestions(
-          questionsData.map((q) => {
-            const qTyped = q as {
+        const mappedQuestions = questionsData.map((q) => {
+          const qTyped = q as {
+            id?: string;
+            question_text?: string;
+            allow_multiple?: boolean;
+            options?: Array<{
               id?: string;
-              question_text?: string;
-              allow_multiple?: boolean;
-              options?: Array<{
-                id?: string;
-                option_text?: string;
-                type?: "discrete" | "freeform";
-                is_correct?: boolean;
-              }>;
-              times?: number[];
-            };
-            return {
-              id: qTyped["id"] || "",
-              question_text: qTyped["question_text"] || "",
-              allow_multiple: qTyped["allow_multiple"] || false,
-              options: (qTyped["options"] || []).map((opt) => ({
-                id: opt["id"] || "",
-                option_text: opt["option_text"] || "",
-                type: opt["type"] || "discrete",
-                is_correct: opt["is_correct"] || false,
-              })),
-              times: qTyped["times"] || [],
-            };
-          })
-        );
+              option_text?: string;
+              type?: "discrete" | "freeform";
+              is_correct?: boolean;
+            }>;
+            times?: number[];
+          };
+          return {
+            id: qTyped["id"] || "",
+            question_text: qTyped["question_text"] || "",
+            allow_multiple: qTyped["allow_multiple"] || false,
+            options: (qTyped["options"] || []).map((opt) => ({
+              id: opt["id"] || "",
+              option_text: opt["option_text"] || "",
+              type: opt["type"] || "discrete",
+              is_correct: opt["is_correct"] || false,
+            })),
+            times: qTyped["times"] || [],
+          };
+        });
+        setContentState((prev) => ({
+          ...prev,
+          questions: mappedQuestions,
+          currentQuestionIds: questionIds,
+        }));
       } else {
-        setQuestions([]);
+        setContentState((prev) => ({
+          ...prev,
+          questions: [],
+          currentQuestionIds: [],
+        }));
       }
-      // Store originals for change tracking
+      // Store originals for change tracking (name and problemStatement now tracked via nuqs)
+      // Basic info state (agents, active) tracked separately
       setOriginalFormData({
-        name: scenarioData.name,
-        problemStatement: scenarioData.problem_statement,
         departmentIds: scenarioData.department_ids || [],
-        active: scenarioData.active ?? true,
-        scenarioAgentId: scenarioData.scenario_agent_id || null,
-        imageAgentId: scenarioData.image_agent_id || null,
-        videoAgentId:
-          (scenarioData as ScenarioDetailOut & { video_agent_id?: string })
-            .video_agent_id || null,
         parameterIds: scenarioData.scenario_parameter_ids || [],
       });
       setOriginalDocumentIds(scenarioData.document_ids || []);
@@ -2501,24 +2458,25 @@ export default function Scenario({
       // Server already parsed URL params and returns selected IDs, search terms, ranges
       const newData = scenarioData as ScenarioNewOut;
       // Preserve problem statement and name if they were set from URL params (don't reset to empty/default)
-      const preservedProblemStatement =
-        formData.problemStatement || initialFormData.problemStatement;
-      // Preserve name if it was set from problem statement (not default "New Scenario")
-      const preservedName =
-        formData.name &&
-        formData.name !== "New Scenario" &&
-        formData.name.trim() !== ""
-          ? formData.name
-          : initialFormData.name;
-      setFormData({
-        ...initialFormData,
-        problemStatement: preservedProblemStatement,
-        name: preservedName,
+      // Name and problemStatement are now managed by nuqs, so they're already in q
+      // Only initialize if not already set in URL
+      if (!q.problemStatement) {
+        // No problem statement in URL - keep empty or use default
+      }
+      if (!q.name || q.name === "New Scenario") {
+        // Name is default or not set - keep as is (nuqs will handle default)
+      }
+      // Initialize basic info state
+      setBasicInfoState({
         scenarioAgentId: scenarioData.scenario_agent_id || null,
         imageAgentId: scenarioData.image_agent_id || null,
         videoAgentId:
           (scenarioData as ScenarioDetailOut & { video_agent_id?: string })
             .video_agent_id || null,
+        active: true, // Default for create mode
+      });
+      setFormData({
+        ...initialFormData,
         parameterIds: newData.selected_parameter_ids || [],
       });
 
@@ -2576,7 +2534,11 @@ export default function Scenario({
             currentObjectiveIdsFromQ,
             objectiveMapping
           );
-          setCurrentObjectives(objectivesFromIds);
+          updateObjectives(objectivesFromIds);
+          setContentState((prev) => ({
+            ...prev,
+            objectives: objectivesFromIds,
+          }));
         }
       }
 
@@ -2606,21 +2568,19 @@ export default function Scenario({
               searchParams.get("problemStatement");
             if (
               !problemStatementFromUrl &&
-              (!formData.problemStatement || !formData.problemStatement.trim())
+              (!problemStatement || !problemStatement.trim())
             ) {
-              handleInputChange(
-                "problemStatement",
-                firstProblemStatement.problem_statement
-              );
+              setQ({
+                problemStatement:
+                  firstProblemStatement.problem_statement || null,
+              });
             }
             // Set name in new mode (using name field)
             const isNewMode =
               !isEditMode &&
-              (!formData.name ||
-                formData.name === "New Scenario" ||
-                formData.name.trim() === "");
+              (!name || name === "New Scenario" || name.trim() === "");
             if (isNewMode && firstProblemStatement.name) {
-              handleInputChange("name", firstProblemStatement.name);
+              setQ({ name: firstProblemStatement.name || null });
             }
           }
         }
@@ -2750,8 +2710,8 @@ export default function Scenario({
     parameterMapping,
     fieldMapping,
     parameterSelectionMinMax, // Used as fallback value in effect
-    formData.name,
-    formData.problemStatement,
+    name,
+    problemStatement,
     handleInputChange,
     useImage,
     // q.documentIds, q.fieldIds, etc. intentionally omitted - only specific q fields needed
@@ -2769,20 +2729,21 @@ export default function Scenario({
 
   // Reset agent selection when flags change to incompatible combination
   useEffect(() => {
-    if (!scenarioData || !agentMapping || !formData.scenarioAgentId) return;
+    if (!scenarioData || !agentMapping || !basicInfoState.scenarioAgentId)
+      return;
 
-    const agent = agentMapping[formData.scenarioAgentId];
+    const agent = agentMapping[basicInfoState.scenarioAgentId];
     const agentRole = agent?.roles?.[0]; // Get first role (should be only one)
 
     // If current agent doesn't match 'scenario' role, clear selection
     if (agentRole && agentRole !== "scenario") {
-      setFormData((prev) => ({
+      setBasicInfoState((prev) => ({
         ...prev,
         scenarioAgentId: null,
         videoAgentId: null,
       }));
     }
-  }, [scenarioData, agentMapping, formData.scenarioAgentId]);
+  }, [scenarioData, agentMapping, basicInfoState.scenarioAgentId]);
 
   // Auto-select agents when there's only one option (similar to Document.tsx)
   useEffect(() => {
@@ -2803,16 +2764,16 @@ export default function Scenario({
       }) || [];
 
     // Auto-select first scenario agent if only one option and not already set
-    if (scenarioAgentIds.length === 1 && !formData.scenarioAgentId) {
-      setFormData((prev) => ({
+    if (scenarioAgentIds.length === 1 && !basicInfoState.scenarioAgentId) {
+      setBasicInfoState((prev) => ({
         ...prev,
         scenarioAgentId: scenarioAgentIds[0] || null,
       }));
     }
 
     // Auto-select first image agent if only one option and not already set
-    if (imageAgentIds.length === 1 && !formData.imageAgentId) {
-      setFormData((prev) => ({
+    if (imageAgentIds.length === 1 && !basicInfoState.imageAgentId) {
+      setBasicInfoState((prev) => ({
         ...prev,
         imageAgentId: imageAgentIds[0] || null,
       }));
@@ -2824,8 +2785,8 @@ export default function Scenario({
         const agent = agentMapping[id];
         return agent?.roles?.includes("video");
       }) || [];
-    if (videoAgentIds.length === 1 && !formData.videoAgentId) {
-      setFormData((prev) => ({
+    if (videoAgentIds.length === 1 && !basicInfoState.videoAgentId) {
+      setBasicInfoState((prev) => ({
         ...prev,
         videoAgentId: videoAgentIds[0] || null,
       }));
@@ -2833,10 +2794,41 @@ export default function Scenario({
   }, [
     scenarioData,
     agentMapping,
-    formData.scenarioAgentId,
-    formData.imageAgentId,
-    formData.videoAgentId,
+    basicInfoState.scenarioAgentId,
+    basicInfoState.imageAgentId,
+    basicInfoState.videoAgentId,
   ]);
+
+  // Store original name and problemStatement for change tracking (from server data)
+  const originalName = useMemo(() => {
+    if (!isEditMode || !scenarioData) return "New Scenario";
+    return scenarioData.name || "New Scenario";
+  }, [isEditMode, scenarioData]);
+
+  const originalProblemStatement = useMemo(() => {
+    if (!isEditMode || !scenarioData) return "";
+    return (scenarioData as ScenarioDetailOut).problem_statement || "";
+  }, [isEditMode, scenarioData]);
+
+  // Store original basic info state for change tracking
+  const originalBasicInfoState = useMemo(() => {
+    if (!isEditMode || !scenarioData) {
+      return {
+        scenarioAgentId: null,
+        imageAgentId: null,
+        videoAgentId: null,
+        active: true,
+      };
+    }
+    return {
+      scenarioAgentId: scenarioData.scenario_agent_id || null,
+      imageAgentId: scenarioData.image_agent_id || null,
+      videoAgentId:
+        (scenarioData as ScenarioDetailOut & { video_agent_id?: string })
+          .video_agent_id || null,
+      active: scenarioData.active ?? true,
+    };
+  }, [isEditMode, scenarioData]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -2849,9 +2841,13 @@ export default function Scenario({
     return (
       JSON.stringify(selectedPersonaIds.sort()) !==
         JSON.stringify(originalPersonaIds.sort()) ||
-      current.name !== original.name ||
-      current.problemStatement !== original.problemStatement ||
-      current.active !== original.active ||
+      name !== originalName ||
+      problemStatement !== originalProblemStatement ||
+      basicInfoState.active !== originalBasicInfoState.active ||
+      basicInfoState.scenarioAgentId !==
+        originalBasicInfoState.scenarioAgentId ||
+      basicInfoState.imageAgentId !== originalBasicInfoState.imageAgentId ||
+      basicInfoState.videoAgentId !== originalBasicInfoState.videoAgentId ||
       JSON.stringify(current.departmentIds?.sort()) !==
         JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify([...currentDocumentIds].sort()) !==
@@ -2866,6 +2862,18 @@ export default function Scenario({
   }, [
     formData,
     originalFormData,
+    name,
+    originalName,
+    problemStatement,
+    originalProblemStatement,
+    basicInfoState.active,
+    basicInfoState.scenarioAgentId,
+    basicInfoState.imageAgentId,
+    basicInfoState.videoAgentId,
+    originalBasicInfoState.active,
+    originalBasicInfoState.scenarioAgentId,
+    originalBasicInfoState.imageAgentId,
+    originalBasicInfoState.videoAgentId,
     isEditMode,
     selectedPersonaIds,
     scenarioData,
@@ -2882,14 +2890,8 @@ export default function Scenario({
   // Check if problem statement has changes (for reset button)
   const hasProblemStatementChanges = useMemo(() => {
     if (!isEditMode) return false;
-    const current = formData?.problemStatement || "";
-    const original = originalFormData?.problemStatement || "";
-    return current !== original;
-  }, [
-    isEditMode,
-    formData?.problemStatement,
-    originalFormData?.problemStatement,
-  ]);
+    return problemStatement !== originalProblemStatement;
+  }, [isEditMode, problemStatement, originalProblemStatement]);
 
   // Use server-computed readonly flag from V2 API
   const isReadonly = useMemo(() => {
@@ -2914,7 +2916,7 @@ export default function Scenario({
   const getStepStatus = useCallback(
     (stepId: string): StepStatus => {
       // If we have a scenario description, mark all sections as completed
-      if (formData.problemStatement && formData.problemStatement.trim()) {
+      if (problemStatement && problemStatement.trim()) {
         return "completed";
       }
 
@@ -2960,7 +2962,7 @@ export default function Scenario({
       currentDocumentIds,
       currentFieldIds, // Renamed from currentParameterItemIds
       fieldMapping, // Renamed from parameterItemMapping
-      formData.problemStatement,
+      problemStatement,
       formData.parameterIds,
     ]
   );
@@ -3420,12 +3422,9 @@ export default function Scenario({
   const handleResetContent = () => {
     try {
       // Clear problem statement and turn off objectives
-      setFormData((prev) => ({
-        ...prev,
-        problemStatement: "",
-      }));
-      // Clear objectives array
-      setCurrentObjectives([]);
+      setQ({ problemStatement: null });
+      // Clear objectives array via contentState
+      setContentState((prev) => ({ ...prev, objectives: [] }));
       // Clear selected problem statement ID
       toast.success("Scenario content reset");
     } catch {
@@ -3442,255 +3441,7 @@ export default function Scenario({
     }
   };
 
-  // Objective handlers
-  const addObjective = () => {
-    const maxObjectives = 3; // Hardcoded max of 3
-    if (currentObjectives.length >= maxObjectives) {
-      toast.error(`Maximum ${maxObjectives} objectives allowed`);
-      return;
-    }
-    setCurrentObjectives((prev) => [...prev, ""]);
-  };
-
-  const removeObjective = (index: number) => {
-    setCurrentObjectives((prev) => {
-      const next = [...prev];
-      next.splice(index, 1);
-      return next;
-    });
-  };
-
-  const updateObjective = (index: number, value: string) => {
-    setCurrentObjectives((prev) => {
-      const next = [...prev];
-      next[index] = value;
-      return next;
-    });
-  };
-
-  const handleDragStartObjective = (e: React.DragEvent, index: number) => {
-    setDraggedObjectiveIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDropObjective = (e: React.DragEvent, targetIndex: number) => {
-    e.preventDefault();
-    if (draggedObjectiveIndex === null) return;
-    setCurrentObjectives((prev) => {
-      const next = [...prev];
-      const [removed] = next.splice(draggedObjectiveIndex, 1);
-      next.splice(targetIndex, 0, removed || "");
-      return next;
-    });
-    setDraggedObjectiveIndex(null);
-  };
-
-  // Question drag handlers
-  const handleDragStartQuestion = (e: React.DragEvent, index: number) => {
-    setDraggedQuestionIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOverQuestion = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDropQuestion = (e: React.DragEvent, targetIndex: number) => {
-    e.preventDefault();
-    if (draggedQuestionIndex === null) return;
-    setQuestions((prev) => {
-      const next = [...prev];
-      const removed = next[draggedQuestionIndex];
-      if (!removed) return next;
-      next.splice(draggedQuestionIndex, 1);
-      next.splice(targetIndex, 0, removed);
-      return next;
-    });
-    setDraggedQuestionIndex(null);
-  };
-
-  // Option drag handlers
-  const handleDragStartOption = (
-    e: React.DragEvent,
-    questionIndex: number,
-    optionIndex: number
-  ) => {
-    setDraggedOptionIndex({ questionIndex, optionIndex });
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOverOption = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDropOption = (
-    e: React.DragEvent,
-    questionIndex: number,
-    targetOptionIndex: number
-  ) => {
-    e.preventDefault();
-    if (draggedOptionIndex === null) return;
-    if (
-      draggedOptionIndex.questionIndex !== questionIndex ||
-      draggedOptionIndex.optionIndex === targetOptionIndex
-    ) {
-      setDraggedOptionIndex(null);
-      return;
-    }
-    setQuestions((prev) => {
-      const next = [...prev];
-      const question = next[draggedOptionIndex.questionIndex];
-      if (!question) return next;
-      const options = [...question.options];
-      const removed = options[draggedOptionIndex.optionIndex];
-      if (!removed) return next;
-      options.splice(draggedOptionIndex.optionIndex, 1);
-      options.splice(targetOptionIndex, 0, removed);
-      next[draggedOptionIndex.questionIndex] = {
-        ...question,
-        options,
-      };
-      return next;
-    });
-    setDraggedOptionIndex(null);
-  };
-
-  // Question update handlers
-  const handleUpdateQuestion = (
-    index: number,
-    question: {
-      id: string;
-      question_text: string;
-      allow_multiple: boolean;
-      options: Array<{
-        id: string;
-        option_text: string;
-        type?: "discrete" | "freeform";
-        is_correct: boolean;
-      }>;
-      times?: number[];
-    }
-  ) => {
-    setQuestions((prev) => {
-      const next = [...prev];
-      next[index] = question;
-      return next;
-    });
-  };
-
-  const handleQuestionTimesChange = (index: number, times: number[]) => {
-    setQuestions((prev) => {
-      const next = [...prev];
-      const question = next[index];
-      if (!question) return next;
-      next[index] = {
-        ...question,
-        times,
-      };
-      return next;
-    });
-  };
-
-  // Option management handlers
-  const handleAddOption = (questionIndex: number) => {
-    setQuestions((prev) => {
-      const next = [...prev];
-      const question = next[questionIndex];
-      if (!question) return next;
-      next[questionIndex] = {
-        ...question,
-        options: [
-          ...question.options,
-          {
-            id: "",
-            option_text: "",
-            type: "discrete",
-            is_correct: false,
-          },
-        ],
-      };
-      return next;
-    });
-  };
-
-  const handleRemoveOption = (questionIndex: number, optionIndex: number) => {
-    setQuestions((prev) => {
-      const next = [...prev];
-      const question = next[questionIndex];
-      if (!question) return next;
-      next[questionIndex] = {
-        ...question,
-        options: question.options.filter((_, i) => i !== optionIndex),
-      };
-      return next;
-    });
-  };
-
-  const handleOptionChange = (
-    questionIndex: number,
-    optionIndex: number,
-    option: {
-      id: string;
-      option_text: string;
-      type?: "discrete" | "freeform";
-      is_correct: boolean;
-    }
-  ) => {
-    setQuestions((prev) => {
-      const next = [...prev];
-      const question = next[questionIndex];
-      if (!question) return next;
-      const options = [...question.options];
-      const existingOption = options[optionIndex];
-      if (!existingOption) return next;
-      options[optionIndex] = option;
-      next[questionIndex] = {
-        ...question,
-        options,
-      };
-      return next;
-    });
-  };
-
-  const handleToggleOptionCorrect = (
-    questionIndex: number,
-    optionIndex: number
-  ) => {
-    setQuestions((prev) => {
-      const next = [...prev];
-      const question = next[questionIndex];
-      if (!question) return next;
-      const options = [...question.options];
-      const existingOption = options[optionIndex];
-      if (!existingOption) return next;
-      options[optionIndex] = {
-        ...existingOption,
-        is_correct: !existingOption.is_correct,
-      };
-      next[questionIndex] = {
-        ...question,
-        options,
-      };
-      return next;
-    });
-  };
-
-  const handleImageSelect = (
-    image: {
-      id: string;
-      name: string;
-      upload_id: string;
-    } | null
-  ) => {
-    setImage(image);
-  };
+  // Note: Objective, question, option, and image/video handlers are now in ContentSection
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -3771,11 +3522,14 @@ export default function Scenario({
 
             // Store upload_id directly (no image creation needed)
             // Image will be linked to scenario when form is submitted
-            setImage({
-              id: databaseUploadId, // Use upload_id as id
-              name: file.name,
-              upload_id: databaseUploadId,
-            });
+            setContentState((prev) => ({
+              ...prev,
+              image: {
+                id: databaseUploadId, // Use upload_id as id
+                name: file.name,
+                upload_id: databaseUploadId,
+              },
+            }));
             toast.success(`Image uploaded: ${file.name}`, { id: toastId });
           } catch (finalizeError) {
             toast.error(
@@ -3946,7 +3700,7 @@ export default function Scenario({
         question_timestamps?: Record<string, Record<string, number[]>> | null;
         video_length?: number | null;
       } = {
-        name: formData.name?.trim() || "",
+        name: name?.trim() || "",
         description:
           scenarioData &&
           typeof scenarioData === "object" &&
@@ -3954,31 +3708,40 @@ export default function Scenario({
             ? ((scenarioData as { description?: string | null }).description ??
               null)
             : null,
-        problem_statement: formData.problemStatement?.trim() || "",
+        problem_statement: problemStatement?.trim() || "",
         department_ids: finalDepartmentIds,
-        active: formData.active ?? true,
+        active: basicInfoState.active,
         persona_ids: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         document_ids: currentDocumentIds,
         template_document_ids:
           templateDocumentIds.length > 0 ? templateDocumentIds : null,
-        objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
-        upload_ids: image?.upload_id ? [image.upload_id] : null,
-        image_names: image?.name ? [image.name] : null,
+        objective_ids: contentState.objectives.filter((obj) => obj.trim()), // Send raw objective text
+        upload_ids: contentState.image?.upload_id
+          ? [contentState.image.upload_id]
+          : null,
+        image_names: contentState.image?.name
+          ? [contentState.image.name]
+          : null,
         parameters: parametersDict,
-        scenario_agent_id: formData.scenarioAgentId || null,
-        image_agent_id: formData.imageAgentId || null,
+        scenario_agent_id: basicInfoState.scenarioAgentId || null,
+        image_agent_id: basicInfoState.imageAgentId || null,
         video_enabled: useVideo,
         questions_enabled: useQuestions,
-        video_agent_id: formData.videoAgentId || null,
-        video_ids: selectedVideo ? [selectedVideo.id] : null,
-        active_video_id: activeVideoId || null,
-        question_ids: currentQuestionIds.length > 0 ? currentQuestionIds : null,
+        video_agent_id: basicInfoState.videoAgentId || null,
+        video_ids: contentState.selectedVideo
+          ? [contentState.selectedVideo.id]
+          : null,
+        active_video_id: contentState.activeVideoId || null,
+        question_ids:
+          contentState.currentQuestionIds.length > 0
+            ? contentState.currentQuestionIds
+            : null,
         question_timestamps:
-          questions.length > 0 && selectedVideo
-            ? questions.reduce(
+          contentState.questions.length > 0 && contentState.selectedVideo
+            ? contentState.questions.reduce(
                 (acc, q) => {
                   if (q.times && q.times.length > 0) {
-                    acc[q.id] = { [selectedVideo.id]: q.times };
+                    acc[q.id] = { [contentState.selectedVideo!.id]: q.times };
                   }
                   return acc;
                 },
@@ -3994,7 +3757,7 @@ export default function Scenario({
           (v) => v.problem_statement
         );
         // Ensure current problem statement is included as the last version (most recent)
-        const currentProblemStatement = formData.problemStatement?.trim() || "";
+        const currentProblemStatement = problemStatement?.trim() || "";
         if (
           currentProblemStatement &&
           !versions.includes(currentProblemStatement)
@@ -4128,41 +3891,35 @@ export default function Scenario({
       <div className="space-y-6">
         {/* Step 1: Basic Information */}
         <ScenarioBasicInfoSection
-          name={formData.name || ""}
+          name={name || ""}
           departmentIds={formData.departmentIds || []}
           validDepartmentIds={scenarioData?.valid_department_ids || []}
           departmentMapping={departmentMapping}
-          scenarioAgentId={formData.scenarioAgentId}
-          imageAgentId={formData.imageAgentId}
-          videoAgentId={formData.videoAgentId}
+          initialScenarioAgentId={basicInfoState.scenarioAgentId}
+          initialImageAgentId={basicInfoState.imageAgentId}
+          initialVideoAgentId={basicInfoState.videoAgentId}
           validAgentIds={scenarioData?.valid_agent_ids || []}
           agentMapping={agentMapping}
-          active={formData.active ?? true}
+          initialActive={basicInfoState.active}
           useVideo={useVideo}
           onNameChange={(name) => handleInputChange("name", name)}
           onDepartmentIdsChange={(ids) =>
             handleInputChange("departmentIds", ids)
           }
-          onScenarioAgentIdChange={(id) =>
-            setFormData((prev) => ({ ...prev, scenarioAgentId: id }))
-          }
-          onImageAgentIdChange={(id) =>
-            setFormData((prev) => ({ ...prev, imageAgentId: id }))
-          }
-          onVideoAgentIdChange={(id) =>
-            setFormData((prev) => ({ ...prev, videoAgentId: id }))
-          }
-          onActiveChange={(active) => handleInputChange("active", active)}
           onUseVideoChange={(enabled) => {
             setQ({ useVideo: enabled || null });
             if (!enabled) {
-              setSelectedVideo(null);
-              setActiveVideoId(null);
+              setContentState((prev) => ({
+                ...prev,
+                selectedVideo: null,
+                activeVideoId: null,
+              }));
               setQ({ useQuestions: null });
             }
           }}
           onRandomizeAll={handleRandomizeAll}
           onResetAll={handleResetAll}
+          onStateChange={setBasicInfoState}
           isReadonly={isReadonly}
         />
         {/* Step 2: Persona Selection */}
@@ -4400,38 +4157,30 @@ export default function Scenario({
             contentStepIndex >= 0 ? contentStepIndex + 1 : steps.length;
           return (
             <ContentSection
-              problemStatement={formData.problemStatement || ""}
+              problemStatement={problemStatement || ""}
               problemStatementMapping={problemStatementMapping}
               currentProblemStatementIds={currentProblemStatementIds}
               {...(selectedProblemStatementId
                 ? { selectedProblemStatementId }
                 : {})}
               hasProblemStatementChanges={hasProblemStatementChanges}
-              originalProblemStatement={
-                originalFormData?.problemStatement || ""
-              }
+              originalProblemStatement={originalProblemStatement}
               useProblemStatement={useProblemStatement}
-              objectives={currentObjectives}
+              initialObjectives={contentState.objectives}
               objectivesHistory={objectivesHistory}
               useObjectives={useObjectives}
               onUseObjectivesChange={(enabled) => {
                 setQ({ useObjectives: enabled || null });
-                if (enabled) {
-                  // Automatically add one objective if none exist
-                  if (currentObjectives.length === 0) {
-                    setCurrentObjectives([""]);
-                  }
-                } else {
-                  setCurrentObjectives([]);
-                }
               }}
               useImage={useImage}
-              image={image}
+              initialImage={contentState.image}
               imageMapping={imageMapping}
               isUploadingImage={isUploadingImage}
               allPreviewDocumentIds={allPreviewDocumentIds}
               documentMapping={documentMapping}
-              scenarioPreviewDocumentId={scenarioPreviewDocumentId}
+              initialScenarioPreviewDocumentId={
+                contentState.scenarioPreviewDocumentId
+              }
               {...(scenarioData?.document_details
                 ? {
                     documentDetails: scenarioData.document_details as Array<{
@@ -4451,118 +4200,43 @@ export default function Scenario({
                 handleProblemStatementVersionSelect
               }
               onResetProblemStatement={() =>
-                handleInputChange(
-                  "problemStatement",
-                  originalFormData?.problemStatement || ""
-                )
+                setQ({ problemStatement: originalProblemStatement || null })
               }
               onUseProblemStatementChange={(enabled) => {
                 setQ({ useProblemStatement: enabled || null });
                 if (!enabled) {
-                  handleInputChange("problemStatement", "");
+                  setQ({ problemStatement: null });
                 }
               }}
-              onObjectivesChange={setCurrentObjectives}
-              onAddObjective={addObjective}
-              onRemoveObjective={removeObjective}
-              onUpdateObjective={updateObjective}
-              onDragStartObjective={handleDragStartObjective}
-              onDragOverObjective={handleDragOver}
-              onDropObjective={handleDropObjective}
               onUseImageChange={(enabled) => {
                 setQ({ useImage: enabled || null });
-                if (!enabled) {
-                  setImage(null);
-                }
               }}
-              onImageSelect={handleImageSelect}
               onImageUpload={handleImageUpload}
-              onImageRemove={() => setImage(null)}
               useVideo={useVideo}
-              selectedVideo={selectedVideo}
+              initialSelectedVideo={contentState.selectedVideo}
               videoMapping={videoMapping}
-              activeVideoId={activeVideoId}
+              initialActiveVideoId={contentState.activeVideoId}
               onUseVideoChange={(enabled) => {
                 setQ({ useVideo: enabled || null });
                 if (!enabled) {
-                  setSelectedVideo(null);
-                  setActiveVideoId(null);
                   setQ({ useQuestions: null });
                 }
               }}
-              onVideoSelect={(video) => {
-                setSelectedVideo(video);
-                setActiveVideoId(video?.id || null);
-              }}
               selectedVideoLength={selectedVideoLength}
-              onVideoLengthChange={(length) => {
-                setSelectedVideoLength(length);
-                // videoLength is not in nuqs schema, update manually
-                const params = new URLSearchParams(searchParams.toString());
-                if (length !== null) {
-                  params.set("videoLength", String(length));
-                } else {
-                  params.delete("videoLength");
-                }
-                router.replace(`${pathname}?${params.toString()}`, {
-                  scroll: false,
-                });
-              }}
+              onVideoLengthChange={updateVideoLength}
               useQuestions={useQuestions}
-              questions={questions}
-              currentQuestionIds={currentQuestionIds}
+              initialQuestions={contentState.questions}
+              initialCurrentQuestionIds={contentState.currentQuestionIds}
               onUseQuestionsChange={(enabled) => {
                 setQ({ useQuestions: enabled || null });
-                if (enabled) {
-                  // Automatically add one question if none exist
-                  if (questions.length === 0) {
-                    setQuestions([
-                      {
-                        id: "",
-                        question_text: "",
-                        allow_multiple: false,
-                        options: [
-                          {
-                            id: "",
-                            option_text: "",
-                            type: "discrete",
-                            is_correct: false,
-                          },
-                          {
-                            id: "",
-                            option_text: "",
-                            type: "discrete",
-                            is_correct: false,
-                          },
-                        ],
-                        times: [],
-                      },
-                    ]);
-                  }
-                } else {
-                  setQuestions([]);
-                  setCurrentQuestionIds([]);
-                }
               }}
-              onQuestionsChange={(newQuestions) => {
-                setQuestions(newQuestions);
-                setCurrentQuestionIds(newQuestions.map((q) => q.id));
+              onStateChange={setContentState}
+              onScenarioPreviewDocumentChange={(docId) => {
+                setContentState((prev) => ({
+                  ...prev,
+                  scenarioPreviewDocumentId: docId,
+                }));
               }}
-              onDragStartQuestion={handleDragStartQuestion}
-              onDragOverQuestion={handleDragOverQuestion}
-              onDropQuestion={handleDropQuestion}
-              onDragStartOption={handleDragStartOption}
-              onDragOverOption={handleDragOverOption}
-              onDropOption={handleDropOption}
-              onUpdateQuestion={handleUpdateQuestion}
-              onQuestionTimesChange={handleQuestionTimesChange}
-              onAddOption={handleAddOption}
-              onRemoveOption={handleRemoveOption}
-              onOptionChange={handleOptionChange}
-              onToggleOptionCorrect={handleToggleOptionCorrect}
-              draggedQuestionIndex={draggedQuestionIndex}
-              draggedOptionIndex={draggedOptionIndex}
-              onScenarioPreviewDocumentChange={setScenarioPreviewDocumentId}
               onDocumentRemove={handleDocumentRemove}
               onGenerate={handleGenerateScenario}
               onResetContent={handleResetContent}
@@ -4582,7 +4256,6 @@ export default function Scenario({
               isReadonly={isReadonly}
               isGeneratingScenario={isGeneratingScenario}
               isSubmitting={isSubmitting}
-              draggedObjectiveIndex={draggedObjectiveIndex}
               imageInputRef={imageInputRef as React.RefObject<HTMLInputElement>}
               isEditMode={isEditMode}
             />

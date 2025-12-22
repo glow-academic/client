@@ -160,7 +160,7 @@ valid_departments_for_eval AS (
     WHERE pd.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id) AND d.active = true
 ),
 valid_dept_ids AS (
-    SELECT id FROM valid_departments_for_eval
+    SELECT ARRAY_AGG(id::text) as ids FROM valid_departments_for_eval
 ),
 all_department_mapping_data AS (
     SELECT COALESCE(

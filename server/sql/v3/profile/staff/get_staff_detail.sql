@@ -4,11 +4,7 @@
 --   $2 = currentProfileId (uuid or NULL) - current user's profile ID for role visibility check
 -- Returns: All fields needed for editing staff
 WITH resolve_current_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
-            ELSE $2::uuid
-        END as resolved_profile_id
+    SELECT $2::uuid as resolved_profile_id
 ),
 current_user_role AS (
     SELECT role FROM resolve_current_profile_id rpi

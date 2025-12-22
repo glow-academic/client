@@ -4,6 +4,7 @@
  */
 "use client";
 import { Check, Power, RotateCcw, Video } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
@@ -28,24 +29,26 @@ export interface ScenarioBasicInfoSectionProps {
   departmentIds: string[];
   validDepartmentIds: string[];
   departmentMapping: Record<string, DepartmentMappingItem>;
-  scenarioAgentId: string | null;
-  imageAgentId: string | null;
-  videoAgentId: string | null;
+  initialScenarioAgentId?: string | null;
+  initialImageAgentId?: string | null;
+  initialVideoAgentId?: string | null;
   validAgentIds: string[];
   agentMapping: Record<string, AgentMappingItem>;
-  active: boolean;
+  initialActive?: boolean;
   useVideo: boolean;
 
   // Callbacks
   onNameChange: (name: string) => void;
   onDepartmentIdsChange: (ids: string[]) => void;
-  onScenarioAgentIdChange: (id: string | null) => void;
-  onImageAgentIdChange: (id: string | null) => void;
-  onVideoAgentIdChange: (id: string | null) => void;
-  onActiveChange: (active: boolean) => void;
   onUseVideoChange: (enabled: boolean) => void;
   onRandomizeAll: () => void;
   onResetAll: () => void;
+  onStateChange?: (state: {
+    scenarioAgentId: string | null;
+    imageAgentId: string | null;
+    videoAgentId: string | null;
+    active: boolean;
+  }) => void;
 
   // UI State
   isReadonly: boolean;
@@ -59,27 +62,70 @@ export function ScenarioBasicInfoSection({
   departmentIds,
   validDepartmentIds,
   departmentMapping,
-  scenarioAgentId,
-  imageAgentId,
-  videoAgentId,
+  initialScenarioAgentId = null,
+  initialImageAgentId = null,
+  initialVideoAgentId = null,
   validAgentIds,
   agentMapping,
-  active,
+  initialActive = true,
   useVideo,
   onNameChange,
   onDepartmentIdsChange,
-  onScenarioAgentIdChange,
-  onImageAgentIdChange,
-  onVideoAgentIdChange,
-  onActiveChange,
   onUseVideoChange,
   onRandomizeAll,
   onResetAll,
+  onStateChange,
   isReadonly,
   defaultName = "New Scenario",
   activeLabel = "Active",
   activeDescription = "Inactive scenarios will not be available for other simulations",
 }: ScenarioBasicInfoSectionProps) {
+  // Internal state for agent IDs and active
+  const [scenarioAgentId, setScenarioAgentId] = useState<string | null>(
+    initialScenarioAgentId ?? null
+  );
+  const [imageAgentId, setImageAgentId] = useState<string | null>(
+    initialImageAgentId ?? null
+  );
+  const [videoAgentId, setVideoAgentId] = useState<string | null>(
+    initialVideoAgentId ?? null
+  );
+  const [active, setActive] = useState<boolean>(initialActive ?? true);
+
+  // Initialize from props when they change (for edit mode)
+  useEffect(() => {
+    if (initialScenarioAgentId !== undefined) {
+      setScenarioAgentId(initialScenarioAgentId);
+    }
+  }, [initialScenarioAgentId]);
+
+  useEffect(() => {
+    if (initialImageAgentId !== undefined) {
+      setImageAgentId(initialImageAgentId);
+    }
+  }, [initialImageAgentId]);
+
+  useEffect(() => {
+    if (initialVideoAgentId !== undefined) {
+      setVideoAgentId(initialVideoAgentId);
+    }
+  }, [initialVideoAgentId]);
+
+  useEffect(() => {
+    if (initialActive !== undefined) {
+      setActive(initialActive);
+    }
+  }, [initialActive]);
+
+  // Notify parent of state changes
+  useEffect(() => {
+    onStateChange?.({
+      scenarioAgentId,
+      imageAgentId,
+      videoAgentId,
+      active,
+    });
+  }, [scenarioAgentId, imageAgentId, videoAgentId, active, onStateChange]);
   // Filter agents by 'scenario' role only
   const filteredScenarioAgentIds =
     validAgentIds?.filter((id) => {
@@ -212,7 +258,7 @@ export function ScenarioBasicInfoSection({
                     items={agentMapping}
                     itemIds={filteredScenarioAgentIds}
                     selectedIds={scenarioAgentId ? [scenarioAgentId] : []}
-                    onSelect={(ids) => onScenarioAgentIdChange(ids[0] || null)}
+                    onSelect={(ids) => setScenarioAgentId(ids[0] || null)}
                     getId={(item) => (item as unknown as { id: string }).id}
                     getLabel={(item) => item.name || ""}
                     getSearchText={(item) =>
@@ -262,7 +308,7 @@ export function ScenarioBasicInfoSection({
                     items={agentMapping}
                     itemIds={imageAgentIds}
                     selectedIds={imageAgentId ? [imageAgentId] : []}
-                    onSelect={(ids) => onImageAgentIdChange(ids[0] || null)}
+                    onSelect={(ids) => setImageAgentId(ids[0] || null)}
                     getId={(item) => (item as unknown as { id: string }).id}
                     getLabel={(item) => item.name || ""}
                     getSearchText={(item) =>
@@ -312,7 +358,7 @@ export function ScenarioBasicInfoSection({
                     items={agentMapping}
                     itemIds={videoAgentIds}
                     selectedIds={videoAgentId ? [videoAgentId] : []}
-                    onSelect={(ids) => onVideoAgentIdChange(ids[0] || null)}
+                    onSelect={(ids) => setVideoAgentId(ids[0] || null)}
                     getId={(item) => (item as unknown as { id: string }).id}
                     getLabel={(item) => item.name || ""}
                     getSearchText={(item) =>
@@ -370,7 +416,7 @@ export function ScenarioBasicInfoSection({
                 id="active"
                 data-testid="switch-scenario-active"
                 checked={active ?? true}
-                onCheckedChange={(checked) => onActiveChange(checked)}
+                onCheckedChange={(checked) => setActive(checked)}
                 disabled={isReadonly}
               />
             </div>

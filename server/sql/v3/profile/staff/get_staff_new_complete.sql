@@ -1,7 +1,10 @@
 -- Get default staff detail for creation
 -- Parameters: $1 = profile_id (uuid)
 
-WITH user_departments AS (
+WITH resolve_profile_id AS (
+    SELECT $1::uuid as resolved_profile_id
+),
+user_departments AS (
     SELECT DISTINCT pd.department_id
     FROM resolve_profile_id rpi
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id

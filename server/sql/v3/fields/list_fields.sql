@@ -4,7 +4,11 @@ WITH user_departments AS (
     WHERE profile_id = $1 AND active = true
 ),
 user_profile AS (
-    SELECT role, name as actor_name FROM profiles WHERE id = $1
+    SELECT 
+        role,
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+    FROM profiles 
+    WHERE id = $1
 ),
 field_parameters_agg AS (
     SELECT 
@@ -117,6 +121,6 @@ AND (
     )
 )
 GROUP BY f.id, f.name, f.description, f.active, f.created_at, f.updated_at,
-         fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, up.role, pmd.mapping, dmd.mapping
+         fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, up.role, up.actor_name, pmd.mapping, dmd.mapping
 ORDER BY f.name
 

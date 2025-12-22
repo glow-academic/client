@@ -1,18 +1,14 @@
 -- Get key detail with department relationships, model relationships, and permissions
 -- Parameters: $1=keyId (uuid), $2=profileId (uuid)
 WITH resolve_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
-            ELSE $2::uuid
-        END as resolved_profile_id
+    SELECT $2::uuid as resolved_profile_id
 ),
 actor_profile AS (
     SELECT 
-        $2::uuid as profile_id,
+        rpi.resolved_profile_id as profile_id,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 key_data AS (
     SELECT 

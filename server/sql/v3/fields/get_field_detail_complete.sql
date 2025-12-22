@@ -8,7 +8,7 @@ user_profile AS (
     SELECT 
         up.id,
         up.role,
-        up.name as actor_name
+        COALESCE(up.first_name || ' ' || up.last_name, 'System') as actor_name
     FROM resolve_profile_id rpi
     JOIN profiles up ON up.id = rpi.resolved_profile_id
 ),
