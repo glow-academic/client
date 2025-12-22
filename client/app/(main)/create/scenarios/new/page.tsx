@@ -9,6 +9,12 @@ import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import {
+  csvToArray,
+  extractFieldRanges,
+  extractFieldShowSelectedByParam,
+  loadScenarioSearchParams,
+} from "../searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
 type ScenarioNewIn = InputOf<"/api/v3/scenarios/new", "post">;
@@ -22,7 +28,7 @@ type UpdateScenarioOut = OutputOf<"/api/v3/scenarios/update", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getScenarioDefault = async (
-  input: ScenarioNewIn,
+  input: ScenarioNewIn
 ): Promise<ScenarioNewOut> => {
   return api.post("/scenarios/new", input, {
     cache: "no-store",
@@ -34,7 +40,7 @@ const getScenarioDefault = async (
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createScenario(
-  input: CreateScenarioIn,
+  input: CreateScenarioIn
 ): Promise<CreateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -56,7 +62,7 @@ export default async function NewScenarioPage({
 }) {
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Parse search params
+  // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -69,156 +75,44 @@ export default async function NewScenarioPage({
     }
   });
 
-  // Extract filter params
-  const departmentIds = searchParamsObj
-    .get("departmentIds")
-    ?.split(",")
-    .filter(Boolean);
-  const personaIds = searchParamsObj
-    .get("personaIds")
-    ?.split(",")
-    .filter(Boolean);
-  const documentIds = searchParamsObj
-    .get("documentIds")
-    ?.split(",")
-    .filter(Boolean);
-  const templateDocumentIds = searchParamsObj
-    .get("templateDocumentIds")
-    ?.split(",")
-    .filter(Boolean);
-  const parameterIds = searchParamsObj
-    .get("parameterIds")
-    ?.split(",")
-    .filter(Boolean);
-  const fieldIds = searchParamsObj // Renamed from parameterItemIds
-    .get("fieldIds") // Renamed from parameterItemIds
-    ?.split(",")
-    .filter(Boolean);
-  // Extract URL parameters for linking generated resources
-  const imageIds = searchParamsObj.get("imageIds")?.split(",").filter(Boolean);
-  const objectiveIds = searchParamsObj
-    .get("objectiveIds")
-    ?.split(",")
-    .filter(Boolean);
-  const problemStatementIds = searchParamsObj
-    .get("problemStatementIds")
-    ?.split(",")
-    .filter(Boolean);
-  const personaSearch = searchParamsObj.get("personaSearch") || undefined;
-  const documentSearch = searchParamsObj.get("documentSearch") || undefined;
-  const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;
-  const documentShowSelected = searchParamsObj.get("documentShowSelected")
-    ? searchParamsObj.get("documentShowSelected") === "true"
-    : undefined;
-  const documentShowTemplate = searchParamsObj.get("documentShowTemplate")
-    ? searchParamsObj.get("documentShowTemplate") === "true"
-    : undefined;
-  const personaShowSelected = searchParamsObj.get("personaShowSelected")
-    ? searchParamsObj.get("personaShowSelected") === "true"
-    : undefined;
-  const parameterShowSelected = searchParamsObj.get("parameterShowSelected")
-    ? searchParamsObj.get("parameterShowSelected") === "true"
-    : undefined;
-  // Extract per-parameter field filters (format: fieldShowSelected_{paramId})
-  const fieldShowSelectedByParam: Record<string, boolean> | undefined = (() => {
-    const result: Record<string, boolean> = {};
-    let hasAny = false;
-    for (const [key, value] of searchParamsObj.entries()) {
-      if (key.startsWith("fieldShowSelected_")) {
-        const paramId = key.replace("fieldShowSelected_", "");
-        result[paramId] = value === "true";
-        hasAny = true;
-      }
-    }
-    return hasAny ? result : undefined;
-  })();
-  const personaMin = searchParamsObj.get("personaMin")
-    ? parseInt(searchParamsObj.get("personaMin") || "1", 10)
-    : undefined;
-  const personaMax = searchParamsObj.get("personaMax")
-    ? parseInt(searchParamsObj.get("personaMax") || "1", 10)
-    : undefined;
-  const documentMin = searchParamsObj.get("documentMin")
-    ? parseInt(searchParamsObj.get("documentMin") || "0", 10)
-    : undefined;
-  const documentMax = searchParamsObj.get("documentMax")
-    ? parseInt(searchParamsObj.get("documentMax") || "1", 10)
-    : undefined;
-  const parameterSelectionMin = searchParamsObj.get("parameterSelectionMin")
-    ? parseInt(searchParamsObj.get("parameterSelectionMin") || "0", 10)
-    : undefined;
-  const parameterSelectionMax = searchParamsObj.get("parameterSelectionMax")
-    ? parseInt(searchParamsObj.get("parameterSelectionMax") || "3", 10)
-    : undefined;
-  const useImage = searchParamsObj.get("useImage")
-    ? searchParamsObj.get("useImage") === "true"
-    : undefined;
-  const useVideo = searchParamsObj.get("useVideo")
-    ? searchParamsObj.get("useVideo") === "true"
-    : undefined;
+  // Load typed search params using nuqs
+  const q = loadScenarioSearchParams(searchParamsObj);
 
-  // Parse field ranges (format: fieldMin_{paramId}, fieldMax_{paramId})
-  const fieldRanges: // Renamed from parameterItemRanges
-  Record<string, { min: number; max: number }> | undefined = (() => {
-    const ranges: Record<string, { min: number; max: number }> = {};
-    let hasRanges = false;
-    for (const [key, value] of searchParamsObj.entries()) {
-      if (key.startsWith("fieldMin_")) {
-        // Renamed from parameterItemMin_
-        const paramId = key.replace("fieldMin_", "");
-        const min = parseInt(value, 10);
-        if (!isNaN(min)) {
-          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
-          ranges[paramId].min = min;
-          hasRanges = true;
-        }
-      } else if (key.startsWith("fieldMax_")) {
-        // Renamed from parameterItemMax_
-        const paramId = key.replace("fieldMax_", "");
-        const max = parseInt(value, 10);
-        if (!isNaN(max)) {
-          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
-          ranges[paramId].max = max;
-          hasRanges = true;
-        }
-      }
-    }
-    return hasRanges ? ranges : undefined;
-  })();
-
-  // Parse randomization param (single param: "all", "persona", "document", "parameters", or "parameter_{field_id}")
-  const randomize = searchParamsObj.get("randomize") || undefined;
+  // Extract dynamic params (not handled by nuqs parsers)
+  const fieldShowSelectedByParam =
+    extractFieldShowSelectedByParam(searchParamsObj);
+  const fieldRanges = extractFieldRanges(searchParamsObj);
 
   // Fetch default scenario detail server-side with filter params
   const scenarioDetailDefault = await getScenarioDefault({
     body: {
-      departmentIds: departmentIds || null,
-      personaIds: personaIds || null,
-      documentIds: documentIds || null,
-      templateDocumentIds: templateDocumentIds || null,
-      parameterIds: parameterIds || null,
-      fieldIds: fieldIds || null, // Renamed from parameterItemIds
-      personaSearch: personaSearch || null,
-      documentSearch: documentSearch || null,
-      parameterSearch: parameterSearch || null,
-      documentShowSelected: documentShowSelected || null,
-      documentShowTemplate: documentShowTemplate || null,
-      personaShowSelected: personaShowSelected || null,
-      parameterShowSelected: parameterShowSelected || null,
-      fieldShowSelectedByParam: fieldShowSelectedByParam || null,
-      personaMin: personaMin || null,
-      personaMax: personaMax || null,
-      documentMin: documentMin || null,
-      documentMax: documentMax || null,
-      parameterSelectionMin: parameterSelectionMin || null,
-      parameterSelectionMax: parameterSelectionMax || null,
-      fieldRanges: fieldRanges || null, // Renamed from parameterItemRanges
-      randomize: randomize || null,
-      useImage: useImage || null,
-      useVideo: useVideo || null,
-      imageIds: imageIds || null,
-      objectiveIds: objectiveIds || null,
-      problemStatementIds: problemStatementIds || null,
+      departmentIds: csvToArray(q.departmentIds) ?? null,
+      personaIds: csvToArray(q.personaIds) ?? null,
+      documentIds: csvToArray(q.documentIds) ?? null,
+      templateDocumentIds: csvToArray(q.templateDocumentIds) ?? null,
+      parameterIds: csvToArray(q.parameterIds) ?? null,
+      fieldIds: csvToArray(q.fieldIds) ?? null,
+      personaSearch: q.personaSearch ?? null,
+      documentSearch: q.documentSearch ?? null,
+      parameterSearch: q.parameterSearch ?? null,
+      documentShowSelected: q.documentShowSelected ?? null,
+      documentShowTemplate: q.documentShowTemplate ?? null,
+      personaShowSelected: q.personaShowSelected ?? null,
+      parameterShowSelected: q.parameterShowSelected ?? null,
+      fieldShowSelectedByParam: fieldShowSelectedByParam ?? null,
+      personaMin: q.personaMin ?? null,
+      personaMax: q.personaMax ?? null,
+      documentMin: q.documentMin ?? null,
+      documentMax: q.documentMax ?? null,
+      parameterSelectionMin: q.parameterSelectionMin ?? null,
+      parameterSelectionMax: q.parameterSelectionMax ?? null,
+      fieldRanges: fieldRanges ?? null,
+      randomize: q.randomize ?? null,
+      useImage: q.useImage ?? null,
+      useVideo: q.useVideo ?? null,
+      imageIds: csvToArray(q.imageIds) ?? null,
+      objectiveIds: csvToArray(q.objectiveIds) ?? null,
+      problemStatementIds: csvToArray(q.problemStatementIds) ?? null,
     },
   });
 

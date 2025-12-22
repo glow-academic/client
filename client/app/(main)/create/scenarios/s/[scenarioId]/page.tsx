@@ -10,6 +10,13 @@ import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import {
+  csvToArray,
+  extractFieldShowSelectedByParam,
+  extractParameterItemRanges,
+  extractRandomizeParameterItems,
+  loadScenarioSearchParams,
+} from "../../searchParams";
 
 /** ---- Strong types from OpenAPI ---- */
 type ScenarioDetailIn = InputOf<"/api/v3/scenarios/detail", "post">;
@@ -65,7 +72,7 @@ const getScenario = async (
     documentShowTemplate?: boolean;
     personaShowSelected?: boolean;
     parameterShowSelected?: boolean;
-    fieldShowSelectedByParam?: Record<string, boolean>;  // Per-parameter field filters: {paramId: bool}
+    fieldShowSelectedByParam?: Record<string, boolean>; // Per-parameter field filters: {paramId: bool}
     personaMin?: number;
     personaMax?: number;
     documentMin?: number;
@@ -145,7 +152,7 @@ export default async function EditScenarioPage({
   const { scenarioId } = await params;
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Parse search params
+  // Parse search params using nuqs
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
   Object.entries(paramsObj).forEach(([key, value]) => {
@@ -158,141 +165,15 @@ export default async function EditScenarioPage({
     }
   });
 
-  // Extract filter params
-  const departmentIds = searchParamsObj
-    .get("departmentIds")
-    ?.split(",")
-    .filter(Boolean);
-  const personaIds = searchParamsObj
-    .get("personaIds")
-    ?.split(",")
-    .filter(Boolean);
-  const documentIds = searchParamsObj
-    .get("documentIds")
-    ?.split(",")
-    .filter(Boolean);
-  const templateDocumentIds = searchParamsObj
-    .get("templateDocumentIds")
-    ?.split(",")
-    .filter(Boolean);
-  const parameterIds = searchParamsObj
-    .get("parameterIds")
-    ?.split(",")
-    .filter(Boolean);
-  const parameterItemIds = searchParamsObj
-    .get("parameterItemIds")
-    ?.split(",")
-    .filter(Boolean);
-  // Extract URL parameters for linking generated resources
-  const imageIds = searchParamsObj.get("imageIds")?.split(",").filter(Boolean);
-  const objectiveIds = searchParamsObj
-    .get("objectiveIds")
-    ?.split(",")
-    .filter(Boolean);
-  const problemStatementIds = searchParamsObj
-    .get("problemStatementIds")
-    ?.split(",")
-    .filter(Boolean);
-  const personaSearch = searchParamsObj.get("personaSearch") || undefined;
-  const documentSearch = searchParamsObj.get("documentSearch") || undefined;
-  const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;
-  const documentShowSelected = searchParamsObj.get("documentShowSelected")
-    ? searchParamsObj.get("documentShowSelected") === "true"
-    : undefined;
-  const documentShowTemplate = searchParamsObj.get("documentShowTemplate")
-    ? searchParamsObj.get("documentShowTemplate") === "true"
-    : undefined;
-  const personaShowSelected = searchParamsObj.get("personaShowSelected")
-    ? searchParamsObj.get("personaShowSelected") === "true"
-    : undefined;
-  const parameterShowSelected = searchParamsObj.get("parameterShowSelected")
-    ? searchParamsObj.get("parameterShowSelected") === "true"
-    : undefined;
-  // Extract per-parameter field filters (format: fieldShowSelected_{paramId})
-  const fieldShowSelectedByParam: Record<string, boolean> | undefined = (() => {
-    const result: Record<string, boolean> = {};
-    let hasAny = false;
-    for (const [key, value] of searchParamsObj.entries()) {
-      if (key.startsWith("fieldShowSelected_")) {
-        const paramId = key.replace("fieldShowSelected_", "");
-        result[paramId] = value === "true";
-        hasAny = true;
-      }
-    }
-    console.log('[DEBUG] page.tsx extracted fieldShowSelectedByParam:', result);
-    return hasAny ? result : undefined;
-  })();
-  const personaMin = searchParamsObj.get("personaMin")
-    ? parseInt(searchParamsObj.get("personaMin") || "1", 10)
-    : undefined;
-  const personaMax = searchParamsObj.get("personaMax")
-    ? parseInt(searchParamsObj.get("personaMax") || "1", 10)
-    : undefined;
-  const documentMin = searchParamsObj.get("documentMin")
-    ? parseInt(searchParamsObj.get("documentMin") || "0", 10)
-    : undefined;
-  const documentMax = searchParamsObj.get("documentMax")
-    ? parseInt(searchParamsObj.get("documentMax") || "1", 10)
-    : undefined;
-  const parameterSelectionMin = searchParamsObj.get("parameterSelectionMin")
-    ? parseInt(searchParamsObj.get("parameterSelectionMin") || "0", 10)
-    : undefined;
-  const parameterSelectionMax = searchParamsObj.get("parameterSelectionMax")
-    ? parseInt(searchParamsObj.get("parameterSelectionMax") || "3", 10)
-    : undefined;
-  const useImage = searchParamsObj.get("useImage")
-    ? searchParamsObj.get("useImage") === "true"
-    : undefined;
-  const useVideo = searchParamsObj.get("useVideo")
-    ? searchParamsObj.get("useVideo") === "true"
-    : undefined;
+  // Load typed search params using nuqs
+  const q = loadScenarioSearchParams(searchParamsObj);
 
-  // Parse parameter item ranges
-  const parameterItemRanges:
-    | Record<string, { min: number; max: number }>
-    | undefined = (() => {
-    const ranges: Record<string, { min: number; max: number }> = {};
-    let hasRanges = false;
-    for (const [key, value] of searchParamsObj.entries()) {
-      if (key.startsWith("parameterItemMin_")) {
-        const paramId = key.replace("parameterItemMin_", "");
-        const min = parseInt(value, 10);
-        if (!isNaN(min)) {
-          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
-          ranges[paramId].min = min;
-          hasRanges = true;
-        }
-      } else if (key.startsWith("parameterItemMax_")) {
-        const paramId = key.replace("parameterItemMax_", "");
-        const max = parseInt(value, 10);
-        if (!isNaN(max)) {
-          if (!ranges[paramId]) ranges[paramId] = { min: 1, max: 2 };
-          ranges[paramId].max = max;
-          hasRanges = true;
-        }
-      }
-    }
-    return hasRanges ? ranges : undefined;
-  })();
-
-  // Parse randomization params
-  const randomizePersonas =
-    searchParamsObj.get("randomizePersonas") || undefined;
-  const randomizeDocuments =
-    searchParamsObj.get("randomizeDocuments") || undefined;
-  const randomizeParameters =
-    searchParamsObj.get("randomizeParameters") || undefined;
-
-  const randomizeParameterItems: Record<string, string> | undefined = (() => {
-    const items: Record<string, string> = {};
-    for (const [key, value] of searchParamsObj.entries()) {
-      if (key.startsWith("randomizeParameterItems_")) {
-        const paramId = key.replace("randomizeParameterItems_", "");
-        items[paramId] = value;
-      }
-    }
-    return Object.keys(items).length > 0 ? items : undefined;
-  })();
+  // Extract dynamic params (not handled by nuqs parsers)
+  const fieldShowSelectedByParam =
+    extractFieldShowSelectedByParam(searchParamsObj);
+  const parameterItemRanges = extractParameterItemRanges(searchParamsObj);
+  const randomizeParameterItems =
+    extractRandomizeParameterItems(searchParamsObj);
 
   // Fetch scenario detail (always fresh - source of truth) with filter params
   try {
@@ -310,7 +191,7 @@ export default async function EditScenarioPage({
       documentShowTemplate?: boolean;
       personaShowSelected?: boolean;
       parameterShowSelected?: boolean;
-      fieldShowSelectedByParam?: Record<string, boolean>;  // Per-parameter field filters
+      fieldShowSelectedByParam?: Record<string, boolean>; // Per-parameter field filters
       personaMin?: number;
       personaMax?: number;
       documentMin?: number;
@@ -329,45 +210,72 @@ export default async function EditScenarioPage({
       problemStatementIds?: string[];
     };
     const filterParams: FilterParams = {};
+    const departmentIds = csvToArray(q.departmentIds);
+    const personaIds = csvToArray(q.personaIds);
+    const documentIds = csvToArray(q.documentIds);
+    const templateDocumentIds = csvToArray(q.templateDocumentIds);
+    const parameterIds = csvToArray(q.parameterIds);
+    const fieldIds = csvToArray(q.fieldIds);
+
     if (departmentIds) filterParams.departmentIds = departmentIds;
     if (personaIds) filterParams.personaIds = personaIds;
     if (documentIds) filterParams.documentIds = documentIds;
     if (templateDocumentIds)
       filterParams.templateDocumentIds = templateDocumentIds;
     if (parameterIds) filterParams.parameterIds = parameterIds;
-    if (parameterItemIds) filterParams.parameterItemIds = parameterItemIds;
-    if (personaSearch) filterParams.personaSearch = personaSearch;
-    if (documentSearch) filterParams.documentSearch = documentSearch;
-    if (parameterSearch) filterParams.parameterSearch = parameterSearch;
-    if (documentShowSelected !== undefined)
-      filterParams.documentShowSelected = documentShowSelected;
-    if (documentShowTemplate !== undefined)
-      filterParams.documentShowTemplate = documentShowTemplate;
-    if (personaShowSelected !== undefined)
-      filterParams.personaShowSelected = personaShowSelected;
-    if (parameterShowSelected !== undefined)
-      filterParams.parameterShowSelected = parameterShowSelected;
+    // Edit mode uses parameterItemIds, but nuqs uses fieldIds
+    if (fieldIds) filterParams.parameterItemIds = fieldIds;
+    if (q.personaSearch) filterParams.personaSearch = q.personaSearch;
+    if (q.documentSearch) filterParams.documentSearch = q.documentSearch;
+    if (q.parameterSearch) filterParams.parameterSearch = q.parameterSearch;
+    if (q.documentShowSelected !== undefined && q.documentShowSelected !== null)
+      filterParams.documentShowSelected = q.documentShowSelected;
+    if (q.documentShowTemplate !== undefined && q.documentShowTemplate !== null)
+      filterParams.documentShowTemplate = q.documentShowTemplate;
+    if (q.personaShowSelected !== undefined && q.personaShowSelected !== null)
+      filterParams.personaShowSelected = q.personaShowSelected;
+    if (
+      q.parameterShowSelected !== undefined &&
+      q.parameterShowSelected !== null
+    )
+      filterParams.parameterShowSelected = q.parameterShowSelected;
     if (fieldShowSelectedByParam !== undefined)
       filterParams.fieldShowSelectedByParam = fieldShowSelectedByParam;
-    if (personaMin !== undefined) filterParams.personaMin = personaMin;
-    if (personaMax !== undefined) filterParams.personaMax = personaMax;
-    if (documentMin !== undefined) filterParams.documentMin = documentMin;
-    if (documentMax !== undefined) filterParams.documentMax = documentMax;
-    if (parameterSelectionMin !== undefined)
-      filterParams.parameterSelectionMin = parameterSelectionMin;
-    if (parameterSelectionMax !== undefined)
-      filterParams.parameterSelectionMax = parameterSelectionMax;
+    if (q.personaMin !== undefined && q.personaMin !== null)
+      filterParams.personaMin = q.personaMin;
+    if (q.personaMax !== undefined && q.personaMax !== null)
+      filterParams.personaMax = q.personaMax;
+    if (q.documentMin !== undefined && q.documentMin !== null)
+      filterParams.documentMin = q.documentMin;
+    if (q.documentMax !== undefined && q.documentMax !== null)
+      filterParams.documentMax = q.documentMax;
+    if (
+      q.parameterSelectionMin !== undefined &&
+      q.parameterSelectionMin !== null
+    )
+      filterParams.parameterSelectionMin = q.parameterSelectionMin;
+    if (
+      q.parameterSelectionMax !== undefined &&
+      q.parameterSelectionMax !== null
+    )
+      filterParams.parameterSelectionMax = q.parameterSelectionMax;
     if (parameterItemRanges)
       filterParams.parameterItemRanges = parameterItemRanges;
-    if (randomizePersonas) filterParams.randomizePersonas = randomizePersonas;
-    if (randomizeDocuments)
-      filterParams.randomizeDocuments = randomizeDocuments;
-    if (randomizeParameters)
-      filterParams.randomizeParameters = randomizeParameters;
+    if (q.randomizePersonas)
+      filterParams.randomizePersonas = q.randomizePersonas;
+    if (q.randomizeDocuments)
+      filterParams.randomizeDocuments = q.randomizeDocuments;
+    if (q.randomizeParameters)
+      filterParams.randomizeParameters = q.randomizeParameters;
     if (randomizeParameterItems)
       filterParams.randomizeParameterItems = randomizeParameterItems;
-    if (useImage !== undefined) filterParams.useImage = useImage;
-    if (useVideo !== undefined) filterParams.useVideo = useVideo;
+    if (q.useImage !== undefined && q.useImage !== null)
+      filterParams.useImage = q.useImage;
+    if (q.useVideo !== undefined && q.useVideo !== null)
+      filterParams.useVideo = q.useVideo;
+    const imageIds = csvToArray(q.imageIds);
+    const objectiveIds = csvToArray(q.objectiveIds);
+    const problemStatementIds = csvToArray(q.problemStatementIds);
     if (imageIds) filterParams.imageIds = imageIds;
     if (objectiveIds) filterParams.objectiveIds = objectiveIds;
     if (problemStatementIds)

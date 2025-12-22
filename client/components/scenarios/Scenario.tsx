@@ -5,8 +5,14 @@
  * 05/20/2025
  */
 "use client";
+import {
+  parseJsonDict,
+  scenarioSearchParamsClient,
+  stringifyJsonDict,
+} from "@/app/(main)/create/scenarios/searchParams";
 import { Loader2, RotateCcw } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useQueryStates } from "nuqs";
 import {
   useCallback,
   useEffect,
@@ -37,11 +43,11 @@ import { Textarea } from "@/components/ui/textarea";
 
 // Custom Components
 import { type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
-import { DocumentSection } from "@/components/common/forms/DocumentSection";
-import { ParameterItemSection } from "@/components/common/forms/ParameterItemSection";
-import { ParameterSection } from "@/components/common/forms/ParameterSection";
-import { PersonaSection } from "@/components/common/forms/PersonaSection";
 import { ContentSection } from "@/components/scenarios/ContentSection";
+import { DocumentSection } from "@/components/scenarios/DocumentSection";
+import { ParameterItemSection } from "@/components/scenarios/ParameterItemSection";
+import { ParameterSection } from "@/components/scenarios/ParameterSection";
+import { PersonaSection } from "@/components/scenarios/PersonaSection";
 import { ScenarioBasicInfoSection } from "@/components/scenarios/ScenarioBasicInfoSection";
 
 // Types and API functions
@@ -108,26 +114,11 @@ export default function Scenario({
   const isEditMode = mode === "edit" && !!scenarioId;
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
-  // Helper function to update URL with query parameters
-  const updateUrlParams = useCallback(
-    (updates: Record<string, string | string[] | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === null || (Array.isArray(value) && value.length === 0)) {
-          params.delete(key);
-        } else if (Array.isArray(value)) {
-          // Use comma-separated values to match how page.tsx reads them
-          params.set(key, value.join(","));
-        } else {
-          params.set(key, value);
-        }
-      });
-
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    },
-    [searchParams, pathname, router]
-  );
+  // URL-backed state using nuqs (replaces manual useState + updateUrlParams)
+  const [q, setQ] = useQueryStates(scenarioSearchParamsClient, {
+    history: "replace", // Don't spam back button for every keystroke
+    shallow: false, // Trigger server-side re-fetch when params change
+  });
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const scenarioDetail = serverScenarioDetail;
@@ -297,7 +288,7 @@ export default function Scenario({
         if (data.success) {
           problemStatementId = data.problem_statement_id;
           // Update state to trigger URL refresh
-          setCurrentProblemStatementIds((prev) => {
+          updateProblemStatementIds((prev) => {
             if (prev.includes(data.problem_statement_id)) {
               return prev;
             }
@@ -325,9 +316,7 @@ export default function Scenario({
         if (data.success) {
           objectiveIds = data.objective_ids;
           // Update state to trigger URL sync
-          setCurrentObjectiveIds(() => {
-            return data.objective_ids;
-          });
+          updateObjectiveIds(data.objective_ids);
         }
       };
 
@@ -364,7 +353,7 @@ export default function Scenario({
             });
             // Add child document to currentDocumentIds
             // Keep parent in URL (for persistence) but add child for display
-            setCurrentDocumentIds((prev) => {
+            updateDocumentIds((prev) => {
               // Add child if not already present
               if (prev.includes(data.document_id)) {
                 return prev;
@@ -377,7 +366,7 @@ export default function Scenario({
             // Regular document (no parent) - add to currentDocumentIds
             // eslint-disable-next-line no-console
             console.log("[Scenario] Adding new document:", data.document_id);
-            setCurrentDocumentIds((prev) => {
+            updateDocumentIds((prev) => {
               return [...prev, data.document_id];
             });
           }
@@ -578,57 +567,49 @@ export default function Scenario({
     []
   );
 
-  // Store personaIds separately since it's now in junction table
-  const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
-  const [personaSearchTerm, setPersonaSearchTerm] = useState<string>("");
-  const [documentSearchTerm, setDocumentSearchTerm] = useState<string>("");
-  const [parameterSearchTerm, setParameterSearchTerm] = useState<string>("");
-  const [documentShowSelected, setDocumentShowSelected] = useState<boolean>(
-    () => {
-      const documentShowSelectedFromUrl = searchParams.get(
-        "documentShowSelected"
-      );
-      return documentShowSelectedFromUrl === "true";
-    }
+  // URL-backed state is now managed by nuqs (q object above)
+  // Extract values with defaults for easier use
+  const personaSearchTerm = q.personaSearch ?? "";
+  const documentSearchTerm = q.documentSearch ?? "";
+  const parameterSearchTerm = q.parameterSearch ?? "";
+  const documentShowSelected = q.documentShowSelected ?? false;
+  const documentShowTemplate = q.documentShowTemplate ?? false;
+  const personaShowSelected = q.personaShowSelected ?? false;
+  const parameterShowSelected = q.parameterShowSelected ?? false;
+
+  // Derived from URL params (arrays) - memoized to prevent unnecessary re-renders
+  const selectedPersonaIds = useMemo(() => q.personaIds ?? [], [q.personaIds]);
+  const currentDocumentIds = useMemo(
+    () => q.documentIds ?? [],
+    [q.documentIds]
   );
-  const [documentShowTemplate, setDocumentShowTemplate] = useState<boolean>(
-    () => {
-      const documentShowTemplateFromUrl = searchParams.get(
-        "documentShowTemplate"
-      );
-      return documentShowTemplateFromUrl === "true";
-    }
+  const templateDocumentIds = useMemo(
+    () => q.templateDocumentIds ?? [],
+    [q.templateDocumentIds]
   );
-  const [personaShowSelected, setPersonaShowSelected] = useState<boolean>(
-    () => {
-      const personaShowSelectedFromUrl = searchParams.get(
-        "personaShowSelected"
-      );
-      return personaShowSelectedFromUrl === "true";
-    }
+  const currentFieldIds = useMemo(() => q.fieldIds ?? [], [q.fieldIds]);
+  const currentProblemStatementIds = useMemo(
+    () => q.problemStatementIds ?? [],
+    [q.problemStatementIds]
   );
-  const [parameterShowSelected, setParameterShowSelected] = useState<boolean>(
-    () => {
-      const parameterShowSelectedFromUrl = searchParams.get(
-        "parameterShowSelected"
-      );
-      return parameterShowSelectedFromUrl === "true";
-    }
+  const currentObjectiveIds = useMemo(
+    () => q.objectiveIds ?? [],
+    [q.objectiveIds]
   );
-  // Per-parameter field filter state (one filter per parameter's field section)
-  const [fieldShowSelectedByParam, setFieldShowSelectedByParam] = useState<
-    Record<string, boolean>
-  >(() => {
-    const result: Record<string, boolean> = {};
-    // Extract per-parameter field filters from URL (format: fieldShowSelected_{paramId})
-    for (const [key, value] of searchParams.entries()) {
-      if (key.startsWith("fieldShowSelected_")) {
-        const paramId = key.replace("fieldShowSelected_", "");
-        result[paramId] = value === "true";
-      }
-    }
-    return result;
-  });
+
+  // Derived from URL params (JSON-encoded dicts)
+  const fieldShowSelectedByParam = useMemo(
+    () => parseJsonDict(q.fieldShowSelected, {}),
+    [q.fieldShowSelected]
+  );
+  const fieldMinMax = useMemo(
+    () =>
+      parseJsonDict<Record<string, { min: number; max: number }>>(
+        q.fieldRanges,
+        {}
+      ),
+    [q.fieldRanges]
+  );
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
     null
   );
@@ -655,22 +636,14 @@ export default function Scenario({
   const [regenerationInstructions, setRegenerationInstructions] = useState("");
   const [regenerateObjectives, setRegenerateObjectives] = useState(true);
   const [originalFormData, setOriginalFormData] = useState(initialFormData);
-  // Use Objectives flag - initialized from URL params (DHH-style: URL as source of truth)
-  const [useObjectives, setUseObjectives] = useState(() => {
-    const useObjectivesFromUrl = searchParams.get("useObjectives");
-    return useObjectivesFromUrl === "true";
-  });
-  // Use Image flag - initialized from URL params (DHH-style: URL as source of truth)
-  const [useImage, setUseImage] = useState(() => {
-    const useImageFromUrl = searchParams.get("useImage");
-    return useImageFromUrl === "true";
-  });
-  // Use Video flag - initialized from URL params
-  const [useVideo, setUseVideo] = useState(() => {
-    const useVideoFromUrl = searchParams.get("useVideo");
-    return useVideoFromUrl === "true";
-  });
-  // Video length - initialized from URL params (DHH-style: URL as source of truth)
+  // URL-backed flags (now managed by nuqs)
+  const useObjectives = q.useObjectives ?? false;
+  const useImage = q.useImage ?? false;
+  const useVideo = q.useVideo ?? false;
+  const useQuestions = q.useQuestions ?? false;
+  const useProblemStatement = q.useProblemStatement ?? false;
+
+  // Video length - still needs custom handling (not in nuqs schema yet)
   const [selectedVideoLength, setSelectedVideoLength] = useState<number | null>(
     () => {
       const videoLengthFromUrl = searchParams.get("videoLength");
@@ -683,16 +656,6 @@ export default function Scenario({
       return null;
     }
   );
-  // Use Questions flag - initialized from URL params
-  const [useQuestions, setUseQuestions] = useState(() => {
-    const useQuestionsFromUrl = searchParams.get("useQuestions");
-    return useQuestionsFromUrl === "true";
-  });
-  // Use Problem Statement flag - initialized from URL params (DHH-style: URL as source of truth)
-  const [useProblemStatement, setUseProblemStatement] = useState(() => {
-    const useProblemStatementFromUrl = searchParams.get("useProblemStatement");
-    return useProblemStatementFromUrl === "true";
-  });
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
   >(null);
@@ -713,36 +676,9 @@ export default function Scenario({
     }
     return [];
   });
-  const [currentFieldIds, setCurrentFieldIds] = useState<string[]>([]);
-  const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
-  // templateDocumentIds comes from URL params (single source of truth)
-  const [templateDocumentIds, setTemplateDocumentIds] = useState<string[]>(
-    () => {
-      const templateDocumentIdsFromUrl =
-        searchParams.get("templateDocumentIds")?.split(",").filter(Boolean) ||
-        [];
-      return templateDocumentIdsFromUrl;
-    }
-  );
   const [scenarioPreviewDocumentId, setScenarioPreviewDocumentId] = useState<
     string | null
   >(null);
-  // Initialize problem statement IDs from URL params (DHH-style: compute when needed)
-  const [currentProblemStatementIds, setCurrentProblemStatementIds] = useState<
-    string[]
-  >(() => {
-    const problemStatementIdsFromUrl =
-      searchParams.get("problemStatementIds")?.split(",").filter(Boolean) || [];
-    return problemStatementIdsFromUrl;
-  });
-  // Initialize objective IDs from URL params (DHH-style: compute when needed)
-  const [currentObjectiveIds, setCurrentObjectiveIds] = useState<string[]>(
-    () => {
-      const objectiveIdsFromUrl =
-        searchParams.get("objectiveIds")?.split(",").filter(Boolean) || [];
-      return objectiveIdsFromUrl;
-    }
-  );
   const [image, setImage] = useState<{
     id: string;
     name: string;
@@ -793,10 +729,13 @@ export default function Scenario({
     "persona" | "document" | "parameters" | `parameter_${string}` | "all" | null
   >(null);
 
-  // Min/max state for randomization (current values, not allowed ranges)
-  // Initialize from server's persona_min/persona_max (current values), default to 1
-  const [personaMinMax, setPersonaMinMax] = useState(() => {
-    // In create mode, check if scenarioData has persona_min/persona_max
+  // Min/max state for randomization (URL-backed via nuqs, fallback to server values)
+  // Initialize from URL params, fallback to server's current values
+  const personaMinMax = useMemo(() => {
+    if (q.personaMin !== null && q.personaMax !== null) {
+      return { min: q.personaMin, max: q.personaMax };
+    }
+    // Fallback to server values
     if (scenarioData && "persona_min" in scenarioData) {
       const newData = scenarioData as ScenarioNewOut;
       return {
@@ -804,12 +743,14 @@ export default function Scenario({
         max: newData.persona_max ?? 1,
       };
     }
-    // Default to 1 (not the allowed range max of 3)
     return { min: 1, max: 1 };
-  });
-  // Initialize from server's current values (persona_min/persona_max, document_min/document_max, etc.)
-  // Server is source of truth - use current values, not allowed_ranges
-  const [documentMinMax, setDocumentMinMax] = useState(() => {
+  }, [q.personaMin, q.personaMax, scenarioData]);
+
+  const documentMinMax = useMemo(() => {
+    if (q.documentMin !== null && q.documentMax !== null) {
+      return { min: q.documentMin, max: q.documentMax };
+    }
+    // Fallback to server values
     if (scenarioData && "document_min" in scenarioData) {
       const newData = scenarioData as ScenarioNewOut;
       return {
@@ -817,57 +758,30 @@ export default function Scenario({
         max: newData.document_max ?? 1,
       };
     }
-    // Fallback to default current values (0-1) if server data not available yet
-    // allowed_ranges contains bounds (0-3), but we want default current values (0-1)
     return { min: 0, max: 1 };
-  });
-  const [parameterSelectionMinMax, setParameterSelectionMinMax] = useState(
-    () => {
-      if (scenarioData && "parameter_selection_min" in scenarioData) {
-        const newData = scenarioData as ScenarioNewOut;
-        return {
-          min: newData.parameter_selection_min ?? 0,
-          max: newData.parameter_selection_max ?? 3,
-        };
-      }
-      // Fallback to allowed range if server data not available yet
-      const ranges = scenarioData?.allowed_ranges;
-      return ranges?.parameter_selection
-        ? {
-            min: ranges.parameter_selection.min,
-            max: ranges.parameter_selection.max,
-          }
-        : { min: 0, max: 3 };
+  }, [q.documentMin, q.documentMax, scenarioData]);
+
+  const parameterSelectionMinMax = useMemo(() => {
+    if (q.parameterSelectionMin !== null && q.parameterSelectionMax !== null) {
+      return { min: q.parameterSelectionMin, max: q.parameterSelectionMax };
     }
-  );
-  const [fieldMinMax, setFieldMinMax] = useState<
-    Record<string, { min: number; max: number }>
-  >(() => {
-    // Use field_ranges (current values) if available, otherwise use allowed_ranges.fields
-    if (scenarioData && "field_ranges" in scenarioData) {
+    // Fallback to server values
+    if (scenarioData && "parameter_selection_min" in scenarioData) {
       const newData = scenarioData as ScenarioNewOut;
-      if (newData.field_ranges) {
-        const result: Record<string, { min: number; max: number }> = {};
-        Object.entries(newData.field_ranges).forEach(([paramId, range]) => {
-          // Handle undefined values with defaults - type assertion needed for index signature
-          const typedRange = range as { min?: number; max?: number };
-          result[paramId] = {
-            min: typedRange.min ?? 1,
-            max: typedRange.max ?? 3,
-          };
-        });
-        return result;
-      }
+      return {
+        min: newData.parameter_selection_min ?? 0,
+        max: newData.parameter_selection_max ?? 3,
+      };
     }
-    // Fallback to allowed_ranges.fields if server data not available yet
     const ranges = scenarioData?.allowed_ranges;
-    if (!ranges?.fields) return {};
-    const result: Record<string, { min: number; max: number }> = {};
-    Object.entries(ranges.fields).forEach(([paramId, range]) => {
-      result[paramId] = { min: range.min, max: range.max };
-    });
-    return result;
-  });
+    return ranges?.parameter_selection
+      ? {
+          min: ranges.parameter_selection.min,
+          max: ranges.parameter_selection.max,
+        }
+      : { min: 0, max: 3 };
+  }, [q.parameterSelectionMin, q.parameterSelectionMax, scenarioData]);
+  // fieldMinMax is now derived from URL params above
 
   // Staged selections per department (preserved when departments are deselected)
   type StagedSelections = {
@@ -887,36 +801,134 @@ export default function Scenario({
     return scenarioData?.field_mapping || {};
   }, [scenarioData]);
 
+  // Helper functions to update URL-backed state via setQ
+  const updatePersonaIds = useCallback(
+    (ids: string[] | ((prev: string[]) => string[])) => {
+      const newIds = typeof ids === "function" ? ids(selectedPersonaIds) : ids;
+      setQ({ personaIds: newIds.length > 0 ? newIds : null });
+    },
+    [selectedPersonaIds, setQ]
+  );
+
+  const updateDocumentIds = useCallback(
+    (ids: string[] | ((prev: string[]) => string[])) => {
+      const newIds = typeof ids === "function" ? ids(currentDocumentIds) : ids;
+      setQ({ documentIds: newIds.length > 0 ? newIds : null });
+    },
+    [currentDocumentIds, setQ]
+  );
+
+  const updateTemplateDocumentIds = useCallback(
+    (ids: string[] | ((prev: string[]) => string[])) => {
+      const newIds = typeof ids === "function" ? ids(templateDocumentIds) : ids;
+      setQ({ templateDocumentIds: newIds.length > 0 ? newIds : null });
+    },
+    [templateDocumentIds, setQ]
+  );
+
+  const updateFieldIds = useCallback(
+    (ids: string[] | ((prev: string[]) => string[])) => {
+      const newIds = typeof ids === "function" ? ids(currentFieldIds) : ids;
+      setQ({ fieldIds: newIds.length > 0 ? newIds : null });
+    },
+    [currentFieldIds, setQ]
+  );
+
+  const updateProblemStatementIds = useCallback(
+    (ids: string[] | ((prev: string[]) => string[])) => {
+      const newIds =
+        typeof ids === "function" ? ids(currentProblemStatementIds) : ids;
+      setQ({ problemStatementIds: newIds.length > 0 ? newIds : null });
+    },
+    [currentProblemStatementIds, setQ]
+  );
+
+  const updateObjectiveIds = useCallback(
+    (ids: string[] | ((prev: string[]) => string[])) => {
+      const newIds = typeof ids === "function" ? ids(currentObjectiveIds) : ids;
+      setQ({ objectiveIds: newIds.length > 0 ? newIds : null });
+    },
+    [currentObjectiveIds, setQ]
+  );
+
+  const updateFieldShowSelected = useCallback(
+    (
+      value:
+        | Record<string, boolean>
+        | ((prev: Record<string, boolean>) => Record<string, boolean>)
+    ) => {
+      const newValue =
+        typeof value === "function" ? value(fieldShowSelectedByParam) : value;
+      setQ({
+        fieldShowSelected: stringifyJsonDict(newValue) || null,
+      });
+    },
+    [fieldShowSelectedByParam, setQ]
+  );
+
+  const updateFieldRanges = useCallback(
+    (
+      value:
+        | Record<string, { min: number; max: number }>
+        | ((
+            prev: Record<string, { min: number; max: number }>
+          ) => Record<string, { min: number; max: number }>)
+    ) => {
+      const newValue = typeof value === "function" ? value(fieldMinMax) : value;
+      setQ({
+        fieldRanges: stringifyJsonDict(newValue) || null,
+      });
+    },
+    [fieldMinMax, setQ]
+  );
+
   // Helper function to build search params including filters, search terms, ranges, and randomize param
   const buildSearchParams = useCallback(() => {
     const params = new URLSearchParams();
 
     // Add filter params (always include if non-empty)
-    // Use comma-separated values to match how page.tsx reads them (searchParams.get().split(","))
+    // Arrays are handled by nuqs automatically, but we still need to set them for URLSearchParams
+    // Note: This function is used for manual URL building, nuqs handles arrays automatically
     if (formData.departmentIds && formData.departmentIds.length > 0) {
-      params.set("departmentIds", formData.departmentIds.join(","));
+      // nuqs will handle array serialization
+      formData.departmentIds.forEach((id) => {
+        params.append("departmentIds", id);
+      });
     }
     if (selectedPersonaIds.length > 0) {
-      params.set("personaIds", selectedPersonaIds.join(","));
+      selectedPersonaIds.forEach((id) => {
+        params.append("personaIds", id);
+      });
     }
     if (currentDocumentIds.length > 0) {
-      params.set("documentIds", currentDocumentIds.join(","));
+      currentDocumentIds.forEach((id) => {
+        params.append("documentIds", id);
+      });
     }
     if (templateDocumentIds.length > 0) {
-      params.set("templateDocumentIds", templateDocumentIds.join(","));
+      templateDocumentIds.forEach((id) => {
+        params.append("templateDocumentIds", id);
+      });
     }
     if (formData.parameterIds && formData.parameterIds.length > 0) {
-      params.set("parameterIds", formData.parameterIds.join(","));
+      formData.parameterIds.forEach((id) => {
+        params.append("parameterIds", id);
+      });
     }
     if (currentFieldIds.length > 0) {
-      // Renamed from currentParameterItemIds
-      params.set("fieldIds", currentFieldIds.join(",")); // Renamed from parameterItemIds
+      currentFieldIds.forEach((id) => {
+        params.append("fieldIds", id);
+      });
     }
     if (currentProblemStatementIds.length > 0) {
-      params.set("problemStatementIds", currentProblemStatementIds.join(","));
+      currentProblemStatementIds.forEach((id) => {
+        params.append("problemStatementIds", id);
+      });
     }
     if (currentObjectiveIds.length > 0) {
-      params.set("objectiveIds", currentObjectiveIds.join(","));
+      currentObjectiveIds.forEach((id) => {
+        params.append("objectiveIds", id);
+      });
     }
 
     // Add search params when non-empty
@@ -943,14 +955,11 @@ export default function Scenario({
     if (parameterShowSelected) {
       params.set("parameterShowSelected", "true");
     }
-    // Add per-parameter field filters (format: fieldShowSelected_{paramId})
-    Object.entries(fieldShowSelectedByParam).forEach(
-      ([paramId, showSelected]) => {
-        if (showSelected) {
-          params.set(`fieldShowSelected_${paramId}`, "true");
-        }
-      }
-    );
+    // Add per-parameter field filters (JSON-encoded dict)
+    const fieldShowSelectedJson = stringifyJsonDict(fieldShowSelectedByParam);
+    if (fieldShowSelectedJson) {
+      params.set("fieldShowSelected", fieldShowSelectedJson);
+    }
     // Add range params when different from server-provided current values
     // Compare against server's current values (persona_min/persona_max), not allowed_ranges
     const serverCurrentValues = scenarioData as ScenarioNewOut | undefined;
@@ -1001,19 +1010,19 @@ export default function Scenario({
     const selectedParamIds = formData.parameterIds || [];
     const isRandomizing = searchParams.get("randomize") === "all";
     const serverFieldRanges = serverCurrentValues?.field_ranges || {};
-    Object.entries(fieldMinMax).forEach(([fieldId, range]) => {
+
+    // Build filtered ranges dict (only include ranges that differ from server or are needed for randomization)
+    const filteredFieldRanges: Record<string, { min: number; max: number }> =
+      {};
+    Object.entries(fieldMinMax).forEach(([paramId, range]) => {
       // Include range if:
       // 1. Parameter is selected, OR
       // 2. We're randomizing all (server will randomize parameters and need these ranges)
       // AND range differs from server's current value
-      const shouldInclude = isRandomizing || selectedParamIds.includes(fieldId);
-      // Get the parameter_id for this field to find its range in server response
-      const fieldParamId = fieldMapping[fieldId]?.parameter_id;
-      const serverFieldRange = fieldParamId
-        ? (serverFieldRanges[fieldParamId] as
-            | { min?: number; max?: number }
-            | undefined)
-        : undefined;
+      const shouldInclude = isRandomizing || selectedParamIds.includes(paramId);
+      const serverFieldRange = serverFieldRanges[paramId] as
+        | { min?: number; max?: number }
+        | undefined;
       const fieldDefaultMin = serverFieldRange?.["min"] ?? 1;
       const fieldDefaultMax = serverFieldRange?.["max"] ?? 3;
       const fieldDefault: { min: number; max: number } = {
@@ -1024,10 +1033,15 @@ export default function Scenario({
         shouldInclude &&
         (range["min"] !== fieldDefault.min || range["max"] !== fieldDefault.max)
       ) {
-        params.set(`fieldMin_${fieldId}`, range["min"].toString());
-        params.set(`fieldMax_${fieldId}`, range["max"].toString());
+        filteredFieldRanges[paramId] = range;
       }
     });
+
+    // Add field ranges as JSON-encoded dict
+    const fieldRangesJson = stringifyJsonDict(filteredFieldRanges);
+    if (fieldRangesJson) {
+      params.set("fieldRanges", fieldRangesJson);
+    }
 
     // Feature flags - compare against server's current values (edit mode) or defaults (create mode)
     // Objectives flag - always include when true to preserve user intent, only include false if it differs from default
@@ -1148,7 +1162,6 @@ export default function Scenario({
     useQuestions, // Include useQuestions for questions flag
     useProblemStatement, // Include useProblemStatement for problem statement flag
     queryParamConfig, // Include queryParamConfig for server value comparisons
-    fieldMapping, // Used for field ranges comparison
     // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
     searchParams,
     // Text fields for URL sync
@@ -1629,7 +1642,7 @@ export default function Scenario({
                 validPersonaSet.has(id)
               );
               if (validPersonas.length > 0) {
-                setSelectedPersonaIds((prevPersonas) => {
+                updatePersonaIds((prevPersonas) => {
                   // Merge staged personas with existing ones, deduplicate
                   const combined = new Set([...prevPersonas, ...validPersonas]);
                   return Array.from(combined);
@@ -1644,7 +1657,7 @@ export default function Scenario({
                 validDocSet.has(id)
               );
               if (validDocs.length > 0) {
-                setCurrentDocumentIds((prevDocs) => {
+                updateDocumentIds((prevDocs) => {
                   // Deduplicate when merging staged documents back
                   const combined = new Set([...prevDocs, ...validDocs]);
                   return Array.from(combined);
@@ -1659,7 +1672,7 @@ export default function Scenario({
                 validParamSet.has(id)
               );
               if (validParams.length > 0) {
-                setCurrentFieldIds((prevParams) => {
+                updateFieldIds((prevParams) => {
                   const combined = new Set([...prevParams, ...validParams]);
                   return Array.from(combined);
                 });
@@ -1673,6 +1686,7 @@ export default function Scenario({
 
     // Update previous department IDs
     setPreviousDepartmentIds(currentDeptIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     formData.departmentIds,
     previousDepartmentIds,
@@ -1682,6 +1696,7 @@ export default function Scenario({
     validPersonaIds,
     validDocumentIds,
     validParameterItemIds,
+    // updatePersonaIds, updateDocumentIds, updateFieldIds intentionally omitted to prevent infinite loops
   ]);
 
   // Clean up staged selections for departments that are no longer valid
@@ -1708,10 +1723,11 @@ export default function Scenario({
       const validSet = new Set(validPersonaIds);
       const filtered = selectedPersonaIds.filter((id) => validSet.has(id));
       if (filtered.length !== selectedPersonaIds.length) {
-        setSelectedPersonaIds(filtered);
+        updatePersonaIds(filtered);
       }
     }
-  }, [selectedPersonaIds, validPersonaIds, personaShowSelected]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPersonaIds, validPersonaIds, personaShowSelected]); // updatePersonaIds intentionally omitted
 
   useEffect(() => {
     // Clear documents that are no longer valid
@@ -1725,15 +1741,16 @@ export default function Scenario({
       const validSet = new Set(validDocumentIds);
       const filtered = currentDocumentIds.filter((id) => validSet.has(id));
       if (filtered.length !== currentDocumentIds.length) {
-        setCurrentDocumentIds(filtered);
+        updateDocumentIds(filtered);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentDocumentIds,
     validDocumentIds,
     documentShowSelected,
     documentShowTemplate,
-  ]);
+  ]); // updateDocumentIds intentionally omitted
 
   // Initialize/update scenarioPreviewDocumentId when allPreviewDocumentIds changes
   // Use allPreviewDocumentIds (not currentDocumentIds) because it already handles parent->child replacement
@@ -1769,52 +1786,14 @@ export default function Scenario({
       const validSet = new Set(validParameterItemIds);
       const filtered = currentFieldIds.filter((id) => validSet.has(id));
       if (filtered.length !== currentFieldIds.length) {
-        setCurrentFieldIds(filtered);
+        updateFieldIds(filtered);
       }
     }
-  }, [currentFieldIds, validParameterItemIds, fieldShowSelectedByParam]);
-
-  // Sync problem statement IDs from URL params (DHH-style: compute when needed, not in effects)
-  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
-  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
-  useEffect(() => {
-    const problemStatementIdsFromUrl =
-      searchParams.get("problemStatementIds")?.split(",").filter(Boolean) || [];
-    const urlIdsSorted = [...problemStatementIdsFromUrl].sort().join(",");
-    const currentIdsSorted = [...currentProblemStatementIds].sort().join(",");
-    if (urlIdsSorted !== currentIdsSorted) {
-      setCurrentProblemStatementIds(problemStatementIdsFromUrl);
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+  }, [currentFieldIds, validParameterItemIds, fieldShowSelectedByParam]); // updateFieldIds intentionally omitted
 
-  // Sync objective IDs from URL params (DHH-style: compute when needed, not in effects)
-  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
-  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
-  useEffect(() => {
-    const objectiveIdsFromUrl =
-      searchParams.get("objectiveIds")?.split(",").filter(Boolean) || [];
-    const urlIdsSorted = [...objectiveIdsFromUrl].sort().join(",");
-    const currentIdsSorted = [...currentObjectiveIds].sort().join(",");
-    if (urlIdsSorted !== currentIdsSorted) {
-      setCurrentObjectiveIds(objectiveIdsFromUrl);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
-
-  // Sync template document IDs from URL params (DHH-style: compute when needed, not in effects)
-  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
-  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
-  useEffect(() => {
-    const templateDocumentIdsFromUrl =
-      searchParams.get("templateDocumentIds")?.split(",").filter(Boolean) || [];
-    const urlIdsSorted = [...templateDocumentIdsFromUrl].sort().join(",");
-    const currentIdsSorted = [...templateDocumentIds].sort().join(",");
-    if (urlIdsSorted !== currentIdsSorted) {
-      setTemplateDocumentIds(templateDocumentIdsFromUrl);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+  // Note: problemStatementIds, objectiveIds, and templateDocumentIds are now derived from URL params
+  // No need for sync effects - they're automatically synced via nuqs
 
   // Sync problem statement text from URL params (DHH-style: compute when needed, not in effects)
   // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
@@ -1884,40 +1863,8 @@ export default function Scenario({
   // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
   // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
 
-  // Sync useObjectives from URL params
-  useEffect(() => {
-    const useObjectivesFromUrl = searchParams.get("useObjectives");
-    const urlUseObjectives = useObjectivesFromUrl === "true";
-    // Only update if different from current state
-    if (useObjectives !== urlUseObjectives) {
-      setUseObjectives(urlUseObjectives);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
-
-  // Sync useImage from URL params
-  useEffect(() => {
-    const useImageFromUrl = searchParams.get("useImage");
-    const urlUseImage = useImageFromUrl === "true";
-    // Only update if different from current state
-    if (useImage !== urlUseImage) {
-      setUseImage(urlUseImage);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
-
-  // Sync useVideo from URL params
-  useEffect(() => {
-    const useVideoFromUrl = searchParams.get("useVideo");
-    const urlUseVideo = useVideoFromUrl === "true";
-    // Only update if different from current state
-    if (useVideo !== urlUseVideo) {
-      setUseVideo(urlUseVideo);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
-
-  // Sync video length from URL params
+  // Note: URL sync is now handled automatically by nuqs - no useEffect needed
+  // Video length still needs custom handling (not in nuqs schema yet)
   useEffect(() => {
     const videoLengthFromUrl = searchParams.get("videoLength");
     let urlVideoLength: number | null = null;
@@ -1930,28 +1877,6 @@ export default function Scenario({
     // Only update if different from current state
     if (selectedVideoLength !== urlVideoLength) {
       setSelectedVideoLength(urlVideoLength);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
-
-  // Sync useQuestions from URL params
-  useEffect(() => {
-    const useQuestionsFromUrl = searchParams.get("useQuestions");
-    const urlUseQuestions = useQuestionsFromUrl === "true";
-    // Only update if different from current state
-    if (useQuestions !== urlUseQuestions) {
-      setUseQuestions(urlUseQuestions);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
-
-  // Sync useProblemStatement from URL params
-  useEffect(() => {
-    const useProblemStatementFromUrl = searchParams.get("useProblemStatement");
-    const urlUseProblemStatement = useProblemStatementFromUrl === "true";
-    // Only update if different from current state
-    if (useProblemStatement !== urlUseProblemStatement) {
-      setUseProblemStatement(urlUseProblemStatement);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
@@ -2021,9 +1946,7 @@ export default function Scenario({
         lastProcessedRandomizedRef.current = null;
         // Clear randomizing section to prevent infinite loading
         setRandomizingSection(null);
-        updateUrlParams({
-          randomize: null,
-        });
+        setQ({ randomize: null });
         return;
       }
 
@@ -2036,10 +1959,10 @@ export default function Scenario({
       // especially important for personas which sort selected ones first
       startTransition(() => {
         if (randomized.personaIds) {
-          setSelectedPersonaIds(randomized.personaIds);
+          updatePersonaIds(randomized.personaIds);
         }
         if (randomized.documentIds) {
-          setCurrentDocumentIds(randomized.documentIds);
+          updateDocumentIds(randomized.documentIds);
         }
         if (randomized.parameterIds) {
           handleInputChange("parameterIds", randomized.parameterIds);
@@ -2064,13 +1987,13 @@ export default function Scenario({
           finalFieldIds = [...otherParamFields, ...randomized.fieldIds];
           // Wrap field updates in transition too for smooth transitions
           startTransition(() => {
-            setCurrentFieldIds(finalFieldIds!);
+            updateFieldIds(finalFieldIds!);
           });
         } else {
           // Full randomization (randomize=all): replace all fields
           finalFieldIds = randomized.fieldIds;
           startTransition(() => {
-            setCurrentFieldIds(finalFieldIds!);
+            updateFieldIds(finalFieldIds!);
           });
         }
       }
@@ -2097,7 +2020,23 @@ export default function Scenario({
           urlUpdates["fieldIds"] = finalFieldIds;
         }
 
-        updateUrlParams(urlUpdates);
+        setQ({
+          randomize: null,
+          personaIds:
+            randomized.personaIds && randomized.personaIds.length > 0
+              ? randomized.personaIds
+              : null,
+          documentIds:
+            randomized.documentIds && randomized.documentIds.length > 0
+              ? randomized.documentIds
+              : null,
+          parameterIds:
+            randomized.parameterIds && randomized.parameterIds.length > 0
+              ? randomized.parameterIds
+              : null,
+          fieldIds:
+            finalFieldIds && finalFieldIds.length > 0 ? finalFieldIds : null,
+        });
         // Reset the flag after clearing params (use another frame to ensure URL update completes)
         requestAnimationFrame(() => {
           isApplyingRandomizedRef.current = false;
@@ -2106,14 +2045,16 @@ export default function Scenario({
         });
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     scenarioData?.randomized_selections,
     searchParams,
-    updateUrlParams,
+    setQ,
     handleInputChange,
     randomizingSection,
     currentFieldIds,
     fieldMapping,
+    // updatePersonaIds, updateDocumentIds, updateFieldIds intentionally omitted
   ]);
 
   // Also handle randomized flag as fallback (DHH-style: server tells client when to clear param)
@@ -2135,13 +2076,13 @@ export default function Scenario({
               scenarioData.persona_ids &&
               scenarioData.persona_ids.length > 0
             ) {
-              setSelectedPersonaIds(scenarioData.persona_ids);
+              updatePersonaIds(scenarioData.persona_ids);
             }
             if (
               scenarioData.document_ids &&
               scenarioData.document_ids.length > 0
             ) {
-              setCurrentDocumentIds(scenarioData.document_ids);
+              updateDocumentIds(scenarioData.document_ids);
             }
             if (
               scenarioData.scenario_parameter_ids &&
@@ -2158,7 +2099,7 @@ export default function Scenario({
               serverData?.selected_field_ids &&
               serverData.selected_field_ids.length > 0
             ) {
-              setCurrentFieldIds(serverData.selected_field_ids);
+              updateFieldIds(serverData.selected_field_ids);
             }
           });
 
@@ -2198,20 +2139,36 @@ export default function Scenario({
           isApplyingRandomizedRef.current = false;
           // Clear randomizing section state
           setRandomizingSection(null);
-          updateUrlParams(fallbackUrlUpdates);
+          // Update URL with arrays directly (nuqs handles array serialization)
+          setQ({
+            personaIds: Array.isArray(fallbackUrlUpdates["personaIds"])
+              ? fallbackUrlUpdates["personaIds"]
+              : null,
+            documentIds: Array.isArray(fallbackUrlUpdates["documentIds"])
+              ? fallbackUrlUpdates["documentIds"]
+              : null,
+            parameterIds: Array.isArray(fallbackUrlUpdates["parameterIds"])
+              ? fallbackUrlUpdates["parameterIds"]
+              : null,
+            fieldIds: Array.isArray(fallbackUrlUpdates["fieldIds"])
+              ? fallbackUrlUpdates["fieldIds"]
+              : null,
+          });
         }
       }, 200);
 
       return () => clearTimeout(timeoutId);
     }
     return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     scenarioData?.randomized,
     scenarioData,
     searchParams,
-    updateUrlParams,
+    setQ,
     startTransition,
     handleInputChange,
+    // updatePersonaIds, updateDocumentIds, updateFieldIds intentionally omitted
   ]);
 
   // Debounce timeout ref for URL updates
@@ -2331,18 +2288,18 @@ export default function Scenario({
       if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
         setPreviousDepartmentIds(deptIds);
       }
-      setSelectedPersonaIds(scenarioData.persona_ids || []);
+      updatePersonaIds(scenarioData.persona_ids || []);
       // Clear local versions when loading existing scenario (edit mode)
       setLocalProblemStatementVersions([]);
       const docIds = scenarioData.document_ids || [];
-      setCurrentDocumentIds(docIds);
+      updateDocumentIds(docIds);
       // Extract template document IDs from documentDetails (is_template field) for edit mode
       const templateDocIds =
         scenarioData.document_details
           ?.filter((doc) => doc.is_template === true)
           .map((doc) => doc.document_id) || [];
-      setTemplateDocumentIds(templateDocIds);
-      setCurrentFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
+      updateTemplateDocumentIds(templateDocIds);
+      updateFieldIds(getFieldIdsFromStructure(scenarioData.parameters));
       setCurrentObjectives(
         getObjectivesFromMapping(
           scenarioData.objective_ids,
@@ -2386,14 +2343,18 @@ export default function Scenario({
       // Load objectives_enabled and objectives
       const objectivesEnabled =
         scenarioDataWithFlags.objectives_enabled ?? false;
-      setUseObjectives(objectivesEnabled);
       // Load images_enabled flag
       const imagesEnabled = scenarioDataWithFlags.images_enabled ?? false;
-      setUseImage(imagesEnabled);
       // Load problem_statement_enabled flag
       const problemStatementEnabled =
         scenarioDataWithFlags.problem_statement_enabled ?? true;
-      setUseProblemStatement(problemStatementEnabled);
+
+      // Update URL-backed flags via nuqs
+      setQ({
+        useObjectives: objectivesEnabled || null,
+        useImage: imagesEnabled || null,
+        useProblemStatement: problemStatementEnabled || null,
+      });
       // In edit mode, load saved images from scenario (scenario_images represents saved images)
       // In create mode, don't auto-select - user must explicitly choose or upload via picker
       const scenarioImages = scenarioDataWithFlags.scenario_images;
@@ -2427,7 +2388,7 @@ export default function Scenario({
 
       // Load video_enabled and scenario video (only active video)
       const videoEnabled = scenarioDataWithFlags.video_enabled ?? false;
-      setUseVideo(videoEnabled);
+      setQ({ useVideo: videoEnabled || null });
       const scenarioVideos = scenarioDataWithFlags.scenario_videos;
       if (
         videoEnabled &&
@@ -2468,7 +2429,7 @@ export default function Scenario({
 
       // Load questions_enabled and questions
       const questionsEnabled = scenarioDataWithFlags.questions_enabled ?? false;
-      setUseQuestions(questionsEnabled);
+      setQ({ useQuestions: questionsEnabled || null });
       const questionIds = scenarioDataWithFlags.question_ids || [];
       const questionsData = scenarioDataWithFlags.questions || [];
       setCurrentQuestionIds(questionIds);
@@ -2562,45 +2523,57 @@ export default function Scenario({
       });
 
       // Initialize selections from server response (filtered to valid IDs)
+      // Only update URL if server values differ from current URL values
       if (newData.selected_persona_ids) {
-        setSelectedPersonaIds(newData.selected_persona_ids);
+        const currentPersonaIds = q.personaIds ?? [];
+        if (
+          JSON.stringify([...currentPersonaIds].sort()) !==
+          JSON.stringify([...newData.selected_persona_ids].sort())
+        ) {
+          updatePersonaIds(newData.selected_persona_ids);
+        }
       }
       if (newData.selected_document_ids) {
-        setCurrentDocumentIds(newData.selected_document_ids);
+        const currentDocIds = q.documentIds ?? [];
+        if (
+          JSON.stringify([...currentDocIds].sort()) !==
+          JSON.stringify([...newData.selected_document_ids].sort())
+        ) {
+          updateDocumentIds(newData.selected_document_ids);
+        }
       }
       // Template document IDs: prioritize URL params over server response
       // URL params are the source of truth (DHH-style)
-      const templateDocumentIdsFromUrl =
-        searchParams.get("templateDocumentIds")?.split(",").filter(Boolean) ||
-        [];
-      if (templateDocumentIdsFromUrl.length > 0) {
-        // URL params take precedence
-        setTemplateDocumentIds(templateDocumentIdsFromUrl);
+      const currentTemplateIds = q.templateDocumentIds ?? [];
+      if (currentTemplateIds.length > 0) {
+        // URL params take precedence - no update needed
       } else if (newData.selected_template_document_ids) {
         // Fallback to server response if no URL params
-        setTemplateDocumentIds(newData.selected_template_document_ids);
+        updateTemplateDocumentIds(newData.selected_template_document_ids);
       }
       if (newData.selected_field_ids) {
-        setCurrentFieldIds(newData.selected_field_ids);
+        const currentFieldIdsFromQ = q.fieldIds ?? [];
+        if (
+          JSON.stringify([...currentFieldIdsFromQ].sort()) !==
+          JSON.stringify([...newData.selected_field_ids].sort())
+        ) {
+          updateFieldIds(newData.selected_field_ids);
+        }
       }
 
       // Don't auto-select images - user must explicitly choose or upload
 
       // Initialize objective IDs from URL params (server doesn't return selected_objective_ids)
       // URL params are the source of truth (DHH-style)
-      const objectiveIdsFromUrl = searchParams
-        .get("objectiveIds")
-        ?.split(",")
-        .filter(Boolean);
-      if (objectiveIdsFromUrl && objectiveIdsFromUrl.length > 0) {
-        setCurrentObjectiveIds(objectiveIdsFromUrl);
+      const currentObjectiveIdsFromQ = q.objectiveIds ?? [];
+      if (currentObjectiveIdsFromQ.length > 0) {
         // Populate currentObjectives from objective IDs using objective_mapping
         // Note: objective_mapping might not be available yet, so we'll populate in a separate useEffect
         const objectiveMapping = (scenarioData?.objective_mapping ||
           {}) as Record<string, { name: string }>;
         if (Object.keys(objectiveMapping).length > 0) {
           const objectivesFromIds = getObjectivesFromMapping(
-            objectiveIdsFromUrl,
+            currentObjectiveIdsFromQ,
             objectiveMapping
           );
           setCurrentObjectives(objectivesFromIds);
@@ -2608,17 +2581,12 @@ export default function Scenario({
       }
 
       // Initialize problem statement IDs from URL params (server doesn't return selected_problem_statement_ids)
-      const problemStatementIdsFromUrl = searchParams
-        .get("problemStatementIds")
-        ?.split(",")
-        .filter(Boolean);
-      if (problemStatementIdsFromUrl && problemStatementIdsFromUrl.length > 0) {
-        setCurrentProblemStatementIds(problemStatementIdsFromUrl);
-
+      const currentProblemStatementIdsFromQ = q.problemStatementIds ?? [];
+      if (currentProblemStatementIdsFromQ.length > 0) {
         // Set first as active and update name if needed
         // Check scenarioData directly for problem_statement_mapping (DHH-style: simple, inline)
         const mappingRaw = scenarioData?.problem_statement_mapping || {};
-        const firstId = problemStatementIdsFromUrl[0];
+        const firstId = currentProblemStatementIdsFromQ[0];
         if (firstId) {
           const firstProblemStatementRaw = mappingRaw[firstId];
           if (firstProblemStatementRaw) {
@@ -2658,37 +2626,67 @@ export default function Scenario({
         }
       }
 
-      // Initialize search terms from server response
-      if (newData.persona_search) {
-        setPersonaSearchTerm(newData.persona_search);
+      // Initialize search terms and ranges from server response (update URL via nuqs)
+      // Only update if server values differ from current URL values
+      const updates: Partial<typeof q> = {};
+      if (
+        newData.persona_search &&
+        newData.persona_search !== q.personaSearch
+      ) {
+        updates.personaSearch = newData.persona_search;
       }
-      if (newData.document_search) {
-        setDocumentSearchTerm(newData.document_search);
+      if (
+        newData.document_search &&
+        newData.document_search !== q.documentSearch
+      ) {
+        updates.documentSearch = newData.document_search;
       }
-      if (newData.parameter_search) {
-        setParameterSearchTerm(newData.parameter_search);
+      if (
+        newData.parameter_search &&
+        newData.parameter_search !== q.parameterSearch
+      ) {
+        updates.parameterSearch = newData.parameter_search;
       }
 
-      // Initialize range values from server response (current values, not allowed ranges)
-      // Always set from server response if available, default to 1
-      // Always update to ensure reset works properly (even if values match defaults)
-      setPersonaMinMax({
-        min: newData.persona_min ?? 1,
-        max: newData.persona_max ?? 1,
-      });
-      // Always update document ranges (not conditional) to ensure reset works
-      setDocumentMinMax({
-        min: newData.document_min ?? 0,
-        max: newData.document_max ?? 1,
-      });
-      // Always update parameter selection ranges to ensure reset works
+      // Update ranges if server values differ
+      const serverPersonaMin = newData.persona_min ?? 1;
+      const serverPersonaMax = newData.persona_max ?? 1;
+      if (
+        q.personaMin !== serverPersonaMin ||
+        q.personaMax !== serverPersonaMax
+      ) {
+        updates.personaMin = serverPersonaMin;
+        updates.personaMax = serverPersonaMax;
+      }
+
+      const serverDocumentMin = newData.document_min ?? 0;
+      const serverDocumentMax = newData.document_max ?? 1;
+      if (
+        q.documentMin !== serverDocumentMin ||
+        q.documentMax !== serverDocumentMax
+      ) {
+        updates.documentMin = serverDocumentMin;
+        updates.documentMax = serverDocumentMax;
+      }
+
       const parameterDefault =
         scenarioData?.allowed_ranges?.parameter_selection ||
         parameterSelectionMinMax;
-      setParameterSelectionMinMax({
-        min: newData.parameter_selection_min ?? parameterDefault.min,
-        max: newData.parameter_selection_max ?? parameterDefault.max,
-      });
+      const serverParameterMin =
+        newData.parameter_selection_min ?? parameterDefault.min;
+      const serverParameterMax =
+        newData.parameter_selection_max ?? parameterDefault.max;
+      if (
+        q.parameterSelectionMin !== serverParameterMin ||
+        q.parameterSelectionMax !== serverParameterMax
+      ) {
+        updates.parameterSelectionMin = serverParameterMin;
+        updates.parameterSelectionMax = serverParameterMax;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        setQ(updates);
+      }
 
       // Initialize per-parameter item ranges from server response
       // Always update field ranges (even if empty) to ensure reset works
@@ -2702,7 +2700,13 @@ export default function Scenario({
             max: typedRange["max"] ?? 3,
           };
         });
-        setFieldMinMax(result);
+        // Update URL with field ranges if they differ from current URL values
+        const currentFieldRanges = parseJsonDict<
+          Record<string, { min: number; max: number }>
+        >(q.fieldRanges, {});
+        if (JSON.stringify(result) !== JSON.stringify(currentFieldRanges)) {
+          updateFieldRanges(result);
+        }
       } else {
         // If no field_ranges in response, initialize with defaults for all parameters
         // This ensures reset works even if server doesn't return field_ranges
@@ -2712,11 +2716,20 @@ export default function Scenario({
         Object.keys(parameterMapping).forEach((paramId) => {
           defaultFieldRanges[paramId] = { min: 1, max: 3 };
         });
-        setFieldMinMax(defaultFieldRanges);
+        const currentFieldRanges = parseJsonDict<
+          Record<string, { min: number; max: number }>
+        >(q.fieldRanges, {});
+        if (
+          JSON.stringify(defaultFieldRanges) !==
+          JSON.stringify(currentFieldRanges)
+        ) {
+          updateFieldRanges(defaultFieldRanges);
+        }
       }
 
       formDataInitializedRef.current = true;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     scenarioData,
     isEditMode,
@@ -2724,13 +2737,25 @@ export default function Scenario({
     effectiveProfile?.primaryDepartmentId,
     initialFormData,
     searchParams,
-    parameterSelectionMinMax, // Used as fallback value in effect
+    q.documentMax,
+    q.documentMin,
+    q.documentSearch,
+    q.parameterSearch,
+    q.parameterSelectionMax,
+    q.parameterSelectionMin,
+    q.personaMax,
+    q.personaMin,
+    q.personaSearch,
+    setQ,
     parameterMapping,
     fieldMapping,
+    parameterSelectionMinMax, // Used as fallback value in effect
     formData.name,
     formData.problemStatement,
     handleInputChange,
     useImage,
+    // q.documentIds, q.fieldIds, etc. intentionally omitted - only specific q fields needed
+    // update* functions intentionally omitted to prevent infinite loops
   ]);
 
   // Problem statement ID is now managed via URL parameters, not state
@@ -3008,7 +3033,7 @@ export default function Scenario({
     // Update URL: keep fields for other parameters, add randomize param
     // Server will randomize fields for this parameter and return them
     // The randomized_selections useEffect will merge randomized fields with existing ones
-    updateUrlParams({
+    setQ({
       fieldIds: filteredFieldIds.length > 0 ? filteredFieldIds : null,
       randomize: `parameter_${paramId}`,
     });
@@ -3044,18 +3069,26 @@ export default function Scenario({
       urlUpdates[`fieldMin_${paramId}`] = null;
       urlUpdates[`fieldMax_${paramId}`] = null;
 
-      // Clear URL params FIRST, then update state after URL update completes
-      updateUrlParams(urlUpdates);
+      // Clear URL params using nuqs and router for dynamic params
+      setQ({
+        fieldIds: null,
+        randomize: null,
+      });
+      // Clear dynamic field range params manually
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete(`fieldMin_${paramId}`);
+      params.delete(`fieldMax_${paramId}`);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
 
       // Update local state after URL update completes (next frame)
       requestAnimationFrame(() => {
         // Reset local state for this parameter's range
-        setFieldMinMax((prev) => ({
+        updateFieldRanges((prev) => ({
           ...prev,
           [paramId]: { min: defaultMin, max: defaultMax },
         }));
         // Update local state - remove this parameter's fields
-        setCurrentFieldIds(currentParamItems);
+        updateFieldIds(currentParamItems);
         // Refresh after state updates to get fresh server data
         router.refresh();
         // Reset flag after refresh completes
@@ -3079,9 +3112,7 @@ export default function Scenario({
     setRandomizingSection("persona");
     // Keep existing personaIds in URL to avoid flash of empty state
     // Server will randomize and return new values, which will update URL via randomized_selections useEffect
-    updateUrlParams({
-      randomize: "persona",
-    });
+    setQ({ randomize: "persona" });
     // Don't clear local state - keep existing values until server returns randomized ones
     // Trigger page refresh to get randomized results from server
     router.refresh();
@@ -3097,22 +3128,18 @@ export default function Scenario({
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
 
-      // Clear URL params FIRST, then update state after URL update completes
-      // This prevents buildSearchParams useEffect from re-adding params
-      updateUrlParams({
+      // Clear URL params and reset to defaults using nuqs
+      setQ({
         personaIds: null,
         personaSearch: null,
-        personaMin: null,
-        personaMax: null,
+        personaMin: defaultMin,
+        personaMax: defaultMax,
         randomize: null,
       });
 
       // Update local state after URL update completes (next frame)
-      // This ensures URL is cleared before state updates trigger buildSearchParams
       requestAnimationFrame(() => {
-        setPersonaMinMax({ min: defaultMin, max: defaultMax });
-        setSelectedPersonaIds([]);
-        setPersonaSearchTerm("");
+        updatePersonaIds([]);
         // Clear resetting flag after state updates and refresh
         router.refresh();
         // Reset flag after refresh completes
@@ -3134,9 +3161,7 @@ export default function Scenario({
     setRandomizingSection("document");
     // Keep existing documentIds in URL to avoid flash of empty state
     // Server will randomize and return new values, which will update URL via randomized_selections useEffect
-    updateUrlParams({
-      randomize: "document",
-    });
+    setQ({ randomize: "document" });
     // Don't clear local state - keep existing values until server returns randomized ones
     // Trigger page refresh to get randomized results from server
     router.refresh();
@@ -3152,22 +3177,18 @@ export default function Scenario({
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
 
-      // Clear URL params FIRST, then update state after URL update completes
-      // This prevents buildSearchParams useEffect from re-adding params
-      updateUrlParams({
+      // Clear URL params and reset to defaults using nuqs
+      setQ({
         documentIds: null,
         documentSearch: null,
-        documentMin: null,
-        documentMax: null,
+        documentMin: defaultMin,
+        documentMax: defaultMax,
         randomize: null,
       });
 
       // Update local state after URL update completes (next frame)
-      // This ensures URL is cleared before state updates trigger buildSearchParams
       requestAnimationFrame(() => {
-        setDocumentMinMax({ min: defaultMin, max: defaultMax });
-        setCurrentDocumentIds([]);
-        setDocumentSearchTerm("");
+        updateDocumentIds([]);
         // Refresh after state updates to get fresh server data
         router.refresh();
         // Reset flag after refresh completes
@@ -3187,11 +3208,11 @@ export default function Scenario({
   const handleDocumentRemove = (docId: string) => {
     // Check if document is in currentDocumentIds (could be regular or child document)
     if (currentDocumentIds.includes(docId)) {
-      setCurrentDocumentIds((prev) => prev.filter((id) => id !== docId));
+      updateDocumentIds((prev) => prev.filter((id) => id !== docId));
     }
     // Check if document is in templateDocumentIds (template document)
     if (templateDocumentIds.includes(docId)) {
-      setTemplateDocumentIds((prev) => prev.filter((id) => id !== docId));
+      updateTemplateDocumentIds((prev) => prev.filter((id) => id !== docId));
     }
     // Note: URL params are automatically updated via useEffect that watches currentDocumentIds and templateDocumentIds
   };
@@ -3200,9 +3221,7 @@ export default function Scenario({
   const handleRandomizeParametersClient = () => {
     // Keep existing parameterIds in URL to avoid flash of empty state
     // Server will randomize and return new values, which will update URL via randomized_selections useEffect
-    updateUrlParams({
-      randomize: "parameters",
-    });
+    setQ({ randomize: "parameters" });
     // Don't clear local state - keep existing values until server returns randomized ones
     // Trigger page refresh to get randomized results from server
     router.refresh();
@@ -3228,39 +3247,46 @@ export default function Scenario({
         randomize: null,
       };
 
-      // Clear all field range params for ALL parameters (including defaults)
-      // Use parameterMapping (all parameters) not generalParameterMapping (filtered)
-      Object.keys(parameterMapping).forEach((paramId) => {
-        urlUpdates[`fieldMin_${paramId}`] = null;
-        urlUpdates[`fieldMax_${paramId}`] = null;
+      // Clear field ranges (now JSON-encoded dict)
+      urlUpdates["fieldRanges"] = null;
+
+      // Clear URL params using nuqs
+      setQ({
+        parameterIds: null,
+        parameterSearch: null,
+        fieldRanges: null,
+        parameterSelectionMin: defaultMin,
+        parameterSelectionMax: defaultMax,
+        fieldIds: null,
+        randomize: null,
       });
 
-      // Also clear any fieldMin_* or fieldMax_* params from URL that we might have missed
+      // Clear dynamic field range params manually
+      const params = new URLSearchParams(searchParams.toString());
+      Object.keys(parameterMapping).forEach((paramId) => {
+        params.delete(`fieldMin_${paramId}`);
+        params.delete(`fieldMax_${paramId}`);
+      });
+      // Also clear any we might have missed
       searchParams.forEach((_value, key) => {
         if (key.startsWith("fieldMin_") || key.startsWith("fieldMax_")) {
-          urlUpdates[key] = null;
+          params.delete(key);
         }
       });
-
-      // Clear URL params FIRST, then update state after URL update completes
-      // This prevents buildSearchParams useEffect from re-adding params
-      updateUrlParams(urlUpdates);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
 
       // Update local state after URL update completes (next frame)
-      // This ensures URL is cleared before state updates trigger buildSearchParams
       requestAnimationFrame(() => {
-        setParameterSelectionMinMax({ min: defaultMin, max: defaultMax });
         handleInputChange("parameterIds", []);
-        setParameterSearchTerm("");
         // Clear all field IDs and ranges when resetting parameters
-        setCurrentFieldIds([]);
+        updateFieldIds([]);
         // Reset field ranges to defaults for ALL parameters
         const defaultFieldRanges: Record<string, { min: number; max: number }> =
           {};
         Object.keys(parameterMapping).forEach((paramId) => {
           defaultFieldRanges[paramId] = { min: 1, max: 3 };
         });
-        setFieldMinMax(defaultFieldRanges);
+        updateFieldRanges(defaultFieldRanges);
         // Refresh after state updates to get fresh server data
         router.refresh();
         // Reset flag after refresh completes
@@ -3286,9 +3312,7 @@ export default function Scenario({
       // Keep existing IDs in URL to avoid flash of empty state
       // Server will randomize and return new values, which will update URL via randomized_selections useEffect
       // Server randomizes from the full filtered set regardless of existing selections
-      updateUrlParams({
-        randomize: "all",
-      });
+      setQ({ randomize: "all" });
 
       // Trigger page refresh to get randomized results from server
       router.refresh();
@@ -3320,38 +3344,49 @@ export default function Scenario({
         randomize: null,
       };
 
-      // Clear all field range params for ALL parameters (including defaults)
-      // Use parameterMapping (all parameters) not generalParameterMapping (filtered)
-      // Also clear any fieldMin_* or fieldMax_* params that might exist in URL but not in current mapping
-      Object.keys(parameterMapping).forEach((paramId) => {
-        urlUpdates[`fieldMin_${paramId}`] = null;
-        urlUpdates[`fieldMax_${paramId}`] = null;
-      });
-
-      // Also clear any fieldMin_* or fieldMax_* params from URL that we might have missed
-      // This handles edge cases where params exist but aren't in current parameterMapping
-      searchParams.forEach((_value, key) => {
-        if (key.startsWith("fieldMin_") || key.startsWith("fieldMax_")) {
-          urlUpdates[key] = null;
-        }
-      });
+      // Clear field ranges (now JSON-encoded dict)
+      urlUpdates["fieldRanges"] = null;
+      urlUpdates["fieldShowSelected"] = null;
 
       // Set resetting flag to prevent buildSearchParams from interfering
       isResettingRef.current = true;
 
-      // Update URL FIRST, then update state after URL update completes
-      // This prevents buildSearchParams useEffect from re-adding params
-      updateUrlParams(urlUpdates);
+      // Clear URL params using nuqs (static params) and router (dynamic params)
+      setQ({
+        departmentIds: null,
+        personaIds: null,
+        documentIds: null,
+        parameterIds: null,
+        fieldIds: null,
+        personaSearch: null,
+        documentSearch: null,
+        parameterSearch: null,
+        personaMin: null,
+        personaMax: null,
+        documentMin: null,
+        documentMax: null,
+        parameterSelectionMin: null,
+        parameterSelectionMax: null,
+        randomize: null,
+      });
+
+      // Clear dynamic field range params manually
+      const params = new URLSearchParams(searchParams.toString());
+      Object.keys(parameterMapping).forEach((paramId) => {
+        params.delete(`fieldMin_${paramId}`);
+        params.delete(`fieldMax_${paramId}`);
+      });
+      searchParams.forEach((_value, key) => {
+        if (key.startsWith("fieldMin_") || key.startsWith("fieldMax_")) {
+          params.delete(key);
+        }
+      });
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
 
       // Update local state after URL update completes (next frame)
-      // This ensures URL is cleared before state updates trigger buildSearchParams
       requestAnimationFrame(() => {
         // Reset all local state to defaults for instant UI feedback
         // Server response will sync these values properly via useEffect
-        setPersonaMinMax({ min: 1, max: 1 });
-        setDocumentMinMax({ min: 0, max: 1 });
-        setParameterSelectionMinMax({ min: 0, max: 3 });
-
         // Reset field ranges to defaults for ALL parameters (including defaults)
         // Use parameterMapping (all parameters) not generalParameterMapping (filtered)
         const defaultFieldRanges: Record<string, { min: number; max: number }> =
@@ -3359,17 +3394,12 @@ export default function Scenario({
         Object.keys(parameterMapping).forEach((paramId) => {
           defaultFieldRanges[paramId] = { min: 1, max: 3 };
         });
-        setFieldMinMax(defaultFieldRanges);
-
-        // Reset all search terms
-        setPersonaSearchTerm("");
-        setDocumentSearchTerm("");
-        setParameterSearchTerm("");
+        updateFieldRanges(defaultFieldRanges);
 
         // Reset all selections
-        setSelectedPersonaIds([]);
-        setCurrentDocumentIds([]);
-        setCurrentFieldIds([]);
+        updatePersonaIds([]);
+        updateDocumentIds([]);
+        updateFieldIds([]);
         handleInputChange("parameterIds", []);
 
         // Refresh after state updates to get fresh server data
@@ -4039,7 +4069,7 @@ export default function Scenario({
 
   // Handler for PersonaPicker multi-select
   const handlePersonaSelect = (ids: string[]) => {
-    setSelectedPersonaIds(ids);
+    updatePersonaIds(ids);
   };
 
   return (
@@ -4124,11 +4154,11 @@ export default function Scenario({
           }
           onActiveChange={(active) => handleInputChange("active", active)}
           onUseVideoChange={(enabled) => {
-            setUseVideo(enabled);
+            setQ({ useVideo: enabled || null });
             if (!enabled) {
               setSelectedVideo(null);
               setActiveVideoId(null);
-              setUseQuestions(false);
+              setQ({ useQuestions: null });
             }
           }}
           onRandomizeAll={handleRandomizeAll}
@@ -4152,11 +4182,15 @@ export default function Scenario({
           }
           showSelected={personaShowSelected}
           onPersonaIdsChange={handlePersonaSelect}
-          onSearchTermChange={setPersonaSearchTerm}
-          onMinMaxChange={setPersonaMinMax}
+          onSearchTermChange={(term) => setQ({ personaSearch: term || null })}
+          onMinMaxChange={(minMax) =>
+            setQ({ personaMin: minMax.min, personaMax: minMax.max })
+          }
           onRandomize={handleRandomizePersonaClient}
           onReset={handleResetPersona}
-          onShowSelectedChange={setPersonaShowSelected}
+          onShowSelectedChange={(value) =>
+            setQ({ personaShowSelected: value || null })
+          }
           stepStatus={getStepStatus("persona")}
           stepTitle={steps[1]?.title || ""}
           stepDescription={steps[1]?.description || ""}
@@ -4208,16 +4242,18 @@ export default function Scenario({
           previewDocumentId={previewDocumentId}
           showSelected={documentShowSelected}
           showTemplate={documentShowTemplate}
-          onDocumentIdsChange={setCurrentDocumentIds}
-          onTemplateDocumentIdsChange={setTemplateDocumentIds}
-          onSearchTermChange={setDocumentSearchTerm}
-          onShowSelectedChange={(value) => {
-            setDocumentShowSelected(value);
-          }}
-          onShowTemplateChange={(value) => {
-            setDocumentShowTemplate(value);
-          }}
-          onMinMaxChange={setDocumentMinMax}
+          onDocumentIdsChange={updateDocumentIds}
+          onTemplateDocumentIdsChange={updateTemplateDocumentIds}
+          onSearchTermChange={(term) => setQ({ documentSearch: term || null })}
+          onShowSelectedChange={(value) =>
+            setQ({ documentShowSelected: value || null })
+          }
+          onShowTemplateChange={(value) =>
+            setQ({ documentShowTemplate: value || null })
+          }
+          onMinMaxChange={(minMax) =>
+            setQ({ documentMin: minMax.min, documentMax: minMax.max })
+          }
           onPreviewDocument={setPreviewDocumentId}
           onRandomize={handleRandomizeDocumentsClient}
           onReset={handleResetDocuments}
@@ -4248,20 +4284,27 @@ export default function Scenario({
               : undefined
           }
           onParameterIdsChange={(ids) => handleInputChange("parameterIds", ids)}
-          onSearchTermChange={setParameterSearchTerm}
-          onMinMaxChange={setParameterSelectionMinMax}
+          onSearchTermChange={(term) => setQ({ parameterSearch: term || null })}
+          onMinMaxChange={(minMax) =>
+            setQ({
+              parameterSelectionMin: minMax.min,
+              parameterSelectionMax: minMax.max,
+            })
+          }
           onRandomize={handleRandomizeParametersClient}
           onReset={handleResetParameters}
           onParameterUnselect={(paramId) => {
             // When unselecting a parameter, also remove all its parameter items (fields)
-            setCurrentFieldIds((prev) =>
+            updateFieldIds((prev) =>
               prev.filter(
                 (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
               )
             );
           }}
           showSelected={parameterShowSelected}
-          onShowSelectedChange={setParameterShowSelected}
+          onShowSelectedChange={(value) =>
+            setQ({ parameterShowSelected: value || null })
+          }
           stepStatus={getStepStatus("parameters")}
           stepTitle={steps[3]?.title || ""}
           stepDescription={steps[3]?.description || ""}
@@ -4309,16 +4352,20 @@ export default function Scenario({
                       }
                     : undefined
                 }
-                showSelected={fieldShowSelectedByParam[paramId] || false}
+                showSelected={
+                  (fieldShowSelectedByParam as Record<string, boolean>)[
+                    paramId
+                  ] || false
+                }
                 onFieldIdsChange={(newIds) => {
                   // Update only this parameter's items
                   const otherFieldIds = currentFieldIds.filter(
                     (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
                   );
-                  setCurrentFieldIds([...otherFieldIds, ...newIds]);
+                  updateFieldIds([...otherFieldIds, ...newIds]);
                 }}
                 onMinMaxChange={(minMax) =>
-                  setFieldMinMax((prev) => ({
+                  updateFieldRanges((prev) => ({
                     ...prev,
                     [paramId]: minMax,
                   }))
@@ -4326,7 +4373,7 @@ export default function Scenario({
                 onRandomize={() => handleRandomizeParameterClient(paramId)}
                 onReset={() => handleResetParameter(paramId)}
                 onShowSelectedChange={(value) =>
-                  setFieldShowSelectedByParam((prev) => ({
+                  updateFieldShowSelected((prev) => ({
                     ...prev,
                     [paramId]: value,
                   }))
@@ -4368,7 +4415,7 @@ export default function Scenario({
               objectivesHistory={objectivesHistory}
               useObjectives={useObjectives}
               onUseObjectivesChange={(enabled) => {
-                setUseObjectives(enabled);
+                setQ({ useObjectives: enabled || null });
                 if (enabled) {
                   // Automatically add one objective if none exist
                   if (currentObjectives.length === 0) {
@@ -4410,7 +4457,7 @@ export default function Scenario({
                 )
               }
               onUseProblemStatementChange={(enabled) => {
-                setUseProblemStatement(enabled);
+                setQ({ useProblemStatement: enabled || null });
                 if (!enabled) {
                   handleInputChange("problemStatement", "");
                 }
@@ -4423,7 +4470,7 @@ export default function Scenario({
               onDragOverObjective={handleDragOver}
               onDropObjective={handleDropObjective}
               onUseImageChange={(enabled) => {
-                setUseImage(enabled);
+                setQ({ useImage: enabled || null });
                 if (!enabled) {
                   setImage(null);
                 }
@@ -4436,11 +4483,11 @@ export default function Scenario({
               videoMapping={videoMapping}
               activeVideoId={activeVideoId}
               onUseVideoChange={(enabled) => {
-                setUseVideo(enabled);
+                setQ({ useVideo: enabled || null });
                 if (!enabled) {
                   setSelectedVideo(null);
                   setActiveVideoId(null);
-                  setUseQuestions(false);
+                  setQ({ useQuestions: null });
                 }
               }}
               onVideoSelect={(video) => {
@@ -4450,15 +4497,22 @@ export default function Scenario({
               selectedVideoLength={selectedVideoLength}
               onVideoLengthChange={(length) => {
                 setSelectedVideoLength(length);
-                updateUrlParams({
-                  videoLength: length !== null ? String(length) : null,
+                // videoLength is not in nuqs schema, update manually
+                const params = new URLSearchParams(searchParams.toString());
+                if (length !== null) {
+                  params.set("videoLength", String(length));
+                } else {
+                  params.delete("videoLength");
+                }
+                router.replace(`${pathname}?${params.toString()}`, {
+                  scroll: false,
                 });
               }}
               useQuestions={useQuestions}
               questions={questions}
               currentQuestionIds={currentQuestionIds}
               onUseQuestionsChange={(enabled) => {
-                setUseQuestions(enabled);
+                setQ({ useQuestions: enabled || null });
                 if (enabled) {
                   // Automatically add one question if none exist
                   if (questions.length === 0) {
