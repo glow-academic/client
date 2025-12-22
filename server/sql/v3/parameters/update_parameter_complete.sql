@@ -2,12 +2,41 @@
 -- Parameters: $1=parameterId, $2=name, $3=description, $4=active, $5=simulation_parameter, $6=document_parameter, $7=persona_parameter, $8=scenario_parameter, $9=video_parameter, $10=parameter_level_department_ids (text array, nullable), $11=field_connections_json (jsonb array), $12=profile_id (uuid)
 -- field_connections_json format: [{"field_id": "uuid", "default": true/false, "active": true/false}, ...]
 -- Exactly one field connection must have default=true
-WITH actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $12::uuid as profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $12::uuid
+),
+object_current_departments AS (
+    -- Get parameter's current active department links
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM parameter_departments
+    WHERE parameter_id = $1::uuid AND active = true
+),
+user_departments AS (
+    -- Get user's departments
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM profile_departments
+    WHERE profile_id = $12::uuid AND active = true
+),
+validate_update_permissions AS (
+    -- Validate department permissions for update operation
+    SELECT validate_department_update_permissions(
+        up.role,
+        ocd.department_ids,
+        ud.department_ids
+    ) as validation_passed
+    FROM user_profile up
+    CROSS JOIN object_current_departments ocd
+    CROSS JOIN user_departments ud
+),
+actor_profile AS (
+    SELECT 
+        $12::uuid as profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 update_parameter AS (
     UPDATE parameters SET

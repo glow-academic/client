@@ -1,6 +1,20 @@
 -- Create a new prompt with department links
 -- Parameters: $1=name, $2=description, $3=system_prompt, $4=active, $5=department_ids (text array, nullable), $6=profile_id (uuid)
-WITH new_prompt AS (
+WITH user_profile AS (
+    SELECT 
+        p.role
+    FROM profiles p
+    WHERE p.id = $6::uuid
+),
+validate_create_permissions AS (
+    -- Validate department permissions for create operation
+    SELECT validate_department_create_permissions(
+        up.role,
+        $5::text[]
+    ) as validation_passed
+    FROM user_profile up
+),
+new_prompt AS (
     INSERT INTO prompts (
         name,
         description,

@@ -104,9 +104,20 @@ def log_and_raise_error(
         status_code = error.status_code
         detail = error.detail
     elif is_sql_error:
-        # SQL errors: 500 with database error message
-        status_code = 500
-        detail = user_friendly_message or f"Database error: {str(error)}"
+        # Check for department permission denied errors
+        error_msg = str(error)
+        if "DEPARTMENT_PERMISSION_DENIED:" in error_msg:
+            # Extract user-friendly message after the prefix
+            detail = (
+                error_msg.split("DEPARTMENT_PERMISSION_DENIED: ", 1)[1]
+                if "DEPARTMENT_PERMISSION_DENIED: " in error_msg
+                else error_msg
+            )
+            status_code = 403
+        else:
+            # Other SQL errors: 500 with database error message
+            status_code = 500
+            detail = user_friendly_message or f"Database error: {str(error)}"
     else:
         # Other errors: 500 with generic message
         status_code = 500

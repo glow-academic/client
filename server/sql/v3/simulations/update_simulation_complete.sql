@@ -3,12 +3,41 @@
 -- Note: scenario_ids/scenario_active_flags and video_ids/video_active_flags must be same length and order within each type
 -- Positions are unified: scenarios get positions 1..N, videos get positions N+1..M
 -- Note: rubric_id and time_limit are now per-scenario, not simulation-level
-WITH actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $27::uuid as profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $27::uuid
+),
+object_current_departments AS (
+    -- Get simulation's current active department links
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM simulation_departments
+    WHERE simulation_id = $1::uuid AND active = true
+),
+user_departments AS (
+    -- Get user's departments
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM profile_departments
+    WHERE profile_id = $27::uuid AND active = true
+),
+validate_update_permissions AS (
+    -- Validate department permissions for update operation
+    SELECT validate_department_update_permissions(
+        up.role,
+        ocd.department_ids,
+        ud.department_ids
+    ) as validation_passed
+    FROM user_profile up
+    CROSS JOIN object_current_departments ocd
+    CROSS JOIN user_departments ud
+),
+actor_profile AS (
+    SELECT 
+        $27::uuid as profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 update_simulation AS (
     UPDATE simulations SET

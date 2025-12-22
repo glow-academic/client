@@ -4,12 +4,26 @@
 -- Note: rubric_id and time_limit are now per-scenario, not simulation-level
 -- Returns: simulation_id, actor_name
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $15::uuid as resolved_profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $15::uuid
+),
+validate_create_permissions AS (
+    -- Validate department permissions for create operation
+    SELECT validate_department_create_permissions(
+        up.role,
+        $5::text[]
+    ) as validation_passed
+    FROM user_profile up
+),
+actor_profile AS (
+    SELECT 
+        $15::uuid as resolved_profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 new_simulation AS (
     INSERT INTO simulations (

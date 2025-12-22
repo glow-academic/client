@@ -3,12 +3,41 @@
 --            $6=value (text), $7=department_ids (text array, nullable), 
 --            $8=base_url (text, nullable), $9=profile_id (uuid)
 -- Returns: model_id, model_name, actor_name
-WITH actor_profile AS (
+WITH user_profile AS (
     SELECT
-        $9::uuid as profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $9::uuid
+),
+object_current_departments AS (
+    -- Get model's current active department links
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM model_departments
+    WHERE model_id = $1::uuid AND active = true
+),
+user_departments AS (
+    -- Get user's departments
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM profile_departments
+    WHERE profile_id = $9::uuid AND active = true
+),
+validate_update_permissions AS (
+    -- Validate department permissions for update operation
+    SELECT validate_department_update_permissions(
+        up.role,
+        ocd.department_ids,
+        ud.department_ids
+    ) as validation_passed
+    FROM user_profile up
+    CROSS JOIN object_current_departments ocd
+    CROSS JOIN user_departments ud
+),
+actor_profile AS (
+    SELECT
+        $9::uuid as profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 update_model AS (
     UPDATE models SET

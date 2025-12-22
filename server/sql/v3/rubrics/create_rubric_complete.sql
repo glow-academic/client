@@ -2,12 +2,26 @@
 -- Parameters: $1=name, $2=description (nullable), $3=active, $4=points, $5=passPoints, $6=department_ids (nullable text array), $7=standard_groups (JSONB array), $8=profile_id (uuid, required), $9=rubric_agent_id (uuid, nullable)
 -- Returns: rubric_id, actor_name
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $8::uuid as resolved_profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $8::uuid
+),
+validate_create_permissions AS (
+    -- Validate department permissions for create operation
+    SELECT validate_department_create_permissions(
+        up.role,
+        $6::text[]
+    ) as validation_passed
+    FROM user_profile up
+),
+actor_profile AS (
+    SELECT 
+        $8::uuid as resolved_profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 new_rubric AS (
     INSERT INTO rubrics (

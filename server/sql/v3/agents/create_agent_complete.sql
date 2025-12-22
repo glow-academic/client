@@ -1,12 +1,26 @@
 -- Create agent with prompt and department links in a single transaction
 -- Parameters: $1=name, $2=description, $3=model_id, $4=active, $5=role, $6=prompt_id (nullable), $7=system_prompt (nullable), $8=department_ids (nullable text array), $9=profile_id (uuid, required)
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $9::uuid as resolved_profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $9::uuid
+),
+validate_create_permissions AS (
+    -- Validate department permissions for create operation
+    SELECT validate_department_create_permissions(
+        up.role,
+        $8::text[]
+    ) as validation_passed
+    FROM user_profile up
+),
+actor_profile AS (
+    SELECT 
+        $9::uuid as resolved_profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 new_agent AS (
     INSERT INTO agents (name, description, model_id, active, role, created_at, updated_at)

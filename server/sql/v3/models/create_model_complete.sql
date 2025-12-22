@@ -4,12 +4,26 @@
 --            $7=base_url (text, nullable), $8=profile_id (uuid, required)
 -- Returns: model_id, actor_name
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $8::uuid as resolved_profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $8::uuid
+),
+validate_create_permissions AS (
+    -- Validate department permissions for create operation
+    SELECT validate_department_create_permissions(
+        up.role,
+        $6::text[]
+    ) as validation_passed
+    FROM user_profile up
+),
+actor_profile AS (
+    SELECT 
+        $8::uuid as resolved_profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 new_model AS (
     INSERT INTO models (

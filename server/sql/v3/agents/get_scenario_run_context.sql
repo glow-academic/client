@@ -1,6 +1,6 @@
 -- Get all data needed to run scenario agent with optimized JOIN
--- Parameters: $1=department_id (uuid), $2=persona_id (uuid, nullable), $3=document_ids[] (uuid array), $4=parameter_item_ids[] (uuid array), $5=agent_id (uuid, required)
--- Returns: agent, model, provider, persona, documents, parameter items, and default guest profile data
+-- Parameters: $1=department_id (uuid), $2=persona_id (uuid, nullable), $3=document_ids[] (uuid array), $4=parameter_item_ids[] (uuid array), $5=agent_id (uuid, required), $6=profile_id (uuid, required)
+-- Returns: agent, model, provider, persona, documents, parameter items
 -- Uses the provided agent_id directly (UI handles filtering and selection)
 WITH params AS (
     -- Explicitly cast parameters for asyncpg type inference
@@ -9,15 +9,8 @@ WITH params AS (
         $2::uuid as persona_id, 
         $3::uuid[] as document_ids, 
         $4::uuid[] as parameter_item_ids,
-        $5::uuid as agent_id
-),
-default_guest AS (
-    -- Get default guest profile from settings system
-    SELECT sdg.profile_id::text as guest_profile_id
-    FROM settings_default_guest sdg
-    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-    WHERE sdg.active = true
-    LIMIT 1
+        $5::uuid as agent_id,
+        $6::uuid as profile_id
 ),
 best_agent AS (
     -- Use the provided agent_id directly (UI handles filtering and selection)
@@ -28,25 +21,35 @@ best_agent AS (
     AND a.active = true
 ),
 profile_rate_limit AS (
-    -- Get rate limit for the default guest profile
+    -- Get rate limit for the profile
     SELECT 
         prl.requests_per_day as req_per_day
     FROM profiles prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
-    WHERE prof.id = (SELECT guest_profile_id::uuid FROM default_guest)
+    WHERE prof.id = (SELECT profile_id FROM params)
 ),
 runs_today AS (
-    -- Count model runs for the default guest profile since start of day
+    -- Count model runs for the profile since start of day
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
-    WHERE mrp.profile_id = (SELECT guest_profile_id::uuid FROM default_guest)
+    WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
--- Get default settings (for key lookup via setting_provider_keys)
+-- Get active settings for profile (for key lookup via setting_provider_keys)
+-- Use profile's primary department for settings resolution
+profile_primary_department AS (
+    SELECT pd.department_id
+    FROM profile_departments pd
+    CROSS JOIN params p
+    WHERE pd.profile_id = p.profile_id
+      AND pd.is_primary = TRUE 
+      AND pd.active = true
+    LIMIT 1
+),
 default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
@@ -58,10 +61,50 @@ default_settings AS (
       )
     LIMIT 1
 ),
+dept_specific_settings AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    WHERE ppd.department_id IS NOT NULL
+      AND s.active = true 
+      AND sd.active = true
+    LIMIT 1
+),
+settings_with_keys AS (
+    SELECT DISTINCT spk.settings_id
+    FROM setting_provider_keys spk
+    JOIN keys k ON k.id = spk.key_id
+    WHERE spk.active = true AND k.active = true
+),
+dept_specific_settings_with_keys AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE ppd.department_id IS NOT NULL
+      AND s.active = true AND sd.active = true
+    LIMIT 1
+),
+default_settings_with_keys AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
+    LIMIT 1
+),
 active_settings AS (
-    -- Use default settings, fall back to any active settings
     SELECT 
         COALESCE(
+            (SELECT settings_id FROM dept_specific_settings_with_keys),
+            (SELECT settings_id FROM default_settings_with_keys),
+            (SELECT settings_id FROM settings_with_keys LIMIT 1),
+            (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
             (SELECT id FROM settings WHERE active = true LIMIT 1)
         ) as settings_id
@@ -156,10 +199,7 @@ SELECT
         '[]'::json
     ) as parameter_items,
     
-    -- Default guest profile
-    dg.guest_profile_id,
-    
-    -- Rate limit data (for default guest profile)
+    -- Rate limit data (for profile)
     prl.req_per_day,
     COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
     rt.earliest_run_created_at
@@ -189,10 +229,9 @@ CROSS JOIN active_settings act_s
 LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
     AND spk.settings_id = act_s.settings_id 
     AND spk.active = true
-LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-LEFT JOIN personas pers ON pers.id = p.persona_id
-CROSS JOIN default_guest dg
-CROSS JOIN profile_rate_limit prl
-CROSS JOIN runs_today rt
--- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
-WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
+    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
+    LEFT JOIN personas pers ON pers.id = p.persona_id
+    CROSS JOIN profile_rate_limit prl
+    CROSS JOIN runs_today rt
+    -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
+    WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE

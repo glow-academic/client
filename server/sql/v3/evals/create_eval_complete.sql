@@ -2,12 +2,26 @@
 -- Parameters: $1=name, $2=description, $3=rubric_id, $4=agent_id (agent being evaluated), $5=eval_agent_id (agent performing evaluation), $6=run_ids (uuid[]), $7=department_ids (uuid[] | NULL), $8=active (boolean), $9=dynamic (boolean), $10=profile_id (uuid, required)
 -- Returns: eval_id, actor_name
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $10::uuid as resolved_profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $10::uuid
+),
+validate_create_permissions AS (
+    -- Validate department permissions for create operation (convert uuid[] to text[])
+    SELECT validate_department_create_permissions(
+        up.role,
+        ARRAY(SELECT dept_id::text FROM UNNEST(COALESCE($7::uuid[], ARRAY[]::uuid[])) as dept_id)
+    ) as validation_passed
+    FROM user_profile up
+),
+actor_profile AS (
+    SELECT 
+        $10::uuid as resolved_profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 new_eval AS (
     INSERT INTO evals (name, description, rubric_id, agent_id, eval_agent_id, active, dynamic, created_at, updated_at)

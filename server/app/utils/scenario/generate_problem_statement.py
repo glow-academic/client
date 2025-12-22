@@ -68,6 +68,8 @@ async def generate_scenario_problem_statement(
     # Clear previous results (now handled by storage with keys)
 
     # Get all context data in a single optimized query using SQL file
+    if not profile_id:
+        raise ValueError("profile_id is required for scenario problem statement generation")
     sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
     context_row = await conn.fetchrow(
         sql,
@@ -80,6 +82,7 @@ async def generate_scenario_problem_statement(
         if parameter_item_ids
         else [],  # Convert to string list
         str(agent_id),  # agent_id (required)
+        str(profile_id),  # profile_id (required)
     )
 
     if not context_row:

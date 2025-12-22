@@ -1,12 +1,41 @@
 -- Update rubric with departments, standard groups, and standards in a single transaction
 -- Parameters: $1=rubricId, $2=name, $3=description (nullable), $4=active, $5=points, $6=passPoints, $7=department_ids (nullable text array), $8=standard_groups (JSONB array), $9=profile_id (uuid), $10=rubric_agent_id (uuid, nullable)
 -- Returns: rubric_id, rubric_name, actor_name
-WITH actor_profile AS (
+WITH user_profile AS (
     SELECT
-        $9::uuid as profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $9::uuid
+),
+object_current_departments AS (
+    -- Get rubric's current active department links
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM rubric_departments
+    WHERE rubric_id = $1::uuid AND active = true
+),
+user_departments AS (
+    -- Get user's departments
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM profile_departments
+    WHERE profile_id = $9::uuid AND active = true
+),
+validate_update_permissions AS (
+    -- Validate department permissions for update operation
+    SELECT validate_department_update_permissions(
+        up.role,
+        ocd.department_ids,
+        ud.department_ids
+    ) as validation_passed
+    FROM user_profile up
+    CROSS JOIN object_current_departments ocd
+    CROSS JOIN user_departments ud
+),
+actor_profile AS (
+    SELECT
+        $9::uuid as profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 update_rubric AS (
     UPDATE rubrics SET

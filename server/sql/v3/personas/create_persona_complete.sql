@@ -1,11 +1,25 @@
 -- Create persona with department links in a single transaction
 -- Parameters: $1=name, $2=description, $3=active, $4=color, $5=icon, $6=instructions, $7=department_ids (nullable text array), $8=profile_id (uuid), $9=example_ids (nullable text array)
-WITH actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $8::uuid as profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $8::uuid
+),
+validate_create_permissions AS (
+    -- Validate department permissions for create operation
+    SELECT validate_department_create_permissions(
+        up.role,
+        $7::text[]
+    ) as validation_passed
+    FROM user_profile up
+),
+actor_profile AS (
+    SELECT 
+        $8::uuid as profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 new_persona AS (
     INSERT INTO personas (name, description, active, color, icon, instructions, created_at, updated_at)

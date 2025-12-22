@@ -26,34 +26,21 @@ except ImportError:
 async def get_agent_model_info(
     conn: asyncpg.Connection,
     agent_id: str,
+    profile_id: str,
 ) -> dict[str, Any] | None:
     """Get agent's model information for image generation.
 
     Args:
         conn: Database connection
         agent_id: Agent ID
+        profile_id: Profile ID (required for API key resolution)
 
     Returns:
         Dict with api_key, base_url, model_name, provider, or None if not found
     """
-    sql_query = """
-    SELECT 
-        m.value as model_name,
-        COALESCE(p.value::text, '') as provider,
-        COALESCE(me.base_url, '') as base_url,
-        k.key as api_key
-    FROM agents a
-    INNER JOIN models m ON m.id = a.model_id
-    LEFT JOIN providers p ON p.id = m.provider_id
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p.id AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-    WHERE a.id = $1::uuid
-      AND a.active = true
-    LIMIT 1
-    """
+    sql_query = load_sql("sql/v3/agents/get_agent_model_info.sql")
 
-    row = await conn.fetchrow(sql_query, agent_id)
+    row = await conn.fetchrow(sql_query, agent_id, profile_id)
     if not row:
         return None
 
@@ -100,8 +87,13 @@ async def generate_image_background(
             return
 
         async with pool.acquire() as conn:
-            # Get agent's model info
-            model_info = await get_agent_model_info(conn, agent_id)
+            # Get agent's model info (profile_id is required for API key resolution)
+            if not profile_id:
+                await _emit_image_error(
+                    image_id, storage_key, "profile_id is required for image generation"
+                )
+                return
+            model_info = await get_agent_model_info(conn, agent_id, profile_id)
             if not model_info:
                 await _emit_image_error(
                     image_id, storage_key, f"Agent {agent_id} not found or inactive"

@@ -2,12 +2,41 @@
 -- Parameters: $1=eval_id, $2=name, $3=description, $4=rubric_id, $5=agent_id (nullable uuid), $6=eval_agent_id (nullable uuid), $7=run_ids (uuid[] | NULL - if provided, replaces all), $8=department_ids (uuid[] | NULL - if provided, replaces all), $9=active (boolean | NULL), $10=dynamic (boolean | NULL), $11=profile_id (uuid)
 -- Returns: eval_id, eval_name, actor_name
 
-WITH actor_profile AS (
+WITH user_profile AS (
     SELECT
-        $11::uuid as profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $11::uuid
+),
+object_current_departments AS (
+    -- Get eval's current active department links
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM eval_departments
+    WHERE eval_id = $1::uuid AND active = true
+),
+user_departments AS (
+    -- Get user's departments
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM profile_departments
+    WHERE profile_id = $11::uuid AND active = true
+),
+validate_update_permissions AS (
+    -- Validate department permissions for update operation
+    SELECT validate_department_update_permissions(
+        up.role,
+        ocd.department_ids,
+        ud.department_ids
+    ) as validation_passed
+    FROM user_profile up
+    CROSS JOIN object_current_departments ocd
+    CROSS JOIN user_departments ud
+),
+actor_profile AS (
+    SELECT
+        $11::uuid as profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 update_eval AS (
     UPDATE evals SET

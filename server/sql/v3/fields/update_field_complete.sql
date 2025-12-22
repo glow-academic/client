@@ -2,9 +2,34 @@ WITH resolve_profile_id AS (
     SELECT $7::uuid as resolved_profile_id
 ),
 user_profile AS (
-    SELECT name as actor_name
+    SELECT 
+        p.role,
+        p.first_name || ' ' || p.last_name as actor_name
     FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
+object_current_departments AS (
+    -- Get field's current active department links
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM field_departments
+    WHERE field_id = $1::uuid AND active = true
+),
+user_departments AS (
+    -- Get user's departments
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM profile_departments
+    WHERE profile_id = $7::uuid AND active = true
+),
+validate_update_permissions AS (
+    -- Validate department permissions for update operation
+    SELECT validate_department_update_permissions(
+        up.role,
+        ocd.department_ids,
+        ud.department_ids
+    ) as validation_passed
+    FROM user_profile up
+    CROSS JOIN object_current_departments ocd
+    CROSS JOIN user_departments ud
 ),
 update_field AS (
     UPDATE fields SET

@@ -2,12 +2,26 @@
 -- Parameters: $1=name, $2=description, $3=active, $4=department_ids (nullable text array), $5=conditional_parameter_ids (nullable text array), $6=profile_id (uuid, required)
 -- Returns: field_id, actor_name
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $6::uuid as resolved_profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $6::uuid
+),
+validate_create_permissions AS (
+    -- Validate department permissions for create operation
+    SELECT validate_department_create_permissions(
+        up.role,
+        $4::text[]
+    ) as validation_passed
+    FROM user_profile up
+),
+actor_profile AS (
+    SELECT 
+        $6::uuid as resolved_profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 new_field AS (
     INSERT INTO fields (

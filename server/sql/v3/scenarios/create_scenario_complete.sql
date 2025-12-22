@@ -16,12 +16,26 @@
 -- Note: problem_statement_versions contains all versions; the one matching problem_statement should be active
 -- Returns: scenario_id, actor_name
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $26::uuid as resolved_profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $26::uuid
+),
+validate_create_permissions AS (
+    -- Validate department permissions for create operation
+    SELECT validate_department_create_permissions(
+        up.role,
+        $13::text[]
+    ) as validation_passed
+    FROM user_profile up
+),
+actor_profile AS (
+    SELECT 
+        $26::uuid as resolved_profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 new_scenario AS (
     INSERT INTO scenarios (
@@ -245,6 +259,7 @@ link_image_uploads AS (
     ON CONFLICT (image_id, upload_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
+    RETURNING image_id, upload_id
 ),
 get_images AS (
     -- Get existing images via image_uploads junction table
@@ -357,6 +372,87 @@ link_question_times AS (
     WHERE $23::jsonb IS NOT NULL
     AND jsonb_typeof($23::jsonb) = 'object'
     ON CONFLICT (scenario_id, question_id, video_id, time) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+-- Link content items to departments based on scenario's departments
+-- If scenario has department links, link items to those departments
+-- If scenario is general (no department links), don't create department links (items remain general)
+link_image_departments AS (
+    INSERT INTO image_departments (image_id, department_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        ai.image_id,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM all_images ai
+    CROSS JOIN new_scenario ns
+    CROSS JOIN UNNEST($13::text[]) as dept_id
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    ON CONFLICT (image_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_video_departments AS (
+    INSERT INTO video_departments (video_id, department_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        video_id::uuid,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM UNNEST($20::text[]) as video_id
+    CROSS JOIN UNNEST($13::text[]) as dept_id
+    WHERE COALESCE(array_length($20::text[], 1), 0) > 0
+    AND COALESCE(array_length($13::text[], 1), 0) > 0
+    ON CONFLICT (video_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_objective_departments AS (
+    INSERT INTO objective_departments (objective_id, department_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        ao.objective_id,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM all_objectives ao
+    CROSS JOIN UNNEST($13::text[]) as dept_id
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    ON CONFLICT (objective_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_question_departments AS (
+    INSERT INTO question_departments (question_id, department_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        question_id::uuid,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM UNNEST($22::text[]) as question_id
+    CROSS JOIN UNNEST($13::text[]) as dept_id
+    WHERE COALESCE(array_length($22::text[], 1), 0) > 0
+    AND COALESCE(array_length($13::text[], 1), 0) > 0
+    ON CONFLICT (question_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_problem_statement_departments AS (
+    INSERT INTO problem_statement_departments (problem_statement_id, department_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        cps.problem_statement_id,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM create_problem_statements cps
+    CROSS JOIN UNNEST($13::text[]) as dept_id
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    ON CONFLICT (problem_statement_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

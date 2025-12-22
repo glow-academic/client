@@ -24,6 +24,13 @@ user_departments AS (
     JOIN departments d ON d.id = pd.department_id
     WHERE pd.active = true AND d.active = true
 ),
+user_departments_rows AS (
+    SELECT DISTINCT pd.department_id as id
+    FROM resolve_profile_id rpi
+    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    JOIN departments d ON d.id = pd.department_id
+    WHERE pd.active = true AND d.active = true
+),
 scenario_departments_data AS (
     SELECT 
         sd.scenario_id,
@@ -66,36 +73,43 @@ problem_statement_mapping_data AS (
                     ps_data
                 )
                 FROM (
-                    -- Problem statements from scenario
+                    -- Problem statements from scenario (sorted first)
                     SELECT 
                         sps.problem_statement_id as ps_id,
                         jsonb_build_object(
                             'name', sps.name,
                             'problem_statement', sps.problem_statement,
                             'created_at', sps.problem_statement_created_at::text,
-                            'updated_at', sps.problem_statement_updated_at::text
-                        ) as ps_data
+                            'updated_at', sps.problem_statement_updated_at::text,
+                            'is_from_scenario', true
+                        ) as ps_data,
+                        0 as sort_order
                     FROM scenario_all_problem_statements sps
                     UNION ALL
-                    -- Problem statements from provided IDs
+                    -- ALL other problem statements matching departments
                     SELECT 
                         ps.id::text as ps_id,
                         jsonb_build_object(
                             'name', ps.name,
                             'problem_statement', ps.problem_statement,
                             'created_at', ps.created_at::text,
-                            'updated_at', ps.updated_at::text
-                        ) as ps_data
+                            'updated_at', ps.updated_at::text,
+                            'is_from_scenario', false
+                        ) as ps_data,
+                        1 as sort_order
                     FROM problem_statements ps
-                    WHERE $6::uuid[] IS NOT NULL
-                    AND array_length($6::uuid[], 1) > 0
-                    AND ps.id = ANY($6::uuid[])
+                    LEFT JOIN problem_statement_departments psd_dept ON psd_dept.problem_statement_id = ps.id AND psd_dept.active = true
+                    WHERE (
+                        psd_dept.department_id IN (SELECT id FROM user_departments_rows)
+                        OR NOT EXISTS (SELECT 1 FROM problem_statement_departments psd2 WHERE psd2.problem_statement_id = ps.id AND psd2.active = true)
+                    )
                     AND NOT EXISTS (
                         SELECT 1
                         FROM scenario_all_problem_statements saps
                         WHERE saps.problem_statement_id::uuid = ps.id
                     )
                 ) combined
+                ORDER BY sort_order, ps_id
             ),
             '{}'::jsonb
         ) as problem_statement_mapping
@@ -169,42 +183,53 @@ scenario_documents_agg AS (
     WHERE scenario_id = $1 AND active = true
 ),
 scenario_videos_data AS (
-    SELECT 
-        COALESCE(
-            (
-                SELECT jsonb_agg(
-                    jsonb_build_object(
-                        'id', v.id::text,
-                        'name', v.name,
-                        'length_seconds', v.length_seconds,
-                        'completed', v.completed,
-                        'active', sv.active,
-                        'image_enabled', v.image_enabled,
-                        'file_path', u.file_path,
-                        'mime_type', u.mime_type,
-                        'upload_id', u.id::text
-                    )
-                )
-                FROM scenario_videos sv
-                JOIN videos v ON v.id = sv.video_id
-                LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
-                LEFT JOIN uploads u ON u.id = vu.upload_id
-                WHERE sv.scenario_id = $1 AND sv.active = true
-            ),
-            '[]'::jsonb
-        ) as scenario_videos
-    FROM (SELECT 1) AS _dummy
+    -- Get ALL videos matching user's departments, with scenario videos sorted first
+    SELECT COALESCE(
+        jsonb_agg(
+            jsonb_build_object(
+                'id', v.id::text,
+                'name', v.name,
+                'length_seconds', v.length_seconds,
+                'completed', v.completed,
+                'active', v.active,
+                'image_enabled', v.image_enabled,
+                'file_path', u.file_path,
+                'mime_type', u.mime_type,
+                'upload_id', u.id::text,
+                'is_from_scenario', CASE WHEN sv.scenario_id IS NOT NULL THEN true ELSE false END
+            )
+            ORDER BY 
+                CASE WHEN sv.scenario_id IS NOT NULL THEN 0 ELSE 1 END,  -- Scenario items first
+                v.created_at DESC
+        ),
+        '[]'::jsonb
+    ) as scenario_videos
+    FROM videos v
+    LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
+    LEFT JOIN uploads u ON u.id = vu.upload_id
+    LEFT JOIN video_departments vd_dept ON vd_dept.video_id = v.id AND vd_dept.active = true
+    LEFT JOIN scenario_videos sv ON sv.video_id = v.id AND sv.scenario_id = $1 AND sv.active = true
+    WHERE v.active = true
+    AND (
+        vd_dept.department_id IN (SELECT id FROM user_departments_rows)
+        OR NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = v.id AND vd2.active = true)
+    )
 ),
 scenario_questions_data AS (
+    -- Get ALL questions matching user's departments, with scenario questions sorted first
     SELECT 
-        COALESCE(ARRAY_AGG(q.id::text ORDER BY sq.created_at), ARRAY[]::text[]) as question_ids,
+        COALESCE(ARRAY_AGG(q.id::text ORDER BY 
+            CASE WHEN sq.scenario_id IS NOT NULL THEN 0 ELSE 1 END,
+            q.created_at DESC
+        ), ARRAY[]::text[]) as question_ids,
         COALESCE(
             jsonb_agg(
                 jsonb_build_object(
                     'id', q.id::text,
                     'question_text', q.question_text,
                     'allow_multiple', q.allow_multiple,
-                    'active', sq.active,
+                    'active', COALESCE(sq.active, q.active),
+                    'is_from_scenario', CASE WHEN sq.scenario_id IS NOT NULL THEN true ELSE false END,
                     'options', COALESCE(
                         (SELECT jsonb_agg(
                             jsonb_build_object(
@@ -231,47 +256,77 @@ scenario_questions_data AS (
                         ARRAY[]::integer[]
                     )
                 )
-                ORDER BY sq.created_at
+                ORDER BY 
+                    CASE WHEN sq.scenario_id IS NOT NULL THEN 0 ELSE 1 END,  -- Scenario items first
+                    q.created_at DESC
             ),
             '[]'::jsonb
         ) as questions
-    FROM scenario_questions sq
-    JOIN questions q ON q.id = sq.question_id
-    WHERE sq.scenario_id = $1 AND sq.active = true
+    FROM questions q
+    LEFT JOIN question_departments qd_dept ON qd_dept.question_id = q.id AND qd_dept.active = true
+    LEFT JOIN scenario_questions sq ON sq.question_id = q.id AND sq.scenario_id = $1 AND sq.active = true
+    WHERE q.active = true
+    AND (
+        qd_dept.department_id IN (SELECT id FROM user_departments_rows)
+        OR NOT EXISTS (SELECT 1 FROM question_departments qd2 WHERE qd2.question_id = q.id AND qd2.active = true)
+    )
 ),
 scenario_images_data AS (
+    -- Get ALL images matching user's departments, with scenario images sorted first
     SELECT COALESCE(
         jsonb_agg(
             jsonb_build_object(
-                'id', iu.upload_id::text,
+                'id', COALESCE(iu.upload_id::text, i.id::text),
                 'name', i.name,
-                'upload_id', iu.upload_id::text,
-                'active', si.active
+                'upload_id', COALESCE(iu.upload_id::text, i.id::text),
+                'file_path', u.file_path,
+                'mime_type', u.mime_type,
+                'active', i.active,
+                'created_at', i.created_at::text,
+                'updated_at', i.updated_at::text,
+                'is_from_scenario', CASE WHEN si.scenario_id IS NOT NULL THEN true ELSE false END
             )
-        ) FILTER (WHERE iu.upload_id IS NOT NULL),
+            ORDER BY 
+                CASE WHEN si.scenario_id IS NOT NULL THEN 0 ELSE 1 END,  -- Scenario items first
+                i.created_at DESC
+        ),
         '[]'::jsonb
     ) as scenario_images
-    FROM scenario_images si
-    JOIN images i ON i.id = si.image_id
-    LEFT JOIN LATERAL (
-        SELECT upload_id 
-        FROM image_uploads iu2 
-        WHERE iu2.image_id = i.id AND iu2.active = true 
-        ORDER BY iu2.created_at DESC 
-        LIMIT 1
-    ) iu ON true
-    WHERE si.scenario_id = $1 AND si.active = true
+    FROM images i
+    LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
+    LEFT JOIN uploads u ON u.id = iu.upload_id
+    LEFT JOIN image_departments id_dept ON id_dept.image_id = i.id AND id_dept.active = true
+    LEFT JOIN user_departments ud ON ud.id = id_dept.department_id
+    LEFT JOIN scenario_images si ON si.image_id = i.id AND si.scenario_id = $1 AND si.active = true
+    WHERE i.active = true
+    AND (
+        id_dept.department_id IN (SELECT id FROM user_departments_rows)
+        OR NOT EXISTS (SELECT 1 FROM image_departments id2 WHERE id2.image_id = i.id AND id2.active = true)
+    )
 ),
 scenario_objectives_data AS (
+    -- Get ALL objectives matching user's departments, with scenario objectives sorted first
     SELECT 
-        COALESCE(ARRAY_AGG(o.id::text ORDER BY so.idx), ARRAY[]::text[]) as objective_ids,
+        COALESCE(ARRAY_AGG(o.id::text ORDER BY 
+            CASE WHEN so.scenario_id IS NOT NULL THEN 0 ELSE 1 END,
+            COALESCE(so.idx, 999999),
+            o.created_at DESC
+        ), ARRAY[]::text[]) as objective_ids,
         COALESCE(jsonb_object_agg(
             o.id::text,
-            jsonb_build_object('name', o.objective, 'description', o.objective)
+            jsonb_build_object(
+                'name', o.objective, 
+                'description', o.objective,
+                'is_from_scenario', CASE WHEN so.scenario_id IS NOT NULL THEN true ELSE false END
+            )
         ) FILTER (WHERE o.objective IS NOT NULL), '{}'::jsonb) as objective_mapping
-    FROM scenario_objectives so
-    JOIN objectives o ON o.id = so.objective_id
-    WHERE so.scenario_id = $1
+    FROM objectives o
+    LEFT JOIN objective_departments od_dept ON od_dept.objective_id = o.id AND od_dept.active = true
+    LEFT JOIN scenario_objectives so ON so.objective_id = o.id AND so.scenario_id = $1
+    WHERE (
+        od_dept.department_id IN (SELECT id FROM user_departments_rows)
+        OR NOT EXISTS (SELECT 1 FROM objective_departments od2 WHERE od2.objective_id = o.id AND od2.active = true)
+    )
 ),
 scenario_simulations_agg AS (
     SELECT 

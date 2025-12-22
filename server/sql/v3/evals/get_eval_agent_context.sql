@@ -1,27 +1,14 @@
 -- Get eval_agent context: active prompt, model, provider, api_key, etc.
--- Parameters: $1=eval_agent_id (uuid), $2=department_id (uuid, nullable), $3=profile_id (uuid, nullable)
+-- Parameters: $1=eval_agent_id (uuid), $2=department_id (uuid, nullable), $3=profile_id (uuid, required)
 -- Returns: agent_id, agent_name, system_prompt, model_id, model_name, provider, base_url, api_key, temperature, reasoning, profile_id, req_per_day, runs_today_count, earliest_run_created_at
 WITH params AS (
     SELECT $1::uuid as eval_agent_id, $2::uuid as department_id, $3::uuid as profile_id
-),
-default_guest AS (
-    SELECT sdg.profile_id::text as guest_profile_id
-    FROM settings_default_guest sdg
-    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-    WHERE sdg.active = true
-    LIMIT 1
-),
-final_profile AS (
-    SELECT COALESCE(
-        (SELECT profile_id FROM params WHERE profile_id IS NOT NULL),
-        (SELECT guest_profile_id::uuid FROM default_guest)
-    ) as final_profile_id
 ),
 profile_rate_limit AS (
     SELECT prl.requests_per_day as req_per_day
     FROM profiles prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
-    WHERE prof.id = (SELECT final_profile_id FROM final_profile)
+    WHERE prof.id = (SELECT profile_id FROM params)
 ),
 runs_today AS (
     SELECT 
@@ -29,15 +16,20 @@ runs_today AS (
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
-    WHERE mrp.profile_id = (SELECT final_profile_id FROM final_profile)
+    WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
-resolved_profile_for_settings AS (
-    SELECT COALESCE(
-        (SELECT profile_id FROM params WHERE profile_id IS NOT NULL),
-        (SELECT guest_profile_id::uuid FROM default_guest)
-    ) as profile_id
+-- Get active settings for profile (for key lookup via setting_provider_keys)
+-- Use profile's primary department for settings resolution
+profile_primary_department AS (
+    SELECT pd.department_id
+    FROM profile_departments pd
+    CROSS JOIN params p
+    WHERE pd.profile_id = p.profile_id
+      AND pd.is_primary = TRUE 
+      AND pd.active = true
+    LIMIT 1
 ),
 default_settings AS (
     SELECT s.id as settings_id
@@ -49,26 +41,49 @@ default_settings AS (
       )
     LIMIT 1
 ),
-profile_primary_department AS (
-    SELECT pd.department_id
-    FROM resolved_profile_for_settings rpfs
-    JOIN profile_departments pd ON pd.profile_id = rpfs.profile_id
-    WHERE pd.is_primary = TRUE 
-      AND pd.active = true
-    LIMIT 1
-),
 dept_specific_settings AS (
     SELECT s.id as settings_id
     FROM settings s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-    WHERE s.active = true 
+    WHERE ppd.department_id IS NOT NULL
+      AND s.active = true 
       AND sd.active = true
+    LIMIT 1
+),
+settings_with_keys AS (
+    SELECT DISTINCT spk.settings_id
+    FROM setting_provider_keys spk
+    JOIN keys k ON k.id = spk.key_id
+    WHERE spk.active = true AND k.active = true
+),
+dept_specific_settings_with_keys AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE ppd.department_id IS NOT NULL
+      AND s.active = true AND sd.active = true
+    LIMIT 1
+),
+default_settings_with_keys AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
     LIMIT 1
 ),
 active_settings AS (
     SELECT 
         COALESCE(
+            (SELECT settings_id FROM dept_specific_settings_with_keys),
+            (SELECT settings_id FROM default_settings_with_keys),
+            (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
             (SELECT id FROM settings WHERE active = true LIMIT 1)
@@ -91,10 +106,7 @@ context_data AS (
         k.key as api_key,
         
         -- Profile data
-        COALESCE(
-            (SELECT profile_id::text FROM params WHERE profile_id IS NOT NULL),
-            dg.guest_profile_id
-        ) as profile_id,
+        p.profile_id::text as profile_id,
         
         -- Rate limit data
         prl.req_per_day,
@@ -127,7 +139,6 @@ context_data AS (
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-    CROSS JOIN default_guest dg
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
 )

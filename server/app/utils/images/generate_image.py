@@ -5,7 +5,6 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.main import UPLOAD_FOLDER
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
@@ -26,34 +25,21 @@ except ImportError:
 async def get_agent_model_info(
     conn: asyncpg.Connection,
     agent_id: str,
+    profile_id: str,
 ) -> dict[str, Any] | None:
     """Get agent's model information for image generation.
 
     Args:
         conn: Database connection
         agent_id: Agent ID
+        profile_id: Profile ID (required for API key resolution)
 
     Returns:
         Dict with api_key, base_url, model_name, provider, or None if not found
     """
-    sql_query = """
-    SELECT 
-        m.value as model_name,
-        COALESCE(p.value::text, '') as provider,
-        COALESCE(me.base_url, '') as base_url,
-        k.key as api_key
-    FROM agents a
-    INNER JOIN models m ON m.id = a.model_id
-    LEFT JOIN providers p ON p.id = m.provider_id
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p.id AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
-    WHERE a.id = $1::uuid
-      AND a.active = true
-    LIMIT 1
-    """
+    sql_query = load_sql("sql/v3/agents/get_agent_model_info.sql")
 
-    row = await conn.fetchrow(sql_query, agent_id)
+    row = await conn.fetchrow(sql_query, agent_id, profile_id)
     if not row:
         return None
 
@@ -92,8 +78,10 @@ async def generate_image_from_prompt(
     if not LITELLM_AVAILABLE:
         raise ValueError("litellm is not available - cannot generate images")
 
-    # Get agent's model info
-    model_info = await get_agent_model_info(conn, agent_id)
+    # Get agent's model info (profile_id is required for API key resolution)
+    if not profile_id:
+        raise ValueError("profile_id is required for image generation")
+    model_info = await get_agent_model_info(conn, agent_id, profile_id)
     if not model_info:
         raise ValueError(f"Agent {agent_id} not found or inactive")
 

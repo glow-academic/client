@@ -4,12 +4,26 @@
 -- Exactly one field connection must have default=true
 -- Returns: parameter_id, actor_name
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $11::uuid as resolved_profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $11::uuid
+),
+validate_create_permissions AS (
+    -- Validate department permissions for create operation (parameter-level departments)
+    SELECT validate_department_create_permissions(
+        up.role,
+        $9::text[]
+    ) as validation_passed
+    FROM user_profile up
+),
+actor_profile AS (
+    SELECT 
+        $11::uuid as resolved_profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 new_parameter AS (
     INSERT INTO parameters (

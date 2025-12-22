@@ -1,6 +1,6 @@
 -- Get all data needed to run scenario regeneration agent AND create run in single atomic transaction
--- Parameters: $1=department_id (uuid), $2=persona_id (uuid, nullable), $3=document_ids[] (uuid array), $4=parameter_item_ids[] (uuid array), $5=agent_id (uuid, required), $6=profile_id (uuid, nullable)
--- Returns: agent, model, provider, persona, documents, parameter items, default guest profile data, AND run_id
+-- Parameters: $1=department_id (uuid), $2=persona_id (uuid, nullable), $3=document_ids[] (uuid array), $4=parameter_item_ids[] (uuid array), $5=agent_id (uuid, required), $6=profile_id (uuid, required)
+-- Returns: agent, model, provider, persona, documents, parameter items, AND run_id
 -- Uses the provided agent_id directly (UI handles filtering and selection)
 -- Validates rate limit and creates run atomically - if run creation fails, entire transaction rolls back
 WITH params AS (
@@ -13,14 +13,6 @@ WITH params AS (
         $5::uuid as agent_id,
         $6::uuid as profile_id
 ),
-default_guest AS (
-    -- Get default guest profile from settings system
-    SELECT sdg.profile_id::text as guest_profile_id
-    FROM settings_default_guest sdg
-    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-    WHERE sdg.active = true
-    LIMIT 1
-),
 best_agent AS (
     -- Use the provided agent_id directly (UI handles filtering and selection)
     SELECT a.id as agent_id
@@ -29,33 +21,36 @@ best_agent AS (
     WHERE a.id = p.agent_id
     AND a.active = true
 ),
-final_profile AS (
-    -- Use provided profile_id or default guest profile
-    SELECT COALESCE(
-        (SELECT profile_id FROM params WHERE profile_id IS NOT NULL),
-        (SELECT guest_profile_id::uuid FROM default_guest)
-    ) as final_profile_id
-),
 profile_rate_limit AS (
-    -- Get rate limit for the final profile (provided or default guest)
+    -- Get rate limit for the profile
     SELECT 
         prl.requests_per_day as req_per_day
     FROM profiles prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
-    WHERE prof.id = (SELECT final_profile_id FROM final_profile)
+    WHERE prof.id = (SELECT profile_id FROM params)
 ),
 runs_today AS (
-    -- Count model runs for the final profile since start of day
+    -- Count model runs for the profile since start of day
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
-    WHERE mrp.profile_id = (SELECT final_profile_id FROM final_profile)
+    WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
--- Get default settings (for key lookup via setting_provider_keys)
+-- Get active settings for profile (for key lookup via setting_provider_keys)
+-- Use profile's primary department for settings resolution
+profile_primary_department AS (
+    SELECT pd.department_id
+    FROM profile_departments pd
+    CROSS JOIN params p
+    WHERE pd.profile_id = p.profile_id
+      AND pd.is_primary = TRUE 
+      AND pd.active = true
+    LIMIT 1
+),
 default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
@@ -67,10 +62,50 @@ default_settings AS (
       )
     LIMIT 1
 ),
+dept_specific_settings AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    WHERE ppd.department_id IS NOT NULL
+      AND s.active = true 
+      AND sd.active = true
+    LIMIT 1
+),
+settings_with_keys AS (
+    SELECT DISTINCT spk.settings_id
+    FROM setting_provider_keys spk
+    JOIN keys k ON k.id = spk.key_id
+    WHERE spk.active = true AND k.active = true
+),
+dept_specific_settings_with_keys AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN department_settings sd ON sd.settings_id = s.id
+    JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE ppd.department_id IS NOT NULL
+      AND s.active = true AND sd.active = true
+    LIMIT 1
+),
+default_settings_with_keys AS (
+    SELECT s.id as settings_id
+    FROM settings s
+    JOIN settings_with_keys swk ON swk.settings_id = s.id
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
+    LIMIT 1
+),
 active_settings AS (
-    -- Use default settings, fall back to any active settings
     SELECT 
         COALESCE(
+            (SELECT settings_id FROM dept_specific_settings_with_keys),
+            (SELECT settings_id FROM default_settings_with_keys),
+            (SELECT settings_id FROM settings_with_keys LIMIT 1),
+            (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
             (SELECT id FROM settings WHERE active = true LIMIT 1)
         ) as settings_id
@@ -167,16 +202,13 @@ context_data AS (
             '[]'::json
         ) as parameter_items,
         
-        -- Default guest profile
-        dg.guest_profile_id,
-        
-        -- Rate limit data (for final profile)
+        -- Rate limit data (for profile)
         prl.req_per_day,
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
         rt.earliest_run_created_at,
         
-        -- Final profile ID
-        fp.final_profile_id
+        -- Profile ID
+        p.profile_id
 
     FROM best_agent ba
     INNER JOIN agents a ON a.id = ba.agent_id
@@ -205,10 +237,8 @@ context_data AS (
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
     LEFT JOIN personas pers ON pers.id = p.persona_id
-    CROSS JOIN default_guest dg
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
-    CROSS JOIN final_profile fp
     -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
     WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
 ),
@@ -228,12 +258,11 @@ link_model AS (
     RETURNING run_id
 ),
 link_profile AS (
-    -- Link profile to run if provided (conditional)
+    -- Link profile to run
     INSERT INTO run_profiles (run_id, profile_id, active)
-    SELECT lm.run_id, cd.final_profile_id, true
+    SELECT lm.run_id, cd.profile_id::uuid, true
     FROM link_model lm
     CROSS JOIN context_data cd
-    WHERE cd.final_profile_id IS NOT NULL
     RETURNING run_id
 )
 SELECT 
@@ -258,7 +287,7 @@ SELECT
     cd.documents,
     cd.document_templates,
     cd.parameter_items,
-    cd.guest_profile_id,
+    cd.profile_id,
     cd.req_per_day,
     cd.runs_today_count,
     cd.earliest_run_created_at,

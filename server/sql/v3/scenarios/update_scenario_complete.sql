@@ -11,12 +11,41 @@
 -- Returns: scenario_id, name, actor_name if updated, or no rows if scenario doesn't exist
 -- Note: objective_ids should only contain new objective text (composite IDs filtered in Python)
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH user_profile AS (
     SELECT 
-        $23::uuid as resolved_profile_id,
+        p.role,
         COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
     FROM profiles p
     WHERE p.id = $23::uuid
+),
+object_current_departments AS (
+    -- Get scenario's current active department links
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM scenario_departments
+    WHERE scenario_id = $1::uuid AND active = true
+),
+user_departments AS (
+    -- Get user's departments
+    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
+    FROM profile_departments
+    WHERE profile_id = $23::uuid AND active = true
+),
+validate_update_permissions AS (
+    -- Validate department permissions for update operation
+    SELECT validate_department_update_permissions(
+        up.role,
+        ocd.department_ids,
+        ud.department_ids
+    ) as validation_passed
+    FROM user_profile up
+    CROSS JOIN object_current_departments ocd
+    CROSS JOIN user_departments ud
+),
+actor_profile AS (
+    SELECT 
+        $23::uuid as resolved_profile_id,
+        up.actor_name
+    FROM user_profile up
 ),
 scenario_exists AS (
     -- Check if scenario exists
@@ -307,6 +336,133 @@ link_scenario_parameters AS (
     FROM UNNEST($22::text[]) as param_id
     WHERE COALESCE(array_length($22::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+-- Update department links for content items based on scenario's departments
+-- Get all content items currently linked to this scenario (after all updates)
+scenario_content_images AS (
+    SELECT DISTINCT image_id
+    FROM scenario_images
+    WHERE scenario_id = $1::uuid
+),
+scenario_content_objectives AS (
+    SELECT DISTINCT objective_id
+    FROM scenario_objectives
+    WHERE scenario_id = $1::uuid
+),
+scenario_content_problem_statements AS (
+    SELECT DISTINCT problem_statement_id
+    FROM scenario_problem_statements
+    WHERE scenario_id = $1::uuid AND active = true
+),
+scenario_content_videos AS (
+    SELECT DISTINCT video_id
+    FROM scenario_videos
+    WHERE scenario_id = $1::uuid
+),
+scenario_content_questions AS (
+    SELECT DISTINCT question_id
+    FROM scenario_questions
+    WHERE scenario_id = $1::uuid AND active = true
+),
+-- Replace department links for images
+replace_image_departments AS (
+    DELETE FROM image_departments
+    WHERE image_id IN (SELECT image_id FROM scenario_content_images)
+),
+link_image_departments AS (
+    INSERT INTO image_departments (image_id, department_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        sci.image_id,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM scenario_content_images sci
+    CROSS JOIN UNNEST($13::text[]) as dept_id
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    ON CONFLICT (image_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+-- Replace department links for videos
+replace_video_departments AS (
+    DELETE FROM video_departments
+    WHERE video_id IN (SELECT video_id FROM scenario_content_videos)
+),
+link_video_departments AS (
+    INSERT INTO video_departments (video_id, department_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        scv.video_id,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM scenario_content_videos scv
+    CROSS JOIN UNNEST($13::text[]) as dept_id
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    ON CONFLICT (video_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+-- Replace department links for objectives
+replace_objective_departments AS (
+    DELETE FROM objective_departments
+    WHERE objective_id IN (SELECT objective_id FROM scenario_content_objectives)
+),
+link_objective_departments AS (
+    INSERT INTO objective_departments (objective_id, department_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        sco.objective_id,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM scenario_content_objectives sco
+    CROSS JOIN UNNEST($13::text[]) as dept_id
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    ON CONFLICT (objective_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+-- Replace department links for questions
+replace_question_departments AS (
+    DELETE FROM question_departments
+    WHERE question_id IN (SELECT question_id FROM scenario_content_questions)
+),
+link_question_departments AS (
+    INSERT INTO question_departments (question_id, department_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        scq.question_id,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM scenario_content_questions scq
+    CROSS JOIN UNNEST($13::text[]) as dept_id
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    ON CONFLICT (question_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+-- Replace department links for problem statements
+replace_problem_statement_departments AS (
+    DELETE FROM problem_statement_departments
+    WHERE problem_statement_id IN (SELECT problem_statement_id FROM scenario_content_problem_statements)
+),
+link_problem_statement_departments AS (
+    INSERT INTO problem_statement_departments (problem_statement_id, department_id, active, created_at, updated_at)
+    SELECT DISTINCT
+        scps.problem_statement_id,
+        dept_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM scenario_content_problem_statements scps
+    CROSS JOIN UNNEST($13::text[]) as dept_id
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    ON CONFLICT (problem_statement_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
