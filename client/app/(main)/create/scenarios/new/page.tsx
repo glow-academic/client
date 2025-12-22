@@ -107,6 +107,31 @@ export default async function NewScenarioPage({
   const personaSearch = searchParamsObj.get("personaSearch") || undefined;
   const documentSearch = searchParamsObj.get("documentSearch") || undefined;
   const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;
+  const documentShowSelected = searchParamsObj.get("documentShowSelected")
+    ? searchParamsObj.get("documentShowSelected") === "true"
+    : undefined;
+  const documentShowTemplate = searchParamsObj.get("documentShowTemplate")
+    ? searchParamsObj.get("documentShowTemplate") === "true"
+    : undefined;
+  const personaShowSelected = searchParamsObj.get("personaShowSelected")
+    ? searchParamsObj.get("personaShowSelected") === "true"
+    : undefined;
+  const parameterShowSelected = searchParamsObj.get("parameterShowSelected")
+    ? searchParamsObj.get("parameterShowSelected") === "true"
+    : undefined;
+  // Extract per-parameter field filters (format: fieldShowSelected_{paramId})
+  const fieldShowSelectedByParam: Record<string, boolean> | undefined = (() => {
+    const result: Record<string, boolean> = {};
+    let hasAny = false;
+    for (const [key, value] of searchParamsObj.entries()) {
+      if (key.startsWith("fieldShowSelected_")) {
+        const paramId = key.replace("fieldShowSelected_", "");
+        result[paramId] = value === "true";
+        hasAny = true;
+      }
+    }
+    return hasAny ? result : undefined;
+  })();
   const personaMin = searchParamsObj.get("personaMin")
     ? parseInt(searchParamsObj.get("personaMin") || "1", 10)
     : undefined;
@@ -176,6 +201,11 @@ export default async function NewScenarioPage({
       personaSearch: personaSearch || null,
       documentSearch: documentSearch || null,
       parameterSearch: parameterSearch || null,
+      documentShowSelected: documentShowSelected || null,
+      documentShowTemplate: documentShowTemplate || null,
+      personaShowSelected: personaShowSelected || null,
+      parameterShowSelected: parameterShowSelected || null,
+      fieldShowSelectedByParam: fieldShowSelectedByParam || null,
       personaMin: personaMin || null,
       personaMax: personaMax || null,
       documentMin: documentMin || null,

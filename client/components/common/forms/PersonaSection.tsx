@@ -6,12 +6,13 @@
 import {
   Brain,
   Check,
+  Filter,
   Loader2,
   RotateCcw,
   Search,
   Shuffle,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { RangeSlider } from "@/components/common/forms/RangeSlider";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { components } from "@/lib/api/schema";
 import { cn } from "@/lib/utils";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
@@ -51,6 +53,7 @@ export interface PersonaSectionProps {
   searchTerm: string;
   minMax: { min: number; max: number }; // Current values
   allowedRange?: { min: number; max: number } | undefined; // Allowed limits (optional, defaults to minMax if not provided)
+  showSelected?: boolean; // Filter value from URL (read-only, server handles filtering)
 
   // Callbacks
   onPersonaIdsChange: (ids: string[]) => void;
@@ -58,6 +61,7 @@ export interface PersonaSectionProps {
   onMinMaxChange: (minMax: { min: number; max: number }) => void;
   onRandomize: () => void;
   onReset: () => void;
+  onShowSelectedChange?: (value: boolean) => void; // Callback to update URL params
 
   // UI State
   stepStatus: StepStatus;
@@ -98,11 +102,13 @@ export function PersonaSection({
   searchTerm,
   minMax,
   allowedRange,
+  showSelected = false,
   onPersonaIdsChange,
   onSearchTermChange,
   onMinMaxChange,
   onRandomize,
   onReset,
+  onShowSelectedChange,
   stepStatus,
   stepTitle,
   stepDescription,
@@ -115,10 +121,21 @@ export function PersonaSection({
   // Use allowedRange for slider limits, minMax for current values
   const sliderMin = allowedRange?.min ?? minMax.min ?? 1;
   const sliderMax = allowedRange?.max ?? minMax.max ?? 3;
-  // Filter personas based on search term
+
+  // Local temporary state for filter values (until Apply is clicked)
+  const [tempShowSelected, setTempShowSelected] = useState<boolean>(showSelected);
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState<boolean>(false);
+
+  // Sync temporary state when props change
+  useEffect(() => {
+    setTempShowSelected(showSelected);
+  }, [showSelected]);
+
+  // Server handles filtering via validPersonaIds (showSelected filter applied server-side)
+  // Client only applies search term filtering (for instant feedback while typing)
   const filteredPersonaIds = useMemo(() => {
     if (!searchTerm.trim()) {
-      return validPersonaIds;
+      return validPersonaIds; // Server already filtered, just return as-is
     }
     const searchLower = searchTerm.toLowerCase();
     return validPersonaIds.filter((personaId) => {
@@ -129,6 +146,11 @@ export function PersonaSection({
       return searchText.includes(searchLower);
     });
   }, [validPersonaIds, personaMapping, searchTerm]);
+
+  const handleApplyFilters = () => {
+    onShowSelectedChange?.(tempShowSelected);
+    setFilterPopoverOpen(false);
+  };
 
   return (
     <Card
@@ -241,6 +263,56 @@ export function PersonaSection({
             className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isReadonly || disabled}
           />
+          <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={isReadonly || disabled}
+                    className="relative"
+                  >
+                    <Filter className="h-4 w-4" />
+                    {showSelected && (
+                      <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Filters</TooltipContent>
+            </Tooltip>
+            <PopoverContent className="w-64 p-4" align="end">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="persona-show-selected"
+                      checked={tempShowSelected}
+                      onCheckedChange={(checked) =>
+                        setTempShowSelected(checked === true)
+                      }
+                      disabled={isReadonly || disabled}
+                    />
+                    <label
+                      htmlFor="persona-show-selected"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Show selected
+                    </label>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleApplyFilters}
+                  disabled={isReadonly || disabled}
+                  className="w-full"
+                  size="sm"
+                >
+                  Apply
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Filtered personas grid */}

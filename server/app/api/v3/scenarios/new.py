@@ -162,6 +162,12 @@ class ScenarioNewRequest(BaseModel):
     personaSearch: str | None = None
     documentSearch: str | None = None
     parameterSearch: str | None = None
+    # Filter parameters
+    documentShowSelected: bool | None = None
+    documentShowTemplate: bool | None = None
+    personaShowSelected: bool | None = None
+    parameterShowSelected: bool | None = None
+    fieldShowSelectedByParam: dict[str, bool] | None = None  # Per-parameter field filters: {paramId: bool}
     # Range parameters
     personaMin: int | None = None
     personaMax: int | None = None
@@ -411,8 +417,8 @@ def filter_valid_persona_ids(
         if pid in selected_dept_persona_ids or pid not in all_dept_persona_ids
     ]
 
-    # Preserve order: selected items first, then filtered items
-    dept_filtered = preserve_order_union_selected_first(selected_persona_ids, filtered)
+    # Maintain original order from filtered list (no special ordering for selected items)
+    dept_filtered = filtered
 
     # Apply parameter-based filtering
     param_filtered = dept_filtered
@@ -512,11 +518,9 @@ def filter_valid_document_ids(
     # Always include currently selected documents (for edit mode - ensures selected items are visible)
     selected_doc_id_set = set(selected_doc_ids)
 
-    # If no departments selected, start with selected ones first, then all valid IDs (preserving order)
+    # If no departments selected, maintain original order from base_ids
     if len(selected_dept_ids) == 0:
-        dept_filtered_ids = preserve_order_union_selected_first(
-            selected_doc_ids, base_ids
-        )
+        dept_filtered_ids = base_ids
     else:
         # Get union of document_ids from ALL departments (to identify cross-department items)
         all_dept_document_ids: set[str] = set()
@@ -542,10 +546,8 @@ def filter_valid_document_ids(
             or doc_id not in all_dept_document_ids
         ]
 
-        # Preserve order: selected items first, then filtered items
-        dept_filtered_ids = preserve_order_union_selected_first(
-            selected_doc_ids, filtered
-        )
+        # Maintain original order from filtered list (no special ordering for selected items)
+        dept_filtered_ids = filtered
 
     # Filter by selected document fields if any are selected
     # Compute documentFieldIds inline to avoid dependency order issue
@@ -777,8 +779,8 @@ def filter_valid_field_ids(  # Renamed from filter_valid_parameter_item_ids
         if item_id in selected_dept_field_ids or item_id not in all_dept_field_ids
     ]
 
-    # Preserve order: selected items first, then filtered items
-    return preserve_order_union_selected_first(selected_field_ids, filtered)
+    # Return filtered items in original order (no special ordering for selected items)
+    return filtered
 
 
 def filter_valid_general_field_ids(  # Renamed from filter_valid_general_parameter_item_ids
@@ -1000,8 +1002,8 @@ def filter_valid_general_field_ids(  # Renamed from filter_valid_general_paramet
 
         # Don't show other fields when parameters are selected (source of truth)
 
-    # Return selected fields first, then filtered fields
-    return preserve_order_union_selected_first(selected_field_ids, filtered_result)
+    # Return filtered fields in original order (no special ordering for selected items)
+    return filtered_result
 
 
 @router.post(
@@ -1896,10 +1898,130 @@ async def get_scenario_new(
                 )
             ]
 
+        # Track selected documents to always include them (even when filtered out)
+        selected_doc_ids_set = set(request_data.documentIds or [])
+        
+        # Apply showSelected filter (server-side)
+        if request_data.documentShowSelected:
+            filtered_valid_document_ids = [
+                did for did in filtered_valid_document_ids
+                if did in selected_doc_ids_set
+            ]
+
+        # Apply showTemplate filter (server-side)
+        if request_data.documentShowTemplate:
+            # Build set of template document IDs from document_details
+            template_doc_ids_set = set()
+            for doc_detail in document_details:
+                if doc_detail.is_template:
+                    template_doc_ids_set.add(doc_detail.document_id)
+            # Also include documents in templateDocumentIds
+            if request_data.templateDocumentIds:
+                template_doc_ids_set.update(request_data.templateDocumentIds)
+
+            filtered_valid_document_ids = [
+                did for did in filtered_valid_document_ids
+                if did in template_doc_ids_set
+            ]
+        
+        # Always include selected documents in valid_document_ids (even if filtered out)
+        # This ensures selected documents remain visible and don't get cleared by client-side cleanup
+        for selected_doc_id in selected_doc_ids_set:
+            if selected_doc_id not in filtered_valid_document_ids:
+                # Check if the document exists in document_mapping (is actually valid)
+                if selected_doc_id in document_mapping:
+                    filtered_valid_document_ids.append(selected_doc_id)
+
+        # Apply persona filtering (same as detail.py)
+        selected_persona_ids_set = set(request_data.personaIds or [])
+        if request_data.personaShowSelected:
+            filtered_valid_persona_ids = [
+                pid for pid in filtered_valid_persona_ids
+                if pid in selected_persona_ids_set
+            ]
+        for selected_persona_id in selected_persona_ids_set:
+            if selected_persona_id not in filtered_valid_persona_ids:
+                if selected_persona_id in persona_mapping:
+                    filtered_valid_persona_ids.append(selected_persona_id)
+
+        # Apply parameter filtering
         if request_data.parameterSearch:
             search_lower = request_data.parameterSearch.lower()
-            # Note: This filters valid_parameter_ids, not the filtered lists above
-            # We'll need to filter the parameter selection separately if needed
+            valid_parameter_ids = [
+                pid
+                for pid in valid_parameter_ids
+                if pid in parameter_mapping
+                and (
+                    search_lower in parameter_mapping[pid].name.lower()
+                    or (
+                        parameter_mapping[pid].description
+                        and search_lower in parameter_mapping[pid].description.lower()
+                    )
+                )
+            ]
+
+        # Track selected parameters to always include them (even when filtered out)
+        selected_param_ids_set = set(request_data.parameterIds or [])
+        
+        # Apply showSelected filter for parameters (server-side)
+        if request_data.parameterShowSelected:
+            valid_parameter_ids = [
+                pid for pid in valid_parameter_ids
+                if pid in selected_param_ids_set
+            ]
+        
+        # Always include selected parameters in valid_parameter_ids (even if filtered out)
+        for selected_param_id in selected_param_ids_set:
+            if selected_param_id not in valid_parameter_ids:
+                # Check if the parameter exists in parameter_mapping (is actually valid)
+                if selected_param_id in parameter_mapping:
+                    valid_parameter_ids.append(selected_param_id)
+
+        # Apply per-parameter field filtering (after filtered_valid_general_field_ids is computed)
+        # Each parameter's field section can have its own "show selected" filter
+        if filtered_valid_general_field_ids is not None and request_data.fieldShowSelectedByParam:
+            # Track selected fields to always include them (even when filtered out)
+            selected_field_ids_set = set(request_data.fieldIds or [])
+            
+            # Apply per-parameter filtering: if a parameter has showSelected=true, filter its fields
+            filtered_result = []
+            processed_field_ids = set()
+            
+            for field_id in filtered_valid_general_field_ids:
+                field = field_mapping.get(field_id)
+                if not field or not field.parameter_id:
+                    # Include fields without parameter_id
+                    filtered_result.append(field_id)
+                    processed_field_ids.add(field_id)
+                    continue
+                
+                param_id = field.parameter_id
+                # If this parameter has showSelected filter active, only include selected fields for this parameter
+                if request_data.fieldShowSelectedByParam.get(param_id, False):
+                    if field_id in selected_field_ids_set:
+                        filtered_result.append(field_id)
+                        processed_field_ids.add(field_id)
+                else:
+                    # No filter for this parameter, include all fields (both selected and unselected)
+                    # Add unselected fields from filtered_valid_general_field_ids
+                    filtered_result.append(field_id)
+                    processed_field_ids.add(field_id)
+                    # Also add selected fields for this parameter that weren't in filtered_valid_general_field_ids
+                    for selected_field_id in selected_field_ids_set:
+                        if selected_field_id not in processed_field_ids:
+                            selected_field = field_mapping.get(selected_field_id)
+                            if selected_field and selected_field.parameter_id == param_id:
+                                filtered_result.append(selected_field_id)
+                                processed_field_ids.add(selected_field_id)
+            
+            filtered_valid_general_field_ids = filtered_result
+            
+            # Always include any remaining selected fields that weren't processed (for parameters not in fieldShowSelectedByParam)
+            for selected_field_id in selected_field_ids_set:
+                if selected_field_id not in processed_field_ids:
+                    # Check if the field exists in field_mapping (is actually valid)
+                    if selected_field_id in field_mapping:
+                        filtered_valid_general_field_ids.append(selected_field_id)
 
         # Filter selected IDs from request to only include valid ones (server-driven approach)
         # Note: These are used as fallback if no randomization occurred

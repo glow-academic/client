@@ -3,7 +3,7 @@
  * Reusable document selection section component
  */
 "use client";
-import { Check, Eye, Loader2, RotateCcw, Search, Shuffle } from "lucide-react";
+import { Check, Eye, Filter, Loader2, RotateCcw, Search, Shuffle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import DocumentViewer, {
@@ -36,6 +36,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 type StepStatus = "pending" | "active" | "completed";
@@ -65,6 +66,8 @@ export interface DocumentSectionProps {
   minMax: { min: number; max: number }; // Current values
   allowedRange?: { min: number; max: number }; // Allowed limits (optional, defaults to minMax if not provided)
   previewDocumentId: string | null;
+  showSelected?: boolean; // Filter value from URL (read-only, server handles filtering)
+  showTemplate?: boolean; // Filter value from URL (read-only, server handles filtering)
 
   // Callbacks
   onDocumentIdsChange: (ids: string[]) => void;
@@ -74,6 +77,8 @@ export interface DocumentSectionProps {
   onPreviewDocument: (docId: string | null) => void;
   onRandomize: () => void;
   onReset: () => void;
+  onShowSelectedChange?: (value: boolean) => void; // Callback to update URL params
+  onShowTemplateChange?: (value: boolean) => void; // Callback to update URL params
 
   // UI State
   stepStatus: StepStatus;
@@ -96,6 +101,8 @@ export function DocumentSection({
   minMax,
   allowedRange,
   previewDocumentId,
+  showSelected = false,
+  showTemplate = false,
   onDocumentIdsChange,
   onTemplateDocumentIdsChange: _onTemplateDocumentIdsChange,
   onSearchTermChange,
@@ -103,6 +110,8 @@ export function DocumentSection({
   onPreviewDocument,
   onRandomize,
   onReset,
+  onShowSelectedChange,
+  onShowTemplateChange,
   stepStatus,
   stepTitle,
   stepDescription,
@@ -125,10 +134,25 @@ export function DocumentSection({
     setLocalPreviewDocumentId(previewDocumentId);
   }, [previewDocumentId]);
 
-  // Filter documents based on search term
+  // Local temporary state for filter values (until Apply is clicked)
+  const [tempShowSelected, setTempShowSelected] = useState<boolean>(showSelected);
+  const [tempShowTemplate, setTempShowTemplate] = useState<boolean>(showTemplate);
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState<boolean>(false);
+
+  // Sync temporary state when props change
+  useEffect(() => {
+    setTempShowSelected(showSelected);
+  }, [showSelected]);
+
+  useEffect(() => {
+    setTempShowTemplate(showTemplate);
+  }, [showTemplate]);
+
+  // Server handles filtering via validDocumentIds (showSelected, showTemplate filters applied server-side)
+  // Client only applies search term filtering (for instant feedback while typing)
   const filteredDocumentIds = useMemo(() => {
     if (!searchTerm.trim()) {
-      return validDocumentIds;
+      return validDocumentIds; // Server already filtered, just return as-is
     }
     const searchLower = searchTerm.toLowerCase();
     return validDocumentIds.filter((docId) => {
@@ -138,6 +162,15 @@ export function DocumentSection({
       return searchText.includes(searchLower);
     });
   }, [validDocumentIds, documentMapping, searchTerm]);
+
+  const handleApplyFilters = () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentSection.tsx:handleApplyFilters',message:'Apply filters clicked',data:{tempShowSelected,tempShowTemplate,hasOnShowSelectedChange:!!onShowSelectedChange,hasOnShowTemplateChange:!!onShowTemplateChange},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    onShowSelectedChange?.(tempShowSelected);
+    onShowTemplateChange?.(tempShowTemplate);
+    setFilterPopoverOpen(false);
+  };
 
   const handlePreviewClick = (docId: string) => {
     setLocalPreviewDocumentId(docId);
@@ -265,6 +298,70 @@ export function DocumentSection({
               className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isReadonly || disabled}
             />
+            <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={isReadonly || disabled}
+                      className="relative"
+                    >
+                      <Filter className="h-4 w-4" />
+                      {(showSelected || showTemplate) && (
+                        <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Filters</TooltipContent>
+              </Tooltip>
+              <PopoverContent className="w-80 p-4" align="end">
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="show-selected"
+                      checked={tempShowSelected}
+                      onCheckedChange={(checked) =>
+                        setTempShowSelected(checked === true)
+                      }
+                      disabled={isReadonly || disabled}
+                    />
+                    <label
+                      htmlFor="show-selected"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Show selected
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="show-template"
+                      checked={tempShowTemplate}
+                      onCheckedChange={(checked) =>
+                        setTempShowTemplate(checked === true)
+                      }
+                      disabled={isReadonly || disabled}
+                    />
+                    <label
+                      htmlFor="show-template"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Template
+                    </label>
+                  </div>
+                  <Button
+                    onClick={handleApplyFilters}
+                    disabled={isReadonly || disabled}
+                    className="w-full"
+                    size="sm"
+                  >
+                    Apply
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Filtered documents grid */}

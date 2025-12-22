@@ -61,6 +61,11 @@ const getScenario = async (
     personaSearch?: string;
     documentSearch?: string;
     parameterSearch?: string;
+    documentShowSelected?: boolean;
+    documentShowTemplate?: boolean;
+    personaShowSelected?: boolean;
+    parameterShowSelected?: boolean;
+    fieldShowSelectedByParam?: Record<string, boolean>;  // Per-parameter field filters: {paramId: bool}
     personaMin?: number;
     personaMax?: number;
     documentMin?: number;
@@ -191,6 +196,32 @@ export default async function EditScenarioPage({
   const personaSearch = searchParamsObj.get("personaSearch") || undefined;
   const documentSearch = searchParamsObj.get("documentSearch") || undefined;
   const parameterSearch = searchParamsObj.get("parameterSearch") || undefined;
+  const documentShowSelected = searchParamsObj.get("documentShowSelected")
+    ? searchParamsObj.get("documentShowSelected") === "true"
+    : undefined;
+  const documentShowTemplate = searchParamsObj.get("documentShowTemplate")
+    ? searchParamsObj.get("documentShowTemplate") === "true"
+    : undefined;
+  const personaShowSelected = searchParamsObj.get("personaShowSelected")
+    ? searchParamsObj.get("personaShowSelected") === "true"
+    : undefined;
+  const parameterShowSelected = searchParamsObj.get("parameterShowSelected")
+    ? searchParamsObj.get("parameterShowSelected") === "true"
+    : undefined;
+  // Extract per-parameter field filters (format: fieldShowSelected_{paramId})
+  const fieldShowSelectedByParam: Record<string, boolean> | undefined = (() => {
+    const result: Record<string, boolean> = {};
+    let hasAny = false;
+    for (const [key, value] of searchParamsObj.entries()) {
+      if (key.startsWith("fieldShowSelected_")) {
+        const paramId = key.replace("fieldShowSelected_", "");
+        result[paramId] = value === "true";
+        hasAny = true;
+      }
+    }
+    console.log('[DEBUG] page.tsx extracted fieldShowSelectedByParam:', result);
+    return hasAny ? result : undefined;
+  })();
   const personaMin = searchParamsObj.get("personaMin")
     ? parseInt(searchParamsObj.get("personaMin") || "1", 10)
     : undefined;
@@ -275,6 +306,11 @@ export default async function EditScenarioPage({
       personaSearch?: string;
       documentSearch?: string;
       parameterSearch?: string;
+      documentShowSelected?: boolean;
+      documentShowTemplate?: boolean;
+      personaShowSelected?: boolean;
+      parameterShowSelected?: boolean;
+      fieldShowSelectedByParam?: Record<string, boolean>;  // Per-parameter field filters
       personaMin?: number;
       personaMax?: number;
       documentMin?: number;
@@ -303,6 +339,16 @@ export default async function EditScenarioPage({
     if (personaSearch) filterParams.personaSearch = personaSearch;
     if (documentSearch) filterParams.documentSearch = documentSearch;
     if (parameterSearch) filterParams.parameterSearch = parameterSearch;
+    if (documentShowSelected !== undefined)
+      filterParams.documentShowSelected = documentShowSelected;
+    if (documentShowTemplate !== undefined)
+      filterParams.documentShowTemplate = documentShowTemplate;
+    if (personaShowSelected !== undefined)
+      filterParams.personaShowSelected = personaShowSelected;
+    if (parameterShowSelected !== undefined)
+      filterParams.parameterShowSelected = parameterShowSelected;
+    if (fieldShowSelectedByParam !== undefined)
+      filterParams.fieldShowSelectedByParam = fieldShowSelectedByParam;
     if (personaMin !== undefined) filterParams.personaMin = personaMin;
     if (personaMax !== undefined) filterParams.personaMax = personaMax;
     if (documentMin !== undefined) filterParams.documentMin = documentMin;

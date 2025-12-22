@@ -55,12 +55,14 @@ export interface ParameterItemSectionProps {
   // State
   minMax: { min: number; max: number }; // Current values
   allowedRange?: { min: number; max: number } | undefined; // Allowed limits (optional, defaults to minMax if not provided)
+  showSelected?: boolean; // Filter value from URL (read-only, server handles filtering)
 
   // Callbacks
   onFieldIdsChange: (ids: string[]) => void;
   onMinMaxChange: (minMax: { min: number; max: number }) => void;
   onRandomize: () => void;
   onReset: () => void;
+  onShowSelectedChange?: (value: boolean) => void; // Callback to update URL params
 
   // UI State
   stepStatus: StepStatus;
@@ -79,10 +81,12 @@ export function ParameterItemSection({
   selectedFieldIds,
   minMax,
   allowedRange,
+  showSelected = false,
   onFieldIdsChange,
   onMinMaxChange,
   onRandomize,
   onReset,
+  onShowSelectedChange,
   stepStatus,
   stepNumber,
   isReadonly,
@@ -93,6 +97,7 @@ export function ParameterItemSection({
   // Use allowedRange for slider limits, minMax for current values
   const sliderMin = allowedRange?.min ?? minMax.min ?? 1;
   const sliderMax = allowedRange?.max ?? minMax.max ?? 3;
+
   return (
     <Card
       className={cn(
@@ -219,6 +224,8 @@ export function ParameterItemSection({
             selectedParameterItemIds={selectedFieldIds}
             onParameterItemIdsChange={onFieldIdsChange}
             disabled={isReadonly || disabled}
+            showSelected={showSelected}
+            onShowSelectedChange={onShowSelectedChange}
           />
         </div>
       </CardContent>

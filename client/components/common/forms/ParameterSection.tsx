@@ -3,8 +3,8 @@
  * Reusable parameter selection section component
  */
 "use client";
-import { Check, Loader2, RotateCcw, Search, Shuffle } from "lucide-react";
-import { useMemo } from "react";
+import { Check, Filter, Loader2, RotateCcw, Search, Shuffle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { RangeSlider } from "@/components/common/forms/RangeSlider";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 type StepStatus = "pending" | "active" | "completed";
@@ -44,6 +45,7 @@ export interface ParameterSectionProps {
   searchTerm: string;
   minMax: { min: number; max: number }; // Current values
   allowedRange?: { min: number; max: number } | undefined; // Allowed limits (optional, defaults to minMax if not provided)
+  showSelected?: boolean; // Filter value from URL (read-only, server handles filtering)
 
   // Callbacks
   onParameterIdsChange: (ids: string[]) => void;
@@ -52,6 +54,7 @@ export interface ParameterSectionProps {
   onRandomize: () => void;
   onReset: () => void;
   onParameterUnselect?: (paramId: string) => void; // Optional callback for cleanup when unselecting
+  onShowSelectedChange?: (value: boolean) => void; // Callback to update URL params
 
   // UI State
   stepStatus: StepStatus;
@@ -71,12 +74,14 @@ export function ParameterSection({
   searchTerm,
   minMax,
   allowedRange,
+  showSelected = false,
   onParameterIdsChange,
   onSearchTermChange,
   onMinMaxChange,
   onRandomize,
   onReset,
   onParameterUnselect,
+  onShowSelectedChange,
   stepStatus,
   stepTitle,
   stepDescription,
@@ -89,10 +94,21 @@ export function ParameterSection({
   // Use allowedRange for slider limits, minMax for current values
   const sliderMin = allowedRange?.min ?? minMax.min ?? 0;
   const sliderMax = allowedRange?.max ?? minMax.max ?? 3;
-  // Filter parameters based on search term
+
+  // Local temporary state for filter values (until Apply is clicked)
+  const [tempShowSelected, setTempShowSelected] = useState<boolean>(showSelected);
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState<boolean>(false);
+
+  // Sync temporary state when props change
+  useEffect(() => {
+    setTempShowSelected(showSelected);
+  }, [showSelected]);
+
+  // Server handles filtering via validParameterIds (showSelected filter applied server-side)
+  // Client only applies search term filtering (for instant feedback while typing)
   const filteredParameterIds = useMemo(() => {
     if (!searchTerm.trim()) {
-      return validParameterIds;
+      return validParameterIds; // Server already filtered, just return as-is
     }
     const searchLower = searchTerm.toLowerCase();
     return validParameterIds.filter((paramId) => {
@@ -103,6 +119,11 @@ export function ParameterSection({
       return searchText.includes(searchLower);
     });
   }, [validParameterIds, parameterMapping, searchTerm]);
+
+  const handleApplyFilters = () => {
+    onShowSelectedChange?.(tempShowSelected);
+    setFilterPopoverOpen(false);
+  };
 
   if (validParameterIds.length === 0) {
     return null;
@@ -223,6 +244,56 @@ export function ParameterSection({
             className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isReadonly || disabled}
           />
+          <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={isReadonly || disabled}
+                    className="relative"
+                  >
+                    <Filter className="h-4 w-4" />
+                    {showSelected && (
+                      <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Filters</TooltipContent>
+            </Tooltip>
+            <PopoverContent className="w-64 p-4" align="end">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="parameter-show-selected"
+                      checked={tempShowSelected}
+                      onCheckedChange={(checked) =>
+                        setTempShowSelected(checked === true)
+                      }
+                      disabled={isReadonly || disabled}
+                    />
+                    <label
+                      htmlFor="parameter-show-selected"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Show selected
+                    </label>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleApplyFilters}
+                  disabled={isReadonly || disabled}
+                  className="w-full"
+                  size="sm"
+                >
+                  Apply
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Filtered parameters grid */}

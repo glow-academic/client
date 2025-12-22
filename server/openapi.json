@@ -40297,6 +40297,64 @@
             ],
             "title": "Parametersearch"
           },
+          "documentShowSelected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentshowselected"
+          },
+          "documentShowTemplate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentshowtemplate"
+          },
+          "personaShowSelected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personashowselected"
+          },
+          "parameterShowSelected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parametershowselected"
+          },
+          "fieldShowSelectedByParam": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fieldshowselectedbyparam"
+          },
           "personaMin": {
             "anyOf": [
               {
@@ -40910,6 +40968,64 @@
               }
             ],
             "title": "Parametersearch"
+          },
+          "documentShowSelected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentshowselected"
+          },
+          "documentShowTemplate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentshowtemplate"
+          },
+          "personaShowSelected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personashowselected"
+          },
+          "parameterShowSelected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parametershowselected"
+          },
+          "fieldShowSelectedByParam": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fieldshowselectedbyparam"
           },
           "personaMin": {
             "anyOf": [

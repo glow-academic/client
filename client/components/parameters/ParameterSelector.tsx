@@ -6,12 +6,23 @@
  * 07/21/2025
  */
 "use client";
-import { Check, Search, X } from "lucide-react";
+import { Check, Filter, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 type ParameterMappingItem = {
@@ -211,6 +222,8 @@ interface ParameterSelectorProps {
   onParameterItemIdsChange: (parameterItemIds: string[]) => void;
   disabled?: boolean;
   maxItemsPerParameter?: number; // Maximum items allowed per parameter
+  showSelected?: boolean; // Filter value from URL (read-only, server handles filtering) - applies to all parameters
+  onShowSelectedChange?: (value: boolean) => void; // Callback to update URL params
 }
 
 export function ParameterSelector({
@@ -221,9 +234,25 @@ export function ParameterSelector({
   onParameterItemIdsChange,
   disabled = false,
   maxItemsPerParameter,
+  showSelected = false,
+  onShowSelectedChange,
 }: ParameterSelectorProps) {
   // Search state per parameter
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
+  
+  // Local temporary state for filter values (until Apply is clicked)
+  const [tempShowSelected, setTempShowSelected] = useState<boolean>(showSelected);
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState<boolean>(false);
+
+  // Sync temporary state when props change
+  useEffect(() => {
+    setTempShowSelected(showSelected);
+  }, [showSelected]);
+
+  const handleApplyFilters = () => {
+    onShowSelectedChange?.(tempShowSelected);
+    setFilterPopoverOpen(false);
+  };
 
   // Refs to track scroll containers for each parameter
   const scrollContainerRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -616,7 +645,7 @@ export function ParameterSelector({
                   </p>
                 )}
 
-                {/* Search bar */}
+                {/* Search bar with filter */}
                 <div className="flex h-9 items-center gap-2 border-b px-0">
                   <Search className="size-4 shrink-0 opacity-50" />
                   <input
@@ -630,7 +659,58 @@ export function ParameterSelector({
                       }))
                     }
                     className="placeholder:text-muted-foreground flex h-9 w-full bg-transparent py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={disabled}
                   />
+                  <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={disabled}
+                            className="relative"
+                          >
+                            <Filter className="h-4 w-4" />
+                            {showSelected && (
+                              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>Filters</TooltipContent>
+                    </Tooltip>
+                    <PopoverContent className="w-64 p-4" align="end">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="field-show-selected"
+                              checked={tempShowSelected}
+                              onCheckedChange={(checked) =>
+                                setTempShowSelected(checked === true)
+                              }
+                              disabled={disabled}
+                            />
+                            <label
+                              htmlFor="field-show-selected"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Show selected
+                            </label>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={handleApplyFilters}
+                          disabled={disabled}
+                          className="w-full"
+                          size="sm"
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div

@@ -583,6 +583,52 @@ export default function Scenario({
   const [personaSearchTerm, setPersonaSearchTerm] = useState<string>("");
   const [documentSearchTerm, setDocumentSearchTerm] = useState<string>("");
   const [parameterSearchTerm, setParameterSearchTerm] = useState<string>("");
+  const [documentShowSelected, setDocumentShowSelected] = useState<boolean>(
+    () => {
+      const documentShowSelectedFromUrl = searchParams.get(
+        "documentShowSelected"
+      );
+      return documentShowSelectedFromUrl === "true";
+    }
+  );
+  const [documentShowTemplate, setDocumentShowTemplate] = useState<boolean>(
+    () => {
+      const documentShowTemplateFromUrl = searchParams.get(
+        "documentShowTemplate"
+      );
+      return documentShowTemplateFromUrl === "true";
+    }
+  );
+  const [personaShowSelected, setPersonaShowSelected] = useState<boolean>(
+    () => {
+      const personaShowSelectedFromUrl = searchParams.get(
+        "personaShowSelected"
+      );
+      return personaShowSelectedFromUrl === "true";
+    }
+  );
+  const [parameterShowSelected, setParameterShowSelected] = useState<boolean>(
+    () => {
+      const parameterShowSelectedFromUrl = searchParams.get(
+        "parameterShowSelected"
+      );
+      return parameterShowSelectedFromUrl === "true";
+    }
+  );
+  // Per-parameter field filter state (one filter per parameter's field section)
+  const [fieldShowSelectedByParam, setFieldShowSelectedByParam] = useState<
+    Record<string, boolean>
+  >(() => {
+    const result: Record<string, boolean> = {};
+    // Extract per-parameter field filters from URL (format: fieldShowSelected_{paramId})
+    for (const [key, value] of searchParams.entries()) {
+      if (key.startsWith("fieldShowSelected_")) {
+        const paramId = key.replace("fieldShowSelected_", "");
+        result[paramId] = value === "true";
+      }
+    }
+    return result;
+  });
   const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(
     null
   );
@@ -884,6 +930,27 @@ export default function Scenario({
       params.set("parameterSearch", parameterSearchTerm);
     }
 
+    // Add filter params when true (omit when false, following boolean flag pattern)
+    if (documentShowSelected) {
+      params.set("documentShowSelected", "true");
+    }
+    if (documentShowTemplate) {
+      params.set("documentShowTemplate", "true");
+    }
+    if (personaShowSelected) {
+      params.set("personaShowSelected", "true");
+    }
+    if (parameterShowSelected) {
+      params.set("parameterShowSelected", "true");
+    }
+    // Add per-parameter field filters (format: fieldShowSelected_{paramId})
+    Object.entries(fieldShowSelectedByParam).forEach(
+      ([paramId, showSelected]) => {
+        if (showSelected) {
+          params.set(`fieldShowSelected_${paramId}`, "true");
+        }
+      }
+    );
     // Add range params when different from server-provided current values
     // Compare against server's current values (persona_min/persona_max), not allowed_ranges
     const serverCurrentValues = scenarioData as ScenarioNewOut | undefined;
@@ -1066,6 +1133,11 @@ export default function Scenario({
     personaSearchTerm,
     documentSearchTerm,
     parameterSearchTerm,
+    documentShowSelected,
+    documentShowTemplate,
+    personaShowSelected,
+    parameterShowSelected,
+    fieldShowSelectedByParam,
     personaMinMax,
     documentMinMax,
     parameterSelectionMinMax,
@@ -1630,25 +1702,38 @@ export default function Scenario({
   // (but preserve cross-department entities and staged selections)
   useEffect(() => {
     // Clear personas that are no longer valid
-    if (selectedPersonaIds.length > 0) {
+    // BUT: Skip cleanup if filters are active - selected personas might be filtered out temporarily
+    // Only clean up when filters are NOT active (to avoid clearing selections due to UI filters)
+    if (selectedPersonaIds.length > 0 && !personaShowSelected) {
       const validSet = new Set(validPersonaIds);
       const filtered = selectedPersonaIds.filter((id) => validSet.has(id));
       if (filtered.length !== selectedPersonaIds.length) {
         setSelectedPersonaIds(filtered);
       }
     }
-  }, [selectedPersonaIds, validPersonaIds]);
+  }, [selectedPersonaIds, validPersonaIds, personaShowSelected]);
 
   useEffect(() => {
     // Clear documents that are no longer valid
-    if (currentDocumentIds.length > 0) {
+    // BUT: Skip cleanup if filters are active - selected documents might be filtered out temporarily
+    // Only clean up when filters are NOT active (to avoid clearing selections due to UI filters)
+    if (
+      currentDocumentIds.length > 0 &&
+      !documentShowSelected &&
+      !documentShowTemplate
+    ) {
       const validSet = new Set(validDocumentIds);
       const filtered = currentDocumentIds.filter((id) => validSet.has(id));
       if (filtered.length !== currentDocumentIds.length) {
         setCurrentDocumentIds(filtered);
       }
     }
-  }, [currentDocumentIds, validDocumentIds]);
+  }, [
+    currentDocumentIds,
+    validDocumentIds,
+    documentShowSelected,
+    documentShowTemplate,
+  ]);
 
   // Initialize/update scenarioPreviewDocumentId when allPreviewDocumentIds changes
   // Use allPreviewDocumentIds (not currentDocumentIds) because it already handles parent->child replacement
@@ -1674,15 +1759,20 @@ export default function Scenario({
   // Filtering happens automatically via validGeneralParameterItemIds based on selected personas/documents
 
   useEffect(() => {
-    // Clear parameter items that are no longer valid
-    if (currentFieldIds.length > 0) {
+    // Clear parameter items (fields) that are no longer valid
+    // BUT: Skip cleanup if any parameter's filter is active - selected fields might be filtered out temporarily
+    // Only clean up when filters are NOT active (to avoid clearing selections due to UI filters)
+    const hasAnyFieldFilterActive = Object.values(
+      fieldShowSelectedByParam
+    ).some(Boolean);
+    if (currentFieldIds.length > 0 && !hasAnyFieldFilterActive) {
       const validSet = new Set(validParameterItemIds);
       const filtered = currentFieldIds.filter((id) => validSet.has(id));
       if (filtered.length !== currentFieldIds.length) {
         setCurrentFieldIds(filtered);
       }
     }
-  }, [currentFieldIds, validParameterItemIds]);
+  }, [currentFieldIds, validParameterItemIds, fieldShowSelectedByParam]);
 
   // Sync problem statement IDs from URL params (DHH-style: compute when needed, not in effects)
   // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
@@ -2201,6 +2291,11 @@ export default function Scenario({
     personaSearchTerm,
     documentSearchTerm,
     parameterSearchTerm,
+    documentShowSelected,
+    documentShowTemplate,
+    personaShowSelected,
+    parameterShowSelected,
+    fieldShowSelectedByParam,
     personaMinMax,
     documentMinMax,
     parameterSelectionMinMax,
@@ -4055,11 +4150,13 @@ export default function Scenario({
                 }
               : undefined
           }
+          showSelected={personaShowSelected}
           onPersonaIdsChange={handlePersonaSelect}
           onSearchTermChange={setPersonaSearchTerm}
           onMinMaxChange={setPersonaMinMax}
           onRandomize={handleRandomizePersonaClient}
           onReset={handleResetPersona}
+          onShowSelectedChange={setPersonaShowSelected}
           stepStatus={getStepStatus("persona")}
           stepTitle={steps[1]?.title || ""}
           stepDescription={steps[1]?.description || ""}
@@ -4109,9 +4206,17 @@ export default function Scenario({
               }
             : {})}
           previewDocumentId={previewDocumentId}
+          showSelected={documentShowSelected}
+          showTemplate={documentShowTemplate}
           onDocumentIdsChange={setCurrentDocumentIds}
           onTemplateDocumentIdsChange={setTemplateDocumentIds}
           onSearchTermChange={setDocumentSearchTerm}
+          onShowSelectedChange={(value) => {
+            setDocumentShowSelected(value);
+          }}
+          onShowTemplateChange={(value) => {
+            setDocumentShowTemplate(value);
+          }}
           onMinMaxChange={setDocumentMinMax}
           onPreviewDocument={setPreviewDocumentId}
           onRandomize={handleRandomizeDocumentsClient}
@@ -4155,6 +4260,8 @@ export default function Scenario({
               )
             );
           }}
+          showSelected={parameterShowSelected}
+          onShowSelectedChange={setParameterShowSelected}
           stepStatus={getStepStatus("parameters")}
           stepTitle={steps[3]?.title || ""}
           stepDescription={steps[3]?.description || ""}
@@ -4202,6 +4309,7 @@ export default function Scenario({
                       }
                     : undefined
                 }
+                showSelected={fieldShowSelectedByParam[paramId] || false}
                 onFieldIdsChange={(newIds) => {
                   // Update only this parameter's items
                   const otherFieldIds = currentFieldIds.filter(
@@ -4217,6 +4325,12 @@ export default function Scenario({
                 }
                 onRandomize={() => handleRandomizeParameterClient(paramId)}
                 onReset={() => handleResetParameter(paramId)}
+                onShowSelectedChange={(value) =>
+                  setFieldShowSelectedByParam((prev) => ({
+                    ...prev,
+                    [paramId]: value,
+                  }))
+                }
                 stepStatus={stepStatus}
                 stepNumber={stepIndex + 1}
                 isReadonly={isReadonly}

@@ -13485,6 +13485,18 @@ export interface components {
             documentSearch?: string | null;
             /** Parametersearch */
             parameterSearch?: string | null;
+            /** Documentshowselected */
+            documentShowSelected?: boolean | null;
+            /** Documentshowtemplate */
+            documentShowTemplate?: boolean | null;
+            /** Personashowselected */
+            personaShowSelected?: boolean | null;
+            /** Parametershowselected */
+            parameterShowSelected?: boolean | null;
+            /** Fieldshowselectedbyparam */
+            fieldShowSelectedByParam?: {
+                [key: string]: boolean;
+            } | null;
             /** Personamin */
             personaMin?: number | null;
             /** Personamax */
@@ -13651,6 +13663,18 @@ export interface components {
             documentSearch?: string | null;
             /** Parametersearch */
             parameterSearch?: string | null;
+            /** Documentshowselected */
+            documentShowSelected?: boolean | null;
+            /** Documentshowtemplate */
+            documentShowTemplate?: boolean | null;
+            /** Personashowselected */
+            personaShowSelected?: boolean | null;
+            /** Parametershowselected */
+            parameterShowSelected?: boolean | null;
+            /** Fieldshowselectedbyparam */
+            fieldShowSelectedByParam?: {
+                [key: string]: boolean;
+            } | null;
             /** Personamin */
             personaMin?: number | null;
             /** Personamax */
