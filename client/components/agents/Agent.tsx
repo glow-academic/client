@@ -1154,9 +1154,7 @@ export default function Agent({
                       disabled={isReadonly}
                     />
                     <p className="text-xs text-muted-foreground mt-1 px-2">
-                      {formData?.name === "New Agent" || !formData?.name
-                        ? "Click to edit • Name will be auto-generated if unchanged"
-                        : "Click to edit"}
+                      Click to edit
                     </p>
                     {errors?.name && (
                       <p className="text-sm text-destructive mt-1 px-2">

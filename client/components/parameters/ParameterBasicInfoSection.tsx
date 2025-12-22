@@ -112,9 +112,7 @@ export function ParameterBasicInfoSection({
               disabled={isReadonly}
             />
             <p className="text-xs text-muted-foreground mt-1 px-2">
-              {name === defaultName || !name
-                ? "Click to edit • Name will be auto-generated if unchanged"
-                : "Click to edit"}
+              Click to edit
             </p>
           </div>
         </div>

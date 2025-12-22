@@ -1951,9 +1951,7 @@ export default function Simulation({
                   />
                 ) : null}
                 <p className="text-xs text-muted-foreground mt-1 px-2">
-                  {formData?.title === "New Simulation" || !formData?.title
-                    ? "Click to edit • Name will be auto-generated if unchanged"
-                    : "Click to edit"}
+                  Click to edit
                 </p>
                 {errors.title && (
                   <p className="text-sm text-destructive mt-1 px-2">
