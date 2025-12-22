@@ -202,6 +202,10 @@ class ScenarioDetailRequest(BaseModel):
     imageIds: list[str] | None = None
     objectiveIds: list[str] | None = None
     problemStatementIds: list[str] | None = None
+    # Text fields for current editing state (in addition to IDs for history)
+    problemStatement: str | None = None
+    objectives: list[str] | None = None  # JSON-encoded array from client
+    name: str | None = None
 
 
 class ParameterDetail(BaseModel):

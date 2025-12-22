@@ -544,19 +544,22 @@ export default function Scenario({
 
   // defaultParameterIds removed - not used (empty array means "all parameters")
 
-  const initialFormData = useMemo(
-    () => ({
-      name: "New Scenario",
-      problemStatement: "",
+  const initialFormData = useMemo(() => {
+    // Read text fields from URL params (in addition to IDs)
+    const problemStatementFromUrl = searchParams.get("problemStatement") || "";
+    const nameFromUrl = searchParams.get("name") || "";
+
+    return {
+      name: nameFromUrl || "New Scenario",
+      problemStatement: problemStatementFromUrl,
       departmentIds: defaultDepartmentIds,
       active: true,
       scenarioAgentId: null as string | null,
       imageAgentId: null as string | null,
       videoAgentId: null as string | null,
       parameterIds: [] as string[], // Empty means "all parameters"
-    }),
-    [defaultDepartmentIds]
-  );
+    };
+  }, [defaultDepartmentIds, searchParams]);
 
   const [formData, setFormData] = useState(initialFormData);
 
@@ -649,7 +652,21 @@ export default function Scenario({
   >(null);
 
   // State for junction data (managed separately from scenario)
-  const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
+  // Initialize objectives from URL params (JSON array) if present
+  const [currentObjectives, setCurrentObjectives] = useState<string[]>(() => {
+    const objectivesParam = searchParams.get("objectives");
+    if (objectivesParam) {
+      try {
+        const parsed = JSON.parse(objectivesParam);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch {
+        // Invalid JSON - ignore, use empty array
+      }
+    }
+    return [];
+  });
   const [currentFieldIds, setCurrentFieldIds] = useState<string[]>([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
   // templateDocumentIds comes from URL params (single source of truth)
@@ -989,6 +1006,49 @@ export default function Scenario({
       params.set("useProblemStatement", "true");
     }
 
+    // Add text fields when they differ from server values
+    // Problem statement text
+    const serverProblemStatement =
+      isEditMode && scenarioData && "problem_statement" in scenarioData
+        ? (scenarioData as ScenarioDetailOut).problem_statement || ""
+        : "";
+    if (
+      formData.problemStatement &&
+      formData.problemStatement.trim() !== "" &&
+      formData.problemStatement.trim() !== serverProblemStatement
+    ) {
+      params.set("problemStatement", formData.problemStatement);
+    }
+
+    // Objectives text (JSON-encoded array)
+    // Include all objectives (even empty strings) to preserve the count of enabled objective slots
+    const serverObjectives =
+      isEditMode && scenarioData && "objectives_history" in scenarioData
+        ? (scenarioData as ScenarioDetailOut).objectives_history?.map(
+            (obj) => obj.objective
+          ) || []
+        : [];
+    const currentObjectivesString = JSON.stringify(currentObjectives);
+    const serverObjectivesString = JSON.stringify(serverObjectives);
+    // Always include objectives if they differ from server (even if empty strings - preserves count)
+    if (currentObjectivesString !== serverObjectivesString) {
+      params.set("objectives", currentObjectivesString);
+    }
+
+    // Name text
+    const serverName =
+      isEditMode && scenarioData && "name" in scenarioData
+        ? (scenarioData as ScenarioDetailOut).name || ""
+        : "New Scenario";
+    if (
+      formData.name &&
+      formData.name.trim() !== "" &&
+      formData.name !== "New Scenario" &&
+      formData.name !== serverName
+    ) {
+      params.set("name", formData.name);
+    }
+
     // Note: randomize param is set separately by randomize handlers, not here
     // This function builds the base URL state (filters, searches, ranges)
 
@@ -1019,6 +1079,11 @@ export default function Scenario({
     fieldMapping, // Used for field ranges comparison
     // searchParams is used to check if randomize=all - only used for conditional, won't cause loops
     searchParams,
+    // Text fields for URL sync
+    formData.problemStatement,
+    currentObjectives,
+    formData.name,
+    isEditMode,
   ]);
 
   // Extract mappings from V2 response
@@ -1661,6 +1726,70 @@ export default function Scenario({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
 
+  // Sync problem statement text from URL params (DHH-style: compute when needed, not in effects)
+  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
+  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
+  useEffect(() => {
+    const problemStatementFromUrl = searchParams.get("problemStatement") || "";
+    if (problemStatementFromUrl !== formData.problemStatement) {
+      handleInputChange("problemStatement", problemStatementFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Sync objectives text from URL params (DHH-style: compute when needed, not in effects)
+  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
+  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
+  // Preserves empty strings to maintain the count of enabled objective slots
+  useEffect(() => {
+    const objectivesParam = searchParams.get("objectives");
+    if (objectivesParam) {
+      try {
+        const parsed = JSON.parse(objectivesParam);
+        if (Array.isArray(parsed)) {
+          // Preserve empty strings - they indicate enabled but empty objective slots
+          const currentObjectivesString = JSON.stringify(currentObjectives);
+          const urlObjectivesString = JSON.stringify(parsed);
+          if (currentObjectivesString !== urlObjectivesString) {
+            setCurrentObjectives(parsed);
+          }
+        }
+      } catch {
+        // Invalid JSON - ignore
+      }
+    } else if (currentObjectives.length > 0) {
+      // URL doesn't have objectives param but state does (including arrays with empty strings)
+      // Clear state if URL explicitly cleared (has "objectives" param but empty value)
+      // or if URL has no objectives param at all
+      const hasOtherParams = Array.from(searchParams.keys()).length > 0;
+      if (!hasOtherParams || searchParams.has("objectives")) {
+        // URL explicitly cleared objectives or has empty objectives param
+        setCurrentObjectives([]);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
+  // Sync name text from URL params (DHH-style: compute when needed, not in effects)
+  // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
+  // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
+  useEffect(() => {
+    const nameFromUrl = searchParams.get("name") || "";
+    // Only update if URL has a name and it's different from current state
+    // Don't update if URL name is empty and current is "New Scenario" (default)
+    if (nameFromUrl && nameFromUrl !== formData.name) {
+      handleInputChange("name", nameFromUrl);
+    } else if (
+      !nameFromUrl &&
+      formData.name !== "New Scenario" &&
+      searchParams.has("name")
+    ) {
+      // URL explicitly cleared name (has "name" param but empty value)
+      handleInputChange("name", "New Scenario");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only watch searchParams - don't re-run when state changes from events
+
   // Sync feature flags from URL params (DHH-style: URL as source of truth)
   // Only sync FROM URL TO state when URL changes (browser navigation, direct URL entry)
   // Do NOT sync when state changes from events - let the debounced effect sync TO URL instead
@@ -1741,7 +1870,16 @@ export default function Scenario({
 
   // Populate currentObjectives from currentObjectiveIds when objective_mapping becomes available
   // This handles the case where objectiveIds are loaded from URL before scenarioData is available
+  // BUT: Only if URL doesn't have objectives text (text takes priority over IDs)
   useEffect(() => {
+    // Check if URL has objectives text - if so, don't populate from IDs
+    const objectivesParam = searchParams.get("objectives");
+    if (objectivesParam) {
+      // URL has objectives text - don't override with IDs
+      return;
+    }
+
+    // No URL text - populate from IDs if available
     if (
       currentObjectiveIds.length > 0 &&
       scenarioData?.objective_mapping &&
@@ -1763,7 +1901,7 @@ export default function Scenario({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentObjectiveIds, scenarioData?.objective_mapping]);
+  }, [currentObjectiveIds, scenarioData?.objective_mapping, searchParams]);
 
   // Handle randomized selections from server response
   useEffect(() => {
@@ -2071,6 +2209,9 @@ export default function Scenario({
     useImage, // Include useImage to trigger URL updates when useImage changes
     useVideo, // Include useVideo to trigger URL updates when useVideo changes
     useQuestions, // Include useQuestions to trigger URL updates when useQuestions changes
+    formData.problemStatement, // Include problemStatement to trigger URL updates when text changes
+    currentObjectives, // Include objectives to trigger URL updates when text changes
+    formData.name, // Include name to trigger URL updates when text changes
     pathname,
   ]);
 
@@ -2397,10 +2538,12 @@ export default function Scenario({
               updated_at: (firstProblemStatementRaw as { updated_at: string })
                 .updated_at,
             };
-            // Set as active
+            // Set as active - but only if URL doesn't have problem statement text (text takes priority)
+            const problemStatementFromUrl =
+              searchParams.get("problemStatement");
             if (
-              !formData.problemStatement ||
-              !formData.problemStatement.trim()
+              !problemStatementFromUrl &&
+              (!formData.problemStatement || !formData.problemStatement.trim())
             ) {
               handleInputChange(
                 "problemStatement",

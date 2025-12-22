@@ -3,7 +3,7 @@
  * Scenario-specific basic information section component
  */
 "use client";
-import { Check, Power, RotateCcw, Shuffle, Video } from "lucide-react";
+import { Check, Power, RotateCcw, Video } from "lucide-react";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
@@ -154,7 +154,6 @@ export function ScenarioBasicInfoSection({
               onClick={onRandomizeAll}
               disabled={isReadonly}
             >
-              <Shuffle className="h-4 w-4 mr-2" />
               Randomize All
             </Button>
             <Tooltip>
@@ -182,7 +181,7 @@ export function ScenarioBasicInfoSection({
               <GenericPicker
                 items={departmentMapping}
                 itemIds={Array.from(
-                  new Set([...validDepartmentIds, ...(departmentIds || [])]),
+                  new Set([...validDepartmentIds, ...(departmentIds || [])])
                 )}
                 selectedIds={departmentIds || []}
                 onSelect={(ids) => onDepartmentIdsChange(ids)}

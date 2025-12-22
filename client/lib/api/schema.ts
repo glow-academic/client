@@ -13519,6 +13519,12 @@ export interface components {
             objectiveIds?: string[] | null;
             /** Problemstatementids */
             problemStatementIds?: string[] | null;
+            /** Problemstatement */
+            problemStatement?: string | null;
+            /** Objectives */
+            objectives?: string[] | null;
+            /** Name */
+            name?: string | null;
         };
         /** ScenarioDocumentItem */
         ScenarioDocumentItem: {
