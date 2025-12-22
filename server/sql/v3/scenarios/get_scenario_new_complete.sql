@@ -842,12 +842,14 @@ problem_statement_mapping_data_default AS (
             )
             FROM problem_statements ps
             LEFT JOIN problem_statement_departments psd_dept ON psd_dept.problem_statement_id = ps.id AND psd_dept.active = true
-            WHERE $5::uuid[] IS NOT NULL
-            AND array_length($5::uuid[], 1) > 0
-            AND ps.id = ANY($5::uuid[])
-            AND (
+            WHERE (
                 psd_dept.department_id IN (SELECT id FROM user_departments)
                 OR NOT EXISTS (SELECT 1 FROM problem_statement_departments psd2 WHERE psd2.problem_statement_id = ps.id AND psd2.active = true)
+            )
+            AND (
+                -- If problemStatementIds provided, filter by them; otherwise return all valid problem statements
+                ($5::uuid[] IS NULL OR array_length($5::uuid[], 1) = 0)
+                OR ps.id = ANY($5::uuid[])
             )
         ),
         '{}'::jsonb

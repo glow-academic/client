@@ -71,6 +71,7 @@ problem_statement_mapping_data AS (
                 SELECT jsonb_object_agg(
                     ps_id,
                     ps_data
+                    ORDER BY sort_order, ps_id
                 )
                 FROM (
                     -- Problem statements from scenario (sorted first)
@@ -109,7 +110,6 @@ problem_statement_mapping_data AS (
                         WHERE saps.problem_statement_id::uuid = ps.id
                     )
                 ) combined
-                ORDER BY sort_order, ps_id
             ),
             '{}'::jsonb
         ) as problem_statement_mapping
@@ -296,7 +296,6 @@ scenario_images_data AS (
     LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
     LEFT JOIN uploads u ON u.id = iu.upload_id
     LEFT JOIN image_departments id_dept ON id_dept.image_id = i.id AND id_dept.active = true
-    LEFT JOIN user_departments ud ON ud.id = id_dept.department_id
     LEFT JOIN scenario_images si ON si.image_id = i.id AND si.scenario_id = $1 AND si.active = true
     WHERE i.active = true
     AND (
@@ -1484,6 +1483,6 @@ CROSS JOIN valid_agents va
 CROSS JOIN scenario_persona_ranges_data sprd
 CROSS JOIN scenario_document_ranges_data sdrd
 CROSS JOIN scenario_parameter_ranges_data sprd2
-LEFT JOIN scenario_field_ranges_data sfrd ON sfrd.scenario_id = sc.id
-WHERE ($3::boolean IS NOT NULL OR TRUE) AND ($4::boolean IS NOT NULL OR TRUE) AND ($7::uuid[] IS NOT NULL OR TRUE) AND ($8::boolean IS NOT NULL OR TRUE)
+    LEFT JOIN scenario_field_ranges_data sfrd ON sfrd.scenario_id = sc.id
+    WHERE ($3::boolean IS NOT NULL OR TRUE) AND ($4::boolean IS NOT NULL OR TRUE) AND ($5::uuid[] IS NOT NULL OR TRUE) AND ($6::uuid[] IS NOT NULL OR TRUE) AND ($7::uuid[] IS NOT NULL OR TRUE) AND ($8::boolean IS NOT NULL OR TRUE)
 

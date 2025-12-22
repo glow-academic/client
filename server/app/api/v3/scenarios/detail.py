@@ -5,9 +5,6 @@ from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.cache.cache_key import cache_key
@@ -15,6 +12,8 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -1015,6 +1014,9 @@ async def get_scenario_detail(
         use_objectives = (
             request_data.objectivesMax is not None and request_data.objectivesMax > 0
         )
+        # Pass None for unused array parameters - SQL will handle NULL
+        # PostgreSQL can infer types when parameters are used in the query
+        
         sql_params = (
             request_data.scenarioId,
             profile_id,
@@ -1022,9 +1024,9 @@ async def get_scenario_detail(
             if request_data.useImage is not None
             else False,  # $3: boolean (unused, but needed for type inference)
             use_objectives,  # $4: boolean (unused, but needed for type inference)
-            document_ids_uuid,
-            problem_statement_ids_uuid,
-            template_document_ids_uuid,
+            document_ids_uuid,  # $5: uuid[]
+            problem_statement_ids_uuid,  # $6: uuid[]
+            template_document_ids_uuid,  # $7: uuid[]
             request_data.useVideo
             if request_data.useVideo is not None
             else False,  # $8: boolean (for video parameter filtering)
