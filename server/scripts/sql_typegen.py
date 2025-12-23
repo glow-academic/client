@@ -416,6 +416,9 @@ def _generate_nested_model_class(
     lines.append(f'{indent_str}    """Generated nested model."""')
     lines.append("")
 
+    # Track if any fields were added
+    fields_added = False
+
     # Generate fields
     for key, value in nested_data.items():
         # Build the full field path for nested class lookup
@@ -500,6 +503,11 @@ def _generate_nested_model_class(
         # Sanitize field name
         sanitized_key = _sanitize_field_name(key)
         lines.append(f"{indent_str}    {sanitized_key}: {field_type}")
+        fields_added = True
+
+    # If no fields were generated, add pass statement
+    if not fields_added:
+        lines.append(f"{indent_str}    pass")
 
     class_code = "\n".join(lines)
     generated_classes[class_name] = class_code

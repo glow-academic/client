@@ -161,6 +161,65 @@ class GetAgentDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
+class GetAgentDetailAvailableVoicesItem(BaseModel):
+
+    id: str
+    voice: str
+
+class GetAgentDetailDepartmentMappingItem(BaseModel):
+
+    name: str
+    description: str
+
+class GetAgentDetailDepartmentPromptLinksItem(BaseModel):
+
+    department_id: str
+    prompt_id: str
+
+class GetAgentDetailPromptMappingItem(BaseModel):
+
+    system_prompt: str
+    created_at: str
+    updated_at: str
+    department_ids: list[str]
+    can_delete: bool
+
+class GetAgentDetailDebugInfoItem(BaseModel):
+
+    model_id: str
+    content: str
+
+class GetAgentDetailModelMappingAvailableVoicesItem(BaseModel):
+    pass
+
+
+class GetAgentDetailModelMappingReasoningOptionsItem(BaseModel):
+
+    reasoning_level: str
+
+class GetAgentDetailModelMappingTemperatureLevelsItem(BaseModel):
+
+    temperature: str
+    is_upper: bool
+
+class GetAgentDetailModelMappingItem(BaseModel):
+
+    input_modalities: list[str]
+    output_modalities: list[str]
+    temperature_lower: float
+    temperature_upper: float
+    available_voices: list[GetAgentDetailModelMappingAvailableVoicesItem]
+    reasoning_options: list[GetAgentDetailModelMappingReasoningOptionsItem]
+    temperature_levels: list[GetAgentDetailModelMappingTemperatureLevelsItem]
+
+class GetAgentDetailReasoningOptionsItem(BaseModel):
+    pass
+
+
+class GetAgentDetailTemperatureLevelsItem(BaseModel):
+    pass
+
+
 class GetAgentDetailSqlRow(BaseModel):
 
     agent_id: str
@@ -175,23 +234,23 @@ class GetAgentDetailSqlRow(BaseModel):
     temperature: float
     selected_reasoning_level_id: str
     reasoning: str
-    selected_voice_ids: dict[str, Any]
-    valid_voices: dict[str, Any]
+    selected_voice_ids: list[str]
+    valid_voices: list[str]
     department_ids: list[str]
     valid_department_ids: list[str]
-    department_mapping: dict[str, Any]
-    prompt_mapping: dict[str, Any]
-    department_prompt_links: dict[str, Any]
     can_edit: bool
-    debug_info: dict[str, Any]
-    model_mapping: dict[str, Any]
-    valid_model_ids: dict[str, Any]
-    reasoning_options: dict[str, Any]
     temperature_lower: float
     temperature_upper: float
-    temperature_levels: dict[str, Any]
-    available_voices: dict[str, Any]
+    valid_model_ids: list[str]
     actor_name: str
+    available_voices: list[GetAgentDetailAvailableVoicesItem]
+    department_mapping: list[GetAgentDetailDepartmentMappingItem]
+    department_prompt_links: list[GetAgentDetailDepartmentPromptLinksItem]
+    prompt_mapping: list[GetAgentDetailPromptMappingItem]
+    debug_info: list[GetAgentDetailDebugInfoItem]
+    model_mapping: list[GetAgentDetailModelMappingItem]
+    reasoning_options: list[GetAgentDetailReasoningOptionsItem]
+    temperature_levels: list[GetAgentDetailTemperatureLevelsItem]
 
 class GetAgentDetailApiRequest(BaseModel):
 
@@ -211,23 +270,23 @@ class GetAgentDetailApiResponse(BaseModel):
     temperature: float
     selected_reasoning_level_id: str
     reasoning: str
-    selected_voice_ids: dict[str, Any]
-    valid_voices: dict[str, Any]
+    selected_voice_ids: list[str]
+    valid_voices: list[str]
     department_ids: list[str]
     valid_department_ids: list[str]
-    department_mapping: dict[str, Any]
-    prompt_mapping: dict[str, Any]
-    department_prompt_links: dict[str, Any]
     can_edit: bool
-    debug_info: dict[str, Any]
-    model_mapping: dict[str, Any]
-    valid_model_ids: dict[str, Any]
-    reasoning_options: dict[str, Any]
     temperature_lower: float
     temperature_upper: float
-    temperature_levels: dict[str, Any]
-    available_voices: dict[str, Any]
+    valid_model_ids: list[str]
     actor_name: str
+    available_voices: list[GetAgentDetailAvailableVoicesItem]
+    department_mapping: list[GetAgentDetailDepartmentMappingItem]
+    department_prompt_links: list[GetAgentDetailDepartmentPromptLinksItem]
+    prompt_mapping: list[GetAgentDetailPromptMappingItem]
+    debug_info: list[GetAgentDetailDebugInfoItem]
+    model_mapping: list[GetAgentDetailModelMappingItem]
+    reasoning_options: list[GetAgentDetailReasoningOptionsItem]
+    temperature_levels: list[GetAgentDetailTemperatureLevelsItem]
 
 
 
@@ -242,14 +301,9 @@ class GetAgentNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class GetAgentNewDepartmentMappingItem(BaseModel):
-
-    id: str
-    name: str
-    description: str
-
 class GetAgentNewModelMappingAvailableVoicesItem(BaseModel):
 
+    id: str
     voice: str
 
 class GetAgentNewModelMappingReasoningOptionsItem(BaseModel):
@@ -263,6 +317,8 @@ class GetAgentNewModelMappingTemperatureLevelsItem(BaseModel):
 
 class GetAgentNewModelMappingItem(BaseModel):
 
+    name: str
+    description: str
     temperature_lower: float
     temperature_upper: float
     input_modalities: list[str]
@@ -271,6 +327,10 @@ class GetAgentNewModelMappingItem(BaseModel):
     reasoning_options: list[GetAgentNewModelMappingReasoningOptionsItem]
     temperature_levels: list[GetAgentNewModelMappingTemperatureLevelsItem]
 
+class GetAgentNewDepartmentMappingItem(BaseModel):
+    pass
+
+
 class GetAgentNewSqlRow(BaseModel):
 
     valid_model_ids: list[str]
@@ -278,8 +338,8 @@ class GetAgentNewSqlRow(BaseModel):
     user_role: str
     actor_name: str
     primary_department_id: str
-    department_mapping: list[GetAgentNewDepartmentMappingItem]
     model_mapping: list[GetAgentNewModelMappingItem]
+    department_mapping: list[GetAgentNewDepartmentMappingItem]
 
 class GetAgentNewApiRequest(BaseModel):
 
@@ -292,8 +352,8 @@ class GetAgentNewApiResponse(BaseModel):
     user_role: str
     actor_name: str
     primary_department_id: str
-    department_mapping: list[GetAgentNewDepartmentMappingItem]
     model_mapping: list[GetAgentNewModelMappingItem]
+    department_mapping: list[GetAgentNewDepartmentMappingItem]
 
 
 
@@ -308,17 +368,19 @@ class GetAgentsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class GetAgentsListDepartmentMappingItem(BaseModel):
+class GetAgentsListModelMappingItem(BaseModel):
 
     id: str
     name: str
     description: str
 
-class GetAgentsListSqlRow(BaseModel):
+class GetAgentsListDepartmentMappingItem(BaseModel):
+    pass
+
+
+class GetAgentsListAgentsItem(BaseModel):
 
     agent_id: str
-    name: str
-    description: str
     reasoning: str
     temperature: float
     model_id: str
@@ -331,7 +393,13 @@ class GetAgentsListSqlRow(BaseModel):
     model_name: str
     model_description: str
     actor_name: str
+
+class GetAgentsListSqlRow(BaseModel):
+
+    actor_name: str
+    model_mapping: list[GetAgentsListModelMappingItem]
     department_mapping: list[GetAgentsListDepartmentMappingItem]
+    agents: list[GetAgentsListAgentsItem]
 
 class GetAgentsListApiRequest(BaseModel):
 
@@ -339,22 +407,10 @@ class GetAgentsListApiRequest(BaseModel):
 
 class GetAgentsListApiResponse(BaseModel):
 
-    agent_id: str
-    name: str
-    description: str
-    reasoning: str
-    temperature: float
-    model_id: str
-    role: str
-    updated_at: str
-    department_ids: list[str]
-    can_edit: bool
-    can_duplicate: bool
-    can_delete: bool
-    model_name: str
-    model_description: str
     actor_name: str
+    model_mapping: list[GetAgentsListModelMappingItem]
     department_mapping: list[GetAgentsListDepartmentMappingItem]
+    agents: list[GetAgentsListAgentsItem]
 
 
 
@@ -372,6 +428,9 @@ class UpdateAgentSqlParams(BaseModel):
     system_prompt: str | None = None
     department_ids: list[str] = Field(default_factory=list)
     department_ids_for_prompt: list[str] = Field(default_factory=list)
+    model_temperature_level_id: UUID | None = None
+    model_reasoning_level_id: UUID | None = None
+    model_voice_ids: list[str] | None = None
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -386,6 +445,9 @@ class UpdateAgentSqlParams(BaseModel):
             self.system_prompt,
             self.department_ids,
             self.department_ids_for_prompt,
+            self.model_temperature_level_id,
+            self.model_reasoning_level_id,
+            self.model_voice_ids,
             self.profile_id,
         )
 
@@ -406,6 +468,9 @@ class UpdateAgentApiRequest(BaseModel):
     system_prompt: str | None = None
     department_ids: list[str] = Field(default_factory=list)
     department_ids_for_prompt: list[str] = Field(default_factory=list)
+    model_temperature_level_id: UUID | None = None
+    model_reasoning_level_id: UUID | None = None
+    model_voice_ids: list[str] | None = None
 
 class UpdateAgentApiResponse(BaseModel):
 
@@ -6389,1103 +6454,3 @@ def load_sql_query(
     from utils.sql_helper import load_sql
 
     return load_sql(file_path)
-
-
-# Overload declarations for load_sql_typed() - provides strong type hints
-# Auto-generated by sql-compile. Do not edit manually.
-if TYPE_CHECKING:
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/agents/create_agent_complete.sql"]
-    ) -> tuple[Type[CreateAgentSqlParams], Type[CreateAgentSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/agents/delete_agent_complete.sql"]
-    ) -> tuple[Type[DeleteAgentSqlParams], Type[DeleteAgentSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/agents/duplicate_agent_complete.sql"]
-    ) -> tuple[Type[DuplicateAgentSqlParams], Type[DuplicateAgentSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/agents/get_agent_detail_complete.sql"]
-    ) -> tuple[Type[GetAgentDetailSqlParams], Type[GetAgentDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/agents/get_agent_new_complete.sql"]
-    ) -> tuple[Type[GetAgentNewSqlParams], Type[GetAgentNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/agents/get_agents_list_complete.sql"]
-    ) -> tuple[Type[GetAgentsListSqlParams], Type[GetAgentsListSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/agents/update_agent_complete.sql"]
-    ) -> tuple[Type[UpdateAgentSqlParams], Type[UpdateAgentSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/attempts/bulk_archive_attempts_complete.sql"]
-    ) -> tuple[Type[BulkArchiveAttemptsSqlParams], Type[BulkArchiveAttemptsSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/attempts/get_attempt_full_complete.sql"]
-    ) -> tuple[Type[GetAttemptFullSqlParams], Type[GetAttemptFullSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/attempts/update_chat_created_at_complete.sql"]
-    ) -> tuple[Type[UpdateChatCreatedAtSqlParams], Type[UpdateChatCreatedAtSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/auth/create_auth_complete.sql"]
-    ) -> tuple[Type[CreateAuthSqlParams], Type[CreateAuthSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/auth/delete_auth_complete.sql"]
-    ) -> tuple[Type[DeleteAuthSqlParams], Type[DeleteAuthSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/auth/duplicate_auth_complete.sql"]
-    ) -> tuple[Type[DuplicateAuthSqlParams], Type[DuplicateAuthSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/auth/get_auth_detail_complete.sql"]
-    ) -> tuple[Type[GetAuthDetailSqlParams], Type[GetAuthDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/auth/get_login_data_complete.sql"]
-    ) -> tuple[Type[GetLoginDataSqlParams], Type[GetLoginDataSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/auth/update_auth_complete.sql"]
-    ) -> tuple[Type[UpdateAuthSqlParams], Type[UpdateAuthSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/cohorts/create_cohort_complete.sql"]
-    ) -> tuple[Type[CreateCohortSqlParams], Type[CreateCohortSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/cohorts/delete_cohort_complete.sql"]
-    ) -> tuple[Type[DeleteCohortSqlParams], Type[DeleteCohortSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/cohorts/duplicate_cohort_complete.sql"]
-    ) -> tuple[Type[DuplicateCohortSqlParams], Type[DuplicateCohortSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/cohorts/get_cohort_detail_complete.sql"]
-    ) -> tuple[Type[GetCohortDetailSqlParams], Type[GetCohortDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/cohorts/get_cohort_new_complete.sql"]
-    ) -> tuple[Type[GetCohortNewSqlParams], Type[GetCohortNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/cohorts/update_cohort_complete.sql"]
-    ) -> tuple[Type[UpdateCohortSqlParams], Type[UpdateCohortSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/departments/create_department_complete.sql"]
-    ) -> tuple[Type[CreateDepartmentSqlParams], Type[CreateDepartmentSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/departments/delete_department_complete.sql"]
-    ) -> tuple[Type[DeleteDepartmentSqlParams], Type[DeleteDepartmentSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/departments/duplicate_department_complete.sql"]
-    ) -> tuple[Type[DuplicateDepartmentSqlParams], Type[DuplicateDepartmentSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/departments/get_department_default_complete.sql"]
-    ) -> tuple[Type[GetDepartmentDefaultSqlParams], Type[GetDepartmentDefaultSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/departments/update_department_complete.sql"]
-    ) -> tuple[Type[UpdateDepartmentSqlParams], Type[UpdateDepartmentSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/documents/complete_document_creation_complete.sql"]
-    ) -> tuple[Type[CompleteDocumentCreationSqlParams], Type[CompleteDocumentCreationSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/documents/get_document_detail_complete.sql"]
-    ) -> tuple[Type[GetDocumentDetailSqlParams], Type[GetDocumentDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/documents/insert_document_complete.sql"]
-    ) -> tuple[Type[InsertDocumentSqlParams], Type[InsertDocumentSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/documents/render_template_complete.sql"]
-    ) -> tuple[Type[RenderTemplateSqlParams], Type[RenderTemplateSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/documents/update_document_complete.sql"]
-    ) -> tuple[Type[UpdateDocumentSqlParams], Type[UpdateDocumentSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/evals/create_eval_complete.sql"]
-    ) -> tuple[Type[CreateEvalSqlParams], Type[CreateEvalSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/evals/get_eval_attempt_full_complete.sql"]
-    ) -> tuple[Type[GetEvalAttemptFullSqlParams], Type[GetEvalAttemptFullSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/evals/get_eval_new_complete.sql"]
-    ) -> tuple[Type[GetEvalNewSqlParams], Type[GetEvalNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/evals/start_eval_attempt_complete.sql"]
-    ) -> tuple[Type[StartEvalAttemptSqlParams], Type[StartEvalAttemptSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/fields/create_field_complete.sql"]
-    ) -> tuple[Type[CreateFieldSqlParams], Type[CreateFieldSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/fields/delete_field_complete.sql"]
-    ) -> tuple[Type[DeleteFieldSqlParams], Type[DeleteFieldSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/fields/duplicate_field_complete.sql"]
-    ) -> tuple[Type[DuplicateFieldSqlParams], Type[DuplicateFieldSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/fields/get_field_detail_complete.sql"]
-    ) -> tuple[Type[GetFieldDetailSqlParams], Type[GetFieldDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/fields/get_field_new_complete.sql"]
-    ) -> tuple[Type[GetFieldNewSqlParams], Type[GetFieldNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/fields/update_field_complete.sql"]
-    ) -> tuple[Type[UpdateFieldSqlParams], Type[UpdateFieldSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/grading/create_grade_complete.sql"]
-    ) -> tuple[Type[CreateGradeSqlParams], Type[CreateGradeSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/grading/create_message_feedback_complete.sql"]
-    ) -> tuple[Type[CreateMessageFeedbackSqlParams], Type[CreateMessageFeedbackSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/keycloak/get_auth_items_complete.sql"]
-    ) -> tuple[Type[GetAuthItemsSqlParams], Type[GetAuthItemsSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/keycloak/get_auth_providers_complete.sql"]
-    ) -> tuple[Type[GetAuthProvidersSqlParams], Type[GetAuthProvidersSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/keys/get_key_detail_complete.sql"]
-    ) -> tuple[Type[GetKeyDetailSqlParams], Type[GetKeyDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/keys/get_key_new_complete.sql"]
-    ) -> tuple[Type[GetKeyNewSqlParams], Type[GetKeyNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/model_runs/create_model_run_complete.sql"]
-    ) -> tuple[Type[CreateModelRunSqlParams], Type[CreateModelRunSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/model_runs/log_run_complete.sql"]
-    ) -> tuple[Type[LogRunSqlParams], Type[LogRunSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/models/create_model_complete.sql"]
-    ) -> tuple[Type[CreateModelSqlParams], Type[CreateModelSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/models/get_model_detail_complete.sql"]
-    ) -> tuple[Type[GetModelDetailSqlParams], Type[GetModelDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/models/get_model_new_complete.sql"]
-    ) -> tuple[Type[GetModelNewSqlParams], Type[GetModelNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/models/list_models_complete.sql"]
-    ) -> tuple[Type[ListModelsSqlParams], Type[ListModelsSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/models/update_model_complete.sql"]
-    ) -> tuple[Type[UpdateModelSqlParams], Type[UpdateModelSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/objectives/insert_objective_complete.sql"]
-    ) -> tuple[Type[InsertObjectiveSqlParams], Type[InsertObjectiveSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/parameters/create_parameter_complete.sql"]
-    ) -> tuple[Type[CreateParameterSqlParams], Type[CreateParameterSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/parameters/delete_parameter_complete.sql"]
-    ) -> tuple[Type[DeleteParameterSqlParams], Type[DeleteParameterSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/parameters/duplicate_parameter_complete.sql"]
-    ) -> tuple[Type[DuplicateParameterSqlParams], Type[DuplicateParameterSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/parameters/get_parameter_detail_complete.sql"]
-    ) -> tuple[Type[GetParameterDetailSqlParams], Type[GetParameterDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/parameters/get_parameter_new_complete.sql"]
-    ) -> tuple[Type[GetParameterNewSqlParams], Type[GetParameterNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/parameters/update_parameter_complete.sql"]
-    ) -> tuple[Type[UpdateParameterSqlParams], Type[UpdateParameterSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/personas/create_persona_complete.sql"]
-    ) -> tuple[Type[CreatePersonaSqlParams], Type[CreatePersonaSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/personas/delete_persona_complete.sql"]
-    ) -> tuple[Type[DeletePersonaSqlParams], Type[DeletePersonaSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/personas/get_persona_detail_complete.sql"]
-    ) -> tuple[Type[GetPersonaDetailSqlParams], Type[GetPersonaDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/personas/get_persona_new_complete.sql"]
-    ) -> tuple[Type[GetPersonaNewSqlParams], Type[GetPersonaNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/personas/update_persona_complete.sql"]
-    ) -> tuple[Type[UpdatePersonaSqlParams], Type[UpdatePersonaSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/pricing/get_group_detail_complete.sql"]
-    ) -> tuple[Type[GetGroupDetailSqlParams], Type[GetGroupDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/pricing/get_pricing_analytics_complete.sql"]
-    ) -> tuple[Type[GetPricingAnalyticsSqlParams], Type[GetPricingAnalyticsSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/problem_statements/insert_problem_statement_complete.sql"]
-    ) -> tuple[Type[InsertProblemStatementSqlParams], Type[InsertProblemStatementSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/profile/get_profile_context_complete.sql"]
-    ) -> tuple[Type[GetProfileContextSqlParams], Type[GetProfileContextSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/profile/update_profile_complete.sql"]
-    ) -> tuple[Type[UpdateProfileSqlParams], Type[UpdateProfileSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/profile/update_profile_to_active_complete.sql"]
-    ) -> tuple[Type[UpdateProfileToActiveSqlParams], Type[UpdateProfileToActiveSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/profile/update_profile_to_inactive_complete.sql"]
-    ) -> tuple[Type[UpdateProfileToInactiveSqlParams], Type[UpdateProfileToInactiveSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/providers/create_provider_complete.sql"]
-    ) -> tuple[Type[CreateProviderSqlParams], Type[CreateProviderSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/providers/get_provider_detail_complete.sql"]
-    ) -> tuple[Type[GetProviderDetailSqlParams], Type[GetProviderDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/providers/get_provider_new_complete.sql"]
-    ) -> tuple[Type[GetProviderNewSqlParams], Type[GetProviderNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/providers/update_provider_complete.sql"]
-    ) -> tuple[Type[UpdateProviderSqlParams], Type[UpdateProviderSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/rubrics/create_rubric_complete.sql"]
-    ) -> tuple[Type[CreateRubricSqlParams], Type[CreateRubricSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/rubrics/delete_rubric_complete.sql"]
-    ) -> tuple[Type[DeleteRubricSqlParams], Type[DeleteRubricSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/rubrics/duplicate_rubric_complete.sql"]
-    ) -> tuple[Type[DuplicateRubricSqlParams], Type[DuplicateRubricSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/rubrics/get_rubric_detail_complete.sql"]
-    ) -> tuple[Type[GetRubricDetailSqlParams], Type[GetRubricDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/rubrics/get_rubric_new_complete.sql"]
-    ) -> tuple[Type[GetRubricNewSqlParams], Type[GetRubricNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/rubrics/update_rubric_complete.sql"]
-    ) -> tuple[Type[UpdateRubricSqlParams], Type[UpdateRubricSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/scenarios/create_scenario_complete.sql"]
-    ) -> tuple[Type[CreateScenarioSqlParams], Type[CreateScenarioSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/scenarios/delete_scenario_complete.sql"]
-    ) -> tuple[Type[DeleteScenarioSqlParams], Type[DeleteScenarioSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/scenarios/get_randomization_data_complete.sql"]
-    ) -> tuple[Type[GetRandomizationDataSqlParams], Type[GetRandomizationDataSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/scenarios/get_scenario_detail_complete.sql"]
-    ) -> tuple[Type[GetScenarioDetailSqlParams], Type[GetScenarioDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/scenarios/get_scenario_new_complete.sql"]
-    ) -> tuple[Type[GetScenarioNewSqlParams], Type[GetScenarioNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/scenarios/update_scenario_complete.sql"]
-    ) -> tuple[Type[UpdateScenarioSqlParams], Type[UpdateScenarioSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/simulations/create_hints_complete.sql"]
-    ) -> tuple[Type[CreateHintsSqlParams], Type[CreateHintsSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/simulations/create_simulation_complete.sql"]
-    ) -> tuple[Type[CreateSimulationSqlParams], Type[CreateSimulationSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/simulations/create_user_message_complete.sql"]
-    ) -> tuple[Type[CreateUserMessageSqlParams], Type[CreateUserMessageSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/simulations/delete_simulation_complete.sql"]
-    ) -> tuple[Type[DeleteSimulationSqlParams], Type[DeleteSimulationSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/simulations/generate_hints_complete.sql"]
-    ) -> tuple[Type[GenerateHintsSqlParams], Type[GenerateHintsSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/simulations/get_simulation_detail_complete.sql"]
-    ) -> tuple[Type[GetSimulationDetailSqlParams], Type[GetSimulationDetailSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/simulations/get_simulation_new_complete.sql"]
-    ) -> tuple[Type[GetSimulationNewSqlParams], Type[GetSimulationNewSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/simulations/link_run_to_group_complete.sql"]
-    ) -> tuple[Type[LinkRunToGroupSqlParams], Type[LinkRunToGroupSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/simulations/start_simulation_attempt_complete.sql"]
-    ) -> tuple[Type[StartSimulationAttemptSqlParams], Type[StartSimulationAttemptSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: Literal["app/sql/v3/simulations/update_simulation_complete.sql"]
-    ) -> tuple[Type[UpdateSimulationSqlParams], Type[UpdateSimulationSqlRow]]: ...
-
-    @overload
-    def load_sql_typed(
-        file_path: str
-    ) -> tuple[Type[BaseModel], Type[BaseModel]]: ...
-
-
-def load_sql_typed(
-    file_path: str,
-) -> tuple[Type[TInput], Type[TOutput]]:
-    """Load typed input/output classes for a SQL file.
-
-    Returns the generated Pydantic model classes for input parameters and output rows.
-    Types are loaded from the registry generated by sql-compile.
-
-    The overloads provide strong type hints - when you use a literal string path,
-    the IDE will know the exact InputType and OutputType classes, including their fields.
-    To see the fields in your IDE, hover over `InputType(...)` when creating an instance,
-    or access `InputType.model_fields` (Pydantic v2) to see all field definitions.
-
-    Args:
-        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")
-
-    Returns:
-        Tuple of (InputType, OutputType) where:
-        - InputType: Pydantic model class for input parameters (e.g., GetAgentNewSqlParams)
-          Use `InputType(...)` to create an instance and see field autocomplete
-        - OutputType: Pydantic model class for output rows (e.g., GetAgentNewSqlRow)
-          Use `OutputType(**dict(row))` to create an instance and see field types
-
-    Raises:
-        ValueError: If no types are found for the SQL file path
-        ImportError: If the type classes cannot be imported
-
-    Example:
-        ```python
-        InputType, OutputType = load_sql_typed("app/sql/v3/agents/get_agent_new_complete.sql")
-        sql_query = load_sql_query("app/sql/v3/agents/get_agent_new_complete.sql")
-        
-        # Type-safe usage - IDE will show fields when you type InputType(...)
-        params = InputType(profile_id="...")  # Hover here to see fields
-        result = await conn.fetchrow(sql_query, *params.to_tuple())
-        typed_result = OutputType(**dict(result))  # Hover here to see fields
-        ```
-    """
-    # Get types from registry
-    input_type, output_type = get_sql_types(file_path)
-    return cast(tuple[Type[TInput], Type[TOutput]], (input_type, output_type))
-
-
-# Overload declarations for load_api_types() - provides strong type hints
-# Auto-generated by sql-compile. Do not edit manually.
-if TYPE_CHECKING:
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/agents/create_agent_complete.sql"]
-    ) -> tuple[Type[CreateAgentApiRequest], Type[CreateAgentApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/agents/delete_agent_complete.sql"]
-    ) -> tuple[Type[DeleteAgentApiRequest], Type[DeleteAgentApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/agents/duplicate_agent_complete.sql"]
-    ) -> tuple[Type[DuplicateAgentApiRequest], Type[DuplicateAgentApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/agents/get_agent_detail_complete.sql"]
-    ) -> tuple[Type[GetAgentDetailApiRequest], Type[GetAgentDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/agents/get_agent_new_complete.sql"]
-    ) -> tuple[Type[GetAgentNewApiRequest], Type[GetAgentNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/agents/get_agents_list_complete.sql"]
-    ) -> tuple[Type[GetAgentsListApiRequest], Type[GetAgentsListApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/agents/update_agent_complete.sql"]
-    ) -> tuple[Type[UpdateAgentApiRequest], Type[UpdateAgentApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/attempts/bulk_archive_attempts_complete.sql"]
-    ) -> tuple[Type[BulkArchiveAttemptsApiRequest], Type[BulkArchiveAttemptsApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/attempts/get_attempt_full_complete.sql"]
-    ) -> tuple[Type[GetAttemptFullApiRequest], Type[GetAttemptFullApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/attempts/update_chat_created_at_complete.sql"]
-    ) -> tuple[Type[UpdateChatCreatedAtApiRequest], Type[UpdateChatCreatedAtApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/auth/create_auth_complete.sql"]
-    ) -> tuple[Type[CreateAuthApiRequest], Type[CreateAuthApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/auth/delete_auth_complete.sql"]
-    ) -> tuple[Type[DeleteAuthApiRequest], Type[DeleteAuthApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/auth/duplicate_auth_complete.sql"]
-    ) -> tuple[Type[DuplicateAuthApiRequest], Type[DuplicateAuthApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/auth/get_auth_detail_complete.sql"]
-    ) -> tuple[Type[GetAuthDetailApiRequest], Type[GetAuthDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/auth/get_login_data_complete.sql"]
-    ) -> tuple[Type[GetLoginDataApiRequest], Type[GetLoginDataApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/auth/update_auth_complete.sql"]
-    ) -> tuple[Type[UpdateAuthApiRequest], Type[UpdateAuthApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/cohorts/create_cohort_complete.sql"]
-    ) -> tuple[Type[CreateCohortApiRequest], Type[CreateCohortApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/cohorts/delete_cohort_complete.sql"]
-    ) -> tuple[Type[DeleteCohortApiRequest], Type[DeleteCohortApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/cohorts/duplicate_cohort_complete.sql"]
-    ) -> tuple[Type[DuplicateCohortApiRequest], Type[DuplicateCohortApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/cohorts/get_cohort_detail_complete.sql"]
-    ) -> tuple[Type[GetCohortDetailApiRequest], Type[GetCohortDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/cohorts/get_cohort_new_complete.sql"]
-    ) -> tuple[Type[GetCohortNewApiRequest], Type[GetCohortNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/cohorts/update_cohort_complete.sql"]
-    ) -> tuple[Type[UpdateCohortApiRequest], Type[UpdateCohortApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/departments/create_department_complete.sql"]
-    ) -> tuple[Type[CreateDepartmentApiRequest], Type[CreateDepartmentApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/departments/delete_department_complete.sql"]
-    ) -> tuple[Type[DeleteDepartmentApiRequest], Type[DeleteDepartmentApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/departments/duplicate_department_complete.sql"]
-    ) -> tuple[Type[DuplicateDepartmentApiRequest], Type[DuplicateDepartmentApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/departments/get_department_default_complete.sql"]
-    ) -> tuple[Type[GetDepartmentDefaultApiRequest], Type[GetDepartmentDefaultApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/departments/update_department_complete.sql"]
-    ) -> tuple[Type[UpdateDepartmentApiRequest], Type[UpdateDepartmentApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/documents/complete_document_creation_complete.sql"]
-    ) -> tuple[Type[CompleteDocumentCreationApiRequest], Type[CompleteDocumentCreationApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/documents/get_document_detail_complete.sql"]
-    ) -> tuple[Type[GetDocumentDetailApiRequest], Type[GetDocumentDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/documents/insert_document_complete.sql"]
-    ) -> tuple[Type[InsertDocumentApiRequest], Type[InsertDocumentApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/documents/render_template_complete.sql"]
-    ) -> tuple[Type[RenderTemplateApiRequest], Type[RenderTemplateApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/documents/update_document_complete.sql"]
-    ) -> tuple[Type[UpdateDocumentApiRequest], Type[UpdateDocumentApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/evals/create_eval_complete.sql"]
-    ) -> tuple[Type[CreateEvalApiRequest], Type[CreateEvalApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/evals/get_eval_attempt_full_complete.sql"]
-    ) -> tuple[Type[GetEvalAttemptFullApiRequest], Type[GetEvalAttemptFullApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/evals/get_eval_new_complete.sql"]
-    ) -> tuple[Type[GetEvalNewApiRequest], Type[GetEvalNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/evals/start_eval_attempt_complete.sql"]
-    ) -> tuple[Type[StartEvalAttemptApiRequest], Type[StartEvalAttemptApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/fields/create_field_complete.sql"]
-    ) -> tuple[Type[CreateFieldApiRequest], Type[CreateFieldApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/fields/delete_field_complete.sql"]
-    ) -> tuple[Type[DeleteFieldApiRequest], Type[DeleteFieldApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/fields/duplicate_field_complete.sql"]
-    ) -> tuple[Type[DuplicateFieldApiRequest], Type[DuplicateFieldApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/fields/get_field_detail_complete.sql"]
-    ) -> tuple[Type[GetFieldDetailApiRequest], Type[GetFieldDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/fields/get_field_new_complete.sql"]
-    ) -> tuple[Type[GetFieldNewApiRequest], Type[GetFieldNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/fields/update_field_complete.sql"]
-    ) -> tuple[Type[UpdateFieldApiRequest], Type[UpdateFieldApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/grading/create_grade_complete.sql"]
-    ) -> tuple[Type[CreateGradeApiRequest], Type[CreateGradeApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/grading/create_message_feedback_complete.sql"]
-    ) -> tuple[Type[CreateMessageFeedbackApiRequest], Type[CreateMessageFeedbackApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/keycloak/get_auth_items_complete.sql"]
-    ) -> tuple[Type[GetAuthItemsApiRequest], Type[GetAuthItemsApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/keycloak/get_auth_providers_complete.sql"]
-    ) -> tuple[Type[GetAuthProvidersApiRequest], Type[GetAuthProvidersApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/keys/get_key_detail_complete.sql"]
-    ) -> tuple[Type[GetKeyDetailApiRequest], Type[GetKeyDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/keys/get_key_new_complete.sql"]
-    ) -> tuple[Type[GetKeyNewApiRequest], Type[GetKeyNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/model_runs/create_model_run_complete.sql"]
-    ) -> tuple[Type[CreateModelRunApiRequest], Type[CreateModelRunApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/model_runs/log_run_complete.sql"]
-    ) -> tuple[Type[LogRunApiRequest], Type[LogRunApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/models/create_model_complete.sql"]
-    ) -> tuple[Type[CreateModelApiRequest], Type[CreateModelApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/models/get_model_detail_complete.sql"]
-    ) -> tuple[Type[GetModelDetailApiRequest], Type[GetModelDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/models/get_model_new_complete.sql"]
-    ) -> tuple[Type[GetModelNewApiRequest], Type[GetModelNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/models/list_models_complete.sql"]
-    ) -> tuple[Type[ListModelsApiRequest], Type[ListModelsApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/models/update_model_complete.sql"]
-    ) -> tuple[Type[UpdateModelApiRequest], Type[UpdateModelApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/objectives/insert_objective_complete.sql"]
-    ) -> tuple[Type[InsertObjectiveApiRequest], Type[InsertObjectiveApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/parameters/create_parameter_complete.sql"]
-    ) -> tuple[Type[CreateParameterApiRequest], Type[CreateParameterApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/parameters/delete_parameter_complete.sql"]
-    ) -> tuple[Type[DeleteParameterApiRequest], Type[DeleteParameterApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/parameters/duplicate_parameter_complete.sql"]
-    ) -> tuple[Type[DuplicateParameterApiRequest], Type[DuplicateParameterApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/parameters/get_parameter_detail_complete.sql"]
-    ) -> tuple[Type[GetParameterDetailApiRequest], Type[GetParameterDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/parameters/get_parameter_new_complete.sql"]
-    ) -> tuple[Type[GetParameterNewApiRequest], Type[GetParameterNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/parameters/update_parameter_complete.sql"]
-    ) -> tuple[Type[UpdateParameterApiRequest], Type[UpdateParameterApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/personas/create_persona_complete.sql"]
-    ) -> tuple[Type[CreatePersonaApiRequest], Type[CreatePersonaApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/personas/delete_persona_complete.sql"]
-    ) -> tuple[Type[DeletePersonaApiRequest], Type[DeletePersonaApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/personas/get_persona_detail_complete.sql"]
-    ) -> tuple[Type[GetPersonaDetailApiRequest], Type[GetPersonaDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/personas/get_persona_new_complete.sql"]
-    ) -> tuple[Type[GetPersonaNewApiRequest], Type[GetPersonaNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/personas/update_persona_complete.sql"]
-    ) -> tuple[Type[UpdatePersonaApiRequest], Type[UpdatePersonaApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/pricing/get_group_detail_complete.sql"]
-    ) -> tuple[Type[GetGroupDetailApiRequest], Type[GetGroupDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/pricing/get_pricing_analytics_complete.sql"]
-    ) -> tuple[Type[GetPricingAnalyticsApiRequest], Type[GetPricingAnalyticsApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/problem_statements/insert_problem_statement_complete.sql"]
-    ) -> tuple[Type[InsertProblemStatementApiRequest], Type[InsertProblemStatementApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/profile/get_profile_context_complete.sql"]
-    ) -> tuple[Type[GetProfileContextApiRequest], Type[GetProfileContextApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/profile/update_profile_complete.sql"]
-    ) -> tuple[Type[UpdateProfileApiRequest], Type[UpdateProfileApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/profile/update_profile_to_active_complete.sql"]
-    ) -> tuple[Type[UpdateProfileToActiveApiRequest], Type[UpdateProfileToActiveApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/profile/update_profile_to_inactive_complete.sql"]
-    ) -> tuple[Type[UpdateProfileToInactiveApiRequest], Type[UpdateProfileToInactiveApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/providers/create_provider_complete.sql"]
-    ) -> tuple[Type[CreateProviderApiRequest], Type[CreateProviderApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/providers/get_provider_detail_complete.sql"]
-    ) -> tuple[Type[GetProviderDetailApiRequest], Type[GetProviderDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/providers/get_provider_new_complete.sql"]
-    ) -> tuple[Type[GetProviderNewApiRequest], Type[GetProviderNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/providers/update_provider_complete.sql"]
-    ) -> tuple[Type[UpdateProviderApiRequest], Type[UpdateProviderApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/rubrics/create_rubric_complete.sql"]
-    ) -> tuple[Type[CreateRubricApiRequest], Type[CreateRubricApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/rubrics/delete_rubric_complete.sql"]
-    ) -> tuple[Type[DeleteRubricApiRequest], Type[DeleteRubricApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/rubrics/duplicate_rubric_complete.sql"]
-    ) -> tuple[Type[DuplicateRubricApiRequest], Type[DuplicateRubricApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/rubrics/get_rubric_detail_complete.sql"]
-    ) -> tuple[Type[GetRubricDetailApiRequest], Type[GetRubricDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/rubrics/get_rubric_new_complete.sql"]
-    ) -> tuple[Type[GetRubricNewApiRequest], Type[GetRubricNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/rubrics/update_rubric_complete.sql"]
-    ) -> tuple[Type[UpdateRubricApiRequest], Type[UpdateRubricApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/scenarios/create_scenario_complete.sql"]
-    ) -> tuple[Type[CreateScenarioApiRequest], Type[CreateScenarioApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/scenarios/delete_scenario_complete.sql"]
-    ) -> tuple[Type[DeleteScenarioApiRequest], Type[DeleteScenarioApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/scenarios/get_randomization_data_complete.sql"]
-    ) -> tuple[Type[GetRandomizationDataApiRequest], Type[GetRandomizationDataApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/scenarios/get_scenario_detail_complete.sql"]
-    ) -> tuple[Type[GetScenarioDetailApiRequest], Type[GetScenarioDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/scenarios/get_scenario_new_complete.sql"]
-    ) -> tuple[Type[GetScenarioNewApiRequest], Type[GetScenarioNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/scenarios/update_scenario_complete.sql"]
-    ) -> tuple[Type[UpdateScenarioApiRequest], Type[UpdateScenarioApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/simulations/create_hints_complete.sql"]
-    ) -> tuple[Type[CreateHintsApiRequest], Type[CreateHintsApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/simulations/create_simulation_complete.sql"]
-    ) -> tuple[Type[CreateSimulationApiRequest], Type[CreateSimulationApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/simulations/create_user_message_complete.sql"]
-    ) -> tuple[Type[CreateUserMessageApiRequest], Type[CreateUserMessageApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/simulations/delete_simulation_complete.sql"]
-    ) -> tuple[Type[DeleteSimulationApiRequest], Type[DeleteSimulationApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/simulations/generate_hints_complete.sql"]
-    ) -> tuple[Type[GenerateHintsApiRequest], Type[GenerateHintsApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/simulations/get_simulation_detail_complete.sql"]
-    ) -> tuple[Type[GetSimulationDetailApiRequest], Type[GetSimulationDetailApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/simulations/get_simulation_new_complete.sql"]
-    ) -> tuple[Type[GetSimulationNewApiRequest], Type[GetSimulationNewApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/simulations/link_run_to_group_complete.sql"]
-    ) -> tuple[Type[LinkRunToGroupApiRequest], Type[LinkRunToGroupApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/simulations/start_simulation_attempt_complete.sql"]
-    ) -> tuple[Type[StartSimulationAttemptApiRequest], Type[StartSimulationAttemptApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: Literal["app/sql/v3/simulations/update_simulation_complete.sql"]
-    ) -> tuple[Type[UpdateSimulationApiRequest], Type[UpdateSimulationApiResponse]]: ...
-
-    @overload
-    def load_api_types(
-        file_path: str
-    ) -> tuple[Type[BaseModel], Type[BaseModel]]: ...
-
-
-def load_api_types(
-    file_path: str,
-) -> tuple[Type[TInput], Type[TOutput]]:
-    """Load API request and response types for a SQL file path.
-
-    Returns the generated Pydantic model classes for API request and response.
-    API request excludes profile_id (obtained from request header).
-    API response matches SQL response structure (can be customized later).
-
-    The overloads provide strong type hints - when you use a literal string path,
-    the IDE will know the exact ApiRequestType and ApiResponseType classes.
-
-    Args:
-        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")
-
-    Returns:
-        Tuple of (ApiRequestType, ApiResponseType) where:
-        - ApiRequestType: Pydantic model class for API request (e.g., GetAgentNewApiRequest)
-          Excludes profile_id field
-        - ApiResponseType: Pydantic model class for API response (e.g., GetAgentNewApiResponse)
-
-    Raises:
-        ValueError: If no types are found for the SQL file path
-        ImportError: If the type classes cannot be imported
-
-    Example:
-        ```python
-        ApiRequestType, ApiResponseType = load_api_types("app/sql/v3/agents/get_agent_new_complete.sql")
-        
-        # Type-safe usage - IDE will show fields when you type ApiRequestType(...)
-        request = ApiRequestType(...)  # No profile_id field
-        response = ApiResponseType(...)  # Same structure as SQL response
-        ```
-    """
-    # Get types from registry
-    api_request_type, api_response_type = get_api_types(file_path)
-    return cast(tuple[Type[TInput], Type[TOutput]], (api_request_type, api_response_type))

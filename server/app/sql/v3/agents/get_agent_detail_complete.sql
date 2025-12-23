@@ -74,28 +74,21 @@ default_prompt_count AS (
 ),
 prompt_mapping_data AS (
     SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                ap.prompt_id,
-                jsonb_build_object(
-                    'system_prompt', ap.system_prompt,
-                    'name', COALESCE(ap.prompt_name, ''),
-                    'description', COALESCE(ap.prompt_description, ''),
-                    'created_at', ap.prompt_created_at::text,
-                    'updated_at', ap.prompt_updated_at::text,
-                    'department_ids', COALESCE(pdd.department_ids, NULL),
-                    'can_delete', CASE
-                        -- Department-specific prompts can always be deleted (fall back to default)
-                        WHEN pdd.department_ids IS NOT NULL THEN true::boolean
-                        -- Default prompts can be deleted if there's more than one
-                        WHEN pdd.department_ids IS NULL AND COALESCE(dpc.count, 0) > 1 THEN true::boolean
-                        -- Otherwise cannot delete (only one default prompt)
-                        ELSE false::boolean
-                    END
-                )
-            ),
-            '{}'::jsonb
-        ) as prompt_mapping
+        ap.prompt_id::text as prompt_id,
+        ap.system_prompt::text as system_prompt,
+        COALESCE(ap.prompt_name, '')::text as prompt_name,
+        COALESCE(ap.prompt_description, '')::text as prompt_description,
+        ap.prompt_created_at::timestamptz as prompt_created_at,
+        ap.prompt_updated_at::timestamptz as prompt_updated_at,
+        COALESCE(pdd.department_ids, NULL)::text[] as department_ids,
+        CASE
+            -- Department-specific prompts can always be deleted (fall back to default)
+            WHEN pdd.department_ids IS NOT NULL THEN true::boolean
+            -- Default prompts can be deleted if there's more than one
+            WHEN pdd.department_ids IS NULL AND COALESCE(dpc.count, 0) > 1 THEN true::boolean
+            -- Otherwise cannot delete (only one default prompt)
+            ELSE false::boolean
+        END as can_delete
     FROM agent_all_prompts ap
     LEFT JOIN prompt_departments_data pdd ON pdd.prompt_id = ap.prompt_id
     CROSS JOIN default_prompt_count dpc
@@ -108,17 +101,12 @@ agent_departments_data AS (
     JOIN agent_departments ad ON ad.agent_id = x.agent_id AND ad.active = true
     GROUP BY ad.agent_id
 ),
-agent_department_prompt_links AS (
+agent_department_prompt_links_data AS (
     SELECT 
-        COALESCE(
-            (SELECT jsonb_object_agg(
-                adp.department_id::text,
-                adp.prompt_id::text
-            )
-            FROM params x
-            JOIN agent_department_prompts adp ON adp.agent_id = x.agent_id AND adp.active = true),
-            '{}'::jsonb
-        ) as department_prompt_links
+        adp.department_id::text as department_id,
+        adp.prompt_id::text as prompt_id
+    FROM params x
+    JOIN agent_department_prompts adp ON adp.agent_id = x.agent_id AND adp.active = true
 ),
 debug_data AS (
     SELECT 
@@ -144,27 +132,10 @@ all_models AS (
 model_modalities_data AS (
     SELECT 
         mm.model_id::text as model_id,
-        jsonb_agg(mm.modality::text ORDER BY mm.modality::text) FILTER (WHERE mm.is_input = true) as input_modalities,
-        jsonb_agg(mm.modality::text ORDER BY mm.modality::text) FILTER (WHERE mm.is_input = false) as output_modalities
+        mm.modality::text as modality,
+        mm.is_input::boolean as is_input
     FROM model_modalities mm
     WHERE mm.active = true
-    GROUP BY mm.model_id
-),
-all_models_with_modalities AS (
-    SELECT 
-        am.model_id,
-        am.name,
-        am.description,
-        am.active,
-        COALESCE(
-            jsonb_build_object(
-                'input', COALESCE(mmod.input_modalities, '[]'::jsonb),
-                'output', COALESCE(mmod.output_modalities, '[]'::jsonb)
-            ),
-            jsonb_build_object('input', '[]'::jsonb, 'output', '[]'::jsonb)
-        ) as modalities
-    FROM all_models am
-    LEFT JOIN model_modalities_data mmod ON mmod.model_id = am.model_id
 ),
 user_profile AS (
     SELECT 
@@ -196,18 +167,14 @@ user_has_agent_access AS (
 ),
 valid_departments_data AS (
     SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                ud.id::text,
-                jsonb_build_object(
-                    'name', ud.name,
-                    'description', COALESCE(ud.description, '')
-                )
-            ),
-            '{}'::jsonb
-        ) as dept_mapping,
-        array_agg(ud.id::text ORDER BY ud.name) as dept_ids
+        ud.id::text as department_id,
+        ud.name::text as department_name,
+        COALESCE(ud.description, '')::text as department_description
     FROM user_departments ud
+),
+valid_department_ids_list AS (
+    SELECT array_agg(id::text ORDER BY name) as dept_ids
+    FROM user_departments
 ),
 model_reasoning_levels_data AS (
     SELECT 
@@ -239,12 +206,11 @@ model_temperature_levels_data AS (
 agent_selected_voices AS (
     SELECT 
         av.agent_id::text as agent_id,
-        jsonb_agg(mv.id::text ORDER BY mv.voice::text) as selected_voice_ids,
-        jsonb_agg(mv.voice::text ORDER BY mv.voice::text) as selected_voices
+        mv.id::text as voice_id,
+        mv.voice::text as voice
     FROM agent_voices av
     JOIN model_voices mv ON mv.id = av.model_voice_id
     WHERE av.active = true AND mv.active = true
-    GROUP BY av.agent_id
 ),
 agent_selected_temperature AS (
     SELECT 
@@ -281,15 +247,17 @@ model_voices_data AS (
 model_temperature_levels_data_with_ids AS (
     SELECT 
         mtl.model_id::text as model_id,
-        MIN(mtl.temperature) FILTER (WHERE mtl.is_upper = false) as temperature_lower,
-        MAX(mtl.temperature) FILTER (WHERE mtl.is_upper = true) as temperature_upper,
-        jsonb_agg(
-            jsonb_build_object(
-                'id', mtl.id::text,
-                'temperature', mtl.temperature::text,
-                'is_upper', mtl.is_upper
-            ) ORDER BY mtl.temperature::text
-        ) as temperature_levels
+        mtl.id::text as temperature_level_id,
+        mtl.temperature::text as temperature_value,
+        mtl.is_upper::boolean as is_upper
+    FROM model_temperature_levels mtl
+    WHERE mtl.active = true
+),
+model_temperature_levels_bounds AS (
+    SELECT 
+        mtl.model_id::text as model_id,
+        MIN(mtl.temperature) FILTER (WHERE mtl.is_upper = false)::float as temperature_lower,
+        MAX(mtl.temperature) FILTER (WHERE mtl.is_upper = true)::float as temperature_upper
     FROM model_temperature_levels mtl
     WHERE mtl.active = true
     GROUP BY mtl.model_id
@@ -297,124 +265,117 @@ model_temperature_levels_data_with_ids AS (
 model_reasoning_levels_data_with_ids AS (
     SELECT 
         mrl.model_id::text as model_id,
-        jsonb_agg(
-            jsonb_build_object(
-                'id', mrl.id::text,
-                'reasoning_level', mrl.reasoning_level::text
-            ) ORDER BY mrl.reasoning_level::text
-        ) as reasoning_levels
+        mrl.id::text as reasoning_level_id,
+        mrl.reasoning_level::text as reasoning_level_value
     FROM model_reasoning_levels mrl
     WHERE mrl.active = true
-    GROUP BY mrl.model_id
+),
+model_voices_data_flat AS (
+    SELECT 
+        mv.model_id::text as model_id,
+        mv.id::text as voice_id,
+        mv.voice::text as voice_value
+    FROM model_voices mv
+    WHERE mv.active = true
 )
 SELECT 
-    ai.agent_id,
-    ai.name,
-    ai.description,
-    COALESCE(aap.system_prompt, '') as system_prompt,
+    -- Top-level agent fields
+    ai.agent_id::text as agent_id,
+    ai.name::text as name,
+    ai.description::text as description,
+    COALESCE(aap.system_prompt, '')::text as system_prompt,
     COALESCE(aap.prompt_id, NULL)::text as prompt_id,
-    ai.model_id,
-    ai.active,
-    ai.role,
+    ai.model_id::text as model_id,
+    ai.active::boolean as active,
+    ai.role::text as role,
     -- Selected options from junction tables
     COALESCE(ast.selected_temperature_level_id, '')::text as selected_temperature_level_id,
-    COALESCE(ast.selected_temperature, 0.7) as temperature,
+    COALESCE(ast.selected_temperature, 0.7)::float as temperature,
     COALESCE(asr.selected_reasoning_level_id, '')::text as selected_reasoning_level_id,
     COALESCE(asr.selected_reasoning, '')::text as reasoning,
-    COALESCE(asv.selected_voice_ids, '[]'::jsonb) as selected_voice_ids,
-    COALESCE(asv.selected_voices, '[]'::jsonb) as valid_voices,
-    COALESCE(add.department_ids, ARRAY[]::text[]) as department_ids,
-    COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
-    COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
-    COALESCE(pmd.prompt_mapping, '{}'::jsonb) as prompt_mapping,
-    COALESCE(adpl.department_prompt_links, '{}'::jsonb) as department_prompt_links,
+    COALESCE((SELECT array_agg(asv2.voice_id::text ORDER BY asv2.voice) FROM agent_selected_voices asv2 WHERE asv2.agent_id = ai.agent_id), ARRAY[]::text[])::text[] as selected_voice_ids,
+    COALESCE((SELECT array_agg(asv3.voice::text ORDER BY asv3.voice) FROM agent_selected_voices asv3 WHERE asv3.agent_id = ai.agent_id), ARRAY[]::text[])::text[] as valid_voices,
+    COALESCE(add.department_ids, ARRAY[]::text[])::text[] as department_ids,
+    COALESCE((SELECT dept_ids FROM valid_department_ids_list LIMIT 1), ARRAY[]::text[])::text[] as valid_department_ids,
     CASE 
         -- Default agents (no department_ids) are read-only for non-superadmin
-        WHEN (COALESCE(add.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND up.role != 'superadmin') THEN false
-        WHEN up.role = 'superadmin' THEN true
-        WHEN up.role IN ('admin', 'instructional') AND uhaa.has_access THEN true
-        ELSE false
+        WHEN (COALESCE(add.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND up.role != 'superadmin') THEN false::boolean
+        WHEN up.role = 'superadmin' THEN true::boolean
+        WHEN up.role IN ('admin', 'instructional') AND uhaa.has_access THEN true::boolean
+        ELSE false::boolean
     END as can_edit,
-    COALESCE(
-        (SELECT jsonb_agg(
-            jsonb_build_object(
-                'created_at', dd.created_at,
-                'model_id', dd.model_id,
-                'content', dd.content
-            ) ORDER BY dd.created_at DESC
-        )
-        FROM debug_data dd),
-        '[]'::jsonb
-    ) as debug_info,
-    COALESCE(
-        (SELECT jsonb_object_agg(
-            amwm.model_id,
-            jsonb_build_object(
-                'name', amwm.name, 
-                'description', amwm.description,
-                'modalities', amwm.modalities,
-                'input_modalities', COALESCE((amwm.modalities->>'input')::jsonb, '[]'::jsonb),
-                'output_modalities', COALESCE((amwm.modalities->>'output')::jsonb, '[]'::jsonb),
-                'temperature_lower', COALESCE(mtl.temperature_lower, 0.0),
-                'temperature_upper', COALESCE(mtl.temperature_upper, 1.0),
-                'temperature_levels', COALESCE(mtl.temperature_levels, '[]'::jsonb),
-                'reasoning_options', COALESCE(mrl.reasoning_levels, '[]'::jsonb),
-                'available_voices', COALESCE(mv.voices, '[]'::jsonb)
-            )
-        )
-        FROM all_models_with_modalities amwm
-        LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = amwm.model_id
-        LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = amwm.model_id
-        LEFT JOIN model_voices_data mv ON mv.model_id = amwm.model_id),
-        '{}'::jsonb
-    ) as model_mapping,
-    COALESCE(
-        (SELECT jsonb_agg(amwm.model_id ORDER BY amwm.name)
-        FROM all_models_with_modalities amwm
-        WHERE amwm.active = true),
-        '[]'::jsonb
-    ) as valid_model_ids,
-    -- Available options from model
-    COALESCE(
-        (SELECT mrl.reasoning_levels
-        FROM model_reasoning_levels_data_with_ids mrl
-        WHERE mrl.model_id = ai.model_id),
-        '[]'::jsonb
-    ) as reasoning_options,
-    COALESCE(
-        (SELECT mtl.temperature_lower
-        FROM model_temperature_levels_data_with_ids mtl
-        WHERE mtl.model_id = ai.model_id),
-        0.0
-    ) as temperature_lower,
-    COALESCE(
-        (SELECT mtl.temperature_upper
-        FROM model_temperature_levels_data_with_ids mtl
-        WHERE mtl.model_id = ai.model_id),
-        1.0
-    ) as temperature_upper,
-    COALESCE(
-        (SELECT mtl.temperature_levels
-        FROM model_temperature_levels_data_with_ids mtl
-        WHERE mtl.model_id = ai.model_id),
-        '[]'::jsonb
-    ) as temperature_levels,
-    COALESCE(
-        (SELECT mv.voices
-        FROM model_voices_data mv
-        WHERE mv.model_id = ai.model_id),
-        '[]'::jsonb
-    ) as available_voices,
-    up.actor_name
+    -- Temperature bounds for selected model
+    COALESCE((SELECT temperature_lower FROM model_temperature_levels_bounds WHERE model_id = ai.model_id), 0.0)::float as temperature_lower,
+    COALESCE((SELECT temperature_upper FROM model_temperature_levels_bounds WHERE model_id = ai.model_id), 1.0)::float as temperature_upper,
+    -- Valid model IDs
+    COALESCE((SELECT array_agg(model_id::text ORDER BY name) FROM all_models WHERE active = true), ARRAY[]::text[])::text[] as valid_model_ids,
+    -- Top-level actor name
+    up.actor_name::text as actor_name,
+    -- Department mapping with __ prefix
+    vdd.department_id::text as "department_mapping__id",
+    vdd.department_name::text as "department_mapping__name",
+    vdd.department_description::text as "department_mapping__description",
+    -- Prompt mapping with __ prefix
+    pmd.prompt_id::text as "prompt_mapping__id",
+    pmd.system_prompt::text as "prompt_mapping__system_prompt",
+    pmd.prompt_name::text as "prompt_mapping__name",
+    pmd.prompt_description::text as "prompt_mapping__description",
+    pmd.prompt_created_at::timestamptz as "prompt_mapping__created_at",
+    pmd.prompt_updated_at::timestamptz as "prompt_mapping__updated_at",
+    pmd.department_ids::text[] as "prompt_mapping__department_ids",
+    pmd.can_delete::boolean as "prompt_mapping__can_delete",
+    -- Department prompt links with __ prefix
+    adpl.department_id::text as "department_prompt_links__department_id",
+    adpl.prompt_id::text as "department_prompt_links__prompt_id",
+    -- Debug info with __ prefix
+    dd.created_at::timestamptz as "debug_info__created_at",
+    dd.model_id::text as "debug_info__model_id",
+    dd.content::text as "debug_info__content",
+    -- Model mapping with __ prefix
+    am.model_id::text as "model_mapping__id",
+    am.name::text as "model_mapping__name",
+    am.description::text as "model_mapping__description",
+    COALESCE((SELECT array_agg(modality::text ORDER BY modality) FROM model_modalities_data WHERE model_id = am.model_id AND is_input = true), ARRAY[]::text[])::text[] as "model_mapping__input_modalities",
+    COALESCE((SELECT array_agg(modality::text ORDER BY modality) FROM model_modalities_data WHERE model_id = am.model_id AND is_input = false), ARRAY[]::text[])::text[] as "model_mapping__output_modalities",
+    COALESCE(mtb.temperature_lower, 0.0)::float as "model_mapping__temperature_lower",
+    COALESCE(mtb.temperature_upper, 1.0)::float as "model_mapping__temperature_upper",
+    -- Model temperature levels with nested __ prefix
+    mtl.temperature_level_id::text as "model_mapping__temperature_levels__id",
+    mtl.temperature_value::text as "model_mapping__temperature_levels__temperature",
+    mtl.is_upper::boolean as "model_mapping__temperature_levels__is_upper",
+    -- Model reasoning options with nested __ prefix
+    mrl.reasoning_level_id::text as "model_mapping__reasoning_options__id",
+    mrl.reasoning_level_value::text as "model_mapping__reasoning_options__reasoning_level",
+    -- Model available voices with nested __ prefix
+    mvf.voice_id::text as "model_mapping__available_voices__id",
+    mvf.voice_value::text as "model_mapping__available_voices__voice",
+    -- Reasoning options for selected model with __ prefix
+    mrl_selected.reasoning_level_id::text as "reasoning_options__id",
+    mrl_selected.reasoning_level_value::text as "reasoning_options__reasoning_level",
+    -- Temperature levels for selected model with __ prefix
+    mtl_selected.temperature_level_id::text as "temperature_levels__id",
+    mtl_selected.temperature_value::text as "temperature_levels__temperature",
+    mtl_selected.is_upper::boolean as "temperature_levels__is_upper",
+    -- Available voices for selected model with __ prefix
+    mvf_selected.voice_id::text as "available_voices__id",
+    mvf_selected.voice_value::text as "available_voices__voice"
 FROM agent_info ai
 LEFT JOIN agent_active_prompt aap ON aap.agent_id = ai.agent_id
 LEFT JOIN agent_departments_data add ON add.agent_id = ai.agent_id
 LEFT JOIN agent_selected_temperature ast ON ast.agent_id = ai.agent_id
 LEFT JOIN agent_selected_reasoning asr ON asr.agent_id = ai.agent_id
-LEFT JOIN agent_selected_voices asv ON asv.agent_id = ai.agent_id
 CROSS JOIN valid_departments_data vdd
 CROSS JOIN prompt_mapping_data pmd
-CROSS JOIN agent_department_prompt_links adpl
+LEFT JOIN agent_department_prompt_links_data adpl ON true
+LEFT JOIN debug_data dd ON true
+CROSS JOIN all_models am
+LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = am.model_id
+LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = am.model_id
+LEFT JOIN model_voices_data_flat mvf ON mvf.model_id = am.model_id
+LEFT JOIN model_temperature_levels_bounds mtb ON mtb.model_id = am.model_id
+LEFT JOIN model_reasoning_levels_data_with_ids mrl_selected ON mrl_selected.model_id = ai.model_id
+LEFT JOIN model_temperature_levels_data_with_ids mtl_selected ON mtl_selected.model_id = ai.model_id
+LEFT JOIN model_voices_data_flat mvf_selected ON mvf_selected.model_id = ai.model_id
 CROSS JOIN user_profile up
 CROSS JOIN user_has_agent_access uhaa
 WHERE uhaa.has_access = true

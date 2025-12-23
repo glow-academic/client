@@ -82,30 +82,50 @@ async def update_agent(
                 if request.department_ids_for_prompt
                 else []
             )
+            model_voice_ids = request.model_voice_ids if request.model_voice_ids else []
 
             # Convert API request to SQL params (add profile_id from header)
-            # Exclude department_ids from model_dump to avoid conflict, then set explicitly
-            request_dict = request.model_dump(exclude={"department_ids", "department_ids_for_prompt"})
-            params = UpdateAgentSqlParams(
-                **request_dict,
-                department_ids=dept_ids,
-                department_ids_for_prompt=dept_ids_for_prompt,
-                profile_id=profile_id,
+            # Note: After SQL types are regenerated, UpdateAgentSqlParams will include
+            # model_temperature_level_id, model_reasoning_level_id, and model_voice_ids
+            request_dict = request.model_dump(exclude={"department_ids", "department_ids_for_prompt", "model_voice_ids"})
+            # For now, we'll need to construct params manually since types haven't been regenerated
+            # After regeneration, this can be simplified to:
+            # params = UpdateAgentSqlParams(
+            #     **request_dict,
+            #     department_ids=dept_ids,
+            #     department_ids_for_prompt=dept_ids_for_prompt,
+            #     model_voice_ids=model_voice_ids,
+            #     profile_id=profile_id,
+            # )
+            
+            # Temporary: Use load_sql and execute directly until types are regenerated
+            from utils.sql_helper import load_sql
+            sql_query = load_sql(SQL_PATH)
+            sql_params = (
+                request.agent_id,
+                request.name,
+                request.description,
+                request.model_id,
+                request.active,
+                request.role,
+                request.prompt_id,
+                request.system_prompt or "",
+                dept_ids,
+                dept_ids_for_prompt,
+                uuid.UUID(request.model_temperature_level_id) if request.model_temperature_level_id else None,
+                uuid.UUID(request.model_reasoning_level_id) if request.model_reasoning_level_id else None,
+                model_voice_ids,
+                profile_id,
             )
-            sql_params = params.to_tuple()
-
-            # Execute SQL with typed helper
-            result = cast(
-                UpdateAgentSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH,
-                    params=params,
-                ),
-            )
-
-            agent_id = result.agent_id
-            actor_name = result.actor_name
+            
+            # Execute query
+            rows = await conn.fetch(sql_query, *sql_params)
+            if not rows:
+                raise HTTPException(status_code=404, detail="Agent not found or update not permitted")
+            
+            result_dict = dict(rows[0])
+            agent_id = result_dict["agent_id"]
+            actor_name = result_dict["actor_name"]
 
             # Set audit context with data from SQL query
             if actor_name:
@@ -114,54 +134,14 @@ async def update_agent(
                     actor={"name": actor_name, "id": profile_id},
                     agent={"name": request.name, "id": str(request.agent_id)},
                 )
+            
+            # Create response from result
+            api_response = UpdateAgentApiResponse(
+                agent_id=agent_id,
+                actor_name=actor_name,
+            )
 
-            # Update temperature level if provided (additional operations after main query)
-            if request.model_temperature_level_id is not None:
-                # Deactivate existing temperature level
-                await conn.execute(
-                    "UPDATE agent_temperature_levels SET active = false, updated_at = NOW() WHERE agent_id = $1",
-                    request.agent_id,
-                )
-                # Insert new temperature level
-                if request.model_temperature_level_id:
-                    await conn.execute(
-                        "INSERT INTO agent_temperature_levels (agent_id, model_temperature_level_id, active) VALUES ($1, $2::uuid, true) ON CONFLICT (agent_id, model_temperature_level_id) DO UPDATE SET active = true, updated_at = NOW()",
-                        request.agent_id,
-                        request.model_temperature_level_id,
-                    )
-
-            # Update reasoning level if provided
-            if request.model_reasoning_level_id is not None:
-                # Deactivate existing reasoning level
-                await conn.execute(
-                    "UPDATE agent_reasoning_levels SET active = false, updated_at = NOW() WHERE agent_id = $1",
-                    request.agent_id,
-                )
-                # Insert new reasoning level
-                if request.model_reasoning_level_id:
-                    await conn.execute(
-                        "INSERT INTO agent_reasoning_levels (agent_id, model_reasoning_level_id, active) VALUES ($1, $2::uuid, true) ON CONFLICT (agent_id, model_reasoning_level_id) DO UPDATE SET active = true, updated_at = NOW()",
-                        request.agent_id,
-                        request.model_reasoning_level_id,
-                    )
-
-            # Update voices if provided
-            if request.model_voice_ids is not None:
-                # Deactivate existing voices
-                await conn.execute(
-                    "UPDATE agent_voices SET active = false, updated_at = NOW() WHERE agent_id = $1",
-                    request.agent_id,
-                )
-                # Insert new voices
-                for voice_id in request.model_voice_ids:
-                    await conn.execute(
-                        "INSERT INTO agent_voices (agent_id, model_voice_id, active) VALUES ($1, $2::uuid, true) ON CONFLICT (agent_id, model_voice_id) DO UPDATE SET active = true, updated_at = NOW()",
-                        request.agent_id,
-                        voice_id,
-                    )
-
-        # Convert SQL result to API response
-        api_response = UpdateAgentApiResponse.model_validate(result.model_dump())
+        # Response already created above
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

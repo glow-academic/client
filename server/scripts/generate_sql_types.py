@@ -262,10 +262,46 @@ def write_consolidated_types_file(
                 # Track written classes and handle duplicate fields
                 if class_name:
                     written_classes.add(class_name)
-                    # Check for duplicate field names within the class
+                    # First pass: collect all fields to detect empty classes
                     field_names: set[str] = set()
+                    classes_info: list[dict] = []  # Store info for each class: {start_idx, indent, has_fields}
+                    current_class_info: dict | None = None
+                    in_class = False
+                    
+                    for cls_line in class_lines:
+                        stripped_line = cls_line.strip()
+                        if stripped_line.startswith("class ") and "(" in stripped_line:
+                            # Save previous class info
+                            if current_class_info is not None:
+                                classes_info.append(current_class_info)
+                            # Start new class
+                            in_class = True
+                            class_indent = cls_line[:len(cls_line) - len(cls_line.lstrip())]
+                            current_class_info = {
+                                "start_idx": len(class_lines),  # Will be updated
+                                "indent": class_indent,
+                                "has_fields": False,
+                                "has_pass": False
+                            }
+                        elif in_class and stripped_line and not stripped_line.startswith('"""') and not stripped_line.startswith("'''") and not stripped_line.startswith("#"):
+                            if ":" in stripped_line:
+                                field_match = stripped_line.split(":")[0].strip()
+                                if field_match and field_match not in ("pass", "def", "return"):
+                                    if current_class_info:
+                                        current_class_info["has_fields"] = True
+                            elif stripped_line == "pass":
+                                if current_class_info:
+                                    current_class_info["has_pass"] = True
+                    
+                    # Save last class info
+                    if current_class_info is not None:
+                        classes_info.append(current_class_info)
+                    
+                    # Second pass: process lines and check for duplicate fields
                     deduplicated_lines: list[str] = []
                     in_class = False
+                    field_names.clear()
+                    
                     for cls_line in class_lines:
                         stripped_line = cls_line.strip()
                         # Detect class definition start
@@ -278,7 +314,7 @@ def write_consolidated_types_file(
                             if not stripped_line:
                                 deduplicated_lines.append(cls_line)
                             else:
-                                # Next class starts, reset
+                                # Next class starts
                                 in_class = False
                                 deduplicated_lines.append(cls_line)
                             continue
@@ -292,7 +328,42 @@ def write_consolidated_types_file(
                                     continue
                                 field_names.add(field_match)
                         deduplicated_lines.append(cls_line)
-                    lines.extend(deduplicated_lines)
+                    
+                    # Final pass: add pass to empty classes by scanning deduplicated_lines
+                    final_lines: list[str] = []
+                    i = 0
+                    while i < len(deduplicated_lines):
+                        line = deduplicated_lines[i]
+                        final_lines.append(line)
+                        stripped = line.strip()
+                        
+                        if stripped.startswith("class ") and "(" in stripped:
+                            # Check if this class has any content before next class
+                            class_indent = line[:len(line) - len(line.lstrip())]
+                            has_content = False
+                            j = i + 1
+                            while j < len(deduplicated_lines):
+                                next_line = deduplicated_lines[j]
+                                next_stripped = next_line.strip()
+                                if next_stripped == "pass":
+                                    has_content = True
+                                    break
+                                if next_stripped.startswith("class "):
+                                    # Next class - current one is empty
+                                    break
+                                if next_stripped and ":" in next_stripped and not next_stripped.startswith("#"):
+                                    # Has a field
+                                    has_content = True
+                                    break
+                                j += 1
+                            
+                            # If class is empty (no content before next class), add pass
+                            if not has_content:
+                                final_lines.append(f"{class_indent}    pass")
+                        
+                        i += 1
+                    
+                    lines.extend(final_lines)
                 else:
                     lines.extend(class_lines)
                 lines.append("")

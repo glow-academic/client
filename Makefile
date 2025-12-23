@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-db typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-db typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -204,7 +204,7 @@ run: check-venv
 	@echo ""
 	@echo "Press Ctrl+C to stop all services"
 	@echo "----------------------------------------"
-	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; pkill -f "notify.sh" 2>/dev/null || true; pkill -f "docker logs.*glow-keycloak" 2>/dev/null || true; echo "✅ All services stopped (Keycloak remains running)"; exit 0' INT; \
+	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "chokidar.*sql" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; pkill -f "notify.sh" 2>/dev/null || true; pkill -f "docker logs.*glow-keycloak" 2>/dev/null || true; echo "✅ All services stopped (Keycloak remains running)"; exit 0' INT; \
 	exec 2>/dev/null; \
 	if docker ps --filter name=glow-keycloak --format "{{.Names}}" | grep -q "^glow-keycloak$$"; then \
 		echo "✅ Keycloak already running, attaching to logs..."; \
@@ -241,6 +241,7 @@ run: check-venv
 	(cd server && redis-server --port $(REDIS_PORT) --dir . --dbfilename dump.rdb 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;31m[REDIS]\033[0m %s' "$$line")"; done) & \
 	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn watch:openapi 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[OPENAPI]\033[0m %s' "$$line")"; done) & \
+	(cd client && yarn watch:sql-types 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[SQL-TYPES]\033[0m %s' "$$line")"; done) & \
 	(cd client && APP_PREFIX=$${APP_PREFIX:-}; KEYCLOAK_PUBLIC_URL=http://localhost:8080/auth NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080/auth NODE_OPTIONS='--dns-result-order=ipv4first' yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
 	(cd database && READS=1 MIN_MS=0 SAMPLE_MS=150 DEBUG_READS=1 yarn logs 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;33m[DATABASE]\033[0m %s' "$$line")"; done) & \
 	sleep 3; \
@@ -276,6 +277,8 @@ stop:
 	@pkill -f "stream-logs.js" 2>/dev/null && echo "✅ Database logs stopped" || echo "⚠️  Database logs process not found"
 	@echo "Stopping Notify service..."
 	@pkill -f "notify.sh" 2>/dev/null && echo "✅ Notify service stopped" || echo "⚠️  Notify service process not found"
+	@echo "Stopping SQL types watcher..."
+	@pkill -f "chokidar.*sql" 2>/dev/null && echo "✅ SQL types watcher stopped" || echo "⚠️  SQL types watcher process not found"
 	@echo "✅ All services stopped (Keycloak remains running)"
 
 # Stop Keycloak container
@@ -330,6 +333,10 @@ sql-compile: check-venv
 	@echo "Compiling SQL files and generating types..."
 	@$(VENV_PYTHON) server/scripts/generate_sql_types.py
 	@echo "✅ SQL compilation complete"
+
+# Watch SQL files and regenerate types on change
+watch-sql-types:
+	@cd client && yarn watch:sql-types
 
 # Check for unused SQL files and inline SQL violations
 sql-format: check-venv

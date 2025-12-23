@@ -14,7 +14,8 @@
     "lint:fix": "next lint --fix --dir app --dir components --dir utils --dir hooks --dir lib --dir contexts",
     "format": "prettier --write .",
     "gen:types": "openapi-typescript ../server/openapi.json -o lib/api/schema.ts",
-    "watch:openapi": "chokidar ../server/openapi.json -c \"yarn gen:types\""
+    "watch:openapi": "chokidar ../server/openapi.json -c \"yarn gen:types\"",
+    "watch:sql-types": "chokidar '../server/app/sql/**/*.sql' '../server/tests/sql/**/*.sql' -c 'cd .. && make sql-compile'"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",

@@ -10358,27 +10358,26 @@ export interface components {
             actor_name: string;
             /** Primary Department Id */
             primary_department_id: string;
-            /** Department Mapping */
-            department_mapping: components["schemas"]["GetAgentNewDepartmentMappingItem"][];
             /** Model Mapping */
             model_mapping: components["schemas"]["GetAgentNewModelMappingItem"][];
+            /** Department Mapping */
+            department_mapping: components["schemas"]["GetAgentNewDepartmentMappingItem"][];
         };
         /** GetAgentNewDepartmentMappingItem */
-        GetAgentNewDepartmentMappingItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
+        GetAgentNewDepartmentMappingItem: Record<string, never>;
         /** GetAgentNewModelMappingAvailableVoicesItem */
         GetAgentNewModelMappingAvailableVoicesItem: {
+            /** Id */
+            id: string;
             /** Voice */
             voice: string;
         };
         /** GetAgentNewModelMappingItem */
         GetAgentNewModelMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /** Temperature Lower */
             temperature_lower: number;
             /** Temperature Upper */
@@ -10406,16 +10405,10 @@ export interface components {
             /** Is Upper */
             is_upper: boolean;
         };
-        /** GetAgentsListApiRequest */
-        GetAgentsListApiRequest: Record<string, never>;
-        /** GetAgentsListApiResponse */
-        GetAgentsListApiResponse: {
+        /** GetAgentsListAgentsItem */
+        GetAgentsListAgentsItem: {
             /** Agent Id */
             agent_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
             /** Reasoning */
             reasoning: string;
             /** Temperature */
@@ -10440,11 +10433,24 @@ export interface components {
             model_description: string;
             /** Actor Name */
             actor_name: string;
+        };
+        /** GetAgentsListApiRequest */
+        GetAgentsListApiRequest: Record<string, never>;
+        /** GetAgentsListApiResponse */
+        GetAgentsListApiResponse: {
+            /** Actor Name */
+            actor_name: string;
+            /** Model Mapping */
+            model_mapping: components["schemas"]["GetAgentsListModelMappingItem"][];
             /** Department Mapping */
             department_mapping: components["schemas"]["GetAgentsListDepartmentMappingItem"][];
+            /** Agents */
+            agents: components["schemas"]["GetAgentsListAgentsItem"][];
         };
         /** GetAgentsListDepartmentMappingItem */
-        GetAgentsListDepartmentMappingItem: {
+        GetAgentsListDepartmentMappingItem: Record<string, never>;
+        /** GetAgentsListModelMappingItem */
+        GetAgentsListModelMappingItem: {
             /** Id */
             id: string;
             /** Name */

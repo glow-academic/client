@@ -10,6 +10,9 @@
 --   system_prompt?: text
 --   department_ids: text[] = {}
 --   department_ids_for_prompt: text[] = {}
+--   model_temperature_level_id?: uuid
+--   model_reasoning_level_id?: uuid
+--   model_voice_ids?: text[]
 --   profile_id: uuid
 -- All parameters are cast exactly once in params CTE for reliable type introspection
 WITH params AS (
@@ -23,7 +26,10 @@ WITH params AS (
            NULLIF($8::text, '') AS system_prompt,
            COALESCE($9::text[], ARRAY[]::text[]) AS department_ids,
            COALESCE($10::text[], ARRAY[]::text[]) AS department_ids_for_prompt,
-           $11::uuid AS profile_id
+           $11::uuid AS model_temperature_level_id,
+           $12::uuid AS model_reasoning_level_id,
+           COALESCE($13::text[], ARRAY[]::text[]) AS model_voice_ids,
+           $14::uuid AS profile_id
 ),
 user_profile AS (
     SELECT 
@@ -157,6 +163,67 @@ link_departments AS (
     ON CONFLICT (agent_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
+),
+deactivate_temperature_levels AS (
+    -- Deactivate existing temperature levels if model_temperature_level_id is provided
+    UPDATE agent_temperature_levels
+    SET active = false, updated_at = NOW()
+    FROM params x
+    WHERE agent_temperature_levels.agent_id = x.agent_id
+    AND x.model_temperature_level_id IS NOT NULL
+    RETURNING agent_temperature_levels.agent_id
+),
+update_temperature_level AS (
+    -- Insert or update temperature level if model_temperature_level_id is provided
+    INSERT INTO agent_temperature_levels (agent_id, model_temperature_level_id, active, created_at, updated_at)
+    SELECT x.agent_id, x.model_temperature_level_id, true, NOW(), NOW()
+    FROM params x
+    WHERE x.model_temperature_level_id IS NOT NULL
+    ON CONFLICT (agent_id, model_temperature_level_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+    RETURNING agent_temperature_levels.agent_id
+),
+deactivate_reasoning_levels AS (
+    -- Deactivate existing reasoning levels if model_reasoning_level_id is provided
+    UPDATE agent_reasoning_levels
+    SET active = false, updated_at = NOW()
+    FROM params x
+    WHERE agent_reasoning_levels.agent_id = x.agent_id
+    AND x.model_reasoning_level_id IS NOT NULL
+    RETURNING agent_reasoning_levels.agent_id
+),
+update_reasoning_level AS (
+    -- Insert or update reasoning level if model_reasoning_level_id is provided
+    INSERT INTO agent_reasoning_levels (agent_id, model_reasoning_level_id, active, created_at, updated_at)
+    SELECT x.agent_id, x.model_reasoning_level_id, true, NOW(), NOW()
+    FROM params x
+    WHERE x.model_reasoning_level_id IS NOT NULL
+    ON CONFLICT (agent_id, model_reasoning_level_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+    RETURNING agent_reasoning_levels.agent_id
+),
+deactivate_voices AS (
+    -- Deactivate existing voices if model_voice_ids is provided
+    UPDATE agent_voices
+    SET active = false, updated_at = NOW()
+    FROM params x
+    WHERE agent_voices.agent_id = x.agent_id
+    AND COALESCE(array_length(x.model_voice_ids, 1), 0) > 0
+    RETURNING agent_voices.agent_id
+),
+update_voices AS (
+    -- Insert or update voices if model_voice_ids is provided
+    INSERT INTO agent_voices (agent_id, model_voice_id, active, created_at, updated_at)
+    SELECT x.agent_id, voice_id::uuid, true, NOW(), NOW()
+    FROM params x
+    CROSS JOIN UNNEST(x.model_voice_ids) as voice_id
+    WHERE COALESCE(array_length(x.model_voice_ids, 1), 0) > 0
+    ON CONFLICT (agent_id, model_voice_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+    RETURNING agent_voices.agent_id
 )
 SELECT 
     ua.agent_id,
