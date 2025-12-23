@@ -8,11 +8,11 @@ from typing import Any
 from agents import Runner, Tool, function_tool, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.main import (get_hint_storage, get_internal_sio, get_pool,
+from app.main import (get_internal_sio, get_pool,
                       get_simulation_tool_calls_dict, sio)
-from app.socket.v3.simulations.message.create import (
-    _simulation_message_create_impl)
 from app.socket.v3.simulations.group.link import _simulation_group_link_impl
+from app.socket.v3.simulations.message.create import \
+    _simulation_message_create_impl
 from app.socket.v3.simulations.streaming.message import (
     _simulation_message_complete_impl, _simulation_message_start_impl,
     _simulation_message_token_impl)
@@ -30,7 +30,6 @@ from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
 from app.utils.personas.find_persona_by_name import find_persona_by_name
 from app.utils.sql_helper import load_sql
-from app.utils.storage.request_storage import build_storage_key
 from app.utils.tools.build_pydantic_fields import \
     build_function_signature_string
 from fastapi import APIRouter
@@ -587,9 +586,8 @@ async def _simulation_text_send_impl(
                     await _simulation_group_link_impl(chat_id_uuid, model_run_id, sid)
 
                     # Link system/developer messages to run via internal event (separate event for database operations)
-                    from app.socket.v3.simulations.messages.link import (
-                        _simulation_messages_link_impl,
-                    )
+                    from app.socket.v3.simulations.messages.link import \
+                        _simulation_messages_link_impl
 
                     await _simulation_messages_link_impl(
                         model_run_id,

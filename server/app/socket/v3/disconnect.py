@@ -36,6 +36,8 @@ async def disconnect(sid: str) -> None:
         try:
             from datetime import UTC, datetime
             from app.main import get_pool
+            from app.utils.sql_helper import load_sql
+
             pool = get_pool()
             if pool:
                 async with pool.acquire() as conn:
@@ -49,36 +51,14 @@ async def disconnect(sid: str) -> None:
         except Exception as e:
             logger.error(f"Error updating profile {profile_to_cleanup} in database: {e}")
 
-    # If this was a guest connection, update counter and default guest profile activity
+    # If this was a guest connection, update counter
     if await is_guest_socket(sid):
         try:
             await remove_guest_socket(sid)
-            # Decrement guest count and get remaining count
-            remaining_guests = await decrement_guest_count()
-
-            from datetime import UTC, datetime
-
-            from app.main import get_pool
-            from app.utils.sql_helper import load_sql
-
-            pool = get_pool()
-            if pool:
-                async with pool.acquire() as conn:
-                    async with conn.transaction():
-                        # Update default guest profile: refresh last_active, set active False only when all guests are gone
-                        sql = load_sql(
-                            "sql/v3/profile/update_default_guest_profile_activity_complete.sql"
-                        )
-                        await conn.fetchrow(
-                            sql, datetime.now(UTC), remaining_guests > 0
-                        )
-                    logger.info(
-                        f"Updated default guest profile activity on disconnect (remaining guests: {remaining_guests})"
-                    )
+            # Decrement guest count
+            await decrement_guest_count()
         except Exception as e:
-            logger.error(
-                f"Error updating default guest profile activity on disconnect: {e}"
-            )
+            logger.error(f"Error removing guest socket: {e}")
 
     # Remove from all active connections using Redis
     chat_ids = await find_chats_by_socket(sid)

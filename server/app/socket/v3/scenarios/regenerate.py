@@ -16,7 +16,7 @@ from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
-from app.main import get_internal_sio, get_pool, get_scenario_storage, sio
+from app.main import get_internal_sio, get_pool, sio
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
@@ -27,7 +27,6 @@ from app.utils.scenario.image_generation import (
     set_image_generation_context,
 )
 from app.utils.sql_helper import load_sql
-from app.utils.storage.request_storage import build_storage_key
 from app.utils.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool
 from pydantic import Field
@@ -119,6 +118,18 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
         department_id = uuid.UUID(data.departmentId)
         profile_id = uuid.UUID(data.profileId) if data.profileId else None
         objectives_enabled = data.objectivesEnabled
+
+        # Validate profile_id is required
+        if not profile_id:
+            await scenario_regeneration_error(
+                ScenarioRegenerationErrorPayload(
+                    success=False,
+                    message="profileId is required",
+                    trace_id=trace_id,
+                ),
+                room=sid,
+            )
+            return
 
         # Get connection pool
         pool = get_pool()
@@ -343,7 +354,6 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                     if isinstance(context_row["document_templates"], str)
                     else context_row["document_templates"] or []
                 ),
-                "default_guest_profile_id": context_row["guest_profile_id"],
                 "req_per_day": context_row["req_per_day"],
                 "runs_today_count": context_row["runs_today_count"],
                 "earliest_run_created_at": context_row["earliest_run_created_at"],
@@ -412,10 +422,8 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             documents_enabled = bool(document_ids and len(document_ids) > 0)
             images_enabled = True  # Enable image generation by default
 
-            # Use default guest profile from context if no profile_id provided
-            final_profile_id = (
-                profile_id if profile_id else context.get("default_guest_profile_id")
-            )
+            # profile_id is required (validated above)
+            final_profile_id = profile_id
 
             # For regeneration, use scenario_id as primary_id (same scenario = same key)
             primary_id = str(scenario_id)
@@ -433,6 +441,9 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 )
 
             # Create scenario generation tools inline (same as generate handler)
+            # Use closure variables to collect results directly (no storage needed)
+            scenario_results: dict[str, Any] = {}
+            
             scenario_tools: list[Tool] = []
             
             # 1. Title and Description Tool (always included)
@@ -449,6 +460,8 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 scenario: str = Field(description=scenario_desc),
             ) -> str:
                 """Set the title and description for the scenario."""
+                scenario_results["title"] = title
+                scenario_results["description"] = scenario
                 await internal_sio.emit(
                     "scenario_tool_problem_statement",
                     {
@@ -477,6 +490,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 ) -> str:
                     """Set the learning objectives for this scenario."""
                     objectives = objectives[:3]  # Limit to 3
+                    scenario_results["objectives"] = objectives
                     await internal_sio.emit(
                         "scenario_tool_objectives",
                         {
@@ -615,7 +629,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             final_profile_id = (
                 profile_id
                 if profile_id
-                else uuid.UUID(context["default_guest_profile_id"])
+                else profile_id
             )
             if not final_profile_id:
                 await scenario_regeneration_error(
@@ -730,15 +744,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                     str(assistant_parent_id) if assistant_parent_id else None,
                 )
 
-            # Extract results from request-scoped storage
-            storage = get_scenario_storage()
-            storage_key = build_storage_key(
-                operation_type="scenario_regeneration",
-                profile_id=str(final_profile_id),
-                primary_id=primary_id,
-            )
-            scenario_result = await storage.get_all(storage_key)
-
+            # Extract results from closure variables
             usage = result.context_wrapper.usage
             assistant_output = getattr(result, "final_output", None) or ""
 
@@ -759,10 +765,10 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             )
 
             # Get result values
-            title = scenario_result.get("title", "")
-            description = scenario_result.get("description", "")
+            title = scenario_results.get("title", "")
+            description = scenario_results.get("description", "")
             objectives = (
-                scenario_result.get("objectives", []) if objectives_enabled else []
+                scenario_results.get("objectives", []) if objectives_enabled else []
             )
 
             # Limit objectives to maximum 3

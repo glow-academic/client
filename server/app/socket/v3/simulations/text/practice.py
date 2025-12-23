@@ -77,21 +77,19 @@ async def _simulation_text_practice_impl(
             )
             return
 
+        # Validate profile_id is required
+        profile_id = data.profile_id
+        if not profile_id or profile_id == "" or profile_id == "null":
+            await simulation_text_practice_error(
+                CreatePracticeScenarioErrorPayload(
+                    success=False, message="profileId is required"
+                ),
+                room=sid,
+            )
+            logger.error(f"Emitted error to {sid}: profileId is required")
+            return
+
         async with pool.acquire() as conn:
-            # Resolve profile for guests
-            profile_id = data.profile_id
-            if profile_id == "" or profile_id == "null" or profile_id is None:
-                sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
-                guest_row = await conn.fetchrow(sql)
-                if guest_row:
-                    profile_id = str(guest_row["id"])
-                    logger.info(
-                        f"Assigning practice scenario to default guest profile {profile_id}"
-                    )
-                else:
-                    logger.warning(
-                        "No default guest profile found; proceeding without profile_id"
-                    )
 
             # Standard mode: find practice simulation with persona
             if not data.persona_id:

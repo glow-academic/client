@@ -117,28 +117,9 @@ async def _insert_activity(
 
     try:
         async with pool.acquire() as conn:
-            # Check if profile exists, set profile_id to NULL if it doesn't
-            # This prevents foreign key violations for test profiles that don't exist in production
-            profile_id_uuid = None
-            if profile_id:
-                profile_exists = await conn.fetchval(
-                    "SELECT EXISTS(SELECT 1 FROM profiles WHERE id = $1::uuid)",
-                    profile_id,
-                )
-                if profile_exists:
-                    profile_id_uuid = profile_id
-                # If profile doesn't exist, profile_id_uuid remains None (NULL in database)
+            from app.infra.activity.insert_websocket import insert_activity_websocket
 
-            await conn.execute(
-                """
-                INSERT INTO activity (message, endpoint, profile_id, error, created_at)
-                VALUES ($1, $2, $3, $4, now())
-                """,
-                message,
-                endpoint,
-                profile_id_uuid,
-                error,
-            )
+            await insert_activity_websocket(message, endpoint, profile_id, error, conn)
     except Exception:
         # Never break logging if DB write fails
         pass

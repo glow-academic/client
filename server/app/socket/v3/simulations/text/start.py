@@ -84,9 +84,16 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
             logger.error(f"Emitted error to {sid}: Missing simulation_id")
             return
 
-        # If the client indicates guest (empty/"null"/None), register under default guest profile
-        if profile_id == "" or profile_id == "null" or profile_id is None:
-            profile_id = None  # normalize before DB lookup
+        # Validate profile_id is required
+        if not profile_id or profile_id == "" or profile_id == "null":
+            await simulation_text_start_error(
+                StartSimulationErrorPayload(
+                    success=False, message="profileId is required"
+                ),
+                room=sid,
+            )
+            logger.error(f"Emitted error to {sid}: profileId is required")
+            return
 
         logger.info(
             f"Processing simulation start: simulation_id={simulation_id}, profile_id={profile_id}, sid={sid}"
@@ -107,19 +114,6 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
             return
 
         async with pool.acquire() as conn:
-            # Resolve profile for guests to avoid ghost attempts
-            if profile_id is None:
-                sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
-                guest_row = await conn.fetchrow(sql)
-                if guest_row:
-                    profile_id = str(guest_row["id"])
-                    logger.info(
-                        f"Assigning simulation attempt to default guest profile {profile_id}"
-                    )
-                else:
-                    logger.warning(
-                        "No default guest profile found; proceeding without profile_id (will create ghost attempt)"
-                    )
 
             # Parse infinite_time_limit
             # Note: infinite_time_limit parameter removed - time limits now managed via

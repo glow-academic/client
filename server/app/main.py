@@ -169,15 +169,6 @@ DEFAULT_CATEGORIES = [
     "syllabi",
 ]
 
-# Request-scoped storage instances (initialized in lifespan)
-# These replace the old global dictionaries for multi-tenant safety
-scenario_storage: Any | None = None
-question_storage: Any | None = None
-outline_storage: Any | None = None
-grading_storage: Any | None = None
-hint_storage: Any | None = None
-image_generation_storage: Any | None = None
-dynamic_document_storage: Any | None = None
 
 # Global storage for voice sessions (chat_id -> session data)
 _voice_sessions: dict[str, dict[str, Any]] = {}
@@ -190,8 +181,6 @@ _voice_message_ids: dict[str, list[str]] = {}
 # Tracks tool call state for streaming persona messages from tool call arguments
 _simulation_tool_calls: dict[str, dict[str, dict[str, Any]]] = {}
 
-# Cached guest profile UUID (initialized at startup)
-_guest_profile_id: str | None = None
 
 
 # ----------  Socket.IO with Redis message queue  ----------
@@ -280,89 +269,11 @@ def get_sio_instance() -> socketio.AsyncServer:
     return sio
 
 
-# Storage getter functions (backward compatibility)
-def get_scenario_storage() -> Any:
-    """Get the scenario generation storage instance."""
-    if scenario_storage is None:
-        raise RuntimeError(
-            "Scenario storage not initialized. Call initialize_storage() at startup."
-        )
-    return scenario_storage
-
-
-def get_question_storage() -> Any:
-    """Get the question generation storage instance."""
-    if question_storage is None:
-        raise RuntimeError(
-            "Question storage not initialized. Call initialize_storage() at startup."
-        )
-    return question_storage
-
-
-def get_outline_storage() -> Any:
-    """Get the outline generation storage instance."""
-    if outline_storage is None:
-        raise RuntimeError(
-            "Outline storage not initialized. Call initialize_storage() at startup."
-        )
-    return outline_storage
-
-
-def get_grading_storage() -> Any:
-    """Get the grading storage instance."""
-    if grading_storage is None:
-        raise RuntimeError(
-            "Grading storage not initialized. Call initialize_storage() at startup."
-        )
-    return grading_storage
-
-
-def get_hint_storage() -> Any:
-    """Get the hint storage instance."""
-    if hint_storage is None:
-        raise RuntimeError(
-            "Hint storage not initialized. Call initialize_storage() at startup."
-        )
-    return hint_storage
-
-
-def get_image_generation_storage() -> Any:
-    """Get the image generation storage instance."""
-    if image_generation_storage is None:
-        raise RuntimeError(
-            "Image generation storage not initialized. Call initialize_storage() at startup."
-        )
-    return image_generation_storage
-
-
-def get_dynamic_document_storage() -> Any:
-    """Get the dynamic document storage instance."""
-    if dynamic_document_storage is None:
-        raise RuntimeError(
-            "Dynamic document storage not initialized. Call initialize_storage() at startup."
-        )
-    return dynamic_document_storage
 
 
 def get_pool() -> asyncpg.Pool | None:
     """Get the global connection pool (for WebSocket handlers)."""
     return _db_pool
-
-
-def get_guest_profile_id() -> str:
-    """Get the cached guest profile UUID.
-
-    Returns:
-        Guest profile UUID string (never null, may be placeholder if not initialized)
-
-    Raises:
-        RuntimeError: If guest profile has not been initialized
-    """
-    if _guest_profile_id is None:
-        raise RuntimeError(
-            "Guest profile UUID not initialized. Call initialize_guest_profile() at startup."
-        )
-    return _guest_profile_id
 
 
 async def init_db_pool() -> None:
@@ -374,7 +285,8 @@ async def init_db_pool() -> None:
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
-        from testcontainers.postgres import PostgresContainer  # type: ignore[import]
+        from testcontainers.postgres import \
+            PostgresContainer  # type: ignore[import]
 
         _test_container = PostgresContainer("postgres:18")
         _test_container.start()
@@ -511,51 +423,41 @@ async def transaction(
 
 # Import Keycloak sync module to register event handlers
 from app.socket.v3.actions import keycloak  # noqa: F401
-
+from app.socket.v3.documents.template.create import \
+    document_template_create_internal  # noqa: F401
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
-from app.socket.v3.images.complete import image_generation_complete  # noqa: F401
-
+from app.socket.v3.images.complete import \
+    image_generation_complete  # noqa: F401
 # Import image modules to register internal_sio handlers
 from app.socket.v3.images.generate import generate_image  # noqa: F401
-
 # Import log module to register internal_sio handler
 from app.socket.v3.log import log_run  # noqa: F401
-
 # Import quiz handlers
 # Note: Quiz events removed - questions now handled through scenarios
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.scenarios.tools.document import scenario_tool_document  # noqa: F401
-from app.socket.v3.scenarios.tools.image import scenario_tool_image  # noqa: F401
-from app.socket.v3.scenarios.tools.objectives import (
-    scenario_tool_objectives,  # noqa: F401
-)
-from app.socket.v3.scenarios.tools.questions import (
-    scenario_tool_questions,  # noqa: F401
-)
-from app.socket.v3.scenarios.tools.statement import (
-    scenario_tool_problem_statement,  # noqa: F401
-)
-
+from app.socket.v3.scenarios.tools.document import \
+    scenario_tool_document  # noqa: F401
+from app.socket.v3.scenarios.tools.image import \
+    scenario_tool_image  # noqa: F401
+from app.socket.v3.scenarios.tools.objectives import \
+    scenario_tool_objectives  # noqa: F401
+from app.socket.v3.scenarios.tools.questions import \
+    scenario_tool_questions  # noqa: F401
+from app.socket.v3.scenarios.tools.statement import \
+    scenario_tool_problem_statement  # noqa: F401
 # Import scenario tools to register internal_sio handlers
-from app.socket.v3.scenarios.tools.video import scenario_tool_video  # noqa: F401
-
+from app.socket.v3.scenarios.tools.video import \
+    scenario_tool_video  # noqa: F401
+from app.socket.v3.simulations.group.link import \
+    simulation_group_link_internal  # noqa: F401
+from app.socket.v3.simulations.hints.create import \
+    simulation_hints_create_internal  # noqa: F401
 # Import simulation hints to register internal_sio handler
-from app.socket.v3.simulations.hints.generate import (
-    simulation_hints_generate_internal,  # noqa: F401
-)
-from app.socket.v3.simulations.hints.create import (
-    simulation_hints_create_internal,  # noqa: F401
-)
-from app.socket.v3.simulations.message.create import (
-    simulation_message_create_internal,  # noqa: F401
-)
-from app.socket.v3.simulations.group.link import (
-    simulation_group_link_internal,  # noqa: F401
-)
-from app.socket.v3.documents.template.create import (
-    document_template_create_internal,  # noqa: F401
-)
+from app.socket.v3.simulations.hints.generate import \
+    simulation_hints_generate_internal  # noqa: F401
+from app.socket.v3.simulations.message.create import \
+    simulation_message_create_internal  # noqa: F401
 
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]
@@ -621,95 +523,24 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 logger.error(f"Failed to initialize Redis client: {e}", exc_info=True)
                 redis_client = None
 
-        # Initialize request-scoped storage instances
-        global scenario_storage, question_storage, outline_storage
-        global \
-            grading_storage, \
-            hint_storage, \
-            image_generation_storage, \
-            dynamic_document_storage
-        from app.utils.storage.request_storage import create_request_storage
-
-        storage = create_request_storage(redis_client, ttl_seconds=3600)
-        scenario_storage = storage
-        question_storage = storage
-        outline_storage = storage
-        grading_storage = storage
-        hint_storage = storage
-        image_generation_storage = storage
-        dynamic_document_storage = storage
-        logger.info("Request-scoped storage initialized (Redis-backed if available)")
-
         # Initialize asyncpg database pool
         await init_db_pool()
 
-        # Initialize database logger
-        from app.utils.logging.db_logger import setup_db_logger  # noqa: E402
-
         pool = get_pool()
         if pool:
-            # Initialize cached guest profile UUID
-            global _guest_profile_id
-            try:
-                async with pool.acquire() as conn:
-                    result = await conn.fetchval(
-                        """
-                        SELECT sdg.profile_id::text
-                        FROM settings_default_guest sdg
-                        JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-                        WHERE sdg.active = true
-                        LIMIT 1
-                        """
-                    )
-
-                    if result:
-                        _guest_profile_id = str(result)
-                        logger.info(
-                            f"✅ Cached guest profile UUID: {_guest_profile_id}"
-                        )
-                    else:
-                        # Fallback to placeholder if no guest profile found
-                        _guest_profile_id = "00000000-0000-0000-0000-000000000000"
-                        logger.warning(
-                            "⚠️  No default guest profile found in database; using placeholder UUID"
-                        )
-            except Exception as e:
-                logger.error(f"Error initializing guest profile: {e}", exc_info=True)
-                # Fallback to placeholder on error
-                _guest_profile_id = "00000000-0000-0000-0000-000000000000"
-
-            setup_db_logger(pool)
-            logger.info("Database logger initialized")
-
             # Setup activity logger
-            from app.utils.activity.logger import setup_activity_logger  # noqa: E402
+            from app.utils.activity.logger import \
+                setup_activity_logger  # noqa: E402
 
             setup_activity_logger(pool)
             logger.info("Activity logger initialized")
-
-            # Add DBLogHandler to Socket.IO loggers so they write to database
-            from app.utils.logging.db_logger import DBLogHandler  # noqa: E402
-
-            for logger_name in [
-                "socketio",
-                "engineio",
-                "socketio.server",
-                "engineio.server",
-            ]:
-                socketio_logger = logging.getLogger(logger_name)
-                # Only add DBLogHandler if not already present
-                if not any(
-                    isinstance(h, DBLogHandler) for h in socketio_logger.handlers
-                ):
-                    db_handler = DBLogHandler()
-                    db_handler.setLevel(logging.DEBUG)
-                    socketio_logger.addHandler(db_handler)
 
             # Keycloak sync moved to app.socket.v3.actions.keycloak
             # Sync is triggered via WebSocket events and after auth mutations
 
         # Initialize metrics collector
-        from app.utils.metrics.collector import initialize_metrics  # noqa: E402
+        from app.utils.metrics.collector import \
+            initialize_metrics  # noqa: E402
 
         if pool:
             await initialize_metrics(pool, redis_client)

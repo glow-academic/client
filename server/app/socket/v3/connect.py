@@ -3,17 +3,17 @@
 import time
 from urllib.parse import parse_qs
 
-from fastapi import APIRouter
-from pydantic import BaseModel
-
-from app.main import sio
+from app.main import get_pool, sio
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
 from app.utils.websocket.add_guest_socket import add_guest_socket
-from app.utils.websocket.remove_socket_owner import remove_socket_owner
 from app.utils.websocket.get_socket_owner import get_socket_owner
 from app.utils.websocket.increment_guest_count import increment_guest_count
+from app.utils.websocket.remove_socket_owner import remove_socket_owner
 from app.utils.websocket.set_socket_owner import set_socket_owner
+from fastapi import APIRouter
+from pydantic import BaseModel
 
 logger = get_logger(__name__)
 
@@ -58,73 +58,43 @@ async def connect(
     )
 
     if profile_id:
-        # Check if this is the default guest profile
-        # Default guest profile is allowed to have multiple simultaneous instances
-        is_default_guest = False
-        try:
-            from app.main import get_pool
-            from app.utils.sql_helper import load_sql
-
-            pool = get_pool()
-            if pool:
-                async with pool.acquire() as conn:
-                    sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
-                    guest_row = await conn.fetchrow(sql)
-                    if guest_row:
-                        default_guest_id = str(guest_row["id"])
-                        is_default_guest = profile_id == default_guest_id
-                        if is_default_guest:
-                            logger.info(
-                                f"Profile {profile_id} is default guest - allowing multiple instances"
-                            )
-        except Exception as e:
-            logger.error(f"Error checking if profile is default guest: {e}")
-            # On error, assume not default guest and enforce single-instance restriction
-
         # Check if another socket is already active for this profile
-        # Skip this check for default guest profile to allow multiple instances
-        if not is_default_guest:
-            old_sid = await get_socket_owner(profile_id)
-            if old_sid and old_sid != sid:
-                logger.warning(
-                    f"Profile {profile_id} already has active socket {old_sid}. "
-                    f"Closing old connection and accepting new one {sid}."
-                )
-                # Clean up the entire old session for this profile
-                logger.info(f"Cleaning up profile {profile_id} connections - new socket takeover")
-                # Remove from socket ownership using Redis
-                await remove_socket_owner(profile_id)
-                # Update database to mark profile as inactive
-                try:
-                    from datetime import UTC, datetime
-                    from app.main import get_pool
-                    pool = get_pool()
-                    if pool:
-                        async with pool.acquire() as conn:
-                            async with conn.transaction():
-                                sql = load_sql(
-                                    "sql/v3/profile/update_profile_to_inactive_complete.sql"
-                                )
-                                last_active = datetime.now(UTC)
-                                await conn.fetchrow(sql, profile_id, last_active)
-                        logger.info(f"Updated profile {profile_id} to inactive in database")
-                except Exception as e:
-                    logger.error(f"Error updating profile {profile_id} in database: {e}")
-                # Forcefully disconnect the old socket from the server-side
-                await sio.disconnect(old_sid)
+        old_sid = await get_socket_owner(profile_id)
+        if old_sid and old_sid != sid:
+            logger.warning(
+                f"Profile {profile_id} already has active socket {old_sid}. "
+                f"Closing old connection and accepting new one {sid}."
+            )
+            # Clean up the entire old session for this profile
+            logger.info(f"Cleaning up profile {profile_id} connections - new socket takeover")
+            # Remove from socket ownership using Redis
+            await remove_socket_owner(profile_id)
+            # Update database to mark profile as inactive
+            try:
+                from datetime import UTC, datetime
 
-        # Store socket ownership (for default guest, this allows multiple entries)
-        # Note: For default guest, multiple sockets can coexist, so we don't overwrite
-        # the socket_owner entry. However, we still track it for room management.
+                pool = get_pool()
+                if pool:
+                    async with pool.acquire() as conn:
+                        async with conn.transaction():
+                            sql = load_sql(
+                                "sql/v3/profile/update_profile_to_inactive_complete.sql"
+                            )
+                            last_active = datetime.now(UTC)
+                            await conn.fetchrow(sql, profile_id, last_active)
+                    logger.info(f"Updated profile {profile_id} to inactive in database")
+            except Exception as e:
+                logger.error(f"Error updating profile {profile_id} in database: {e}")
+            # Forcefully disconnect the old socket from the server-side
+            await sio.disconnect(old_sid)
+
+        # Store socket ownership
         await set_socket_owner(profile_id, sid)
         await sio.enter_room(sid, profile_id)
 
         # Update database to mark profile as active
         try:
             from datetime import UTC, datetime
-
-            from app.main import get_pool
-            from app.utils.sql_helper import load_sql
 
             pool = get_pool()
             if pool:
@@ -135,7 +105,7 @@ async def connect(
                         )
                         last_active = datetime.now(UTC)
                         await conn.fetchrow(sql, profile_id, last_active)
-                    logger.info(f"Updated profile {profile_id} to active in database")
+                logger.info(f"Updated profile {profile_id} to active in database")
         except Exception as e:
             logger.error(f"Error updating profile {profile_id} in database: {e}")
     else:
@@ -148,28 +118,8 @@ async def connect(
                 await add_guest_socket(sid)
                 # Increment guest connection counter
                 await increment_guest_count()
-
-                from datetime import UTC, datetime
-
-                from app.main import get_pool
-                from app.utils.sql_helper import load_sql
-
-                pool = get_pool()
-                if pool:
-                    async with pool.acquire() as conn:
-                        async with conn.transaction():
-                            # Find and update default guest profile
-                            sql = load_sql(
-                                "sql/v3/profile/update_default_guest_profile_to_active_complete.sql"
-                            )
-                            await conn.fetchrow(sql, datetime.now(UTC))
-                        logger.info(
-                            "Marked default guest profile active (guest connection added)"
-                        )
             except Exception as e:
-                logger.error(
-                    f"Error updating default guest profile activity on connect: {e}"
-                )
+                logger.error(f"Error adding guest socket: {e}")
         else:
             logger.info("Anonymous guest connection with no guest_id; broadcasts only.")
 

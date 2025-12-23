@@ -352,6 +352,18 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 room=sid,
             )
 
+            # Validate profile_id is required
+            if not profile_id:
+                await scenario_generation_error(
+                    ScenarioGenerationErrorPayload(
+                        success=False,
+                        message="profileId is required",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
+
             # Get all context data AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
             # Pattern: All AI operations use atomic context+run creation SQL files
@@ -514,7 +526,6 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 "documents": documents,
                 "parameter_items": parameter_items,
                 "document_templates": document_templates,
-                "default_guest_profile_id": context_row["guest_profile_id"],
                 "req_per_day": context_row["req_per_day"],
                 "runs_today_count": context_row["runs_today_count"],
                 "earliest_run_created_at": context_row["earliest_run_created_at"],
@@ -634,10 +645,8 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 f"video_enabled: {video_enabled}, questions_enabled: {questions_enabled}"
             )
 
-            # Use default guest profile from context if no profile_id provided
-            final_profile_id = (
-                profile_id if profile_id else context["default_guest_profile_id"]
-            )
+            # profile_id is required (validated above)
+            final_profile_id = profile_id
 
             # Create scenario generation tools inline
             scenario_tools: list[Tool] = []

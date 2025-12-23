@@ -31,14 +31,6 @@ video_info AS (
     FROM params p
     LEFT JOIN videos v ON v.id = p.video_id
 ),
-default_guest AS (
-    -- Get default guest profile from settings system
-    SELECT sdg.profile_id::text as guest_profile_id
-    FROM settings_default_guest sdg
-    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
-    WHERE sdg.active = true
-    LIMIT 1
-),
 best_agent AS (
     SELECT a.id as agent_id
     FROM agents a
@@ -58,11 +50,10 @@ best_agent AS (
     LIMIT 1
 ),
 final_profile AS (
-    -- Use provided profile_id or default guest profile
-    SELECT COALESCE(
-        (SELECT profile_id FROM params WHERE profile_id IS NOT NULL),
-        (SELECT guest_profile_id::uuid FROM default_guest)
-    ) as final_profile_id
+    -- Use provided profile_id (required)
+    SELECT profile_id as final_profile_id
+    FROM params
+    WHERE profile_id IS NOT NULL
 ),
 profile_rate_limit AS (
     -- Get rate limit for the final profile (provided or default guest)
@@ -85,10 +76,9 @@ runs_today AS (
 ),
 -- Get active settings for profile (for key lookup via setting_provider_keys)
 resolved_profile_for_settings AS (
-    SELECT COALESCE(
-        (SELECT profile_id FROM params WHERE profile_id IS NOT NULL),
-        (SELECT guest_profile_id::uuid FROM default_guest)
-    ) as profile_id
+    SELECT profile_id
+    FROM params
+    WHERE profile_id IS NOT NULL
 ),
 default_settings AS (
     SELECT s.id as settings_id

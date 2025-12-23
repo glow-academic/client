@@ -4,30 +4,20 @@ import json
 import uuid
 from typing import Any
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    gen_trace_id,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, gen_trace_id,
+                    trace)
 from agents.items import TResponseInputItem
-
-from app.main import get_scenario_storage
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
-from app.utils.scenario.image_generation import (
-    get_image_generation_results,
-    set_image_generation_context,
-)
+from app.utils.scenario.image_generation import (get_image_generation_results,
+                                                 set_image_generation_context)
 from app.utils.sql_helper import load_sql
-from app.utils.storage.request_storage import build_storage_key
-from app.utils.tools.build_pydantic_fields import build_function_signature_string
-from agents import Tool, function_tool
+from app.utils.tools.build_pydantic_fields import \
+    build_function_signature_string
 from pydantic import Field
 
 logger = get_logger(__name__)
@@ -126,7 +116,6 @@ async def generate_scenario_problem_statement(
         else None,
         "documents": documents,
         "parameter_items": parameter_items,
-        "default_guest_profile_id": context_row["guest_profile_id"],
         "req_per_day": context_row["req_per_day"],
         "runs_today_count": context_row["runs_today_count"],
         "earliest_run_created_at": context_row["earliest_run_created_at"],
@@ -177,15 +166,11 @@ async def generate_scenario_problem_statement(
                 "content": content,
             }
 
-    # Determine final profile ID early (use provided or default guest)
-    final_profile_id: uuid.UUID | None = profile_id
-    if not final_profile_id:
-        default_guest_id = context.get("default_guest_profile_id")
-        if default_guest_id:
-            try:
-                final_profile_id = uuid.UUID(default_guest_id)
-            except (ValueError, TypeError):
-                final_profile_id = None
+    # Validate profile_id is required
+    if not profile_id:
+        raise ValueError("profile_id is required")
+    
+    final_profile_id: uuid.UUID = profile_id
 
     # Create scenario generation tools
     if group_id is None:
@@ -216,6 +201,8 @@ async def generate_scenario_problem_statement(
     }
 
     # Create scenario generation tools inline
+    # Use closure variables to collect results directly (no storage needed)
+    scenario_results: dict[str, Any] = {}
     scenario_tools: list[Tool] = []
     
     # 1. Title and Description Tool (always included)
@@ -232,15 +219,8 @@ async def generate_scenario_problem_statement(
         scenario: str = Field(description=scenario_desc),
     ) -> str:
         """Set the title and description for the scenario."""
-        storage = get_scenario_storage()
-        storage_key = build_storage_key(
-            operation_type="scenario_generation",
-            profile_id=str(final_profile_id) if final_profile_id else "",
-            primary_id=primary_id,
-        )
-        await storage.set(storage_key, "title", title)
-        await storage.set(storage_key, "description", scenario)
-        await storage.set(storage_key, "title_description_progress", True)
+        scenario_results["title"] = title
+        scenario_results["description"] = scenario
         logger.info(f"✓ Set title: {title}")
         return "Set title and description successfully"
     
@@ -259,14 +239,7 @@ async def generate_scenario_problem_statement(
         ) -> str:
             """Set the learning objectives for this scenario."""
             objectives = objectives[:3]  # Limit to 3
-            storage = get_scenario_storage()
-            storage_key = build_storage_key(
-                operation_type="scenario_generation",
-                profile_id=str(final_profile_id) if final_profile_id else "",
-                primary_id=primary_id,
-            )
-            await storage.set(storage_key, "objectives", objectives)
-            await storage.set(storage_key, "objectives_progress", True)
+            scenario_results["objectives"] = objectives
             logger.info(f"✓ Set {len(objectives)} objectives")
             return f"Set {len(objectives)} learning objectives successfully"
         
@@ -287,15 +260,10 @@ async def generate_scenario_problem_statement(
             prompt: str = Field(description=prompt_desc),
         ) -> str:
             """Generate an image from a detailed prompt."""
-            # For API endpoints, image generation happens via storage context
-            storage = get_scenario_storage()
-            storage_key = build_storage_key(
-                operation_type="image_generation",
-                profile_id=str(final_profile_id) if final_profile_id else "",
-                primary_id=primary_id,
-            )
-            # Store image generation request
-            await storage.set(storage_key, f"image_{name}", prompt)
+            # Store image generation request in results dict
+            if "image_requests" not in scenario_results:
+                scenario_results["image_requests"] = {}
+            scenario_results["image_requests"][name] = prompt
             logger.info(f"✓ Queued image generation: {name}")
             return f"Image generation queued for '{name}'"
         
@@ -402,19 +370,11 @@ async def generate_scenario_problem_statement(
             context=DebugContext(conn=conn, run_id=model_run_id),
         )
 
-    # Extract results from request-scoped storage
-    storage = get_scenario_storage()
-    storage_key = build_storage_key(
-        operation_type="scenario_generation",
-        profile_id=str(final_profile_id),
-        primary_id=primary_id,
-    )
-    scenario_result = await storage.get_all(storage_key)
-
+    # Extract results from closure variables
     logger.info("Scenario generation completed successfully")
-    logger.info(f"Title: {scenario_result.get('title', 'N/A')}")
-    logger.info(f"Description: {scenario_result.get('description', 'N/A')[:100]}...")
-    objectives = scenario_result.get("objectives", []) if objectives_enabled else []
+    logger.info(f"Title: {scenario_results.get('title', 'N/A')}")
+    logger.info(f"Description: {scenario_results.get('description', 'N/A')[:100]}...")
+    objectives = scenario_results.get("objectives", []) if objectives_enabled else []
     logger.info(f"Objectives: {objectives}")
 
     usage = result.context_wrapper.usage
@@ -429,15 +389,15 @@ async def generate_scenario_problem_statement(
     )
 
     # Get result values (ensure non-None values)
-    title = scenario_result.get("title") or ""
-    description = scenario_result.get("description") or ""
+    title = scenario_results.get("title") or ""
+    description = scenario_results.get("description") or ""
 
     logger.info(
         f"Scenario generation completed: title={title}, "
         f"description length={len(description)}, objectives count={len(objectives)}"
     )
 
-    # Retrieve image_ids from storage (images are generated in background via WebSocket)
+    # Retrieve image_ids from image generation results (images are generated in background via WebSocket)
     generated_image_ids: list[str] = []
     if final_profile_id:
         image_results = await get_image_generation_results(
@@ -449,10 +409,9 @@ async def generate_scenario_problem_statement(
         if image_ids:
             generated_image_ids = image_ids
             logger.info(
-                f"Retrieved {len(generated_image_ids)} image IDs from storage "
+                f"Retrieved {len(generated_image_ids)} image IDs "
                 f"(generation in progress in background)"
             )
-            # Don't clear storage - background tasks will clean up individual image contexts
 
     return {
         "title": title,

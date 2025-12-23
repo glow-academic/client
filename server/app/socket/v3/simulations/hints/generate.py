@@ -2,11 +2,12 @@
 
 import json
 import uuid
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from agents import Runner, Tool, function_tool, trace
 from agents.items import TResponseInputItem
-from app.main import get_hint_storage, get_internal_sio, get_pool, sio
+from app.main import get_internal_sio, get_pool, sio
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.chat.format_chat_scenario import format_chat_scenario
 from app.utils.chat.get_simulation_conversation_history import \
@@ -15,7 +16,6 @@ from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from app.utils.storage.request_storage import build_storage_key
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 
@@ -168,13 +168,20 @@ async def _generate_hints_impl(
                 else context_row["documents"]
             )
 
-            # Resolve guest profile if needed
+            # Validate profile_id is required
             profile_id = context_row["profile_id"]
             if not profile_id:
-                sql_guest = load_sql("sql/v3/profile/get_default_guest_profile.sql")
-                guest_row = await conn.fetchrow(sql_guest)
-                if guest_row:
-                    profile_id = guest_row["id"]
+                await hint_generation_progress(
+                    HintGenerationProgressPayload(
+                        type="error",
+                        message="profileId is required",
+                        error="Missing profile_id",
+                        chat_id=str(chat_id),
+                        message_id=str(message_id),
+                    ),
+                    room=f"simulation_{chat_id}",
+                )
+                return
 
             context = {
                 "message_id": context_row["message_id"],
@@ -283,6 +290,9 @@ async def _generate_hints_impl(
             }
 
             # Create hint tools inline
+            # Use closure variables to collect hints directly (no storage needed)
+            hint_results: dict[str, str] = {}
+            
             hint_tools: list[Tool] = []
             for i in range(1, 4):  # 1, 2, 3
                 tool_name = f"provide_hint_{i}"
@@ -301,18 +311,7 @@ async def _generate_hints_impl(
                 ) -> Callable[[str], Awaitable[str]]:
                     async def provide_hint(hint: str = Field(description=description)) -> str:
                         """Provide a strategic hint for the GTA."""
-                        if not profile_id_str or not chat_id:
-                            return "Error: Storage configuration missing"
-                        storage = get_hint_storage()
-                        storage_key = build_storage_key(
-                            operation_type="hint_generation",
-                            profile_id=str(profile_id_str),
-                            primary_id=str(chat_id),
-                        )
-                        await storage.set(storage_key, f"hint_{hint_number}", hint)
-                        await storage.set(
-                            storage_key, f"hint_{hint_number}_progress", True
-                        )
+                        hint_results[f"hint_{hint_number}"] = hint
                         logger.info(f"✓ Hint {hint_number} recorded: {hint[:80]}...")
                         return f"Hint {hint_number} recorded successfully. Continue until all 3 hints are provided."
 
@@ -365,23 +364,10 @@ async def _generate_hints_impl(
 
             logger.info("Hint agent completed successfully")
 
-            # Extract hints from request-scoped storage
-            profile_id_str = context.get("profile_id")
-            if profile_id_str:
-                storage = get_hint_storage()
-                storage_key = build_storage_key(
-                    operation_type="hint_generation",
-                    profile_id=str(profile_id_str),
-                    primary_id=str(chat_id),
-                )
-                hint_result = await storage.get_all(storage_key)
-                hint_1 = hint_result.get("hint_1", "")
-                hint_2 = hint_result.get("hint_2", "")
-                hint_3 = hint_result.get("hint_3", "")
-            else:
-                hint_1 = ""
-                hint_2 = ""
-                hint_3 = ""
+            # Extract hints from closure variables
+            hint_1 = hint_results.get("hint_1", "")
+            hint_2 = hint_results.get("hint_2", "")
+            hint_3 = hint_results.get("hint_3", "")
 
             # Log what was generated
             hints_generated = sum([bool(hint_1), bool(hint_2), bool(hint_3)])

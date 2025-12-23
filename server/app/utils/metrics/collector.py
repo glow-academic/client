@@ -177,30 +177,16 @@ async def log_metrics_snapshot() -> None:
         # Write to database
         async with _db_pool.acquire() as conn:
             async with conn.transaction():
-                await conn.execute(
-                    """
-                    INSERT INTO app_metrics (
-                        ts,
-                        requests_total,
-                        errors_total,
-                        avg_latency_ms,
-                        cpu_percent,
-                        memory_bytes
-                    )
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                    ON CONFLICT (ts) DO UPDATE
-                    SET requests_total = EXCLUDED.requests_total,
-                        errors_total = EXCLUDED.errors_total,
-                        avg_latency_ms = EXCLUDED.avg_latency_ms,
-                        cpu_percent = EXCLUDED.cpu_percent,
-                        memory_bytes = EXCLUDED.memory_bytes
-                    """,
+                from app.infra.metrics.snapshot import log_metrics_snapshot
+
+                await log_metrics_snapshot(
                     ts,
                     requests_total,
                     errors_total,
                     avg_latency_ms,
                     cpu_percent,
                     memory_bytes,
+                    conn,
                 )
     except Exception as e:
         # Log error but don't break metrics collection
@@ -234,21 +220,11 @@ async def log_health_checks() -> None:
         # Write to database
         async with _db_pool.acquire() as conn:
             async with conn.transaction():
+                from app.infra.metrics.health import log_service_health
+
                 for service, result in checks.items():
-                    await conn.execute(
-                        """
-                        INSERT INTO service_health (ts, service, ok, latency_ms, error)
-                        VALUES ($1, $2, $3, $4, $5)
-                        ON CONFLICT (ts, service) DO UPDATE
-                        SET ok = EXCLUDED.ok,
-                            latency_ms = EXCLUDED.latency_ms,
-                            error = EXCLUDED.error
-                        """,
-                        ts,
-                        service,
-                        result.ok,
-                        result.latency_ms,
-                        result.error,
+                    await log_service_health(
+                        ts, service, result.ok, result.latency_ms, result.error, conn
                     )
     except Exception as e:
         # Log error but don't break health endpoint
