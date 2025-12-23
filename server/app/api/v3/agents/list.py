@@ -7,8 +7,8 @@ from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (GetAgentsListApiRequest, GetAgentsListApiResponse,
-                           GetAgentsListSqlParams, GetAgentsListSqlRow,
-                           load_sql_query)
+                           GetAgentsListAgentsItem, GetAgentsListSqlParams,
+                           GetAgentsListSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
@@ -21,7 +21,7 @@ SQL_PATH = "app/sql/v3/agents/get_agents_list_complete.sql"
 
 # Extended response model for list endpoint (aggregates multiple rows)
 class AgentsListResponse(BaseModel):
-    agents: list[GetAgentsListApiResponse]
+    agents: list[GetAgentsListAgentsItem]
     model_mapping: dict[str, dict[str, str]]
     department_mapping: dict[str, dict[str, str]]
 
@@ -89,28 +89,50 @@ async def list_agents(
         # nest_many returns lists, but we need dicts keyed by id
         model_mapping_list = result_dict.get("model_mapping", [])
         model_mapping: dict[str, dict[str, str]] = {}
-        for model in model_mapping_list:
-            if isinstance(model, dict) and "id" in model:
-                model_mapping[model["id"]] = {
-                    "name": model.get("name", ""),
-                    "description": model.get("description", ""),
-                }
+        if isinstance(model_mapping_list, list):
+            for model in model_mapping_list:
+                if isinstance(model, dict):
+                    model_id = model.get("id")
+                    if model_id:
+                        model_mapping[str(model_id)] = {
+                            "name": model.get("name", ""),
+                            "description": model.get("description", ""),
+                        }
+                else:
+                    # Handle Pydantic model
+                    model_id = getattr(model, "id", None)
+                    if model_id:
+                        model_mapping[str(model_id)] = {
+                            "name": getattr(model, "name", ""),
+                            "description": getattr(model, "description", ""),
+                        }
 
         department_mapping_list = result_dict.get("department_mapping", [])
         department_mapping: dict[str, dict[str, str]] = {}
-        for dept in department_mapping_list:
-            if isinstance(dept, dict) and "id" in dept:
-                department_mapping[dept["id"]] = {
-                    "name": dept.get("name", ""),
-                    "description": dept.get("description", ""),
-                }
+        if isinstance(department_mapping_list, list):
+            for dept in department_mapping_list:
+                if isinstance(dept, dict):
+                    dept_id = dept.get("id")
+                    if dept_id:
+                        department_mapping[str(dept_id)] = {
+                            "name": dept.get("name", ""),
+                            "description": dept.get("description", ""),
+                        }
+                else:
+                    # Handle Pydantic model
+                    dept_id = getattr(dept, "id", None)
+                    if dept_id:
+                        department_mapping[str(dept_id)] = {
+                            "name": getattr(dept, "name", ""),
+                            "description": getattr(dept, "description", ""),
+                        }
 
         # Get agents list
         agents_list = result_dict.get("agents", [])
-        agents: list[GetAgentsListApiResponse] = []
+        agents: list[GetAgentsListAgentsItem] = []
         for agent_data in agents_list:
             if isinstance(agent_data, dict):
-                # Format updated_at if needed
+                # Format updated_at if needed (should already be text from SQL, but handle just in case)
                 updated_at = agent_data.get("updated_at")
                 if updated_at and hasattr(updated_at, "isoformat"):
                     agent_data["updated_at"] = updated_at.isoformat()
@@ -124,7 +146,7 @@ async def list_agents(
                 else:
                     agent_data["department_ids"] = []
                 
-                agents.append(GetAgentsListApiResponse(**agent_data))
+                agents.append(GetAgentsListAgentsItem(**agent_data))
 
         # Collect all department IDs actually assigned to agents
         assigned_department_ids = set()

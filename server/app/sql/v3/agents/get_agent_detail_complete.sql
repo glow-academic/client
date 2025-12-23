@@ -320,15 +320,15 @@ SELECT
     pmd.system_prompt::text as "prompt_mapping__system_prompt",
     pmd.prompt_name::text as "prompt_mapping__name",
     pmd.prompt_description::text as "prompt_mapping__description",
-    pmd.prompt_created_at::timestamptz as "prompt_mapping__created_at",
-    pmd.prompt_updated_at::timestamptz as "prompt_mapping__updated_at",
-    pmd.department_ids::text[] as "prompt_mapping__department_ids",
+    pmd.prompt_created_at::text as "prompt_mapping__created_at",
+    pmd.prompt_updated_at::text as "prompt_mapping__updated_at",
+    COALESCE(pmd.department_ids, ARRAY[]::text[])::text[] as "prompt_mapping__department_ids",
     pmd.can_delete::boolean as "prompt_mapping__can_delete",
     -- Department prompt links with __ prefix
     adpl.department_id::text as "department_prompt_links__department_id",
     adpl.prompt_id::text as "department_prompt_links__prompt_id",
     -- Debug info with __ prefix
-    dd.created_at::timestamptz as "debug_info__created_at",
+    dd.created_at::text as "debug_info__created_at",
     dd.model_id::text as "debug_info__model_id",
     dd.content::text as "debug_info__content",
     -- Model mapping with __ prefix

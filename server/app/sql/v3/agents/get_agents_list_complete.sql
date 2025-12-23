@@ -86,7 +86,7 @@ SELECT
     COALESCE(mtl.temperature, 0.0)::float as "agents__temperature",
     fa.model_id::text as "agents__model_id",
     fa.role::text as "agents__role",
-    fa.updated_at::timestamptz as "agents__updated_at",
+    fa.updated_at::text as "agents__updated_at",
     COALESCE(addd.department_ids, ARRAY[]::text[])::text[] as "agents__department_ids",
     CASE WHEN up.role IN ('admin', 'superadmin') THEN true::boolean ELSE false::boolean END as "agents__can_edit",
     true::boolean as "agents__can_duplicate",

@@ -6514,7 +6514,7 @@ export interface components {
         /** AgentsListResponse */
         AgentsListResponse: {
             /** Agents */
-            agents: components["schemas"]["GetAgentsListApiResponse"][];
+            agents: components["schemas"]["GetAgentsListAgentsItem"][];
             /** Model Mapping */
             model_mapping: {
                 [key: string]: {
@@ -10358,26 +10358,27 @@ export interface components {
             actor_name: string;
             /** Primary Department Id */
             primary_department_id: string;
-            /** Model Mapping */
-            model_mapping: components["schemas"]["GetAgentNewModelMappingItem"][];
             /** Department Mapping */
             department_mapping: components["schemas"]["GetAgentNewDepartmentMappingItem"][];
+            /** Model Mapping */
+            model_mapping: components["schemas"]["GetAgentNewModelMappingItem"][];
         };
         /** GetAgentNewDepartmentMappingItem */
-        GetAgentNewDepartmentMappingItem: Record<string, never>;
-        /** GetAgentNewModelMappingAvailableVoicesItem */
-        GetAgentNewModelMappingAvailableVoicesItem: {
+        GetAgentNewDepartmentMappingItem: {
             /** Id */
             id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** GetAgentNewModelMappingAvailableVoicesItem */
+        GetAgentNewModelMappingAvailableVoicesItem: {
             /** Voice */
             voice: string;
         };
         /** GetAgentNewModelMappingItem */
         GetAgentNewModelMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
             /** Temperature Lower */
             temperature_lower: number;
             /** Temperature Upper */
@@ -10388,10 +10389,10 @@ export interface components {
             output_modalities: string[];
             /** Available Voices */
             available_voices: components["schemas"]["GetAgentNewModelMappingAvailableVoicesItem"][];
-            /** Reasoning Options */
-            reasoning_options: components["schemas"]["GetAgentNewModelMappingReasoningOptionsItem"][];
             /** Temperature Levels */
             temperature_levels: components["schemas"]["GetAgentNewModelMappingTemperatureLevelsItem"][];
+            /** Reasoning Options */
+            reasoning_options: components["schemas"]["GetAgentNewModelMappingReasoningOptionsItem"][];
         };
         /** GetAgentNewModelMappingReasoningOptionsItem */
         GetAgentNewModelMappingReasoningOptionsItem: {
@@ -10409,6 +10410,10 @@ export interface components {
         GetAgentsListAgentsItem: {
             /** Agent Id */
             agent_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /** Reasoning */
             reasoning: string;
             /** Temperature */
@@ -10436,28 +10441,6 @@ export interface components {
         };
         /** GetAgentsListApiRequest */
         GetAgentsListApiRequest: Record<string, never>;
-        /** GetAgentsListApiResponse */
-        GetAgentsListApiResponse: {
-            /** Actor Name */
-            actor_name: string;
-            /** Model Mapping */
-            model_mapping: components["schemas"]["GetAgentsListModelMappingItem"][];
-            /** Department Mapping */
-            department_mapping: components["schemas"]["GetAgentsListDepartmentMappingItem"][];
-            /** Agents */
-            agents: components["schemas"]["GetAgentsListAgentsItem"][];
-        };
-        /** GetAgentsListDepartmentMappingItem */
-        GetAgentsListDepartmentMappingItem: Record<string, never>;
-        /** GetAgentsListModelMappingItem */
-        GetAgentsListModelMappingItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
         /** GradeItem */
         GradeItem: {
             /** Id */

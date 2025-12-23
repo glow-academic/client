@@ -22033,7 +22033,7 @@
         "properties": {
           "agents": {
             "items": {
-              "$ref": "#/components/schemas/GetAgentsListApiResponse"
+              "$ref": "#/components/schemas/GetAgentsListAgentsItem"
             },
             "type": "array",
             "title": "Agents"
@@ -31637,19 +31637,19 @@
             "type": "string",
             "title": "Primary Department Id"
           },
-          "model_mapping": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentNewModelMappingItem"
-            },
-            "type": "array",
-            "title": "Model Mapping"
-          },
           "department_mapping": {
             "items": {
               "$ref": "#/components/schemas/GetAgentNewDepartmentMappingItem"
             },
             "type": "array",
             "title": "Department Mapping"
+          },
+          "model_mapping": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewModelMappingItem"
+            },
+            "type": "array",
+            "title": "Model Mapping"
           }
         },
         "type": "object",
@@ -31659,36 +31659,17 @@
           "user_role",
           "actor_name",
           "primary_department_id",
-          "model_mapping",
-          "department_mapping"
+          "department_mapping",
+          "model_mapping"
         ],
         "title": "GetAgentNewApiResponse"
       },
       "GetAgentNewDepartmentMappingItem": {
-        "properties": {},
-        "type": "object",
-        "title": "GetAgentNewDepartmentMappingItem"
-      },
-      "GetAgentNewModelMappingAvailableVoicesItem": {
         "properties": {
           "id": {
             "type": "string",
             "title": "Id"
           },
-          "voice": {
-            "type": "string",
-            "title": "Voice"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "voice"
-        ],
-        "title": "GetAgentNewModelMappingAvailableVoicesItem"
-      },
-      "GetAgentNewModelMappingItem": {
-        "properties": {
           "name": {
             "type": "string",
             "title": "Name"
@@ -31696,7 +31677,31 @@
           "description": {
             "type": "string",
             "title": "Description"
-          },
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "title": "GetAgentNewDepartmentMappingItem"
+      },
+      "GetAgentNewModelMappingAvailableVoicesItem": {
+        "properties": {
+          "voice": {
+            "type": "string",
+            "title": "Voice"
+          }
+        },
+        "type": "object",
+        "required": [
+          "voice"
+        ],
+        "title": "GetAgentNewModelMappingAvailableVoicesItem"
+      },
+      "GetAgentNewModelMappingItem": {
+        "properties": {
           "temperature_lower": {
             "type": "number",
             "title": "Temperature Lower"
@@ -31726,32 +31731,30 @@
             "type": "array",
             "title": "Available Voices"
           },
-          "reasoning_options": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentNewModelMappingReasoningOptionsItem"
-            },
-            "type": "array",
-            "title": "Reasoning Options"
-          },
           "temperature_levels": {
             "items": {
               "$ref": "#/components/schemas/GetAgentNewModelMappingTemperatureLevelsItem"
             },
             "type": "array",
             "title": "Temperature Levels"
+          },
+          "reasoning_options": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewModelMappingReasoningOptionsItem"
+            },
+            "type": "array",
+            "title": "Reasoning Options"
           }
         },
         "type": "object",
         "required": [
-          "name",
-          "description",
           "temperature_lower",
           "temperature_upper",
           "input_modalities",
           "output_modalities",
           "available_voices",
-          "reasoning_options",
-          "temperature_levels"
+          "temperature_levels",
+          "reasoning_options"
         ],
         "title": "GetAgentNewModelMappingItem"
       },
@@ -31791,6 +31794,14 @@
           "agent_id": {
             "type": "string",
             "title": "Agent Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
           },
           "reasoning": {
             "type": "string",
@@ -31847,6 +31858,8 @@
         "type": "object",
         "required": [
           "agent_id",
+          "name",
+          "description",
           "reasoning",
           "temperature",
           "model_id",
@@ -31866,71 +31879,6 @@
         "properties": {},
         "type": "object",
         "title": "GetAgentsListApiRequest"
-      },
-      "GetAgentsListApiResponse": {
-        "properties": {
-          "actor_name": {
-            "type": "string",
-            "title": "Actor Name"
-          },
-          "model_mapping": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentsListModelMappingItem"
-            },
-            "type": "array",
-            "title": "Model Mapping"
-          },
-          "department_mapping": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentsListDepartmentMappingItem"
-            },
-            "type": "array",
-            "title": "Department Mapping"
-          },
-          "agents": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentsListAgentsItem"
-            },
-            "type": "array",
-            "title": "Agents"
-          }
-        },
-        "type": "object",
-        "required": [
-          "actor_name",
-          "model_mapping",
-          "department_mapping",
-          "agents"
-        ],
-        "title": "GetAgentsListApiResponse"
-      },
-      "GetAgentsListDepartmentMappingItem": {
-        "properties": {},
-        "type": "object",
-        "title": "GetAgentsListDepartmentMappingItem"
-      },
-      "GetAgentsListModelMappingItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description"
-        ],
-        "title": "GetAgentsListModelMappingItem"
       },
       "GradeItem": {
         "properties": {
