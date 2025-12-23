@@ -21,13 +21,11 @@ from app.main import TUS_UPLOADS_DIR, classification_results, get_db
 from app.utils.activity.audit import audit_activity, audit_set
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.tools.load_agent_tools import load_agent_tools
 from app.utils.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool
 from pydantic import Field
 from app.utils.debug_info import DebugContext
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
@@ -214,7 +212,9 @@ async def classify_upload(
 
         # Load agent tools from database
         agent_id_uuid = uuid.UUID(context["agent_id"])
-        agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+        sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+        rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
+        agent_tools_config = [dict(row) for row in rows]
         tool_config_map_classify: dict[str, dict[str, Any]] = {
             tool_config["name"]: tool_config for tool_config in agent_tools_config
         }
@@ -339,13 +339,48 @@ Use the provided classification tools to indicate which files match each paramet
         ]  # type: ignore[assignment]
 
         # Log system and developer messages for this run
-        await log_run_messages(
-            conn=conn,
-            run_id=model_run_id,
-            system_prompt=context["system_prompt"],
-            input_items=input_items,
-            department_id=department_id,
-        )
+        # Link system message (and scenario developer message if chat_id provided)
+        if context["system_prompt"]:
+            sql_link_sys_dev = load_sql(
+                "sql/v3/model_runs/link_system_developer_messages_to_run.sql"
+            )
+            await conn.fetchrow(
+                sql_link_sys_dev,
+                str(model_run_id),
+                str(department_id) if department_id else None,
+                None,  # chat_id
+            )
+
+        # Link developer messages from input_items if provided
+        developer_contents: list[str] = []
+        if input_items:
+            developer_messages = [
+                item
+                for item in input_items
+                if item and isinstance(item, dict) and item.get("role") == "developer"
+            ]
+            for dev_msg in developer_messages:
+                content = dev_msg.get("content", "")
+                if isinstance(content, str):
+                    stripped = content.strip()
+                    if stripped:
+                        developer_contents.append(stripped)
+
+        # Link each developer message to the run
+        sql_link_dev = load_sql("sql/v3/simulations/link_developer_message_to_run.sql")
+        developer_message_ids: list[uuid.UUID] = []
+        for content in developer_contents:
+            result = await conn.fetchrow(
+                sql_link_dev,
+                content,
+                str(model_run_id),
+            )
+            if result and result.get("message_id"):
+                message_id = result["message_id"]
+                if isinstance(message_id, uuid.UUID):
+                    developer_message_ids.append(message_id)
+                else:
+                    developer_message_ids.append(uuid.UUID(str(message_id)))
 
         with trace(
             "Classification Agent",
@@ -360,13 +395,37 @@ Use the provided classification tools to indicate which files match each paramet
 
         # Log assistant message (model output)
         assistant_output = getattr(result, "final_output", None) or ""
-        if assistant_output:
-            await log_run_messages(
-                conn=conn,
-                run_id=model_run_id,
-                system_prompt=None,  # Already logged
-                assistant_output=assistant_output,
-                department_id=department_id,
+        if assistant_output and assistant_output.strip():
+            # Get the parent message ID (developer if exists, otherwise system)
+            parent_message_id: uuid.UUID | None = None
+
+            # Try to get developer message ID (use the last one if multiple)
+            if developer_message_ids:
+                parent_message_id = developer_message_ids[-1]
+            else:
+                # Get system message ID from the run
+                sys_dev_result = await conn.fetchrow(
+                    load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql"),
+                    str(model_run_id),
+                    str(department_id) if department_id else None,
+                    None,  # chat_id
+                )
+                if sys_dev_result and sys_dev_result.get("system_message_id"):
+                    system_msg_id = sys_dev_result["system_message_id"]
+                    if isinstance(system_msg_id, uuid.UUID):
+                        parent_message_id = system_msg_id
+                    else:
+                        parent_message_id = uuid.UUID(str(system_msg_id))
+
+            # Create assistant message with branch
+            sql_create_assistant = load_sql(
+                "sql/v3/messages/create_assistant_message_with_branch.sql"
+            )
+            await conn.fetchrow(
+                sql_create_assistant,
+                assistant_output.strip(),
+                str(model_run_id),
+                str(parent_message_id) if parent_message_id else None,
             )
 
         # Update token counts

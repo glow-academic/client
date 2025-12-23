@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.utils.activity.audit import audit_activity, audit_set
-from app.utils.analytics_query_builder import build_base_filter
+from datetime import datetime
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -164,18 +164,77 @@ async def get_leaderboard(
         # Leaderboard shows aggregated data across all profiles
         profile_id = request.state.profile_id
 
-        # Build WHERE clause using analytics query builder utility
-        where_clause, params = build_base_filter(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters]
-            if filters.simulationFilters
-            else None,
-            profile_id=None,  # Leaderboard shows aggregated data across all profiles
-            department_ids=filters.departmentIds,
-        )
+        # Build WHERE clause inline
+        conditions = []
+        params: list[Any] = []
+        param_counter = 1
+
+        # Date filters - convert ISO strings to datetime objects
+        conditions.append(f"a.attempt_created_at >= ${param_counter}")
+        params.append(datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")))
+        param_counter += 1
+
+        conditions.append(f"a.attempt_created_at < ${param_counter}")
+        params.append(datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")))
+        param_counter += 1
+
+        # Simulation type filters
+        sim_filters = [f.value for f in filters.simulationFilters] if filters.simulationFilters else ["general"]
+        sim_conditions = []
+
+        if "general" in sim_filters:
+            sim_conditions.append("a.is_general = TRUE")
+        if "practice" in sim_filters:
+            sim_conditions.append("a.is_practice = TRUE")
+        if "archived" in sim_filters:
+            if "general" not in sim_filters and "practice" not in sim_filters:
+                sim_conditions.append("a.is_archived = TRUE")
+            else:
+                sim_conditions.append(
+                    "(a.is_archived = TRUE OR (a.is_general = FALSE AND a.is_practice = FALSE))"
+                )
+
+        if sim_conditions:
+            conditions.append(f"({' OR '.join(sim_conditions)})")
+
+        # Profile filter - not used for leaderboard (shows aggregated data)
+
+        # Role filter
+        if filters.roles:
+            conditions.append(f"a.profile_role = ANY(${param_counter})")
+            params.append(filters.roles)
+            param_counter += 1
+
+        # Simulation filter by cohorts
+        if filters.cohortIds:
+            conditions.append(
+                f"""a.simulation_id IN (
+                    SELECT DISTINCT s.id
+                    FROM simulations s
+                    WHERE s.active = TRUE
+                      AND (
+                          EXISTS (
+                              SELECT 1 
+                              FROM cohort_simulations cs 
+                              WHERE cs.simulation_id = s.id 
+                                AND cs.cohort_id = ANY(${param_counter}::uuid[])
+                                AND cs.active = TRUE
+                          )
+                          OR
+                          (s.practice_simulation = TRUE 
+                           AND NOT EXISTS (
+                               SELECT 1 
+                               FROM cohort_simulations cs2 
+                               WHERE cs2.simulation_id = s.id 
+                                 AND cs2.active = TRUE
+                           ))
+                      )
+                )"""
+            )
+            params.append(filters.cohortIds)
+            param_counter += 1
+
+        where_clause = " AND ".join(conditions) if conditions else "TRUE"
 
         # Load SQL template
         sql_template = load_sql("sql/v3/leaderboard/leaderboard_bundle.sql")

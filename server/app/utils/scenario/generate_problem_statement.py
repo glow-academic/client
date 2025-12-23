@@ -26,7 +26,6 @@ from app.utils.scenario.image_generation import (
 )
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
-from app.utils.tools.load_agent_tools import load_agent_tools
 from app.utils.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool
 from pydantic import Field
@@ -209,7 +208,9 @@ async def generate_scenario_problem_statement(
 
     # Load agent tools from database
     agent_id_uuid = uuid.UUID(context["agent_id"])
-    agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+    sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+    rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
+    agent_tools_config = [dict(row) for row in rows]
     tool_config_map: dict[str, dict[str, Any]] = {
         tool_config["name"]: tool_config for tool_config in agent_tools_config
     }

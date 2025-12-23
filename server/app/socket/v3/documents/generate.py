@@ -13,7 +13,6 @@ from pydantic import BaseModel, ValidationError
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.tools.load_agent_tools import load_agent_tools
 from app.utils.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool, FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResult
 from pydantic import Field
@@ -223,7 +222,9 @@ async def _document_generate_impl(
 
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context["agent_id"])
-            agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+            sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+            rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
+            agent_tools_config = [dict(row) for row in rows]
             tool_config_map_doc: dict[str, dict[str, Any]] = {
                 tool_config["name"]: tool_config for tool_config in agent_tools_config
             }

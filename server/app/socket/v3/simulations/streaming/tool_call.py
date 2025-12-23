@@ -9,7 +9,6 @@ from pydantic import BaseModel, ValidationError
 from app.main import get_internal_sio, get_pool
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from app.utils.tools.get_tool_id_by_name import get_tool_id_by_name
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -81,7 +80,13 @@ async def _simulation_tool_call_start_impl(
 
     try:
         # Look up tool_id by tool_name
-        tool_id = await get_tool_id_by_name(conn, validated.tool_name)
+        sql_get_tool_id = """
+            SELECT id FROM tools 
+            WHERE name = $1::text AND active = TRUE
+            LIMIT 1
+        """
+        row = await conn.fetchrow(sql_get_tool_id, validated.tool_name)
+        tool_id = row["id"] if row else None
         if not tool_id:
             logger.error(
                 f"Tool not found: {validated.tool_name} for chat {validated.chat_id}, call_id={validated.call_id}"

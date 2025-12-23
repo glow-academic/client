@@ -12,7 +12,6 @@ from app.main import get_internal_sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_run_messages import log_run_messages
 from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
@@ -215,14 +214,49 @@ async def run_eval_single_run(
                 reasoning=agent_context["reasoning"],
             )
 
-            # Log system prompt and messages for agent run
-            await log_run_messages(
-                conn=conn,
-                run_id=uuid.UUID(agent_run_id),
-                system_prompt=modified_system_prompt,
-                input_items=agent_input_items,
-                department_id=uuid.UUID(department_id) if department_id else None,
-            )
+            # Log system prompt and messages for agent run inline
+            agent_run_id_uuid = uuid.UUID(agent_run_id)
+            if modified_system_prompt:
+                sql_link_sys_dev = load_sql(
+                    "sql/v3/model_runs/link_system_developer_messages_to_run.sql"
+                )
+                await conn.fetchrow(
+                    sql_link_sys_dev,
+                    str(agent_run_id_uuid),
+                    str(uuid.UUID(department_id)) if department_id else None,
+                    None,  # chat_id
+                )
+
+            # Link developer messages from input_items if provided
+            developer_contents: list[str] = []
+            if agent_input_items:
+                developer_messages = [
+                    item
+                    for item in agent_input_items
+                    if item and isinstance(item, dict) and item.get("role") == "developer"
+                ]
+                for dev_msg in developer_messages:
+                    content = dev_msg.get("content", "")
+                    if isinstance(content, str):
+                        stripped = content.strip()
+                        if stripped:
+                            developer_contents.append(stripped)
+
+            # Link each developer message to the run
+            sql_link_dev = load_sql("sql/v3/simulations/link_developer_message_to_run.sql")
+            developer_message_ids: list[uuid.UUID] = []
+            for content in developer_contents:
+                result = await conn.fetchrow(
+                    sql_link_dev,
+                    content,
+                    str(agent_run_id_uuid),
+                )
+                if result and result.get("message_id"):
+                    message_id = result["message_id"]
+                    if isinstance(message_id, uuid.UUID):
+                        developer_message_ids.append(message_id)
+                    else:
+                        developer_message_ids.append(uuid.UUID(str(message_id)))
 
             # Run agent being evaluated with modified prompt
             logger.info(
@@ -243,12 +277,37 @@ async def run_eval_single_run(
             agent_usage = agent_result.context_wrapper.usage
             agent_assistant_output = getattr(agent_result, "final_output", None) or ""
 
-            if agent_assistant_output:
-                await log_run_messages(
-                    conn=conn,
-                    run_id=uuid.UUID(agent_run_id),
-                    system_prompt=None,  # Already logged above
-                    assistant_output=agent_assistant_output,
+            if agent_assistant_output and agent_assistant_output.strip():
+                # Get the parent message ID (developer if exists, otherwise system)
+                parent_message_id: uuid.UUID | None = None
+
+                # Try to get developer message ID (use the last one if multiple)
+                if developer_message_ids:
+                    parent_message_id = developer_message_ids[-1]
+                else:
+                    # Get system message ID from the run
+                    sys_dev_result = await conn.fetchrow(
+                        load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql"),
+                        str(agent_run_id_uuid),
+                        str(uuid.UUID(department_id)) if department_id else None,
+                        None,  # chat_id
+                    )
+                    if sys_dev_result and sys_dev_result.get("system_message_id"):
+                        system_msg_id = sys_dev_result["system_message_id"]
+                        if isinstance(system_msg_id, uuid.UUID):
+                            parent_message_id = system_msg_id
+                        else:
+                            parent_message_id = uuid.UUID(str(system_msg_id))
+
+                # Create assistant message with branch
+                sql_create_assistant = load_sql(
+                    "sql/v3/messages/create_assistant_message_with_branch.sql"
+                )
+                await conn.fetchrow(
+                    sql_create_assistant,
+                    agent_assistant_output.strip(),
+                    str(agent_run_id_uuid),
+                    str(parent_message_id) if parent_message_id else None,
                 )
 
             # Handle pricing/logs for agent run
@@ -398,14 +457,49 @@ async def run_eval_single_run(
             reasoning=context["reasoning"],
         )
 
-        # 10. Log system prompt and messages
-        await log_run_messages(
-            conn=conn,
-            run_id=uuid.UUID(eval_run_id),
-            system_prompt=context["system_prompt"],
-            input_items=input_items,
-            department_id=uuid.UUID(department_id) if department_id else None,
-        )
+        # 10. Log system prompt and messages inline
+        eval_run_id_uuid = uuid.UUID(eval_run_id)
+        if context["system_prompt"]:
+            sql_link_sys_dev = load_sql(
+                "sql/v3/model_runs/link_system_developer_messages_to_run.sql"
+            )
+            await conn.fetchrow(
+                sql_link_sys_dev,
+                str(eval_run_id_uuid),
+                str(uuid.UUID(department_id)) if department_id else None,
+                None,  # chat_id
+            )
+
+        # Link developer messages from input_items if provided
+        developer_contents_eval: list[str] = []
+        if input_items:
+            developer_messages = [
+                item
+                for item in input_items
+                if item and isinstance(item, dict) and item.get("role") == "developer"
+            ]
+            for dev_msg in developer_messages:
+                content = dev_msg.get("content", "")
+                if isinstance(content, str):
+                    stripped = content.strip()
+                    if stripped:
+                        developer_contents_eval.append(stripped)
+
+        # Link each developer message to the run
+        sql_link_dev = load_sql("sql/v3/simulations/link_developer_message_to_run.sql")
+        developer_message_ids_eval: list[uuid.UUID] = []
+        for content in developer_contents_eval:
+            result = await conn.fetchrow(
+                sql_link_dev,
+                content,
+                str(eval_run_id_uuid),
+            )
+            if result and result.get("message_id"):
+                message_id = result["message_id"]
+                if isinstance(message_id, uuid.UUID):
+                    developer_message_ids_eval.append(message_id)
+                else:
+                    developer_message_ids_eval.append(uuid.UUID(str(message_id)))
 
         # 11. Run eval_agent
         logger.info(f"Running eval_agent {eval_agent_id} for run {run_id}")
@@ -424,12 +518,37 @@ async def run_eval_single_run(
         usage = result.context_wrapper.usage
         assistant_output = getattr(result, "final_output", None) or ""
 
-        if assistant_output:
-            await log_run_messages(
-                conn=conn,
-                run_id=uuid.UUID(eval_run_id),
-                system_prompt=None,  # Already logged above
-                assistant_output=assistant_output,
+        if assistant_output and assistant_output.strip():
+            # Get the parent message ID (developer if exists, otherwise system)
+            parent_message_id_eval: uuid.UUID | None = None
+
+            # Try to get developer message ID (use the last one if multiple)
+            if developer_message_ids_eval:
+                parent_message_id_eval = developer_message_ids_eval[-1]
+            else:
+                # Get system message ID from the run
+                sys_dev_result = await conn.fetchrow(
+                    load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql"),
+                    str(eval_run_id_uuid),
+                    str(uuid.UUID(department_id)) if department_id else None,
+                    None,  # chat_id
+                )
+                if sys_dev_result and sys_dev_result.get("system_message_id"):
+                    system_msg_id = sys_dev_result["system_message_id"]
+                    if isinstance(system_msg_id, uuid.UUID):
+                        parent_message_id_eval = system_msg_id
+                    else:
+                        parent_message_id_eval = uuid.UUID(str(system_msg_id))
+
+            # Create assistant message with branch
+            sql_create_assistant = load_sql(
+                "sql/v3/messages/create_assistant_message_with_branch.sql"
+            )
+            await conn.fetchrow(
+                sql_create_assistant,
+                assistant_output.strip(),
+                str(eval_run_id_uuid),
+                str(parent_message_id_eval) if parent_message_id_eval else None,
             )
 
         # 13. Handle pricing/logs (emit log_run event via internal_sio)

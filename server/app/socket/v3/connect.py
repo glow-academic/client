@@ -10,7 +10,7 @@ from app.main import sio
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.websocket.add_guest_socket import add_guest_socket
-from app.utils.websocket.cleanup_profile_connection import cleanup_profile_connection
+from app.utils.websocket.remove_socket_owner import remove_socket_owner
 from app.utils.websocket.get_socket_owner import get_socket_owner
 from app.utils.websocket.increment_guest_count import increment_guest_count
 from app.utils.websocket.set_socket_owner import set_socket_owner
@@ -91,7 +91,25 @@ async def connect(
                     f"Closing old connection and accepting new one {sid}."
                 )
                 # Clean up the entire old session for this profile
-                await cleanup_profile_connection(profile_id, "new socket takeover")
+                logger.info(f"Cleaning up profile {profile_id} connections - new socket takeover")
+                # Remove from socket ownership using Redis
+                await remove_socket_owner(profile_id)
+                # Update database to mark profile as inactive
+                try:
+                    from datetime import UTC, datetime
+                    from app.main import get_pool
+                    pool = get_pool()
+                    if pool:
+                        async with pool.acquire() as conn:
+                            async with conn.transaction():
+                                sql = load_sql(
+                                    "sql/v3/profile/update_profile_to_inactive_complete.sql"
+                                )
+                                last_active = datetime.now(UTC)
+                                await conn.fetchrow(sql, profile_id, last_active)
+                        logger.info(f"Updated profile {profile_id} to inactive in database")
+                except Exception as e:
+                    logger.error(f"Error updating profile {profile_id} in database: {e}")
                 # Forcefully disconnect the old socket from the server-side
                 await sio.disconnect(old_sid)
 

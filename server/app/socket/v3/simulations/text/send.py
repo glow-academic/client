@@ -33,7 +33,6 @@ from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
 from app.utils.tools.build_pydantic_fields import \
     build_function_signature_string
-from app.utils.tools.load_agent_tools import load_agent_tools
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 
@@ -695,7 +694,9 @@ async def _simulation_text_send_impl(
                     if personas:
                         # Load agent tools from database
                         simulation_agent_id_uuid = uuid.UUID(simulation_agent_id)
-                        agent_tools_config = await load_agent_tools(conn, simulation_agent_id_uuid)
+                        sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+                        rows = await conn.fetch(sql_get_agent_tools, str(simulation_agent_id_uuid))
+                        agent_tools_config = [dict(row) for row in rows]
                         tool_config_map_persona: dict[str, dict[str, Any]] = {
                             tool_config["name"]: tool_config for tool_config in agent_tools_config
                         }

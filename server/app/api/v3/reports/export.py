@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.utils.activity.audit import audit_activity, audit_set
-from app.utils.analytics_query_builder import build_profile_and_analytics_filters
+from datetime import datetime
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 
@@ -234,17 +234,96 @@ async def export_reports(
         # Use the same reports_bundle.sql query that the reports view uses
         sql_template = load_sql("sql/v3/reports/reports_bundle.sql")
 
-        # Build base filters (same as reports bundle)
-        profile_where, analytics_where, params = build_profile_and_analytics_filters(
-            start_date=request.filters.startDate,
-            end_date=request.filters.endDate,
-            cohort_ids=request.filters.cohortIds,
-            roles=request.filters.roles,
-            sim_filters=[f.value for f in request.filters.simulationFilters]
-            if request.filters.simulationFilters
-            else None,
-            profile_id=profile_id,
-            department_ids=request.filters.departmentIds,
+        # Build base filters inline (same as reports bundle)
+        profile_conditions = []
+        analytics_conditions = []
+        params: list[Any] = []
+        param_counter = 1
+
+        # Date filters - only for analytics
+        analytics_conditions.append(f"a.attempt_created_at >= ${param_counter}")
+        params.append(datetime.fromisoformat(request.filters.startDate.replace("Z", "+00:00")))
+        param_counter += 1
+
+        analytics_conditions.append(f"a.attempt_created_at < ${param_counter}")
+        params.append(datetime.fromisoformat(request.filters.endDate.replace("Z", "+00:00")))
+        param_counter += 1
+
+        # Simulation type filters - only for analytics
+        sim_filters = [f.value for f in request.filters.simulationFilters] if request.filters.simulationFilters else ["general"]
+        sim_conditions = []
+
+        if "general" in sim_filters:
+            sim_conditions.append("a.is_general = TRUE")
+        if "practice" in sim_filters:
+            sim_conditions.append("a.is_practice = TRUE")
+        if "archived" in sim_filters:
+            if "general" not in sim_filters and "practice" not in sim_filters:
+                sim_conditions.append("a.is_archived = TRUE")
+            else:
+                sim_conditions.append(
+                    "(a.is_archived = TRUE OR (a.is_general = FALSE AND a.is_practice = FALSE))"
+                )
+
+        if sim_conditions:
+            analytics_conditions.append(f"({' OR '.join(sim_conditions)})")
+
+        # Profile filter - applies to both
+        if profile_id:
+            profile_conditions.append(f"p.id = ${param_counter}")
+            analytics_conditions.append(f"a.profile_id = ${param_counter}")
+            params.append(profile_id)
+            param_counter += 1
+
+        # Role filter - only for profiles (only if no profile_id)
+        if not profile_id and request.filters.roles:
+            profile_conditions.append(f"p.role = ANY(${param_counter}::profile_role[])")
+            params.append(request.filters.roles)
+            param_counter += 1
+
+        # Cohort filter
+        if request.filters.cohortIds:
+            profile_conditions.append(
+                f"EXISTS (SELECT 1 FROM cohort_profiles cp WHERE cp.profile_id = p.id AND cp.cohort_id = ANY(${param_counter}::uuid[]) AND cp.active = true)"
+            )
+            analytics_conditions.append(
+                f"""a.simulation_id IN (
+                    SELECT DISTINCT s.id
+                    FROM simulations s
+                    WHERE s.active = TRUE
+                      AND (
+                          EXISTS (
+                              SELECT 1 
+                              FROM cohort_simulations cs 
+                              WHERE cs.simulation_id = s.id 
+                                AND cs.cohort_id = ANY(${param_counter}::uuid[])
+                                AND cs.active = TRUE
+                          )
+                          OR
+                          (s.practice_simulation = TRUE 
+                           AND NOT EXISTS (
+                               SELECT 1 
+                               FROM cohort_simulations cs2 
+                               WHERE cs2.simulation_id = s.id 
+                                 AND cs2.active = TRUE
+                           ))
+                      )
+                )"""
+            )
+            params.append(request.filters.cohortIds)
+            param_counter += 1
+
+        # Department filter
+        if request.filters.departmentIds:
+            profile_conditions.append(
+                f"EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.profile_id = p.id AND pd.department_id = ANY(${param_counter}::uuid[]) AND pd.active = true)"
+            )
+            params.append(request.filters.departmentIds)
+            param_counter += 1
+
+        profile_where = " AND ".join(profile_conditions) if profile_conditions else "TRUE"
+        analytics_where = (
+            " AND ".join(analytics_conditions) if analytics_conditions else "TRUE"
         )
 
         # Replace WHERE clause placeholders in SQL template

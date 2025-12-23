@@ -22,14 +22,12 @@ from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
-from app.utils.messages.log_regeneration_messages import log_regeneration_messages
 from app.utils.scenario.image_generation import (
     get_image_generation_results,
     set_image_generation_context,
 )
 from app.utils.sql_helper import load_sql
 from app.utils.storage.request_storage import build_storage_key
-from app.utils.tools.load_agent_tools import load_agent_tools
 from app.utils.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool
 from pydantic import Field
@@ -307,7 +305,9 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context_row["agent_id"])
-            agent_tools_config = await load_agent_tools(conn, agent_id_uuid)
+            sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+            rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
+            agent_tools_config = [dict(row) for row in rows]
             # Create mapping of tool name -> tool config for quick lookup
             tool_config_map: dict[str, dict[str, Any]] = {
                 tool_config["name"]: tool_config for tool_config in agent_tools_config
@@ -649,14 +649,86 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # Log regeneration messages (reuse existing system/developer, add user + assistant)
             assistant_output = getattr(result, "final_output", None) or ""
-            await log_regeneration_messages(
-                conn=conn,
-                run_id=model_run_id,
-                previous_run_id=previous_run_id,
-                user_instructions=data.userInstructions,
-                assistant_output=assistant_output,
-                department_id=department_id,
-            )
+            
+            # Get latest message from previous run (assistant if exists, otherwise developer/system)
+            sql_get_latest = """
+                SELECT m.id as latest_message_id
+                FROM messages m
+                JOIN message_runs mr ON mr.message_id = m.id
+                WHERE mr.run_id = $1::uuid
+                AND NOT EXISTS (
+                    SELECT 1 FROM message_tree mt 
+                    WHERE mt.parent_id = m.id AND mt.active = true
+                )
+                ORDER BY m.created_at DESC
+                LIMIT 1
+            """
+            latest_row = await conn.fetchrow(sql_get_latest, str(previous_run_id))
+
+            if not latest_row or not latest_row.get("latest_message_id"):
+                # Fallback: get any system/developer message from previous run
+                sql_fallback = """
+                    SELECT m.id as latest_message_id
+                    FROM messages m
+                    JOIN message_runs mr ON mr.message_id = m.id
+                    WHERE mr.run_id = $1::uuid
+                    AND m.role IN ('system', 'developer')
+                    ORDER BY m.created_at ASC
+                    LIMIT 1
+                """
+                latest_row = await conn.fetchrow(sql_fallback, str(previous_run_id))
+
+            parent_message_id: uuid.UUID | None = None
+            if latest_row and latest_row.get("latest_message_id"):
+                parent_message_id = uuid.UUID(latest_row["latest_message_id"])
+
+            # Link existing system/developer messages to new run (reuse them)
+            # They're already shared via deduplication, just need to link via message_runs
+            sql_link_existing = """
+                INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
+                SELECT DISTINCT mr.message_id, $1::uuid, NOW(), NOW()
+                FROM message_runs mr
+                WHERE mr.run_id = $2::uuid
+                AND EXISTS (
+                    SELECT 1 FROM messages m 
+                    WHERE m.id = mr.message_id 
+                    AND m.role IN ('system', 'developer')
+                )
+                ON CONFLICT (message_id, run_id) 
+                DO UPDATE SET updated_at = NOW()
+            """
+            await conn.execute(sql_link_existing, str(model_run_id), str(previous_run_id))
+
+            # Create user message with branch from latest message
+            user_message_id: uuid.UUID | None = None
+            if data.userInstructions and data.userInstructions.strip():
+                sql_create_user = load_sql(
+                    "sql/v3/messages/create_user_message_with_branch.sql"
+                )
+                user_result = await conn.fetchrow(
+                    sql_create_user,
+                    data.userInstructions.strip(),
+                    str(model_run_id),
+                    str(parent_message_id) if parent_message_id else None,
+                )
+
+                if user_result and user_result.get("id"):
+                    user_message_id = uuid.UUID(user_result["id"])
+
+            # Create assistant message with branch from user message (if exists) or latest message
+            if assistant_output and assistant_output.strip():
+                # Use user message as parent if it exists, otherwise use the latest message from previous run
+                assistant_parent_id = user_message_id if user_message_id else parent_message_id
+
+                sql_create_assistant = load_sql(
+                    "sql/v3/messages/create_assistant_message_with_branch.sql"
+                )
+                await conn.fetchrow(
+                    sql_create_assistant,
+                    assistant_output.strip(),
+                    str(model_run_id),
+                    str(assistant_parent_id) if assistant_parent_id else None,
+                )
 
             # Extract results from request-scoped storage
             storage = get_scenario_storage()

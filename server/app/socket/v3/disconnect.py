@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from app.main import sio
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
-from app.utils.websocket.cleanup_profile_connection import cleanup_profile_connection
+from app.utils.websocket.remove_socket_owner import remove_socket_owner
 from app.utils.websocket.decrement_guest_count import decrement_guest_count
 from app.utils.websocket.find_chats_by_socket import find_chats_by_socket
 from app.utils.websocket.find_profile_by_socket import find_profile_by_socket
@@ -29,7 +29,25 @@ async def disconnect(sid: str) -> None:
     profile_to_cleanup = await find_profile_by_socket(sid)
 
     if profile_to_cleanup:
-        await cleanup_profile_connection(profile_to_cleanup, "socket disconnect")
+        logger.info(f"Cleaning up profile {profile_to_cleanup} connections - socket disconnect")
+        # Remove from socket ownership using Redis
+        await remove_socket_owner(profile_to_cleanup)
+        # Update database to mark profile as inactive
+        try:
+            from datetime import UTC, datetime
+            from app.main import get_pool
+            pool = get_pool()
+            if pool:
+                async with pool.acquire() as conn:
+                    async with conn.transaction():
+                        sql = load_sql(
+                            "sql/v3/profile/update_profile_to_inactive_complete.sql"
+                        )
+                        last_active = datetime.now(UTC)
+                        await conn.fetchrow(sql, profile_to_cleanup, last_active)
+                logger.info(f"Updated profile {profile_to_cleanup} to inactive in database")
+        except Exception as e:
+            logger.error(f"Error updating profile {profile_to_cleanup} in database: {e}")
 
     # If this was a guest connection, update counter and default guest profile activity
     if await is_guest_socket(sid):

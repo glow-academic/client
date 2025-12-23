@@ -12,7 +12,7 @@ from app.api.v3.dashboard.bundle import MetricResponse
 from app.api.v3.reports.export import router as export_router
 from app.main import get_db
 from app.utils.activity.audit import audit_activity, audit_set
-from app.utils.analytics_query_builder import build_profile_and_analytics_filters
+from datetime import datetime
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -170,18 +170,120 @@ async def get_reports(
 
         # Build separate WHERE clauses for profiles and analytics
         # This allows including all matching profiles even if they have no attempts
-        profile_where, analytics_where, params = build_profile_and_analytics_filters(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=filters.simulationFilters,
-            profile_id=None,  # Reports bundle doesn't filter by profileId
-            department_ids=filters.departmentIds,
-            profile_ids=filters.profileIds,
-            simulation_ids=filters.simulationIds,
-            scenario_ids=filters.scenarioIds,
-            search=filters.search,
+        # Build separate WHERE clauses for profiles and analytics inline
+        # This allows including all matching profiles even if they have no attempts
+        profile_conditions = []
+        analytics_conditions = []
+        params: list[Any] = []
+        param_counter = 1
+
+        # Date filters - only for analytics
+        analytics_conditions.append(f"a.attempt_created_at >= ${param_counter}")
+        params.append(datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")))
+        param_counter += 1
+
+        analytics_conditions.append(f"a.attempt_created_at < ${param_counter}")
+        params.append(datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")))
+        param_counter += 1
+
+        # Simulation type filters - only for analytics
+        sim_filters = filters.simulationFilters or ["general"]
+        sim_conditions = []
+
+        if "general" in sim_filters:
+            sim_conditions.append("a.is_general = TRUE")
+        if "practice" in sim_filters:
+            sim_conditions.append("a.is_practice = TRUE")
+        if "archived" in sim_filters:
+            if "general" not in sim_filters and "practice" not in sim_filters:
+                sim_conditions.append("a.is_archived = TRUE")
+            else:
+                sim_conditions.append(
+                    "(a.is_archived = TRUE OR (a.is_general = FALSE AND a.is_practice = FALSE))"
+                )
+
+        if sim_conditions:
+            analytics_conditions.append(f"({' OR '.join(sim_conditions)})")
+
+        # Profile filter - not used for reports bundle
+
+        # Role filter - only for profiles
+        if filters.roles:
+            profile_conditions.append(f"p.role = ANY(${param_counter}::profile_role[])")
+            params.append(filters.roles)
+            param_counter += 1
+
+        # Cohort filter
+        if filters.cohortIds:
+            profile_conditions.append(
+                f"EXISTS (SELECT 1 FROM cohort_profiles cp WHERE cp.profile_id = p.id AND cp.cohort_id = ANY(${param_counter}::uuid[]) AND cp.active = true)"
+            )
+            analytics_conditions.append(
+                f"""a.simulation_id IN (
+                    SELECT DISTINCT s.id
+                    FROM simulations s
+                    WHERE s.active = TRUE
+                      AND (
+                          EXISTS (
+                              SELECT 1 
+                              FROM cohort_simulations cs 
+                              WHERE cs.simulation_id = s.id 
+                                AND cs.cohort_id = ANY(${param_counter}::uuid[])
+                                AND cs.active = TRUE
+                          )
+                          OR
+                          (s.practice_simulation = TRUE 
+                           AND NOT EXISTS (
+                               SELECT 1 
+                               FROM cohort_simulations cs2 
+                               WHERE cs2.simulation_id = s.id 
+                                 AND cs2.active = TRUE
+                           ))
+                      )
+                )"""
+            )
+            params.append(filters.cohortIds)
+            param_counter += 1
+
+        # Department filter
+        if filters.departmentIds:
+            profile_conditions.append(
+                f"EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.profile_id = p.id AND pd.department_id = ANY(${param_counter}::uuid[]) AND pd.active = true)"
+            )
+            params.append(filters.departmentIds)
+            param_counter += 1
+
+        # Profile IDs filter
+        if filters.profileIds:
+            profile_conditions.append(f"p.id = ANY(${param_counter}::uuid[])")
+            analytics_conditions.append(f"a.profile_id = ANY(${param_counter}::uuid[])")
+            params.append(filters.profileIds)
+            param_counter += 1
+
+        # Simulation IDs filter
+        if filters.simulationIds:
+            analytics_conditions.append(f"a.simulation_id = ANY(${param_counter}::uuid[])")
+            params.append(filters.simulationIds)
+            param_counter += 1
+
+        # Scenario IDs filter
+        if filters.scenarioIds:
+            analytics_conditions.append(f"a.scenario_id = ANY(${param_counter}::uuid[])")
+            params.append(filters.scenarioIds)
+            param_counter += 1
+
+        # Text search filter
+        if filters.search:
+            search_pattern = f"%{filters.search}%"
+            profile_conditions.append(
+                f"(p.first_name ILIKE ${param_counter} OR p.last_name ILIKE ${param_counter})"
+            )
+            params.append(search_pattern)
+            param_counter += 1
+
+        profile_where = " AND ".join(profile_conditions) if profile_conditions else "TRUE"
+        analytics_where = (
+            " AND ".join(analytics_conditions) if analytics_conditions else "TRUE"
         )
 
         # Build ORDER BY clause

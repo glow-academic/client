@@ -16,7 +16,6 @@ from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from app.utils.tools.load_agent_tools import load_agent_tools
 from app.utils.personas.find_persona_by_name import find_persona_by_name
 from agents import function_tool
 from pydantic import Field
@@ -418,7 +417,9 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
             # Create persona tools inline
             # Load agent tools from database
-            agent_tools_config = await load_agent_tools(conn, simulation_agent_id)
+            sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+            rows = await conn.fetch(sql_get_agent_tools, str(simulation_agent_id))
+            agent_tools_config = [dict(row) for row in rows]
             tool_config_map_voice: dict[str, dict[str, Any]] = {
                 tool_config["name"]: tool_config for tool_config in agent_tools_config
             }
