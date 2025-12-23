@@ -320,9 +320,8 @@ async def _document_generate_impl(
             # Get department name
             department_name: str | None = None
             if department_id:
-                dept_row = await conn.fetchrow(
-                    "SELECT title FROM departments WHERE id = $1", department_id
-                )
+                sql_get_dept = load_sql("sql/v3/departments/get_department_title.sql")
+                dept_row = await conn.fetchrow(sql_get_dept, department_id)
                 if dept_row:
                     department_name = dept_row.get("title")
 

@@ -172,27 +172,8 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             previous_run_id = uuid.UUID(previous_run_row["run_id"])
 
             # Get scenario's current persona/document/parameter IDs and agent_id
-            sql_get_scenario_ids = """
-                SELECT 
-                    (SELECT rp.persona_id FROM scenario_personas rp WHERE rp.scenario_id = s.id AND rp.active = true LIMIT 1) as persona_id,
-                    s.scenario_agent_id::text as scenario_agent_id,
-                    COALESCE(
-                        json_agg(DISTINCT sd.document_id::text) FILTER (WHERE sd.document_id IS NOT NULL),
-                        '[]'::json
-                    ) as document_ids,
-                    COALESCE(
-                        json_agg(DISTINCT spi.parameter_item_id::text) FILTER (WHERE spi.parameter_item_id IS NOT NULL),
-                        '[]'::json
-                    ) as parameter_item_ids
-                FROM scenarios s
-                LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id AND sd.active = true
-                LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id AND spi.active = true
-                WHERE s.id = $1::uuid
-                GROUP BY s.id, s.scenario_agent_id
-            """
-            scenario_ids_row = await conn.fetchrow(
-                sql_get_scenario_ids, str(scenario_id)
-            )
+            sql_get_scenario_ids = load_sql("sql/v3/scenarios/get_scenario_ids_for_regeneration.sql")
+            scenario_ids_row = await conn.fetchrow(sql_get_scenario_ids, str(scenario_id))
 
             if not scenario_ids_row:
                 await scenario_regeneration_error(

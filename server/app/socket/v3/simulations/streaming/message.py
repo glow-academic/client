@@ -209,20 +209,11 @@ async def _simulation_message_start_impl(
             if latest_user_message_row:
                 user_created_at = latest_user_message_row["created_at"]
                 if user_created_at >= message_created_at:
-                    await conn.execute(
-                        """
-                            UPDATE messages
-                            SET created_at = $1::timestamp + INTERVAL '1 millisecond'
-                            WHERE id = $2::uuid
-                            """,
-                        user_created_at,
-                        db_message_id,
-                    )
+                    sql_update_created_at = load_sql("sql/v3/messages/update_message_created_at.sql")
+                    await conn.execute(sql_update_created_at, user_created_at, db_message_id)
                     # Fetch updated created_at
-                    updated_row = await conn.fetchrow(
-                        "SELECT created_at FROM messages WHERE id = $1::uuid",
-                        db_message_id,
-                    )
+                    sql_get_created_at = load_sql("sql/v3/messages/get_message_created_at.sql")
+                    updated_row = await conn.fetchrow(sql_get_created_at, db_message_id)
                     if updated_row:
                         message_created_at = updated_row["created_at"]
 
@@ -248,28 +239,8 @@ async def _simulation_message_start_impl(
         parent_id_str = validated.parent_message_id
         if not parent_id_str and validated.role == "assistant":
             # For assistant messages, find latest message with no active children
-            latest_message_row = await conn.fetchrow(
-                """
-                SELECT m.id
-                FROM messages m
-                JOIN message_runs mr ON mr.message_id = m.id
-                JOIN runs r ON r.id = mr.run_id
-                JOIN group_runs gr ON gr.run_id = r.id
-                JOIN groups g ON g.id = gr.group_id
-                JOIN chat_groups cg ON cg.group_id = g.id
-                JOIN chats c ON c.id = cg.chat_id
-                WHERE c.id = $1::uuid
-                  AND m.id != $2::uuid
-                  AND NOT EXISTS (
-                      SELECT 1 FROM message_tree mt 
-                      WHERE mt.parent_id = m.id AND mt.active = true
-                  )
-                ORDER BY m.created_at DESC
-                LIMIT 1
-                """,
-                chat_id_uuid,
-                db_message_id,
-            )
+            sql_get_latest = load_sql("sql/v3/simulations/get_latest_message_without_children.sql")
+            latest_message_row = await conn.fetchrow(sql_get_latest, chat_id_uuid, db_message_id)
             if latest_message_row and latest_message_row.get("id"):
                 parent_id_str = str(latest_message_row["id"])
 
@@ -439,20 +410,12 @@ async def _simulation_message_complete_impl(
         )
 
         # Also emit updated message with completed=True
-        message_row = await conn.fetchrow(
-            "SELECT role, created_at FROM messages WHERE id = $1::uuid",
-            validated.message_id,
-        )
+        sql_get_message = load_sql("sql/v3/messages/get_message_role_and_created_at.sql")
+        message_row = await conn.fetchrow(sql_get_message, validated.message_id)
         if message_row:
             # Try to get persona_id
-            persona_row = await conn.fetchrow(
-                """
-                    SELECT persona_id FROM message_personas 
-                    WHERE message_id = $1::uuid 
-                    LIMIT 1
-                    """,
-                validated.message_id,
-            )
+            sql_get_persona = load_sql("sql/v3/messages/get_message_persona_id.sql")
+            persona_row = await conn.fetchrow(sql_get_persona, validated.message_id)
             persona_id_str = str(persona_row["persona_id"]) if persona_row else None
 
             await simulation_new_message(

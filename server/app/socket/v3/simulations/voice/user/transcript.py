@@ -134,10 +134,8 @@ async def _simulation_voice_user_transcript_impl(
             user_message_id = uuid.UUID(db_message_id_str)
 
             # Get created_at for emission
-            message_row = await conn.fetchrow(
-                "SELECT created_at FROM messages WHERE id = $1::uuid",
-                user_message_id,
-            )
+            sql_get_created_at = load_sql("sql/v3/messages/get_message_created_at.sql")
+            message_row = await conn.fetchrow(sql_get_created_at, user_message_id)
             created_at = message_row["created_at"] if message_row else None
 
             # Link audio upload to message if upload_id is provided

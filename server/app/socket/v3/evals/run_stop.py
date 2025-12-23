@@ -8,6 +8,7 @@ from pydantic import BaseModel, ValidationError
 from app.main import get_pool, sio
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
 from app.utils.websocket.cancel_active_run import cancel_active_run
 
 logger = get_logger(__name__)
@@ -135,25 +136,12 @@ async def _eval_run_stop_impl(sid: str, data: EvalRunStopPayload) -> None:
                 )
 
                 # Mark test as completed
-                await conn.execute(
-                    """
-                    UPDATE tests SET completed = true, updated_at = NOW()
-                    WHERE id = $1::uuid
-                    """,
-                    test_id,
-                )
+                sql_complete_test = load_sql("sql/v3/evals/complete_test.sql")
+                await conn.execute(sql_complete_test, test_id)
 
                 # Mark eval_runs as completed (stopped)
-                await conn.execute(
-                    """
-                    UPDATE eval_runs SET completed = true, updated_at = NOW()
-                    WHERE eval_id = (
-                        SELECT eval_id FROM eval_attempts WHERE id = $1::uuid
-                    ) AND run_id = $2::uuid
-                    """,
-                    attempt_id,
-                    run_id,
-                )
+                sql_complete_eval_run = load_sql("sql/v3/evals/complete_eval_run.sql")
+                await conn.execute(sql_complete_eval_run, attempt_id, run_id)
 
                 # Invalidate cache after stopping run
                 try:

@@ -9,6 +9,7 @@ from pydantic import BaseModel, ValidationError
 from app.main import get_pool, sio
 from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -93,15 +94,8 @@ async def _eval_enter_impl(sid: str, data: EvalEnterPayload) -> None:
 
         async with pool.acquire() as conn:
             # Update test created_at timestamp
-            result = await conn.fetchrow(
-                """
-                UPDATE tests SET created_at = $1, updated_at = NOW()
-                WHERE id = $2::uuid
-                RETURNING id::text as test_id
-                """,
-                created_at_dt,
-                test_id,
-            )
+            sql_update_test = load_sql("sql/v3/evals/update_test_created_at.sql")
+            result = await conn.fetchrow(sql_update_test, created_at_dt, test_id)
 
             if result and result.get("test_id"):
                 logger.info(

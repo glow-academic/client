@@ -122,9 +122,8 @@ async def _simulation_voice_assistant_audio_link_impl(
                 return
 
             # Validate upload exists
-            upload_row = await conn.fetchrow(
-                "SELECT id FROM uploads WHERE id = $1::uuid", str(upload_id_uuid)
-            )
+            sql_get_upload = load_sql("sql/v3/uploads/get_upload_id.sql")
+            upload_row = await conn.fetchrow(sql_get_upload, str(upload_id_uuid))
 
             if not upload_row:
                 logger.warning(f"Upload {upload_id} does not exist")

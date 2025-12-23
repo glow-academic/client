@@ -353,7 +353,10 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 room=sid,
             )
 
-            # Get all context data in a single optimized query using SQL file
+            # Get all context data AND create run in single atomic transaction
+            # This validates rate limits and creates run atomically
+            # Pattern: All AI operations use atomic context+run creation SQL files
+            # See WEBSOCKET_STANDARDS.md for details
             doc_ids_str = [str(d) for d in document_ids] if document_ids else []
             field_ids_str = [str(f) for f in field_ids] if field_ids else []
 

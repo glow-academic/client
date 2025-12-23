@@ -160,89 +160,17 @@ async def _simulation_voice_user_speech_impl(
                 # Get active settings for profile (or default if no profile)
                 if profile_id_uuid:
                     # Get active settings for profile
+                    sql_get_key = load_sql("sql/v3/settings/get_key_id_for_model_with_profile.sql")
                     key_id_row = await conn.fetchrow(
-                        """
-                        WITH default_settings AS (
-                            SELECT s.id as settings_id
-                            FROM settings s
-                            WHERE s.active = true
-                              AND NOT EXISTS (
-                                  SELECT 1 FROM department_settings sd 
-                                  WHERE sd.settings_id = s.id AND sd.active = true
-                              )
-                            LIMIT 1
-                        ),
-                        profile_primary_department AS (
-                            SELECT pd.department_id
-                            FROM profile_departments pd
-                            WHERE pd.profile_id = $2::uuid 
-                              AND pd.is_primary = TRUE 
-                              AND pd.active = true
-                            LIMIT 1
-                        ),
-                        dept_specific_settings AS (
-                            SELECT s.id as settings_id
-                            FROM settings s
-                            JOIN department_settings sd ON sd.settings_id = s.id
-                            JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-                            WHERE s.active = true 
-                              AND sd.active = true
-                            LIMIT 1
-                        ),
-                        active_settings AS (
-                            SELECT 
-                                COALESCE(
-                                    (SELECT settings_id FROM dept_specific_settings),
-                                    (SELECT settings_id FROM default_settings),
-                                    (SELECT id FROM settings WHERE active = true LIMIT 1)
-                                ) as settings_id
-                        )
-                        SELECT spk.key_id::text as key_id
-                        FROM models m
-                        JOIN providers p ON p.id = m.provider_id
-                        CROSS JOIN active_settings act_s
-                        JOIN setting_provider_keys spk ON spk.provider_id = p.id 
-                            AND spk.settings_id = act_s.settings_id 
-                            AND spk.active = true
-                        JOIN keys k ON k.id = spk.key_id AND k.active = true
-                        WHERE m.id = $1::uuid
-                        LIMIT 1
-                        """,
+                        sql_get_key,
                         model_id_uuid,
                         profile_id_uuid,
                     )
                 else:
                     # Use default settings if no profile_id
+                    sql_get_key = load_sql("sql/v3/settings/get_key_id_for_model_default.sql")
                     key_id_row = await conn.fetchrow(
-                        """
-                        WITH default_settings AS (
-                            SELECT s.id as settings_id
-                            FROM settings s
-                            WHERE s.active = true
-                              AND NOT EXISTS (
-                                  SELECT 1 FROM department_settings sd 
-                                  WHERE sd.settings_id = s.id AND sd.active = true
-                              )
-                            LIMIT 1
-                        ),
-                        active_settings AS (
-                            SELECT 
-                                COALESCE(
-                                    (SELECT settings_id FROM default_settings),
-                                    (SELECT id FROM settings WHERE active = true LIMIT 1)
-                                ) as settings_id
-                        )
-                        SELECT spk.key_id::text as key_id
-                        FROM models m
-                        JOIN providers p ON p.id = m.provider_id
-                        CROSS JOIN active_settings act_s
-                        JOIN setting_provider_keys spk ON spk.provider_id = p.id 
-                            AND spk.settings_id = act_s.settings_id 
-                            AND spk.active = true
-                        JOIN keys k ON k.id = spk.key_id AND k.active = true
-                        WHERE m.id = $1::uuid
-                        LIMIT 1
-                        """,
+                        sql_get_key,
                         model_id_uuid,
                     )
                 key_id_uuid = None
@@ -364,57 +292,12 @@ async def _simulation_voice_user_speech_impl(
 
                         # Link run to chat's group (now uses groups/group_runs)
                         # Get or create group for chat, then link run to group
-                        chat_group_row = await conn.fetchrow(
-                            """
-                            WITH chat_group AS (
-                                SELECT cg.group_id
-                                FROM chat_groups cg
-                                WHERE cg.chat_id = $1::uuid
-                                LIMIT 1
-                            ),
-                            create_group_if_needed AS (
-                                INSERT INTO groups (created_at, updated_at)
-                                SELECT NOW(), NOW()
-                                WHERE NOT EXISTS (SELECT 1 FROM chat_group)
-                                RETURNING id as group_id
-                            ),
-                            create_chat_group_if_needed AS (
-                                INSERT INTO chat_groups (chat_id, group_id, created_at, updated_at)
-                                SELECT $1::uuid, cg.group_id, NOW(), NOW()
-                                FROM create_group_if_needed cg
-                                WHERE NOT EXISTS (SELECT 1 FROM chat_group)
-                                ON CONFLICT (chat_id, group_id) DO NOTHING
-                                RETURNING group_id
-                            ),
-                            selected_group AS (
-                                SELECT group_id FROM chat_group
-                                UNION ALL
-                                SELECT group_id FROM create_group_if_needed
-                                UNION ALL
-                                SELECT group_id FROM create_chat_group_if_needed
-                            )
-                            SELECT group_id FROM selected_group
-                            LIMIT 1
-                            """,
-                            str(chat_id_uuid),
-                        )
+                        sql_get_group = load_sql("sql/v3/simulations/get_or_create_group_for_chat.sql")
+                        chat_group_row = await conn.fetchrow(sql_get_group, str(chat_id_uuid))
                         if chat_group_row:
                             group_id = chat_group_row["group_id"]
-                            await conn.execute(
-                                """
-                                INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-                                VALUES (
-                                    $1::uuid, 
-                                    $2::uuid, 
-                                    COALESCE((SELECT MAX(idx) FROM group_runs WHERE group_id = $1::uuid), -1) + 1,
-                                    NOW(), 
-                                    NOW()
-                                )
-                                ON CONFLICT (group_id, run_id) DO NOTHING
-                                """,
-                                str(group_id),
-                                str(run_id),
-                            )
+                            sql_link_run = load_sql("sql/v3/simulations/link_run_to_group.sql")
+                            await conn.execute(sql_link_run, str(group_id), str(run_id))
 
                         # Link message to run (if message exists)
                         try:

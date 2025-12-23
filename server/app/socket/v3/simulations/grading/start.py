@@ -6,32 +6,25 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
+from app.utils.agents.tools.create_safe_field_name import \
+    create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.tools.load_agent_tools import load_agent_tools
-from app.utils.tools.build_pydantic_fields import build_function_signature_string
-from agents import Tool, function_tool
-from pydantic import Field
-from app.utils.chat.get_simulation_conversation_history import (
-    get_simulation_conversation_history,
-)
+from app.utils.chat.get_simulation_conversation_history import \
+    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
+from app.utils.tools.build_pydantic_fields import \
+    build_function_signature_string
+from app.utils.tools.load_agent_tools import load_agent_tools
+from fastapi import APIRouter
+from pydantic import BaseModel, Field, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -135,16 +128,63 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             grading_results.clear()
             grading_progress.clear()
 
-            # Get all grading context data in one optimized query using SQL file
-            sql = load_sql("sql/v3/agents/get_grading_run_context.sql")
+            # Get all grading context data AND create run in single atomic transaction
+            # This validates rate limits and creates run atomically
+            # Pattern: All AI operations use atomic context+run creation SQL files
+            # See WEBSOCKET_STANDARDS.md for details
+            sql = load_sql("sql/v3/agents/get_grading_run_context_and_create_run.sql")
             sql_query = sql
             sql_params = (str(simulation_chat_id), str(department_id))
-            context_row = await conn.fetchrow(sql, *sql_params)
+            try:
+                context_row = await conn.fetchrow(sql, *sql_params)
+            except Exception as e:
+                import asyncpg  # type: ignore
+
+                error_msg = str(e)
+                # Check if it's a rate limit error from SQL (PostgreSQL exception)
+                if (
+                    isinstance(e, asyncpg.PostgresError)
+                    and "RATE_LIMIT_EXCEEDED" in error_msg
+                ):
+                    # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else error_msg
+                    )
+                    await simulation_grading_progress(
+                        SimulationGradingProgressPayload(
+                            type="error",
+                            chat_id=str(simulation_chat_id),
+                            message=user_msg,
+                            error=user_msg,
+                        ),
+                        room=f"simulation_{simulation_chat_id}",
+                    )
+                    return
+                # Log run creation failures for debugging
+                logger.error(
+                    f"Failed to get context and create run for grading {simulation_chat_id}: {str(e)}",
+                    exc_info=True,
+                )
+                await simulation_grading_progress(
+                    SimulationGradingProgressPayload(
+                        type="error",
+                        chat_id=str(simulation_chat_id),
+                        message=f"Failed to initialize grading: {str(e)}",
+                        error=str(e),
+                    ),
+                    room=f"simulation_{simulation_chat_id}",
+                )
+                return
 
             if not context_row:
                 raise ValueError(
                     f"Chat {simulation_chat_id} not found or no grading agent configured"
                 )
+
+            # Extract run_id from context (created in same transaction)
+            model_run_id = uuid.UUID(context_row["run_id"])
 
             # Parse JSON arrays for standard_groups and standards
             standard_groups_json = (
@@ -413,19 +453,10 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                     room=f"simulation_{simulation_chat_id}",
                 )
 
-            # Create model run first (needed for grade record)
-            sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
-            model_run_row = await conn.fetchrow(
-                sql_create_run,
-                str(department_id),
-                context["model"]["id"],
-                context["agent"]["id"],
-                "agent",
-                context["profile_id"],
-                None,  # key_id
-                str(context["agent"]["id"]),  # agent_id
-            )
-            model_run_id = uuid.UUID(model_run_row["run_id"])
+            # Rate limit validation and run creation are now handled in SQL
+            # (get_grading_run_context_and_create_run.sql) - both happen atomically
+            # If we get here, rate limit check passed and run was created successfully
+            # model_run_id is already extracted from context_row above
 
             # Create grade record at START with placeholder values
             # Tools will insert feedbacks as they're called
@@ -674,9 +705,8 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 
             # Add audio grading tool if audio messages exist and audio agent is configured
             if has_audio_messages and grade_voice_agent_id:
-                from app.socket.v3.simulations.grading.tools.audio import (
-                    _grading_tool_audio_impl,
-                )
+                from app.socket.v3.simulations.grading.tools.audio import \
+                    _grading_tool_audio_impl
 
                 grade_audio_config = tool_config_map_grading.get("grade_audio")
                 if grade_audio_config:
@@ -799,32 +829,10 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 
             agent_instance = grading_agent.agent()
 
-            # Check rate limit
-            profile_id_uuid = (
-                uuid.UUID(context["profile_id"]) if context["profile_id"] else None
-            )
-            if not profile_id_uuid:
-                raise ValueError("Profile not found. Please contact support.")
-
-            req_per_day = context["req_per_day"]
-            runs_today_count = context["runs_today_count"]
-
-            if req_per_day is not None and runs_today_count >= req_per_day:
-                earliest_run_created_at = context["earliest_run_created_at"]
-                if earliest_run_created_at:
-                    next_allowed_utc = earliest_run_created_at + timedelta(days=1)
-                    eastern_tz = ZoneInfo("America/New_York")
-                    next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
-                    error_message = (
-                        f"Daily request limit of {req_per_day} reached. "
-                        f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
-                        f"{next_allowed_et.strftime('%B %d, %Y')}."
-                    )
-                else:
-                    error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-                raise ValueError(error_message)
-
-            # Model run already created above (before grade record)
+            # Rate limit validation and run creation are now handled in SQL
+            # (get_grading_run_context_and_create_run.sql) - both happen atomically
+            # If we get here, rate limit check passed and run was created successfully
+            # model_run_id is already extracted from context_row above
 
             # Run the grading
             logger.info("Running grading agent...")
@@ -839,6 +847,8 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 
             # Emit async pricing event (non-blocking)
             # This handles token updates and message logging in background
+            # Pattern: All AI operations must emit log_run event after completion
+            # See WEBSOCKET_STANDARDS.md for details
             usage = result.context_wrapper.usage
             assistant_output = getattr(result, "final_output", None) or ""
             rubric_dev_content = str(rubric_input.get("content", ""))
@@ -889,11 +899,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             )
 
             # 3. Mark chat as completed
-            sql_mark_completed = """
-                UPDATE simulation_chats
-                SET completed = true
-                WHERE id = $1::uuid
-            """
+            sql_mark_completed = load_sql("sql/v3/simulations/mark_chat_completed.sql")
             await conn.execute(sql_mark_completed, str(simulation_chat_id))
 
             logger.info(

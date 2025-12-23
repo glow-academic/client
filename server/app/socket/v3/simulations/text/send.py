@@ -411,11 +411,52 @@ async def _simulation_text_send_impl(
                     from app.utils.websocket.store_active_run import \
                         store_active_run
 
-                    # Fetch context for the chat
+                    # Get context AND create run in single atomic transaction
+                    # This validates rate limits and creates run atomically
+                    # Pattern: All AI operations use atomic context+run creation SQL files
+                    # See WEBSOCKET_STANDARDS.md for details
                     sql_context = load_sql(
-                        "sql/v3/agents/get_simulation_run_context.sql"
+                        "sql/v3/agents/get_simulation_run_context_and_create_run.sql"
                     )
-                    context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
+                    try:
+                        context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
+                    except Exception as e:
+                        import asyncpg  # type: ignore
+
+                        error_msg = str(e)
+                        # Check if it's a rate limit error from SQL (PostgreSQL exception)
+                        if (
+                            isinstance(e, asyncpg.PostgresError)
+                            and "RATE_LIMIT_EXCEEDED" in error_msg
+                        ):
+                            # Extract the user-friendly message (everything after "RATE_LIMIT_EXCEEDED: ")
+                            user_msg = (
+                                error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                                if "RATE_LIMIT_EXCEEDED: " in error_msg
+                                else error_msg
+                            )
+                            await simulation_text_send_error(
+                                SendSimulationMessageErrorPayload(
+                                    success=False,
+                                    message=user_msg,
+                                ),
+                                room=sid,
+                            )
+                            return
+                        # Log run creation failures for debugging
+                        logger.error(
+                            f"Failed to get context and create run for {sid}: {str(e)}",
+                            exc_info=True,
+                        )
+                        await simulation_text_send_error(
+                            SendSimulationMessageErrorPayload(
+                                success=False,
+                                message=f"Failed to initialize simulation: {str(e)}",
+                            ),
+                            room=sid,
+                        )
+                        return
+
                     if not context_row:
                         raise ValueError(
                             f"Chat {chat_id_uuid} not found or no persona configured"
@@ -460,6 +501,9 @@ async def _simulation_text_send_impl(
                             "earliest_run_created_at"
                         ],
                     }
+
+                    # Extract run_id from context (created in same transaction)
+                    model_run_id = uuid.UUID(context_row["run_id"])
 
                     # Validate API key before proceeding
                     if not context.get("api_key"):
@@ -528,62 +572,17 @@ async def _simulation_text_send_impl(
                     input_items.insert(0, chat_scenario)
                     input_items.extend(conversation_history)
 
-                    # Check rate limit
-                    profile_id_uuid = (
-                        uuid.UUID(context["profile_id"])
-                        if context["profile_id"]
-                        else None
-                    )
-                    if not profile_id_uuid:
-                        raise ValueError("Profile not found. Please contact support.")
+                    # Rate limit validation and run creation are now handled in SQL
+                    # (get_simulation_run_context_and_create_run.sql) - both happen atomically
+                    # If we get here, rate limit check passed and run was created successfully
 
-                    req_per_day = context["req_per_day"]
-                    runs_today_count = context["runs_today_count"]
-
-                    if req_per_day is not None and runs_today_count >= req_per_day:
-                        from datetime import timedelta
-                        from zoneinfo import ZoneInfo
-
-                        earliest_run_created_at = context["earliest_run_created_at"]
-                        if earliest_run_created_at:
-                            next_allowed_utc = earliest_run_created_at + timedelta(
-                                days=1
-                            )
-                            eastern_tz = ZoneInfo("America/New_York")
-                            next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
-                            error_message = (
-                                f"Daily request limit of {req_per_day} reached. "
-                                f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
-                                f"{next_allowed_et.strftime('%B %d, %Y')}."
-                            )
-                        else:
-                            error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-                        raise ValueError(error_message)
-
-                    # Get Simulation Text Agent ID from context (already available from get_simulation_run_context.sql)
+                    # Get Simulation Text Agent ID from context (already available from SQL)
                     # After migration 97, agents are on simulations (simulation_text_agent_id), not personas
                     simulation_agent_id = context_row.get("agent_id")
                     if not simulation_agent_id:
                         raise ValueError(
                             f"Simulation Text Agent not found for simulation {context['simulation_id']}"
                         )
-
-                    # Create model run via internal event (separate event for database operations)
-                    from app.socket.v3.simulations.run.create import (
-                        _simulation_run_create_impl,
-                    )
-
-                    run_id_str = await _simulation_run_create_impl(
-                        department_id,
-                        uuid.UUID(context["model_id"]),
-                        uuid.UUID(context["persona_id"]),
-                        uuid.UUID(context["profile_id"]),
-                        uuid.UUID(simulation_agent_id),
-                        sid,
-                    )
-                    if not run_id_str:
-                        raise ValueError("Failed to create run")
-                    model_run_id = uuid.UUID(run_id_str)
 
                     # Emit internal event to link run to group (separate event for database operations)
                     await _simulation_group_link_impl(chat_id_uuid, model_run_id, sid)
@@ -818,9 +817,8 @@ Tool Usage Instructions:
                         tools=persona_tools,
                     )
 
-                    # Link run to chat's group if not already linked (now uses groups/group_runs)
-                    # Emit internal event to link run to group (separate event for database operations)
-                    await _simulation_group_link_impl(chat_id_uuid, model_run_id, sid)
+                    # Link run to chat's group (already done above, but keeping for clarity)
+                    # Note: Run is already linked to group above via _simulation_group_link_impl
 
                     # Link system/developer messages to run
                     sql_link_sys_dev = load_sql(
@@ -2151,6 +2149,8 @@ Tool Usage Instructions:
 
                     # Emit async pricing event (non-blocking)
                     # This handles token updates and message logging in background
+                    # Pattern: All AI operations must emit log_run event after completion
+                    # See WEBSOCKET_STANDARDS.md for details
                     # Note: For simulations, assistant output is handled via tool calls, not a single message
                     usage = result.context_wrapper.usage
                     await internal_sio.emit(

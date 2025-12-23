@@ -105,10 +105,8 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
 
         async with pool.acquire() as conn:
             # Get eval data (dynamic flag and agent_id)
-            eval_row = await conn.fetchrow(
-                "SELECT dynamic, agent_id::text as agent_id FROM evals WHERE id = $1::uuid",
-                eval_id,
-            )
+            sql_get_eval = load_sql("sql/v3/evals/get_eval_dynamic_and_agent.sql")
+            eval_row = await conn.fetchrow(sql_get_eval, eval_id)
             if not eval_row:
                 await eval_process_next_error(
                     EvalProcessNextErrorPayload(

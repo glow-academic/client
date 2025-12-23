@@ -9,6 +9,7 @@ from openai import OpenAI
 from pydantic import BaseModel, ValidationError
 
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
+from app.utils.activity.websocket_logger import log_websocket_activity
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql

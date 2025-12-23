@@ -1,7 +1,6 @@
--- Get or create group for chat and return group_id
+-- Get or create group for a chat (complex CTE query)
 -- Parameters: $1=chat_id (uuid)
 -- Returns: group_id (uuid)
--- Creates group and chat_group if they don't exist, otherwise returns existing group_id
 WITH chat_group AS (
     SELECT cg.group_id
     FROM chat_groups cg
@@ -31,4 +30,3 @@ selected_group AS (
 )
 SELECT group_id FROM selected_group
 LIMIT 1
-
