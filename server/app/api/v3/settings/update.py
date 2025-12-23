@@ -8,9 +8,9 @@ from pydantic import BaseModel
 
 from app.main import get_db, get_internal_sio, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 internal_sio = get_internal_sio()
 
@@ -116,7 +116,7 @@ async def update_settings(
             auth_value_mapping_json = json.dumps(request.auth_value_mapping or {})
 
             # Update settings: deactivate current active, insert new active row
-            sql_query = load_sql("sql/v3/settings/update_settings.sql")
+            sql_query = load_sql("app/sql/v3/settings/update_settings.sql")
             # Prepare department_ids array (empty array = global, non-empty = department-specific)
             department_ids_array = (
                 request.department_ids if request.department_ids else None

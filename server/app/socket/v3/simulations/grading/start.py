@@ -16,9 +16,9 @@ from app.infra.debug.debug_info import debug_info as debug_info_tool
 from app.infra.tools.build_pydantic_fields import \
     build_function_signature_string
 from app.main import get_internal_sio, get_pool, sio
-from app.utils.agents.create_safe_field_name import create_safe_field_name
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.agents.create_safe_field_name import create_safe_field_name
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 
@@ -128,7 +128,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             # This validates rate limits and creates run atomically
             # Pattern: All AI operations use atomic context+run creation SQL files
             # See WEBSOCKET_STANDARDS.md for details
-            sql = load_sql("sql/v3/agents/get_grading_run_context_and_create_run.sql")
+            sql = load_sql("app/sql/v3/agents/get_grading_run_context_and_create_run.sql")
             sql_query = sql
             sql_params = (str(simulation_chat_id), str(department_id))
             try:
@@ -301,7 +301,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
                 )
 
             # Get messages using SQL file
-            sql_messages = load_sql("sql/v3/simulations/get_simulation_messages.sql")
+            sql_messages = load_sql("app/sql/v3/simulations/get_simulation_messages.sql")
             message_rows = await conn.fetch(sql_messages, str(simulation_chat_id))
             messages = [dict(row) for row in message_rows]
 
@@ -534,7 +534,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 
             # Create grade record at START with placeholder values
             # Tools will insert feedbacks as they're called
-            sql_create_grade = load_sql("sql/v3/grading/create_grade_complete.sql")
+            sql_create_grade = load_sql("app/sql/v3/grading/create_grade_complete.sql")
             grade_row = await conn.fetchrow(
                 sql_create_grade,
                 str(model_run_id),  # run_id
@@ -554,7 +554,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
 
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context["agent"]["id"])
-            sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
             rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
             agent_tools_config = [dict(row) for row in rows]
             tool_config_map_grading: dict[str, dict[str, Any]] = {
@@ -965,7 +965,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             summary = getattr(result, "final_output", None) or ""
 
             # Update grade record with final values
-            sql_update_grade = load_sql("sql/v3/grading/update_grade_final.sql")
+            sql_update_grade = load_sql("app/sql/v3/grading/update_grade_final.sql")
             await conn.execute(
                 sql_update_grade,
                 str(grade_id),
@@ -975,7 +975,7 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             )
 
             # 3. Mark chat as completed
-            sql_mark_completed = load_sql("sql/v3/simulations/mark_chat_completed.sql")
+            sql_mark_completed = load_sql("app/sql/v3/simulations/mark_chat_completed.sql")
             await conn.execute(sql_mark_completed, str(simulation_chat_id))
 
             logger.info(

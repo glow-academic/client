@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.infra.activity.audit import audit_activity
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 class ProviderOption(BaseModel):
@@ -64,7 +64,7 @@ async def get_login_providers(
     """Get list of active auth provider options and departments for login page."""
     department_id = UUID(request.departmentId) if request.departmentId else None
 
-    sql_query = load_sql("sql/v3/auth/get_login_data_complete.sql")
+    sql_query = load_sql("app/sql/v3/auth/get_login_data_complete.sql")
     row = await conn.fetchrow(sql_query, department_id)
 
     if not row:

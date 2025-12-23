@@ -12,13 +12,13 @@ from fastapi.responses import FileResponse, Response
 from app.api.v3.settings.active import ThemeTokens
 from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.document.pdf_first_page_to_image_bytes import (
+from utils.document.pdf_first_page_to_image_bytes import (
     pdf_first_page_to_image_bytes,
 )
 from app.infra.error.handle_route_error import handle_route_error
 from app.infra.templates.jinja_renderer import render_template
-from app.utils.mime.get_content_type import get_content_type
-from app.utils.sql_helper import load_sql
+from utils.mime.get_content_type import get_content_type
+from utils.sql_helper import load_sql
 
 router = APIRouter()
 
@@ -43,7 +43,7 @@ async def download_upload(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        sql_query = load_sql("sql/v3/uploads/get_upload_file_info.sql")
+        sql_query = load_sql("app/sql/v3/uploads/get_upload_file_info.sql")
         sql_params = (upload_id,)
         result = await conn.fetchrow(sql_query, upload_id)
 
@@ -107,7 +107,7 @@ async def download_upload(
             # Check if upload is associated with a template document
             template_info = None
             try:
-                template_query = load_sql("sql/v3/uploads/get_upload_template_info.sql")
+                template_query = load_sql("app/sql/v3/uploads/get_upload_template_info.sql")
                 template_info = await conn.fetchrow(template_query, upload_id)
             except Exception:
                 # If template query fails (e.g., upload not linked to document), treat as non-template

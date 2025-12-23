@@ -4,7 +4,7 @@ import asyncio
 from dataclasses import dataclass
 
 from app.socket.v3.actions.keycloak import sync_keycloak
-from app.utils.logging.db_logger import get_logger
+from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

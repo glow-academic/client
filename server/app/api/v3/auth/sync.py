@@ -83,7 +83,7 @@ async def sync_keycloak(
     except HTTPException:
         raise
     except Exception as e:
-        from app.utils.error_handler import handle_route_error
+        from utils.error_handler import handle_route_error
 
         handle_route_error(
             error=e,

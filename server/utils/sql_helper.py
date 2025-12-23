@@ -14,10 +14,10 @@ def load_sql(file_path: str) -> str:
     This follows DHH principles - route owns the execution.
 
     Args:
-        file_path: Relative path from server root (e.g., "sql/v3/profile/get_profile.sql")
+        file_path: Relative path from server root (e.g., "app/sql/v3/profile/get_profile.sql")
 
     Returns:
         SQL string with parameter placeholders ($1, $2, etc.)
     """
-    sql_path = Path(__file__).parent.parent.parent / file_path
+    sql_path = Path(__file__).parent.parent / file_path
     return sql_path.read_text()

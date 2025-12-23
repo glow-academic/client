@@ -7,8 +7,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_internal_sio, get_pool
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -46,7 +46,7 @@ async def _simulation_run_create_impl(
     async with pool.acquire() as conn:
         try:
             # Create model run with all junction records using SQL file
-            sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+            sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
             model_run_row = await conn.fetchrow(
                 sql_create_run,
                 str(department_id),

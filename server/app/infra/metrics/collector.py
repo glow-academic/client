@@ -31,7 +31,7 @@ async def initialize_metrics(
 
     # Initialize Redis counters if Redis available
     if _redis_client:
-        from app.utils.logging.db_logger import get_logger
+        from utils.logging.db_logger import get_logger
 
         logger = get_logger("app.infra.metrics.collector")
         try:
@@ -45,7 +45,7 @@ async def initialize_metrics(
             )
             _redis_client = None
     else:
-        from app.utils.logging.db_logger import get_logger
+        from utils.logging.db_logger import get_logger
 
         logger = get_logger("app.infra.metrics.collector")
         logger.info(
@@ -144,7 +144,7 @@ async def log_metrics_snapshot() -> None:
                 # For per-minute: reset counters
                 # We'll keep cumulative for now, but could reset if needed
             except Exception as e:
-                from app.utils.logging.db_logger import get_logger
+                from utils.logging.db_logger import get_logger
 
                 logger = get_logger("app.infra.metrics.collector")
                 logger.warning(
@@ -190,7 +190,7 @@ async def log_metrics_snapshot() -> None:
                 )
     except Exception as e:
         # Log error but don't break metrics collection
-        from app.utils.logging.db_logger import get_logger
+        from utils.logging.db_logger import get_logger
 
         logger = get_logger("app.infra.metrics.collector")
         logger.error(f"Error logging metrics snapshot: {e}")
@@ -228,7 +228,7 @@ async def log_health_checks() -> None:
                     )
     except Exception as e:
         # Log error but don't break health endpoint
-        from app.utils.logging.db_logger import get_logger
+        from utils.logging.db_logger import get_logger
 
         logger = get_logger("app.infra.metrics.collector")
         logger.warning(f"Error logging health checks: {e}")

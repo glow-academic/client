@@ -17,8 +17,8 @@ from app.main import UPLOAD_FOLDER, get_db
 from app.infra.activity.audit import audit_activity, audit_set
 from app.infra.error.handle_route_error import handle_route_error
 from app.infra.templates.jinja_renderer import render_template
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 
 class RenderTemplateRequest(BaseModel):
@@ -79,7 +79,7 @@ async def render_document_template(
 
         # Get template upload info and template args
         # SQL uses INNER JOIN so it only returns rows if document exists and has active template
-        sql_query = load_sql("sql/v3/documents/render_template_complete.sql")
+        sql_query = load_sql("app/sql/v3/documents/render_template_complete.sql")
         sql_params = (str(document_id), str(profile_id))
         template_row = await conn.fetchrow(sql_query, str(document_id), str(profile_id))
 

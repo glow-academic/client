@@ -7,8 +7,8 @@ from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
 from app.infra.activity.websocket_logger import log_websocket_activity
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 from app.infra.websocket.cancel_active_run import cancel_active_run
 
 logger = get_logger(__name__)
@@ -107,7 +107,7 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
             await cancel_active_run(str(chat_id))
 
             # Stop simulation and mark message complete using SQL
-            sql = load_sql("sql/v3/simulations/simulation_text_stop_run_complete.sql")
+            sql = load_sql("app/sql/v3/simulations/simulation_text_stop_run_complete.sql")
             row = await conn.fetchrow(sql, chat_id)
 
             if not row:

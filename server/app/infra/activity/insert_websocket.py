@@ -2,7 +2,7 @@
 
 import asyncpg  # type: ignore
 from app.infra.activity.profile_exists import profile_exists
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 async def insert_activity_websocket(
@@ -30,6 +30,6 @@ async def insert_activity_websocket(
             profile_id_uuid = profile_id
         # If profile doesn't exist, profile_id_uuid remains None (NULL in database)
 
-    sql = load_sql("sql/infrastructure/activity/insert_websocket_complete.sql")
+    sql = load_sql("app/sql/v3/infrastructure/activity/insert_websocket_complete.sql")
     await conn.execute(sql, message, endpoint, profile_id_uuid, error)
 

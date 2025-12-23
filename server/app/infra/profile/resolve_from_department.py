@@ -1,7 +1,7 @@
 """Resolve profile ID from department cookies."""
 
 import asyncpg  # type: ignore
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 async def resolve_profile_from_department(
@@ -22,7 +22,7 @@ async def resolve_profile_from_department(
     if not auth_mode or auth_mode not in ("default-guest", "default-account"):
         return None
 
-    sql = load_sql("sql/infrastructure/profile/resolve_from_department_complete.sql")
+    sql = load_sql("app/sql/v3/infrastructure/profile/resolve_from_department_complete.sql")
     result = await conn.fetchval(sql, department_id, auth_mode)
     if result is None:
         return None

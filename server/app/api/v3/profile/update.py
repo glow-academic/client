@@ -9,9 +9,9 @@ from pydantic import BaseModel
 
 from app.main import get_db, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 router = APIRouter()
 
@@ -138,7 +138,7 @@ async def update_profile(
                 )
 
             # Single consolidated query: checks existence, updates profile, department, and request limit
-            sql_query = load_sql("sql/v3/profile/staff/update_profile_complete.sql")
+            sql_query = load_sql("app/sql/v3/profile/staff/update_profile_complete.sql")
             sql_params = (
                 request.profileId,
                 first_name,
@@ -231,7 +231,7 @@ async def update_profile(
             # Update profile with all fields in a single SQL file
             # Pass None for fields that aren't being updated (SQL uses COALESCE to keep existing values)
             # Note: req_per_day is stored in profile_request_limits table, not updated here
-            sql_query = load_sql("sql/v3/profile/update_profile_complete.sql")
+            sql_query = load_sql("app/sql/v3/profile/update_profile_complete.sql")
             sql_params = (
                 request.profileId,  # $1
                 request.firstName,  # $2

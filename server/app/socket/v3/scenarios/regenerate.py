@@ -21,8 +21,8 @@ from app.infra.activity.websocket_logger import log_websocket_activity
 from app.infra.agents.generic_agent import GenericAgent
 from app.infra.debug.debug_info import DebugContext
 from app.infra.debug.debug_info import debug_info as debug_info_tool
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 from app.infra.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool
 from pydantic import Field
@@ -177,7 +177,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             previous_run_id = uuid.UUID(previous_run_row["run_id"])
 
             # Get scenario's current persona/document/parameter IDs and agent_id
-            sql_get_scenario_ids = load_sql("sql/v3/scenarios/get_scenario_ids_for_regeneration.sql")
+            sql_get_scenario_ids = load_sql("app/sql/v3/scenarios/get_scenario_ids_for_regeneration.sql")
             scenario_ids_row = await conn.fetchrow(sql_get_scenario_ids, str(scenario_id))
 
             if not scenario_ids_row:
@@ -312,7 +312,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context_row["agent_id"])
-            sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
             rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
             agent_tools_config = [dict(row) for row in rows]
             # Create mapping of tool name -> tool config for quick lookup

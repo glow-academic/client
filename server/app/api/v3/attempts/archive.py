@@ -8,10 +8,10 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -88,7 +88,7 @@ async def bulk_archive_attempts(
 
             from datetime import datetime
 
-            sql_query = load_sql("sql/v3/attempts/bulk_archive_attempts_by_filters.sql")
+            sql_query = load_sql("app/sql/v3/attempts/bulk_archive_attempts_by_filters.sql")
 
             # Build parameters matching SQL file expectations:
             # $1: archived (bool)
@@ -139,7 +139,7 @@ async def bulk_archive_attempts(
             result = await conn.fetchrow(sql_query, *sql_params)
         elif request.attemptIds:
             # AttemptIds-based bulk archive: archive specific attempts (backward compatible)
-            sql_query = load_sql("sql/v3/attempts/bulk_archive_attempts_complete.sql")
+            sql_query = load_sql("app/sql/v3/attempts/bulk_archive_attempts_complete.sql")
             sql_params = (request.archived, request.attemptIds)
             result = await conn.fetchrow(
                 sql_query, request.archived, request.attemptIds
@@ -182,7 +182,7 @@ async def bulk_archive_attempts(
         # Refresh analytics materialized view to update is_archived/is_general flags
         # This is critical because archiving changes these computed columns
         try:
-            refresh_sql = load_sql("sql/v3/analytics/refresh_materialized_view.sql")
+            refresh_sql = load_sql("app/sql/v3/analytics/refresh_materialized_view.sql")
             await conn.execute(refresh_sql)
         except Exception as refresh_error:
             # Log error but don't fail the archive operation

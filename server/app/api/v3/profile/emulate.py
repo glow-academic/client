@@ -8,8 +8,8 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.infra.activity.audit import audit_activity
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.sql_helper import load_sql
+from utils.cache.invalidate_tags import invalidate_tags
+from utils.sql_helper import load_sql
 
 router = APIRouter()
 
@@ -46,7 +46,7 @@ async def authorize_emulation(
         return AuthorizeEmulationResponse(allowed=True, reason=None)
 
     # Get simulatable profiles for the requester
-    simulatable_sql = load_sql("sql/v3/profile/get_simulatable_profiles_combined.sql")
+    simulatable_sql = load_sql("app/sql/v3/profile/get_simulatable_profiles_combined.sql")
     simulatable_rows = await conn.fetch(simulatable_sql, request.requesterProfileId)
 
     # Check if target is in the list

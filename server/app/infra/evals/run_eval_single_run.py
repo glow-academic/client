@@ -10,8 +10,8 @@ from agents.items import TResponseInputItem
 from app.infra.agents.generic_agent import GenericAgent
 from app.main import get_internal_sio
 from app.infra.debug.debug_info import DebugContext
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -123,7 +123,7 @@ async def run_eval_single_run(
             )
 
         # 1. Get messages from original run
-        sql_get_messages = load_sql("sql/v3/evals/get_run_messages_for_eval.sql")
+        sql_get_messages = load_sql("app/sql/v3/evals/get_run_messages_for_eval.sql")
         messages_row = await conn.fetchrow(sql_get_messages, run_id)
         if not messages_row:
             raise ValueError(f"No messages found for run {run_id}")
@@ -138,7 +138,7 @@ async def run_eval_single_run(
                 raise ValueError("agent_id is required when dynamic is true")
 
             # Get agent being evaluated's context
-            sql_get_agent_context = load_sql("sql/v3/evals/get_agent_context.sql")
+            sql_get_agent_context = load_sql("app/sql/v3/evals/get_agent_context.sql")
             agent_context_row = await conn.fetchrow(
                 sql_get_agent_context, agent_id, department_id, profile_id
             )
@@ -242,7 +242,7 @@ async def run_eval_single_run(
                             developer_contents.append(stripped)
 
             # Link each developer message to the run
-            sql_link_dev = load_sql("sql/v3/simulations/link_developer_message_to_run.sql")
+            sql_link_dev = load_sql("app/sql/v3/simulations/link_developer_message_to_run.sql")
             developer_message_ids: list[uuid.UUID] = []
             for content in developer_contents:
                 result = await conn.fetchrow(
@@ -286,7 +286,7 @@ async def run_eval_single_run(
                 else:
                     # Get system message ID from the run
                     sys_dev_result = await conn.fetchrow(
-                        load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql"),
+                        load_sql("app/sql/v3/model_runs/link_system_developer_messages_to_run.sql"),
                         str(agent_run_id_uuid),
                         str(uuid.UUID(department_id)) if department_id else None,
                         None,  # chat_id
@@ -340,7 +340,7 @@ async def run_eval_single_run(
             )
 
         # 3. Get eval_agent context
-        sql_get_context = load_sql("sql/v3/evals/get_eval_agent_context.sql")
+        sql_get_context = load_sql("app/sql/v3/evals/get_eval_agent_context.sql")
         context_row = await conn.fetchrow(
             sql_get_context, eval_agent_id, department_id, profile_id
         )
@@ -374,7 +374,7 @@ async def run_eval_single_run(
             test_id = None
 
         # 6. Create run for eval_agent
-        sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+        sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
         eval_run_row = await conn.fetchrow(
             sql_create_run,
             department_id,
@@ -485,7 +485,7 @@ async def run_eval_single_run(
                         developer_contents_eval.append(stripped)
 
         # Link each developer message to the run
-        sql_link_dev = load_sql("sql/v3/simulations/link_developer_message_to_run.sql")
+        sql_link_dev = load_sql("app/sql/v3/simulations/link_developer_message_to_run.sql")
         developer_message_ids_eval: list[uuid.UUID] = []
         for content in developer_contents_eval:
             result = await conn.fetchrow(
@@ -527,7 +527,7 @@ async def run_eval_single_run(
             else:
                 # Get system message ID from the run
                 sys_dev_result = await conn.fetchrow(
-                    load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql"),
+                    load_sql("app/sql/v3/model_runs/link_system_developer_messages_to_run.sql"),
                     str(eval_run_id_uuid),
                     str(uuid.UUID(department_id)) if department_id else None,
                     None,  # chat_id
@@ -576,7 +576,7 @@ async def run_eval_single_run(
 
         # Placeholder: Create a grade with default values
         # TODO: Implement actual grading logic using eval_agent's output
-        grade_sql = load_sql("sql/v3/evals/create_eval_grade.sql")
+        grade_sql = load_sql("app/sql/v3/evals/create_eval_grade.sql")
         grade_result = await conn.fetchrow(
             grade_sql,
             eval_run_id,  # run_id (the eval_agent's run)

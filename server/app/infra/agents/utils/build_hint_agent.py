@@ -8,7 +8,7 @@ from agents import FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResu
 # For now, we'll check progress after tool execution completes
 # This is a limitation of the current tool_use_behavior pattern
 from app.infra.agents.generic_agent import GenericAgent
-from app.utils.logging.db_logger import get_logger
+from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

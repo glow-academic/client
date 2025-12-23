@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_internal_sio, get_pool, sio
-from app.utils.logging.db_logger import get_logger
+from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -160,10 +160,10 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                 )
             else:
                 # Create new video and link to scenario
-                from app.utils.sql_helper import load_sql
+                from utils.sql_helper import load_sql
 
                 # Create video
-                create_video_sql = load_sql("sql/v3/videos/create_video_basic.sql")
+                create_video_sql = load_sql("app/sql/v3/videos/create_video_basic.sql")
                 video_result = await conn.fetchrow(
                     create_video_sql,
                     "Generated Video",  # name (will be updated after generation)
@@ -174,7 +174,7 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                 video_id_uuid = video_result["id"]
 
                 # Link video to scenario (only one active at a time)
-                link_video_sql = load_sql("sql/v3/scenarios/link_video_to_scenario.sql")
+                link_video_sql = load_sql("app/sql/v3/scenarios/link_video_to_scenario.sql")
                 await conn.execute(
                     link_video_sql,
                     str(scenario_id_uuid),

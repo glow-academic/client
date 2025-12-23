@@ -15,8 +15,8 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -56,7 +56,7 @@ async def generate_certificate(
             )
 
         # Load SQL query and fetch certificate data from database
-        sql_query = load_sql("sql/v3/documents/get_certificate_data.sql")
+        sql_query = load_sql("app/sql/v3/documents/get_certificate_data.sql")
         result = await conn.fetchrow(sql_query, profile_id)
 
         if not result:

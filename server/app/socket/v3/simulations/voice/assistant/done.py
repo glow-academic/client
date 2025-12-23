@@ -22,8 +22,8 @@ from app.socket.v3.simulations.streaming.message import (
 from app.socket.v3.simulations.streaming.tool_call import (
     _simulation_tool_call_complete_impl,
 )
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -218,7 +218,7 @@ async def _simulation_voice_assistant_done_impl(
                     return
 
                 # Get personas for this chat to look up persona_id
-                sql_personas = load_sql("sql/v3/voice/get_chat_personas.sql")
+                sql_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
                 persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
 
                 if not persona_rows or len(persona_rows) == 0:

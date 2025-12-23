@@ -3,7 +3,7 @@ Tests for app.utils.agents.tools.create_evaluation_function
 """
 
 from app.main import guardrail_progress, guardrail_results
-from app.utils.agents.tools.create_evaluation_function import create_evaluation_function
+from utils.agents.tools.create_evaluation_function import create_evaluation_function
 
 
 class TestCreate_Evaluation_Function:

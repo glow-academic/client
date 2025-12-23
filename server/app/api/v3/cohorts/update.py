@@ -9,9 +9,9 @@ from pydantic import BaseModel
 
 from app.main import get_db, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 class UpdateCohortRequest(BaseModel):
@@ -70,7 +70,7 @@ async def update_cohort(
         description = request.description if request.description is not None else ""
 
         # Single consolidated query: updates cohort, department, profile, and simulation relationships
-        sql_query = load_sql("sql/v3/cohorts/update_cohort_complete.sql")
+        sql_query = load_sql("app/sql/v3/cohorts/update_cohort_complete.sql")
         sql_params = (
             uuid.UUID(request.cohortId),
             request.title,

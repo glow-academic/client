@@ -57,8 +57,8 @@ from app.api.v3.settings import router as settings_router
 from app.api.v3.simulations import router as simulations_router
 from app.api.v3.staff import router as staff_router
 from app.api.v3.uploads import router as uploads_router
-from app.utils.profile.get_effective_profile_id import get_effective_profile_id
-from app.utils.profile.get_profile_id import get_profile_id
+from utils.profile.get_effective_profile_id import get_effective_profile_id
+from utils.profile.get_profile_id import get_profile_id
 
 # ============================================================================
 # Main Router Configuration

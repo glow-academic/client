@@ -25,8 +25,8 @@ from app.infra.agents.utils.build_hint_agent import build_hint_agent
 from app.infra.chat.format_chat_scenario import format_chat_scenario
 from app.infra.debug.debug_info import DebugContext
 from app.infra.documents.format_document_info import format_document_info
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 from app.infra.tools.build_pydantic_fields import \
     build_function_signature_string
 from fastapi import APIRouter
@@ -614,7 +614,7 @@ async def _simulation_text_send_impl(
                             }
 
                     # Get all personas for this scenario and create persona tools
-                    sql_personas = load_sql("sql/v3/voice/get_chat_personas.sql")
+                    sql_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
                     persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
                     personas = [dict(row) for row in persona_rows]
 
@@ -689,7 +689,7 @@ async def _simulation_text_send_impl(
                     if personas:
                         # Load agent tools from database
                         simulation_agent_id_uuid = uuid.UUID(simulation_agent_id)
-                        sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+                        sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
                         rows = await conn.fetch(sql_get_agent_tools, str(simulation_agent_id_uuid))
                         agent_tools_config = [dict(row) for row in rows]
                         tool_config_map_persona: dict[str, dict[str, Any]] = {
@@ -2229,7 +2229,7 @@ Tool Usage Instructions:
                             f"Triggering hint generation for practice message {last_tool_message['id']}"
                         )
                         # Extract department_id from run context for hint generation
-                        sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
+                        sql = load_sql("app/sql/v3/agents/get_simulation_run_context.sql")
                         run_context_for_hints = await conn.fetchrow(
                             sql, str(chat_id_uuid)
                         )

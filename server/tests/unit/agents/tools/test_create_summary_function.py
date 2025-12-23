@@ -6,7 +6,7 @@ import uuid
 from typing import Any
 
 from app.main import grading_progress, grading_results
-from app.utils.agents.tools.create_summary_function import create_summary_function
+from utils.agents.tools.create_summary_function import create_summary_function
 
 
 class TestCreate_Summary_Function:

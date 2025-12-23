@@ -10,8 +10,8 @@ from app.infra.websocket.increment_guest_count import increment_guest_count
 from app.infra.websocket.remove_socket_owner import remove_socket_owner
 from app.infra.websocket.set_socket_owner import set_socket_owner
 from app.main import get_pool, sio
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 from fastapi import APIRouter
 from pydantic import BaseModel
 

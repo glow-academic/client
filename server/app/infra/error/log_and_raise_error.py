@@ -5,7 +5,7 @@ from typing import Any
 import asyncpg  # type: ignore
 from fastapi import HTTPException, Request
 
-from app.utils.logging.db_logger import get_logger
+from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

@@ -12,10 +12,10 @@ from pydantic import BaseModel
 
 from app.main import AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.logging.db_logger import get_logger
-from app.utils.mime.get_content_type import get_content_type
-from app.utils.sql_helper import load_sql
+from utils.cache.invalidate_tags import invalidate_tags
+from utils.logging.db_logger import get_logger
+from utils.mime.get_content_type import get_content_type
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -111,7 +111,7 @@ async def tus_finalize(
         content_type = metadata.get("filetype") or get_content_type(filename)
 
         # Insert upload record (SQL returns the generated ID)
-        sql = load_sql("sql/v3/uploads/insert_upload.sql")
+        sql = load_sql("app/sql/v3/uploads/insert_upload.sql")
         upload_id = await conn.fetchval(
             sql,
             final_file_path,

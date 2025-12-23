@@ -8,8 +8,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_internal_sio, get_pool, sio
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -147,7 +147,7 @@ async def _simulation_message_start_impl(
         persona_id_str = validated.persona_id
         if not persona_id_str and validated.persona_name:
             # Look up persona by name
-            sql_find_persona = load_sql("sql/v3/personas/get_persona_by_name.sql")
+            sql_find_persona = load_sql("app/sql/v3/personas/get_persona_by_name.sql")
             persona_row = await conn.fetchrow(
                 sql_find_persona, validated.persona_name, str(chat_id_uuid)
             )
@@ -155,7 +155,7 @@ async def _simulation_message_start_impl(
                 persona_id_str = str(persona_row["id"])
 
         # Create message in database
-        sql_create_message = load_sql("sql/v3/simulations/create_message.sql")
+        sql_create_message = load_sql("app/sql/v3/simulations/create_message.sql")
         created_at_param = None
         if validated.created_at:
             from datetime import datetime
@@ -209,17 +209,17 @@ async def _simulation_message_start_impl(
             if latest_user_message_row:
                 user_created_at = latest_user_message_row["created_at"]
                 if user_created_at >= message_created_at:
-                    sql_update_created_at = load_sql("sql/v3/messages/update_message_created_at.sql")
+                    sql_update_created_at = load_sql("app/sql/v3/messages/update_message_created_at.sql")
                     await conn.execute(sql_update_created_at, user_created_at, db_message_id)
                     # Fetch updated created_at
-                    sql_get_created_at = load_sql("sql/v3/messages/get_message_created_at.sql")
+                    sql_get_created_at = load_sql("app/sql/v3/messages/get_message_created_at.sql")
                     updated_row = await conn.fetchrow(sql_get_created_at, db_message_id)
                     if updated_row:
                         message_created_at = updated_row["created_at"]
 
         # Link message to run if run_id is provided
         if validated.run_id:
-            sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
+            sql_link = load_sql("app/sql/v3/simulations/link_message_to_run.sql")
             try:
                 await conn.execute(sql_link, str(db_message_id), validated.run_id)
             except Exception as e:
@@ -239,7 +239,7 @@ async def _simulation_message_start_impl(
         parent_id_str = validated.parent_message_id
         if not parent_id_str and validated.role == "assistant":
             # For assistant messages, find latest message with no active children
-            sql_get_latest = load_sql("sql/v3/simulations/get_latest_message_without_children.sql")
+            sql_get_latest = load_sql("app/sql/v3/simulations/get_latest_message_without_children.sql")
             latest_message_row = await conn.fetchrow(sql_get_latest, chat_id_uuid, db_message_id)
             if latest_message_row and latest_message_row.get("id"):
                 parent_id_str = str(latest_message_row["id"])
@@ -247,7 +247,7 @@ async def _simulation_message_start_impl(
         if parent_id_str:
             assistant_id_str = str(db_message_id)
             if parent_id_str != assistant_id_str:
-                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                sql_branch = load_sql("app/sql/v3/simulations/create_message_branch.sql")
                 try:
                     await conn.execute(sql_branch, parent_id_str, assistant_id_str)
                     logger.info(
@@ -322,7 +322,7 @@ async def _simulation_message_token_impl(
 
     try:
         # Update message content in database
-        sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
+        sql_update = load_sql("app/sql/v3/simulations/update_message_content.sql")
         await conn.execute(
             sql_update, validated.accumulated_content, validated.message_id
         )
@@ -383,7 +383,7 @@ async def _simulation_message_complete_impl(
 
     try:
         # Update message content with final content
-        sql_update = load_sql("sql/v3/simulations/update_message_content.sql")
+        sql_update = load_sql("app/sql/v3/simulations/update_message_content.sql")
         await conn.execute(sql_update, validated.final_content, validated.message_id)
 
         # Update final content in message_content
@@ -395,7 +395,7 @@ async def _simulation_message_complete_impl(
         )
 
         # Complete message in database
-        sql_complete = load_sql("sql/v3/simulations/complete_message.sql")
+        sql_complete = load_sql("app/sql/v3/simulations/complete_message.sql")
         await conn.execute(sql_complete, validated.message_id)
 
         # Emit completion event to clients
@@ -410,11 +410,11 @@ async def _simulation_message_complete_impl(
         )
 
         # Also emit updated message with completed=True
-        sql_get_message = load_sql("sql/v3/messages/get_message_role_and_created_at.sql")
+        sql_get_message = load_sql("app/sql/v3/messages/get_message_role_and_created_at.sql")
         message_row = await conn.fetchrow(sql_get_message, validated.message_id)
         if message_row:
             # Try to get persona_id
-            sql_get_persona = load_sql("sql/v3/messages/get_message_persona_id.sql")
+            sql_get_persona = load_sql("app/sql/v3/messages/get_message_persona_id.sql")
             persona_row = await conn.fetchrow(sql_get_persona, validated.message_id)
             persona_id_str = str(persona_row["persona_id"]) if persona_row else None
 

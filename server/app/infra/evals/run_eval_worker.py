@@ -6,7 +6,7 @@ from typing import Any
 
 import asyncpg  # type: ignore
 
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ async def run_single_eval(
 
         # Placeholder: Create a grade with default values
         # In production, this should use actual grading logic
-        grade_sql = load_sql("sql/v3/evals/create_eval_grade.sql")
+        grade_sql = load_sql("app/sql/v3/evals/create_eval_grade.sql")
         grade_result = await conn.fetchrow(
             grade_sql,
             model_run_id,

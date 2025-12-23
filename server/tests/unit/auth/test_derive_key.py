@@ -6,7 +6,7 @@ import os
 
 import pytest
 
-from app.utils.auth.derive_key import derive_key
+from utils.auth.derive_key import derive_key
 
 
 class TestDerive_Key:

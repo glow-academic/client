@@ -12,7 +12,7 @@ from pydantic import BaseModel, ValidationError
 
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.infra.activity.websocket_logger import log_websocket_activity
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool, FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResult
 from pydantic import Field
@@ -20,8 +20,8 @@ from app.infra.debug.debug_info import DebugContext
 from app.infra.documents.format_document_template_context import (
     format_document_template_context,
 )
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -222,7 +222,7 @@ async def _document_generate_impl(
 
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context["agent_id"])
-            sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
             rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
             agent_tools_config = [dict(row) for row in rows]
             tool_config_map_doc: dict[str, dict[str, Any]] = {
@@ -321,7 +321,7 @@ async def _document_generate_impl(
             # Get department name
             department_name: str | None = None
             if department_id:
-                sql_get_dept = load_sql("sql/v3/departments/get_department_title.sql")
+                sql_get_dept = load_sql("app/sql/v3/departments/get_department_title.sql")
                 dept_row = await conn.fetchrow(sql_get_dept, department_id)
                 if dept_row:
                     department_name = dept_row.get("title")

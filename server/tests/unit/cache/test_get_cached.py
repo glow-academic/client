@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.utils.cache.get_cached import get_cached
+from utils.cache.get_cached import get_cached
 
 
 class TestGet_Cached:

@@ -6,8 +6,8 @@ from typing import Any
 from app.main import get_internal_sio, get_pool, sio
 from app.socket.v3.simulations.streaming.message import (
     SimulationNewMessagePayload, simulation_new_message)
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
@@ -43,7 +43,7 @@ async def _simulation_message_create_impl(
     async with pool.acquire() as conn:
         try:
             # Create user message with linking and branching in single transaction
-            sql = load_sql("sql/v3/simulations/create_user_message_complete.sql")
+            sql = load_sql("app/sql/v3/simulations/create_user_message_complete.sql")
             result_row = await conn.fetchrow(
                 sql, str(chat_id), message_content, str(run_id)
             )

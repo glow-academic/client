@@ -10,9 +10,9 @@ from pydantic import BaseModel
 
 from app.main import get_db, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 class UpdateDocumentRequest(BaseModel):
@@ -79,7 +79,7 @@ async def update_document(
                 template_args_jsonb = json.dumps(request.templateArgs)
 
             # Update document with department links and parameter items in a single transaction
-            sql_query = load_sql("sql/v3/documents/update_document_complete.sql")
+            sql_query = load_sql("app/sql/v3/documents/update_document_complete.sql")
             # Ensure field_ids is always an array (empty if None)
             field_ids_list = request.field_ids or []
             sql_params = (

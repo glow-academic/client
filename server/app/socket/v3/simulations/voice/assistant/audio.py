@@ -7,8 +7,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -122,7 +122,7 @@ async def _simulation_voice_assistant_audio_link_impl(
                 return
 
             # Validate upload exists
-            sql_get_upload = load_sql("sql/v3/uploads/get_upload_id.sql")
+            sql_get_upload = load_sql("app/sql/v3/uploads/get_upload_id.sql")
             upload_row = await conn.fetchrow(sql_get_upload, str(upload_id_uuid))
 
             if not upload_row:

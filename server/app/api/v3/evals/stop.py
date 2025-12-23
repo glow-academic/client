@@ -8,10 +8,10 @@ from pydantic import BaseModel
 
 from app.main import get_db, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
 from app.infra.evals.run_eval_worker import cancel_eval_tasks
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -70,7 +70,7 @@ async def stop_eval(
             cancel_eval_tasks(request.evalId)
 
             # Mark pending runs as completed
-            sql_query = load_sql("sql/v3/evals/stop_eval.sql")
+            sql_query = load_sql("app/sql/v3/evals/stop_eval.sql")
             sql_params = (request.evalId, profile_id)
             result = await conn.fetchrow(sql_query, *sql_params)
 

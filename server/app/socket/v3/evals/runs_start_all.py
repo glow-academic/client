@@ -7,8 +7,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -103,7 +103,7 @@ async def _eval_runs_start_all_impl(sid: str, data: EvalRunsStartAllPayload) -> 
 
         async with pool.acquire() as conn:
             # Get pending runs for this attempt
-            sql_get_pending = load_sql("sql/v3/evals/get_pending_runs_for_attempt.sql")
+            sql_get_pending = load_sql("app/sql/v3/evals/get_pending_runs_for_attempt.sql")
             result = await conn.fetchrow(sql_get_pending, attempt_id)
 
             if not result:

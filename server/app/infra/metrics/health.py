@@ -3,7 +3,7 @@
 from datetime import datetime
 
 import asyncpg  # type: ignore
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 async def log_service_health(
@@ -24,6 +24,6 @@ async def log_service_health(
         error: Error message (empty string if ok)
         conn: Database connection
     """
-    sql = load_sql("sql/infrastructure/metrics/health_complete.sql")
+    sql = load_sql("app/sql/v3/infrastructure/metrics/health_complete.sql")
     await conn.execute(sql, ts, service, ok, latency_ms, error)
 

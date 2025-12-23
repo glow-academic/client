@@ -8,10 +8,10 @@ from pydantic import BaseModel
 
 from app.main import get_db, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.auth.encrypt_api_key import encrypt_api_key
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.auth.encrypt_api_key import encrypt_api_key
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -75,7 +75,7 @@ async def update_key(
             department_ids = request.department_ids if request.department_ids else []
 
             # Update key with department links
-            sql_query = load_sql("sql/v3/keys/update_key.sql")
+            sql_query = load_sql("app/sql/v3/keys/update_key.sql")
             sql_params = (
                 request.keyId,
                 request.name,

@@ -2,7 +2,7 @@
 Tests for app.utils.cache.tag_set_name
 """
 
-from app.utils.cache.tag_set_name import tag_set_name
+from utils.cache.tag_set_name import tag_set_name
 
 
 class TestTag_Set_Name:

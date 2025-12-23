@@ -5,7 +5,7 @@ from typing import Any
 
 from app.main import get_pool
 from app.infra.activity.audit import jinja
-from app.utils.logging.db_logger import get_logger
+from utils.logging.db_logger import get_logger
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 
 logger = get_logger(__name__)

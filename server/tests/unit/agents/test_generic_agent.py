@@ -8,7 +8,7 @@ class TestGeneric_Agent:
 
     def test_generic_agent_structure(self) -> None:
         """Test that GenericAgent class exists and has expected structure."""
-        from app.utils.agents.generic_agent import GenericAgent
+        from utils.agents.generic_agent import GenericAgent
 
         assert GenericAgent is not None
         # Basic structure test - GenericAgent is a complex class

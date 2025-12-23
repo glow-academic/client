@@ -8,13 +8,13 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
+from utils.cache.cache_key import cache_key
+from utils.cache.get_cached import get_cached
+from utils.cache.set_cached import set_cached
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
-from app.utils.theme.color_utils import ensure_contrast, shade, tint
-from app.utils.theme.oklch_to_hex import hex_to_oklch
+from utils.sql_helper import load_sql
+from utils.theme.color_utils import ensure_contrast, shade, tint
+from utils.theme.oklch_to_hex import hex_to_oklch
 
 
 # Inline request/response schemas
@@ -290,7 +290,7 @@ async def get_active_settings(
         # Use empty string instead of None to avoid PostgreSQL type ambiguity
         profile_id_param = profile_id if profile_id else ""
 
-        sql_query = load_sql("sql/v3/settings/get_active_settings.sql")
+        sql_query = load_sql("app/sql/v3/settings/get_active_settings.sql")
         # Pass profileId and departmentId to SQL query
         # profileId: can be null, empty, or UUID (from header, null for guest users)
         # departmentId: optional UUID for direct department-specific settings lookup

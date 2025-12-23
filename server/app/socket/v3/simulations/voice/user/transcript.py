@@ -10,8 +10,8 @@ from app.main import get_pool, get_voice_speech_timestamps, sio
 from app.socket.v3.simulations.streaming.message import (
     _simulation_message_start_impl,
 )
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -134,7 +134,7 @@ async def _simulation_voice_user_transcript_impl(
             user_message_id = uuid.UUID(db_message_id_str)
 
             # Get created_at for emission
-            sql_get_created_at = load_sql("sql/v3/messages/get_message_created_at.sql")
+            sql_get_created_at = load_sql("app/sql/v3/messages/get_message_created_at.sql")
             message_row = await conn.fetchrow(sql_get_created_at, user_message_id)
             created_at = message_row["created_at"] if message_row else None
 

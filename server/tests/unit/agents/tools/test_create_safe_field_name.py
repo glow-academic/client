@@ -2,7 +2,7 @@
 Tests for app.utils.agents.tools.create_safe_field_name
 """
 
-from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
+from utils.agents.tools.create_safe_field_name import create_safe_field_name
 
 
 class TestCreate_Safe_Field_Name:

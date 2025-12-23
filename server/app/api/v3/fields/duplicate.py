@@ -8,9 +8,9 @@ from pydantic import BaseModel
 
 from app.main import get_db, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 class DuplicateFieldRequest(BaseModel):
@@ -63,7 +63,7 @@ async def duplicate_field(
             )
 
         async with transaction(conn):
-            sql_query = load_sql("sql/v3/fields/duplicate_field_complete.sql")
+            sql_query = load_sql("app/sql/v3/fields/duplicate_field_complete.sql")
             sql_params = (request.fieldId, profile_id)
             new_field = await conn.fetchrow(sql_query, request.fieldId, profile_id)
 

@@ -11,8 +11,8 @@ from app.socket.v3.scenarios.tools.image import (
     image_tool_complete,
 )
 from app.infra.activity.websocket_logger import log_websocket_activity
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -54,7 +54,7 @@ async def _image_generation_complete_impl(
     try:
         async with pool.acquire() as conn:
             # Load SQL query at top (DHH style - one SQL file per websocket event)
-            sql = load_sql("sql/v3/images/complete_image_generation_complete.sql")
+            sql = load_sql("app/sql/v3/images/complete_image_generation_complete.sql")
 
             sql_query = sql
             sql_params = (image_id, file_path, mime_type, file_size)

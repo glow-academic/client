@@ -10,8 +10,8 @@ from pydantic import BaseModel, ValidationError
 
 from app.main import get_internal_sio, get_pool, sio
 from app.infra.activity.websocket_logger import log_websocket_activity
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 # Import chat creation function from start.py
 from app.socket.v3.simulations.text.start import simulation_chat_create_impl
@@ -144,7 +144,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
 
         async with pool.acquire() as conn:
             # Get the chat
-            sql = load_sql("sql/v3/simulations/get_chat_basic.sql")
+            sql = load_sql("app/sql/v3/simulations/get_chat_basic.sql")
             chat = await conn.fetchrow(sql, chat_id)
             if not chat:
                 await simulation_text_end_error(
@@ -157,7 +157,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 return
 
             # Get the attempt with profile
-            sql = load_sql("sql/v3/attempts/get_attempt_with_profile.sql")
+            sql = load_sql("app/sql/v3/attempts/get_attempt_with_profile.sql")
             attempt_with_profile = await conn.fetchrow(sql, attempt_id)
             if not attempt_with_profile:
                 await simulation_text_end_error(
@@ -193,7 +193,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
 
             # Extract department_id from chat/scenario for grading
             # SQL query includes fallback: scenario -> profile -> any active department
-            sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
+            sql = load_sql("app/sql/v3/agents/get_simulation_run_context.sql")
             run_context = await conn.fetchrow(sql, chat_id)
 
             if not run_context:
@@ -228,7 +228,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             department_id = uuid.UUID(str(department_id))
 
             # Get the simulation
-            sql = load_sql("sql/v3/simulations/get_simulation_by_id.sql")
+            sql = load_sql("app/sql/v3/simulations/get_simulation_by_id.sql")
             simulation = await conn.fetchrow(
                 sql, str(simulation_attempt["simulation_id"])
             )
@@ -258,12 +258,12 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 return
 
             # Load scenarios for this simulation from junction table
-            sql = load_sql("sql/v3/simulations/get_simulation_scenarios_ordered.sql")
+            sql = load_sql("app/sql/v3/simulations/get_simulation_scenarios_ordered.sql")
             scenario_links = await conn.fetch(sql, str(simulation["id"]))
             is_infinite_mode = bool(simulation_attempt["infinite_mode"])
 
             # Get existing chats for this attempt
-            sql = load_sql("sql/v3/attempts/get_existing_chats_for_attempt.sql")
+            sql = load_sql("app/sql/v3/attempts/get_existing_chats_for_attempt.sql")
             existing_chats = await conn.fetch(sql, attempt_id)
 
             # Debug: Check if existing_chats have 'id' field
@@ -283,7 +283,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             # Get parent scenarios from simulation_scenarios that have at least one graded chat
             # A scenario is considered "done" if it has a chat (linked via attempt_chats) with a grade
             # This uses simulation_scenarios as the source of truth
-            sql = load_sql("sql/v3/simulations/get_scenarios_with_grades.sql")
+            sql = load_sql("app/sql/v3/simulations/get_scenarios_with_grades.sql")
             scenarios_with_grades = await conn.fetch(sql, attempt_id)
             scenarios_with_grades_set = {
                 str(row["parent_scenario_id"]) for row in scenarios_with_grades
@@ -293,7 +293,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             # (for normal grading, we don't want to create another chat for the current scenario)
             # Recursively map child scenario ID to root parent ID for comparison with scenario_links (which contain parent IDs)
             current_chat_child_scenario_id = str(chat.get("scenario_id"))
-            sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
+            sql = load_sql("app/sql/v3/scenarios/get_root_scenario_id.sql")
             current_chat_parent_row = await conn.fetchrow(
                 sql, current_chat_child_scenario_id
             )
@@ -316,7 +316,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 ]
                 if child_scenario_ids:
                     # Batch query to recursively map all child IDs to root parent IDs
-                    sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
+                    sql = load_sql("app/sql/v3/scenarios/get_root_scenario_id.sql")
                     parent_mappings = []
                     for child_id in child_scenario_ids:
                         root_row = await conn.fetchrow(sql, child_id)
@@ -363,11 +363,11 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             # Handle previous_chat_id if provided (reusing score from previous attempt)
             if previous_chat_id:
                 # Link the previous chat to current attempt via junction table
-                sql = load_sql("sql/v3/attempts/link_chat_to_attempt.sql")
+                sql = load_sql("app/sql/v3/attempts/link_chat_to_attempt.sql")
                 await conn.execute(sql, attempt_id, previous_chat_id)
 
                 # Check if the previous chat has a grade and update scenarios_with_grades_set
-                sql = load_sql("sql/v3/simulations/get_previous_chat_info.sql")
+                sql = load_sql("app/sql/v3/simulations/get_previous_chat_info.sql")
                 prev_chat_info = await conn.fetchrow(sql, previous_chat_id)
                 if (
                     prev_chat_info
@@ -376,7 +376,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 ):
                     # Recursively map child scenario ID to root parent ID for comparison with scenario_links
                     prev_chat_child_scenario_id = str(prev_chat_info["scenario_id"])
-                    sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
+                    sql = load_sql("app/sql/v3/scenarios/get_root_scenario_id.sql")
                     prev_chat_parent_row = await conn.fetchrow(
                         sql, prev_chat_child_scenario_id
                     )
@@ -403,7 +403,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                         next_index = len(scenario_links)
 
                 # Mark current incomplete chat as completed (without grade = skipped)
-                sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
+                sql = load_sql("app/sql/v3/simulations/update_chat_completed.sql")
                 await conn.execute(sql, chat_id)
 
                 # If end_all, mark all remaining incomplete chats as completed
@@ -421,7 +421,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             created_chats_count_map = 0
             if end_all and previous_chat_map:
                 # Mark current chat as completed (without grading - user is using previous chat scores)
-                sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
+                sql = load_sql("app/sql/v3/simulations/update_chat_completed.sql")
                 await conn.execute(sql, chat_id)
 
                 # Get scenario IDs that already have chats in this attempt
@@ -435,7 +435,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                     ]
                     if child_scenario_ids:
                         # Batch query to recursively map all child IDs to root parent IDs
-                        sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
+                        sql = load_sql("app/sql/v3/scenarios/get_root_scenario_id.sql")
                         parent_mappings = []
                         for child_id in child_scenario_ids:
                             root_row = await conn.fetchrow(sql, child_id)
@@ -468,7 +468,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                         prev_chat_id = previous_chat_map[scenario_id_str]
                         if prev_chat_id:
                             # Link the previous chat to current attempt via junction table
-                            sql = load_sql("sql/v3/attempts/link_chat_to_attempt.sql")
+                            sql = load_sql("app/sql/v3/attempts/link_chat_to_attempt.sql")
                             await conn.execute(sql, attempt_id, prev_chat_id)
 
                             # Check if the previous chat has a grade and update scenarios_with_grades_set
@@ -517,7 +517,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 # If end_all but no previous_chat_map or previous_chat_id, mark all remaining incomplete chats as completed (skipped)
                 for existing_chat in existing_chats:
                     if not existing_chat["completed"]:
-                        sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
+                        sql = load_sql("app/sql/v3/simulations/update_chat_completed.sql")
                         await conn.execute(sql, str(existing_chat["id"]))
 
             # Create next chat if not end_all (works for both previous_chat_id and normal cases)
@@ -551,7 +551,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
 
                         if most_recent_child_scenario_id:
                             # Recursively map child scenario ID to root parent scenario ID
-                            sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
+                            sql = load_sql("app/sql/v3/scenarios/get_root_scenario_id.sql")
                             parent_row = await conn.fetchrow(
                                 sql, most_recent_child_scenario_id
                             )
@@ -644,7 +644,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             if not previous_chat_id and not previous_chat_map:
                 # Use optimized batch query to get message counts
                 existing_chat_ids = [str(c["id"]) for c in existing_chats]
-                sql = load_sql("sql/v3/simulations/get_messages_count_by_chat_ids.sql")
+                sql = load_sql("app/sql/v3/simulations/get_messages_count_by_chat_ids.sql")
                 message_counts = await conn.fetch(sql, existing_chat_ids)
                 message_count_map = {
                     str(row["chat_id"]): row["message_count"] for row in message_counts
@@ -671,7 +671,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                     graded_chat_child_scenario_id = str(chat.get("scenario_id"))
                     if graded_chat_child_scenario_id:
                         # Recursively map to root parent ID from scenario_tree
-                        sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
+                        sql = load_sql("app/sql/v3/scenarios/get_root_scenario_id.sql")
                         graded_chat_parent_row = await conn.fetchrow(
                             sql, graded_chat_child_scenario_id
                         )
@@ -703,7 +703,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
 
                 # Mark the current chat as completed (if not already marked by previous_chat_map handling)
                 if not (end_all and previous_chat_map):
-                    sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
+                    sql = load_sql("app/sql/v3/simulations/update_chat_completed.sql")
                     await conn.execute(sql, chat_id)
 
             created_chats_count = 0
@@ -711,7 +711,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             if end_all and not previous_chat_id and not previous_chat_map:
                 # End any other incomplete chats for this attempt
                 existing_chat_ids = [str(c["id"]) for c in existing_chats]
-                sql = load_sql("sql/v3/simulations/get_messages_count_by_chat_ids.sql")
+                sql = load_sql("app/sql/v3/simulations/get_messages_count_by_chat_ids.sql")
                 message_counts = await conn.fetch(sql, existing_chat_ids)
                 message_count_map = {
                     str(row["chat_id"]): row["message_count"] for row in message_counts
@@ -734,7 +734,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                                     "sid": sid,
                                 },
                             )
-                        sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
+                        sql = load_sql("app/sql/v3/simulations/update_chat_completed.sql")
                         await conn.execute(sql, str(existing_chat["id"]))
 
                 # Calculate and create remaining chats in order
@@ -763,7 +763,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
             if is_infinite_mode:
                 is_attempt_finished = False
             else:
-                sql = load_sql("sql/v3/simulations/get_scenarios_with_grades.sql")
+                sql = load_sql("app/sql/v3/simulations/get_scenarios_with_grades.sql")
                 scenarios_with_grades_for_finished_check = await conn.fetch(
                     sql, attempt_id
                 )
@@ -798,7 +798,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 )
 
                 # Get all chat IDs for this attempt to help frontend with cache invalidation
-                sql = load_sql("sql/v3/attempts/get_existing_chats_for_attempt.sql")
+                sql = load_sql("app/sql/v3/attempts/get_existing_chats_for_attempt.sql")
                 all_chats = await conn.fetch(sql, attempt_id)
                 completed_chat_ids = [
                     str(c["id"]) for c in all_chats if c.get("completed")

@@ -5,7 +5,7 @@ from agents import (Agent, FunctionToolResult, ModelSettings, OutputGuardrail,
                     RunContextWrapper, Tool, ToolsToFinalOutputResult)
 from agents.extensions.models.litellm_model import LitellmModel
 from agents.mcp.server import MCPServer
-from app.utils.auth.decrypt_api_key import decrypt_api_key
+from utils.auth.decrypt_api_key import decrypt_api_key
 from app.infra.debug.debug_info import DebugContext
 from openai.types import Reasoning
 

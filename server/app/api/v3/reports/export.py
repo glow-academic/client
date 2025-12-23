@@ -16,7 +16,7 @@ from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
 from datetime import datetime
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.logging.db_logger import get_logger
+from utils.logging.db_logger import get_logger
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -28,7 +28,7 @@ class SimulationFilter(str, Enum):
     ARCHIVED = "archived"
 
 
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -232,7 +232,7 @@ async def export_reports(
             )
 
         # Use the same reports_bundle.sql query that the reports view uses
-        sql_template = load_sql("sql/v3/reports/reports_bundle.sql")
+        sql_template = load_sql("app/sql/v3/reports/reports_bundle.sql")
 
         # Build base filters inline (same as reports bundle)
         profile_conditions = []

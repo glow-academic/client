@@ -5,7 +5,7 @@ from typing import Any
 from agents import FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResult
 
 from app.infra.agents.generic_agent import DEBUG_INFO_TOOL_SUFFIX, GenericAgent
-from app.utils.logging.db_logger import get_logger
+from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

@@ -6,9 +6,9 @@ import socket
 from typing import Any
 
 from app.main import get_internal_sio, get_pool, sio
-from app.utils.auth.decrypt_api_key import decrypt_api_key
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.auth.decrypt_api_key import decrypt_api_key
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -140,7 +140,7 @@ async def get_realm_name_for_department(department_id: str | None, pool: Any) ->
 
     try:
         async with pool.acquire() as conn:
-            realm_sql = load_sql("sql/v3/keycloak/get_realm_name_for_department.sql")
+            realm_sql = load_sql("app/sql/v3/keycloak/get_realm_name_for_department.sql")
             realm_name = await conn.fetchval(realm_sql, department_id)
             return realm_name or "master"
     except Exception as e:
@@ -526,7 +526,7 @@ async def sync_department_realm_by_settings(
         # Get providers for this settings (not department)
         # We need to update get_auth_providers_complete.sql to accept settings_id
         # For now, if we have department_id, use it; otherwise use NULL for default settings
-        providers_sql = load_sql("sql/v3/keycloak/get_auth_providers_complete.sql")
+        providers_sql = load_sql("app/sql/v3/keycloak/get_auth_providers_complete.sql")
         # Pass department_id for backward compatibility, but logic will be updated
         providers = await conn.fetch(providers_sql, department_id)
 
@@ -566,7 +566,7 @@ async def sync_department_realm_by_settings(
                 f"No active providers found for department {department_id or 'default'}, skipping sync"
             )
         else:
-            items_sql = load_sql("sql/v3/keycloak/get_auth_items_complete.sql")
+            items_sql = load_sql("app/sql/v3/keycloak/get_auth_items_complete.sql")
 
             for p in providers:
                 auth_id = p["id"]

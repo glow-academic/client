@@ -10,21 +10,21 @@ class TestNormalize_Text:
 
     def test_normalize_text_success(self) -> None:
         """Test successful normalize_text execution."""
-        from app.utils.text.normalize_text import normalize_text
+        from utils.text.normalize_text import normalize_text
 
         result = normalize_text("Hello World")
         assert result == "hello world"
 
     def test_normalize_text_accents(self) -> None:
         """Test normalize_text with accents."""
-        from app.utils.text.normalize_text import normalize_text
+        from utils.text.normalize_text import normalize_text
 
         result = normalize_text("Café résumé")
         assert result == "cafe resume"
 
     def test_normalize_text_whitespace(self) -> None:
         """Test normalize_text with multiple whitespace."""
-        from app.utils.text.normalize_text import normalize_text
+        from utils.text.normalize_text import normalize_text
 
         result = normalize_text("Hello    World  \n\t  Test")
         assert result == "hello world test"
@@ -35,21 +35,21 @@ class TestTokenize:
 
     def test_tokenize_success(self) -> None:
         """Test successful tokenize execution."""
-        from app.utils.text.tokenize import tokenize
+        from utils.text.tokenize import tokenize
 
         result = tokenize("Hello World Test")
         assert result == ["hello", "world", "test"]
 
     def test_tokenize_empty(self) -> None:
         """Test tokenize with empty string."""
-        from app.utils.text.tokenize import tokenize
+        from utils.text.tokenize import tokenize
 
         result = tokenize("")
         assert result == []
 
     def test_tokenize_whitespace_only(self) -> None:
         """Test tokenize with whitespace only."""
-        from app.utils.text.tokenize import tokenize
+        from utils.text.tokenize import tokenize
 
         result = tokenize("   \n\t  ")
         assert result == []
@@ -60,7 +60,7 @@ class TestBuild_Fuzzy_Conditions:
 
     def test_build_fuzzy_conditions_success(self) -> None:
         """Test successful build_fuzzy_conditions execution."""
-        from app.utils.search import build_fuzzy_conditions
+        from utils.search import build_fuzzy_conditions
 
         fields = ["s.name", "s.description"]
         query = "test query"
@@ -82,7 +82,7 @@ class TestBuild_Fuzzy_Conditions:
 
     def test_build_fuzzy_conditions_single_field(self) -> None:
         """Test build_fuzzy_conditions with single field."""
-        from app.utils.search import build_fuzzy_conditions
+        from utils.search import build_fuzzy_conditions
 
         fields = ["s.name"]
         query = "test"
@@ -94,7 +94,7 @@ class TestBuild_Fuzzy_Conditions:
 
     def test_build_fuzzy_conditions_parameter_indexing(self) -> None:
         """Test build_fuzzy_conditions parameter indexing."""
-        from app.utils.search import build_fuzzy_conditions
+        from utils.search import build_fuzzy_conditions
 
         fields = ["s.name"]
         query = "test"

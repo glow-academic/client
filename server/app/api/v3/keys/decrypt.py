@@ -8,9 +8,9 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.auth.decrypt_api_key import decrypt_api_key
+from utils.auth.decrypt_api_key import decrypt_api_key
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -59,7 +59,7 @@ async def decrypt_key(
             )
 
         # Fetch the encrypted key from database
-        sql_query = load_sql("sql/v3/keys/get_key_detail.sql")
+        sql_query = load_sql("app/sql/v3/keys/get_key_detail.sql")
         sql_params = (
             request.keyId,
             True,

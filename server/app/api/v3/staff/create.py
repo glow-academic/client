@@ -10,9 +10,9 @@ from pydantic import BaseModel
 from app.api.v3.profile.create import CreateProfileRequest
 from app.main import get_db, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 router = APIRouter()
 
@@ -90,7 +90,7 @@ async def bulk_create_staff(
                 department_ids.append("")  # Empty string for no department
 
         # Single consolidated query: validates emails, creates all profiles, and inserts departments
-        sql_query = load_sql("sql/v3/profile/staff/bulk_create_profile_complete.sql")
+        sql_query = load_sql("app/sql/v3/profile/staff/bulk_create_profile_complete.sql")
         sql_params = (
             profile_ids,
             first_names,

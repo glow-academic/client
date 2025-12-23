@@ -9,10 +9,10 @@ from pydantic import BaseModel
 
 from app.main import get_db, get_pool
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
 from app.infra.evals.run_eval_worker import run_eval_parallel
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -64,7 +64,7 @@ async def run_eval(
     try:
         profile_id = http_request.state.profile_id
         # Get eval and pending model_runs
-        sql_query = load_sql("sql/v3/evals/run_eval.sql")
+        sql_query = load_sql("app/sql/v3/evals/run_eval.sql")
         sql_params = (request.evalId, profile_id)
         result = await conn.fetchrow(sql_query, *sql_params)
 

@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from app.main import sio
 from app.infra.activity.websocket_logger import log_websocket_activity
-from app.utils.logging.db_logger import get_logger
+from utils.logging.db_logger import get_logger
 from app.infra.websocket.remove_socket_owner import remove_socket_owner
 from app.infra.websocket.decrement_guest_count import decrement_guest_count
 from app.infra.websocket.find_chats_by_socket import find_chats_by_socket
@@ -36,7 +36,7 @@ async def disconnect(sid: str) -> None:
         try:
             from datetime import UTC, datetime
             from app.main import get_pool
-            from app.utils.sql_helper import load_sql
+            from utils.sql_helper import load_sql
 
             pool = get_pool()
             if pool:

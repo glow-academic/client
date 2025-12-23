@@ -8,11 +8,11 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.infra.activity.audit import audit_activity
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
+from utils.cache.cache_key import cache_key
+from utils.cache.get_cached import get_cached
+from utils.cache.set_cached import set_cached
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -82,7 +82,7 @@ async def get_feedback_list(
 
     try:
         # Load SQL query
-        sql_query = load_sql("sql/v3/feedback/get_feedback_list.sql")
+        sql_query = load_sql("app/sql/v3/feedback/get_feedback_list.sql")
         sql_params = ()
 
         # Execute query

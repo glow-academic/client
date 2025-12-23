@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from dotenv import load_dotenv
 
-from app.utils.auth.derive_key import IV_LENGTH, SALT_LENGTH, derive_key
+from utils.auth.derive_key import IV_LENGTH, SALT_LENGTH, derive_key
 
 load_dotenv()
 

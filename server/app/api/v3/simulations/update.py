@@ -8,9 +8,9 @@ from pydantic import BaseModel
 
 from app.main import get_db, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -177,7 +177,7 @@ async def update_simulation(
 
             # Update simulation with departments and scenarios in single SQL (DHH style)
             # Note: rubric_id and time_limit are now per-scenario, not simulation-level
-            sql_query = load_sql("sql/v3/simulations/update_simulation_complete.sql")
+            sql_query = load_sql("app/sql/v3/simulations/update_simulation_complete.sql")
             sql_params = (
                 request.simulationId,
                 request.title,

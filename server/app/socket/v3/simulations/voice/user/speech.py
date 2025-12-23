@@ -11,8 +11,8 @@ from app.socket.v3.simulations.text.send import (
     SimulationRunCompletePayload,
     simulation_run_complete,
 )
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -104,7 +104,7 @@ async def _simulation_voice_user_speech_impl(
 
             async with pool.acquire() as conn:
                 # Get chat context (department_id, model_id, agent_id, profile_id, key_id)
-                sql_context = load_sql("sql/v3/agents/get_simulation_run_context.sql")
+                sql_context = load_sql("app/sql/v3/agents/get_simulation_run_context.sql")
                 context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
 
                 if not context_row:
@@ -160,7 +160,7 @@ async def _simulation_voice_user_speech_impl(
                 # Get active settings for profile (or default if no profile)
                 if profile_id_uuid:
                     # Get active settings for profile
-                    sql_get_key = load_sql("sql/v3/settings/get_key_id_for_model_with_profile.sql")
+                    sql_get_key = load_sql("app/sql/v3/settings/get_key_id_for_model_with_profile.sql")
                     key_id_row = await conn.fetchrow(
                         sql_get_key,
                         model_id_uuid,
@@ -168,7 +168,7 @@ async def _simulation_voice_user_speech_impl(
                     )
                 else:
                     # Use default settings if no profile_id
-                    sql_get_key = load_sql("sql/v3/settings/get_key_id_for_model_default.sql")
+                    sql_get_key = load_sql("app/sql/v3/settings/get_key_id_for_model_default.sql")
                     key_id_row = await conn.fetchrow(
                         sql_get_key,
                         model_id_uuid,
@@ -183,7 +183,7 @@ async def _simulation_voice_user_speech_impl(
                         )
 
                 # Get first persona ID for run creation (needed for entity_id)
-                sql_personas = load_sql("sql/v3/voice/get_chat_personas.sql")
+                sql_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
                 persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
                 if not persona_rows or len(persona_rows) == 0:
                     logger.error(f"No personas found for chat {chat_id}")
@@ -292,11 +292,11 @@ async def _simulation_voice_user_speech_impl(
 
                         # Link run to chat's group (now uses groups/group_runs)
                         # Get or create group for chat, then link run to group
-                        sql_get_group = load_sql("sql/v3/simulations/get_or_create_group_for_chat.sql")
+                        sql_get_group = load_sql("app/sql/v3/simulations/get_or_create_group_for_chat.sql")
                         chat_group_row = await conn.fetchrow(sql_get_group, str(chat_id_uuid))
                         if chat_group_row:
                             group_id = chat_group_row["group_id"]
-                            sql_link_run = load_sql("sql/v3/simulations/link_run_to_group.sql")
+                            sql_link_run = load_sql("app/sql/v3/simulations/link_run_to_group.sql")
                             await conn.execute(sql_link_run, str(group_id), str(run_id))
 
                         # Link message to run (if message exists)

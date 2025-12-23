@@ -6,7 +6,7 @@ import uuid
 from typing import Any
 
 from app.main import grading_progress, grading_results
-from app.utils.agents.tools.create_grading_tools import create_grading_tools
+from utils.agents.tools.create_grading_tools import create_grading_tools
 
 
 class TestCreate_Grading_Tools:

@@ -7,9 +7,9 @@ from typing import Any
 import asyncpg  # type: ignore
 
 from app.main import UPLOAD_FOLDER, get_pool
-from app.utils.auth.decrypt_api_key import decrypt_api_key
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.auth.decrypt_api_key import decrypt_api_key
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -67,7 +67,7 @@ async def generate_image_background(
                 )
                 return
             
-            sql_query = load_sql("sql/v3/agents/get_agent_model_info.sql")
+            sql_query = load_sql("app/sql/v3/agents/get_agent_model_info.sql")
             row = await conn.fetchrow(sql_query, agent_id, profile_id)
             if not row:
                 await _emit_image_error(
@@ -207,7 +207,7 @@ async def generate_image_background(
                 mime_type = "image/gif"
 
             # Create upload record
-            sql_insert_upload = load_sql("sql/v3/uploads/insert_upload.sql")
+            sql_insert_upload = load_sql("app/sql/v3/uploads/insert_upload.sql")
             upload_row = await conn.fetchrow(
                 sql_insert_upload,
                 file_path,
@@ -245,7 +245,7 @@ async def generate_image_background(
                 # Don't fail - upload exists, can be linked later
 
             # Update image record: completed=true
-            sql_update_image = load_sql("sql/v3/images/update_image_completed.sql")
+            sql_update_image = load_sql("app/sql/v3/images/update_image_completed.sql")
             await conn.execute(sql_update_image, image_id, True)
 
             logger.info(
@@ -334,7 +334,7 @@ async def _emit_image_error(
     if pool:
         try:
             async with pool.acquire() as conn:
-                sql_update_image = load_sql("sql/v3/images/update_image_completed.sql")
+                sql_update_image = load_sql("app/sql/v3/images/update_image_completed.sql")
                 await conn.execute(sql_update_image, image_id, True)
         except Exception as e:
             logger.error(f"Failed to update image record on error: {e}")

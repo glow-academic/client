@@ -7,8 +7,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -96,7 +96,7 @@ async def _simulation_voice_debug_info_impl(
             run_id = uuid.UUID(run_row["run_id"])
 
             # Insert debug info
-            sql_insert_debug_info = load_sql("sql/v3/model_runs/insert_debug_info.sql")
+            sql_insert_debug_info = load_sql("app/sql/v3/model_runs/insert_debug_info.sql")
             await conn.execute(sql_insert_debug_info, run_id, content)
 
             logger.info(

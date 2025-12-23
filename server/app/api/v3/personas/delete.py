@@ -8,9 +8,9 @@ from pydantic import BaseModel
 
 from app.main import get_db, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -63,7 +63,7 @@ async def delete_persona(
 
         async with transaction(conn):
             # Delete persona with usage check and name fetch (single query)
-            sql_query = load_sql("sql/v3/personas/delete_persona_complete.sql")
+            sql_query = load_sql("app/sql/v3/personas/delete_persona_complete.sql")
             sql_params = (request.personaId, profile_id)
             result = await conn.fetchrow(sql_query, request.personaId, profile_id)
 

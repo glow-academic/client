@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import asyncpg  # type: ignore
 from agents import RunContextWrapper, function_tool
 
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 @dataclass
@@ -38,7 +38,7 @@ def debug_info(ctx: RunContextWrapper[DebugContext], content: str) -> str:
 
     try:
         # Insert debug info asynchronously (fire-and-forget)
-        sql = load_sql("sql/v3/model_runs/insert_debug_info.sql")
+        sql = load_sql("app/sql/v3/model_runs/insert_debug_info.sql")
         asyncio.create_task(conn.execute(sql, run_id, content))
     except Exception as e:
         print(f"Error saving debug info: {e}")

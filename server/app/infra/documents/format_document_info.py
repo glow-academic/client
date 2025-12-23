@@ -14,9 +14,9 @@ from openai.types.responses.response_input_message_content_list_param import (
 from openai.types.responses.response_input_text_param import ResponseInputTextParam
 
 from app.main import UPLOAD_FOLDER
-from app.utils.document.pdf_pages_to_image_data_urls import pdf_pages_to_image_data_urls
-from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
-from app.utils.document.read_text_file import read_text_file
+from utils.document.pdf_pages_to_image_data_urls import pdf_pages_to_image_data_urls
+from utils.document.read_pdf_text_pages import read_pdf_text_pages
+from utils.document.read_text_file import read_text_file
 
 
 def _format_template_args_notice(template_args: Any) -> str:

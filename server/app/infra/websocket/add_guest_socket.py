@@ -1,7 +1,7 @@
 """Add a guest socket to Redis."""
 
 from app.main import get_redis_client
-from app.utils.logging.db_logger import get_logger
+from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

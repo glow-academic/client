@@ -12,8 +12,8 @@ from app.infra.agents.utils.build_hint_agent import build_hint_agent
 from app.infra.chat.format_chat_scenario import format_chat_scenario
 from app.infra.debug.debug_info import DebugContext
 from app.infra.documents.format_document_info import format_document_info
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 
@@ -95,7 +95,7 @@ async def _generate_hints_impl(
 
             # Get context AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
-            sql = load_sql("sql/v3/simulations/generate_hints_complete.sql")
+            sql = load_sql("app/sql/v3/simulations/generate_hints_complete.sql")
             try:
                 context_row = await conn.fetchrow(
                     sql, str(message_id), str(chat_id), str(department_id)
@@ -251,7 +251,7 @@ async def _generate_hints_impl(
                 input_items.append(document_info)
 
             # Get all messages for the chat using SQL file
-            sql = load_sql("sql/v3/simulations/get_simulation_messages.sql")
+            sql = load_sql("app/sql/v3/simulations/get_simulation_messages.sql")
             message_rows = await conn.fetch(sql, str(chat_id))
             all_messages = [dict(row) for row in message_rows]
 
@@ -343,7 +343,7 @@ async def _generate_hints_impl(
 
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context["agent_id"])
-            sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
             rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
             agent_tools_config = [dict(row) for row in rows]
             tool_config_map: dict[str, dict[str, Any]] = {

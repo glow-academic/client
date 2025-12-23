@@ -20,13 +20,13 @@ from pydantic import BaseModel
 from app.main import TUS_UPLOADS_DIR, classification_results, get_db
 from app.infra.activity.audit import audit_activity, audit_set
 from app.infra.agents.generic_agent import GenericAgent
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool
 from pydantic import Field
 from app.infra.debug.debug_info import DebugContext
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -114,7 +114,7 @@ async def classify_upload(
         if request_body.parameterIds:
             parameter_ids_filter = [uuid.UUID(pid) for pid in request_body.parameterIds]
 
-        sql_param_items = load_sql("sql/v3/uploads/get_classification_context.sql")
+        sql_param_items = load_sql("app/sql/v3/uploads/get_classification_context.sql")
         rows = await conn.fetch(
             sql_param_items,
             parameter_ids_filter if parameter_ids_filter else [],
@@ -212,7 +212,7 @@ async def classify_upload(
 
         # Load agent tools from database
         agent_id_uuid = uuid.UUID(context["agent_id"])
-        sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+        sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
         rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
         agent_tools_config = [dict(row) for row in rows]
         tool_config_map_classify: dict[str, dict[str, Any]] = {
@@ -319,7 +319,7 @@ Analyze each file name and classify it by selecting the most appropriate paramet
 Use the provided classification tools to indicate which files match each parameter item. Call the tool for each parameter item that has matching files."""
 
         # Create model run
-        sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+        sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
         model_run_row = await conn.fetchrow(
             sql_create_run,
             str(department_id) if department_id else None,
@@ -367,7 +367,7 @@ Use the provided classification tools to indicate which files match each paramet
                         developer_contents.append(stripped)
 
         # Link each developer message to the run
-        sql_link_dev = load_sql("sql/v3/simulations/link_developer_message_to_run.sql")
+        sql_link_dev = load_sql("app/sql/v3/simulations/link_developer_message_to_run.sql")
         developer_message_ids: list[uuid.UUID] = []
         for content in developer_contents:
             result = await conn.fetchrow(
@@ -405,7 +405,7 @@ Use the provided classification tools to indicate which files match each paramet
             else:
                 # Get system message ID from the run
                 sys_dev_result = await conn.fetchrow(
-                    load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql"),
+                    load_sql("app/sql/v3/model_runs/link_system_developer_messages_to_run.sql"),
                     str(model_run_id),
                     str(department_id) if department_id else None,
                     None,  # chat_id
@@ -430,7 +430,7 @@ Use the provided classification tools to indicate which files match each paramet
 
         # Update token counts
         usage = result.context_wrapper.usage
-        sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+        sql_update_tokens = load_sql("app/sql/v3/model_runs/update_model_run_tokens.sql")
         await conn.execute(
             sql_update_tokens,
             str(model_run_id),

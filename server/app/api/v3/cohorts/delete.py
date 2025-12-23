@@ -9,9 +9,9 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 class DeleteCohortRequest(BaseModel):
@@ -61,7 +61,7 @@ async def delete_cohort(
             )
 
         # Delete cohort with usage check (single query)
-        sql_query = load_sql("sql/v3/cohorts/delete_cohort_complete.sql")
+        sql_query = load_sql("app/sql/v3/cohorts/delete_cohort_complete.sql")
         sql_params = (uuid.UUID(request.cohortId), uuid.UUID(profile_id))
         result = await conn.fetchrow(
             sql_query, uuid.UUID(request.cohortId), uuid.UUID(profile_id)

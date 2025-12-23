@@ -11,11 +11,11 @@ from pydantic import BaseModel
 
 from app.main import UPLOAD_FOLDER, get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
+from utils.cache.cache_key import cache_key
+from utils.cache.get_cached import get_cached
+from utils.cache.set_cached import set_cached
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -176,7 +176,7 @@ async def get_document_detail(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("sql/v3/documents/get_document_detail_complete.sql")
+        sql_query = load_sql("app/sql/v3/documents/get_document_detail_complete.sql")
         sql_params = (
             uuid.UUID(request_body.documentId),
             uuid.UUID(profile_id),
@@ -341,7 +341,7 @@ async def get_document_detail(
                         with open(full_path, encoding="utf-8") as f:
                             template_html = f.read()
                 else:
-                    sql_get_upload = load_sql("sql/v3/uploads/get_upload_file_info.sql")
+                    sql_get_upload = load_sql("app/sql/v3/uploads/get_upload_file_info.sql")
                     upload_row = await conn.fetchrow(sql_get_upload, template_upload_id)
                     if upload_row and upload_row.get("file_path"):
                         file_path = upload_row["file_path"]

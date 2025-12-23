@@ -13,11 +13,11 @@ from app.api.v3.reports.export import router as export_router
 from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
 from datetime import datetime
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
+from utils.cache.cache_key import cache_key
+from utils.cache.get_cached import get_cached
+from utils.cache.set_cached import set_cached
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 router.include_router(export_router)
@@ -166,7 +166,7 @@ async def get_reports(
 
     try:
         # Load SQL template
-        sql_template = load_sql("sql/v3/reports/reports_bundle.sql")
+        sql_template = load_sql("app/sql/v3/reports/reports_bundle.sql")
 
         # Build separate WHERE clauses for profiles and analytics
         # This allows including all matching profiles even if they have no attempts

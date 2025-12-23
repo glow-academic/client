@@ -14,8 +14,8 @@ from pydantic import BaseModel, ValidationError
 from app.main import _voice_sessions, get_pool, sio
 from app.infra.activity.websocket_logger import log_websocket_activity
 from app.infra.agents.utils.build_voice_agent import build_voice_agent
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 from agents import function_tool
 from pydantic import Field
 
@@ -165,7 +165,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
         async with pool.acquire() as conn:
             # Get chat context (similar to send_message)
-            sql_context = load_sql("sql/v3/agents/get_simulation_run_context.sql")
+            sql_context = load_sql("app/sql/v3/agents/get_simulation_run_context.sql")
             context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
 
             if not context_row:
@@ -179,7 +179,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 return
 
             # Get all personas for this scenario
-            sql_personas = load_sql("sql/v3/voice/get_chat_personas.sql")
+            sql_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
             persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
 
             if not persona_rows or len(persona_rows) == 0:
@@ -335,7 +335,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             # Get active settings for profile (or default if no profile)
             if profile_id_uuid:
                 # Get active settings for profile
-                sql_get_key = load_sql("sql/v3/settings/get_key_id_for_model_with_profile.sql")
+                sql_get_key = load_sql("app/sql/v3/settings/get_key_id_for_model_with_profile.sql")
                 key_id_row = await conn.fetchrow(
                     sql_get_key,
                     model_id_uuid,
@@ -343,7 +343,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 )
             else:
                 # Use default settings if no profile_id
-                sql_get_key = load_sql("sql/v3/settings/get_key_id_for_model_default.sql")
+                sql_get_key = load_sql("app/sql/v3/settings/get_key_id_for_model_default.sql")
                 key_id_row = await conn.fetchrow(
                     sql_get_key,
                     model_id_uuid,
@@ -416,7 +416,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
             # Create persona tools inline
             # Load agent tools from database
-            sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
             rows = await conn.fetch(sql_get_agent_tools, str(simulation_agent_id))
             agent_tools_config = [dict(row) for row in rows]
             tool_config_map_voice: dict[str, dict[str, Any]] = {
@@ -788,7 +788,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
             # Get conversation history for RealtimeSession
             # Fetch messages using the same SQL as text mode
-            sql_messages = load_sql("sql/v3/simulations/get_simulation_messages.sql")
+            sql_messages = load_sql("app/sql/v3/simulations/get_simulation_messages.sql")
             message_rows = await conn.fetch(sql_messages, str(chat_id_uuid))
             messages = [dict(row) for row in message_rows]
 

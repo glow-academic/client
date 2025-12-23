@@ -7,8 +7,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_internal_sio, get_pool
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -94,7 +94,7 @@ async def _simulation_tool_call_start_impl(
             return None
 
         # Create tool call in database
-        sql_create_tool_call = load_sql("sql/v3/tool_calls/create_tool_call.sql")
+        sql_create_tool_call = load_sql("app/sql/v3/tool_calls/create_tool_call.sql")
         tool_call_row = await conn.fetchrow(
             sql_create_tool_call, validated.call_id, str(tool_id)
         )
@@ -108,7 +108,7 @@ async def _simulation_tool_call_start_impl(
         db_tool_call_id = tool_call_row["id"]
 
         # Link tool call to run
-        sql_link_tool_call = load_sql("sql/v3/tool_calls/link_tool_call_to_run.sql")
+        sql_link_tool_call = load_sql("app/sql/v3/tool_calls/link_tool_call_to_run.sql")
         try:
             await conn.execute(
                 sql_link_tool_call, str(db_tool_call_id), validated.run_id
@@ -162,7 +162,7 @@ async def _simulation_tool_call_token_impl(
 
     try:
         # Update tool call arguments in database
-        sql_update_args = load_sql("sql/v3/tool_calls/update_tool_call_arguments.sql")
+        sql_update_args = load_sql("app/sql/v3/tool_calls/update_tool_call_arguments.sql")
         await conn.execute(
             sql_update_args, validated.tool_call_id, validated.arguments_raw
         )
@@ -218,7 +218,7 @@ async def _simulation_tool_call_complete_impl(
         await conn.execute(sql_update_completed, validated.tool_call_id)
 
         # Update arguments with final version
-        sql_update_args = load_sql("sql/v3/tool_calls/update_tool_call_arguments.sql")
+        sql_update_args = load_sql("app/sql/v3/tool_calls/update_tool_call_arguments.sql")
         await conn.execute(
             sql_update_args, validated.tool_call_id, validated.arguments_raw
         )

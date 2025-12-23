@@ -10,9 +10,9 @@ from pydantic import BaseModel, ValidationError
 
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.infra.activity.websocket_logger import log_websocket_activity
-from app.utils.auth.decrypt_api_key import decrypt_api_key
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.auth.decrypt_api_key import decrypt_api_key
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -284,7 +284,7 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                     # Create upload record
                     mime_type = "video/mp4"
                     file_size = len(video_content_bytes)
-                    sql_query = load_sql("sql/v3/uploads/insert_upload.sql")
+                    sql_query = load_sql("app/sql/v3/uploads/insert_upload.sql")
                     upload_id_str = await conn.fetchval(
                         sql_query,
                         video_filename,

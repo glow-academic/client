@@ -11,9 +11,9 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
+from utils.cache.cache_key import cache_key
+from utils.cache.get_cached import get_cached
+from utils.cache.set_cached import set_cached
 from app.infra.error.handle_route_error import handle_route_error
 
 
@@ -26,7 +26,7 @@ class SimulationFilter(str, Enum):
     ARCHIVED = "archived"
 
 
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 router = APIRouter()
 
@@ -164,7 +164,7 @@ async def get_pricing(
             simulation_filters = [f.value for f in filters.simulationFilters]
 
         # Execute consolidated SQL query with all filter logic (including role check)
-        sql_query = load_sql("sql/v3/pricing/get_pricing_analytics_complete.sql")
+        sql_query = load_sql("app/sql/v3/pricing/get_pricing_analytics_complete.sql")
         sql_params = (
             start_dt,
             end_dt,

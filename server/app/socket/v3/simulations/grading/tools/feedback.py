@@ -7,8 +7,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_internal_sio, get_pool, sio
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -143,7 +143,7 @@ async def _grading_tool_feedback_impl(sid: str, data: dict[str, Any]) -> str | N
             standard_id_uuid = uuid.UUID(standard_row["id"])
 
             # Create feedback record
-            sql_create_feedback = load_sql("sql/v3/grading/create_feedback.sql")
+            sql_create_feedback = load_sql("app/sql/v3/grading/create_feedback.sql")
             sql_query = sql_create_feedback
             sql_params = (
                 str(grade_id_uuid),

@@ -4,8 +4,8 @@ from typing import Any
 
 from fastapi import Request
 
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.set_cached import set_cached
+from utils.cache.cache_key import cache_key
+from utils.cache.set_cached import set_cached
 
 
 async def set_cached_response(

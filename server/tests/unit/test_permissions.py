@@ -2,7 +2,7 @@
 Tests for app.utils.permissions
 """
 
-from app.utils.permissions import (
+from utils.permissions import (
     ROUTE_PERMISSIONS,
     get_available_subsections_for_role,
     get_redirect_path_for_role,

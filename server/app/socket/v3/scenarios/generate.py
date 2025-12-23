@@ -17,8 +17,8 @@ from app.infra.debug.debug_info import DebugContext
 from app.infra.debug.debug_info import debug_info as debug_info_tool
 from app.infra.documents.format_document_info import format_document_info
 from app.infra.templates.jinja_renderer import render_template
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 from app.infra.tools.build_pydantic_fields import \
     build_function_signature_string
 from fastapi import APIRouter
@@ -370,7 +370,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             doc_ids_str = [str(d) for d in document_ids] if document_ids else []
             field_ids_str = [str(f) for f in field_ids] if field_ids else []
 
-            sql = load_sql("sql/v3/agents/get_scenario_run_context_and_create_run.sql")
+            sql = load_sql("app/sql/v3/agents/get_scenario_run_context_and_create_run.sql")
             # Scenario Agent ID should be provided in payload (UI filters and selects appropriate agent)
             scenario_agent_id = (
                 uuid.UUID(data.scenarioAgentId)
@@ -491,7 +491,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context_row["agent_id"])
-            sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
             rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
             agent_tools_config = [dict(row) for row in rows]
             # Create mapping of tool name -> tool config for quick lookup

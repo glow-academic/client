@@ -9,9 +9,9 @@ from pydantic import BaseModel
 
 from app.main import get_db, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -93,7 +93,7 @@ async def update_eval_attempt(
                     raise ValueError("conversation_max_turns must be greater than 0")
 
             # Update eval attempt
-            sql_query = load_sql("sql/v3/evals/update_eval_attempt.sql")
+            sql_query = load_sql("app/sql/v3/evals/update_eval_attempt.sql")
             sql_params = (
                 request.attemptId,
                 request.conversation_mode,

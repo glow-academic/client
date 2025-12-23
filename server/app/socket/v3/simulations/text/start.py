@@ -14,12 +14,12 @@ from agents.items import TResponseInputItem
 from app.infra.activity.websocket_logger import log_websocket_activity
 from app.infra.agents.generic_agent import GenericAgent
 from app.main import get_internal_sio, get_pool, sio
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.debug.debug_info import DebugContext
 from app.infra.debug.debug_info import debug_info as debug_info_tool
 from app.infra.documents.format_document_info import format_document_info
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 from app.infra.tools.build_pydantic_fields import \
     build_function_signature_string
 from fastapi import APIRouter
@@ -96,7 +96,7 @@ async def _create_chat_with_randomization(
         return [dict(item) for item in data]
 
     # Get parent scenario by ID (NEVER modify the original scenario)
-    sql = load_sql("sql/v3/scenarios/get_scenario_by_id.sql")
+    sql = load_sql("app/sql/v3/scenarios/get_scenario_by_id.sql")
     parent_scenario = await conn.fetchrow(sql, scenario_id)
     if not parent_scenario:
         return None
@@ -106,7 +106,7 @@ async def _create_chat_with_randomization(
     profile_id_uuid = uuid.UUID(str(profile_id)) if profile_id else None
 
     # Get department_ids from scenario_departments junction table (for better department selection)
-    sql = load_sql("sql/v3/scenarios/get_scenario_departments.sql")
+    sql = load_sql("app/sql/v3/scenarios/get_scenario_departments.sql")
     scenario_dept_rows = await conn.fetch(sql, parent_scenario_id_uuid)
     scenario_dept_ids = (
         [uuid.UUID(str(row["department_id"])) for row in scenario_dept_rows]
@@ -137,7 +137,7 @@ async def _create_chat_with_randomization(
         selected_department_id = random.choice(department_ids)
         logger.info(f"Using provided department_id: {selected_department_id}")
     elif profile_id_for_randomization:
-        sql = load_sql("sql/v3/profile/get_departments_for_profile.sql")
+        sql = load_sql("app/sql/v3/profile/get_departments_for_profile.sql")
         profile_dept_rows = await conn.fetch(sql, str(profile_id_for_randomization))
         if profile_dept_rows and len(profile_dept_rows) > 0:
             profile_dept_ids = [uuid.UUID(str(row["id"])) for row in profile_dept_rows]
@@ -151,7 +151,7 @@ async def _create_chat_with_randomization(
         )
 
     # Step 1.5: Get randomization ranges
-    sql = load_sql("sql/v3/scenarios/get_randomization_ranges.sql")
+    sql = load_sql("app/sql/v3/scenarios/get_randomization_ranges.sql")
     ranges_result = await conn.fetchrow(sql, scenario_id_uuid)
     if not ranges_result:
         persona_min = 1
@@ -188,7 +188,7 @@ async def _create_chat_with_randomization(
     dept_uuids: list[uuid.UUID] = (
         [] if use_all_departments else [selected_department_id]
     )
-    sql = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
+    sql = load_sql("app/sql/v3/scenarios/get_randomization_data_complete.sql")
     result = await conn.fetchrow(sql, dept_uuids, scenario_id_uuid)
 
     if not result:
@@ -527,14 +527,14 @@ async def _create_chat_with_randomization(
     # Step 6: Child scenario creation (if scenario_id provided)
     child_scenario_id: uuid.UUID | None = None
     if scenario_id_uuid:
-        sql = load_sql("sql/v3/scenarios/get_scenario_by_id.sql")
+        sql = load_sql("app/sql/v3/scenarios/get_scenario_by_id.sql")
         parent_scenario_row = await conn.fetchrow(sql, scenario_id_uuid)
         if not parent_scenario_row:
             raise ValueError(f"Parent scenario {scenario_id_uuid} not found")
 
         parent_scenario_dict = dict(parent_scenario_row)
 
-        sql = load_sql("sql/v3/scenarios/get_scenario_problem_statement_active.sql")
+        sql = load_sql("app/sql/v3/scenarios/get_scenario_problem_statement_active.sql")
         problem_statement_row = await conn.fetchrow(sql, scenario_id_uuid)
         scenario_problem_statement = (
             problem_statement_row["problem_statement"]
@@ -569,7 +569,7 @@ async def _create_chat_with_randomization(
                 raise ValueError(
                     "profile_id is required for scenario problem statement generation"
                 )
-            sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
+            sql = load_sql("app/sql/v3/agents/get_scenario_run_context.sql")
             context_row = await conn.fetchrow(
                 sql,
                 selected_department_id,
@@ -672,7 +672,7 @@ async def _create_chat_with_randomization(
             scenario_trace_id = gen_trace_id()
             primary_id = str(group_id)
 
-            sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+            sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
             rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
             agent_tools_config = [dict(row) for row in rows]
             tool_config_map: dict[str, dict[str, Any]] = {
@@ -817,7 +817,7 @@ async def _create_chat_with_randomization(
                     error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                 raise ValueError(error_message)
 
-            sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+            sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
             model_run_row = await conn.fetchrow(
                 sql_create_run,
                 selected_department_id,
@@ -853,7 +853,7 @@ async def _create_chat_with_randomization(
 
             usage = result.context_wrapper.usage
 
-            sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+            sql_update_tokens = load_sql("app/sql/v3/model_runs/update_model_run_tokens.sql")
             await conn.execute(
                 sql_update_tokens,
                 str(model_run_id),
@@ -876,11 +876,11 @@ async def _create_chat_with_randomization(
             scenario_objectives = objectives
         else:
             scenario_title = parent_scenario_dict.get("name", "")
-            sql = load_sql("sql/v3/scenarios/get_scenario_objectives_top_n.sql")
+            sql = load_sql("app/sql/v3/scenarios/get_scenario_objectives_top_n.sql")
             objectives_data = await conn.fetch(sql, scenario_id_uuid, 3)
             scenario_objectives = [obj["objective"] for obj in objectives_data]
 
-        sql = load_sql("sql/v3/scenarios/insert_scenario_variant.sql")
+        sql = load_sql("app/sql/v3/scenarios/insert_scenario_variant.sql")
         new_scenario_row = await conn.fetchrow(
             sql,
             scenario_title or parent_scenario_dict.get("name", ""),
@@ -897,7 +897,7 @@ async def _create_chat_with_randomization(
         )
 
         if scenario_problem_statement:
-            sql = load_sql("sql/v3/scenarios/insert_scenario_problem_statement.sql")
+            sql = load_sql("app/sql/v3/scenarios/insert_scenario_problem_statement.sql")
             problem_statement_name = (
                 scenario_title.strip()
                 if scenario_title and scenario_title.strip()
@@ -915,14 +915,14 @@ async def _create_chat_with_randomization(
             )
 
         if scenario_objectives and parent_scenario_dict.get("objectives_enabled", True):
-            sql = load_sql("sql/v3/scenarios/insert_scenario_objective.sql")
+            sql = load_sql("app/sql/v3/scenarios/insert_scenario_objective.sql")
             for idx, objective in enumerate(scenario_objectives[:3]):
                 await conn.execute(sql, child_scenario_id, idx, objective)
             logger.info(
                 f"Inserted {min(len(scenario_objectives), 3)} objectives for child scenario {child_scenario_id}"
             )
 
-        sql = load_sql("sql/v3/scenarios/insert_scenario_tree_edge.sql")
+        sql = load_sql("app/sql/v3/scenarios/insert_scenario_tree_edge.sql")
         await conn.execute(
             sql,
             scenario_id_uuid,
@@ -934,14 +934,14 @@ async def _create_chat_with_randomization(
         )
 
         if persona_id:
-            sql = load_sql("sql/v3/scenarios/insert_scenario_persona_link.sql")
+            sql = load_sql("app/sql/v3/scenarios/insert_scenario_persona_link.sql")
             await conn.execute(sql, child_scenario_id, persona_id, True)
             logger.info(
                 f"Linked persona {persona_id} to child scenario {child_scenario_id}"
             )
 
         if doc_ids:
-            sql = load_sql("sql/v3/scenarios/insert_scenario_document_link.sql")
+            sql = load_sql("app/sql/v3/scenarios/insert_scenario_document_link.sql")
             for doc_id in doc_ids:
                 await conn.execute(sql, child_scenario_id, doc_id, True)
             logger.info(
@@ -949,7 +949,7 @@ async def _create_chat_with_randomization(
             )
 
         if param_ids:
-            sql = load_sql("sql/v3/scenarios/insert_scenario_parameter_link.sql")
+            sql = load_sql("app/sql/v3/scenarios/insert_scenario_parameter_link.sql")
             for param_id in param_ids:
                 await conn.execute(sql, child_scenario_id, param_id, True)
             logger.info(
@@ -957,7 +957,7 @@ async def _create_chat_with_randomization(
             )
 
         if selected_department_id:
-            sql = load_sql("sql/v3/scenarios/insert_scenario_department_link.sql")
+            sql = load_sql("app/sql/v3/scenarios/insert_scenario_department_link.sql")
             await conn.execute(sql, child_scenario_id, selected_department_id, True)
             logger.info(
                 f"Linked department {selected_department_id} to child scenario {child_scenario_id}"
@@ -1002,7 +1002,7 @@ async def _create_chat_with_randomization(
     chat_title = parent_scenario.get("name", "")
     trace_id = gen_trace_id()
 
-    sql = load_sql("sql/v3/simulations/create_simulation_chat.sql")
+    sql = load_sql("app/sql/v3/simulations/create_simulation_chat.sql")
     chat = await conn.fetchrow(
         sql,
         datetime.now(UTC),
@@ -1166,7 +1166,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
             trace_id = gen_trace_id()
 
             # Create attempt and chat using SQL
-            sql = load_sql("sql/v3/simulations/start_simulation_attempt_complete.sql")
+            sql = load_sql("app/sql/v3/simulations/start_simulation_attempt_complete.sql")
             row = await conn.fetchrow(
                 sql,
                 simulation_id,
@@ -1234,7 +1234,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                     )
 
                     # Get profile_id from attempt
-                    sql = load_sql("sql/v3/attempts/get_attempt_with_profile.sql")
+                    sql = load_sql("app/sql/v3/attempts/get_attempt_with_profile.sql")
                     attempt_with_profile = await conn.fetchrow(sql, row["attempt_id"])
                     attempt_profile_id_raw = (
                         attempt_with_profile["profile_id"]
@@ -1247,7 +1247,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                     )
 
                     # Get department_id from scenario_departments
-                    sql = load_sql("sql/v3/scenarios/get_scenario_departments.sql")
+                    sql = load_sql("app/sql/v3/scenarios/get_scenario_departments.sql")
                     scenario_dept_rows = await conn.fetch(sql, scenario_id)
                     department_id = None
 
@@ -1260,7 +1260,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         )
                     elif attempt_profile_id:
                         # Fallback to profile's departments
-                        sql = load_sql("sql/v3/profile/get_departments_for_profile.sql")
+                        sql = load_sql("app/sql/v3/profile/get_departments_for_profile.sql")
                         profile_dept_rows = await conn.fetch(sql, attempt_profile_id)
                         if profile_dept_rows and len(profile_dept_rows) > 0:
                             dept_id_raw = profile_dept_rows[0]["id"]
@@ -1345,7 +1345,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             selected_department_id = random.choice(department_ids)
                             logger.info(f"Using provided department_id: {selected_department_id}")
                         elif profile_id:
-                            sql = load_sql("sql/v3/profile/get_departments_for_profile.sql")
+                            sql = load_sql("app/sql/v3/profile/get_departments_for_profile.sql")
                             profile_dept_rows = await conn.fetch(sql, str(profile_id))
                             if profile_dept_rows and len(profile_dept_rows) > 0:
                                 profile_dept_ids = [uuid.UUID(str(row["id"])) for row in profile_dept_rows]
@@ -1359,7 +1359,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             )
 
                         # Step 1.5: Get randomization ranges
-                        sql = load_sql("sql/v3/scenarios/get_randomization_ranges.sql")
+                        sql = load_sql("app/sql/v3/scenarios/get_randomization_ranges.sql")
                         ranges_result = await conn.fetchrow(sql, scenario_id)
                         if not ranges_result:
                             persona_min = 1
@@ -1396,7 +1396,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         dept_uuids: list[uuid.UUID] = (
                             [] if use_all_departments else [selected_department_id]
                         )
-                        sql = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
+                        sql = load_sql("app/sql/v3/scenarios/get_randomization_data_complete.sql")
                         result = await conn.fetchrow(sql, dept_uuids, scenario_id)
 
                         if not result:
@@ -1735,14 +1735,14 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         # Step 6: Child scenario creation (if scenario_id provided)
                         child_scenario_id: uuid.UUID | None = None
                         if scenario_id:
-                            sql = load_sql("sql/v3/scenarios/get_scenario_by_id.sql")
+                            sql = load_sql("app/sql/v3/scenarios/get_scenario_by_id.sql")
                             parent_scenario_row = await conn.fetchrow(sql, scenario_id)
                             if not parent_scenario_row:
                                 raise ValueError(f"Parent scenario {scenario_id} not found")
 
                             parent_scenario_dict = dict(parent_scenario_row)
 
-                            sql = load_sql("sql/v3/scenarios/get_scenario_problem_statement_active.sql")
+                            sql = load_sql("app/sql/v3/scenarios/get_scenario_problem_statement_active.sql")
                             problem_statement_row = await conn.fetchrow(sql, scenario_id)
                             scenario_problem_statement = (
                                 problem_statement_row["problem_statement"]
@@ -1773,7 +1773,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
 
                                 if not profile_id:
                                     raise ValueError("profile_id is required for scenario problem statement generation")
-                                sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
+                                sql = load_sql("app/sql/v3/agents/get_scenario_run_context.sql")
                                 context_row = await conn.fetchrow(
                                     sql,
                                     selected_department_id,
@@ -1877,7 +1877,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
 
                                 # Image generation context is now passed directly to background tasks (no-op removed)
 
-                                sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+                                sql_get_agent_tools = load_sql("app/sql/v3/agents/get_agent_tools.sql")
                                 rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
                                 agent_tools_config = [dict(row) for row in rows]
                                 tool_config_map: dict[str, dict[str, Any]] = {
@@ -2005,7 +2005,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                         error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                                     raise ValueError(error_message)
 
-                                sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+                                sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
                                 model_run_row = await conn.fetchrow(
                                     sql_create_run,
                                     selected_department_id,
@@ -2037,7 +2037,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
 
                                 usage = result.context_wrapper.usage
 
-                                sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+                                sql_update_tokens = load_sql("app/sql/v3/model_runs/update_model_run_tokens.sql")
                                 await conn.execute(
                                     sql_update_tokens,
                                     str(model_run_id),
@@ -2061,11 +2061,11 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                 scenario_objectives = objectives
                             else:
                                 scenario_title = parent_scenario_dict.get("name", "")
-                                sql = load_sql("sql/v3/scenarios/get_scenario_objectives_top_n.sql")
+                                sql = load_sql("app/sql/v3/scenarios/get_scenario_objectives_top_n.sql")
                                 objectives_data = await conn.fetch(sql, scenario_id, 3)
                                 scenario_objectives = [obj["objective"] for obj in objectives_data]
 
-                            sql = load_sql("sql/v3/scenarios/insert_scenario_variant.sql")
+                            sql = load_sql("app/sql/v3/scenarios/insert_scenario_variant.sql")
                             new_scenario_row = await conn.fetchrow(
                                 sql,
                                 scenario_title or parent_scenario_dict.get("name", ""),
@@ -2082,7 +2082,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             )
 
                             if scenario_problem_statement:
-                                sql = load_sql("sql/v3/scenarios/insert_scenario_problem_statement.sql")
+                                sql = load_sql("app/sql/v3/scenarios/insert_scenario_problem_statement.sql")
                                 problem_statement_name = (
                                     scenario_title.strip()
                                     if scenario_title and scenario_title.strip()
@@ -2100,14 +2100,14 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                 )
 
                             if scenario_objectives and parent_scenario_dict.get("objectives_enabled", True):
-                                sql = load_sql("sql/v3/scenarios/insert_scenario_objective.sql")
+                                sql = load_sql("app/sql/v3/scenarios/insert_scenario_objective.sql")
                                 for idx, objective in enumerate(scenario_objectives[:3]):
                                     await conn.execute(sql, child_scenario_id, idx, objective)
                                 logger.info(
                                     f"Inserted {min(len(scenario_objectives), 3)} objectives for child scenario {child_scenario_id}"
                                 )
 
-                            sql = load_sql("sql/v3/scenarios/insert_scenario_tree_edge.sql")
+                            sql = load_sql("app/sql/v3/scenarios/insert_scenario_tree_edge.sql")
                             await conn.execute(
                                 sql,
                                 scenario_id,
@@ -2119,14 +2119,14 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                             )
 
                             if persona_id:
-                                sql = load_sql("sql/v3/scenarios/insert_scenario_persona_link.sql")
+                                sql = load_sql("app/sql/v3/scenarios/insert_scenario_persona_link.sql")
                                 await conn.execute(sql, child_scenario_id, persona_id, True)
                                 logger.info(
                                     f"Linked persona {persona_id} to child scenario {child_scenario_id}"
                                 )
 
                             if doc_ids:
-                                sql = load_sql("sql/v3/scenarios/insert_scenario_document_link.sql")
+                                sql = load_sql("app/sql/v3/scenarios/insert_scenario_document_link.sql")
                                 for doc_id in doc_ids:
                                     await conn.execute(sql, child_scenario_id, doc_id, True)
                                 logger.info(
@@ -2134,7 +2134,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                 )
 
                             if param_ids:
-                                sql = load_sql("sql/v3/scenarios/insert_scenario_parameter_link.sql")
+                                sql = load_sql("app/sql/v3/scenarios/insert_scenario_parameter_link.sql")
                                 for param_id in param_ids:
                                     await conn.execute(sql, child_scenario_id, param_id, True)
                                 logger.info(
@@ -2142,7 +2142,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                 )
 
                             if selected_department_id:
-                                sql = load_sql("sql/v3/scenarios/insert_scenario_department_link.sql")
+                                sql = load_sql("app/sql/v3/scenarios/insert_scenario_department_link.sql")
                                 await conn.execute(sql, child_scenario_id, selected_department_id, True)
                                 logger.info(
                                     f"Linked department {selected_department_id} to child scenario {child_scenario_id}"
@@ -2184,7 +2184,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         )
 
                         # Update chat to use child scenario instead of parent
-                        sql = load_sql("sql/v3/simulations/update_chat_scenario_id.sql")
+                        sql = load_sql("app/sql/v3/simulations/update_chat_scenario_id.sql")
                         await conn.execute(sql, row["chat_id"], new_scenario_id)
                         logger.info(
                             f"Updated chat {row['chat_id']} to use child scenario {new_scenario_id}"
@@ -2194,7 +2194,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         scenario_id = new_scenario_id
 
                         # Fetch child scenario data for result
-                        sql = load_sql("sql/v3/scenarios/get_scenario_by_id.sql")
+                        sql = load_sql("app/sql/v3/scenarios/get_scenario_by_id.sql")
                         child_scenario = await conn.fetchrow(sql, new_scenario_id)
                         if child_scenario:
                             # Get problem statement from child

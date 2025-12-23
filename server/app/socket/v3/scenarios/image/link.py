@@ -4,8 +4,8 @@ import uuid
 from typing import Any
 
 from app.main import get_internal_sio, get_pool
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
@@ -41,7 +41,7 @@ async def _scenario_image_link_impl(
     async with pool.acquire() as conn:
         try:
             # Link image to scenario
-            sql_link = load_sql("sql/v3/scenarios/insert_scenario_image_link.sql")
+            sql_link = load_sql("app/sql/v3/scenarios/insert_scenario_image_link.sql")
             await conn.execute(
                 sql_link,
                 str(scenario_id),

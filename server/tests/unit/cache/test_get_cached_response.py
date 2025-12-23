@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.utils.cache.get_cached_response import get_cached_response
+from utils.cache.get_cached_response import get_cached_response
 
 
 class TestGet_Cached_Response:

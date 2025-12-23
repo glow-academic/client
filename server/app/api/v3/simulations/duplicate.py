@@ -8,9 +8,9 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -63,7 +63,7 @@ async def duplicate_simulation(
             )
 
         # Use single comprehensive SQL file (DHH style)
-        sql_query = load_sql("sql/v3/simulations/duplicate_simulation.sql")
+        sql_query = load_sql("app/sql/v3/simulations/duplicate_simulation.sql")
         sql_params = (request.simulationId, profile_id)
         new_simulation_row = await conn.fetchrow(
             sql_query, request.simulationId, profile_id

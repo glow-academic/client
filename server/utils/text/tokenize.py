@@ -1,6 +1,6 @@
 """Tokenize normalized text into words."""
 
-from app.utils.text.normalize_text import normalize_text
+from utils.text.normalize_text import normalize_text
 
 
 def tokenize(text: str | None) -> list[str]:

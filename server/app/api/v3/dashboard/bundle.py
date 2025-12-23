@@ -11,11 +11,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
+from utils.cache.cache_key import cache_key
+from utils.cache.get_cached import get_cached
+from utils.cache.set_cached import set_cached
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -1698,7 +1698,7 @@ async def get_dashboard(
         # Get profile_id from header (set by router-level dependency)
         profile_id = request.state.profile_id
 
-        sql_query = load_sql("sql/v3/dashboard/get_dashboard_bundle.sql")
+        sql_query = load_sql("app/sql/v3/dashboard/get_dashboard_bundle.sql")
 
         # Build parameters in the same order as the query expects ($1-$6)
         # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: department_ids

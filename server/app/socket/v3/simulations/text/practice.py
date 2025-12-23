@@ -12,8 +12,8 @@ from app.socket.v3.simulations.text.start import (
     _simulation_text_start_impl,
 )
 from app.infra.activity.websocket_logger import log_websocket_activity
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -103,7 +103,7 @@ async def _simulation_text_practice_impl(
 
             # Find practice simulation with persona
             department_ids = [data.department_id] if data.department_id else []
-            sql = load_sql("sql/v3/practice/find_practice_simulation_with_persona.sql")
+            sql = load_sql("app/sql/v3/practice/find_practice_simulation_with_persona.sql")
             result = await conn.fetchrow(sql, data.persona_id, department_ids)
 
             if not result:
@@ -123,7 +123,7 @@ async def _simulation_text_practice_impl(
             )
 
             # Get parent scenario
-            sql = load_sql("sql/v3/scenarios/get_scenario_by_id.sql")
+            sql = load_sql("app/sql/v3/scenarios/get_scenario_by_id.sql")
             parent_scenario = await conn.fetchrow(sql, parent_scenario_id)
             if not parent_scenario:
                 await simulation_text_practice_error(
@@ -143,12 +143,12 @@ async def _simulation_text_practice_impl(
                 selected_dept_id = uuid.UUID(data.department_id)
             else:
                 # Fallback: get from scenario or profile
-                sql = load_sql("sql/v3/scenarios/get_scenario_departments.sql")
+                sql = load_sql("app/sql/v3/scenarios/get_scenario_departments.sql")
                 scenario_dept_rows = await conn.fetch(sql, parent_scenario_id_uuid)
                 if scenario_dept_rows and len(scenario_dept_rows) > 0:
                     selected_dept_id = scenario_dept_rows[0]["department_id"]
                 elif profile_id:
-                    sql = load_sql("sql/v3/profile/get_departments_for_profile.sql")
+                    sql = load_sql("app/sql/v3/profile/get_departments_for_profile.sql")
                     profile_dept_rows = await conn.fetch(sql, profile_id)
                     if profile_dept_rows and len(profile_dept_rows) > 0:
                         selected_dept_id = profile_dept_rows[0]["id"]
@@ -180,7 +180,7 @@ async def _simulation_text_practice_impl(
                 scenario = dict(parent_scenario)
 
                 # Create child scenario variant
-                sql = load_sql("sql/v3/scenarios/insert_scenario_variant.sql")
+                sql = load_sql("app/sql/v3/scenarios/insert_scenario_variant.sql")
                 new_scenario_row = await conn.fetchrow(
                     sql,
                     scenario["name"],
@@ -196,13 +196,13 @@ async def _simulation_text_practice_impl(
                 )
 
                 # Create scenario_tree edge
-                sql = load_sql("sql/v3/scenarios/insert_scenario_tree_edge.sql")
+                sql = load_sql("app/sql/v3/scenarios/insert_scenario_tree_edge.sql")
                 await conn.execute(sql, parent_scenario_id_uuid, new_scenario_id, True)
 
                 # Link persona (use selected persona for standard mode)
                 if data.persona_id:
                     persona_id_to_link = uuid.UUID(data.persona_id)
-                    sql = load_sql("sql/v3/scenarios/insert_scenario_persona_link.sql")
+                    sql = load_sql("app/sql/v3/scenarios/insert_scenario_persona_link.sql")
                     await conn.execute(sql, new_scenario_id, persona_id_to_link, True)
                     logger.info(
                         f"Linked persona {persona_id_to_link} to child scenario"

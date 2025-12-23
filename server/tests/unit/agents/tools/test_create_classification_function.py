@@ -3,7 +3,7 @@ Tests for app.utils.agents.tools.create_classification_function
 """
 
 from app.main import classification_progress, classification_results
-from app.utils.agents.tools.create_classification_function import (
+from utils.agents.tools.create_classification_function import (
     create_classification_function,
 )
 

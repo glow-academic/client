@@ -5,7 +5,7 @@ import httpx
 import pytest
 from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias  # type: ignore
 
-from app.utils.auth.encrypt_api_key import encrypt_api_key
+from utils.auth.encrypt_api_key import encrypt_api_key
 
 pytestmark = pytest.mark.asyncio
 

@@ -12,9 +12,9 @@ from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
 from app.infra.error.handle_route_error import handle_route_error
 from app.infra.permissions import ProfileRole, get_available_subsections_for_role
-from app.utils.sql_helper import load_sql
-from app.utils.theme.color_utils import ensure_contrast, shade, tint
-from app.utils.theme.oklch_to_hex import hex_to_oklch
+from utils.sql_helper import load_sql
+from utils.theme.color_utils import ensure_contrast, shade, tint
+from utils.theme.oklch_to_hex import hex_to_oklch
 
 router = APIRouter()
 
@@ -216,7 +216,7 @@ async def get_profile_context(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        from app.utils.logging.db_logger import get_logger
+        from utils.logging.db_logger import get_logger
 
         logger = get_logger(__name__)
 
@@ -290,7 +290,7 @@ async def get_profile_context(
             and not effective_profile_id
             and auth_mode_cookie in ("default-account", "default-guest")
         ):
-            auth_check_sql = load_sql("sql/v3/profile/check_login_authorization.sql")
+            auth_check_sql = load_sql("app/sql/v3/profile/check_login_authorization.sql")
             auth_result = await conn.fetchrow(auth_check_sql, department_id_cookie)
 
             if not auth_result:
@@ -361,7 +361,7 @@ async def get_profile_context(
 
         # Get all context data with emulation validation in single query
         # Pass profile IDs (can be null) and cookie values (can be null) to SQL
-        sql_query = load_sql("sql/v3/profile/get_profile_context_complete.sql")
+        sql_query = load_sql("app/sql/v3/profile/get_profile_context_complete.sql")
         sql_params = (
             actual_profile_id,
             effective_profile_id,

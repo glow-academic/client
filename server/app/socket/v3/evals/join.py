@@ -7,7 +7,7 @@ from pydantic import BaseModel, ValidationError
 
 from app.main import sio
 from app.infra.activity.websocket_logger import log_websocket_activity
-from app.utils.logging.db_logger import get_logger
+from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 

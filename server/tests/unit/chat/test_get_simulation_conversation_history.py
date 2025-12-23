@@ -4,7 +4,7 @@ Tests for app.utils.chat.get_simulation_conversation_history
 
 from datetime import datetime
 
-from app.utils.chat.get_simulation_conversation_history import (
+from utils.chat.get_simulation_conversation_history import (
     get_simulation_conversation_history,
 )
 

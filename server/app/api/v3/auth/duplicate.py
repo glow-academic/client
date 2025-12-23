@@ -8,9 +8,9 @@ from pydantic import BaseModel
 
 from app.main import get_db, transaction
 from app.infra.activity.audit import audit_activity, audit_set
-from app.utils.cache.invalidate_tags import invalidate_tags
+from utils.cache.invalidate_tags import invalidate_tags
 from app.infra.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
+from utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -64,7 +64,7 @@ async def duplicate_auth(
 
         async with transaction(conn):
             # Duplicate auth with items and key links in single SQL (DHH style)
-            sql_query = load_sql("sql/v3/auth/duplicate_auth_complete.sql")
+            sql_query = load_sql("app/sql/v3/auth/duplicate_auth_complete.sql")
             sql_params = (request.authId, profile_id)
             new_auth = await conn.fetchrow(sql_query, request.authId, profile_id)
 

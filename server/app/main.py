@@ -610,7 +610,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process request and log to database."""
         from app.infra.metrics.collector import record_error, record_request
-        from app.utils.logging.db_logger import get_logger, set_profile_id
+        from utils.logging.db_logger import get_logger, set_profile_id
 
         logger = get_logger(__name__)
         start_time = time.perf_counter()
@@ -690,7 +690,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
             # Log activity to database (fire and forget - don't block response)
             try:
                 from app.infra.activity.logger import log_activity
-                from app.utils.logging.db_logger import profile_id_context
+                from utils.logging.db_logger import profile_id_context
 
                 # Get resolved profile_id for activity logging
                 resolved_profile_id = profile_id_context.get(None)
@@ -809,7 +809,7 @@ async def metrics_snapshot() -> JSONResponse:
             }
         )
     except Exception as e:
-        from app.utils.logging.db_logger import get_logger
+        from utils.logging.db_logger import get_logger
 
         logger = get_logger("app.main")
         logger.error(f"Error logging metrics snapshot: {e}")

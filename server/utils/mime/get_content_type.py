@@ -1,6 +1,6 @@
 """Get best-effort content type for a file."""
 
-from app.utils.mime.infer_mime_from_name import DEFAULT_FALLBACK, infer_mime_from_name
+from utils.mime.infer_mime_from_name import DEFAULT_FALLBACK, infer_mime_from_name
 
 
 def get_content_type(filename: str, mime_type: str | None = None) -> str:

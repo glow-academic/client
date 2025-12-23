@@ -7,9 +7,9 @@ from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
 from app.infra.activity.websocket_logger import log_websocket_activity
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import load_sql
+from utils.cache.invalidate_tags import invalidate_tags
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 
@@ -93,7 +93,7 @@ async def _eval_start_impl(sid: str, data: EvalStartPayload) -> None:
 
         async with pool.acquire() as conn:
             # Create eval_attempt and get eval data + pending runs
-            sql = load_sql("sql/v3/evals/start_eval_attempt_complete.sql")
+            sql = load_sql("app/sql/v3/evals/start_eval_attempt_complete.sql")
             row = await conn.fetchrow(
                 sql,
                 eval_id,
