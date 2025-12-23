@@ -186,6 +186,54 @@ def detect_list_prefixes(columns: list[ColumnMetadata]) -> set[str]:
     return list_prefixes
 
 
+def detect_dict_prefixes(columns: list[ColumnMetadata], list_prefixes: set[str]) -> dict[str, str]:
+    """Detect which list prefixes should become dicts and their key fields.
+
+    Analyzes column structure to determine if a list prefix should be a dict:
+    - If prefix has an `id` field (e.g., `model_mapping__id`), it's likely a dict keyed by `id`
+    - Common patterns: `*_mapping`, `*_links` → dicts
+    - Other list prefixes → remain as lists
+
+    Args:
+        columns: List of column metadata
+        list_prefixes: Set of detected list prefixes
+
+    Returns:
+        Dict mapping prefix to key field name (e.g., {"model_mapping": "id", "department_mapping": "id"})
+    """
+    dict_prefixes: dict[str, str] = {}
+    sep = "__"
+
+    for prefix in list_prefixes:
+        # Common patterns that should be dicts (mappings and links)
+        is_mapping = prefix.endswith("_mapping")
+        is_links = prefix.endswith("_links")
+
+        # Only make it a dict if it matches mapping/links pattern AND has an id field
+        if is_mapping or is_links:
+            # Check if this prefix has an `id` field (exactly `prefix__id`)
+            has_id_field = False
+            id_field_name = prefix + sep + "id"
+            for col in columns:
+                if col.name == id_field_name:
+                    has_id_field = True
+                    break
+
+            # Only make it a dict if it has an id field (for keying)
+            if has_id_field:
+                dict_prefixes[prefix] = "id"
+            else:
+                # Find first field after prefix to use as key
+                for col in columns:
+                    if col.name.startswith(prefix + sep):
+                        parts = col.name.split(sep)
+                        if len(parts) >= 2:
+                            dict_prefixes[prefix] = parts[1]
+                            break
+
+    return dict_prefixes
+
+
 def _python_type_to_sample_value(python_type: str) -> Any:
     """Convert Python type string to a sample value for nest_many().
 
@@ -896,9 +944,16 @@ def generate_api_response_model(
 
         return "\n".join(lines)
 
-    # Generate nested structure using nest_many()
+    # Detect dict prefixes for API responses (mappings should be dicts)
+    dict_prefixes = detect_dict_prefixes(metadata.returns, list_prefixes)
+
+    # Generate nested structure using nest_many() with dict_prefixes for API responses
     sample_rows = create_sample_rows(metadata.returns, list_prefixes, num_samples=3)
-    nested_data = nest_many(sample_rows, list_prefixes=list_prefixes)
+    nested_data = nest_many(
+        sample_rows,
+        list_prefixes=list_prefixes,
+        dict_prefixes=dict_prefixes if dict_prefixes else None,
+    )
 
     # Create a mapping from field name to PostgreSQL type for top-level fields
     top_level_type_map: dict[str, str] = {}
@@ -931,7 +986,7 @@ def generate_api_response_model(
         "",
         f"Generated from: {metadata.sql_path}",
         "",
-        "For now, identical to SQL response structure.",
+        "Structure matches nest_many() output with dict_prefixes applied.",
         '"""',
         "",
         "from typing import Any",
@@ -950,7 +1005,7 @@ def generate_api_response_model(
     lines.append(f"class {class_name}(BaseModel):")
     lines.append('    """API response data after nesting.')
     lines.append("")
-    lines.append("    Structure matches nest_many() output.")
+    lines.append("    Structure matches nest_many() output with dict_prefixes applied.")
     lines.append('    """')
     lines.append("")
 
@@ -969,8 +1024,21 @@ def generate_api_response_model(
             if api_field_type is None:
                 api_field_type = _generate_type_from_value(value, key, generated_classes, route_name)
 
-            # If it's a dict of objects, use the generated class
-            if isinstance(value, dict) and value:
+            # Check if this prefix should be a dict (from dict_prefixes detection)
+            if key in dict_prefixes:
+                # This should be a dict, find the item class
+                item_class_name = _to_class_name(
+                    f"{route_name}_{key}_item", ""
+                )
+                if item_class_name in generated_classes:
+                    api_field_type = f"dict[str, {item_class_name}]"
+                elif isinstance(value, dict) and value:
+                    # Fallback: infer from nested structure
+                    first_val = next(iter(value.values()))
+                    if isinstance(first_val, dict):
+                        api_field_type = f"dict[str, Any]"
+            # If it's a dict of objects (but not in dict_prefixes), use the generated class
+            elif isinstance(value, dict) and value:
                 first_val = next(iter(value.values()))
                 if isinstance(first_val, dict):
                     # Find the corresponding generated class
