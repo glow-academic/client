@@ -42,62 +42,6 @@ def load_sql(file_path: str) -> str:
     return sql_path.read_text()
 
 
-def _detect_dict_prefixes_simple(columns: list[Any], list_prefixes: set[str]) -> dict[str, str]:
-    """Detect dict prefixes: if list prefix has an 'id' field AND multiple fields, convert to dict.
-    
-    Simple rule: if a list prefix has a column prefix__id AND has multiple fields (not just id),
-    convert to dict keyed by id. This distinguishes mappings (dicts) from simple lists.
-    Only applies to top-level prefixes (not nested within other prefixes).
-    No pattern matching - purely based on column structure.
-    
-    Args:
-        columns: List of column metadata objects with 'name' attribute
-        list_prefixes: Set of detected list prefixes
-        
-    Returns:
-        Dict mapping prefix to key field name (e.g., {"model_mapping": "id"})
-    """
-    dict_prefixes: dict[str, str] = {}
-    sep = "__"
-    
-    # Find all top-level prefixes (not nested within other prefixes)
-    top_level_prefixes = set()
-    for prefix in list_prefixes:
-        # Check if this prefix is nested within another prefix
-        is_nested = any(
-            other_prefix != prefix and prefix.startswith(other_prefix + sep)
-            for other_prefix in list_prefixes
-        )
-        if not is_nested:
-            top_level_prefixes.add(prefix)
-    
-    # Prefixes that should remain as lists (even if they have id fields)
-    list_only_prefixes = {"reasoning_options", "temperature_levels", "available_voices", "debug_info"}
-    
-    for prefix in top_level_prefixes:
-        # Skip prefixes that should always be lists
-        if prefix in list_only_prefixes:
-            continue
-            
-        prefix_key = prefix + sep
-        # Count fields for this prefix
-        prefix_fields = [col.name for col in columns if col.name.startswith(prefix_key)]
-        
-        # Only convert to dict if prefix has multiple fields (indicating it's a mapping, not a simple list)
-        if len(prefix_fields) > 1:
-            id_field_name = prefix + sep + "id"
-            # Check if this prefix has an 'id' field
-            if any(col.name == id_field_name for col in columns):
-                dict_prefixes[prefix] = "id"
-            # Special case: department_prompt_links uses department_id as key
-            elif prefix == "department_prompt_links":
-                dept_id_field = prefix + sep + "department_id"
-                if any(col.name == dept_id_field for col in columns):
-                    dict_prefixes[prefix] = "department_id"
-    
-    return dict_prefixes
-
-
 async def execute_sql_typed(
     conn: asyncpg.Connection,
     sql_path: str,
@@ -148,7 +92,7 @@ async def execute_sql_typed(
 
     from app.sql.types import get_sql_types, load_sql_query
     from scripts.sql_introspect import ColumnMetadata, introspect_sql_file
-    from scripts.sql_typegen import detect_list_prefixes
+    from scripts.sql_typegen import detect_dict_prefixes, detect_list_prefixes
 
     # Load SQL query and types separately
     sql_query = load_sql_query(sql_path)
@@ -176,7 +120,7 @@ async def execute_sql_typed(
             
             # Auto-detect dict_prefixes
             if dict_prefixes is None and list_prefixes:
-                dict_prefixes = _detect_dict_prefixes_simple(cached_metadata.returns, list_prefixes)
+                dict_prefixes = detect_dict_prefixes(cached_metadata.returns, list_prefixes)
         else:
             # Fallback to empty sets if introspection failed
             if list_prefixes is None:
