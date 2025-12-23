@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict zHBD2TT4yL3Byyk4mNysoeEYJYpqHFQ7TTYVsThE686TDI8n4ikWZrrLokHcPpM
+\restrict eKrVk6ZmJNCCf2BTtNrd7jof4Qzbuy7XabfVfcfWLNL8WzH7htv4dUQvAVbyaT2
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -179,6 +179,33 @@ CREATE TYPE public.reasoning_effort AS ENUM (
     'medium',
     'high',
     'none'
+);
+
+
+--
+-- Name: tool_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.tool_type AS ENUM (
+    'title_description',
+    'objectives',
+    'document',
+    'image',
+    'video',
+    'questions_batch',
+    'question_multiple_choice',
+    'question_free_response',
+    'question_multi_select',
+    'outline',
+    'video_name',
+    'speak',
+    'hint',
+    'grading_standard_group',
+    'message_strength',
+    'message_improvement',
+    'grade_audio',
+    'classification',
+    'end_conversation'
 );
 
 
@@ -417,6 +444,51 @@ $$;
 
 
 --
+-- Name: validate_department_create_permissions(text, text[]); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.validate_department_create_permissions(p_user_role text, p_department_ids text[]) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Non-superadmins cannot create general objects (empty department_ids)
+    IF p_user_role != 'superadmin' AND COALESCE(array_length(p_department_ids, 1), 0) = 0 THEN
+        RAISE EXCEPTION 'DEPARTMENT_PERMISSION_DENIED: Non-superadmins cannot create general objects';
+    END IF;
+    RETURN TRUE;
+END;
+$$;
+
+
+--
+-- Name: validate_department_update_permissions(text, text[], text[]); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.validate_department_update_permissions(p_user_role text, p_object_department_ids text[], p_user_department_ids text[]) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Non-superadmins cannot modify general objects (no department links)
+    IF p_user_role != 'superadmin' AND COALESCE(array_length(p_object_department_ids, 1), 0) = 0 THEN
+        RAISE EXCEPTION 'DEPARTMENT_PERMISSION_DENIED: Non-superadmins cannot modify general objects';
+    END IF;
+    
+    -- Non-superadmins must belong to ALL object's departments
+    IF p_user_role != 'superadmin' AND COALESCE(array_length(p_object_department_ids, 1), 0) > 0 THEN
+        IF NOT (
+            SELECT bool_and(dept_id = ANY(p_user_department_ids))
+            FROM UNNEST(p_object_department_ids) as dept_id
+        ) THEN
+            RAISE EXCEPTION 'DEPARTMENT_PERMISSION_DENIED: User must belong to all departments of this object to modify it';
+        END IF;
+    END IF;
+    
+    RETURN TRUE;
+END;
+$$;
+
+
+--
 -- Name: validate_rate_limit(integer, bigint); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -530,6 +602,19 @@ CREATE TABLE public.agent_temperature_levels (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     agent_id uuid NOT NULL,
     model_temperature_level_id uuid NOT NULL
+);
+
+
+--
+-- Name: agent_tools; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.agent_tools (
+    agent_id uuid NOT NULL,
+    tool_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -898,7 +983,8 @@ CREATE TABLE public.scenarios (
     id uuid DEFAULT uuidv7() CONSTRAINT scenarios_id_v7_not_null NOT NULL,
     scenario_agent_id uuid,
     video_agent_id uuid,
-    image_agent_id uuid
+    image_agent_id uuid,
+    problem_statement_enabled boolean DEFAULT true NOT NULL
 );
 
 
@@ -1575,14 +1661,15 @@ CREATE TABLE public.fields (
 
 
 --
--- Name: image_runs; Type: TABLE; Schema: public; Owner: -
+-- Name: image_departments; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.image_runs (
+CREATE TABLE public.image_departments (
+    active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    image_id uuid NOT NULL,
-    run_id uuid NOT NULL
+    department_id uuid NOT NULL,
+    image_id uuid NOT NULL
 );
 
 
@@ -1609,7 +1696,8 @@ CREATE TABLE public.images (
     name text NOT NULL,
     active boolean DEFAULT true NOT NULL,
     completed boolean DEFAULT false NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT images_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT images_id_v7_not_null NOT NULL,
+    tool_call_id uuid NOT NULL
 );
 
 
@@ -1649,7 +1737,8 @@ CREATE TABLE public.message_content (
     content text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    message_id uuid NOT NULL,
+    message_id uuid,
+    tool_call_id uuid NOT NULL,
     CONSTRAINT message_content_idx_check CHECK ((idx >= 0))
 );
 
@@ -1662,7 +1751,7 @@ CREATE TABLE public.message_feedback_highlight (
     idx integer NOT NULL,
     section text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    message_feedback_id uuid NOT NULL
+    message_feedback_id uuid
 );
 
 
@@ -1675,7 +1764,7 @@ CREATE TABLE public.message_feedback_replace (
     section text NOT NULL,
     replace text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    message_feedback_id uuid NOT NULL
+    message_feedback_id uuid
 );
 
 
@@ -1690,7 +1779,8 @@ CREATE TABLE public.message_feedbacks (
     type public.message_feedback_type NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT message_feedbacks_id_v7_not_null NOT NULL,
     grade_id uuid,
-    message_id uuid
+    message_id uuid,
+    tool_call_id uuid NOT NULL
 );
 
 
@@ -1741,7 +1831,7 @@ CREATE TABLE public.model_endpoints (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    model_id uuid NOT NULL,
+    model_id uuid,
     CONSTRAINT model_endpoints_base_url_check CHECK ((base_url <> ''::text))
 );
 
@@ -1784,7 +1874,7 @@ CREATE TABLE public.model_qualities (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    model_id uuid NOT NULL
+    model_id uuid
 );
 
 
@@ -1849,14 +1939,15 @@ CREATE TABLE public.models (
 
 
 --
--- Name: objective_runs; Type: TABLE; Schema: public; Owner: -
+-- Name: objective_departments; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.objective_runs (
+CREATE TABLE public.objective_departments (
+    active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    objective_id uuid NOT NULL,
-    run_id uuid NOT NULL
+    department_id uuid NOT NULL,
+    objective_id uuid NOT NULL
 );
 
 
@@ -1868,7 +1959,8 @@ CREATE TABLE public.objectives (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     objective text NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT objectives_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT objectives_id_v7_not_null NOT NULL,
+    tool_call_id uuid NOT NULL
 );
 
 
@@ -1958,14 +2050,15 @@ CREATE TABLE public.persona_fields (
 
 
 --
--- Name: problem_statement_runs; Type: TABLE; Schema: public; Owner: -
+-- Name: problem_statement_departments; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.problem_statement_runs (
+CREATE TABLE public.problem_statement_departments (
+    active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    problem_statement_id uuid NOT NULL,
-    run_id uuid NOT NULL
+    department_id uuid NOT NULL,
+    problem_statement_id uuid NOT NULL
 );
 
 
@@ -1978,7 +2071,8 @@ CREATE TABLE public.problem_statements (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     name text NOT NULL,
     problem_statement text NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT problem_statements_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT problem_statements_id_v7_not_null NOT NULL,
+    tool_call_id uuid NOT NULL
 );
 
 
@@ -2004,7 +2098,7 @@ CREATE TABLE public.profile_emails (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    profile_id uuid NOT NULL
+    profile_id uuid
 );
 
 
@@ -2017,7 +2111,7 @@ CREATE TABLE public.profile_request_limits (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    profile_id uuid NOT NULL,
+    profile_id uuid,
     CONSTRAINT profile_request_limits_requests_per_day_check CHECK ((requests_per_day > 0))
 );
 
@@ -2066,7 +2160,7 @@ CREATE TABLE public.provider_endpoints (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    provider_id uuid NOT NULL,
+    provider_id uuid,
     CONSTRAINT provider_endpoints_base_url_check CHECK ((base_url <> ''::text))
 );
 
@@ -2100,6 +2194,19 @@ CREATE TABLE public.question_answers (
 
 
 --
+-- Name: question_departments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.question_departments (
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    department_id uuid NOT NULL,
+    question_id uuid NOT NULL
+);
+
+
+--
 -- Name: question_options; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2122,7 +2229,8 @@ CREATE TABLE public.questions (
     question_text text NOT NULL,
     allow_multiple boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT questions_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT questions_id_v7_not_null NOT NULL,
+    tool_call_id uuid NOT NULL
 );
 
 
@@ -2229,7 +2337,7 @@ CREATE TABLE public.scenario_document_ranges (
     max_count integer DEFAULT 3 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    scenario_id uuid NOT NULL,
+    scenario_id uuid,
     CONSTRAINT scenario_document_ranges_min_max_check CHECK (((min_count >= 0) AND (max_count >= min_count)))
 );
 
@@ -2256,8 +2364,8 @@ CREATE TABLE public.scenario_field_ranges (
     max_count integer DEFAULT 3 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    parameter_id uuid NOT NULL,
-    scenario_id uuid NOT NULL,
+    parameter_id uuid,
+    scenario_id uuid,
     CONSTRAINT scenario_field_ranges_min_max_check CHECK (((min_count >= 1) AND (max_count >= min_count)))
 );
 
@@ -2321,7 +2429,7 @@ CREATE TABLE public.scenario_parameter_ranges (
     max_count integer DEFAULT 3 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    scenario_id uuid NOT NULL,
+    scenario_id uuid,
     CONSTRAINT scenario_parameter_ranges_min_max_check CHECK (((min_count >= 0) AND (max_count >= min_count)))
 );
 
@@ -2348,7 +2456,7 @@ CREATE TABLE public.scenario_persona_ranges (
     max_count integer DEFAULT 3 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    scenario_id uuid NOT NULL,
+    scenario_id uuid,
     CONSTRAINT scenario_persona_ranges_min_max_check CHECK (((min_count >= 1) AND (max_count >= min_count)))
 );
 
@@ -2597,7 +2705,7 @@ CREATE TABLE public.simulation_hints (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     hint text NOT NULL,
     idx integer NOT NULL,
-    simulation_message_id uuid NOT NULL
+    simulation_message_id uuid
 );
 
 
@@ -2615,7 +2723,8 @@ CREATE TABLE public.standard_groups (
     "position" integer DEFAULT 1 NOT NULL,
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT standard_groups_id_v7_not_null NOT NULL,
-    rubric_id uuid
+    rubric_id uuid,
+    tool_call_id uuid NOT NULL
 );
 
 
@@ -2634,18 +2743,6 @@ CREATE TABLE public.standards (
 
 
 --
--- Name: template_runs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.template_runs (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    run_id uuid NOT NULL,
-    template_id uuid NOT NULL
-);
-
-
---
 -- Name: templates; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2655,7 +2752,8 @@ CREATE TABLE public.templates (
     name text NOT NULL,
     args jsonb DEFAULT '{}'::jsonb NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT templates_id_v7_not_null NOT NULL,
-    upload_id uuid
+    upload_id uuid,
+    tool_call_id uuid NOT NULL
 );
 
 
@@ -2706,7 +2804,7 @@ CREATE TABLE public.tool_call_results (
     result_content text NOT NULL,
     result_json jsonb,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tool_call_id uuid NOT NULL
+    tool_call_id uuid
 );
 
 
@@ -2730,9 +2828,28 @@ CREATE TABLE public.tool_calls (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     call_id text NOT NULL,
-    tool_name text NOT NULL,
     completed boolean DEFAULT false NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT tool_calls_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT tool_calls_id_v7_not_null NOT NULL,
+    tool_id uuid
+);
+
+
+--
+-- Name: tools; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tools (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL,
+    description text NOT NULL,
+    tool_type public.tool_type NOT NULL,
+    agent_role public.agent_role NOT NULL,
+    arguments jsonb DEFAULT '{}'::jsonb NOT NULL,
+    argument_descriptions jsonb DEFAULT '{}'::jsonb NOT NULL,
+    argument_defaults jsonb DEFAULT '{}'::jsonb NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 
@@ -2766,6 +2883,19 @@ CREATE TABLE public.uploads (
 
 
 --
+-- Name: video_departments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.video_departments (
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    department_id uuid NOT NULL,
+    video_id uuid NOT NULL
+);
+
+
+--
 -- Name: video_uploads; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2791,6 +2921,7 @@ CREATE TABLE public.videos (
     image_enabled boolean DEFAULT true NOT NULL,
     completed boolean DEFAULT false NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT videos_id_v7_not_null NOT NULL,
+    tool_call_id uuid NOT NULL,
     CONSTRAINT videos_length_seconds_check CHECK ((length_seconds > 0))
 );
 
@@ -2849,6 +2980,14 @@ ALTER TABLE ONLY public.agent_reasoning_levels
 
 ALTER TABLE ONLY public.agent_temperature_levels
     ADD CONSTRAINT agent_temperature_levels_pkey PRIMARY KEY (agent_id, model_temperature_level_id);
+
+
+--
+-- Name: agent_tools agent_tools_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_tools
+    ADD CONSTRAINT agent_tools_pkey PRIMARY KEY (agent_id, tool_id);
 
 
 --
@@ -3164,11 +3303,11 @@ ALTER TABLE ONLY public.groups
 
 
 --
--- Name: image_runs image_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: image_departments image_departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_runs
-    ADD CONSTRAINT image_runs_pkey PRIMARY KEY (image_id, run_id);
+ALTER TABLE ONLY public.image_departments
+    ADD CONSTRAINT image_departments_pkey PRIMARY KEY (image_id, department_id);
 
 
 --
@@ -3201,30 +3340,6 @@ ALTER TABLE ONLY public.keys
 
 ALTER TABLE ONLY public.message_audio
     ADD CONSTRAINT message_audio_pkey PRIMARY KEY (message_id, upload_id);
-
-
---
--- Name: message_content message_content_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_content
-    ADD CONSTRAINT message_content_pkey PRIMARY KEY (message_id, idx);
-
-
---
--- Name: message_feedback_highlight message_feedback_highlight_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_feedback_highlight
-    ADD CONSTRAINT message_feedback_highlight_pkey PRIMARY KEY (message_feedback_id, idx);
-
-
---
--- Name: message_feedback_replace message_feedback_replace_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_feedback_replace
-    ADD CONSTRAINT message_feedback_replace_pkey PRIMARY KEY (message_feedback_id, idx);
 
 
 --
@@ -3276,14 +3391,6 @@ ALTER TABLE ONLY public.model_departments
 
 
 --
--- Name: model_endpoints model_endpoints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_endpoints
-    ADD CONSTRAINT model_endpoints_pkey PRIMARY KEY (model_id);
-
-
---
 -- Name: model_modalities model_modalities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3297,14 +3404,6 @@ ALTER TABLE ONLY public.model_modalities
 
 ALTER TABLE ONLY public.model_pricing
     ADD CONSTRAINT model_pricing_pkey PRIMARY KEY (model_id, pricing_type, unit_id);
-
-
---
--- Name: model_qualities model_qualities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_qualities
-    ADD CONSTRAINT model_qualities_pkey PRIMARY KEY (model_id, quality);
 
 
 --
@@ -3340,11 +3439,11 @@ ALTER TABLE ONLY public.models
 
 
 --
--- Name: objective_runs objective_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: objective_departments objective_departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.objective_runs
-    ADD CONSTRAINT objective_runs_pkey PRIMARY KEY (objective_id, run_id);
+ALTER TABLE ONLY public.objective_departments
+    ADD CONSTRAINT objective_departments_pkey PRIMARY KEY (objective_id, department_id);
 
 
 --
@@ -3420,11 +3519,11 @@ ALTER TABLE ONLY public.personas
 
 
 --
--- Name: problem_statement_runs problem_statement_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: problem_statement_departments problem_statement_departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.problem_statement_runs
-    ADD CONSTRAINT problem_statement_runs_pkey PRIMARY KEY (problem_statement_id, run_id);
+ALTER TABLE ONLY public.problem_statement_departments
+    ADD CONSTRAINT problem_statement_departments_pkey PRIMARY KEY (problem_statement_id, department_id);
 
 
 --
@@ -3452,22 +3551,6 @@ ALTER TABLE ONLY public.profile_departments
 
 
 --
--- Name: profile_emails profile_emails_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.profile_emails
-    ADD CONSTRAINT profile_emails_pkey PRIMARY KEY (profile_id, email);
-
-
---
--- Name: profile_request_limits profile_request_limits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.profile_request_limits
-    ADD CONSTRAINT profile_request_limits_pkey PRIMARY KEY (profile_id);
-
-
---
 -- Name: profiles profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3492,14 +3575,6 @@ ALTER TABLE ONLY public.prompts
 
 
 --
--- Name: provider_endpoints provider_endpoints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.provider_endpoints
-    ADD CONSTRAINT provider_endpoints_pkey PRIMARY KEY (provider_id);
-
-
---
 -- Name: providers providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3513,6 +3588,14 @@ ALTER TABLE ONLY public.providers
 
 ALTER TABLE ONLY public.question_answers
     ADD CONSTRAINT question_answers_pkey PRIMARY KEY (question_id, option_id);
+
+
+--
+-- Name: question_departments question_departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.question_departments
+    ADD CONSTRAINT question_departments_pkey PRIMARY KEY (question_id, department_id);
 
 
 --
@@ -3620,27 +3703,11 @@ ALTER TABLE ONLY public.scenario_departments
 
 
 --
--- Name: scenario_document_ranges scenario_document_ranges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_document_ranges
-    ADD CONSTRAINT scenario_document_ranges_pkey PRIMARY KEY (scenario_id);
-
-
---
 -- Name: scenario_documents scenario_documents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.scenario_documents
     ADD CONSTRAINT scenario_documents_pkey PRIMARY KEY (scenario_id, document_id);
-
-
---
--- Name: scenario_field_ranges scenario_field_ranges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_field_ranges
-    ADD CONSTRAINT scenario_field_ranges_pkey PRIMARY KEY (scenario_id, parameter_id);
 
 
 --
@@ -3676,27 +3743,11 @@ ALTER TABLE ONLY public.scenario_objectives
 
 
 --
--- Name: scenario_parameter_ranges scenario_parameter_ranges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_parameter_ranges
-    ADD CONSTRAINT scenario_parameter_ranges_pkey PRIMARY KEY (scenario_id);
-
-
---
 -- Name: scenario_parameters scenario_parameters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.scenario_parameters
     ADD CONSTRAINT scenario_parameters_pkey PRIMARY KEY (scenario_id, parameter_id);
-
-
---
--- Name: scenario_persona_ranges scenario_persona_ranges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_persona_ranges
-    ADD CONSTRAINT scenario_persona_ranges_pkey PRIMARY KEY (scenario_id);
 
 
 --
@@ -3868,14 +3919,6 @@ ALTER TABLE ONLY public.simulation_departments
 
 
 --
--- Name: simulation_hints simulation_hints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.simulation_hints
-    ADD CONSTRAINT simulation_hints_pkey PRIMARY KEY (simulation_message_id, idx);
-
-
---
 -- Name: simulation_scenarios simulation_scenarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3905,14 +3948,6 @@ ALTER TABLE ONLY public.standard_groups
 
 ALTER TABLE ONLY public.standards
     ADD CONSTRAINT standards_pkey PRIMARY KEY (id);
-
-
---
--- Name: template_runs template_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.template_runs
-    ADD CONSTRAINT template_runs_pkey PRIMARY KEY (template_id, run_id);
 
 
 --
@@ -3948,14 +3983,6 @@ ALTER TABLE ONLY public.tool_call_arguments
 
 
 --
--- Name: tool_call_results tool_call_results_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tool_call_results
-    ADD CONSTRAINT tool_call_results_pkey PRIMARY KEY (tool_call_id);
-
-
---
 -- Name: tool_call_runs tool_call_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3972,6 +3999,22 @@ ALTER TABLE ONLY public.tool_calls
 
 
 --
+-- Name: tools tools_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tools
+    ADD CONSTRAINT tools_name_key UNIQUE (name);
+
+
+--
+-- Name: tools tools_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tools
+    ADD CONSTRAINT tools_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: units units_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3985,6 +4028,14 @@ ALTER TABLE ONLY public.units
 
 ALTER TABLE ONLY public.uploads
     ADD CONSTRAINT uploads_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: video_departments video_departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.video_departments
+    ADD CONSTRAINT video_departments_pkey PRIMARY KEY (video_id, department_id);
 
 
 --
@@ -4141,6 +4192,34 @@ CREATE INDEX agent_temperature_levels_agent_id_v7_idx ON public.agent_temperatur
 --
 
 CREATE INDEX agent_temperature_levels_model_temperature_level_id_v7_idx ON public.agent_temperature_levels USING btree (model_temperature_level_id);
+
+
+--
+-- Name: agent_tools_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_tools_active_idx ON public.agent_tools USING btree (active);
+
+
+--
+-- Name: agent_tools_agent_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_tools_agent_active_idx ON public.agent_tools USING btree (agent_id, active);
+
+
+--
+-- Name: agent_tools_agent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_tools_agent_id_idx ON public.agent_tools USING btree (agent_id);
+
+
+--
+-- Name: agent_tools_tool_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_tools_tool_id_idx ON public.agent_tools USING btree (tool_id);
 
 
 --
@@ -4935,17 +5014,17 @@ CREATE INDEX idx_simulation_scenarios_active ON public.simulation_scenarios USIN
 
 
 --
--- Name: image_runs_image_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: image_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX image_runs_image_id_v7_idx ON public.image_runs USING btree (image_id);
+CREATE INDEX image_departments_department_id_v7_idx ON public.image_departments USING btree (department_id);
 
 
 --
--- Name: image_runs_run_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: image_departments_image_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX image_runs_run_id_v7_idx ON public.image_runs USING btree (run_id);
+CREATE INDEX image_departments_image_id_v7_idx ON public.image_departments USING btree (image_id);
 
 
 --
@@ -4984,6 +5063,13 @@ CREATE INDEX images_name_idx ON public.images USING btree (name);
 
 
 --
+-- Name: images_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX images_tool_call_id_idx ON public.images USING btree (tool_call_id);
+
+
+--
 -- Name: keys_active_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5019,6 +5105,13 @@ CREATE INDEX message_content_message_id_v7_idx ON public.message_content USING b
 
 
 --
+-- Name: message_content_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_content_tool_call_id_idx ON public.message_content USING btree (tool_call_id);
+
+
+--
 -- Name: message_feedback_highlight_message_feedback_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5044,6 +5137,13 @@ CREATE INDEX message_feedbacks_grade_id_v7_idx ON public.message_feedbacks USING
 --
 
 CREATE INDEX message_feedbacks_message_id_v7_idx ON public.message_feedbacks USING btree (message_id);
+
+
+--
+-- Name: message_feedbacks_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_feedbacks_tool_call_id_idx ON public.message_feedbacks USING btree (tool_call_id);
 
 
 --
@@ -5292,17 +5392,17 @@ CREATE INDEX models_provider_id_v7_idx ON public.models USING btree (provider_id
 
 
 --
--- Name: objective_runs_objective_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: objective_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX objective_runs_objective_id_v7_idx ON public.objective_runs USING btree (objective_id);
+CREATE INDEX objective_departments_department_id_v7_idx ON public.objective_departments USING btree (department_id);
 
 
 --
--- Name: objective_runs_run_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: objective_departments_objective_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX objective_runs_run_id_v7_idx ON public.objective_runs USING btree (run_id);
+CREATE INDEX objective_departments_objective_id_v7_idx ON public.objective_departments USING btree (objective_id);
 
 
 --
@@ -5310,6 +5410,13 @@ CREATE INDEX objective_runs_run_id_v7_idx ON public.objective_runs USING btree (
 --
 
 CREATE INDEX objectives_created_at_idx ON public.objectives USING btree (created_at);
+
+
+--
+-- Name: objectives_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX objectives_tool_call_id_idx ON public.objectives USING btree (tool_call_id);
 
 
 --
@@ -5404,17 +5511,17 @@ CREATE INDEX personas_id_idx ON public.personas USING btree (id);
 
 
 --
--- Name: problem_statement_runs_problem_statement_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: problem_statement_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX problem_statement_runs_problem_statement_id_v7_idx ON public.problem_statement_runs USING btree (problem_statement_id);
+CREATE INDEX problem_statement_departments_department_id_v7_idx ON public.problem_statement_departments USING btree (department_id);
 
 
 --
--- Name: problem_statement_runs_run_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: problem_statement_departments_problem_statement_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX problem_statement_runs_run_id_v7_idx ON public.problem_statement_runs USING btree (run_id);
+CREATE INDEX problem_statement_departments_problem_statement_id_v7_idx ON public.problem_statement_departments USING btree (problem_statement_id);
 
 
 --
@@ -5429,6 +5536,13 @@ CREATE INDEX problem_statements_created_at_idx ON public.problem_statements USIN
 --
 
 CREATE INDEX problem_statements_name_idx ON public.problem_statements USING btree (name);
+
+
+--
+-- Name: problem_statements_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX problem_statements_tool_call_id_idx ON public.problem_statements USING btree (tool_call_id);
 
 
 --
@@ -5551,6 +5665,20 @@ CREATE INDEX question_answers_question_id_v7_idx ON public.question_answers USIN
 
 
 --
+-- Name: question_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX question_departments_department_id_v7_idx ON public.question_departments USING btree (department_id);
+
+
+--
+-- Name: question_departments_question_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX question_departments_question_id_v7_idx ON public.question_departments USING btree (question_id);
+
+
+--
 -- Name: question_options_option_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5569,6 +5697,13 @@ CREATE INDEX question_options_question_id_v7_idx ON public.question_options USIN
 --
 
 CREATE INDEX questions_active_idx ON public.questions USING btree (active);
+
+
+--
+-- Name: questions_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX questions_tool_call_id_idx ON public.questions USING btree (tool_call_id);
 
 
 --
@@ -6349,6 +6484,13 @@ CREATE INDEX standard_groups_rubric_idx ON public.standard_groups USING btree (r
 
 
 --
+-- Name: standard_groups_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX standard_groups_tool_call_id_idx ON public.standard_groups USING btree (tool_call_id);
+
+
+--
 -- Name: standards_group_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6363,20 +6505,6 @@ CREATE INDEX standards_standard_group_id_v7_idx ON public.standards USING btree 
 
 
 --
--- Name: template_runs_run_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX template_runs_run_id_v7_idx ON public.template_runs USING btree (run_id);
-
-
---
--- Name: template_runs_template_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX template_runs_template_id_v7_idx ON public.template_runs USING btree (template_id);
-
-
---
 -- Name: templates_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6388,6 +6516,13 @@ CREATE INDEX templates_created_at_idx ON public.templates USING btree (created_a
 --
 
 CREATE INDEX templates_name_idx ON public.templates USING btree (name);
+
+
+--
+-- Name: templates_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX templates_tool_call_id_idx ON public.templates USING btree (tool_call_id);
 
 
 --
@@ -6461,10 +6596,31 @@ CREATE INDEX tool_calls_created_at_idx ON public.tool_calls USING btree (created
 
 
 --
--- Name: tool_calls_tool_name_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: tool_calls_tool_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX tool_calls_tool_name_idx ON public.tool_calls USING btree (tool_name);
+CREATE INDEX tool_calls_tool_id_idx ON public.tool_calls USING btree (tool_id);
+
+
+--
+-- Name: tools_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX tools_active_idx ON public.tools USING btree (active);
+
+
+--
+-- Name: tools_agent_role_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX tools_agent_role_idx ON public.tools USING btree (agent_role);
+
+
+--
+-- Name: tools_tool_type_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX tools_tool_type_idx ON public.tools USING btree (tool_type);
 
 
 --
@@ -6510,6 +6666,20 @@ CREATE INDEX uploads_file_path_idx ON public.uploads USING btree (file_path);
 
 
 --
+-- Name: video_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX video_departments_department_id_v7_idx ON public.video_departments USING btree (department_id);
+
+
+--
+-- Name: video_departments_video_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX video_departments_video_id_v7_idx ON public.video_departments USING btree (video_id);
+
+
+--
 -- Name: video_uploads_upload_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6521,6 +6691,13 @@ CREATE INDEX video_uploads_upload_id_v7_idx ON public.video_uploads USING btree 
 --
 
 CREATE INDEX video_uploads_video_id_v7_idx ON public.video_uploads USING btree (video_id);
+
+
+--
+-- Name: videos_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX videos_tool_call_id_idx ON public.videos USING btree (tool_call_id);
 
 
 --
@@ -6785,6 +6962,22 @@ ALTER TABLE ONLY public.agent_temperature_levels
 
 ALTER TABLE ONLY public.agent_temperature_levels
     ADD CONSTRAINT agent_temperature_levels_model_temperature_level_id_fkey FOREIGN KEY (model_temperature_level_id) REFERENCES public.model_temperature_levels(id);
+
+
+--
+-- Name: agent_tools agent_tools_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_tools
+    ADD CONSTRAINT agent_tools_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES public.agents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: agent_tools agent_tools_tool_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_tools
+    ADD CONSTRAINT agent_tools_tool_id_fkey FOREIGN KEY (tool_id) REFERENCES public.tools(id) ON DELETE CASCADE;
 
 
 --
@@ -7268,19 +7461,19 @@ ALTER TABLE ONLY public.group_runs
 
 
 --
--- Name: image_runs image_runs_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: image_departments image_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_runs
-    ADD CONSTRAINT image_runs_image_id_fkey FOREIGN KEY (image_id) REFERENCES public.images(id);
+ALTER TABLE ONLY public.image_departments
+    ADD CONSTRAINT image_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id);
 
 
 --
--- Name: image_runs image_runs_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: image_departments image_departments_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.image_runs
-    ADD CONSTRAINT image_runs_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(id);
+ALTER TABLE ONLY public.image_departments
+    ADD CONSTRAINT image_departments_image_id_fkey FOREIGN KEY (image_id) REFERENCES public.images(id);
 
 
 --
@@ -7297,6 +7490,14 @@ ALTER TABLE ONLY public.image_uploads
 
 ALTER TABLE ONLY public.image_uploads
     ADD CONSTRAINT image_uploads_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES public.uploads(id);
+
+
+--
+-- Name: images images_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.images
+    ADD CONSTRAINT images_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
 
 
 --
@@ -7321,6 +7522,14 @@ ALTER TABLE ONLY public.message_audio
 
 ALTER TABLE ONLY public.message_content
     ADD CONSTRAINT message_content_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id);
+
+
+--
+-- Name: message_content message_content_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_content
+    ADD CONSTRAINT message_content_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
 
 
 --
@@ -7353,6 +7562,14 @@ ALTER TABLE ONLY public.message_feedbacks
 
 ALTER TABLE ONLY public.message_feedbacks
     ADD CONSTRAINT message_feedbacks_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id);
+
+
+--
+-- Name: message_feedbacks message_feedbacks_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_feedbacks
+    ADD CONSTRAINT message_feedbacks_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
 
 
 --
@@ -7492,19 +7709,27 @@ ALTER TABLE ONLY public.models
 
 
 --
--- Name: objective_runs objective_runs_objective_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: objective_departments objective_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.objective_runs
-    ADD CONSTRAINT objective_runs_objective_id_fkey FOREIGN KEY (objective_id) REFERENCES public.objectives(id);
+ALTER TABLE ONLY public.objective_departments
+    ADD CONSTRAINT objective_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id);
 
 
 --
--- Name: objective_runs objective_runs_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: objective_departments objective_departments_objective_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.objective_runs
-    ADD CONSTRAINT objective_runs_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(id);
+ALTER TABLE ONLY public.objective_departments
+    ADD CONSTRAINT objective_departments_objective_id_fkey FOREIGN KEY (objective_id) REFERENCES public.objectives(id);
+
+
+--
+-- Name: objectives objectives_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.objectives
+    ADD CONSTRAINT objectives_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
 
 
 --
@@ -7588,19 +7813,27 @@ ALTER TABLE ONLY public.persona_fields
 
 
 --
--- Name: problem_statement_runs problem_statement_runs_problem_statement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: problem_statement_departments problem_statement_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.problem_statement_runs
-    ADD CONSTRAINT problem_statement_runs_problem_statement_id_fkey FOREIGN KEY (problem_statement_id) REFERENCES public.problem_statements(id);
+ALTER TABLE ONLY public.problem_statement_departments
+    ADD CONSTRAINT problem_statement_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id);
 
 
 --
--- Name: problem_statement_runs problem_statement_runs_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: problem_statement_departments problem_statement_departments_problem_statement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.problem_statement_runs
-    ADD CONSTRAINT problem_statement_runs_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(id);
+ALTER TABLE ONLY public.problem_statement_departments
+    ADD CONSTRAINT problem_statement_departments_problem_statement_id_fkey FOREIGN KEY (problem_statement_id) REFERENCES public.problem_statements(id);
+
+
+--
+-- Name: problem_statements problem_statements_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.problem_statements
+    ADD CONSTRAINT problem_statements_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
 
 
 --
@@ -7684,6 +7917,22 @@ ALTER TABLE ONLY public.question_answers
 
 
 --
+-- Name: question_departments question_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.question_departments
+    ADD CONSTRAINT question_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id);
+
+
+--
+-- Name: question_departments question_departments_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.question_departments
+    ADD CONSTRAINT question_departments_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions(id);
+
+
+--
 -- Name: question_options question_options_option_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7697,6 +7946,14 @@ ALTER TABLE ONLY public.question_options
 
 ALTER TABLE ONLY public.question_options
     ADD CONSTRAINT question_options_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions(id);
+
+
+--
+-- Name: questions questions_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.questions
+    ADD CONSTRAINT questions_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
 
 
 --
@@ -8388,6 +8645,14 @@ ALTER TABLE ONLY public.standard_groups
 
 
 --
+-- Name: standard_groups standard_groups_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.standard_groups
+    ADD CONSTRAINT standard_groups_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
+
+
+--
 -- Name: standards standards_standard_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8396,19 +8661,11 @@ ALTER TABLE ONLY public.standards
 
 
 --
--- Name: template_runs template_runs_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: templates templates_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.template_runs
-    ADD CONSTRAINT template_runs_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(id);
-
-
---
--- Name: template_runs template_runs_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.template_runs
-    ADD CONSTRAINT template_runs_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.templates(id);
+ALTER TABLE ONLY public.templates
+    ADD CONSTRAINT templates_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
 
 
 --
@@ -8476,6 +8733,30 @@ ALTER TABLE ONLY public.tool_call_runs
 
 
 --
+-- Name: tool_calls tool_calls_tool_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tool_calls
+    ADD CONSTRAINT tool_calls_tool_id_fkey FOREIGN KEY (tool_id) REFERENCES public.tools(id);
+
+
+--
+-- Name: video_departments video_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.video_departments
+    ADD CONSTRAINT video_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id);
+
+
+--
+-- Name: video_departments video_departments_video_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.video_departments
+    ADD CONSTRAINT video_departments_video_id_fkey FOREIGN KEY (video_id) REFERENCES public.videos(id);
+
+
+--
 -- Name: video_uploads video_uploads_upload_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8492,8 +8773,16 @@ ALTER TABLE ONLY public.video_uploads
 
 
 --
+-- Name: videos videos_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.videos
+    ADD CONSTRAINT videos_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.tool_calls(id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict zHBD2TT4yL3Byyk4mNysoeEYJYpqHFQ7TTYVsThE686TDI8n4ikWZrrLokHcPpM
+\unrestrict eKrVk6ZmJNCCf2BTtNrd7jof4Qzbuy7XabfVfcfWLNL8WzH7htv4dUQvAVbyaT2
 
