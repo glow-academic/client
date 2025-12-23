@@ -303,17 +303,23 @@ async def init_db_pool() -> None:
         print(f"✅ Using test database at {db_url}")
 
         schema_path = (
-            Path(__file__).resolve().parent.parent / "tests" / "test-schema.sql"
+            Path(__file__).resolve().parent.parent.parent / "database" / "schema.sql"
         )
         if not schema_path.exists():
             raise FileNotFoundError(
-                f"Test schema file not found at {schema_path}. \n"
-                "Generate it with 'make generate-test-schema'."
+                f"Schema file not found at {schema_path}. \n"
+                "Generate it with 'make export-db schema'."
             )
 
         schema_sql = schema_path.read_text()
+        # Filter out pg_dump meta-commands (lines starting with \) that can't be executed via asyncpg
+        # These are psql meta-commands, not SQL
+        filtered_sql = "\n".join(
+            line for line in schema_sql.split("\n")
+            if not line.strip().startswith("\\")
+        )
         async with _db_pool.acquire() as conn:
-            await conn.execute(schema_sql)
+            await conn.execute(filtered_sql)
         print("🗄️  Test schema applied to disposable database")
         return
 

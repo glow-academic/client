@@ -4,7 +4,7 @@ from typing import Any, NoReturn
 
 from fastapi import Request
 
-from app.infra.error.log_and_raise_error import log_and_raise_error
+from app.infra.v3.error.log_and_raise_error import log_and_raise_error
 
 
 def handle_route_error(

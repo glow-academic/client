@@ -56,12 +56,12 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
     """
     global _test_db_url
 
-    schema_file = Path(__file__).parent / "test-schema.sql"
+    schema_file = Path(__file__).parent.parent.parent / "database" / "schema.sql"
 
     if not schema_file.exists():
         raise FileNotFoundError(
-            f"Test schema file not found: {schema_file}\n"
-            "Please run 'make generate-test-schema' to generate it."
+            f"Schema file not found: {schema_file}\n"
+            "Please run 'make export-db schema' to generate it."
         )
 
     await init_db_pool()

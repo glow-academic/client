@@ -4,7 +4,7 @@ import asyncio
 from typing import Any
 
 import asyncpg  # type: ignore
-from app.infra.activity.audit import AuditIntent, jinja
+from app.infra.v3.activity.audit import AuditIntent, jinja
 from fastapi import Request
 
 # Global DB pool (set during startup)
@@ -105,7 +105,7 @@ async def _insert_activity(
 
     try:
         async with _db_pool.acquire() as conn:
-            from app.infra.activity.insert import insert_activity
+            from app.infra.v3.activity.insert import insert_activity
 
             await insert_activity(message, endpoint, profile_id, error, conn)
     except Exception:

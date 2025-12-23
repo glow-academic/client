@@ -31,7 +31,7 @@ async def resolve_profile_from_department_cookies(
 
     try:
         async with db_pool.acquire() as conn:
-            from app.infra.profile.resolve_from_department import \
+            from app.infra.v3.profile.resolve_from_department import \
                 resolve_profile_from_department
 
             return await resolve_profile_from_department(

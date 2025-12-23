@@ -53,6 +53,8 @@ dependencies = [
     "pytest-mock>=3.10.0",
     "httpx>=0.24.0",
     "testcontainers[postgresql]==4.0.0",
+    "sqlalchemy>=2.0.0",  # Required by testcontainers for container readiness checks
+    "psycopg2-binary>=2.9.0",  # Required by sqlalchemy for PostgreSQL connection checks
     # E2E testing
     "pytest-playwright>=0.4.0",
     "playwright>=1.40.0",

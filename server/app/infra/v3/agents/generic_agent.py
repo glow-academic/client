@@ -6,7 +6,7 @@ from agents import (Agent, FunctionToolResult, ModelSettings, OutputGuardrail,
 from agents.extensions.models.litellm_model import LitellmModel
 from agents.mcp.server import MCPServer
 from utils.auth.decrypt_api_key import decrypt_api_key
-from app.infra.debug.debug_info import DebugContext
+from app.infra.v3.debug.debug_info import DebugContext
 from openai.types import Reasoning
 
 DEBUG_INFO_TOOL_SUFFIX = """

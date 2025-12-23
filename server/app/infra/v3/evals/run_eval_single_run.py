@@ -7,9 +7,9 @@ from typing import Any
 import asyncpg  # type: ignore
 from agents import Runner, trace
 from agents.items import TResponseInputItem
-from app.infra.agents.generic_agent import GenericAgent
+from app.infra.v3.agents.generic_agent import GenericAgent
 from app.main import get_internal_sio
-from app.infra.debug.debug_info import DebugContext
+from app.infra.v3.debug.debug_info import DebugContext
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 

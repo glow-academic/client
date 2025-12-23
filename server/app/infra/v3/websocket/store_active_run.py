@@ -2,7 +2,7 @@
 
 import uuid
 
-from app.infra.websocket.set_active_run import set_active_run
+from app.infra.v3.websocket.set_active_run import set_active_run
 
 
 async def store_active_run(chat_id: str, run_result: object) -> None:

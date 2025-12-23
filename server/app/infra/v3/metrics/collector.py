@@ -177,7 +177,7 @@ async def log_metrics_snapshot() -> None:
         # Write to database
         async with _db_pool.acquire() as conn:
             async with conn.transaction():
-                from app.infra.metrics.snapshot import log_metrics_snapshot
+                from app.infra.v3.metrics.snapshot import log_metrics_snapshot
 
                 await log_metrics_snapshot(
                     ts,
@@ -206,7 +206,7 @@ async def log_health_checks() -> None:
         return
 
     try:
-        from app.infra.health import run_service_checks
+        from app.infra.v3.health import run_service_checks
 
         checks = await run_service_checks()
 
@@ -220,7 +220,7 @@ async def log_health_checks() -> None:
         # Write to database
         async with _db_pool.acquire() as conn:
             async with conn.transaction():
-                from app.infra.metrics.health import log_service_health
+                from app.infra.v3.metrics.health import log_service_health
 
                 for service, result in checks.items():
                     await log_service_health(

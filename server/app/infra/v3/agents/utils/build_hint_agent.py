@@ -7,7 +7,7 @@ from agents import FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResu
 # Note: Progress checking in tool_use_behavior is synchronous, but storage is async
 # For now, we'll check progress after tool execution completes
 # This is a limitation of the current tool_use_behavior pattern
-from app.infra.agents.generic_agent import GenericAgent
+from app.infra.v3.agents.generic_agent import GenericAgent
 from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

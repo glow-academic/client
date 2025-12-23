@@ -1,7 +1,7 @@
 """Insert activity record for WebSocket events."""
 
 import asyncpg  # type: ignore
-from app.infra.activity.profile_exists import profile_exists
+from app.infra.v3.activity.profile_exists import profile_exists
 from utils.sql_helper import load_sql
 
 

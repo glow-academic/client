@@ -13,7 +13,7 @@ from app.api.v3.settings.active import (
     get_active_settings,
 )
 from app.main import UPLOAD_FOLDER
-from app.infra.templates.jinja_renderer import render_template
+from app.infra.v3.templates.jinja_renderer import render_template
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 

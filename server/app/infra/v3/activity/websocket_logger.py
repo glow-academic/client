@@ -4,9 +4,9 @@ import asyncio
 from typing import Any
 
 from app.main import get_pool
-from app.infra.activity.audit import jinja
+from app.infra.v3.activity.audit import jinja
 from utils.logging.db_logger import get_logger
-from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v3.websocket.find_profile_by_socket import find_profile_by_socket
 
 logger = get_logger(__name__)
 
@@ -117,7 +117,7 @@ async def _insert_activity(
 
     try:
         async with pool.acquire() as conn:
-            from app.infra.activity.insert_websocket import insert_activity_websocket
+            from app.infra.v3.activity.insert_websocket import insert_activity_websocket
 
             await insert_activity_websocket(message, endpoint, profile_id, error, conn)
     except Exception:
