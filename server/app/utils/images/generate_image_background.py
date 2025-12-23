@@ -23,33 +23,6 @@ except ImportError:
     logger.warning("litellm not available - image generation will not work")
 
 
-async def get_agent_model_info(
-    conn: asyncpg.Connection,
-    agent_id: str,
-    profile_id: str,
-) -> dict[str, Any] | None:
-    """Get agent's model information for image generation.
-
-    Args:
-        conn: Database connection
-        agent_id: Agent ID
-        profile_id: Profile ID (required for API key resolution)
-
-    Returns:
-        Dict with api_key, base_url, model_name, provider, or None if not found
-    """
-    sql_query = load_sql("sql/v3/agents/get_agent_model_info.sql")
-
-    row = await conn.fetchrow(sql_query, agent_id, profile_id)
-    if not row:
-        return None
-
-    return {
-        "model_name": row["model_name"],
-        "provider": row["provider"] or "",
-        "base_url": row["base_url"] or None,
-        "api_key": row["api_key"],
-    }
 
 
 async def generate_image_background(
@@ -87,20 +60,22 @@ async def generate_image_background(
             return
 
         async with pool.acquire() as conn:
-            # Get agent's model info (profile_id is required for API key resolution)
+            # Get agent's model info inline (profile_id is required for API key resolution)
             if not profile_id:
                 await _emit_image_error(
                     image_id, storage_key, "profile_id is required for image generation"
                 )
                 return
-            model_info = await get_agent_model_info(conn, agent_id, profile_id)
-            if not model_info:
+            
+            sql_query = load_sql("sql/v3/agents/get_agent_model_info.sql")
+            row = await conn.fetchrow(sql_query, agent_id, profile_id)
+            if not row:
                 await _emit_image_error(
                     image_id, storage_key, f"Agent {agent_id} not found or inactive"
                 )
                 return
 
-            api_key = model_info["api_key"]
+            api_key = row["api_key"]
             if not api_key:
                 await _emit_image_error(
                     image_id, storage_key, f"API key not found for agent {agent_id}"
@@ -116,9 +91,9 @@ async def generate_image_background(
                 )
                 return
 
-            model_name = model_info["model_name"]
-            base_url = model_info["base_url"]
-            provider = model_info["provider"]
+            model_name = row["model_name"]
+            base_url = row["base_url"]
+            provider = row["provider"] or ""
 
             # Determine image model
             image_model = model_name

@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 from app.main import TUS_UPLOADS_DIR, classification_results, get_db
 from app.utils.activity.audit import audit_activity, audit_set
-from app.utils.agents.generic_agent import GenericAgent
+from app.infra.agents.generic_agent import GenericAgent
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool

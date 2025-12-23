@@ -197,3 +197,4 @@ def cancel_eval_tasks(eval_id: str) -> None:
     ]
     for key in keys_to_remove:
         _active_eval_tasks.pop(key, None)
+

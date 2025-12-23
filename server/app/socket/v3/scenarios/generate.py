@@ -11,8 +11,8 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
 from agents.items import TResponseInputItem
 from app.api.v3.settings.active import ThemePrimitives, derive_theme_tokens
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
-from app.utils.activity.websocket_logger import log_websocket_activity
-from app.utils.agents.generic_agent import GenericAgent
+from app.infra.activity.websocket_logger import log_websocket_activity
+from app.infra.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info

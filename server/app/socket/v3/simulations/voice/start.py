@@ -12,7 +12,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import _voice_sessions, get_pool, sio
-from app.utils.activity.websocket_logger import log_websocket_activity
+from app.infra.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql

@@ -7,7 +7,7 @@ from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
 from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.evals.run_eval_single_run import run_eval_single_run
+from app.infra.evals.run_eval_single_run import run_eval_single_run
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

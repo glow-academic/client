@@ -10,7 +10,7 @@ from app.socket.v3.scenarios.tools.image import (
     ImageToolCompletePayload,
     image_tool_complete,
 )
-from app.utils.activity.websocket_logger import log_websocket_activity
+from app.infra.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 

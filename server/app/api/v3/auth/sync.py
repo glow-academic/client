@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.utils.activity.audit import audit_activity
-from app.utils.auth.keycloak_sync import perform_keycloak_sync
+from app.infra.auth.keycloak_sync import perform_keycloak_sync
 
 
 class SyncKeycloakRequest(BaseModel):

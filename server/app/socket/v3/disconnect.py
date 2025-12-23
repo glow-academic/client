@@ -3,15 +3,15 @@
 from fastapi import APIRouter
 
 from app.main import sio
-from app.utils.activity.websocket_logger import log_websocket_activity
+from app.infra.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
-from app.utils.websocket.remove_socket_owner import remove_socket_owner
-from app.utils.websocket.decrement_guest_count import decrement_guest_count
-from app.utils.websocket.find_chats_by_socket import find_chats_by_socket
-from app.utils.websocket.find_profile_by_socket import find_profile_by_socket
-from app.utils.websocket.is_guest_socket import is_guest_socket
-from app.utils.websocket.remove_active_connection import remove_active_connection
-from app.utils.websocket.remove_guest_socket import remove_guest_socket
+from app.infra.websocket.remove_socket_owner import remove_socket_owner
+from app.infra.websocket.decrement_guest_count import decrement_guest_count
+from app.infra.websocket.find_chats_by_socket import find_chats_by_socket
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.is_guest_socket import is_guest_socket
+from app.infra.websocket.remove_active_connection import remove_active_connection
+from app.infra.websocket.remove_guest_socket import remove_guest_socket
 
 logger = get_logger(__name__)
 

@@ -52,7 +52,7 @@ async def perform_keycloak_sync(
         # Check if Keycloak is available BEFORE attempting sync
         # Note: Keycloak might return 403 "HTTPS required" before sync disables SSL requirement
         # This is expected and sync will fix it, so we proceed anyway
-        from app.utils.health import check_keycloak
+        from app.infra.health import check_keycloak
 
         keycloak_check = await check_keycloak()
         # Only fail if Keycloak is completely unavailable (connection error, not 403 HTTPS required)
@@ -134,3 +134,4 @@ async def perform_keycloak_sync(
             department_id=department_id,
             error=error_msg,
         )
+

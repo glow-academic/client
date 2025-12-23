@@ -10,7 +10,7 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
                     ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
 from app.main import get_internal_sio, get_pool, sio
-from app.utils.agents.generic_agent import GenericAgent
+from app.infra.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_safe_field_name import \
     create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario

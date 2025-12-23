@@ -17,7 +17,7 @@ from agents import (
 from agents.items import TResponseInputItem
 from pydantic import Field
 
-from app.utils.agents.generic_agent import GenericAgent
+from app.infra.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql

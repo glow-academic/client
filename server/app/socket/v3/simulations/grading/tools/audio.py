@@ -9,7 +9,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
-from app.utils.agents.generic_agent import GenericAgent
+from app.infra.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql

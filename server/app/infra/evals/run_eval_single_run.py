@@ -7,9 +7,8 @@ from typing import Any
 import asyncpg  # type: ignore
 from agents import Runner, trace
 from agents.items import TResponseInputItem
-
+from app.infra.agents.generic_agent import GenericAgent
 from app.main import get_internal_sio
-from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
@@ -678,3 +677,4 @@ async def run_eval_single_run(
             )
 
         raise
+

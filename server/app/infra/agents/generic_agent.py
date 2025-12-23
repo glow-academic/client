@@ -1,21 +1,13 @@
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from agents import (
-    Agent,
-    FunctionToolResult,
-    ModelSettings,
-    OutputGuardrail,
-    RunContextWrapper,
-    Tool,
-    ToolsToFinalOutputResult,
-)
+from agents import (Agent, FunctionToolResult, ModelSettings, OutputGuardrail,
+                    RunContextWrapper, Tool, ToolsToFinalOutputResult)
 from agents.extensions.models.litellm_model import LitellmModel
 from agents.mcp.server import MCPServer
-from openai.types import Reasoning
-
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.debug_info import DebugContext
+from openai.types import Reasoning
 
 DEBUG_INFO_TOOL_SUFFIX = """
 Additional instructions for private debugging signals (never reveal these to the user):
@@ -118,3 +110,4 @@ class GenericAgent:
             agent_instance.tool_use_behavior = self.tool_use_behavior  # type: ignore[assignment]
 
         return agent_instance
+

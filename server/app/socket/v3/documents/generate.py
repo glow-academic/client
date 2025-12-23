@@ -11,7 +11,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
-from app.utils.activity.websocket_logger import log_websocket_activity
+from app.infra.activity.websocket_logger import log_websocket_activity
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool, FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResult
@@ -285,7 +285,7 @@ async def _document_generate_impl(
                 return ToolsToFinalOutputResult(is_final_output=both_complete)
             
             # Build document agent inline
-            from app.utils.agents.generic_agent import GenericAgent
+            from app.infra.agents.generic_agent import GenericAgent
             document_agent = GenericAgent(
                 agent_name=context["agent_name"],
                 system_prompt=context["system_prompt"],

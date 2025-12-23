@@ -16,10 +16,16 @@ from typing import Any
 import asyncpg  # type: ignore
 
 from app.utils.logging.db_logger import get_logger
-from app.utils.scenario.generate_problem_statement import (
-    generate_scenario_problem_statement,
-)
 from app.utils.sql_helper import load_sql
+from app.infra.agents.generic_agent import GenericAgent
+from app.utils.debug_info import DebugContext
+from app.utils.debug_info import debug_info as debug_info_tool
+from app.utils.document.format_document_info import format_document_info
+from app.utils.scenario.image_generation import get_image_generation_results, set_image_generation_context
+from app.utils.tools.build_pydantic_fields import build_function_signature_string
+from agents import FunctionToolResult, RunContextWrapper, Runner, Tool, ToolsToFinalOutputResult, function_tool, gen_trace_id, trace
+from agents.items import TResponseInputItem
+from pydantic import Field
 
 logger = get_logger(__name__)
 
@@ -522,21 +528,349 @@ async def randomize_scenario_attributes(
                     f"Parent scenario {scenario_id} has no scenario_agent_id configured"
                 )
 
-            # Disable image generation for API endpoints (only WebSocket should handle AI)
-            generated = await generate_scenario_problem_statement(
-                conn=conn,
-                department_id=selected_department_id,
-                agent_id=uuid.UUID(scenario_agent_id),
-                persona_id=persona_id,
-                document_ids=doc_ids if doc_ids else None,
-                parameter_item_ids=param_ids if param_ids else None,
-                profile_id=profile_id,
-                objectives_enabled=parent_scenario_dict.get("objectives_enabled", True),
-                images_enabled=False,  # Disable image generation for API endpoints
+            # Generate problem statement inline (moved from generate_problem_statement.py)
+            agent_id_uuid = uuid.UUID(scenario_agent_id)
+            objectives_enabled = parent_scenario_dict.get("objectives_enabled", True)
+            images_enabled = False  # Disable image generation for API endpoints
+            
+            # Ensure department_id is set (required for SQL query)
+            if not selected_department_id:
+                raise ValueError("department_id is required for scenario problem statement generation")
+            
+            logger.info(
+                f"Generating scenario problem statement with "
+                f"department_id={selected_department_id}, agent_id={agent_id_uuid}, persona_id={persona_id}, "
+                f"document_ids={doc_ids}, parameter_item_ids={param_ids}"
             )
-            scenario_problem_statement = generated.get("description") or ""
-            scenario_title = generated.get("title") or ""
-            scenario_objectives = generated.get("objectives") or []
+
+            # Get all context data in a single optimized query using SQL file
+            if not profile_id:
+                raise ValueError("profile_id is required for scenario problem statement generation")
+            sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
+            context_row = await conn.fetchrow(
+                sql,
+                selected_department_id,
+                persona_id if persona_id else None,
+                [str(d) for d in doc_ids] if doc_ids else [],
+                [str(p) for p in param_ids] if param_ids else [],
+                str(agent_id_uuid),
+                str(profile_id),
+            )
+
+            if not context_row:
+                raise ValueError(
+                    f"Agent {agent_id_uuid} not found or not available for department {selected_department_id}"
+                )
+
+            # Parse JSON arrays
+            documents = (
+                json.loads(context_row["documents"])
+                if isinstance(context_row["documents"], str)
+                else context_row["documents"]
+            )
+            parameter_items = (
+                json.loads(context_row["parameter_items"])
+                if isinstance(context_row["parameter_items"], str)
+                else context_row["parameter_items"]
+            )
+
+            context = {
+                "agent_id": context_row["agent_id"],
+                "agent_name": context_row["agent_name"],
+                "system_prompt": context_row["system_prompt"],
+                "temperature": float(context_row["temperature"])
+                if context_row["temperature"] is not None
+                else 0.0,
+                "reasoning": context_row["reasoning"],
+                "model_id": context_row["model_id"],
+                "model_name": context_row["model_name"],
+                "provider": context_row["provider"],
+                "base_url": context_row["base_url"],
+                "api_key": context_row["api_key"],
+                "persona": {
+                    "id": context_row["persona_id"],
+                    "name": context_row["persona_name"],
+                    "description": context_row["persona_description"],
+                }
+                if context_row["persona_id"]
+                else None,
+                "documents": documents,
+                "parameter_items": parameter_items,
+                "req_per_day": context_row["req_per_day"],
+                "runs_today_count": context_row["runs_today_count"],
+                "earliest_run_created_at": context_row["earliest_run_created_at"],
+            }
+
+            # Format persona info if persona was provided
+            if persona_id is None or context["persona"] is None:
+                persona_info = None
+                show_images = False
+            else:
+                persona_data = context["persona"]
+                persona_info = {
+                    "role": "user",
+                    "content": f"This is the profile of the student: Name: {persona_data['name']} Description: {persona_data.get('description', '')}",
+                }
+                show_images = False
+
+            # Format document info if documents were provided
+            if not doc_ids or len(doc_ids) == 0:
+                document_info = None
+            else:
+                document_info = format_document_info(context["documents"], show_images)
+
+            # Format parameter item info if parameter items were provided
+            if not param_ids or len(param_ids) == 0:
+                parameter_item_info = None
+            else:
+                parameter_items_data = context["parameter_items"]
+                if not parameter_items_data:
+                    parameter_item_info = {
+                        "role": "user",
+                        "content": "No parameter items found.",
+                    }
+                else:
+                    formatted_items = []
+                    for row in parameter_items_data:
+                        formatted_item = (
+                            f"This is the {row['param_name']} ({row.get('param_description', '')}) for this chat: {row['item_name']}. "
+                            f"Description: {row.get('item_description', '')}."
+                        )
+                        formatted_items.append(formatted_item)
+
+                    content = "The following is the parameter item information:\n" + "\n".join(
+                        formatted_items
+                    )
+                    parameter_item_info = {
+                        "role": "user",
+                        "content": content,
+                    }
+
+            final_profile_id: uuid.UUID = profile_id
+
+            # Create scenario generation tools
+            group_id = uuid.uuid4()
+            scenario_trace_id = gen_trace_id()
+            primary_id = str(group_id)
+
+            # Set image generation context before creating tools (async)
+            if images_enabled and final_profile_id:
+                await set_image_generation_context(
+                    agent_id=context["agent_id"],
+                    profile_id=str(final_profile_id),
+                    primary_id=primary_id,
+                    department_id=str(selected_department_id) if selected_department_id else None,
+                    room=None,  # API endpoint - no WebSocket room
+                )
+
+            # Load agent tools from database
+            sql_get_agent_tools = load_sql("sql/v3/agents/get_agent_tools.sql")
+            rows = await conn.fetch(sql_get_agent_tools, str(agent_id_uuid))
+            agent_tools_config = [dict(row) for row in rows]
+            tool_config_map: dict[str, dict[str, Any]] = {
+                tool_config["name"]: tool_config for tool_config in agent_tools_config
+            }
+
+            # Create scenario generation tools inline
+            scenario_results: dict[str, Any] = {}
+            scenario_tools: list[Tool] = []
+            
+            # 1. Title and Description Tool (always included)
+            title_desc_config = tool_config_map.get("set_title_and_description")
+            if title_desc_config:
+                title_desc = title_desc_config.get("argument_descriptions", {}).get("title", "Short, descriptive title for the scenario (5-10 words)")
+                scenario_desc = title_desc_config.get("argument_descriptions", {}).get("scenario", "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it")
+            else:
+                title_desc = "Short, descriptive title for the scenario (5-10 words)"
+                scenario_desc = "Scenario description (1-2 sentences) that subtly demonstrates the persona without naming it"
+            
+            async def set_title_description(
+                title: str = Field(description=title_desc),
+                scenario: str = Field(description=scenario_desc),
+            ) -> str:
+                """Set the title and description for the scenario."""
+                scenario_results["title"] = title
+                scenario_results["description"] = scenario
+                logger.info(f"✓ Set title: {title}")
+                return "Set title and description successfully"
+            
+            scenario_tools.append(function_tool(set_title_description))
+            
+            # 2. Objectives Tool (if enabled)
+            if objectives_enabled:
+                objectives_config = tool_config_map.get("set_objectives")
+                if objectives_config:
+                    objectives_desc = objectives_config.get("argument_descriptions", {}).get("objectives", "List of 1-3 specific learning objectives that GTAs should achieve in this scenario")
+                else:
+                    objectives_desc = "List of 1-3 specific learning objectives that GTAs should achieve in this scenario"
+                
+                async def set_objectives(
+                    objectives: list[str] = Field(description=objectives_desc),
+                ) -> str:
+                    """Set the learning objectives for this scenario."""
+                    objectives = objectives[:3]  # Limit to 3
+                    scenario_results["objectives"] = objectives
+                    logger.info(f"✓ Set {len(objectives)} objectives")
+                    return f"Set {len(objectives)} learning objectives successfully"
+                
+                scenario_tools.append(function_tool(set_objectives))
+            
+            # 3. Image Generation Tool (if enabled)
+            if images_enabled:
+                image_config = tool_config_map.get("generate_image")
+                if image_config:
+                    name_desc = image_config.get("argument_descriptions", {}).get("name", "Descriptive name for the generated image")
+                    prompt_desc = image_config.get("argument_descriptions", {}).get("prompt", "Detailed, descriptive prompt for image generation")
+                else:
+                    name_desc = "Descriptive name for the generated image"
+                    prompt_desc = "Detailed, descriptive prompt for image generation"
+                
+                async def generate_image(
+                    name: str = Field(description=name_desc),
+                    prompt: str = Field(description=prompt_desc),
+                ) -> str:
+                    """Generate an image from a detailed prompt."""
+                    if "image_requests" not in scenario_results:
+                        scenario_results["image_requests"] = {}
+                    scenario_results["image_requests"][name] = prompt
+                    logger.info(f"✓ Queued image generation: {name}")
+                    return f"Image generation queued for '{name}'"
+                
+                scenario_tools.append(function_tool(generate_image))
+            
+            scenario_tools.append(debug_info_tool)
+            logger.info(f"Created {len(scenario_tools)} scenario tools (including debug_info)")
+
+            # Create tool use behavior
+            def tool_use_behavior(
+                tool_context: RunContextWrapper[Any],
+                tool_results: list[FunctionToolResult],
+            ) -> ToolsToFinalOutputResult:
+                required_tools = ["title_description"]
+                if objectives_enabled:
+                    required_tools.append("objectives")
+                completed_required = True
+                logger.info(
+                    f"Tool use check: required={required_tools}, completed={completed_required}"
+                )
+                return ToolsToFinalOutputResult(is_final_output=completed_required)
+
+            scenario_agent_generic = GenericAgent(
+                agent_name=context["agent_name"],
+                system_prompt=context["system_prompt"],
+                temperature=context["temperature"],
+                model_name=context["model_name"],
+                provider=context["provider"],
+                base_url=context["base_url"],
+                api_key=context["api_key"],
+                reasoning=context["reasoning"],
+                tools=scenario_tools,
+                parallel_tool_calls=False,
+                tool_use_behavior=tool_use_behavior,
+            )
+
+            agent_instance = scenario_agent_generic.agent()
+
+            input_items: list[TResponseInputItem | None] = [
+                persona_info,
+                document_info,
+                parameter_item_info,
+            ]
+
+            clean_input_items = [item for item in input_items if item is not None]
+
+            # Check rate limit
+            req_per_day = context["req_per_day"]
+            runs_today_count = context["runs_today_count"]
+
+            if req_per_day is not None and runs_today_count >= req_per_day:
+                from datetime import timedelta
+                from zoneinfo import ZoneInfo
+
+                earliest_run_created_at = context["earliest_run_created_at"]
+                if earliest_run_created_at:
+                    next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+                    eastern_tz = ZoneInfo("America/New_York")
+                    next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+                    error_message = (
+                        f"Daily request limit of {req_per_day} reached. "
+                        f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
+                        f"{next_allowed_et.strftime('%B %d, %Y')}."
+                    )
+                else:
+                    error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
+                raise ValueError(error_message)
+
+            # Create model run with all junction records using SQL file
+            sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+            model_run_row = await conn.fetchrow(
+                sql_create_run,
+                selected_department_id,
+                uuid.UUID(context["model_id"]),
+                uuid.UUID(context["agent_id"]),
+                "agent",
+                final_profile_id,
+                None,  # key_id
+                context["agent_id"],
+            )
+            model_run_id = uuid.UUID(model_run_row["run_id"])
+
+            with trace(
+                "Scenario Agent",
+                group_id=str(group_id),
+                trace_id=scenario_trace_id,
+            ):
+                result = await Runner.run(
+                    agent_instance,
+                    input=clean_input_items,
+                    context=DebugContext(conn=conn, run_id=model_run_id),
+                )
+
+            # Extract results from closure variables
+            logger.info("Scenario generation completed successfully")
+            logger.info(f"Title: {scenario_results.get('title', 'N/A')}")
+            logger.info(f"Description: {scenario_results.get('description', 'N/A')[:100]}...")
+            objectives = scenario_results.get("objectives", []) if objectives_enabled else []
+            logger.info(f"Objectives: {objectives}")
+
+            usage = result.context_wrapper.usage
+
+            # Update model run with token usage using SQL file
+            sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+            await conn.execute(
+                sql_update_tokens,
+                str(model_run_id),
+                usage.input_tokens,
+                usage.output_tokens,
+            )
+
+            # Get result values
+            title = scenario_results.get("title") or ""
+            description = scenario_results.get("description") or ""
+
+            logger.info(
+                f"Scenario generation completed: title={title}, "
+                f"description length={len(description)}, objectives count={len(objectives)}"
+            )
+
+            # Retrieve image_ids from image generation results
+            generated_image_ids: list[str] = []
+            if final_profile_id:
+                image_results = await get_image_generation_results(
+                    profile_id=str(final_profile_id),
+                    primary_id=primary_id,
+                )
+                image_ids = image_results.get("images", [])
+                if image_ids:
+                    generated_image_ids = image_ids
+                    logger.info(
+                        f"Retrieved {len(generated_image_ids)} image IDs "
+                        f"(generation in progress in background)"
+                    )
+
+            scenario_problem_statement = description
+            scenario_title = title
+            scenario_objectives = objectives
         else:
             scenario_title = parent_scenario_dict.get("name", "")
             # Get objectives from parent

@@ -4,9 +4,8 @@ import asyncio
 from typing import Any
 
 import asyncpg  # type: ignore
-from fastapi import Request
-
 from app.utils.activity.audit import AuditIntent, jinja
+from fastapi import Request
 
 # Global DB pool (set during startup)
 _db_pool: asyncpg.Pool | None = None
@@ -112,3 +111,4 @@ async def _insert_activity(
     except Exception:
         # Never break logging if DB write fails
         pass
+

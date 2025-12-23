@@ -6,9 +6,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import sio
-from app.utils.activity.websocket_logger import log_websocket_activity
+from app.infra.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
-from app.utils.websocket.set_active_connection import set_active_connection
+from app.infra.websocket.set_active_connection import set_active_connection
 
 logger = get_logger(__name__)
 

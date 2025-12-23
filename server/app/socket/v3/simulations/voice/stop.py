@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import _voice_message_ids, _voice_sessions, sio
-from app.utils.activity.websocket_logger import log_websocket_activity
+from app.infra.activity.websocket_logger import log_websocket_activity
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

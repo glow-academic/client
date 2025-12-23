@@ -17,8 +17,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_internal_sio, get_pool, sio
-from app.utils.activity.websocket_logger import log_websocket_activity
-from app.utils.agents.generic_agent import GenericAgent
+from app.infra.activity.websocket_logger import log_websocket_activity
+from app.infra.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger

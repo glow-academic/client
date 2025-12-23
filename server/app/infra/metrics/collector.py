@@ -33,7 +33,7 @@ async def initialize_metrics(
     if _redis_client:
         from app.utils.logging.db_logger import get_logger
 
-        logger = get_logger("app.utils.metrics.collector")
+        logger = get_logger("app.infra.metrics.collector")
         try:
             # Initialize counters to 0 if they don't exist (async Redis client)
             await _redis_client.set("metrics:requests_total", 0, nx=True)
@@ -47,7 +47,7 @@ async def initialize_metrics(
     else:
         from app.utils.logging.db_logger import get_logger
 
-        logger = get_logger("app.utils.metrics.collector")
+        logger = get_logger("app.infra.metrics.collector")
         logger.info(
             "Metrics collector initialized with in-memory backend (Redis unavailable)"
         )
@@ -146,7 +146,7 @@ async def log_metrics_snapshot() -> None:
             except Exception as e:
                 from app.utils.logging.db_logger import get_logger
 
-                logger = get_logger("app.utils.metrics.collector")
+                logger = get_logger("app.infra.metrics.collector")
                 logger.warning(
                     f"Error reading from Redis, using in-memory fallback: {e}"
                 )
@@ -192,7 +192,7 @@ async def log_metrics_snapshot() -> None:
         # Log error but don't break metrics collection
         from app.utils.logging.db_logger import get_logger
 
-        logger = get_logger("app.utils.metrics.collector")
+        logger = get_logger("app.infra.metrics.collector")
         logger.error(f"Error logging metrics snapshot: {e}")
 
 
@@ -206,7 +206,7 @@ async def log_health_checks() -> None:
         return
 
     try:
-        from app.utils.health import run_service_checks
+        from app.infra.health import run_service_checks
 
         checks = await run_service_checks()
 
@@ -230,7 +230,7 @@ async def log_health_checks() -> None:
         # Log error but don't break health endpoint
         from app.utils.logging.db_logger import get_logger
 
-        logger = get_logger("app.utils.metrics.collector")
+        logger = get_logger("app.infra.metrics.collector")
         logger.warning(f"Error logging health checks: {e}")
 
 
@@ -287,3 +287,4 @@ async def get_current_metrics() -> dict[str, Any]:
         "sample_count": len(_latency_samples),
         "backend": "memory",
     }
+

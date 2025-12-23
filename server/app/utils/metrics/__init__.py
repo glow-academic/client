@@ -1,6 +1,6 @@
 """Metrics collection utilities (Redis-backed for multi-instance)."""
 
-from app.utils.metrics.collector import (
+from app.infra.metrics.collector import (
     get_current_metrics,
     initialize_metrics,
     log_health_checks,
