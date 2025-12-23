@@ -1,6 +1,6 @@
 -- Create agent with prompt and department links in a single transaction
--- Parameters: $1=name, $2=description, $3=model_id, $4=active, $5=role, $6=prompt_id (nullable), $7=system_prompt (nullable), $8=department_ids (nullable text array), $9=profile_id (uuid, required)
--- profile_id is always a UUID (required in request body)
+-- Parameters: $1=name (text), $2=description (text), $3=model_id (uuid), $4=active (boolean), $5=role (text), $6=prompt_id (uuid, nullable), $7=system_prompt (text, nullable), $8=department_ids (text[], nullable), $9=profile_id (uuid, required)
+-- All parameters are explicitly cast for type introspection
 WITH user_profile AS (
     SELECT 
         p.role,
@@ -25,11 +25,11 @@ actor_profile AS (
 new_agent AS (
     INSERT INTO agents (name, description, model_id, active, role, created_at, updated_at)
     SELECT 
-        $1, 
-        $2, 
-        $3, 
-        $4, 
-        $5, 
+        $1::text, 
+        $2::text, 
+        $3::uuid, 
+        $4::boolean, 
+        $5::text, 
         NOW(), 
         NOW()
     RETURNING id::text as agent_id
@@ -38,16 +38,16 @@ new_prompt AS (
     -- Create prompt only if system_prompt provided and prompt_id not provided
     INSERT INTO prompts (system_prompt, created_at, updated_at)
     SELECT $7::text, NOW(), NOW()
-    WHERE $6::text IS NULL AND $7::text IS NOT NULL AND $7::text != ''
+    WHERE $6::uuid IS NULL AND $7::text IS NOT NULL AND $7::text != ''
     RETURNING id::text as prompt_id
 ),
 selected_prompt_id AS (
     -- Use provided prompt_id or newly created prompt_id (only return row if prompt exists)
     SELECT COALESCE(
-        $6::text,
+        $6::uuid::text,
         (SELECT prompt_id FROM new_prompt LIMIT 1)
     ) as prompt_id
-    WHERE $6::text IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
+    WHERE $6::uuid IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
 ),
 link_prompt AS (
     -- Link agent to prompt if prompt_id exists

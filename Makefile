@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-db typecheck-client build-client openapi-gen gen-client-types
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-db typecheck-client build-client openapi-gen gen-client-types sql-compile sql-types
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -325,6 +325,15 @@ migrate-db-all:
 	@cd database && yarn migrate:all
 	@echo "✅ All database migrations completed"
 
+# Compile SQL files and generate types
+sql-compile: check-venv
+	@echo "Compiling SQL files and generating types..."
+	@$(VENV_PYTHON) server/scripts/generate_sql_types.py
+	@echo "✅ SQL compilation complete"
+
+# Alias for sql-compile
+sql-types: sql-compile
+
 # Connect to database
 connect-db:
 	@echo "Connecting to database..."
@@ -367,6 +376,8 @@ help:
 	@echo "  restore-db     - Restore database from latest backup"
 	@echo "  migrate-db     - Run most recent database migration"
 	@echo "  migrate-db-all - Run all database migrations"
+	@echo "  sql-compile    - Compile SQL files and generate types (migration safety gate)"
+	@echo "  sql-types      - Alias for sql-compile"
 	@echo "  connect-db     - Connect to database"
 	@echo "  fresh-db       - Interactive setup for fresh database"
 	@echo "  export-db      - Export database (schema|base|university|organization)"

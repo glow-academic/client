@@ -4,17 +4,18 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from app.infra.activity.audit import audit_activity, audit_set
+from app.infra.error.handle_route_error import handle_route_error
+from app.main import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
-
-from app.main import get_db
-from app.infra.activity.audit import audit_activity, audit_set
 from utils.cache.invalidate_tags import invalidate_tags
-from app.infra.error.handle_route_error import handle_route_error
 from utils.sql_helper import load_sql
 
+# Generated types will be imported after running: make sql-compile
+# from app.api.v3.agents.create.types import CreateAgentSqlParams, CreateAgentSqlRow
 
-# Inline request/response schemas
+# Request model for API (includes business logic fields not in SQL)
 class CreateAgentRequest(BaseModel):
     name: str
     description: str
@@ -90,6 +91,22 @@ async def create_agent(
 
             # Create agent with prompt and departments in single SQL (DHH style)
             sql_query = load_sql("app/sql/v3/agents/create_agent_complete.sql")
+            
+            # TODO: Once types are generated, use CreateAgentSqlParams:
+            # sql_params_model = CreateAgentSqlParams(
+            #     param_1=request.name,
+            #     param_2=request.description,
+            #     param_3=request.model_id,
+            #     param_4=request.active,
+            #     param_5=request.role,
+            #     param_6=request.prompt_id,
+            #     param_7=request.system_prompt if not request.prompt_id else None,
+            #     param_8=dept_ids,
+            #     param_9=profile_id,
+            # )
+            # sql_params = sql_params_model.to_tuple()
+            
+            # For now, use manual tuple (will be replaced after type generation)
             sql_params = (
                 request.name,
                 request.description,
