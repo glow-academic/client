@@ -134,7 +134,15 @@ def _process_nested_lists(
 
         # Create a key from regular data to group items with same base values
         # Use a tuple of sorted items for grouping
-        group_key = tuple(sorted(regular_data.items()))
+        # Convert lists to tuples so they can be hashed (for dictionary key)
+        def make_hashable(value: Any) -> Any:
+            if isinstance(value, list):
+                return tuple(make_hashable(item) for item in value)
+            if isinstance(value, dict):
+                return tuple(sorted((k, make_hashable(v)) for k, v in value.items()))
+            return value
+        
+        group_key = tuple(sorted((k, make_hashable(v)) for k, v in regular_data.items()))
 
         if group_key not in item_groups:
             # First time seeing this group, initialize

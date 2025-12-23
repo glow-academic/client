@@ -329,12 +329,6 @@ def _generate_type_from_value(
     if isinstance(value, str):
         return "str"
     if isinstance(value, int):
-        # Check if it's actually a bool (0/1)
-        # Common patterns: is_*, has_*, can_*, should_*, will_*
-        if value in (0, 1) and field_name:
-            field_lower = field_name.lower()
-            if any(prefix in field_lower for prefix in ["is_", "has_", "can_", "should_", "will_", "_enabled", "_active"]):
-                return "bool"
         return "int"
     if isinstance(value, float):
         return "float"
@@ -389,6 +383,7 @@ def _generate_nested_model_class(
     indent: int = 0,
     generated_classes: dict[str, str] | None = None,
     route_name: str = "",
+    column_type_map: dict[str, str] | None = None,
 ) -> tuple[str, dict[str, str]]:
     """Generate a Pydantic model class from nested data structure.
 
@@ -429,7 +424,62 @@ def _generate_nested_model_class(
         else:
             full_field_path = f"{route_name}_{key}" if route_name else key
         
-        field_type = _generate_type_from_value(value, full_field_path, generated_classes, route_name)
+        # First, try to use PostgreSQL type from column metadata if available
+        field_type: str | None = None
+        if column_type_map:
+            # Try to find the column type - column_type_map has both full paths and field names
+            # Column names are like "model_mapping__temperature_lower"
+            # After nesting, field names are like "temperature_lower"
+            # We need to reconstruct the column name format: "prefix__field_name"
+            
+            # Extract the list prefix from class name (e.g., "GetAgentNewModelMappingItem" -> "model_mapping")
+            list_prefix = ""
+            if class_name.endswith("Item"):
+                # Convert "GetAgentNewModelMappingItem" -> "get_agent_new_model_mapping" -> "model_mapping"
+                import re
+                base_name = class_name.replace("Item", "")
+                snake_case = re.sub(r'(?<!^)(?=[A-Z])', '_', base_name).lower()
+                # Extract the last part which should be the prefix (e.g., "model_mapping")
+                parts = snake_case.split('_')
+                if len(parts) >= 2:
+                    list_prefix = '_'.join(parts[-2:])  # Take last 2 parts for "model_mapping"
+            
+            # Try different path formats - column_type_map has both "model_mapping__temperature_lower" and "temperature_lower"
+            possible_paths = [
+                key,  # Just the field name (e.g., "temperature_lower") - column_type_map has this
+            ]
+            
+            # Try with list prefix if we have it (this is the actual column name format)
+            if list_prefix:
+                possible_paths.insert(0, f"{list_prefix}__{key}")  # "model_mapping__temperature_lower" - try this first!
+            
+            # Try full field path variations
+            possible_paths.extend([
+                full_field_path,  # Full path from route
+            ])
+            
+            # Try reconstructing from full_field_path if it contains "__"
+            if "__" in full_field_path:
+                parts = full_field_path.split("__")
+                if len(parts) >= 2:
+                    possible_paths.append(f"{parts[-2]}__{parts[-1]}")
+            
+            for path in possible_paths:
+                if path in column_type_map:
+                    pg_type = column_type_map[path]
+                    # Always preserve the PostgreSQL type, but make it nullable if value is None
+                    # Note: PostgreSQL types from introspection don't include | None, so we add it if value is None
+                    if value is None:
+                        # Remove any existing | None and add it back
+                        base_type = pg_type.replace(" | None", "").strip()
+                        field_type = f"{base_type} | None"
+                    else:
+                        field_type = pg_type
+                    break
+        
+        # Fall back to value inference if no PostgreSQL type found
+        if field_type is None:
+            field_type = _generate_type_from_value(value, full_field_path, generated_classes, route_name)
         
         # If it's a list of dicts, check if we have a generated class for it
         if isinstance(value, list) and value:
@@ -457,6 +507,7 @@ def generate_nested_types(
     nested_data: dict[str, Any],
     route_name: str,
     prefix: str = "",
+    column_type_map: dict[str, str] | None = None,
 ) -> tuple[str, dict[str, str]]:
     """Recursively generate Pydantic model classes from nested structure.
 
@@ -499,7 +550,7 @@ def generate_nested_types(
 
                     # Now generate the class for this item (nested classes are already generated)
                     item_code, updated_classes = _generate_nested_model_class(
-                        first_item, item_class_name, indent=0, generated_classes=generated_classes, route_name=route_name
+                        first_item, item_class_name, indent=0, generated_classes=generated_classes, route_name=route_name, column_type_map=column_type_map
                     )
                     generated_classes.update(updated_classes)
                     if item_code:
@@ -584,9 +635,29 @@ def generate_response_model(
     sample_rows = create_sample_rows(metadata.returns, list_prefixes, num_samples=3)
     nested_data = nest_many(sample_rows, list_prefixes=list_prefixes)
 
+    # Create a mapping from field name to PostgreSQL type for top-level fields
+    top_level_type_map: dict[str, str] = {}
+    for col in metadata.returns:
+        # Top-level fields don't have list prefixes
+        if not any(col.name.startswith(prefix + "__") for prefix in list_prefixes):
+            field_name = _sanitize_field_name(col.name)
+            top_level_type_map[field_name] = col.python_type
+
+    # Create column type map for nested fields
+    column_type_map: dict[str, str] = {}
+    for col in metadata.returns:
+        # Map column names (like "model_mapping__input_modalities") to their PostgreSQL types
+        for prefix in list_prefixes:
+            if col.name.startswith(prefix + "__"):
+                field_path = col.name  # e.g., "model_mapping__input_modalities"
+                field_name = col.name[len(prefix) + 2:]  # e.g., "input_modalities"
+                column_type_map[field_path] = col.python_type  # Full path lookup
+                column_type_map[field_name] = col.python_type  # Field name lookup
+                break
+
     # Generate nested model classes
     nested_classes_code, generated_classes = generate_nested_types(
-        nested_data, route_name
+        nested_data, route_name, column_type_map=column_type_map
     )
 
     # Build the main response model
@@ -618,7 +689,14 @@ def generate_response_model(
 
     # Generate fields based on nested structure
     for key, value in nested_data.items():
-        field_type = _generate_type_from_value(value, key, generated_classes, route_name)
+        # Try to use PostgreSQL type from column metadata for top-level fields
+        sql_field_type: str | None = None
+        if top_level_type_map and key in top_level_type_map:
+            sql_field_type = top_level_type_map[key]
+        
+        # Fall back to value inference
+        if sql_field_type is None:
+            sql_field_type = _generate_type_from_value(value, key, generated_classes, route_name)
 
         # If it's a dict of objects, use the generated class
         if isinstance(value, dict) and value:
@@ -629,7 +707,7 @@ def generate_response_model(
                     f"{route_name}_{key}_item", ""
                 )
                 if item_class_name in generated_classes:
-                    field_type = f"dict[str, {item_class_name}]"
+                    sql_field_type = f"dict[str, {item_class_name}]"
 
         # If it's a list of dicts, use the generated class
         elif isinstance(value, list) and value:
@@ -639,10 +717,10 @@ def generate_response_model(
                     f"{route_name}_{key}_item", ""
                 )
                 if item_class_name in generated_classes:
-                    field_type = f"list[{item_class_name}]"
+                    sql_field_type = f"list[{item_class_name}]"
 
         sanitized_key = _sanitize_field_name(key)
-        lines.append(f"    {sanitized_key}: {field_type}")
+        lines.append(f"    {sanitized_key}: {sql_field_type}")
 
     return "\n".join(lines)
 
@@ -794,9 +872,29 @@ def generate_api_response_model(
     sample_rows = create_sample_rows(metadata.returns, list_prefixes, num_samples=3)
     nested_data = nest_many(sample_rows, list_prefixes=list_prefixes)
 
+    # Create a mapping from field name to PostgreSQL type for top-level fields
+    top_level_type_map: dict[str, str] = {}
+    for col in metadata.returns:
+        # Top-level fields don't have list prefixes
+        if not any(col.name.startswith(prefix + "__") for prefix in list_prefixes):
+            field_name = _sanitize_field_name(col.name)
+            top_level_type_map[field_name] = col.python_type
+
+    # Create column type map for nested fields
+    column_type_map: dict[str, str] = {}
+    for col in metadata.returns:
+        # Map column names (like "model_mapping__input_modalities") to their PostgreSQL types
+        for prefix in list_prefixes:
+            if col.name.startswith(prefix + "__"):
+                field_path = col.name  # e.g., "model_mapping__input_modalities"
+                field_name = col.name[len(prefix) + 2:]  # e.g., "input_modalities"
+                column_type_map[field_path] = col.python_type  # Full path lookup
+                column_type_map[field_name] = col.python_type  # Field name lookup
+                break
+
     # Generate nested model classes
     nested_classes_code, generated_classes = generate_nested_types(
-        nested_data, route_name
+        nested_data, route_name, column_type_map=column_type_map
     )
 
     # Build the main response model
@@ -830,7 +928,14 @@ def generate_api_response_model(
 
     # Generate fields based on nested structure
     for key, value in nested_data.items():
-        field_type = _generate_type_from_value(value, key, generated_classes, route_name)
+        # Try to use PostgreSQL type from column metadata for top-level fields
+        api_field_type: str | None = None
+        if top_level_type_map and key in top_level_type_map:
+            api_field_type = top_level_type_map[key]
+        
+        # Fall back to value inference
+        if api_field_type is None:
+            api_field_type = _generate_type_from_value(value, key, generated_classes, route_name)
 
         # If it's a dict of objects, use the generated class
         if isinstance(value, dict) and value:
@@ -841,7 +946,7 @@ def generate_api_response_model(
                     f"{route_name}_{key}_item", ""
                 )
                 if item_class_name in generated_classes:
-                    field_type = f"dict[str, {item_class_name}]"
+                    api_field_type = f"dict[str, {item_class_name}]"
 
         # If it's a list of dicts, use the generated class
         elif isinstance(value, list) and value:
@@ -851,10 +956,10 @@ def generate_api_response_model(
                     f"{route_name}_{key}_item", ""
                 )
                 if item_class_name in generated_classes:
-                    field_type = f"list[{item_class_name}]"
+                    api_field_type = f"list[{item_class_name}]"
 
         sanitized_key = _sanitize_field_name(key)
-        lines.append(f"    {sanitized_key}: {field_type}")
+        lines.append(f"    {sanitized_key}: {api_field_type}")
 
     return "\n".join(lines)
 

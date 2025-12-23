@@ -16,310 +16,105 @@ TOutput = TypeVar("TOutput", bound=BaseModel)
 SqlString = str
 
 if TYPE_CHECKING:
-    from app.types.v3.agents.create_agent_complete import (
-        CreateAgentApiRequest, CreateAgentApiResponse, CreateAgentSqlParams,
-        CreateAgentSqlRow)
-    from app.types.v3.agents.delete_agent_complete import (
-        DeleteAgentApiRequest, DeleteAgentApiResponse, DeleteAgentSqlParams,
-        DeleteAgentSqlRow)
-    from app.types.v3.agents.get_agent_detail_complete import (
-        GetAgentDetailApiRequest, GetAgentDetailApiResponse,
-        GetAgentDetailSqlParams, GetAgentDetailSqlRow)
-    from app.types.v3.agents.get_agent_new_complete import (
-        GetAgentNewApiRequest, GetAgentNewApiResponse, GetAgentNewSqlParams,
-        GetAgentNewSqlRow)
-    from app.types.v3.agents.get_agents_list_complete import (
-        GetAgentsListApiRequest, GetAgentsListApiResponse,
-        GetAgentsListSqlParams, GetAgentsListSqlRow)
-    from app.types.v3.agents.update_agent_complete import (
-        UpdateAgentApiRequest, UpdateAgentApiResponse, UpdateAgentSqlParams,
-        UpdateAgentSqlRow)
-    from app.types.v3.attempts.bulk_archive_attempts_complete import (
-        BulkArchiveAttemptsApiRequest, BulkArchiveAttemptsApiResponse,
-        BulkArchiveAttemptsSqlParams, BulkArchiveAttemptsSqlRow)
-    from app.types.v3.attempts.get_attempt_full_complete import (
-        GetAttemptFullApiRequest, GetAttemptFullApiResponse,
-        GetAttemptFullSqlParams, GetAttemptFullSqlRow)
-    from app.types.v3.attempts.update_chat_created_at_complete import (
-        UpdateChatCreatedAtApiRequest, UpdateChatCreatedAtApiResponse,
-        UpdateChatCreatedAtSqlParams, UpdateChatCreatedAtSqlRow)
-    from app.types.v3.auth.create_auth_complete import (CreateAuthApiRequest,
-                                                        CreateAuthApiResponse,
-                                                        CreateAuthSqlParams,
-                                                        CreateAuthSqlRow)
-    from app.types.v3.auth.delete_auth_complete import (DeleteAuthApiRequest,
-                                                        DeleteAuthApiResponse,
-                                                        DeleteAuthSqlParams,
-                                                        DeleteAuthSqlRow)
-    from app.types.v3.auth.duplicate_auth_complete import (
-        DuplicateAuthApiRequest, DuplicateAuthApiResponse,
-        DuplicateAuthSqlParams, DuplicateAuthSqlRow)
-    from app.types.v3.auth.get_auth_detail_complete import (
-        GetAuthDetailApiRequest, GetAuthDetailApiResponse,
-        GetAuthDetailSqlParams, GetAuthDetailSqlRow)
-    from app.types.v3.auth.get_login_data_complete import (
-        GetLoginDataApiRequest, GetLoginDataApiResponse, GetLoginDataSqlParams,
-        GetLoginDataSqlRow)
-    from app.types.v3.auth.update_auth_complete import (UpdateAuthApiRequest,
-                                                        UpdateAuthApiResponse,
-                                                        UpdateAuthSqlParams,
-                                                        UpdateAuthSqlRow)
-    from app.types.v3.cohorts.create_cohort_complete import (
-        CreateCohortApiRequest, CreateCohortApiResponse, CreateCohortSqlParams,
-        CreateCohortSqlRow)
-    from app.types.v3.cohorts.delete_cohort_complete import (
-        DeleteCohortApiRequest, DeleteCohortApiResponse, DeleteCohortSqlParams,
-        DeleteCohortSqlRow)
-    from app.types.v3.cohorts.duplicate_cohort_complete import (
-        DuplicateCohortApiRequest, DuplicateCohortApiResponse,
-        DuplicateCohortSqlParams, DuplicateCohortSqlRow)
-    from app.types.v3.cohorts.get_cohort_detail_complete import (
-        GetCohortDetailApiRequest, GetCohortDetailApiResponse,
-        GetCohortDetailSqlParams, GetCohortDetailSqlRow)
-    from app.types.v3.cohorts.get_cohort_new_complete import (
-        GetCohortNewApiRequest, GetCohortNewApiResponse, GetCohortNewSqlParams,
-        GetCohortNewSqlRow)
-    from app.types.v3.cohorts.update_cohort_complete import (
-        UpdateCohortApiRequest, UpdateCohortApiResponse, UpdateCohortSqlParams,
-        UpdateCohortSqlRow)
-    from app.types.v3.departments.create_department_complete import (
-        CreateDepartmentApiRequest, CreateDepartmentApiResponse,
-        CreateDepartmentSqlParams, CreateDepartmentSqlRow)
-    from app.types.v3.departments.delete_department_complete import (
-        DeleteDepartmentApiRequest, DeleteDepartmentApiResponse,
-        DeleteDepartmentSqlParams, DeleteDepartmentSqlRow)
-    from app.types.v3.departments.duplicate_department_complete import (
-        DuplicateDepartmentApiRequest, DuplicateDepartmentApiResponse,
-        DuplicateDepartmentSqlParams, DuplicateDepartmentSqlRow)
-    from app.types.v3.departments.get_department_default_complete import (
-        GetDepartmentDefaultApiRequest, GetDepartmentDefaultApiResponse,
-        GetDepartmentDefaultSqlParams, GetDepartmentDefaultSqlRow)
-    from app.types.v3.departments.update_department_complete import (
-        UpdateDepartmentApiRequest, UpdateDepartmentApiResponse,
-        UpdateDepartmentSqlParams, UpdateDepartmentSqlRow)
-    from app.types.v3.documents.complete_document_creation_complete import (
-        CompleteDocumentCreationApiRequest,
-        CompleteDocumentCreationApiResponse, CompleteDocumentCreationSqlParams,
-        CompleteDocumentCreationSqlRow)
-    from app.types.v3.documents.get_document_detail_complete import (
-        GetDocumentDetailApiRequest, GetDocumentDetailApiResponse,
-        GetDocumentDetailSqlParams, GetDocumentDetailSqlRow)
-    from app.types.v3.documents.insert_document_complete import (
-        InsertDocumentApiRequest, InsertDocumentApiResponse,
-        InsertDocumentSqlParams, InsertDocumentSqlRow)
-    from app.types.v3.documents.render_template_complete import (
-        RenderTemplateApiRequest, RenderTemplateApiResponse,
-        RenderTemplateSqlParams, RenderTemplateSqlRow)
-    from app.types.v3.documents.update_document_complete import (
-        UpdateDocumentApiRequest, UpdateDocumentApiResponse,
-        UpdateDocumentSqlParams, UpdateDocumentSqlRow)
-    from app.types.v3.evals.create_eval_complete import (CreateEvalApiRequest,
-                                                         CreateEvalApiResponse,
-                                                         CreateEvalSqlParams,
-                                                         CreateEvalSqlRow)
-    from app.types.v3.evals.get_eval_attempt_full_complete import (
-        GetEvalAttemptFullApiRequest, GetEvalAttemptFullApiResponse,
-        GetEvalAttemptFullSqlParams, GetEvalAttemptFullSqlRow)
-    from app.types.v3.evals.get_eval_new_complete import (
-        GetEvalNewApiRequest, GetEvalNewApiResponse, GetEvalNewSqlParams,
-        GetEvalNewSqlRow)
-    from app.types.v3.evals.start_eval_attempt_complete import (
-        StartEvalAttemptApiRequest, StartEvalAttemptApiResponse,
-        StartEvalAttemptSqlParams, StartEvalAttemptSqlRow)
-    from app.types.v3.fields.create_field_complete import (
-        CreateFieldApiRequest, CreateFieldApiResponse, CreateFieldSqlParams,
-        CreateFieldSqlRow)
-    from app.types.v3.fields.delete_field_complete import (
-        DeleteFieldApiRequest, DeleteFieldApiResponse, DeleteFieldSqlParams,
-        DeleteFieldSqlRow)
-    from app.types.v3.fields.duplicate_field_complete import (
-        DuplicateFieldApiRequest, DuplicateFieldApiResponse,
-        DuplicateFieldSqlParams, DuplicateFieldSqlRow)
-    from app.types.v3.fields.get_field_detail_complete import (
-        GetFieldDetailApiRequest, GetFieldDetailApiResponse,
-        GetFieldDetailSqlParams, GetFieldDetailSqlRow)
-    from app.types.v3.fields.get_field_new_complete import (
-        GetFieldNewApiRequest, GetFieldNewApiResponse, GetFieldNewSqlParams,
-        GetFieldNewSqlRow)
-    from app.types.v3.fields.update_field_complete import (
-        UpdateFieldApiRequest, UpdateFieldApiResponse, UpdateFieldSqlParams,
-        UpdateFieldSqlRow)
-    from app.types.v3.grading.create_grade_complete import (
-        CreateGradeApiRequest, CreateGradeApiResponse, CreateGradeSqlParams,
-        CreateGradeSqlRow)
-    from app.types.v3.grading.create_message_feedback_complete import (
-        CreateMessageFeedbackApiRequest, CreateMessageFeedbackApiResponse,
-        CreateMessageFeedbackSqlParams, CreateMessageFeedbackSqlRow)
-    from app.types.v3.keycloak.get_auth_items_complete import (
-        GetAuthItemsApiRequest, GetAuthItemsApiResponse, GetAuthItemsSqlParams,
-        GetAuthItemsSqlRow)
-    from app.types.v3.keycloak.get_auth_providers_complete import (
-        GetAuthProvidersApiRequest, GetAuthProvidersApiResponse,
-        GetAuthProvidersSqlParams, GetAuthProvidersSqlRow)
-    from app.types.v3.keys.get_key_detail_complete import (
-        GetKeyDetailApiRequest, GetKeyDetailApiResponse, GetKeyDetailSqlParams,
-        GetKeyDetailSqlRow)
-    from app.types.v3.keys.get_key_new_complete import (GetKeyNewApiRequest,
-                                                        GetKeyNewApiResponse,
-                                                        GetKeyNewSqlParams,
-                                                        GetKeyNewSqlRow)
-    from app.types.v3.model_runs.create_model_run_complete import (
-        CreateModelRunApiRequest, CreateModelRunApiResponse,
-        CreateModelRunSqlParams, CreateModelRunSqlRow)
-    from app.types.v3.model_runs.log_run_complete import (LogRunApiRequest,
-                                                          LogRunApiResponse,
-                                                          LogRunSqlParams,
-                                                          LogRunSqlRow)
-    from app.types.v3.models.create_model_complete import (
-        CreateModelApiRequest, CreateModelApiResponse, CreateModelSqlParams,
-        CreateModelSqlRow)
-    from app.types.v3.models.get_model_detail_complete import (
-        GetModelDetailApiRequest, GetModelDetailApiResponse,
-        GetModelDetailSqlParams, GetModelDetailSqlRow)
-    from app.types.v3.models.get_model_new_complete import (
-        GetModelNewApiRequest, GetModelNewApiResponse, GetModelNewSqlParams,
-        GetModelNewSqlRow)
-    from app.types.v3.models.list_models_complete import (
-        ListModelsApiRequest, ListModelsApiResponse, ListModelsSqlParams,
-        ListModelsSqlRow)
-    from app.types.v3.models.update_model_complete import (
-        UpdateModelApiRequest, UpdateModelApiResponse, UpdateModelSqlParams,
-        UpdateModelSqlRow)
-    from app.types.v3.objectives.insert_objective_complete import (
-        InsertObjectiveApiRequest, InsertObjectiveApiResponse,
-        InsertObjectiveSqlParams, InsertObjectiveSqlRow)
-    from app.types.v3.parameters.create_parameter_complete import (
-        CreateParameterApiRequest, CreateParameterApiResponse,
-        CreateParameterSqlParams, CreateParameterSqlRow)
-    from app.types.v3.parameters.delete_parameter_complete import (
-        DeleteParameterApiRequest, DeleteParameterApiResponse,
-        DeleteParameterSqlParams, DeleteParameterSqlRow)
-    from app.types.v3.parameters.duplicate_parameter_complete import (
-        DuplicateParameterApiRequest, DuplicateParameterApiResponse,
-        DuplicateParameterSqlParams, DuplicateParameterSqlRow)
-    from app.types.v3.parameters.get_parameter_detail_complete import (
-        GetParameterDetailApiRequest, GetParameterDetailApiResponse,
-        GetParameterDetailSqlParams, GetParameterDetailSqlRow)
-    from app.types.v3.parameters.get_parameter_new_complete import (
-        GetParameterNewApiRequest, GetParameterNewApiResponse,
-        GetParameterNewSqlParams, GetParameterNewSqlRow)
-    from app.types.v3.parameters.update_parameter_complete import (
-        UpdateParameterApiRequest, UpdateParameterApiResponse,
-        UpdateParameterSqlParams, UpdateParameterSqlRow)
-    from app.types.v3.personas.create_persona_complete import (
-        CreatePersonaApiRequest, CreatePersonaApiResponse,
-        CreatePersonaSqlParams, CreatePersonaSqlRow)
-    from app.types.v3.personas.delete_persona_complete import (
-        DeletePersonaApiRequest, DeletePersonaApiResponse,
-        DeletePersonaSqlParams, DeletePersonaSqlRow)
-    from app.types.v3.personas.get_persona_detail_complete import (
-        GetPersonaDetailApiRequest, GetPersonaDetailApiResponse,
-        GetPersonaDetailSqlParams, GetPersonaDetailSqlRow)
-    from app.types.v3.personas.get_persona_new_complete import (
-        GetPersonaNewApiRequest, GetPersonaNewApiResponse,
-        GetPersonaNewSqlParams, GetPersonaNewSqlRow)
-    from app.types.v3.personas.update_persona_complete import (
-        UpdatePersonaApiRequest, UpdatePersonaApiResponse,
-        UpdatePersonaSqlParams, UpdatePersonaSqlRow)
-    from app.types.v3.pricing.get_group_detail_complete import (
-        GetGroupDetailApiRequest, GetGroupDetailApiResponse,
-        GetGroupDetailSqlParams, GetGroupDetailSqlRow)
-    from app.types.v3.pricing.get_pricing_analytics_complete import (
-        GetPricingAnalyticsApiRequest, GetPricingAnalyticsApiResponse,
-        GetPricingAnalyticsSqlParams, GetPricingAnalyticsSqlRow)
-    from app.types.v3.problem_statements.insert_problem_statement_complete import (
-        InsertProblemStatementApiRequest, InsertProblemStatementApiResponse,
-        InsertProblemStatementSqlParams, InsertProblemStatementSqlRow)
-    from app.types.v3.profile.get_profile_context_complete import (
-        GetProfileContextApiRequest, GetProfileContextApiResponse,
-        GetProfileContextSqlParams, GetProfileContextSqlRow)
-    from app.types.v3.profile.update_profile_complete import (
-        UpdateProfileApiRequest, UpdateProfileApiResponse,
-        UpdateProfileSqlParams, UpdateProfileSqlRow)
-    from app.types.v3.profile.update_profile_to_active_complete import (
-        UpdateProfileToActiveApiRequest, UpdateProfileToActiveApiResponse,
-        UpdateProfileToActiveSqlParams, UpdateProfileToActiveSqlRow)
-    from app.types.v3.profile.update_profile_to_inactive_complete import (
-        UpdateProfileToInactiveApiRequest, UpdateProfileToInactiveApiResponse,
-        UpdateProfileToInactiveSqlParams, UpdateProfileToInactiveSqlRow)
-    from app.types.v3.providers.create_provider_complete import (
-        CreateProviderApiRequest, CreateProviderApiResponse,
-        CreateProviderSqlParams, CreateProviderSqlRow)
-    from app.types.v3.providers.get_provider_detail_complete import (
-        GetProviderDetailApiRequest, GetProviderDetailApiResponse,
-        GetProviderDetailSqlParams, GetProviderDetailSqlRow)
-    from app.types.v3.providers.get_provider_new_complete import (
-        GetProviderNewApiRequest, GetProviderNewApiResponse,
-        GetProviderNewSqlParams, GetProviderNewSqlRow)
-    from app.types.v3.providers.update_provider_complete import (
-        UpdateProviderApiRequest, UpdateProviderApiResponse,
-        UpdateProviderSqlParams, UpdateProviderSqlRow)
-    from app.types.v3.rubrics.create_rubric_complete import (
-        CreateRubricApiRequest, CreateRubricApiResponse, CreateRubricSqlParams,
-        CreateRubricSqlRow)
-    from app.types.v3.rubrics.delete_rubric_complete import (
-        DeleteRubricApiRequest, DeleteRubricApiResponse, DeleteRubricSqlParams,
-        DeleteRubricSqlRow)
-    from app.types.v3.rubrics.duplicate_rubric_complete import (
-        DuplicateRubricApiRequest, DuplicateRubricApiResponse,
-        DuplicateRubricSqlParams, DuplicateRubricSqlRow)
-    from app.types.v3.rubrics.get_rubric_detail_complete import (
-        GetRubricDetailApiRequest, GetRubricDetailApiResponse,
-        GetRubricDetailSqlParams, GetRubricDetailSqlRow)
-    from app.types.v3.rubrics.get_rubric_new_complete import (
-        GetRubricNewApiRequest, GetRubricNewApiResponse, GetRubricNewSqlParams,
-        GetRubricNewSqlRow)
-    from app.types.v3.rubrics.update_rubric_complete import (
-        UpdateRubricApiRequest, UpdateRubricApiResponse, UpdateRubricSqlParams,
-        UpdateRubricSqlRow)
-    from app.types.v3.scenarios.create_scenario_complete import (
-        CreateScenarioApiRequest, CreateScenarioApiResponse,
-        CreateScenarioSqlParams, CreateScenarioSqlRow)
-    from app.types.v3.scenarios.delete_scenario_complete import (
-        DeleteScenarioApiRequest, DeleteScenarioApiResponse,
-        DeleteScenarioSqlParams, DeleteScenarioSqlRow)
-    from app.types.v3.scenarios.get_randomization_data_complete import (
-        GetRandomizationDataApiRequest, GetRandomizationDataApiResponse,
-        GetRandomizationDataSqlParams, GetRandomizationDataSqlRow)
-    from app.types.v3.scenarios.get_scenario_detail_complete import (
-        GetScenarioDetailApiRequest, GetScenarioDetailApiResponse,
-        GetScenarioDetailSqlParams, GetScenarioDetailSqlRow)
-    from app.types.v3.scenarios.get_scenario_new_complete import (
-        GetScenarioNewApiRequest, GetScenarioNewApiResponse,
-        GetScenarioNewSqlParams, GetScenarioNewSqlRow)
-    from app.types.v3.scenarios.update_scenario_complete import (
-        UpdateScenarioApiRequest, UpdateScenarioApiResponse,
-        UpdateScenarioSqlParams, UpdateScenarioSqlRow)
-    from app.types.v3.simulations.create_hints_complete import (
-        CreateHintsApiRequest, CreateHintsApiResponse, CreateHintsSqlParams,
-        CreateHintsSqlRow)
-    from app.types.v3.simulations.create_simulation_complete import (
-        CreateSimulationApiRequest, CreateSimulationApiResponse,
-        CreateSimulationSqlParams, CreateSimulationSqlRow)
-    from app.types.v3.simulations.create_user_message_complete import (
-        CreateUserMessageApiRequest, CreateUserMessageApiResponse,
-        CreateUserMessageSqlParams, CreateUserMessageSqlRow)
-    from app.types.v3.simulations.delete_simulation_complete import (
-        DeleteSimulationApiRequest, DeleteSimulationApiResponse,
-        DeleteSimulationSqlParams, DeleteSimulationSqlRow)
-    from app.types.v3.simulations.generate_hints_complete import (
-        GenerateHintsApiRequest, GenerateHintsApiResponse,
-        GenerateHintsSqlParams, GenerateHintsSqlRow)
-    from app.types.v3.simulations.get_simulation_detail_complete import (
-        GetSimulationDetailApiRequest, GetSimulationDetailApiResponse,
-        GetSimulationDetailSqlParams, GetSimulationDetailSqlRow)
-    from app.types.v3.simulations.get_simulation_new_complete import (
-        GetSimulationNewApiRequest, GetSimulationNewApiResponse,
-        GetSimulationNewSqlParams, GetSimulationNewSqlRow)
-    from app.types.v3.simulations.link_run_to_group_complete import (
-        LinkRunToGroupApiRequest, LinkRunToGroupApiResponse,
-        LinkRunToGroupSqlParams, LinkRunToGroupSqlRow)
-    from app.types.v3.simulations.start_simulation_attempt_complete import (
-        StartSimulationAttemptApiRequest, StartSimulationAttemptApiResponse,
-        StartSimulationAttemptSqlParams, StartSimulationAttemptSqlRow)
-    from app.types.v3.simulations.update_simulation_complete import (
-        UpdateSimulationApiRequest, UpdateSimulationApiResponse,
-        UpdateSimulationSqlParams, UpdateSimulationSqlRow)
+    from app.types.v3.agents.create_agent_complete import CreateAgentSqlParams, CreateAgentSqlRow, CreateAgentApiRequest, CreateAgentApiResponse
+    from app.types.v3.agents.delete_agent_complete import DeleteAgentSqlParams, DeleteAgentSqlRow, DeleteAgentApiRequest, DeleteAgentApiResponse
+    from app.types.v3.agents.get_agent_detail_complete import GetAgentDetailSqlParams, GetAgentDetailSqlRow, GetAgentDetailApiRequest, GetAgentDetailApiResponse
+    from app.types.v3.agents.get_agent_new_complete import GetAgentNewSqlParams, GetAgentNewSqlRow, GetAgentNewApiRequest, GetAgentNewApiResponse
+    from app.types.v3.agents.get_agents_list_complete import GetAgentsListSqlParams, GetAgentsListSqlRow, GetAgentsListApiRequest, GetAgentsListApiResponse
+    from app.types.v3.agents.update_agent_complete import UpdateAgentSqlParams, UpdateAgentSqlRow, UpdateAgentApiRequest, UpdateAgentApiResponse
+    from app.types.v3.attempts.bulk_archive_attempts_complete import BulkArchiveAttemptsSqlParams, BulkArchiveAttemptsSqlRow, BulkArchiveAttemptsApiRequest, BulkArchiveAttemptsApiResponse
+    from app.types.v3.attempts.get_attempt_full_complete import GetAttemptFullSqlParams, GetAttemptFullSqlRow, GetAttemptFullApiRequest, GetAttemptFullApiResponse
+    from app.types.v3.attempts.update_chat_created_at_complete import UpdateChatCreatedAtSqlParams, UpdateChatCreatedAtSqlRow, UpdateChatCreatedAtApiRequest, UpdateChatCreatedAtApiResponse
+    from app.types.v3.auth.create_auth_complete import CreateAuthSqlParams, CreateAuthSqlRow, CreateAuthApiRequest, CreateAuthApiResponse
+    from app.types.v3.auth.delete_auth_complete import DeleteAuthSqlParams, DeleteAuthSqlRow, DeleteAuthApiRequest, DeleteAuthApiResponse
+    from app.types.v3.auth.duplicate_auth_complete import DuplicateAuthSqlParams, DuplicateAuthSqlRow, DuplicateAuthApiRequest, DuplicateAuthApiResponse
+    from app.types.v3.auth.get_auth_detail_complete import GetAuthDetailSqlParams, GetAuthDetailSqlRow, GetAuthDetailApiRequest, GetAuthDetailApiResponse
+    from app.types.v3.auth.get_login_data_complete import GetLoginDataSqlParams, GetLoginDataSqlRow, GetLoginDataApiRequest, GetLoginDataApiResponse
+    from app.types.v3.auth.update_auth_complete import UpdateAuthSqlParams, UpdateAuthSqlRow, UpdateAuthApiRequest, UpdateAuthApiResponse
+    from app.types.v3.cohorts.create_cohort_complete import CreateCohortSqlParams, CreateCohortSqlRow, CreateCohortApiRequest, CreateCohortApiResponse
+    from app.types.v3.cohorts.delete_cohort_complete import DeleteCohortSqlParams, DeleteCohortSqlRow, DeleteCohortApiRequest, DeleteCohortApiResponse
+    from app.types.v3.cohorts.duplicate_cohort_complete import DuplicateCohortSqlParams, DuplicateCohortSqlRow, DuplicateCohortApiRequest, DuplicateCohortApiResponse
+    from app.types.v3.cohorts.get_cohort_detail_complete import GetCohortDetailSqlParams, GetCohortDetailSqlRow, GetCohortDetailApiRequest, GetCohortDetailApiResponse
+    from app.types.v3.cohorts.get_cohort_new_complete import GetCohortNewSqlParams, GetCohortNewSqlRow, GetCohortNewApiRequest, GetCohortNewApiResponse
+    from app.types.v3.cohorts.update_cohort_complete import UpdateCohortSqlParams, UpdateCohortSqlRow, UpdateCohortApiRequest, UpdateCohortApiResponse
+    from app.types.v3.departments.create_department_complete import CreateDepartmentSqlParams, CreateDepartmentSqlRow, CreateDepartmentApiRequest, CreateDepartmentApiResponse
+    from app.types.v3.departments.delete_department_complete import DeleteDepartmentSqlParams, DeleteDepartmentSqlRow, DeleteDepartmentApiRequest, DeleteDepartmentApiResponse
+    from app.types.v3.departments.duplicate_department_complete import DuplicateDepartmentSqlParams, DuplicateDepartmentSqlRow, DuplicateDepartmentApiRequest, DuplicateDepartmentApiResponse
+    from app.types.v3.departments.get_department_default_complete import GetDepartmentDefaultSqlParams, GetDepartmentDefaultSqlRow, GetDepartmentDefaultApiRequest, GetDepartmentDefaultApiResponse
+    from app.types.v3.departments.update_department_complete import UpdateDepartmentSqlParams, UpdateDepartmentSqlRow, UpdateDepartmentApiRequest, UpdateDepartmentApiResponse
+    from app.types.v3.documents.complete_document_creation_complete import CompleteDocumentCreationSqlParams, CompleteDocumentCreationSqlRow, CompleteDocumentCreationApiRequest, CompleteDocumentCreationApiResponse
+    from app.types.v3.documents.get_document_detail_complete import GetDocumentDetailSqlParams, GetDocumentDetailSqlRow, GetDocumentDetailApiRequest, GetDocumentDetailApiResponse
+    from app.types.v3.documents.insert_document_complete import InsertDocumentSqlParams, InsertDocumentSqlRow, InsertDocumentApiRequest, InsertDocumentApiResponse
+    from app.types.v3.documents.render_template_complete import RenderTemplateSqlParams, RenderTemplateSqlRow, RenderTemplateApiRequest, RenderTemplateApiResponse
+    from app.types.v3.documents.update_document_complete import UpdateDocumentSqlParams, UpdateDocumentSqlRow, UpdateDocumentApiRequest, UpdateDocumentApiResponse
+    from app.types.v3.evals.create_eval_complete import CreateEvalSqlParams, CreateEvalSqlRow, CreateEvalApiRequest, CreateEvalApiResponse
+    from app.types.v3.evals.get_eval_attempt_full_complete import GetEvalAttemptFullSqlParams, GetEvalAttemptFullSqlRow, GetEvalAttemptFullApiRequest, GetEvalAttemptFullApiResponse
+    from app.types.v3.evals.get_eval_new_complete import GetEvalNewSqlParams, GetEvalNewSqlRow, GetEvalNewApiRequest, GetEvalNewApiResponse
+    from app.types.v3.evals.start_eval_attempt_complete import StartEvalAttemptSqlParams, StartEvalAttemptSqlRow, StartEvalAttemptApiRequest, StartEvalAttemptApiResponse
+    from app.types.v3.fields.create_field_complete import CreateFieldSqlParams, CreateFieldSqlRow, CreateFieldApiRequest, CreateFieldApiResponse
+    from app.types.v3.fields.delete_field_complete import DeleteFieldSqlParams, DeleteFieldSqlRow, DeleteFieldApiRequest, DeleteFieldApiResponse
+    from app.types.v3.fields.duplicate_field_complete import DuplicateFieldSqlParams, DuplicateFieldSqlRow, DuplicateFieldApiRequest, DuplicateFieldApiResponse
+    from app.types.v3.fields.get_field_detail_complete import GetFieldDetailSqlParams, GetFieldDetailSqlRow, GetFieldDetailApiRequest, GetFieldDetailApiResponse
+    from app.types.v3.fields.get_field_new_complete import GetFieldNewSqlParams, GetFieldNewSqlRow, GetFieldNewApiRequest, GetFieldNewApiResponse
+    from app.types.v3.fields.update_field_complete import UpdateFieldSqlParams, UpdateFieldSqlRow, UpdateFieldApiRequest, UpdateFieldApiResponse
+    from app.types.v3.grading.create_grade_complete import CreateGradeSqlParams, CreateGradeSqlRow, CreateGradeApiRequest, CreateGradeApiResponse
+    from app.types.v3.grading.create_message_feedback_complete import CreateMessageFeedbackSqlParams, CreateMessageFeedbackSqlRow, CreateMessageFeedbackApiRequest, CreateMessageFeedbackApiResponse
+    from app.types.v3.keycloak.get_auth_items_complete import GetAuthItemsSqlParams, GetAuthItemsSqlRow, GetAuthItemsApiRequest, GetAuthItemsApiResponse
+    from app.types.v3.keycloak.get_auth_providers_complete import GetAuthProvidersSqlParams, GetAuthProvidersSqlRow, GetAuthProvidersApiRequest, GetAuthProvidersApiResponse
+    from app.types.v3.keys.get_key_detail_complete import GetKeyDetailSqlParams, GetKeyDetailSqlRow, GetKeyDetailApiRequest, GetKeyDetailApiResponse
+    from app.types.v3.keys.get_key_new_complete import GetKeyNewSqlParams, GetKeyNewSqlRow, GetKeyNewApiRequest, GetKeyNewApiResponse
+    from app.types.v3.model_runs.create_model_run_complete import CreateModelRunSqlParams, CreateModelRunSqlRow, CreateModelRunApiRequest, CreateModelRunApiResponse
+    from app.types.v3.model_runs.log_run_complete import LogRunSqlParams, LogRunSqlRow, LogRunApiRequest, LogRunApiResponse
+    from app.types.v3.models.create_model_complete import CreateModelSqlParams, CreateModelSqlRow, CreateModelApiRequest, CreateModelApiResponse
+    from app.types.v3.models.get_model_detail_complete import GetModelDetailSqlParams, GetModelDetailSqlRow, GetModelDetailApiRequest, GetModelDetailApiResponse
+    from app.types.v3.models.get_model_new_complete import GetModelNewSqlParams, GetModelNewSqlRow, GetModelNewApiRequest, GetModelNewApiResponse
+    from app.types.v3.models.list_models_complete import ListModelsSqlParams, ListModelsSqlRow, ListModelsApiRequest, ListModelsApiResponse
+    from app.types.v3.models.update_model_complete import UpdateModelSqlParams, UpdateModelSqlRow, UpdateModelApiRequest, UpdateModelApiResponse
+    from app.types.v3.objectives.insert_objective_complete import InsertObjectiveSqlParams, InsertObjectiveSqlRow, InsertObjectiveApiRequest, InsertObjectiveApiResponse
+    from app.types.v3.parameters.create_parameter_complete import CreateParameterSqlParams, CreateParameterSqlRow, CreateParameterApiRequest, CreateParameterApiResponse
+    from app.types.v3.parameters.delete_parameter_complete import DeleteParameterSqlParams, DeleteParameterSqlRow, DeleteParameterApiRequest, DeleteParameterApiResponse
+    from app.types.v3.parameters.duplicate_parameter_complete import DuplicateParameterSqlParams, DuplicateParameterSqlRow, DuplicateParameterApiRequest, DuplicateParameterApiResponse
+    from app.types.v3.parameters.get_parameter_detail_complete import GetParameterDetailSqlParams, GetParameterDetailSqlRow, GetParameterDetailApiRequest, GetParameterDetailApiResponse
+    from app.types.v3.parameters.get_parameter_new_complete import GetParameterNewSqlParams, GetParameterNewSqlRow, GetParameterNewApiRequest, GetParameterNewApiResponse
+    from app.types.v3.parameters.update_parameter_complete import UpdateParameterSqlParams, UpdateParameterSqlRow, UpdateParameterApiRequest, UpdateParameterApiResponse
+    from app.types.v3.personas.create_persona_complete import CreatePersonaSqlParams, CreatePersonaSqlRow, CreatePersonaApiRequest, CreatePersonaApiResponse
+    from app.types.v3.personas.delete_persona_complete import DeletePersonaSqlParams, DeletePersonaSqlRow, DeletePersonaApiRequest, DeletePersonaApiResponse
+    from app.types.v3.personas.get_persona_detail_complete import GetPersonaDetailSqlParams, GetPersonaDetailSqlRow, GetPersonaDetailApiRequest, GetPersonaDetailApiResponse
+    from app.types.v3.personas.get_persona_new_complete import GetPersonaNewSqlParams, GetPersonaNewSqlRow, GetPersonaNewApiRequest, GetPersonaNewApiResponse
+    from app.types.v3.personas.update_persona_complete import UpdatePersonaSqlParams, UpdatePersonaSqlRow, UpdatePersonaApiRequest, UpdatePersonaApiResponse
+    from app.types.v3.pricing.get_group_detail_complete import GetGroupDetailSqlParams, GetGroupDetailSqlRow, GetGroupDetailApiRequest, GetGroupDetailApiResponse
+    from app.types.v3.pricing.get_pricing_analytics_complete import GetPricingAnalyticsSqlParams, GetPricingAnalyticsSqlRow, GetPricingAnalyticsApiRequest, GetPricingAnalyticsApiResponse
+    from app.types.v3.problem_statements.insert_problem_statement_complete import InsertProblemStatementSqlParams, InsertProblemStatementSqlRow, InsertProblemStatementApiRequest, InsertProblemStatementApiResponse
+    from app.types.v3.profile.get_profile_context_complete import GetProfileContextSqlParams, GetProfileContextSqlRow, GetProfileContextApiRequest, GetProfileContextApiResponse
+    from app.types.v3.profile.update_profile_complete import UpdateProfileSqlParams, UpdateProfileSqlRow, UpdateProfileApiRequest, UpdateProfileApiResponse
+    from app.types.v3.profile.update_profile_to_active_complete import UpdateProfileToActiveSqlParams, UpdateProfileToActiveSqlRow, UpdateProfileToActiveApiRequest, UpdateProfileToActiveApiResponse
+    from app.types.v3.profile.update_profile_to_inactive_complete import UpdateProfileToInactiveSqlParams, UpdateProfileToInactiveSqlRow, UpdateProfileToInactiveApiRequest, UpdateProfileToInactiveApiResponse
+    from app.types.v3.providers.create_provider_complete import CreateProviderSqlParams, CreateProviderSqlRow, CreateProviderApiRequest, CreateProviderApiResponse
+    from app.types.v3.providers.get_provider_detail_complete import GetProviderDetailSqlParams, GetProviderDetailSqlRow, GetProviderDetailApiRequest, GetProviderDetailApiResponse
+    from app.types.v3.providers.get_provider_new_complete import GetProviderNewSqlParams, GetProviderNewSqlRow, GetProviderNewApiRequest, GetProviderNewApiResponse
+    from app.types.v3.providers.update_provider_complete import UpdateProviderSqlParams, UpdateProviderSqlRow, UpdateProviderApiRequest, UpdateProviderApiResponse
+    from app.types.v3.rubrics.create_rubric_complete import CreateRubricSqlParams, CreateRubricSqlRow, CreateRubricApiRequest, CreateRubricApiResponse
+    from app.types.v3.rubrics.delete_rubric_complete import DeleteRubricSqlParams, DeleteRubricSqlRow, DeleteRubricApiRequest, DeleteRubricApiResponse
+    from app.types.v3.rubrics.duplicate_rubric_complete import DuplicateRubricSqlParams, DuplicateRubricSqlRow, DuplicateRubricApiRequest, DuplicateRubricApiResponse
+    from app.types.v3.rubrics.get_rubric_detail_complete import GetRubricDetailSqlParams, GetRubricDetailSqlRow, GetRubricDetailApiRequest, GetRubricDetailApiResponse
+    from app.types.v3.rubrics.get_rubric_new_complete import GetRubricNewSqlParams, GetRubricNewSqlRow, GetRubricNewApiRequest, GetRubricNewApiResponse
+    from app.types.v3.rubrics.update_rubric_complete import UpdateRubricSqlParams, UpdateRubricSqlRow, UpdateRubricApiRequest, UpdateRubricApiResponse
+    from app.types.v3.scenarios.create_scenario_complete import CreateScenarioSqlParams, CreateScenarioSqlRow, CreateScenarioApiRequest, CreateScenarioApiResponse
+    from app.types.v3.scenarios.delete_scenario_complete import DeleteScenarioSqlParams, DeleteScenarioSqlRow, DeleteScenarioApiRequest, DeleteScenarioApiResponse
+    from app.types.v3.scenarios.get_randomization_data_complete import GetRandomizationDataSqlParams, GetRandomizationDataSqlRow, GetRandomizationDataApiRequest, GetRandomizationDataApiResponse
+    from app.types.v3.scenarios.get_scenario_detail_complete import GetScenarioDetailSqlParams, GetScenarioDetailSqlRow, GetScenarioDetailApiRequest, GetScenarioDetailApiResponse
+    from app.types.v3.scenarios.get_scenario_new_complete import GetScenarioNewSqlParams, GetScenarioNewSqlRow, GetScenarioNewApiRequest, GetScenarioNewApiResponse
+    from app.types.v3.scenarios.update_scenario_complete import UpdateScenarioSqlParams, UpdateScenarioSqlRow, UpdateScenarioApiRequest, UpdateScenarioApiResponse
+    from app.types.v3.simulations.create_hints_complete import CreateHintsSqlParams, CreateHintsSqlRow, CreateHintsApiRequest, CreateHintsApiResponse
+    from app.types.v3.simulations.create_simulation_complete import CreateSimulationSqlParams, CreateSimulationSqlRow, CreateSimulationApiRequest, CreateSimulationApiResponse
+    from app.types.v3.simulations.create_user_message_complete import CreateUserMessageSqlParams, CreateUserMessageSqlRow, CreateUserMessageApiRequest, CreateUserMessageApiResponse
+    from app.types.v3.simulations.delete_simulation_complete import DeleteSimulationSqlParams, DeleteSimulationSqlRow, DeleteSimulationApiRequest, DeleteSimulationApiResponse
+    from app.types.v3.simulations.generate_hints_complete import GenerateHintsSqlParams, GenerateHintsSqlRow, GenerateHintsApiRequest, GenerateHintsApiResponse
+    from app.types.v3.simulations.get_simulation_detail_complete import GetSimulationDetailSqlParams, GetSimulationDetailSqlRow, GetSimulationDetailApiRequest, GetSimulationDetailApiResponse
+    from app.types.v3.simulations.get_simulation_new_complete import GetSimulationNewSqlParams, GetSimulationNewSqlRow, GetSimulationNewApiRequest, GetSimulationNewApiResponse
+    from app.types.v3.simulations.link_run_to_group_complete import LinkRunToGroupSqlParams, LinkRunToGroupSqlRow, LinkRunToGroupApiRequest, LinkRunToGroupApiResponse
+    from app.types.v3.simulations.start_simulation_attempt_complete import StartSimulationAttemptSqlParams, StartSimulationAttemptSqlRow, StartSimulationAttemptApiRequest, StartSimulationAttemptApiResponse
+    from app.types.v3.simulations.update_simulation_complete import UpdateSimulationSqlParams, UpdateSimulationSqlRow, UpdateSimulationApiRequest, UpdateSimulationApiResponse
 
 
 _registry: dict[str, tuple[str, str, str, str, str]] = {
@@ -1067,7 +862,492 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/delete_agent_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/get_agent_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/agents/get_agent_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/get_agents_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/agents/update_agent_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/attempts/bulk_archive_attempts_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/attempts/get_attempt_full_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/attempts/update_chat_created_at_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/create_auth_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/delete_auth_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/duplicate_auth_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/get_auth_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/get_login_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/update_auth_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/cohorts/create_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/cohorts/delete_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/cohorts/duplicate_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/cohorts/get_cohort_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/cohorts/get_cohort_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/cohorts/update_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/create_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/delete_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/duplicate_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/get_department_default_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/update_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/documents/complete_document_creation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/documents/get_document_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/documents/insert_document_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/documents/render_template_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/documents/update_document_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/create_eval_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/get_eval_attempt_full_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/get_eval_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/start_eval_attempt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/fields/create_field_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/fields/delete_field_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/fields/duplicate_field_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/fields/get_field_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/fields/get_field_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/fields/update_field_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/grading/create_grade_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/grading/create_message_feedback_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/keycloak/get_auth_items_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/keycloak/get_auth_providers_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/keys/get_key_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/keys/get_key_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/model_runs/create_model_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/model_runs/log_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/create_model_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/get_model_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/get_model_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/list_models_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/update_model_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/objectives/insert_objective_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/parameters/create_parameter_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/parameters/delete_parameter_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/parameters/duplicate_parameter_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/parameters/get_parameter_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/parameters/get_parameter_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/parameters/update_parameter_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/personas/create_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/personas/delete_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/personas/get_persona_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/personas/get_persona_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/personas/update_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/pricing/get_group_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/pricing/get_pricing_analytics_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/problem_statements/insert_problem_statement_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/get_profile_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/update_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/update_profile_to_active_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/update_profile_to_inactive_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/providers/create_provider_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/providers/get_provider_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/providers/get_provider_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/providers/update_provider_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/create_rubric_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/delete_rubric_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/duplicate_rubric_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/get_rubric_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/get_rubric_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/update_rubric_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/scenarios/create_scenario_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/scenarios/delete_scenario_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/scenarios/get_randomization_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/scenarios/get_scenario_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/scenarios/get_scenario_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/scenarios/update_scenario_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/create_hints_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/create_simulation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/create_user_message_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/delete_simulation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/generate_hints_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/get_simulation_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/get_simulation_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/link_run_to_group_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/start_simulation_attempt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/update_simulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload

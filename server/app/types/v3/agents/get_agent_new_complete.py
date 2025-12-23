@@ -4,6 +4,7 @@ Generated from: app/sql/v3/agents/get_agent_new_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,7 +15,7 @@ class GetAgentNewSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
-    profile_id: str
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
@@ -33,18 +34,18 @@ from typing import Any
 from pydantic import BaseModel
 
 
+class GetAgentNewModelMappingAvailableVoicesItem(BaseModel):
+    """Generated nested model."""
+
+    id: str
+    voice: str
+
 class GetAgentNewModelMappingTemperatureLevelsItem(BaseModel):
     """Generated nested model."""
 
     id: str
     temperature: str
     is_upper: bool
-
-class GetAgentNewModelMappingAvailableVoicesItem(BaseModel):
-    """Generated nested model."""
-
-    id: str
-    voice: str
 
 class GetAgentNewModelMappingReasoningOptionsItem(BaseModel):
     """Generated nested model."""
@@ -58,13 +59,12 @@ class GetAgentNewModelMappingItem(BaseModel):
     id: str
     name: str
     description: str
-    temperature_lower: Any | None
-    temperature_upper: Any | None
-    input_modalities: str
-    input_modality: str
-    output_modality: str
-    temperature_levels: list[GetAgentNewModelMappingTemperatureLevelsItem]
+    temperature_lower: float
+    temperature_upper: float
+    input_modalities: list[str]
+    output_modalities: list[str]
     available_voices: list[GetAgentNewModelMappingAvailableVoicesItem]
+    temperature_levels: list[GetAgentNewModelMappingTemperatureLevelsItem]
     reasoning_options: list[GetAgentNewModelMappingReasoningOptionsItem]
 
 class GetAgentNewDepartmentMappingItem(BaseModel):
@@ -81,8 +81,8 @@ class GetAgentNewSqlRow(BaseModel):
     Structure matches nest_many() output.
     """
 
-    valid_model_ids: list[Any]
-    valid_department_ids: list[Any]
+    valid_model_ids: list[str]
+    valid_department_ids: list[str]
     user_role: str
     actor_name: str
     primary_department_id: str
@@ -122,18 +122,18 @@ from typing import Any
 from pydantic import BaseModel
 
 
+class GetAgentNewModelMappingAvailableVoicesItem(BaseModel):
+    """Generated nested model."""
+
+    id: str
+    voice: str
+
 class GetAgentNewModelMappingTemperatureLevelsItem(BaseModel):
     """Generated nested model."""
 
     id: str
     temperature: str
     is_upper: bool
-
-class GetAgentNewModelMappingAvailableVoicesItem(BaseModel):
-    """Generated nested model."""
-
-    id: str
-    voice: str
 
 class GetAgentNewModelMappingReasoningOptionsItem(BaseModel):
     """Generated nested model."""
@@ -147,13 +147,12 @@ class GetAgentNewModelMappingItem(BaseModel):
     id: str
     name: str
     description: str
-    temperature_lower: Any | None
-    temperature_upper: Any | None
-    input_modalities: str
-    input_modality: str
-    output_modality: str
-    temperature_levels: list[GetAgentNewModelMappingTemperatureLevelsItem]
+    temperature_lower: float
+    temperature_upper: float
+    input_modalities: list[str]
+    output_modalities: list[str]
     available_voices: list[GetAgentNewModelMappingAvailableVoicesItem]
+    temperature_levels: list[GetAgentNewModelMappingTemperatureLevelsItem]
     reasoning_options: list[GetAgentNewModelMappingReasoningOptionsItem]
 
 class GetAgentNewDepartmentMappingItem(BaseModel):
@@ -170,8 +169,8 @@ class GetAgentNewApiResponse(BaseModel):
     Structure matches nest_many() output.
     """
 
-    valid_model_ids: list[Any]
-    valid_department_ids: list[Any]
+    valid_model_ids: list[str]
+    valid_department_ids: list[str]
     user_role: str
     actor_name: str
     primary_department_id: str

@@ -56,7 +56,7 @@ class GenerateHintsSqlRow(BaseModel):
     agent_id: str
     agent_name: str
     system_prompt: str
-    temperature: Any
+    temperature: float
     reasoning: str
     model_id: str
     model_name: str
@@ -126,7 +126,7 @@ class GenerateHintsApiResponse(BaseModel):
     agent_id: str
     agent_name: str
     system_prompt: str
-    temperature: Any
+    temperature: float
     reasoning: str
     model_id: str
     model_name: str

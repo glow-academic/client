@@ -51,7 +51,7 @@ class GetAgentDetailSqlRow(BaseModel):
     active: bool
     role: str
     selected_temperature_level_id: str
-    temperature: Any
+    temperature: float
     selected_reasoning_level_id: str
     reasoning: str
     selected_voice_ids: dict[str, Any]
@@ -66,8 +66,8 @@ class GetAgentDetailSqlRow(BaseModel):
     model_mapping: dict[str, Any]
     valid_model_ids: dict[str, Any]
     reasoning_options: dict[str, Any]
-    temperature_lower: Any
-    temperature_upper: Any
+    temperature_lower: float
+    temperature_upper: float
     temperature_levels: dict[str, Any]
     available_voices: dict[str, Any]
     actor_name: str
@@ -122,7 +122,7 @@ class GetAgentDetailApiResponse(BaseModel):
     active: bool
     role: str
     selected_temperature_level_id: str
-    temperature: Any
+    temperature: float
     selected_reasoning_level_id: str
     reasoning: str
     selected_voice_ids: dict[str, Any]
@@ -137,8 +137,8 @@ class GetAgentDetailApiResponse(BaseModel):
     model_mapping: dict[str, Any]
     valid_model_ids: dict[str, Any]
     reasoning_options: dict[str, Any]
-    temperature_lower: Any
-    temperature_upper: Any
+    temperature_lower: float
+    temperature_upper: float
     temperature_levels: dict[str, Any]
     available_voices: dict[str, Any]
     actor_name: str

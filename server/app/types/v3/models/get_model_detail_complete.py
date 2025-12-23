@@ -59,8 +59,8 @@ class GetModelDetailSqlRow(BaseModel):
     key_mapping: dict[str, Any]
     valid_key_ids: list[str]
     default_key_id: str
-    temperature_lower: Any
-    temperature_upper: Any
+    temperature_lower: float
+    temperature_upper: float
     temperature_values: dict[str, Any]
     pricing: dict[str, Any]
     modalities: dict[str, Any]
@@ -128,8 +128,8 @@ class GetModelDetailApiResponse(BaseModel):
     key_mapping: dict[str, Any]
     valid_key_ids: list[str]
     default_key_id: str
-    temperature_lower: Any
-    temperature_upper: Any
+    temperature_lower: float
+    temperature_upper: float
     temperature_values: dict[str, Any]
     pricing: dict[str, Any]
     modalities: dict[str, Any]

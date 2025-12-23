@@ -52,11 +52,11 @@ class GetAgentsListSqlRow(BaseModel):
     name: str
     description: str
     reasoning: str
-    temperature: Any | None
+    temperature: float
     model_id: str
     role: str
     updated_at: str
-    department_ids: list[Any]
+    department_ids: list[str]
     can_edit: bool
     can_duplicate: bool
     can_delete: bool
@@ -118,11 +118,11 @@ class GetAgentsListApiResponse(BaseModel):
     name: str
     description: str
     reasoning: str
-    temperature: Any | None
+    temperature: float
     model_id: str
     role: str
     updated_at: str
-    department_ids: list[Any]
+    department_ids: list[str]
     can_edit: bool
     can_duplicate: bool
     can_delete: bool

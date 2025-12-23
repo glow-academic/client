@@ -10356,6 +10356,35 @@ export interface components {
             imageReferenceId?: string | null;
         };
         /**
+         * GetAgentNewApiRequest
+         * @description API request parameters.
+         *
+         *     Excludes profile_id (obtained from request header).
+         */
+        GetAgentNewApiRequest: Record<string, never>;
+        /**
+         * GetAgentNewApiResponse
+         * @description API response data after nesting.
+         *
+         *     Structure matches nest_many() output.
+         */
+        GetAgentNewApiResponse: {
+            /** Valid Model Ids */
+            valid_model_ids: string[];
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** User Role */
+            user_role: string;
+            /** Actor Name */
+            actor_name: string;
+            /** Primary Department Id */
+            primary_department_id: string;
+            /** Model Mapping */
+            model_mapping: components["schemas"]["GetAgentNewModelMappingItem"][];
+            /** Department Mapping */
+            department_mapping: components["schemas"]["GetAgentNewDepartmentMappingItem"][];
+        };
+        /**
          * GetAgentNewDepartmentMappingItem
          * @description Generated nested model.
          */
@@ -10389,21 +10418,19 @@ export interface components {
             /** Description */
             description: string;
             /** Temperature Lower */
-            temperature_lower: unknown | null;
+            temperature_lower: number;
             /** Temperature Upper */
-            temperature_upper: unknown | null;
+            temperature_upper: number;
             /** Input Modalities */
-            input_modalities: string;
-            /** Input Modality */
-            input_modality: string;
-            /** Output Modality */
-            output_modality: string;
+            input_modalities: string[];
+            /** Output Modalities */
+            output_modalities: string[];
+            /** Available Voices */
+            available_voices: components["schemas"]["GetAgentNewModelMappingAvailableVoicesItem"][];
             /** Temperature Levels */
             temperature_levels: components["schemas"]["GetAgentNewModelMappingTemperatureLevelsItem"][];
             /** Reasoning Options */
             reasoning_options: components["schemas"]["GetAgentNewModelMappingReasoningOptionsItem"][];
-            /** Available Voices */
-            available_voices: components["schemas"]["GetAgentNewModelMappingAvailableVoicesItem"][];
         };
         /**
          * GetAgentNewModelMappingReasoningOptionsItem
@@ -10426,38 +10453,6 @@ export interface components {
             temperature: string;
             /** Is Upper */
             is_upper: boolean;
-        };
-        /**
-         * GetAgentNewSqlParams
-         * @description SQL parameters for query execution.
-         *
-         *     Parameters are ordered $1, $2, ...
-         */
-        GetAgentNewSqlParams: {
-            /** Profile Id */
-            profile_id: string;
-        };
-        /**
-         * GetAgentNewSqlRow
-         * @description SQL query result row after nesting.
-         *
-         *     Structure matches nest_many() output.
-         */
-        GetAgentNewSqlRow: {
-            /** Valid Model Ids */
-            valid_model_ids: unknown[];
-            /** Valid Department Ids */
-            valid_department_ids: unknown[];
-            /** User Role */
-            user_role: string;
-            /** Actor Name */
-            actor_name: string;
-            /** Primary Department Id */
-            primary_department_id: string;
-            /** Model Mapping */
-            model_mapping: components["schemas"]["GetAgentNewModelMappingItem"][];
-            /** Department Mapping */
-            department_mapping: components["schemas"]["GetAgentNewDepartmentMappingItem"][];
         };
         /** GradeItem */
         GradeItem: {
@@ -24413,7 +24408,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetAgentNewSqlParams"];
+                "application/json": components["schemas"]["GetAgentNewApiRequest"];
             };
         };
         responses: {
@@ -24423,7 +24418,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetAgentNewSqlRow"];
+                    "application/json": components["schemas"]["GetAgentNewApiResponse"];
                 };
             };
             /** @description Validation Error */

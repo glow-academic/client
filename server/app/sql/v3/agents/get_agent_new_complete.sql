@@ -1,32 +1,28 @@
 -- Get default agent detail for creation
--- Parameters: $1 = profile_id (uuid)
-
-WITH resolve_profile_id AS (
-    -- Resolve profile ID from parameter
-    SELECT 
-        CASE 
-            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
-            ELSE $1::uuid
-        END as resolved_profile_id
+-- @params
+--   profile_id: uuid
+-- All parameters are cast exactly once in params CTE for reliable type introspection
+WITH params AS (
+    SELECT $1::uuid AS profile_id
 ),
 user_profile AS (
     SELECT 
         role,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 primary_department_id AS (
     SELECT department_id::text
-    FROM resolve_profile_id rpi
-    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    FROM params x
+    JOIN profile_departments pd ON pd.profile_id = x.profile_id
     WHERE pd.is_primary = TRUE
     LIMIT 1
 ),
 user_departments_for_models AS (
     SELECT DISTINCT pd.department_id
-    FROM resolve_profile_id rpi
-    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    FROM params x
+    JOIN profile_departments pd ON pd.profile_id = x.profile_id
 ),
 valid_models AS (
     -- Filter models by department: include if has matching department link OR has no department links at all (cross-dept)
@@ -97,10 +93,10 @@ all_models_with_modalities AS (
 user_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
     FROM departments d
-    JOIN resolve_profile_id rpi ON true
+    JOIN params x ON true
     JOIN profile_departments pd ON pd.department_id = d.id
     WHERE d.active = true
-    AND pd.profile_id = rpi.resolved_profile_id
+    AND pd.profile_id = x.profile_id
     AND pd.active = true
 ),
 valid_departments_list AS (
@@ -120,9 +116,8 @@ SELECT
     amwm.description::text as "model_mapping__description",
     COALESCE(mtb.temperature_lower, 0.0)::float as "model_mapping__temperature_lower",
     COALESCE(mtb.temperature_upper, 1.0)::float as "model_mapping__temperature_upper",
-    mmod.modality::text as "model_mapping__input_modalities",
-    CASE WHEN mmod.is_input = true THEN mmod.modality::text ELSE NULL::text END as "model_mapping__input_modality",
-    CASE WHEN mmod.is_input = false THEN mmod.modality::text ELSE NULL::text END as "model_mapping__output_modality",
+    COALESCE((SELECT array_agg(mmod2.modality::text ORDER BY mmod2.modality) FROM model_modalities_data mmod2 WHERE mmod2.model_id = amwm.model_id AND mmod2.is_input = true), ARRAY[]::text[])::text[] as "model_mapping__input_modalities",
+    COALESCE((SELECT array_agg(mmod3.modality::text ORDER BY mmod3.modality) FROM model_modalities_data mmod3 WHERE mmod3.model_id = amwm.model_id AND mmod3.is_input = false), ARRAY[]::text[])::text[] as "model_mapping__output_modalities",
     mtl.temperature_level_id::text as "model_mapping__temperature_levels__id",
     mtl.temperature_value::text as "model_mapping__temperature_levels__temperature",
     mtl.is_upper::boolean as "model_mapping__temperature_levels__is_upper",
@@ -144,7 +139,6 @@ CROSS JOIN valid_departments_data vdd
 CROSS JOIN user_profile up
 LEFT JOIN primary_department_id pdi ON true
 LEFT JOIN model_temperature_levels_bounds mtb ON mtb.model_id = amwm.model_id
-LEFT JOIN model_modalities_data mmod ON mmod.model_id = amwm.model_id
 LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = amwm.model_id
 LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = amwm.model_id
 LEFT JOIN model_voices_data mv ON mv.model_id = amwm.model_id

@@ -46,7 +46,7 @@ class GetAuthDetailAuthItemsItem(BaseModel):
     active: bool
     value_masked: str
     key_id: str
-    encrypted: int
+    encrypted: bool
 
 
 class GetAuthDetailSqlRow(BaseModel):
@@ -57,7 +57,7 @@ class GetAuthDetailSqlRow(BaseModel):
 
     name: str
     description: str
-    active: int
+    active: bool
     can_edit: bool
     actor_name: str
     auth_items: list[GetAuthDetailAuthItemsItem]
@@ -108,7 +108,7 @@ class GetAuthDetailAuthItemsItem(BaseModel):
     active: bool
     value_masked: str
     key_id: str
-    encrypted: int
+    encrypted: bool
 
 
 class GetAuthDetailApiResponse(BaseModel):
@@ -119,7 +119,7 @@ class GetAuthDetailApiResponse(BaseModel):
 
     name: str
     description: str
-    active: int
+    active: bool
     can_edit: bool
     actor_name: str
     auth_items: list[GetAuthDetailAuthItemsItem]

@@ -8002,7 +8002,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetAgentNewSqlParams"
+                "$ref": "#/components/schemas/GetAgentNewApiRequest"
               }
             }
           }
@@ -8013,7 +8013,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetAgentNewSqlRow"
+                  "$ref": "#/components/schemas/GetAgentNewApiResponse"
                 }
               }
             }
@@ -31677,6 +31677,68 @@
         "title": "GenerateVideoPayload",
         "description": "Request to generate a video."
       },
+      "GetAgentNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetAgentNewApiRequest",
+        "description": "API request parameters.\n\nExcludes profile_id (obtained from request header)."
+      },
+      "GetAgentNewApiResponse": {
+        "properties": {
+          "valid_model_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Model Ids"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "user_role": {
+            "type": "string",
+            "title": "User Role"
+          },
+          "actor_name": {
+            "type": "string",
+            "title": "Actor Name"
+          },
+          "primary_department_id": {
+            "type": "string",
+            "title": "Primary Department Id"
+          },
+          "model_mapping": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewModelMappingItem"
+            },
+            "type": "array",
+            "title": "Model Mapping"
+          },
+          "department_mapping": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewDepartmentMappingItem"
+            },
+            "type": "array",
+            "title": "Department Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_model_ids",
+          "valid_department_ids",
+          "user_role",
+          "actor_name",
+          "primary_department_id",
+          "model_mapping",
+          "department_mapping"
+        ],
+        "title": "GetAgentNewApiResponse",
+        "description": "API response data after nesting.\n\nStructure matches nest_many() output."
+      },
       "GetAgentNewDepartmentMappingItem": {
         "properties": {
           "id": {
@@ -31735,34 +31797,33 @@
             "title": "Description"
           },
           "temperature_lower": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
+            "type": "number",
             "title": "Temperature Lower"
           },
           "temperature_upper": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
+            "type": "number",
             "title": "Temperature Upper"
           },
           "input_modalities": {
-            "type": "string",
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Input Modalities"
           },
-          "input_modality": {
-            "type": "string",
-            "title": "Input Modality"
+          "output_modalities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Output Modalities"
           },
-          "output_modality": {
-            "type": "string",
-            "title": "Output Modality"
+          "available_voices": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewModelMappingAvailableVoicesItem"
+            },
+            "type": "array",
+            "title": "Available Voices"
           },
           "temperature_levels": {
             "items": {
@@ -31777,13 +31838,6 @@
             },
             "type": "array",
             "title": "Reasoning Options"
-          },
-          "available_voices": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentNewModelMappingAvailableVoicesItem"
-            },
-            "type": "array",
-            "title": "Available Voices"
           }
         },
         "type": "object",
@@ -31794,11 +31848,10 @@
           "temperature_lower",
           "temperature_upper",
           "input_modalities",
-          "input_modality",
-          "output_modality",
+          "output_modalities",
+          "available_voices",
           "temperature_levels",
-          "reasoning_options",
-          "available_voices"
+          "reasoning_options"
         ],
         "title": "GetAgentNewModelMappingItem",
         "description": "Generated nested model."
@@ -31845,72 +31898,6 @@
         ],
         "title": "GetAgentNewModelMappingTemperatureLevelsItem",
         "description": "Generated nested model."
-      },
-      "GetAgentNewSqlParams": {
-        "properties": {
-          "profile_id": {
-            "type": "string",
-            "title": "Profile Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profile_id"
-        ],
-        "title": "GetAgentNewSqlParams",
-        "description": "SQL parameters for query execution.\n\nParameters are ordered $1, $2, ..."
-      },
-      "GetAgentNewSqlRow": {
-        "properties": {
-          "valid_model_ids": {
-            "items": {},
-            "type": "array",
-            "title": "Valid Model Ids"
-          },
-          "valid_department_ids": {
-            "items": {},
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "user_role": {
-            "type": "string",
-            "title": "User Role"
-          },
-          "actor_name": {
-            "type": "string",
-            "title": "Actor Name"
-          },
-          "primary_department_id": {
-            "type": "string",
-            "title": "Primary Department Id"
-          },
-          "model_mapping": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentNewModelMappingItem"
-            },
-            "type": "array",
-            "title": "Model Mapping"
-          },
-          "department_mapping": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentNewDepartmentMappingItem"
-            },
-            "type": "array",
-            "title": "Department Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "valid_model_ids",
-          "valid_department_ids",
-          "user_role",
-          "actor_name",
-          "primary_department_id",
-          "model_mapping",
-          "department_mapping"
-        ],
-        "title": "GetAgentNewSqlRow",
-        "description": "SQL query result row after nesting.\n\nStructure matches nest_many() output."
       },
       "GradeItem": {
         "properties": {

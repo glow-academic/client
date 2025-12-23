@@ -20,6 +20,10 @@ OID_TO_PYTHON_TYPE: dict[int, str] = {
     20: "int",  # BIGINT
     21: "int",  # SMALLINT
     23: "int",  # INTEGER
+    # Float types
+    700: "float",  # REAL (FLOAT4)
+    701: "float",  # DOUBLE PRECISION (FLOAT8)
+    1700: "float",  # NUMERIC
     # Text types
     25: "str",  # TEXT
     1043: "str",  # VARCHAR
@@ -269,6 +273,12 @@ async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, 
                     return "list[str]", True
                 if base_name in ("json", "jsonb"):
                     return "list[dict[str, Any]]", True
+                if base_name in ("float4", "real"):
+                    return "list[float]", True
+                if base_name in ("float8", "double precision"):
+                    return "list[float]", True
+                if base_name == "numeric":
+                    return "list[float]", True
             else:
                 # Base type - map common types
                 if typname in ("text", "varchar", "char", "name", "bpchar"):
@@ -287,6 +297,12 @@ async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, 
                     return "str", False
                 if typname in ("json", "jsonb"):
                     return "dict[str, Any]", False
+                if typname in ("float4", "real"):
+                    return "float", False
+                if typname in ("float8", "double precision"):
+                    return "float", False
+                if typname == "numeric":
+                    return "float", False
     except Exception:
         pass
 
