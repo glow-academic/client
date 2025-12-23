@@ -117,17 +117,20 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
 
             image_id = image_row["id"]
 
-            # Optionally link to scenario if scenario_id provided
+            # Optionally link to scenario if scenario_id provided (via separate event)
             if validated.scenario_id:
                 scenario_id_uuid = uuid.UUID(validated.scenario_id)
-                sql_link = load_sql("sql/v3/scenarios/insert_scenario_image_link.sql")
-                await conn.execute(
-                    sql_link,
-                    str(scenario_id_uuid),
+                # Emit internal event to link image to scenario (separate event for database operations)
+                from app.socket.v3.scenarios.image.link import (
+                    _scenario_image_link_impl,
+                )
+
+                await _scenario_image_link_impl(
+                    scenario_id_uuid,
                     image_id,
                     True,  # active
+                    sid,
                 )
-                logger.info(f"✓ Linked image {image_id} to scenario {scenario_id_uuid}")
 
             # Emit to internal bus for background image generation with all context
             await internal_sio.emit(

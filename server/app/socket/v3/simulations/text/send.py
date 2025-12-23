@@ -568,34 +568,36 @@ async def _simulation_text_send_impl(
                             f"Simulation Text Agent not found for simulation {context['simulation_id']}"
                         )
 
-                    # Create model run with all junction records using SQL file (using persona, not agent)
-                    sql_create_run = load_sql(
-                        "sql/v3/model_runs/create_model_run_complete.sql"
+                    # Create model run via internal event (separate event for database operations)
+                    from app.socket.v3.simulations.run.create import (
+                        _simulation_run_create_impl,
                     )
-                    model_run_row = await conn.fetchrow(
-                        sql_create_run,
-                        context["department_id"],
-                        context["model_id"],
-                        context["persona_id"],
-                        "persona",
-                        context["profile_id"],
-                        None,  # key_id
-                        str(simulation_agent_id),  # agent_id
+
+                    run_id_str = await _simulation_run_create_impl(
+                        department_id,
+                        uuid.UUID(context["model_id"]),
+                        uuid.UUID(context["persona_id"]),
+                        uuid.UUID(context["profile_id"]),
+                        uuid.UUID(simulation_agent_id),
+                        sid,
                     )
-                    model_run_id = uuid.UUID(model_run_row["run_id"])
+                    if not run_id_str:
+                        raise ValueError("Failed to create run")
+                    model_run_id = uuid.UUID(run_id_str)
 
                     # Emit internal event to link run to group (separate event for database operations)
                     await _simulation_group_link_impl(chat_id_uuid, model_run_id, sid)
 
-                    # Link system/developer messages to run
-                    sql_link_sys_dev = load_sql(
-                        "sql/v3/model_runs/link_system_developer_messages_to_run.sql"
+                    # Link system/developer messages to run via internal event (separate event for database operations)
+                    from app.socket.v3.simulations.messages.link import (
+                        _simulation_messages_link_impl,
                     )
-                    await conn.fetchrow(
-                        sql_link_sys_dev,
-                        str(model_run_id),
-                        context.get("department_id"),
-                        str(chat_id_uuid),
+
+                    await _simulation_messages_link_impl(
+                        model_run_id,
+                        department_id,
+                        chat_id_uuid,
+                        sid,
                     )
 
                     # Create user message if it wasn't created earlier (no run existed)

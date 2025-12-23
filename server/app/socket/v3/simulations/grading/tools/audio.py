@@ -316,6 +316,23 @@ Please provide a detailed analysis based on this request. Consider aspects such 
 
             analysis = getattr(result, "final_output", None) or "No analysis provided"
 
+            # Emit async pricing event (non-blocking)
+            # This handles token updates and message logging in background
+            usage = result.context_wrapper.usage
+            await internal_sio.emit(
+                "log_run",
+                {
+                    "runId": str(model_run_id),
+                    "operationType": "simulation_grade_audio",
+                    "inputTextTokens": usage.input_tokens,
+                    "outputTextTokens": usage.output_tokens,
+                    "systemPrompt": audio_context_row.get("system_prompt", ""),
+                    "inputItems": input_items,  # Serialized TResponseInputItem list
+                    "assistantOutput": analysis,
+                    "departmentId": str(department_id_uuid),
+                },
+            )
+
             # If synchronous call, return result via callback
             if is_synchronous and result_callback:
                 await result_callback(analysis, None)

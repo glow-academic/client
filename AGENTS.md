@@ -218,3 +218,90 @@ tree -I node_modules -I uploads -I history -I screenshots -I queries -I mutation
 ### Type Safety
 - **Server**: Pydantic models for request/response
 - **Client**: `InputOf<"/api/v3/[resource]/[operation]", "post">` and `OutputOf<...>`
+
+## WebSocket Event Patterns
+
+### Single Unit of Work Principle
+
+**Each websocket event must do exactly one thing.** Database operations should be separated into dedicated events.
+
+**Pattern:**
+- One event = one database operation (one SQL file)
+- Complex operations chain multiple events via `internal_sio.emit()`
+- Direct function calls between events are allowed when return values are needed, but events should also be registered for consistency
+
+### AI Operations Pattern
+
+**Standard flow for AI generation events:**
+
+1. Get context + create run atomically (SQL handles both in single transaction)
+2. Run AI agent (`Runner.run()` or `Runner.run_streamed()`)
+3. Emit `log_run` event via `internal_sio.emit("log_run", ...)` for token/pricing logging
+4. Emit completion event
+
+**Example:** `scenarios/generate.py`, `documents/generate.py`, `hints/generate.py`
+
+**Required log_run fields:**
+- `runId`: UUID string of the model run
+- `operationType`: String (e.g., "scenario", "document", "simulation", "simulation_grade")
+- `inputTextTokens`: Integer
+- `outputTextTokens`: Integer
+- `systemPrompt`: String (optional)
+- `inputItems`: List of TResponseInputItem (optional, for message logging)
+- `assistantOutput`: String (optional)
+- `departmentId`: UUID string (optional)
+
+### Database Operations Pattern
+
+**Standard flow for database operation events:**
+
+1. Event receives payload (via `@sio.event` or `@internal_sio.on`)
+2. Performs single database operation (one SQL file)
+3. Returns result or emits completion event if needed
+
+**Example:** `simulation_message_create`, `simulation_group_link`, `simulation_hints_create`
+
+**Pattern for new internal events:**
+- Create handler file: `server/app/socket/v3/[resource]/[operation].py`
+- Register with `@internal_sio.on("[event_name]")`
+- Export `_impl` function for direct calls when return values needed
+- Use single SQL file per event: `sql/v3/[resource]/[operation]_complete.sql`
+
+### Event Chaining
+
+**When an event needs to perform multiple operations:**
+
+1. Get context/validate input
+2. Emit internal events for each database operation
+3. Call `_impl` functions directly when return values are needed
+4. Continue with remaining logic
+
+**Example:** `simulation_text_send` chains:
+- `simulation_run_create` (creates run)
+- `simulation_group_link` (links run to group)
+- `simulation_messages_link` (links system/developer messages)
+- `simulation_message_create` (creates user message)
+- Runs AI agent
+- Emits `log_run` (logs tokens/pricing)
+
+### Activity Logging
+
+**Standard pattern:**
+- AI operations: Activity logging handled by `log_run` event
+- Other events: Call `log_websocket_activity()` directly (but consistently)
+- Always wrap in try/except to avoid breaking event flow
+
+### File Organization
+
+**WebSocket events:**
+- `server/app/socket/v3/[resource]/[operation].py` - Event handlers
+- `server/sql/v3/[resource]/[operation]_complete.sql` - SQL files (one per event)
+- Internal events: Use `@internal_sio.on()` decorator
+- Client events: Use `@sio.event()` decorator
+
+### Common Violations to Avoid
+
+1. **Multiple database operations in one event** - Split into separate events
+2. **Missing log_run** - All AI operations using `Runner.run()` must emit `log_run`
+3. **Direct SQL in event handler** - Use SQL files via `load_sql()`
+4. **Mixing concerns** - Keep event handlers focused on one operation

@@ -1,0 +1,2 @@
+"""Scenario image event handlers."""
+
