@@ -66,7 +66,8 @@ async def execute_sql_typed(
 
     Example:
         ```python
-        sql, InputType, OutputType = load_sql_typed("app/sql/v3/agents/get_agent_new_complete.sql")
+        sql_query = load_sql_query("app/sql/v3/agents/get_agent_new_complete.sql")
+        InputType, OutputType = load_sql_typed("app/sql/v3/agents/get_agent_new_complete.sql")
         params = InputType(profile_id="...")
         result = await execute_sql_typed(
             conn,
@@ -78,10 +79,11 @@ async def execute_sql_typed(
         ```
     """
     # Import here to avoid circular imports
-    from app.types.registry import load_sql_typed
+    from app.types.registry import load_sql_query, load_sql_typed
 
-    # Load SQL with types
-    sql_query, InputType, OutputType = load_sql_typed(sql_path)
+    # Load SQL query and types separately
+    sql_query = load_sql_query(sql_path)
+    InputType, OutputType = load_sql_typed(sql_path)
 
     # Execute query
     if params:

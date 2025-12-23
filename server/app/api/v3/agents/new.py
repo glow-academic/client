@@ -6,7 +6,7 @@ import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.types.registry import load_api_types, load_sql_typed
+from app.types.registry import load_api_types, load_sql_query, load_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
@@ -15,7 +15,7 @@ from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/agents/get_agent_new_complete.sql"
-_sql_query, GetAgentNewSqlParams, GetAgentNewSqlRow = load_sql_typed(SQL_PATH)
+GetAgentNewSqlParams, GetAgentNewSqlRow = load_sql_typed(SQL_PATH)
 GetAgentNewApiRequest, GetAgentNewApiResponse = load_api_types(SQL_PATH)
 
 
@@ -49,12 +49,11 @@ async def get_agent_new(
         response.headers["X-Cache-Hit"] = "1"
         return GetAgentNewApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
-        # Always override profile_id from request body with header value
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -64,7 +63,6 @@ async def get_agent_new(
 
         # Convert API request to SQL params (add profile_id from header)
         params = GetAgentNewSqlParams(**request.model_dump(), profile_id=profile_id)
-        sql_query = _sql_query
         sql_params = params.to_tuple()
         
         result = await execute_sql_typed(
@@ -91,7 +89,6 @@ async def get_agent_new(
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        # Return API response
         return api_response
     except HTTPException:
         raise
