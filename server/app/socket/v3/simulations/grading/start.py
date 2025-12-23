@@ -9,17 +9,16 @@ from zoneinfo import ZoneInfo
 from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
                     ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
-from app.main import get_internal_sio, get_pool, sio
 from app.infra.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.create_safe_field_name import \
-    create_safe_field_name
-from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.debug_info import DebugContext
-from app.utils.debug_info import debug_info as debug_info_tool
+from app.infra.chat.format_chat_scenario import format_chat_scenario
+from app.infra.debug.debug_info import DebugContext
+from app.infra.debug.debug_info import debug_info as debug_info_tool
+from app.infra.tools.build_pydantic_fields import \
+    build_function_signature_string
+from app.main import get_internal_sio, get_pool, sio
+from app.utils.agents.create_safe_field_name import create_safe_field_name
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from app.utils.tools.build_pydantic_fields import \
-    build_function_signature_string
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
 

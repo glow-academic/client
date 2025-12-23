@@ -14,7 +14,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from app.main import get_db
-from app.utils.activity.audit import audit_activity, audit_set
+from app.infra.activity.audit import audit_activity, audit_set
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 

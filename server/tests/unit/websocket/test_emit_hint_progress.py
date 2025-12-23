@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from app.utils.websocket.emit_hint_progress import emit_hint_progress
+from app.infra.websocket.emit_hint_progress import emit_hint_progress
 
 
 class TestEmitHintProgress:

@@ -8,7 +8,7 @@ import asyncpg  # type: ignore
 import pytest
 from fastapi import HTTPException, Request
 
-from app.utils.error.handle_route_error import handle_route_error
+from app.infra.error.handle_route_error import handle_route_error
 
 
 class TestHandle_Route_Error:

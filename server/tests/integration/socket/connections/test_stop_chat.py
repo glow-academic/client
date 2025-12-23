@@ -5,7 +5,7 @@ import pytest
 from tests.integration.socket.conftest import MockSocketIO
 
 from app.socket.v3.connections.stop_chat import stop_chat
-from app.utils.websocket.set_active_connection import set_active_connection
+from app.infra.websocket.set_active_connection import set_active_connection
 
 pytestmark = pytest.mark.asyncio
 
@@ -32,7 +32,7 @@ async def test_stop_chat_success(
     assert stopped_events[0]["chat_type"] == "assistant"  # default
 
     # Verify active connection was removed
-    from app.utils.websocket.get_active_connection import get_active_connection
+    from app.infra.websocket.get_active_connection import get_active_connection
 
     await get_active_connection(chat_id)
     # In test environment without Redis, this may return None

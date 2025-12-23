@@ -13,9 +13,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db
-from app.utils.activity.audit import audit_activity, audit_set
+from app.infra.activity.audit import audit_activity, audit_set
 from datetime import datetime
-from app.utils.error.handle_route_error import handle_route_error
+from app.infra.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 
 

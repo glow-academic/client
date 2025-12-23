@@ -19,11 +19,11 @@ from pydantic import BaseModel, ValidationError
 from app.main import get_internal_sio, get_pool, sio
 from app.infra.activity.websocket_logger import log_websocket_activity
 from app.infra.agents.generic_agent import GenericAgent
-from app.utils.debug_info import DebugContext
-from app.utils.debug_info import debug_info as debug_info_tool
+from app.infra.debug.debug_info import DebugContext
+from app.infra.debug.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from app.utils.tools.build_pydantic_fields import build_function_signature_string
+from app.infra.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool
 from pydantic import Field
 
@@ -356,7 +356,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             }
 
             # Format input items (same as generation)
-            from app.utils.document.format_document_info import format_document_info
+            from app.infra.documents.format_document_info import format_document_info
 
             # Format persona info if persona was provided
             if persona_id is None or context["persona"] is None:

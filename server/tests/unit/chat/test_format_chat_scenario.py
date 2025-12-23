@@ -8,7 +8,7 @@ class TestFormat_Chat_Scenario:
 
     def test_format_chat_scenario_success(self) -> None:
         """Test successful format_chat_scenario execution."""
-        from app.utils.chat.format_chat_scenario import format_chat_scenario
+        from app.infra.chat.format_chat_scenario import format_chat_scenario
 
         problem_statement = "You are a customer service representative helping a user."
 
@@ -20,7 +20,7 @@ class TestFormat_Chat_Scenario:
 
     def test_format_chat_scenario_empty(self) -> None:
         """Test format_chat_scenario with empty string."""
-        from app.utils.chat.format_chat_scenario import format_chat_scenario
+        from app.infra.chat.format_chat_scenario import format_chat_scenario
 
         result = format_chat_scenario("")
 

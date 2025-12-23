@@ -13,7 +13,7 @@ class TestFormat_Document_Info:
 
     def test_format_document_info_empty_list(self) -> None:
         """Test format_document_info with empty document list."""
-        from app.utils.document.format_document_info import format_document_info
+        from app.infra.documents.format_document_info import format_document_info
 
         result = format_document_info([])
 
@@ -27,7 +27,7 @@ class TestFormat_Document_Info:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test format_document_info with text file."""
-        from app.utils.document.format_document_info import format_document_info
+        from app.infra.documents.format_document_info import format_document_info
 
         # Create a temporary text file
         test_file = tmp_path / "test.txt"
@@ -65,7 +65,7 @@ class TestFormat_Document_Info:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test format_document_info with PDF file."""
-        from app.utils.document.format_document_info import format_document_info
+        from app.infra.documents.format_document_info import format_document_info
 
         test_file = tmp_path / "test.pdf"
         test_file.write_bytes(b"fake pdf content")
@@ -108,7 +108,7 @@ class TestFormat_Document_Info:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test format_document_info with PDF and images enabled."""
-        from app.utils.document.format_document_info import format_document_info
+        from app.infra.documents.format_document_info import format_document_info
 
         test_file = tmp_path / "test.pdf"
         test_file.write_bytes(b"fake pdf content")
@@ -154,7 +154,7 @@ class TestFormat_Document_Info:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test format_document_info with image file."""
-        from app.utils.document.format_document_info import format_document_info
+        from app.infra.documents.format_document_info import format_document_info
 
         # Create a fake image file (valid PNG header)
         test_file = tmp_path / "test.png"
@@ -193,7 +193,7 @@ class TestFormat_Document_Info:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test format_document_info with image file but show_images=False."""
-        from app.utils.document.format_document_info import format_document_info
+        from app.infra.documents.format_document_info import format_document_info
 
         test_file = tmp_path / "test.png"
         test_file.write_bytes(b"fake png content")
@@ -224,7 +224,7 @@ class TestFormat_Document_Info:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test format_document_info with missing document file."""
-        from app.utils.document.format_document_info import format_document_info
+        from app.infra.documents.format_document_info import format_document_info
 
         monkeypatch.setattr(
             "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path

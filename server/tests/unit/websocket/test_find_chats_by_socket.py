@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.utils.websocket.find_chats_by_socket import find_chats_by_socket
+from app.infra.websocket.find_chats_by_socket import find_chats_by_socket
 
 
 class TestFind_Chats_By_Socket:

@@ -13,11 +13,11 @@ from pydantic import BaseModel, ValidationError
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.infra.activity.websocket_logger import log_websocket_activity
 from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.tools.build_pydantic_fields import build_function_signature_string
+from app.infra.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool, FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResult
 from pydantic import Field
-from app.utils.debug_info import DebugContext
-from app.utils.document.format_document_template_context import (
+from app.infra.debug.debug_info import DebugContext
+from app.infra.documents.format_document_template_context import (
     format_document_template_context,
 )
 from app.utils.logging.db_logger import get_logger

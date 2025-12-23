@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.utils.websocket.get_guest_count import get_guest_count
+from app.infra.websocket.get_guest_count import get_guest_count
 
 
 class TestGet_Guest_Count:

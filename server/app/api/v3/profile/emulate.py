@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel
 
 from app.main import get_db
-from app.utils.activity.audit import audit_activity
+from app.infra.activity.audit import audit_activity
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import load_sql
 

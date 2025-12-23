@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.utils.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 
 
 class TestFind_Profile_By_Socket:

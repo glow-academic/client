@@ -6,7 +6,7 @@ from tests.integration.socket.conftest import MockSocketIO
 
 from app.socket.v3.connections.join_chat import join_chat
 from app.socket.v3.connections.leave_chat import leave_chat
-from app.utils.websocket.set_active_connection import set_active_connection
+from app.infra.websocket.set_active_connection import set_active_connection
 
 pytestmark = pytest.mark.asyncio
 
@@ -34,7 +34,7 @@ async def test_leave_chat_success(
         assert sid not in mock_sio.rooms[room_name]
 
     # Verify active connection was removed
-    from app.utils.websocket.get_active_connection import get_active_connection
+    from app.infra.websocket.get_active_connection import get_active_connection
 
     await get_active_connection(chat_id)
     # In test environment without Redis, this may return None

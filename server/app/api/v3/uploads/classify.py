@@ -18,13 +18,13 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import TUS_UPLOADS_DIR, classification_results, get_db
-from app.utils.activity.audit import audit_activity, audit_set
+from app.infra.activity.audit import audit_activity, audit_set
 from app.infra.agents.generic_agent import GenericAgent
 from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.tools.build_pydantic_fields import build_function_signature_string
+from app.infra.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool
 from pydantic import Field
-from app.utils.debug_info import DebugContext
+from app.infra.debug.debug_info import DebugContext
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 

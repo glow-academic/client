@@ -9,7 +9,7 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.infra.agents.generic_agent import GenericAgent
 from app.main import get_internal_sio
-from app.utils.debug_info import DebugContext
+from app.infra.debug.debug_info import DebugContext
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 

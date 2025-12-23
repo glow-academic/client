@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.utils.websocket.emit_chat_stopped import emit_chat_stopped
+from app.infra.websocket.emit_chat_stopped import emit_chat_stopped
 
 
 class TestEmit_Chat_Stopped:

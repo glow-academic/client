@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.utils.websocket.store_active_events import store_active_events
+from app.infra.websocket.store_active_events import store_active_events
 
 
 class TestStore_Active_Events:

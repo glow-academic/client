@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.utils.websocket.get_active_run import get_active_run
+from app.infra.websocket.get_active_run import get_active_run
 
 
 class TestGet_Active_Run:

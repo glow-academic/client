@@ -15,12 +15,12 @@ from app.infra.activity.websocket_logger import log_websocket_activity
 from app.infra.agents.generic_agent import GenericAgent
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.debug_info import DebugContext
-from app.utils.debug_info import debug_info as debug_info_tool
-from app.utils.document.format_document_info import format_document_info
+from app.infra.debug.debug_info import DebugContext
+from app.infra.debug.debug_info import debug_info as debug_info_tool
+from app.infra.documents.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from app.utils.tools.build_pydantic_fields import \
+from app.infra.tools.build_pydantic_fields import \
     build_function_signature_string
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
@@ -1292,12 +1292,12 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                                         function_tool, trace)
                     from agents.items import TResponseInputItem
                     from app.infra.agents.generic_agent import GenericAgent
-                    from app.utils.debug_info import DebugContext
-                    from app.utils.debug_info import \
+                    from app.infra.debug.debug_info import DebugContext
+                    from app.infra.debug.debug_info import \
                         debug_info as debug_info_tool
-                    from app.utils.document.format_document_info import \
+                    from app.infra.documents.format_document_info import \
                         format_document_info
-                    from app.utils.tools.build_pydantic_fields import \
+                    from app.infra.tools.build_pydantic_fields import \
                         build_function_signature_string
                     from pydantic import Field
 

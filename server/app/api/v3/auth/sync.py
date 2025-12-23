@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from app.utils.activity.audit import audit_activity
+from app.infra.activity.audit import audit_activity
 from app.infra.auth.keycloak_sync import perform_keycloak_sync
 
 

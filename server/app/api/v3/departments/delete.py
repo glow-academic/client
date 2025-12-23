@@ -8,9 +8,9 @@ from pydantic import BaseModel
 
 from app.main import get_db, get_internal_sio
 from app.socket.v3.actions.keycloak import delete_department_realm
-from app.utils.activity.audit import audit_activity, audit_set
+from app.infra.activity.audit import audit_activity, audit_set
 from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.error.handle_route_error import handle_route_error
+from app.infra.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
 
 internal_sio = get_internal_sio()

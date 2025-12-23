@@ -21,13 +21,13 @@ from app.socket.v3.simulations.streaming.message import (
 from app.socket.v3.simulations.streaming.tool_call import (
     _simulation_tool_call_complete_impl, _simulation_tool_call_start_impl,
     _simulation_tool_call_token_impl)
-from app.utils.agents.build_hint_agent import build_hint_agent
-from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.debug_info import DebugContext
-from app.utils.document.format_document_info import format_document_info
+from app.infra.agents.utils.build_hint_agent import build_hint_agent
+from app.infra.chat.format_chat_scenario import format_chat_scenario
+from app.infra.debug.debug_info import DebugContext
+from app.infra.documents.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from app.utils.tools.build_pydantic_fields import \
+from app.infra.tools.build_pydantic_fields import \
     build_function_signature_string
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
@@ -796,7 +796,7 @@ Tool Usage Instructions:
                         input_items.append(developer_message_personas)
 
                         # Add debug_info tool to persona_tools
-                        from app.utils.debug_info import debug_info
+                        from app.infra.debug.debug_info import debug_info
 
                         persona_tools.append(debug_info)
 

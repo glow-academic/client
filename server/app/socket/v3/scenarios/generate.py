@@ -13,13 +13,13 @@ from app.api.v3.settings.active import ThemePrimitives, derive_theme_tokens
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.infra.activity.websocket_logger import log_websocket_activity
 from app.infra.agents.generic_agent import GenericAgent
-from app.utils.debug_info import DebugContext
-from app.utils.debug_info import debug_info as debug_info_tool
-from app.utils.document.format_document_info import format_document_info
-from app.utils.jinja_renderer import render_template
+from app.infra.debug.debug_info import DebugContext
+from app.infra.debug.debug_info import debug_info as debug_info_tool
+from app.infra.documents.format_document_info import format_document_info
+from app.infra.templates.jinja_renderer import render_template
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from app.utils.tools.build_pydantic_fields import \
+from app.infra.tools.build_pydantic_fields import \
     build_function_signature_string
 from fastapi import APIRouter
 from pydantic import (BaseModel, ConfigDict, Field, ValidationError,

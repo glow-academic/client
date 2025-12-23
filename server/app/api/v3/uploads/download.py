@@ -11,12 +11,12 @@ from fastapi.responses import FileResponse, Response
 
 from app.api.v3.settings.active import ThemeTokens
 from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
-from app.utils.activity.audit import audit_activity, audit_set
+from app.infra.activity.audit import audit_activity, audit_set
 from app.utils.document.pdf_first_page_to_image_bytes import (
     pdf_first_page_to_image_bytes,
 )
-from app.utils.error.handle_route_error import handle_route_error
-from app.utils.jinja_renderer import render_template
+from app.infra.error.handle_route_error import handle_route_error
+from app.infra.templates.jinja_renderer import render_template
 from app.utils.mime.get_content_type import get_content_type
 from app.utils.sql_helper import load_sql
 

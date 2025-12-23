@@ -8,10 +8,10 @@ from typing import Any
 from agents import Runner, Tool, function_tool, trace
 from agents.items import TResponseInputItem
 from app.main import get_internal_sio, get_pool, sio
-from app.utils.agents.build_hint_agent import build_hint_agent
-from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.debug_info import DebugContext
-from app.utils.document.format_document_info import format_document_info
+from app.infra.agents.utils.build_hint_agent import build_hint_agent
+from app.infra.chat.format_chat_scenario import format_chat_scenario
+from app.infra.debug.debug_info import DebugContext
+from app.infra.documents.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter
@@ -383,7 +383,7 @@ async def _generate_hints_impl(
                 hint_tools.append(function_tool(provide_hint_func))
 
             # Add debug_info tool
-            from app.utils.debug_info import debug_info
+            from app.infra.debug.debug_info import debug_info
 
             hint_tools.append(debug_info)
 

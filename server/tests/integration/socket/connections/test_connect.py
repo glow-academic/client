@@ -115,7 +115,7 @@ async def test_connect_profile_takeover(
     new_sid = "new_sid_456"
 
     # Set up old socket ownership (simulate existing connection)
-    from app.utils.websocket.set_socket_owner import set_socket_owner
+    from app.infra.websocket.set_socket_owner import set_socket_owner
 
     await set_socket_owner(profile_id, old_sid)
     await mock_sio.enter_room(old_sid, profile_id)

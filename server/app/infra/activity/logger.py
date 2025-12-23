@@ -4,7 +4,7 @@ import asyncio
 from typing import Any
 
 import asyncpg  # type: ignore
-from app.utils.activity.audit import AuditIntent, jinja
+from app.infra.activity.audit import AuditIntent, jinja
 from fastapi import Request
 
 # Global DB pool (set during startup)

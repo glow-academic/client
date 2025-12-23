@@ -8,7 +8,7 @@ import uuid
 from fastapi import APIRouter, Request, Response
 
 from app.main import TUS_UPLOADS_DIR
-from app.utils.activity.audit import audit_activity, audit_set
+from app.infra.activity.audit import audit_activity, audit_set
 
 router = APIRouter()
 

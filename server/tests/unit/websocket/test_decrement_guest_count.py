@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.utils.websocket.decrement_guest_count import decrement_guest_count
+from app.infra.websocket.decrement_guest_count import decrement_guest_count
 
 
 class TestDecrement_Guest_Count:
