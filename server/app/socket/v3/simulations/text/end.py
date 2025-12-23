@@ -5,16 +5,14 @@ from datetime import UTC, datetime
 from typing import Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.main import get_internal_sio, get_pool, sio
-from app.infra.activity.websocket_logger import log_websocket_activity
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
-
 # Import chat creation function from start.py
 from app.socket.v3.simulations.text.start import simulation_chat_create_impl
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()

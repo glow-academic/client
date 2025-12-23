@@ -9,18 +9,18 @@ from zoneinfo import ZoneInfo
 from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
                     ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
-from app.infra.agents.generic_agent import GenericAgent
-from app.infra.chat.format_chat_scenario import format_chat_scenario
-from app.infra.debug.debug_info import DebugContext
-from app.infra.debug.debug_info import debug_info as debug_info_tool
-from app.infra.tools.build_pydantic_fields import \
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
+from app.infra.v3.debug.debug_info import DebugContext
+from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
+from app.infra.v3.tools.build_pydantic_fields import \
     build_function_signature_string
 from app.main import get_internal_sio, get_pool, sio
+from fastapi import APIRouter
+from pydantic import BaseModel, Field, ValidationError
 from utils.agents.create_safe_field_name import create_safe_field_name
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
-from fastapi import APIRouter
-from pydantic import BaseModel, Field, ValidationError
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()

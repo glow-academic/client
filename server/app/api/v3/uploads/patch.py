@@ -1,9 +1,8 @@
 """TUS PATCH endpoint - v3 API following DHH principles."""
 
-from fastapi import APIRouter, Request, Response
-
+from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.main import TUS_UPLOADS_DIR
-from app.infra.activity.audit import audit_activity, audit_set
+from fastapi import APIRouter, Request, Response
 
 router = APIRouter()
 

@@ -24,7 +24,7 @@ class TestDebug_Info:
             # Reload the module to pick up the mocked decorator
             if "app.utils.debug_info" in sys.modules:
                 importlib.reload(sys.modules["app.utils.debug_info"])
-            from app.infra.debug.debug_info import DebugContext, debug_info
+            from app.infra.v3.debug.debug_info import DebugContext, debug_info
 
             model_run_id = uuid.uuid4()
             mock_conn = AsyncMock()
@@ -55,7 +55,7 @@ class TestDebug_Info:
             # Reload the module to pick up the mocked decorator
             if "app.utils.debug_info" in sys.modules:
                 importlib.reload(sys.modules["app.utils.debug_info"])
-            from app.infra.debug.debug_info import DebugContext, debug_info
+            from app.infra.v3.debug.debug_info import DebugContext, debug_info
 
             model_run_id = uuid.uuid4()
             mock_conn = AsyncMock()

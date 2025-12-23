@@ -4,7 +4,7 @@ Tests for app.utils.csv.parse_csv_file
 
 from pathlib import Path
 
-from app.infra.csv.parse_csv_file import parse_csv_file
+from app.infra.v3.csv.parse_csv_file import parse_csv_file
 
 
 class TestParse_Csv_File:

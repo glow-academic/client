@@ -2,10 +2,9 @@
 
 import asyncpg  # type: ignore
 import pytest
+from app.socket.v3.connections.connect import connect
 from tests.integration.socket.conftest import MockSocketIO
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
-
-from app.socket.v3.connections.connect import connect
 
 pytestmark = pytest.mark.asyncio
 
@@ -115,7 +114,7 @@ async def test_connect_profile_takeover(
     new_sid = "new_sid_456"
 
     # Set up old socket ownership (simulate existing connection)
-    from app.infra.websocket.set_socket_owner import set_socket_owner
+    from app.infra.v3.websocket.set_socket_owner import set_socket_owner
 
     await set_socket_owner(profile_id, old_sid)
     await mock_sio.enter_room(old_sid, profile_id)

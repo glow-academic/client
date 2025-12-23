@@ -6,9 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import asyncpg  # type: ignore
 import pytest
+from app.infra.v3.error.handle_route_error import handle_route_error
 from fastapi import HTTPException, Request
-
-from app.infra.error.handle_route_error import handle_route_error
 
 
 class TestHandle_Route_Error:

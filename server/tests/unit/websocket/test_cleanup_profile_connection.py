@@ -10,8 +10,7 @@ class TestCleanup_Profile_Connection:
         """Test that cleanup_profile_connection has correct structure."""
         # This function is complex and requires database setup
         # Basic structure test to ensure it exists and is callable
-        from app.infra.websocket.cleanup_profile_connection import (
-            cleanup_profile_connection,
-        )
+        from app.infra.v3.websocket.cleanup_profile_connection import \
+            cleanup_profile_connection
 
         assert callable(cleanup_profile_connection)

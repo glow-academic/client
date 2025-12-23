@@ -5,21 +5,19 @@ import os
 import uuid
 from typing import Any
 
-from agents import Runner, trace
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.debug.debug_info import DebugContext
+from app.infra.v3.documents.format_document_template_context import \
+    format_document_template_context
+from app.infra.v3.tools.build_pydantic_fields import \
+    build_function_signature_string
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
-from app.infra.activity.websocket_logger import log_websocket_activity
+from fastapi import APIRouter
+from pydantic import BaseModel, Field, ValidationError
 from utils.cache.invalidate_tags import invalidate_tags
-from app.infra.tools.build_pydantic_fields import build_function_signature_string
-from agents import Tool, function_tool, FunctionToolResult, RunContextWrapper, ToolsToFinalOutputResult
-from pydantic import Field
-from app.infra.debug.debug_info import DebugContext
-from app.infra.documents.format_document_template_context import (
-    format_document_template_context,
-)
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
@@ -285,7 +283,7 @@ async def _document_generate_impl(
                 return ToolsToFinalOutputResult(is_final_output=both_complete)
             
             # Build document agent inline
-            from app.infra.agents.generic_agent import GenericAgent
+            from app.infra.v3.agents.generic_agent import GenericAgent
             document_agent = GenericAgent(
                 agent_name=context["agent_name"],
                 system_prompt=context["system_prompt"],

@@ -7,11 +7,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.main import (AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER,
+                      VIDEO_FOLDER, get_db)
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
-
-from app.main import AUDIO_FOLDER, TUS_UPLOADS_DIR, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
-from app.infra.activity.audit import audit_activity, audit_set
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.logging.db_logger import get_logger
 from utils.mime.get_content_type import get_content_type

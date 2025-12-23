@@ -6,8 +6,8 @@ from enum import Enum
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.infra.activity.audit import audit_set
-from app.infra.error.handle_route_error import handle_route_error
+from app.infra.v3.activity.audit import audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel

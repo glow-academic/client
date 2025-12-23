@@ -4,20 +4,14 @@ import json
 import uuid
 from typing import Any
 
-from agents import (
-    Runner,
-    function_tool,
-    gen_trace_id,
-    trace,
-)
+from agents import Runner, function_tool, gen_trace_id, trace
 from agents.items import TResponseInputItem
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.debug.debug_info import DebugContext
+from app.main import get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
-
-from app.main import get_internal_sio, get_pool, sio
-from app.infra.activity.websocket_logger import log_websocket_activity
-from app.infra.agents.generic_agent import GenericAgent
-from app.infra.debug.debug_info import DebugContext
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 

@@ -2,14 +2,13 @@
 
 from typing import Any
 
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.websocket.cancel_active_run import cancel_active_run
+from app.main import get_pool, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import get_pool, sio
-from app.infra.activity.websocket_logger import log_websocket_activity
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
-from app.infra.websocket.cancel_active_run import cancel_active_run
 
 logger = get_logger(__name__)
 
@@ -99,7 +98,8 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
 
         async with pool.acquire() as conn:
             # Attempt to cancel the simulation run and the in-process Runner immediately
-            from app.infra.websocket.cancel_active_result import cancel_active_result
+            from app.infra.v3.websocket.cancel_active_result import \
+                cancel_active_result
 
             # Try immediate in-process cancel first
             await cancel_active_result(str(chat_id))

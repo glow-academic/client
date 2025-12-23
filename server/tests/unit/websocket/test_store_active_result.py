@@ -5,8 +5,7 @@ Tests for app.utils.websocket.store_active_result
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-from app.infra.websocket.store_active_result import store_active_result
+from app.infra.v3.websocket.store_active_result import store_active_result
 
 
 class TestStore_Active_Result:

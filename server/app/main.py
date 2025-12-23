@@ -529,7 +529,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         pool = get_pool()
         if pool:
             # Setup activity logger
-            from app.infra.activity.logger import \
+            from app.infra.v3.activity.logger import \
                 setup_activity_logger  # noqa: E402
 
             setup_activity_logger(pool)
@@ -539,7 +539,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             # Sync is triggered via WebSocket events and after auth mutations
 
         # Initialize metrics collector
-        from app.infra.metrics.collector import \
+        from app.infra.v3.metrics.collector import \
             initialize_metrics  # noqa: E402
 
         if pool:
@@ -609,7 +609,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process request and log to database."""
-        from app.infra.metrics.collector import record_error, record_request
+        from app.infra.v3.metrics.collector import record_error, record_request
         from utils.logging.db_logger import get_logger, set_profile_id
 
         logger = get_logger(__name__)
@@ -689,7 +689,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
             # Log activity to database (fire and forget - don't block response)
             try:
-                from app.infra.activity.logger import log_activity
+                from app.infra.v3.activity.logger import log_activity
                 from utils.logging.db_logger import profile_id_context
 
                 # Get resolved profile_id for activity logging
@@ -757,8 +757,8 @@ async def health_services() -> JSONResponse:
     Returns per-service status + latencies.
     Automatically logs health checks to database when called by notify service.
     """
-    from app.infra.health import run_service_checks
-    from app.infra.metrics.collector import log_health_checks
+    from app.infra.v3.health import run_service_checks
+    from app.infra.v3.metrics.collector import log_health_checks
 
     checks = await run_service_checks()
 
@@ -798,7 +798,7 @@ async def metrics_snapshot() -> JSONResponse:
     Called by notify service to log metrics snapshot.
     No leader election needed since notify service is single instance.
     """
-    from app.infra.metrics.collector import log_metrics_snapshot
+    from app.infra.v3.metrics.collector import log_metrics_snapshot
 
     try:
         await log_metrics_snapshot()

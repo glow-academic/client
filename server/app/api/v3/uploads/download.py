@@ -6,17 +6,15 @@ import urllib.parse
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from app.api.v3.settings.active import ThemeTokens
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.infra.v3.templates.jinja_renderer import render_template
+from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, Response
-
-from app.api.v3.settings.active import ThemeTokens
-from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
-from app.infra.activity.audit import audit_activity, audit_set
-from utils.document.pdf_first_page_to_image_bytes import (
-    pdf_first_page_to_image_bytes,
-)
-from app.infra.error.handle_route_error import handle_route_error
-from app.infra.templates.jinja_renderer import render_template
+from utils.document.pdf_first_page_to_image_bytes import \
+    pdf_first_page_to_image_bytes
 from utils.mime.get_content_type import get_content_type
 from utils.sql_helper import load_sql
 

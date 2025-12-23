@@ -8,16 +8,14 @@ from datetime import datetime
 from typing import Any, get_type_hints
 
 import httpx
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
+from agents import function_tool
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.utils.build_voice_agent import build_voice_agent
 from app.main import _voice_sessions, get_pool, sio
-from app.infra.activity.websocket_logger import log_websocket_activity
-from app.infra.agents.utils.build_voice_agent import build_voice_agent
+from fastapi import APIRouter
+from pydantic import BaseModel, Field, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
-from agents import function_tool
-from pydantic import Field
 
 logger = get_logger(__name__)
 
@@ -388,12 +386,9 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
             # Import emit functions from send_message
             from app.socket.v3.simulations.text.send import (
                 SimulationMessageCompletePayload,
-                SimulationMessageTokenPayload,
-                SimulationNewMessagePayload,
-                simulation_message_complete,
-                simulation_message_token,
-                simulation_new_message,
-            )
+                SimulationMessageTokenPayload, SimulationNewMessagePayload,
+                simulation_message_complete, simulation_message_token,
+                simulation_new_message)
 
             # Create emit wrapper functions for persona tools
             async def emit_new_message_wrapper(event_data: dict[str, Any]) -> None:

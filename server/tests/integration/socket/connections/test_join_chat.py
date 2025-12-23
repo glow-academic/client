@@ -2,9 +2,8 @@
 
 import asyncpg  # type: ignore
 import pytest
-from tests.integration.socket.conftest import MockSocketIO
-
 from app.socket.v3.connections.join_chat import join_chat
+from tests.integration.socket.conftest import MockSocketIO
 
 pytestmark = pytest.mark.asyncio
 
@@ -34,7 +33,8 @@ async def test_join_chat_success(
     assert sid in mock_sio.rooms[room_name]
 
     # Verify active connection was set
-    from app.infra.websocket.get_active_connection import get_active_connection
+    from app.infra.v3.websocket.get_active_connection import \
+        get_active_connection
 
     await get_active_connection(chat_id)
     # In test environment without Redis, this may return None

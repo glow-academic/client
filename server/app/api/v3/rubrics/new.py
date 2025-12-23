@@ -5,24 +5,20 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+# Reuse models from detail.py
+from app.api.v3.rubrics.detail import (AgentMapping, AgentMappingItem,
+                                       DepartmentMappingItem,
+                                       RubricDetailResponse,
+                                       StandardGroupDetail,
+                                       StandardMappingItem)
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
-
-# Reuse models from detail.py
-from app.api.v3.rubrics.detail import (
-    AgentMapping,
-    AgentMappingItem,
-    DepartmentMappingItem,
-    RubricDetailResponse,
-    StandardGroupDetail,
-    StandardMappingItem,
-)
-from app.main import get_db
-from app.infra.activity.audit import audit_activity, audit_set
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from app.infra.error.handle_route_error import handle_route_error
 from utils.sql_helper import load_sql
 
 

@@ -1,17 +1,18 @@
 """Handler for disconnect WebSocket event."""
 
-from fastapi import APIRouter
-
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.websocket.decrement_guest_count import decrement_guest_count
+from app.infra.v3.websocket.find_chats_by_socket import find_chats_by_socket
+from app.infra.v3.websocket.find_profile_by_socket import \
+    find_profile_by_socket
+from app.infra.v3.websocket.is_guest_socket import is_guest_socket
+from app.infra.v3.websocket.remove_active_connection import \
+    remove_active_connection
+from app.infra.v3.websocket.remove_guest_socket import remove_guest_socket
+from app.infra.v3.websocket.remove_socket_owner import remove_socket_owner
 from app.main import sio
-from app.infra.activity.websocket_logger import log_websocket_activity
+from fastapi import APIRouter
 from utils.logging.db_logger import get_logger
-from app.infra.websocket.remove_socket_owner import remove_socket_owner
-from app.infra.websocket.decrement_guest_count import decrement_guest_count
-from app.infra.websocket.find_chats_by_socket import find_chats_by_socket
-from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.websocket.is_guest_socket import is_guest_socket
-from app.infra.websocket.remove_active_connection import remove_active_connection
-from app.infra.websocket.remove_guest_socket import remove_guest_socket
 
 logger = get_logger(__name__)
 
@@ -35,6 +36,7 @@ async def disconnect(sid: str) -> None:
         # Update database to mark profile as inactive
         try:
             from datetime import UTC, datetime
+
             from app.main import get_pool
             from utils.sql_helper import load_sql
 

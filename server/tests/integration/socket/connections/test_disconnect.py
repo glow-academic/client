@@ -2,13 +2,12 @@
 
 import asyncpg  # type: ignore
 import pytest
-from tests.integration.socket.conftest import MockSocketIO
-from tests.seed_helpers import get_superadmin_alias  # type: ignore
-
+from app.infra.v3.websocket.add_guest_socket import add_guest_socket
+from app.infra.v3.websocket.set_active_connection import set_active_connection
 from app.socket.v3.connections.connect import connect
 from app.socket.v3.connections.disconnect import disconnect
-from app.infra.websocket.add_guest_socket import add_guest_socket
-from app.infra.websocket.set_active_connection import set_active_connection
+from tests.integration.socket.conftest import MockSocketIO
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 
@@ -61,7 +60,7 @@ async def test_disconnect_with_guest_success(
 
     # Assert
     # Verify guest socket was removed (check via is_guest_socket)
-    from app.infra.websocket.is_guest_socket import is_guest_socket
+    from app.infra.v3.websocket.is_guest_socket import is_guest_socket
 
     await is_guest_socket(sid)
     # Note: In test environment without Redis, this may return False
@@ -93,7 +92,8 @@ async def test_disconnect_removes_active_connections(
 
     # Assert
     # Verify active connections were removed
-    from app.infra.websocket.get_active_connection import get_active_connection
+    from app.infra.v3.websocket.get_active_connection import \
+        get_active_connection
 
     await get_active_connection(chat_id_1)
     await get_active_connection(chat_id_2)

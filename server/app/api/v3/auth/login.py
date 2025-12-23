@@ -5,11 +5,10 @@ from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from app.infra.v3.activity.audit import audit_activity
+from app.main import get_db
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-
-from app.main import get_db
-from app.infra.activity.audit import audit_activity
 from utils.sql_helper import load_sql
 
 

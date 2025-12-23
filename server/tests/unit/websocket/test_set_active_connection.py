@@ -5,8 +5,7 @@ Tests for app.utils.websocket.set_active_connection
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
-from app.infra.websocket.set_active_connection import set_active_connection
+from app.infra.v3.websocket.set_active_connection import set_active_connection
 
 
 class TestSet_Active_Connection:

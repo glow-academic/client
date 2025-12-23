@@ -4,13 +4,12 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.main import get_db, transaction
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
-
-from app.main import get_db, transaction
-from app.infra.activity.audit import audit_activity, audit_set
 from utils.cache.invalidate_tags import invalidate_tags
-from app.infra.error.handle_route_error import handle_route_error
 from utils.sql_helper import load_sql
 
 

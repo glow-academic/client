@@ -5,8 +5,7 @@ Tests for app.utils.websocket.increment_guest_count
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
-from app.infra.websocket.increment_guest_count import increment_guest_count
+from app.infra.v3.websocket.increment_guest_count import increment_guest_count
 
 
 class TestIncrement_Guest_Count:

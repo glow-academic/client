@@ -5,8 +5,7 @@ Tests for app.utils.websocket.is_run_cancelled
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
-from app.infra.websocket.is_run_cancelled import is_run_cancelled
+from app.infra.v3.websocket.is_run_cancelled import is_run_cancelled
 
 
 class TestIs_Run_Cancelled:

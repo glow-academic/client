@@ -5,8 +5,8 @@ from typing import Annotated, Any
 
 import asyncpg
 from app.api.v3.profile.detail import ProfileItem
-from app.infra.activity.audit import audit_activity, audit_set
-from app.infra.error.handle_route_error import handle_route_error
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel

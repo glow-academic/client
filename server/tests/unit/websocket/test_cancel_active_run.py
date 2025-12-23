@@ -5,8 +5,7 @@ Tests for app.utils.websocket.cancel_active_run
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
-from app.infra.websocket.cancel_active_run import cancel_active_run
+from app.infra.v3.websocket.cancel_active_run import cancel_active_run
 
 
 class TestCancel_Active_Run:

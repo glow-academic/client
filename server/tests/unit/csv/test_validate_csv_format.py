@@ -4,7 +4,7 @@ Tests for app.utils.csv.validate_csv_format
 
 from pathlib import Path
 
-from app.infra.csv.validate_csv_format import validate_csv_format
+from app.infra.v3.csv.validate_csv_format import validate_csv_format
 
 
 class TestValidate_Csv_Format:

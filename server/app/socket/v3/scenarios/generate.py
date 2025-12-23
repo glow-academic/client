@@ -10,20 +10,20 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
                     trace)
 from agents.items import TResponseInputItem
 from app.api.v3.settings.active import ThemePrimitives, derive_theme_tokens
-from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
-from app.infra.activity.websocket_logger import log_websocket_activity
-from app.infra.agents.generic_agent import GenericAgent
-from app.infra.debug.debug_info import DebugContext
-from app.infra.debug.debug_info import debug_info as debug_info_tool
-from app.infra.documents.format_document_info import format_document_info
-from app.infra.templates.jinja_renderer import render_template
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
-from app.infra.tools.build_pydantic_fields import \
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.debug.debug_info import DebugContext
+from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
+from app.infra.v3.documents.format_document_info import format_document_info
+from app.infra.v3.templates.jinja_renderer import render_template
+from app.infra.v3.tools.build_pydantic_fields import \
     build_function_signature_string
+from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from fastapi import APIRouter
 from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
                       create_model)
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()

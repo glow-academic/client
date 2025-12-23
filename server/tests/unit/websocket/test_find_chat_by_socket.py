@@ -6,8 +6,7 @@ from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
-from app.infra.websocket.find_chat_by_socket import find_chat_by_socket
+from app.infra.v3.websocket.find_chat_by_socket import find_chat_by_socket
 
 
 class TestFind_Chat_By_Socket:

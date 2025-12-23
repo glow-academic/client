@@ -997,7 +997,7 @@ async def keycloak_sync(sid: str, data: dict[str, Any]) -> None:
     department_id = data.get("department_id") if isinstance(data, dict) else None
 
     # Use utility function for consistent behavior
-    from app.infra.auth.keycloak_sync import perform_keycloak_sync
+    from app.infra.v3.auth.keycloak_sync import perform_keycloak_sync
 
     result = await perform_keycloak_sync(department_id=department_id)
     if not result.success:
@@ -1015,7 +1015,7 @@ async def keycloak_sync_internal(data: dict[str, Any]) -> None:
     department_id = data.get("department_id") if isinstance(data, dict) else None
 
     # Use utility function for consistent behavior
-    from app.infra.auth.keycloak_sync import perform_keycloak_sync
+    from app.infra.v3.auth.keycloak_sync import perform_keycloak_sync
 
     result = await perform_keycloak_sync(department_id=department_id)
     if not result.success:

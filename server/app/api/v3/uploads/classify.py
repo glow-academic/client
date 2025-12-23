@@ -6,25 +6,18 @@ import zipfile
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.debug.debug_info import DebugContext
+from app.infra.v3.tools.build_pydantic_fields import \
+    build_function_signature_string
 from app.main import TUS_UPLOADS_DIR, classification_results, get_db
-from app.infra.activity.audit import audit_activity, audit_set
-from app.infra.agents.generic_agent import GenericAgent
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel, Field
 from utils.cache.invalidate_tags import invalidate_tags
-from app.infra.tools.build_pydantic_fields import build_function_signature_string
-from agents import Tool, function_tool
-from pydantic import Field
-from app.infra.debug.debug_info import DebugContext
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 

@@ -2,13 +2,13 @@
 
 from typing import Any
 
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.websocket.remove_active_connection import \
+    remove_active_connection
+from app.main import sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import sio
-from app.infra.activity.websocket_logger import log_websocket_activity
 from utils.logging.db_logger import get_logger
-from app.infra.websocket.remove_active_connection import remove_active_connection
 
 logger = get_logger(__name__)
 

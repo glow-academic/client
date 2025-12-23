@@ -8,8 +8,14 @@ from typing import Any
 from agents import Runner, Tool, function_tool, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.infra.activity.websocket_logger import log_websocket_activity
-from app.infra.agents.generic_agent import GenericAgent
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.agents.utils.build_hint_agent import build_hint_agent
+from app.infra.v3.chat.format_chat_scenario import format_chat_scenario
+from app.infra.v3.debug.debug_info import DebugContext
+from app.infra.v3.documents.format_document_info import format_document_info
+from app.infra.v3.tools.build_pydantic_fields import \
+    build_function_signature_string
 from app.main import (get_internal_sio, get_pool,
                       get_simulation_tool_calls_dict, sio)
 from app.socket.v3.simulations.group.link import _simulation_group_link_impl
@@ -21,16 +27,10 @@ from app.socket.v3.simulations.streaming.message import (
 from app.socket.v3.simulations.streaming.tool_call import (
     _simulation_tool_call_complete_impl, _simulation_tool_call_start_impl,
     _simulation_tool_call_token_impl)
-from app.infra.agents.utils.build_hint_agent import build_hint_agent
-from app.infra.chat.format_chat_scenario import format_chat_scenario
-from app.infra.debug.debug_info import DebugContext
-from app.infra.documents.format_document_info import format_document_info
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
-from app.infra.tools.build_pydantic_fields import \
-    build_function_signature_string
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -403,7 +403,7 @@ async def _simulation_text_send_impl(
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.infra.websocket.store_active_run import \
+                    from app.infra.v3.websocket.store_active_run import \
                         store_active_run
 
                     # Get context AND create run in single atomic transaction
@@ -796,7 +796,7 @@ Tool Usage Instructions:
                         input_items.append(developer_message_personas)
 
                         # Add debug_info tool to persona_tools
-                        from app.infra.debug.debug_info import debug_info
+                        from app.infra.v3.debug.debug_info import debug_info
 
                         persona_tools.append(debug_info)
 
@@ -2138,7 +2138,7 @@ Tool Usage Instructions:
                             del tool_calls_dict[chat_id_str]
 
                         # Clean up active run
-                        from app.infra.websocket.remove_active_run import \
+                        from app.infra.v3.websocket.remove_active_run import \
                             remove_active_run
 
                         await remove_active_run(chat_id_str)

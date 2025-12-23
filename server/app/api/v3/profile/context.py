@@ -4,14 +4,14 @@ import json
 from typing import Annotated, Any, Literal, cast
 
 import asyncpg
+from app.api.v3.profile.detail import ProfileItem
+from app.infra.v3.activity.audit import audit_activity, audit_set
+from app.infra.v3.error.handle_route_error import handle_route_error
+from app.infra.v3.permissions import (ProfileRole,
+                                      get_available_subsections_for_role)
+from app.main import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-
-from app.api.v3.profile.detail import ProfileItem
-from app.main import get_db
-from app.infra.activity.audit import audit_activity, audit_set
-from app.infra.error.handle_route_error import handle_route_error
-from app.infra.permissions import ProfileRole, get_available_subsections_for_role
 from utils.sql_helper import load_sql
 from utils.theme.color_utils import ensure_contrast, shade, tint
 from utils.theme.oklch_to_hex import hex_to_oklch

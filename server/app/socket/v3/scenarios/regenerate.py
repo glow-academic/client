@@ -4,28 +4,21 @@ import json
 import uuid
 from typing import Any
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    gen_trace_id,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, gen_trace_id,
+                    trace)
 from agents.items import TResponseInputItem
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.infra.v3.agents.generic_agent import GenericAgent
+from app.infra.v3.debug.debug_info import DebugContext
+from app.infra.v3.debug.debug_info import debug_info as debug_info_tool
+from app.infra.v3.tools.build_pydantic_fields import \
+    build_function_signature_string
 from app.main import get_internal_sio, get_pool, sio
-from app.infra.activity.websocket_logger import log_websocket_activity
-from app.infra.agents.generic_agent import GenericAgent
-from app.infra.debug.debug_info import DebugContext
-from app.infra.debug.debug_info import debug_info as debug_info_tool
+from fastapi import APIRouter
+from pydantic import BaseModel, Field, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
-from app.infra.tools.build_pydantic_fields import build_function_signature_string
-from agents import Tool, function_tool
-from pydantic import Field
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -356,7 +349,8 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             }
 
             # Format input items (same as generation)
-            from app.infra.documents.format_document_info import format_document_info
+            from app.infra.v3.documents.format_document_info import \
+                format_document_info
 
             # Format persona info if persona was provided
             if persona_id is None or context["persona"] is None:

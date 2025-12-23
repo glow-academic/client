@@ -3,15 +3,12 @@
 import uuid
 from typing import Any
 
+from app.infra.v3.activity.websocket_logger import log_websocket_activity
+from app.main import get_pool, sio
+from app.socket.v3.simulations.text.start import (StartSimulationPayload,
+                                                  _simulation_text_start_impl)
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-
-from app.main import get_pool, sio
-from app.socket.v3.simulations.text.start import (
-    StartSimulationPayload,
-    _simulation_text_start_impl,
-)
-from app.infra.activity.websocket_logger import log_websocket_activity
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
