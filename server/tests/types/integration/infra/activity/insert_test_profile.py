@@ -37,4 +37,4 @@ class InsertTestProfileSqlRow(BaseModel):
     Columns returned by the SQL query.
     """
 
-    id: str
+    id: UUID

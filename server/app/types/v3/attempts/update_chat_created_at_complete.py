@@ -4,6 +4,7 @@ Generated from: app/sql/v3/attempts/update_chat_created_at_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,14 @@ class UpdateChatCreatedAtSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    createdAt: str
+    chatId: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.createdAt,
+            self.chatId,
         )
 
 

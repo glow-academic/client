@@ -24,8 +24,9 @@ OID_TO_PYTHON_TYPE: dict[int, str] = {
     25: "str",  # TEXT
     1043: "str",  # VARCHAR
     1042: "str",  # CHAR
-    # UUID
-    2950: "str",  # UUID (stored as string in Python)
+    # UUID - use uuid.UUID for strong typing
+    2950: "UUID",  # UUID (use uuid.UUID for strong typing)
+    2951: "list[UUID]",  # UUID[] (use list[uuid.UUID] for strong typing)
     # Timestamp types
     1114: "str",  # TIMESTAMP (ISO string)
     1184: "str",  # TIMESTAMPTZ (ISO string)
@@ -52,7 +53,7 @@ OID_TO_PYTHON_TYPE: dict[int, str] = {
     1022: "list[float]",  # FLOAT8[]
     1028: "list[int]",  # INT4[]
     1033: "list[str]",  # ACLITEM[]
-    1034: "list[str]",  # UUID[]
+    1034: "list[UUID]",  # UUID[] (use list[uuid.UUID] for strong typing)
     1115: "list[str]",  # TIMESTAMP[]
     1182: "list[str]",  # DATE[]
     1183: "list[str]",  # TIME[]
@@ -72,6 +73,8 @@ class ColumnMetadata:
     python_type: str
     pg_oid: int
     is_array: bool
+    is_optional: bool = False  # For parameters: whether field is optional (nullable)
+    default_value: str | None = None  # For parameters: default value expression (e.g., "[]", "None")
 
 
 @dataclass
@@ -82,6 +85,126 @@ class SQLMetadata:
     parameters: list[ColumnMetadata]  # Ordered $1, $2, ...
     returns: list[ColumnMetadata]  # Return columns
     error: str | None = None  # If introspection failed
+
+
+def _parse_atparams_block(sql_text: str) -> dict[int, dict[str, Any]]:
+    """Parse @params block for parameter metadata.
+    
+    Parses:
+    -- @params
+    --   name: text
+    --   prompt_id?: uuid
+    --   department_ids: uuid[] = {}
+    
+    Returns dict mapping param index to {name, type, optional, default}
+    """
+    import re
+    
+    param_metadata: dict[int, dict[str, Any]] = {}
+    
+    # Find @params block
+    atparams_pattern = r'--\s*@params\s*\n((?:--\s+.*\n)*)'
+    match = re.search(atparams_pattern, sql_text, re.IGNORECASE | re.MULTILINE)
+    
+    if not match:
+        return param_metadata
+    
+    params_block = match.group(1)
+    
+    # Extract parameter definitions: name: type, name?: type, name: type = default
+    param_line_pattern = r'--\s+(\w+)(\?)?:\s+(\S+)(?:\s*=\s*(.+))?'
+    
+    param_index = 1
+    for line_match in re.finditer(param_line_pattern, params_block, re.IGNORECASE):
+        param_name = line_match.group(1)
+        is_optional = line_match.group(2) == '?'
+        param_type = line_match.group(3)
+        default_value = line_match.group(4) if line_match.group(4) else None
+        
+        param_metadata[param_index] = {
+            'name': param_name,
+            'type': param_type,
+            'optional': is_optional,
+            'default': default_value,
+        }
+        param_index += 1
+    
+    return param_metadata
+
+
+def _extract_param_names_from_params_cte(sql_text: str) -> dict[int, str]:
+    """Extract parameter names from params CTE column aliases or comments.
+    
+    First tries to extract from params CTE pattern: WITH params AS (SELECT $1::type AS name, ...)
+    Falls back to parsing comments: -- Parameters: $1=name (type), $2=name2 (type), ...
+    
+    Args:
+        sql_text: SQL query text
+        
+    Returns:
+        Dict mapping parameter index to name (e.g., {1: "name", 2: "description"})
+    """
+    import re
+    
+    param_names: dict[int, str] = {}
+    
+    # First, try to extract from params CTE
+    params_cte_pattern = r'WITH\s+params\s+AS\s*\(\s*SELECT\s+(.*?)\s*\)\s*,'
+    match = re.search(params_cte_pattern, sql_text, re.IGNORECASE | re.DOTALL)
+    
+    if match:
+        select_clause = match.group(1)
+        
+        # Split by commas to get individual column definitions
+        # But be careful of commas inside function calls
+        columns = []
+        current_col = ""
+        paren_depth = 0
+        for char in select_clause:
+            if char == '(':
+                paren_depth += 1
+                current_col += char
+            elif char == ')':
+                paren_depth -= 1
+                current_col += char
+            elif char == ',' and paren_depth == 0:
+                columns.append(current_col.strip())
+                current_col = ""
+            else:
+                current_col += char
+        if current_col.strip():
+            columns.append(current_col.strip())
+        
+        # Extract parameter number and alias from each column
+        for col in columns:
+            # Find the AS keyword and extract the alias
+            as_match = re.search(r'\s+AS\s+(\w+)', col, re.IGNORECASE)
+            if not as_match:
+                continue
+            
+            param_name = as_match.group(1)
+            
+            # Find the parameter number ($N)
+            param_match = re.search(r'\$(\d+)', col)
+            if param_match:
+                param_index = int(param_match.group(1))
+                param_names[param_index] = param_name
+    
+    # If no params CTE found, try parsing from comments
+    if not param_names:
+        # Pattern: -- Parameters: $1=name (type), $2=name2 (type), ...
+        comment_pattern = r'--\s*Parameters?:\s*(.*?)(?:\n|$)'
+        comment_match = re.search(comment_pattern, sql_text, re.IGNORECASE | re.MULTILINE)
+        if comment_match:
+            params_line = comment_match.group(1)
+            # Extract $N=name patterns
+            param_pattern = r'\$(\d+)\s*=\s*(\w+)'
+            for param_match in re.finditer(param_pattern, params_line):
+                param_index = int(param_match.group(1))
+                param_name = param_match.group(2)
+                param_names[param_index] = param_name
+    
+    return param_names
 
 
 async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, bool]:
@@ -141,7 +264,7 @@ async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, 
                 if base_name in ("bool", "boolean"):
                     return "list[bool]", True
                 if base_name == "uuid":
-                    return "list[str]", True
+                    return "list[UUID]", True
                 if base_name in ("timestamp", "timestamptz", "date", "time", "timetz"):
                     return "list[str]", True
                 if base_name in ("json", "jsonb"):
@@ -159,7 +282,7 @@ async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, 
                 if typname in ("bool", "boolean"):
                     return "bool", False
                 if typname == "uuid":
-                    return "str", False
+                    return "UUID", False
                 if typname in ("timestamp", "timestamptz", "date", "time", "timetz"):
                     return "str", False
                 if typname in ("json", "jsonb"):
@@ -211,45 +334,45 @@ async def introspect_sql_file(
                     )
                 )
 
-            # For parameter types, we need to use a different approach
-            # asyncpg's prepare() doesn't expose parameter types directly
-            # Try to get them by executing a PREPARE statement with proper escaping
+            # Get parameter types from asyncpg's prepared statement
+            # asyncpg's prepare() exposes parameter types via get_parameters()
             param_types: list[ColumnMetadata] = []
             try:
-                # Use dollar-quoting for PREPARE to avoid escaping issues
-                dollar_tag = f"tag_{abs(hash(sql_path)) % 10000}"
-                # Format: PREPARE name AS $tag$sql$tag$
-                prepare_cmd = f"PREPARE {stmt_name} AS ${dollar_tag}${sql_text}${dollar_tag}$"
-                await conn.execute(prepare_cmd)
+                # Parse @params block (primary source of truth for names, optionality, defaults)
+                atparams_metadata = _parse_atparams_block(sql_text)
                 
-                # Query pg_prepared_statements for parameter types
-                param_rows = await conn.fetch(
-                    """
-                    SELECT parameter_types
-                    FROM pg_prepared_statements
-                    WHERE name = $1
-                    LIMIT 1
-                    """,
-                    stmt_name,
-                )
+                # Fallback: extract parameter names from params CTE or comments
+                param_names = _extract_param_names_from_params_cte(sql_text)
                 
-                if param_rows and param_rows[0]["parameter_types"]:
-                    param_oids = param_rows[0]["parameter_types"]
-                    for i, param_oid in enumerate(param_oids, start=1):
+                param_type_objs = stmt.get_parameters()
+                if param_type_objs:
+                    for i, param_type_obj in enumerate(param_type_objs, start=1):
                         python_type, is_array = await _oid_to_python_type(
-                            param_oid, conn
+                            param_type_obj.oid, conn
                         )
+                        
+                        # Get metadata from @params block if available
+                        if i in atparams_metadata:
+                            meta = atparams_metadata[i]
+                            param_name = meta['name']
+                            is_optional = meta['optional']
+                            default_value = meta['default']
+                        else:
+                            # Fallback to CTE/comment parsing
+                            param_name = param_names.get(i, f"${i}")
+                            is_optional = False
+                            default_value = None
+                        
                         param_types.append(
                             ColumnMetadata(
-                                name=f"${i}",
+                                name=param_name,
                                 python_type=python_type,
-                                pg_oid=param_oid,
+                                pg_oid=param_type_obj.oid,
                                 is_array=is_array,
+                                is_optional=is_optional,
+                                default_value=default_value,
                             )
                         )
-                
-                # Clean up
-                await conn.execute(f"DEALLOCATE {stmt_name}")
             except Exception:
                 # If we can't get parameter types, that's okay - we still have return types
                 # Parameter types can be inferred from SQL comments or left as empty

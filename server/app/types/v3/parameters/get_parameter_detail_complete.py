@@ -4,6 +4,7 @@ Generated from: app/sql/v3/parameters/get_parameter_detail_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,14 @@ class GetParameterDetailSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    param_1: UUID
+    param_2: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.param_1,
+            self.param_2,
         )
 
 

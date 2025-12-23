@@ -4,6 +4,7 @@ Generated from: app/sql/v3/keys/get_key_detail_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,14 @@ class GetKeyDetailSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    keyId: UUID
+    profileId: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.keyId,
+            self.profileId,
         )
 
 
@@ -37,7 +42,7 @@ class GetKeyDetailSqlRow(BaseModel):
     Columns returned by the SQL query.
     """
 
-    key_id: str
+    key_id: UUID
     name: str
     key_masked: str
     description: str

@@ -4,6 +4,7 @@ Generated from: app/sql/v3/cohorts/delete_cohort_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,14 @@ class DeleteCohortSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    cohort_id: UUID
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.cohort_id,
+            self.profile_id,
         )
 
 

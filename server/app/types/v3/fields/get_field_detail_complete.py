@@ -4,6 +4,7 @@ Generated from: app/sql/v3/fields/get_field_detail_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,14 @@ class GetFieldDetailSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    param_1: UUID
+    param_2: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.param_1,
+            self.param_2,
         )
 
 
@@ -37,7 +42,7 @@ class GetFieldDetailSqlRow(BaseModel):
     Columns returned by the SQL query.
     """
 
-    field_id: str
+    field_id: UUID
     name: str
     description: str
     active: bool

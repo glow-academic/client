@@ -4,6 +4,7 @@ Generated from: app/sql/v3/profile/get_profile_context_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,18 @@ class GetProfileContextSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    actualProfileId: UUID
+    effectiveProfileId: UUID
+    param_3: str
+    param_4: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.actualProfileId,
+            self.effectiveProfileId,
+            self.param_3,
+            self.param_4,
         )
 
 
@@ -38,7 +47,7 @@ class GetProfileContextSqlRow(BaseModel):
     """
 
     is_authorized: bool
-    actual_id: str
+    actual_id: UUID
     actual_first_name: str
     actual_last_name: str
     actual_emails: list[str]
@@ -50,8 +59,8 @@ class GetProfileContextSqlRow(BaseModel):
     actual_last_active: str
     actual_created_at: str
     actual_updated_at: str
-    actual_primary_department_id: str
-    id: str
+    actual_primary_department_id: UUID
+    id: UUID
     first_name: str
     last_name: str
     emails: list[str]
@@ -63,7 +72,7 @@ class GetProfileContextSqlRow(BaseModel):
     last_active: str
     created_at: str
     updated_at: str
-    primary_department_id: str
+    primary_department_id: UUID
     departments: dict[str, Any]
     cohorts: dict[str, Any]
     simulations: dict[str, Any]

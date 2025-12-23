@@ -4,6 +4,7 @@ Generated from: app/sql/v3/evals/start_eval_attempt_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,18 @@ class StartEvalAttemptSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    eval_id: UUID
+    conversation_mode: bool
+    conversation_agent_id: UUID
+    conversation_max_turns: int
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.eval_id,
+            self.conversation_mode,
+            self.conversation_agent_id,
+            self.conversation_max_turns,
         )
 
 

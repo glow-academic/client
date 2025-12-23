@@ -4,6 +4,7 @@ Generated from: app/sql/v3/auth/update_auth_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,22 @@ class UpdateAuthSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    auth_id: UUID
+    name: str
+    description: str
+    active: bool
+    items_json: dict[str, Any]
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.auth_id,
+            self.name,
+            self.description,
+            self.active,
+            self.items_json,
+            self.profile_id,
         )
 
 

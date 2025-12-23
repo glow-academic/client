@@ -14,10 +14,12 @@ class GetAgentNewSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    profile_id: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.profile_id,
         )
 
 
@@ -30,13 +32,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-
-class GetAgentNewDepartmentMappingItem(BaseModel):
-    """Generated nested model."""
-
-    id: str
-    name: str
-    description: str
 
 class GetAgentNewModelMappingTemperatureLevelsItem(BaseModel):
     """Generated nested model."""
@@ -72,6 +67,13 @@ class GetAgentNewModelMappingItem(BaseModel):
     reasoning_options: list[GetAgentNewModelMappingReasoningOptionsItem]
     available_voices: list[GetAgentNewModelMappingAvailableVoicesItem]
 
+class GetAgentNewDepartmentMappingItem(BaseModel):
+    """Generated nested model."""
+
+    id: str
+    name: str
+    description: str
+
 
 class GetAgentNewSqlRow(BaseModel):
     """SQL query result row after nesting.
@@ -84,5 +86,5 @@ class GetAgentNewSqlRow(BaseModel):
     user_role: str
     actor_name: str
     primary_department_id: str
-    department_mapping: list[GetAgentNewDepartmentMappingItem]
     model_mapping: list[GetAgentNewModelMappingItem]
+    department_mapping: list[GetAgentNewDepartmentMappingItem]

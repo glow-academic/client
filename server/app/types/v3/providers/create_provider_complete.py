@@ -4,6 +4,7 @@ Generated from: app/sql/v3/providers/create_provider_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,22 @@ class CreateProviderSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    name: str
+    description: str
+    value: str
+    active: bool
+    base_url: str
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.name,
+            self.description,
+            self.value,
+            self.active,
+            self.base_url,
+            self.profile_id,
         )
 
 

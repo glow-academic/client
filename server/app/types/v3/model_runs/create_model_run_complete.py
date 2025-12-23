@@ -4,6 +4,7 @@ Generated from: app/sql/v3/model_runs/create_model_run_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,24 @@ class CreateModelRunSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    department_id: UUID
+    model_id: UUID
+    entity_id: UUID
+    entity_type: str
+    profile_id: UUID
+    key_id: UUID
+    agent_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.department_id,
+            self.model_id,
+            self.entity_id,
+            self.entity_type,
+            self.profile_id,
+            self.key_id,
+            self.agent_id,
         )
 
 

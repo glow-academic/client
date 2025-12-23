@@ -7932,7 +7932,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__agents__detail__AgentDetailResponse"
+                  "$ref": "#/components/schemas/AgentDetailResponse"
                 }
               }
             }
@@ -8002,7 +8002,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AgentNewRequest"
+                "$ref": "#/components/schemas/GetAgentNewSqlParams"
               }
             }
           }
@@ -8013,7 +8013,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__agents__new__AgentDetailResponse"
+                  "$ref": "#/components/schemas/GetAgentNewSqlRow"
                 }
               }
             }
@@ -21808,6 +21808,240 @@
         ],
         "title": "AgentDetailRequest"
       },
+      "AgentDetailResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "system_prompt": {
+            "type": "string",
+            "title": "System Prompt"
+          },
+          "prompt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Id"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "selected_temperature_level_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Temperature Level Id"
+          },
+          "selected_reasoning_level_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Reasoning Level Id"
+          },
+          "selected_voice_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Voice Ids"
+          },
+          "valid_model_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Model Ids"
+          },
+          "reasoning_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Reasoning Options"
+          },
+          "temperature_lower": {
+            "type": "number",
+            "title": "Temperature Lower"
+          },
+          "temperature_upper": {
+            "type": "number",
+            "title": "Temperature Upper"
+          },
+          "temperature_levels": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Temperature Levels"
+          },
+          "valid_voices": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Voices"
+          },
+          "available_voices": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Available Voices"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__agents__detail__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "department_prompt_links": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Department Prompt Links"
+          },
+          "prompt_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PromptInfo"
+            },
+            "type": "object",
+            "title": "Prompt Mapping"
+          },
+          "debug_info": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__agents__detail__DebugInfoItem"
+            },
+            "type": "array",
+            "title": "Debug Info"
+          },
+          "model_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__agents__detail__ModelMappingItem"
+            },
+            "type": "object",
+            "title": "Model Mapping"
+          },
+          "reasoning_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ReasoningMappingItem"
+            },
+            "type": "object",
+            "title": "Reasoning Mapping"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "system_prompt",
+          "prompt_id",
+          "temperature",
+          "model_id",
+          "reasoning",
+          "active",
+          "role",
+          "selected_temperature_level_id",
+          "selected_reasoning_level_id",
+          "selected_voice_ids",
+          "valid_model_ids",
+          "reasoning_options",
+          "temperature_lower",
+          "temperature_upper",
+          "temperature_levels",
+          "valid_voices",
+          "available_voices",
+          "department_ids",
+          "valid_department_ids",
+          "department_mapping",
+          "department_prompt_links",
+          "prompt_mapping",
+          "debug_info",
+          "model_mapping",
+          "reasoning_mapping",
+          "can_edit"
+        ],
+        "title": "AgentDetailResponse"
+      },
       "AgentItem": {
         "properties": {
           "agent_id": {
@@ -21892,11 +22126,6 @@
           "can_delete"
         ],
         "title": "AgentItem"
-      },
-      "AgentNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "AgentNewRequest"
       },
       "AgentsListRequest": {
         "properties": {},
@@ -31447,6 +31676,241 @@
         ],
         "title": "GenerateVideoPayload",
         "description": "Request to generate a video."
+      },
+      "GetAgentNewDepartmentMappingItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "title": "GetAgentNewDepartmentMappingItem",
+        "description": "Generated nested model."
+      },
+      "GetAgentNewModelMappingAvailableVoicesItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "voice"
+        ],
+        "title": "GetAgentNewModelMappingAvailableVoicesItem",
+        "description": "Generated nested model."
+      },
+      "GetAgentNewModelMappingItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "temperature_lower": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Lower"
+          },
+          "temperature_upper": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Upper"
+          },
+          "input_modalities": {
+            "type": "string",
+            "title": "Input Modalities"
+          },
+          "input_modality": {
+            "type": "string",
+            "title": "Input Modality"
+          },
+          "output_modality": {
+            "type": "string",
+            "title": "Output Modality"
+          },
+          "temperature_levels": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewModelMappingTemperatureLevelsItem"
+            },
+            "type": "array",
+            "title": "Temperature Levels"
+          },
+          "reasoning_options": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewModelMappingReasoningOptionsItem"
+            },
+            "type": "array",
+            "title": "Reasoning Options"
+          },
+          "available_voices": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewModelMappingAvailableVoicesItem"
+            },
+            "type": "array",
+            "title": "Available Voices"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "temperature_lower",
+          "temperature_upper",
+          "input_modalities",
+          "input_modality",
+          "output_modality",
+          "temperature_levels",
+          "reasoning_options",
+          "available_voices"
+        ],
+        "title": "GetAgentNewModelMappingItem",
+        "description": "Generated nested model."
+      },
+      "GetAgentNewModelMappingReasoningOptionsItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "reasoning_level": {
+            "type": "string",
+            "title": "Reasoning Level"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "reasoning_level"
+        ],
+        "title": "GetAgentNewModelMappingReasoningOptionsItem",
+        "description": "Generated nested model."
+      },
+      "GetAgentNewModelMappingTemperatureLevelsItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "temperature": {
+            "type": "string",
+            "title": "Temperature"
+          },
+          "is_upper": {
+            "type": "boolean",
+            "title": "Is Upper"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "temperature",
+          "is_upper"
+        ],
+        "title": "GetAgentNewModelMappingTemperatureLevelsItem",
+        "description": "Generated nested model."
+      },
+      "GetAgentNewSqlParams": {
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "title": "Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id"
+        ],
+        "title": "GetAgentNewSqlParams",
+        "description": "SQL parameters for query execution.\n\nParameters are ordered $1, $2, ..."
+      },
+      "GetAgentNewSqlRow": {
+        "properties": {
+          "valid_model_ids": {
+            "items": {},
+            "type": "array",
+            "title": "Valid Model Ids"
+          },
+          "valid_department_ids": {
+            "items": {},
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "user_role": {
+            "type": "string",
+            "title": "User Role"
+          },
+          "actor_name": {
+            "type": "string",
+            "title": "Actor Name"
+          },
+          "primary_department_id": {
+            "type": "string",
+            "title": "Primary Department Id"
+          },
+          "model_mapping": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewModelMappingItem"
+            },
+            "type": "array",
+            "title": "Model Mapping"
+          },
+          "department_mapping": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewDepartmentMappingItem"
+            },
+            "type": "array",
+            "title": "Department Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_model_ids",
+          "valid_department_ids",
+          "user_role",
+          "actor_name",
+          "primary_department_id",
+          "model_mapping",
+          "department_mapping"
+        ],
+        "title": "GetAgentNewSqlRow",
+        "description": "SQL query result row after nesting.\n\nStructure matches nest_many() output."
       },
       "GradeItem": {
         "properties": {
@@ -48466,240 +48930,6 @@
         "title": "VoiceUserTranscriptPayload",
         "description": "Request to send user transcript from voice simulation."
       },
-      "app__api__v3__agents__detail__AgentDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "system_prompt": {
-            "type": "string",
-            "title": "System Prompt"
-          },
-          "prompt_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompt Id"
-          },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "selected_temperature_level_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Temperature Level Id"
-          },
-          "selected_reasoning_level_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Reasoning Level Id"
-          },
-          "selected_voice_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Selected Voice Ids"
-          },
-          "valid_model_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Model Ids"
-          },
-          "reasoning_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Reasoning Options"
-          },
-          "temperature_lower": {
-            "type": "number",
-            "title": "Temperature Lower"
-          },
-          "temperature_upper": {
-            "type": "number",
-            "title": "Temperature Upper"
-          },
-          "temperature_levels": {
-            "items": {
-              "additionalProperties": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "boolean"
-                  }
-                ]
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Temperature Levels"
-          },
-          "valid_voices": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Voices"
-          },
-          "available_voices": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Available Voices"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__agents__detail__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "department_prompt_links": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Department Prompt Links"
-          },
-          "prompt_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/PromptInfo"
-            },
-            "type": "object",
-            "title": "Prompt Mapping"
-          },
-          "debug_info": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__agents__detail__DebugInfoItem"
-            },
-            "type": "array",
-            "title": "Debug Info"
-          },
-          "model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__agents__detail__ModelMappingItem"
-            },
-            "type": "object",
-            "title": "Model Mapping"
-          },
-          "reasoning_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ReasoningMappingItem"
-            },
-            "type": "object",
-            "title": "Reasoning Mapping"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "system_prompt",
-          "prompt_id",
-          "temperature",
-          "model_id",
-          "reasoning",
-          "active",
-          "role",
-          "selected_temperature_level_id",
-          "selected_reasoning_level_id",
-          "selected_voice_ids",
-          "valid_model_ids",
-          "reasoning_options",
-          "temperature_lower",
-          "temperature_upper",
-          "temperature_levels",
-          "valid_voices",
-          "available_voices",
-          "department_ids",
-          "valid_department_ids",
-          "department_mapping",
-          "department_prompt_links",
-          "prompt_mapping",
-          "debug_info",
-          "model_mapping",
-          "reasoning_mapping",
-          "can_edit"
-        ],
-        "title": "AgentDetailResponse"
-      },
       "app__api__v3__agents__detail__DebugInfoItem": {
         "properties": {
           "created_at": {
@@ -48898,316 +49128,6 @@
           "description": {
             "type": "string",
             "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ModelMappingItem",
-        "description": "Model mapping item."
-      },
-      "app__api__v3__agents__new__AgentDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "system_prompt": {
-            "type": "string",
-            "title": "System Prompt"
-          },
-          "prompt_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompt Id"
-          },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "valid_model_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Model Ids"
-          },
-          "reasoning_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Reasoning Options"
-          },
-          "temperature_lower": {
-            "type": "number",
-            "title": "Temperature Lower"
-          },
-          "temperature_upper": {
-            "type": "number",
-            "title": "Temperature Upper"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__agents__new__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "department_prompt_links": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Department Prompt Links"
-          },
-          "prompt_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Prompt Mapping"
-          },
-          "debug_info": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Debug Info"
-          },
-          "model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__agents__new__ModelMappingItem"
-            },
-            "type": "object",
-            "title": "Model Mapping"
-          },
-          "reasoning_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ReasoningMappingItem"
-            },
-            "type": "object",
-            "title": "Reasoning Mapping"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "system_prompt",
-          "prompt_id",
-          "temperature",
-          "model_id",
-          "reasoning",
-          "active",
-          "role",
-          "valid_model_ids",
-          "reasoning_options",
-          "temperature_lower",
-          "temperature_upper",
-          "department_ids",
-          "valid_department_ids",
-          "department_mapping",
-          "department_prompt_links",
-          "prompt_mapping",
-          "debug_info",
-          "model_mapping",
-          "reasoning_mapping",
-          "can_edit"
-        ],
-        "title": "AgentDetailResponse"
-      },
-      "app__api__v3__agents__new__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__agents__new__ModelMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "input_modalities": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Modalities"
-          },
-          "output_modalities": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Modalities"
-          },
-          "temperature_lower": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Lower"
-          },
-          "temperature_upper": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Upper"
-          },
-          "temperature_levels": {
-            "anyOf": [
-              {
-                "items": {
-                  "additionalProperties": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "boolean"
-                      }
-                    ]
-                  },
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Levels"
-          },
-          "reasoning_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Options"
-          },
-          "available_voices": {
-            "anyOf": [
-              {
-                "items": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Available Voices"
           }
         },
         "type": "object",

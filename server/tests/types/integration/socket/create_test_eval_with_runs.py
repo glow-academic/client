@@ -4,6 +4,7 @@ Generated from: tests/sql/integration/socket/create_test_eval_with_runs.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,16 @@ class CreateTestEvalWithRunsSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    agent_id: UUID
+    eval_agent_id: UUID
+    rubric_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.agent_id,
+            self.eval_agent_id,
+            self.rubric_id,
         )
 
 

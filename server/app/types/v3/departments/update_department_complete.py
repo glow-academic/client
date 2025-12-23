@@ -4,6 +4,7 @@ Generated from: app/sql/v3/departments/update_department_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,22 @@ class UpdateDepartmentSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    department_id: UUID
+    title: str
+    description: str
+    active: bool
+    settings_id: str
+    current_profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.department_id,
+            self.title,
+            self.description,
+            self.active,
+            self.settings_id,
+            self.current_profile_id,
         )
 
 
@@ -37,6 +50,6 @@ class UpdateDepartmentSqlRow(BaseModel):
     Columns returned by the SQL query.
     """
 
-    id: str
+    id: UUID
     title: str
     actor_name: str

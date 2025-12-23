@@ -4,6 +4,7 @@ Generated from: tests/sql/integration/socket/create_test_scenario_with_dependenc
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,16 @@ class CreateTestScenarioWithDependenciesSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    department_id: UUID
+    persona_id: UUID
+    name: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.department_id,
+            self.persona_id,
+            self.name,
         )
 
 

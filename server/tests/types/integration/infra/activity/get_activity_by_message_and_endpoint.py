@@ -14,10 +14,14 @@ class GetActivityByMessageAndEndpointSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    param_1: str
+    param_2: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.param_1,
+            self.param_2,
         )
 
 
@@ -41,5 +45,5 @@ class GetActivityByMessageAndEndpointSqlRow(BaseModel):
     message: str
     endpoint: str
     error: bool
-    id: str
-    profile_id: str
+    id: UUID
+    profile_id: UUID

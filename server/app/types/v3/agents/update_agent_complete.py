@@ -4,6 +4,7 @@ Generated from: app/sql/v3/agents/update_agent_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,32 @@ class UpdateAgentSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    agentId: UUID
+    name: str
+    description: str
+    model_id: UUID
+    active: bool
+    role: str
+    prompt_id: str
+    system_prompt: str
+    department_ids: list[str]
+    department_ids_for_prompt: list[str]
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.agentId,
+            self.name,
+            self.description,
+            self.model_id,
+            self.active,
+            self.role,
+            self.prompt_id,
+            self.system_prompt,
+            self.department_ids,
+            self.department_ids_for_prompt,
+            self.profile_id,
         )
 
 

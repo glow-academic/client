@@ -4,6 +4,7 @@ Generated from: app/sql/v3/model_runs/log_run_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,32 @@ class LogRunSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    run_id: UUID
+    param_2: UUID
+    param_3: int
+    param_4: int
+    param_5: int
+    param_6: int
+    param_7: int
+    param_8: int
+    param_9: int
+    param_10: list[str]
+    param_11: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.run_id,
+            self.param_2,
+            self.param_3,
+            self.param_4,
+            self.param_5,
+            self.param_6,
+            self.param_7,
+            self.param_8,
+            self.param_9,
+            self.param_10,
+            self.param_11,
         )
 
 

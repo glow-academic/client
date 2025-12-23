@@ -74,6 +74,16 @@ def generate_request_model(
     """
     class_name = _to_class_name(route_name, "SqlParams")
 
+    # Check if we need UUID import
+    needs_uuid = any(
+        "UUID" in param.python_type for param in metadata.parameters
+    )
+    
+    # Check if we need Field import (for defaults)
+    needs_field = any(
+        param.default_value is not None for param in metadata.parameters
+    )
+
     lines = [
         '"""SQL parameter model generated from SQL introspection.',
         "",
@@ -81,24 +91,52 @@ def generate_request_model(
         '"""',
         "",
         "from typing import Any",
-        "",
-        "from pydantic import BaseModel",
-        "",
-        "",
-        f"class {class_name}(BaseModel):",
-        '    """SQL parameters for query execution.',
-        "",
-        "    Parameters are ordered $1, $2, ...",
-        '    """',
-        "",
     ]
+    
+    if needs_uuid:
+        lines.append("from uuid import UUID")
+    
+    lines.append("")
+    lines.append("from pydantic import BaseModel")
+    
+    if needs_field:
+        lines.append("from pydantic import Field")
+    
+    lines.append("")
+    lines.append("")
+    lines.append(f"class {class_name}(BaseModel):")
+    lines.append('    """SQL parameters for query execution.')
+    lines.append("")
+    lines.append("    Parameters are ordered $1, $2, ...")
+    lines.append('    """')
+    lines.append("")
 
     # Add fields for each parameter
     for param in metadata.parameters:
         field_name = _sanitize_field_name(param.name)
-        field_type = _to_pydantic_field_type(param.python_type)
-        # Parameters are typically required unless they can be NULL
-        # We'll make them all required for now - can be enhanced later
+        field_type = _to_pydantic_field_type(param.python_type, param.is_optional)
+        
+        # Handle defaults
+        if param.default_value is not None:
+            # Convert default value to Python expression
+            if param.default_value == "{}":
+                # Empty list/dict default
+                if "list" in field_type:
+                    default_expr = "Field(default_factory=list)"
+                elif "dict" in field_type:
+                    default_expr = "Field(default_factory=dict)"
+                else:
+                    default_expr = "None"
+            elif param.default_value == "None" or param.default_value.lower() == "null":
+                default_expr = "None"
+            else:
+                # Try to parse as literal
+                default_expr = param.default_value
+            
+            lines.append(f"    {field_name}: {field_type} = {default_expr}")
+        elif param.is_optional:
+            lines.append(f"    {field_name}: {field_type} = None")
+        else:
         lines.append(f"    {field_name}: {field_type}")
 
     # Add to_tuple() method

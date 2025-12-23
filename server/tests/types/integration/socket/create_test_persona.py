@@ -14,10 +14,12 @@ class CreateTestPersonaSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    name: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.name,
         )
 
 

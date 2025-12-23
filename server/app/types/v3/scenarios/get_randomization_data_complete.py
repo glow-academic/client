@@ -4,6 +4,7 @@ Generated from: app/sql/v3/scenarios/get_randomization_data_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,14 @@ class GetRandomizationDataSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    department_ids: list[UUID]
+    param_2: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.department_ids,
+            self.param_2,
         )
 
 

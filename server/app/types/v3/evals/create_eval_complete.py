@@ -4,6 +4,7 @@ Generated from: app/sql/v3/evals/create_eval_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,30 @@ class CreateEvalSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    name: str
+    description: str
+    rubric_id: UUID
+    agent_id: UUID
+    eval_agent_id: UUID
+    run_ids: list[UUID]
+    department_ids: list[UUID]
+    active: bool
+    dynamic: bool
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.name,
+            self.description,
+            self.rubric_id,
+            self.agent_id,
+            self.eval_agent_id,
+            self.run_ids,
+            self.department_ids,
+            self.active,
+            self.dynamic,
+            self.profile_id,
         )
 
 

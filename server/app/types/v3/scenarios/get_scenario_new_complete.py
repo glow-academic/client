@@ -4,6 +4,7 @@ Generated from: app/sql/v3/scenarios/get_scenario_new_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,28 @@ class GetScenarioNewSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    profileId: UUID
+    useImage: bool
+    useObjectives: bool
+    param_4: list[UUID]
+    param_5: list[UUID]
+    param_6: list[UUID]
+    param_7: list[UUID]
+    param_8: list[UUID]
+    param_9: bool
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.profileId,
+            self.useImage,
+            self.useObjectives,
+            self.param_4,
+            self.param_5,
+            self.param_6,
+            self.param_7,
+            self.param_8,
+            self.param_9,
         )
 
 

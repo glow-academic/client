@@ -41,5 +41,5 @@ class MockSelectTestSqlRow(BaseModel):
     message: str
     endpoint: str
     error: bool
-    id: str
-    profile_id: str
+    id: UUID
+    profile_id: UUID

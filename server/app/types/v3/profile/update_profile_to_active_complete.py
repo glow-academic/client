@@ -4,6 +4,7 @@ Generated from: app/sql/v3/profile/update_profile_to_active_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,14 @@ class UpdateProfileToActiveSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    profile_id: UUID
+    last_active: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.profile_id,
+            self.last_active,
         )
 
 

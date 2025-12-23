@@ -4,6 +4,7 @@ Generated from: app/sql/v3/rubrics/delete_rubric_complete.sql
 """
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -14,10 +15,14 @@ class DeleteRubricSqlParams(BaseModel):
     Parameters are ordered $1, $2, ...
     """
 
+    rubricId: UUID
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert model to tuple in parameter order ($1, $2, ...)."""
         return (
+            self.rubricId,
+            self.profile_id,
         )
 
 
