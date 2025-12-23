@@ -5,7 +5,7 @@ Generates Pydantic models from SQL metadata for request/response types.
 
 from typing import Any
 
-from utils.sql_introspect import ColumnMetadata, SQLMetadata
+from scripts.sql_introspect import ColumnMetadata, SQLMetadata
 
 
 def _to_pydantic_field_type(python_type: str, is_optional: bool = False) -> str:

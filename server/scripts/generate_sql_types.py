@@ -17,8 +17,8 @@ import asyncpg  # type: ignore
 server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
 
-from utils.sql_introspect import introspect_sql_file
-from utils.sql_typegen import generate_types_file
+from scripts.sql_introspect import introspect_sql_file
+from scripts.sql_typegen import generate_types_file
 
 
 def _sql_path_to_types_path(sql_path: str) -> tuple[str, str] | None:
@@ -85,6 +85,25 @@ def _sql_path_to_types_path(sql_path: str) -> tuple[str, str] | None:
         # Build types path
         types_path = f"tests/types/integration/infra/{resource}/{operation}.py"
         # Route name is just the operation (resource is already in the path)
+        route_name = operation.replace("-", "_")
+
+        return types_path, route_name
+    
+    # Pattern: tests/sql/integration/socket/[operation].sql
+    # -> tests/types/integration/socket/[operation].py
+    if sql_path.startswith("tests/sql/integration/socket/"):
+        # Remove prefix and replace sql with types
+        relative = sql_path[len("tests/sql/integration/socket/") :]
+
+        # Remove .sql suffix
+        if not relative.endswith(".sql"):
+            return None
+
+        operation = relative[: -len(".sql")]
+
+        # Build types path
+        types_path = f"tests/types/integration/socket/{operation}.py"
+        # Route name is just the operation
         route_name = operation.replace("-", "_")
 
         return types_path, route_name
@@ -165,8 +184,8 @@ async def main() -> int:
     if app_sql_dir.exists():
         sql_files.extend(app_sql_dir.rglob("*.sql"))
     
-    # Process tests/sql/integration/infra/
-    tests_sql_dir = server_root / "tests" / "sql" / "integration" / "infra"
+    # Process tests/sql/integration/ (all subdirectories)
+    tests_sql_dir = server_root / "tests" / "sql" / "integration"
     if tests_sql_dir.exists():
         sql_files.extend(tests_sql_dir.rglob("*.sql"))
     

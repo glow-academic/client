@@ -331,10 +331,13 @@ sql-compile: check-venv
 	@$(VENV_PYTHON) server/scripts/generate_sql_types.py
 	@echo "✅ SQL compilation complete"
 
-# Check for unused SQL files
+# Check for unused SQL files and inline SQL violations
 sql-format: check-venv
 	@echo "Checking for unused SQL files..."
 	@$(VENV_PYTHON) server/scripts/check_unused_sql.py
+	@echo ""
+	@echo "Checking for inline SQL violations..."
+	@$(VENV_PYTHON) server/scripts/check_inline_sql.py
 
 # Connect to database
 connect-db:
