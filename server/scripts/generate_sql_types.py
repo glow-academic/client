@@ -37,213 +37,262 @@ def _to_class_name(route_name: str, suffix: str) -> str:
     return f"{pascal}{suffix}"
 
 
-def _sql_path_to_types_path(sql_path: str) -> tuple[str, str] | None:
-    """Convert SQL file path to types file path and route name.
+def _sql_path_to_route_name(sql_path: str) -> str | None:
+    """Extract route name from SQL file path.
 
     Example:
-        "app/sql/v3/agents/create_agent_complete.sql" ->
-        ("app/types/v3/agents/create_agent.py", "create_agent")
-        
-        "tests/sql/integration/infra/activity/insert_test_profile.sql" ->
-        ("tests/types/integration/infra/activity/insert_test_profile.py", "insert_test_profile")
+        "app/sql/v3/agents/create_agent_complete.sql" -> "create_agent"
+        "tests/sql/integration/infra/activity/insert_test_profile.sql" -> "insert_test_profile"
 
     Args:
         sql_path: SQL file path relative to server root
 
     Returns:
-        Tuple of (types_file_path, route_name) or None if pattern doesn't match
+        Route name or None if pattern doesn't match
     """
     # Pattern: app/sql/v3/[resource]/[operation]_complete.sql
-    # -> app/types/v3/[resource]/[operation]_complete.py
     if sql_path.startswith("app/sql/v3/"):
-        # Remove prefix and replace sql with types
         relative = sql_path[len("app/sql/v3/") :]
-
-        # Split into resource and filename
         parts = relative.split("/")
         if len(parts) != 2:
             return None
-
         resource, filename = parts
-
-        # Remove _complete.sql suffix
         if not filename.endswith("_complete.sql"):
             return None
-
         operation = filename[: -len("_complete.sql")]
-
-        # Build types path
-        types_path = f"app/types/v3/{resource}/{operation}_complete.py"
-        # Route name is just the operation (resource is already in the path)
-        route_name = operation.replace("-", "_")
-
-        return types_path, route_name
+        return operation.replace("-", "_")
     
     # Pattern: tests/sql/integration/infra/[resource]/[operation].sql
-    # -> tests/types/integration/infra/[resource]/[operation].py
     if sql_path.startswith("tests/sql/integration/infra/"):
-        # Remove prefix and replace sql with types
         relative = sql_path[len("tests/sql/integration/infra/") :]
-
-        # Split into resource and filename
         parts = relative.split("/")
         if len(parts) != 2:
             return None
-
         resource, filename = parts
-
-        # Remove .sql suffix
         if not filename.endswith(".sql"):
             return None
-
         operation = filename[: -len(".sql")]
-
-        # Build types path
-        types_path = f"tests/types/integration/infra/{resource}/{operation}.py"
-        # Route name is just the operation (resource is already in the path)
-        route_name = operation.replace("-", "_")
-
-        return types_path, route_name
+        return operation.replace("-", "_")
     
     # Pattern: tests/sql/integration/socket/[operation].sql
-    # -> tests/types/integration/socket/[operation].py
     if sql_path.startswith("tests/sql/integration/socket/"):
-        # Remove prefix and replace sql with types
         relative = sql_path[len("tests/sql/integration/socket/") :]
-
-        # Remove .sql suffix
         if not relative.endswith(".sql"):
             return None
-
         operation = relative[: -len(".sql")]
-
-        # Build types path
-        types_path = f"tests/types/integration/socket/{operation}.py"
-        # Route name is just the operation
-        route_name = operation.replace("-", "_")
-
-        return types_path, route_name
+        return operation.replace("-", "_")
 
     return None
 
 
 def generate_registry_entry(
-    sql_path: str, types_path: str, route_name: str
-) -> tuple[str, str, str, str, str, str, str] | None:
+    sql_path: str, route_name: str
+) -> tuple[str, str, str, str, str, str] | None:
     """Generate registry entry for a SQL file.
 
     Args:
         sql_path: SQL file path (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")
-        types_path: Types file path (e.g., "app/types/v3/agents/get_agent_new_complete.py")
         route_name: Route name (e.g., "get_agent_new")
 
     Returns:
-        Tuple of (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class) or None if invalid
+        Tuple of (registry_type, sql_path, sql_params_class, sql_row_class, api_request_class, api_response_class) or None if invalid
         registry_type is either "app" or "test"
     """
     # Process app/sql/v3/ files
     if sql_path.startswith("app/sql/v3/"):
-        # Convert types_path to module path (remove .py, replace / with .)
-        module_path = types_path.replace(".py", "").replace("/", ".")
-
         # Generate class names
         sql_params_class = _to_class_name(route_name, "SqlParams")
         sql_row_class = _to_class_name(route_name, "SqlRow")
         api_request_class = _to_class_name(route_name, "ApiRequest")
         api_response_class = _to_class_name(route_name, "ApiResponse")
 
-        return ("app", sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
+        return ("app", sql_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
     
     # Process test SQL files
     if sql_path.startswith("tests/sql/integration/"):
-        # Convert types_path to module path (remove .py, replace / with .)
-        module_path = types_path.replace(".py", "").replace("/", ".")
-
         # Generate class names
         sql_params_class = _to_class_name(route_name, "SqlParams")
         sql_row_class = _to_class_name(route_name, "SqlRow")
         api_request_class = _to_class_name(route_name, "ApiRequest")
         api_response_class = _to_class_name(route_name, "ApiResponse")
 
-        return ("test", sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
+        return ("test", sql_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
     
     return None
 
 
-def write_registry_file(
-    registry_entries: list[tuple[str, str, str, str, str, str, str]], registry_type: str, server_root: Path
+def write_consolidated_types_file(
+    type_definitions: list[tuple[str, str, str, str, str, str, str]], registry_type: str, server_root: Path
 ) -> None:
-    """Write registry file mapping SQL paths to type classes.
+    """Write consolidated types.py file with all class definitions and registry.
 
     Args:
-        registry_entries: List of (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class) tuples
+        type_definitions: List of (sql_path, route_name, types_content, sql_params_class, sql_row_class, api_request_class, api_response_class) tuples
         registry_type: Either "app" or "test"
         server_root: Server root directory
     """
     if registry_type == "app":
-        registry_file = server_root / "app" / "types" / "registry.py"
+        types_file = server_root / "app" / "sql" / "types.py"
     else:
-        registry_file = server_root / "tests" / "types" / "registry.py"
+        types_file = server_root / "tests" / "sql" / "types.py"
 
+    # Collect all unique imports
+    all_imports: set[str] = set()
+    all_imports.add("from typing import Any")
+    all_imports.add("from typing import TYPE_CHECKING, Literal, Type, TypeVar, overload")
+    all_imports.add("from pydantic import BaseModel")
+    
+    # Scan type definitions for imports
+    for _, _, types_content, _, _, _, _ in type_definitions:
+        for line in types_content.split("\n"):
+            if line.startswith("from typing import"):
+                all_imports.add(line)
+            elif line.startswith("from uuid import"):
+                all_imports.add(line)
+            elif line.startswith("from pydantic import"):
+                # Merge pydantic imports
+                if "Field" in line:
+                    all_imports.add("from pydantic import Field")
+    
+    # Sort imports
+    typing_imports = sorted([imp for imp in all_imports if imp.startswith("from typing")])
+    uuid_imports = sorted([imp for imp in all_imports if imp.startswith("from uuid")])
+    pydantic_imports = sorted([imp for imp in all_imports if imp.startswith("from pydantic")])
+    
     lines = [
-        '"""Registry mapping SQL file paths to their generated type classes.',
+        '"""SQL type definitions and registry - AUTO-GENERATED - DO NOT EDIT MANUALLY.',
         "",
-        "Auto-generated by sql-compile. Do not edit manually.",
+        "This file is automatically generated by sql-compile. All edits will be overwritten.",
         '"""',
         "",
-        "from pathlib import Path",
-        "from typing import TYPE_CHECKING, Literal, Type, TypeVar, overload",
-        "",
-        "from pydantic import BaseModel",
-        "",
-        "# Type variables for generic return types",
-        "TInput = TypeVar(\"TInput\", bound=BaseModel)",
-        "TOutput = TypeVar(\"TOutput\", bound=BaseModel)",
-        "",
-        "# Type alias for SQL strings loaded from files (semantic clarity)",
-        "SqlString = str",
-        "",
-        "if TYPE_CHECKING:",
     ]
-
-    # Add TYPE_CHECKING imports for all types (for type checkers)
-    # registry_entries is (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
-    for _, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(registry_entries, key=lambda x: x[1]):
-        lines.append(f"    from {module_path} import {sql_params_class}, {sql_row_class}, {api_request_class}, {api_response_class}")
-
+    
+    # Add imports
+    for imp in typing_imports:
+        lines.append(imp)
+    if uuid_imports:
+        lines.append("")
+        for imp in uuid_imports:
+            lines.append(imp)
+    if pydantic_imports:
+        lines.append("")
+        for imp in pydantic_imports:
+            lines.append(imp)
+    
     lines.append("")
     lines.append("")
-    lines.append("_registry: dict[str, tuple[str, str, str, str, str]] = {")
-
+    lines.append("# Type variables for generic return types")
+    lines.append("TInput = TypeVar(\"TInput\", bound=BaseModel)")
+    lines.append("TOutput = TypeVar(\"TOutput\", bound=BaseModel)")
+    lines.append("")
+    lines.append("# Type alias for SQL strings loaded from files (semantic clarity)")
+    lines.append("SqlString = str")
+    lines.append("")
+    lines.append("")
+    lines.append("# ============================================================================")
+    lines.append("# TYPE DEFINITIONS")
+    lines.append("# ============================================================================")
+    lines.append("")
+    
+    # Add all class definitions
+    for _, sql_path, types_content, _, _, _, _ in sorted(type_definitions, key=lambda x: x[0]):
+        # Split types_content by triple newlines to get each class section
+        sections = types_content.split("\n\n\n")
+        
+        # Add comment for this SQL file
+        lines.append("")
+        lines.append(f"# Generated from: {sql_path}")
+        lines.append("")
+        
+        for section in sections:
+            section_lines = section.split("\n")
+            class_lines: list[str] = []
+            in_docstring = False
+            docstring_delimiter = None
+            
+            for line in section_lines:
+                # Skip imports
+                if line.strip().startswith("from ") or line.strip().startswith("import "):
+                    continue
+                
+                # Track docstrings
+                stripped = line.strip()
+                if stripped.startswith('"""') or stripped.startswith("'''"):
+                    # Check if it's opening or closing
+                    quote_count = stripped.count('"""') + stripped.count("'''")
+                    if quote_count == 2 or (stripped.startswith('"""') and stripped.endswith('"""') and len(stripped) > 3):
+                        # Single-line docstring, skip it
+                        continue
+                    elif not in_docstring:
+                        # Opening docstring
+                        in_docstring = True
+                        docstring_delimiter = '"""' if '"""' in stripped else "'''"
+                        continue
+                    elif in_docstring and docstring_delimiter is not None and (docstring_delimiter in stripped):
+                        # Closing docstring
+                        in_docstring = False
+                        docstring_delimiter = None
+                        continue
+                
+                # Skip lines inside docstrings
+                if in_docstring:
+                    continue
+                
+                # Include everything else (class definitions and their content)
+                class_lines.append(line)
+            
+            # Add the class definition (skip if empty)
+            if class_lines and any(l.strip().startswith("class ") for l in class_lines):
+                lines.extend(class_lines)
+                lines.append("")
+    
+    lines.append("")
+    lines.append("")
+    lines.append("# ============================================================================")
+    lines.append("# REGISTRY")
+    lines.append("# ============================================================================")
+    lines.append("")
+    lines.append("_registry: dict[str, tuple[str, str, str, str]] = {")
+    
     # Add registry entries
-    # registry_entries is (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
-    for _, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(registry_entries, key=lambda x: x[1]):
+    # type_definitions is (sql_path, route_name, types_content, sql_params_class, sql_row_class, api_request_class, api_response_class)
+    for sql_path, _, _, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(type_definitions, key=lambda x: x[0]):
         lines.append(f'    "{sql_path}": (')
-        lines.append(f'        "{module_path}",')
         lines.append(f'        "{sql_params_class}",')
         lines.append(f'        "{sql_row_class}",')
         lines.append(f'        "{api_request_class}",')
         lines.append(f'        "{api_response_class}",')
         lines.append("    ),")
-
+    
     lines.append("}")
     lines.append("")
+    lines.append("")
+    lines.append("# ============================================================================")
+    lines.append("# HELPER FUNCTIONS")
+    lines.append("# ============================================================================")
     lines.append("")
     lines.append("def get_sql_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:")
     lines.append('    """Get SQL input and output types for a SQL file path.')
     lines.append("    ")
-    lines.append("    Uses lazy imports to avoid loading all types at startup.")
+    lines.append("    Args:")
+    lines.append('        sql_path: SQL file path (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")')
+    lines.append("    ")
+    lines.append("    Returns:")
+    lines.append("        Tuple of (SqlParamsType, SqlRowType)")
+    lines.append("    ")
+    lines.append("    Raises:")
+    lines.append("        ValueError: If no types are found for the SQL file path")
     lines.append('    """')
     lines.append('    if sql_path not in _registry:')
     lines.append('        raise ValueError(f"No types found for SQL path: {sql_path}")')
     lines.append("    ")
-    lines.append("    module_path, sql_params_class, sql_row_class, _, _ = _registry[sql_path]")
+    lines.append("    sql_params_class, sql_row_class, _, _ = _registry[sql_path]")
     lines.append("    ")
-    lines.append("    # Dynamic import")
-    lines.append("    import importlib")
-    lines.append("    module = importlib.import_module(module_path)")
-    lines.append("    sql_params_type = getattr(module, sql_params_class)")
-    lines.append("    sql_row_type = getattr(module, sql_row_class)")
+    lines.append("    # Get class from current module")
+    lines.append("    import sys")
+    lines.append("    current_module = sys.modules[__name__]")
+    lines.append("    sql_params_type = getattr(current_module, sql_params_class)")
+    lines.append("    sql_row_type = getattr(current_module, sql_row_class)")
     lines.append("    ")
     lines.append("    return sql_params_type, sql_row_type")
     lines.append("")
@@ -251,18 +300,25 @@ def write_registry_file(
     lines.append("def get_api_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:")
     lines.append('    """Get API request and response types for a SQL file path.')
     lines.append("    ")
-    lines.append("    Uses lazy imports to avoid loading all types at startup.")
+    lines.append("    Args:")
+    lines.append('        sql_path: SQL file path (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")')
+    lines.append("    ")
+    lines.append("    Returns:")
+    lines.append("        Tuple of (ApiRequestType, ApiResponseType)")
+    lines.append("    ")
+    lines.append("    Raises:")
+    lines.append("        ValueError: If no types are found for the SQL file path")
     lines.append('    """')
     lines.append('    if sql_path not in _registry:')
     lines.append('        raise ValueError(f"No types found for SQL path: {sql_path}")')
     lines.append("    ")
-    lines.append("    module_path, _, _, api_request_class, api_response_class = _registry[sql_path]")
+    lines.append("    _, _, api_request_class, api_response_class = _registry[sql_path]")
     lines.append("    ")
-    lines.append("    # Dynamic import")
-    lines.append("    import importlib")
-    lines.append("    module = importlib.import_module(module_path)")
-    lines.append("    api_request_type = getattr(module, api_request_class)")
-    lines.append("    api_response_type = getattr(module, api_response_class)")
+    lines.append("    # Get class from current module")
+    lines.append("    import sys")
+    lines.append("    current_module = sys.modules[__name__]")
+    lines.append("    api_request_type = getattr(current_module, api_request_class)")
+    lines.append("    api_response_type = getattr(current_module, api_response_class)")
     lines.append("    ")
     lines.append("    return api_request_type, api_response_type")
     lines.append("")
@@ -272,8 +328,7 @@ def write_registry_file(
     lines.append("if TYPE_CHECKING:")
     
     # Generate overload declarations for load_sql_query() for each SQL file
-    # registry_entries is (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
-    for _, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(registry_entries, key=lambda x: x[1]):
+    for sql_path, _, _, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(type_definitions, key=lambda x: x[0]):
         lines.append("    @overload")
         lines.append("    def load_sql_query(")
         lines.append(f'        file_path: Literal["{sql_path}"]')
@@ -296,7 +351,10 @@ def write_registry_file(
     lines.append("    Uses Literal overloads to provide strong type hints for file paths.")
     lines.append("")
     lines.append("    Args:")
-    lines.append('        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")')
+    if registry_type == "app":
+        lines.append('        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")')
+    else:
+        lines.append('        file_path: Relative path from server root (e.g., "tests/sql/integration/infra/activity/insert_test_profile.sql")')
     lines.append("")
     lines.append("    Returns:")
     lines.append("        SQL string with parameter placeholders ($1, $2, etc.)")
@@ -321,8 +379,7 @@ def write_registry_file(
     lines.append("if TYPE_CHECKING:")
     
     # Generate overload declarations for each SQL file
-    # registry_entries is (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
-    for _, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(registry_entries, key=lambda x: x[1]):
+    for sql_path, _, _, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(type_definitions, key=lambda x: x[0]):
         lines.append("    @overload")
         lines.append("    def load_sql_typed(")
         lines.append(f'        file_path: Literal["{sql_path}"]')
@@ -350,7 +407,10 @@ def write_registry_file(
     lines.append("    or access `InputType.model_fields` (Pydantic v2) to see all field definitions.")
     lines.append("")
     lines.append("    Args:")
-    lines.append('        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")')
+    if registry_type == "app":
+        lines.append('        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")')
+    else:
+        lines.append('        file_path: Relative path from server root (e.g., "tests/sql/integration/infra/activity/insert_test_profile.sql")')
     lines.append("")
     lines.append("    Returns:")
     lines.append("        Tuple of (InputType, OutputType) where:")
@@ -388,8 +448,7 @@ def write_registry_file(
     lines.append("if TYPE_CHECKING:")
     
     # Generate overload declarations for each SQL file
-    # registry_entries is (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
-    for _, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(registry_entries, key=lambda x: x[1]):
+    for sql_path, _, _, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(type_definitions, key=lambda x: x[0]):
         lines.append("    @overload")
         lines.append("    def load_api_types(")
         lines.append(f'        file_path: Literal["{sql_path}"]')
@@ -416,7 +475,10 @@ def write_registry_file(
     lines.append("    the IDE will know the exact ApiRequestType and ApiResponseType classes.")
     lines.append("")
     lines.append("    Args:")
-    lines.append('        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")')
+    if registry_type == "app":
+        lines.append('        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")')
+    else:
+        lines.append('        file_path: Relative path from server root (e.g., "tests/sql/integration/infra/activity/insert_test_profile.sql")')
     lines.append("")
     lines.append("    Returns:")
     lines.append("        Tuple of (ApiRequestType, ApiResponseType) where:")
@@ -444,12 +506,12 @@ def write_registry_file(
     lines.append("    api_request_type, api_response_type = get_api_types(file_path)")
     lines.append("    return api_request_type, api_response_type")
 
-    registry_file.write_text("\n".join(lines))
+    types_file.write_text("\n".join(lines))
 
 
 async def generate_types_for_sql_file(
     sql_path: str, conn: asyncpg.Connection, server_root: Path
-) -> tuple[bool, str, tuple[str, str, str, str, str] | None]:
+) -> tuple[bool, str, tuple[str, str, str, str, str, str, str] | None]:
     """Generate types for a single SQL file.
 
     Args:
@@ -458,7 +520,9 @@ async def generate_types_for_sql_file(
         server_root: Server root directory
 
     Returns:
-        Tuple of (success, error_message, registry_entry)
+        Tuple of (success, error_message, type_definition) where type_definition is:
+        (sql_path, route_name, types_content, sql_params_class, sql_row_class, api_request_class, api_response_class)
+        or None if skipped/error
     """
     try:
         # Introspect SQL file
@@ -470,29 +534,23 @@ async def generate_types_for_sql_file(
                 return True, f"Skipping {sql_path} (introspection failed: {metadata.error})", None
             return False, metadata.error, None
 
-        # Convert SQL path to types path
-        types_info = _sql_path_to_types_path(sql_path)
-        if not types_info:
+        # Extract route name from SQL path
+        route_name = _sql_path_to_route_name(sql_path)
+        if not route_name:
             return True, f"Skipping {sql_path} (doesn't match route pattern)", None
 
-        types_path, route_name = types_info
-
-        # Generate types
+        # Generate types content
         types_content = generate_types_file(metadata, route_name)
 
-        # Write types file to central types folder
-        types_file = server_root / types_path
+        # Generate class names
+        sql_params_class = _to_class_name(route_name, "SqlParams")
+        sql_row_class = _to_class_name(route_name, "SqlRow")
+        api_request_class = _to_class_name(route_name, "ApiRequest")
+        api_response_class = _to_class_name(route_name, "ApiResponse")
 
-        # Ensure directory exists
-        types_file.parent.mkdir(parents=True, exist_ok=True)
+        type_definition = (sql_path, route_name, types_content, sql_params_class, sql_row_class, api_request_class, api_response_class)
 
-        # Write file
-        types_file.write_text(types_content)
-
-        # Generate registry entry
-        registry_entry = generate_registry_entry(sql_path, types_path, route_name)
-
-        return True, f"Generated {types_file.relative_to(server_root)}", registry_entry
+        return True, f"Generated types for {sql_path}", type_definition
 
     except Exception as e:
         # For test SQL files, treat exceptions as skips (they're often mocks/seeds)
@@ -547,13 +605,13 @@ async def main() -> int:
         errors: list[tuple[str, str]] = []  # (sql_path, error_message)
         successes: list[str] = []
         skipped: list[str] = []
-        registry_entries: list[tuple[str, str, str, str, str]] = []  # (registry_type, sql_path, module_path, input_class_name, output_class_name)
+        type_definitions: list[tuple[str, str, str, str, str, str, str]] = []  # (sql_path, route_name, types_content, sql_params_class, sql_row_class, api_request_class, api_response_class)
 
         for sql_file in sorted(sql_files):
             # Get relative path from server root
             sql_path = str(sql_file.relative_to(server_root))
 
-            success, message, registry_entry = await generate_types_for_sql_file(
+            success, message, type_definition = await generate_types_for_sql_file(
                 sql_path, conn, server_root
             )
 
@@ -561,9 +619,9 @@ async def main() -> int:
                 if "Skipping" not in message:
                     successes.append(message)
                     print(f"✅ {message}")
-                    # Collect registry entry if available
-                    if registry_entry:
-                        registry_entries.append(registry_entry)
+                    # Collect type definition if available
+                    if type_definition:
+                        type_definitions.append(type_definition)
                 else:
                     skipped.append(sql_path)
                     print(f"⏭️  {message}")
@@ -572,19 +630,19 @@ async def main() -> int:
                 errors.append((sql_path, message))
                 print(f"❌ {sql_path}: {message}")
 
-        # Separate app and test registry entries
-        app_registry_entries = [e for e in registry_entries if e[0] == "app"]
-        test_registry_entries = [e for e in registry_entries if e[0] == "test"]
+        # Separate app and test type definitions
+        app_type_definitions = [td for td in type_definitions if td[0].startswith("app/sql/v3/")]
+        test_type_definitions = [td for td in type_definitions if td[0].startswith("tests/sql/integration/")]
         
-        # Write app registry file if we have entries
-        if app_registry_entries:
-            write_registry_file(app_registry_entries, "app", server_root)
-            print(f"✅ Generated app/types/registry.py with {len(app_registry_entries)} entries")
+        # Write app consolidated types file if we have entries
+        if app_type_definitions:
+            write_consolidated_types_file(app_type_definitions, "app", server_root)
+            print(f"✅ Generated app/sql/types.py with {len(app_type_definitions)} type definitions")
         
-        # Write test registry file if we have entries
-        if test_registry_entries:
-            write_registry_file(test_registry_entries, "test", server_root)
-            print(f"✅ Generated tests/types/registry.py with {len(test_registry_entries)} entries")
+        # Write test consolidated types file if we have entries
+        if test_type_definitions:
+            write_consolidated_types_file(test_type_definitions, "test", server_root)
+            print(f"✅ Generated tests/sql/types.py with {len(test_type_definitions)} type definitions")
 
         # Summary
         print(f"\n📊 Summary:")

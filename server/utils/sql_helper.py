@@ -10,7 +10,7 @@ import asyncpg  # type: ignore
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from app.types.registry import load_sql_typed
+    from app.sql.types import load_sql_typed
 
 from pathlib import Path
 
@@ -79,7 +79,7 @@ async def execute_sql_typed(
         ```
     """
     # Import here to avoid circular imports
-    from app.types.registry import load_sql_query, load_sql_typed
+    from app.sql.types import load_sql_query, load_sql_typed
 
     # Load SQL query and types separately
     sql_query = load_sql_query(sql_path)
