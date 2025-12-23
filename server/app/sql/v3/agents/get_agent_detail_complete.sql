@@ -7,6 +7,12 @@ WITH params AS (
     SELECT $1::uuid AS agent_id,
            $2::uuid AS profile_id
 ),
+agent_exists_check AS (
+    -- Check if agent exists independently of access control
+    SELECT EXISTS(
+        SELECT 1 FROM agents WHERE id = (SELECT agent_id FROM params)
+    )::boolean as agent_exists
+),
 agent_info AS (
     SELECT 
         id::text as agent_id,
@@ -242,6 +248,8 @@ model_voices_data_flat AS (
     WHERE mv.active = true
 )
 SELECT 
+    -- Agent existence check (always returned)
+    aec.agent_exists::boolean as agent_exists,
     -- Top-level agent fields
     ai.agent_id::text as agent_id,
     ai.name::text as name,
@@ -322,24 +330,28 @@ SELECT
     -- Available voices for selected model with __ prefix
     mvf_selected.voice_id::text as "available_voices__id",
     mvf_selected.voice_value::text as "available_voices__voice"
-FROM agent_info ai
-LEFT JOIN agent_active_prompt aap ON aap.agent_id = ai.agent_id
-LEFT JOIN agent_departments_data add ON add.agent_id = ai.agent_id
-LEFT JOIN agent_selected_temperature ast ON ast.agent_id = ai.agent_id
-LEFT JOIN agent_selected_reasoning asr ON asr.agent_id = ai.agent_id
-CROSS JOIN valid_departments_data vdd
-CROSS JOIN prompt_mapping_data pmd
-LEFT JOIN agent_department_prompt_links_data adpl ON true
-LEFT JOIN debug_data dd ON true
-CROSS JOIN all_models am
-LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = am.model_id
-LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = am.model_id
-LEFT JOIN model_voices_data_flat mvf ON mvf.model_id = am.model_id
-LEFT JOIN model_temperature_levels_bounds mtb ON mtb.model_id = am.model_id
-LEFT JOIN model_reasoning_levels_data_with_ids mrl_selected ON mrl_selected.model_id = ai.model_id
-LEFT JOIN model_temperature_levels_data_with_ids mtl_selected ON mtl_selected.model_id = ai.model_id
-LEFT JOIN model_voices_data_flat mvf_selected ON mvf_selected.model_id = ai.model_id
+FROM agent_exists_check aec
 CROSS JOIN user_profile up
 CROSS JOIN user_has_agent_access uhaa
-WHERE uhaa.has_access = true
+LEFT JOIN agent_info ai ON ai.agent_id = (SELECT agent_id::text FROM params) AND uhaa.has_access = true
+LEFT JOIN agent_active_prompt aap ON aap.agent_id = ai.agent_id AND uhaa.has_access = true
+LEFT JOIN agent_departments_data add ON add.agent_id = ai.agent_id AND uhaa.has_access = true
+LEFT JOIN agent_selected_temperature ast ON ast.agent_id = ai.agent_id AND uhaa.has_access = true
+LEFT JOIN agent_selected_reasoning asr ON asr.agent_id = ai.agent_id AND uhaa.has_access = true
+LEFT JOIN valid_departments_data vdd ON uhaa.has_access = true
+LEFT JOIN prompt_mapping_data pmd ON uhaa.has_access = true
+LEFT JOIN agent_department_prompt_links_data adpl ON uhaa.has_access = true
+LEFT JOIN debug_data dd ON uhaa.has_access = true
+LEFT JOIN all_models am ON uhaa.has_access = true
+LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = am.model_id AND uhaa.has_access = true
+LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = am.model_id AND uhaa.has_access = true
+LEFT JOIN model_voices_data_flat mvf ON mvf.model_id = am.model_id AND uhaa.has_access = true
+LEFT JOIN model_temperature_levels_bounds mtb ON mtb.model_id = am.model_id AND uhaa.has_access = true
+LEFT JOIN model_reasoning_levels_data_with_ids mrl_selected ON mrl_selected.model_id = ai.model_id AND uhaa.has_access = true
+LEFT JOIN model_temperature_levels_data_with_ids mtl_selected ON mtl_selected.model_id = ai.model_id AND uhaa.has_access = true
+LEFT JOIN model_voices_data_flat mvf_selected ON mvf_selected.model_id = ai.model_id AND uhaa.has_access = true
+-- Always return at least one row to check agent_exists and has_access
+-- Filter to one row when has_access is true (to avoid cartesian product from CROSS JOINs)
+-- When has_access is false, we still want one row to return agent_exists for error handling
+LIMIT 1
 

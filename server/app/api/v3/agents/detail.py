@@ -80,21 +80,18 @@ async def get_agent_detail(
             ),
         )
 
-        # Check if result is empty (no access or not found)
-        # SQL handles access control via WHERE clause, so empty result means no access or not found
-        if not result.agent_id:
-            # Check if agent exists but user doesn't have department access
-            agent_exists_check = await conn.fetchval(
-                "SELECT EXISTS(SELECT 1 FROM agents WHERE id = $1)",
-                request.agent_id,
-            )
-            if agent_exists_check:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this agent. It may be restricted to other departments.",
-                )
+        # Check if agent exists and has access using SQL result
+        # SQL now returns agent_exists field to distinguish 404 vs 403
+        if not result.agent_exists:
             raise HTTPException(
                 status_code=404, detail=f"Agent {request.agent_id} not found"
+            )
+        
+        if not result.agent_id:
+            # Agent exists but user doesn't have access
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this agent. It may be restricted to other departments.",
             )
 
         # Set audit context with data from SQL query

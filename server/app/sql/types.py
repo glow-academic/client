@@ -161,10 +161,16 @@ class GetAgentDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class GetAgentDetailAvailableVoicesItem(BaseModel):
+class GetAgentDetailTemperatureLevelsItem(BaseModel):
 
     id: str
-    voice: str
+    temperature: str
+    is_upper: bool
+
+class GetAgentDetailDepartmentMappingItem(BaseModel):
+
+    name: str
+    description: str
 
 class GetAgentDetailDebugInfoItem(BaseModel):
 
@@ -172,39 +178,18 @@ class GetAgentDetailDebugInfoItem(BaseModel):
     model_id: str
     content: str
 
-class GetAgentDetailDepartmentMappingItem(BaseModel):
-
-    name: str
-    description: str
-
-class GetAgentDetailPromptMappingItem(BaseModel):
-
-    system_prompt: str
-    updated_at: str
-    department_ids: list[str]
-    can_delete: bool
-
-class GetAgentDetailReasoningOptionsItem(BaseModel):
-
-    reasoning_level: str
-
 class GetAgentDetailDepartmentPromptLinksItem(BaseModel):
 
     department_id: str
     prompt_id: str
 
-class GetAgentDetailTemperatureLevelsItem(BaseModel):
-
-    temperature: str
-    is_upper: bool
-
 class GetAgentDetailModelMappingReasoningOptionsItem(BaseModel):
-    pass
 
+    reasoning_level: str
 
 class GetAgentDetailModelMappingAvailableVoicesItem(BaseModel):
-    pass
 
+    voice: str
 
 class GetAgentDetailModelMappingTemperatureLevelsItem(BaseModel):
     pass
@@ -220,8 +205,24 @@ class GetAgentDetailModelMappingItem(BaseModel):
     available_voices: list[GetAgentDetailModelMappingAvailableVoicesItem]
     temperature_levels: list[GetAgentDetailModelMappingTemperatureLevelsItem]
 
+class GetAgentDetailPromptMappingItem(BaseModel):
+
+    system_prompt: str
+    updated_at: str
+    department_ids: list[str]
+    can_delete: bool
+
+class GetAgentDetailAvailableVoicesItem(BaseModel):
+    pass
+
+
+class GetAgentDetailReasoningOptionsItem(BaseModel):
+    pass
+
+
 class GetAgentDetailSqlRow(BaseModel):
 
+    agent_exists: bool
     agent_id: str
     name: str
     description: str
@@ -243,14 +244,14 @@ class GetAgentDetailSqlRow(BaseModel):
     temperature_upper: float
     valid_model_ids: list[str]
     actor_name: str
-    available_voices: list[GetAgentDetailAvailableVoicesItem]
-    debug_info: list[GetAgentDetailDebugInfoItem]
-    department_mapping: list[GetAgentDetailDepartmentMappingItem]
-    prompt_mapping: list[GetAgentDetailPromptMappingItem]
-    reasoning_options: list[GetAgentDetailReasoningOptionsItem]
-    department_prompt_links: list[GetAgentDetailDepartmentPromptLinksItem]
     temperature_levels: list[GetAgentDetailTemperatureLevelsItem]
+    department_mapping: list[GetAgentDetailDepartmentMappingItem]
+    debug_info: list[GetAgentDetailDebugInfoItem]
+    department_prompt_links: list[GetAgentDetailDepartmentPromptLinksItem]
     model_mapping: list[GetAgentDetailModelMappingItem]
+    prompt_mapping: list[GetAgentDetailPromptMappingItem]
+    available_voices: list[GetAgentDetailAvailableVoicesItem]
+    reasoning_options: list[GetAgentDetailReasoningOptionsItem]
 
 class GetAgentDetailApiRequest(BaseModel):
 
@@ -258,6 +259,7 @@ class GetAgentDetailApiRequest(BaseModel):
 
 class GetAgentDetailApiResponse(BaseModel):
 
+    agent_exists: bool
     agent_id: str
     name: str
     description: str
@@ -279,14 +281,14 @@ class GetAgentDetailApiResponse(BaseModel):
     temperature_upper: float
     valid_model_ids: list[str]
     actor_name: str
-    available_voices: list[GetAgentDetailAvailableVoicesItem]
-    debug_info: list[GetAgentDetailDebugInfoItem]
-    department_mapping: dict[str, GetAgentDetailDepartmentMappingItem]
-    prompt_mapping: dict[str, GetAgentDetailPromptMappingItem]
-    reasoning_options: list[GetAgentDetailReasoningOptionsItem]
-    department_prompt_links: dict[str, GetAgentDetailDepartmentPromptLinksItem]
     temperature_levels: list[GetAgentDetailTemperatureLevelsItem]
+    department_mapping: dict[str, GetAgentDetailDepartmentMappingItem]
+    debug_info: list[GetAgentDetailDebugInfoItem]
+    department_prompt_links: dict[str, GetAgentDetailDepartmentPromptLinksItem]
     model_mapping: dict[str, GetAgentDetailModelMappingItem]
+    prompt_mapping: dict[str, GetAgentDetailPromptMappingItem]
+    available_voices: list[GetAgentDetailAvailableVoicesItem]
+    reasoning_options: list[GetAgentDetailReasoningOptionsItem]
 
 
 
@@ -367,11 +369,15 @@ class GetAgentsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class GetAgentsListDepartmentMappingItem(BaseModel):
+class GetAgentsListModelMappingItem(BaseModel):
 
     id: str
     name: str
     description: str
+
+class GetAgentsListDepartmentMappingItem(BaseModel):
+    pass
+
 
 class GetAgentsListAgentsItem(BaseModel):
 
@@ -389,16 +395,12 @@ class GetAgentsListAgentsItem(BaseModel):
     model_description: str
     actor_name: str
 
-class GetAgentsListModelMappingItem(BaseModel):
-    pass
-
-
 class GetAgentsListSqlRow(BaseModel):
 
     actor_name: str
+    model_mapping: list[GetAgentsListModelMappingItem]
     department_mapping: list[GetAgentsListDepartmentMappingItem]
     agents: list[GetAgentsListAgentsItem]
-    model_mapping: list[GetAgentsListModelMappingItem]
 
 class GetAgentsListApiRequest(BaseModel):
 
@@ -407,9 +409,9 @@ class GetAgentsListApiRequest(BaseModel):
 class GetAgentsListApiResponse(BaseModel):
 
     actor_name: str
+    model_mapping: dict[str, GetAgentsListModelMappingItem]
     department_mapping: dict[str, GetAgentsListDepartmentMappingItem]
     agents: list[GetAgentsListAgentsItem]
-    model_mapping: dict[str, GetAgentsListModelMappingItem]
 
 
 

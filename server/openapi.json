@@ -31334,6 +31334,10 @@
       },
       "GetAgentDetailApiResponse": {
         "properties": {
+          "agent_exists": {
+            "type": "boolean",
+            "title": "Agent Exists"
+          },
           "agent_id": {
             "type": "string",
             "title": "Agent Id"
@@ -31433,19 +31437,12 @@
             "type": "string",
             "title": "Actor Name"
           },
-          "available_voices": {
+          "temperature_levels": {
             "items": {
-              "$ref": "#/components/schemas/GetAgentDetailAvailableVoicesItem"
+              "$ref": "#/components/schemas/GetAgentDetailTemperatureLevelsItem"
             },
             "type": "array",
-            "title": "Available Voices"
-          },
-          "debug_info": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentDetailDebugInfoItem"
-            },
-            "type": "array",
-            "title": "Debug Info"
+            "title": "Temperature Levels"
           },
           "department_mapping": {
             "additionalProperties": {
@@ -31454,19 +31451,12 @@
             "type": "object",
             "title": "Department Mapping"
           },
-          "prompt_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/GetAgentDetailPromptMappingItem"
-            },
-            "type": "object",
-            "title": "Prompt Mapping"
-          },
-          "reasoning_options": {
+          "debug_info": {
             "items": {
-              "$ref": "#/components/schemas/GetAgentDetailReasoningOptionsItem"
+              "$ref": "#/components/schemas/GetAgentDetailDebugInfoItem"
             },
             "type": "array",
-            "title": "Reasoning Options"
+            "title": "Debug Info"
           },
           "department_prompt_links": {
             "additionalProperties": {
@@ -31475,23 +31465,38 @@
             "type": "object",
             "title": "Department Prompt Links"
           },
-          "temperature_levels": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentDetailTemperatureLevelsItem"
-            },
-            "type": "array",
-            "title": "Temperature Levels"
-          },
           "model_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/GetAgentDetailModelMappingItem"
             },
             "type": "object",
             "title": "Model Mapping"
+          },
+          "prompt_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/GetAgentDetailPromptMappingItem"
+            },
+            "type": "object",
+            "title": "Prompt Mapping"
+          },
+          "available_voices": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentDetailAvailableVoicesItem"
+            },
+            "type": "array",
+            "title": "Available Voices"
+          },
+          "reasoning_options": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentDetailReasoningOptionsItem"
+            },
+            "type": "array",
+            "title": "Reasoning Options"
           }
         },
         "type": "object",
         "required": [
+          "agent_exists",
           "agent_id",
           "name",
           "description",
@@ -31513,33 +31518,20 @@
           "temperature_upper",
           "valid_model_ids",
           "actor_name",
-          "available_voices",
-          "debug_info",
-          "department_mapping",
-          "prompt_mapping",
-          "reasoning_options",
-          "department_prompt_links",
           "temperature_levels",
-          "model_mapping"
+          "department_mapping",
+          "debug_info",
+          "department_prompt_links",
+          "model_mapping",
+          "prompt_mapping",
+          "available_voices",
+          "reasoning_options"
         ],
         "title": "GetAgentDetailApiResponse"
       },
       "GetAgentDetailAvailableVoicesItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "voice": {
-            "type": "string",
-            "title": "Voice"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "id",
-          "voice"
-        ],
         "title": "GetAgentDetailAvailableVoicesItem"
       },
       "GetAgentDetailDebugInfoItem": {
@@ -31602,8 +31594,16 @@
         "title": "GetAgentDetailDepartmentPromptLinksItem"
       },
       "GetAgentDetailModelMappingAvailableVoicesItem": {
-        "properties": {},
+        "properties": {
+          "voice": {
+            "type": "string",
+            "title": "Voice"
+          }
+        },
         "type": "object",
+        "required": [
+          "voice"
+        ],
         "title": "GetAgentDetailModelMappingAvailableVoicesItem"
       },
       "GetAgentDetailModelMappingItem": {
@@ -31665,8 +31665,16 @@
         "title": "GetAgentDetailModelMappingItem"
       },
       "GetAgentDetailModelMappingReasoningOptionsItem": {
-        "properties": {},
+        "properties": {
+          "reasoning_level": {
+            "type": "string",
+            "title": "Reasoning Level"
+          }
+        },
         "type": "object",
+        "required": [
+          "reasoning_level"
+        ],
         "title": "GetAgentDetailModelMappingReasoningOptionsItem"
       },
       "GetAgentDetailModelMappingTemperatureLevelsItem": {
@@ -31706,20 +31714,16 @@
         "title": "GetAgentDetailPromptMappingItem"
       },
       "GetAgentDetailReasoningOptionsItem": {
-        "properties": {
-          "reasoning_level": {
-            "type": "string",
-            "title": "Reasoning Level"
-          }
-        },
+        "properties": {},
         "type": "object",
-        "required": [
-          "reasoning_level"
-        ],
         "title": "GetAgentDetailReasoningOptionsItem"
       },
       "GetAgentDetailTemperatureLevelsItem": {
         "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
           "temperature": {
             "type": "string",
             "title": "Temperature"
@@ -31731,6 +31735,7 @@
         },
         "type": "object",
         "required": [
+          "id",
           "temperature",
           "is_upper"
         ],
@@ -32008,6 +32013,13 @@
             "type": "string",
             "title": "Actor Name"
           },
+          "model_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/GetAgentsListModelMappingItem"
+            },
+            "type": "object",
+            "title": "Model Mapping"
+          },
           "department_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/GetAgentsListDepartmentMappingItem"
@@ -32021,25 +32033,23 @@
             },
             "type": "array",
             "title": "Agents"
-          },
-          "model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/GetAgentsListModelMappingItem"
-            },
-            "type": "object",
-            "title": "Model Mapping"
           }
         },
         "type": "object",
         "required": [
           "actor_name",
+          "model_mapping",
           "department_mapping",
-          "agents",
-          "model_mapping"
+          "agents"
         ],
         "title": "GetAgentsListApiResponse"
       },
       "GetAgentsListDepartmentMappingItem": {
+        "properties": {},
+        "type": "object",
+        "title": "GetAgentsListDepartmentMappingItem"
+      },
+      "GetAgentsListModelMappingItem": {
         "properties": {
           "id": {
             "type": "string",
@@ -32060,11 +32070,6 @@
           "name",
           "description"
         ],
-        "title": "GetAgentsListDepartmentMappingItem"
-      },
-      "GetAgentsListModelMappingItem": {
-        "properties": {},
-        "type": "object",
         "title": "GetAgentsListModelMappingItem"
       },
       "GradeItem": {
