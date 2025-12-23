@@ -32,11 +32,15 @@ async def create_test_profile(
 
 
 async def create_test_department(
-    db: asyncpg.Connection, title: str = "Test Department"
+    db: asyncpg.Connection,
+    title: str = "Test Department",
+    description: str = "Test Department Description",
 ) -> str:
     """Create a test department."""
     dept_id = await db.fetchval(
-        "INSERT INTO departments(title, active) VALUES ($1, true) RETURNING id", title
+        "INSERT INTO departments(title, description, active) VALUES ($1, $2, true) RETURNING id",
+        title,
+        description,
     )
     return str(dept_id)
 

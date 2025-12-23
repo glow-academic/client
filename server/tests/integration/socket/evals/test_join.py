@@ -19,15 +19,14 @@ async def test_eval_join_success(
 
     # Create test eval and attempt
     eval_id = await db.fetchval(
-        "INSERT INTO evals(title, active) VALUES ('Test Eval', true) RETURNING id"
+        "INSERT INTO evals(name, description, active) VALUES ('Test Eval', 'Test Description', true) RETURNING id"
     )
 
-    # Create an eval attempt (eval_attempts table)
+    # Create an eval attempt (eval_attempts table - no profile_id or active columns)
     attempt_id = await db.fetchval(
-        "INSERT INTO eval_attempts(eval_id, profile_id, active) "
-        "VALUES ($1, $2, true) RETURNING id",
+        "INSERT INTO eval_attempts(eval_id) "
+        "VALUES ($1) RETURNING id",
         eval_id,
-        profile_id,
     )
 
     sid = "test_sid_123"

@@ -20,15 +20,19 @@ async def test_eval_enter_success(
 
     # Create test eval
     eval_id = await db.fetchval(
-        "INSERT INTO evals(title, active) VALUES ('Test Eval', true) RETURNING id"
+        "INSERT INTO evals(name, description, active) VALUES ('Test Eval', 'Test Description', true) RETURNING id"
     )
 
-    # Create test
+    # Create a run first (tests table requires run_id)
+    run_id = await db.fetchval(
+        "INSERT INTO runs(input_tokens, output_tokens) VALUES (0, 0) RETURNING id"
+    )
+    
+    # Create test (tests table requires title, trace_id, and run_id)
     test_id = await db.fetchval(
-        "INSERT INTO tests(eval_id, profile_id, active) "
-        "VALUES ($1, $2, true) RETURNING id",
-        eval_id,
-        profile_id,
+        "INSERT INTO tests(title, trace_id, run_id) "
+        "VALUES ('Test Title', 'test-trace-id', $1) RETURNING id",
+        run_id,
     )
 
     sid = "test_sid_123"
