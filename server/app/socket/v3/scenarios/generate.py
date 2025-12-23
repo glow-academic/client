@@ -18,7 +18,6 @@ from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
 from app.utils.jinja_renderer import render_template
 from app.utils.logging.db_logger import get_logger
-from app.utils.scenario.image_generation import set_image_generation_context
 from app.utils.sql_helper import load_sql
 from app.utils.tools.build_pydantic_fields import \
     build_function_signature_string
@@ -677,13 +676,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     )
                     return
 
-                await set_image_generation_context(
-                    agent_id=str(image_agent_id),
-                    profile_id=str(final_profile_id),
-                    primary_id=primary_id if primary_id else "",
-                    department_id=str(department_id) if department_id else None,
-                    room=sid,  # WebSocket room for emitting events
-                )
+                # Image generation context is now passed directly to background tasks (no-op removed)
 
             # 1. Title and Description Tool (always included)
             # Build signature from database config if available

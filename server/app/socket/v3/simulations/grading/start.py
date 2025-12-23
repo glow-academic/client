@@ -14,8 +14,6 @@ from app.infra.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_safe_field_name import \
     create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
@@ -315,11 +313,89 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             has_audio_messages = any(msg.get("audio", False) for msg in messages)
             grade_voice_agent_id = context_row.get("grade_voice_agent_id")
 
-            # Always enable message numbering for grading
+            # Always enable message numbering for grading (inlined from get_simulation_conversation_history)
+            from datetime import datetime
             include_message_numbers = True
-            conversation_history, message_id_map = get_simulation_conversation_history(
-                messages, include_message_numbers=include_message_numbers
-            )
+            conversation_history: list[TResponseInputItem] = []
+            message_id_map: dict[str, int] = {}
+            message_number = 1
+
+            # Filter out error messages and make a list of all items
+            items = [msg for msg in messages if not msg.get("content", "").startswith("Error:")]
+
+            # sort items by created_at
+            items = sorted(items, key=lambda x: x.get("created_at", datetime.min))
+
+            # Group messages by type to handle consecutive responses
+            current_response_messages: list[dict[str, Any]] = []
+
+            for item in items:
+                # Handle both "type" (legacy/test) and "role" (database) fields
+                msg_type = item.get("type", "")
+                msg_role = item.get("role", "")
+                msg_content = item.get("content", "")
+                message_id = item.get("id", "")
+
+                # Check if this is a user message (type="query" or role="user")
+                is_user_message = (
+                    msg_type == "query" or msg_role == "user"
+                ) and msg_content != ""
+
+                if is_user_message:
+                    # If we have pending response messages, add the latest one
+                    if current_response_messages:
+                        latest_response = current_response_messages[-1]
+                        response_id = latest_response.get("id", "")
+                        content = latest_response.get("content", "")
+
+                        if include_message_numbers:
+                            content = f"[{message_number}] {content}"
+                            if response_id:
+                                message_id_map[response_id] = message_number
+                            message_number += 1
+
+                        assistant_message_item: TResponseInputItem = {
+                            "role": "assistant",
+                            "content": content,
+                        }
+                        conversation_history.append(assistant_message_item)
+                        current_response_messages = []
+
+                    # Add the user message
+                    content = msg_content
+                    if include_message_numbers:
+                        content = f"[{message_number}] {content}"
+                        if message_id:
+                            message_id_map[message_id] = message_number
+                        message_number += 1
+
+                    user_message_item: TResponseInputItem = {
+                        "role": "user",
+                        "content": content,
+                    }
+                    conversation_history.append(user_message_item)
+                # Check if this is an assistant message (type="response" or role="assistant")
+                elif (msg_type == "response" or msg_role == "assistant") and msg_content != "":
+                    # Collect response messages to find the latest one
+                    current_response_messages.append(item)
+
+            # Handle any remaining response messages at the end
+            if current_response_messages:
+                latest_response = current_response_messages[-1]
+                response_id = latest_response.get("id", "")
+                content = latest_response.get("content", "")
+
+                if include_message_numbers:
+                    content = f"[{message_number}] {content}"
+                    if response_id:
+                        message_id_map[response_id] = message_number
+                    message_number += 1
+
+                current_assistant_message_item: TResponseInputItem = {
+                    "role": "assistant",
+                    "content": content,
+                }
+                conversation_history.append(current_assistant_message_item)
 
             # Format scenario from context
             chat_scenario = format_chat_scenario(context["problem_statement"])

@@ -23,12 +23,9 @@ from app.socket.v3.simulations.streaming.tool_call import (
     _simulation_tool_call_token_impl)
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
-from app.utils.personas.find_persona_by_name import find_persona_by_name
 from app.utils.sql_helper import load_sql
 from app.utils.tools.build_pydantic_fields import \
     build_function_signature_string
@@ -727,7 +724,7 @@ async def _simulation_text_send_impl(
                             logger.info(f"Speak tool called: persona={persona}, message_length={len(message)}")
                             
                             # Find persona by name
-                            persona_match = find_persona_by_name(persona.strip() if persona else "", personas)
+                            persona_match = find_persona_by_name_inline(persona.strip() if persona else "", personas)
                             if not persona_match:
                                 available_list = "\n".join(f"  - {p.get('persona_name') or p.get('name', '')}" for p in personas)
                                 error_msg = f"Persona '{persona}' not found. Available personas:\n{available_list}"
@@ -1222,7 +1219,7 @@ Tool Usage Instructions:
                                             # Resolve persona_id if we have persona_so_far
                                             persona_id_str = None
                                             if tool_call_state["persona_so_far"]:
-                                                persona_match = find_persona_by_name(
+                                                persona_match = find_persona_by_name_inline(
                                                     tool_call_state["persona_so_far"],
                                                     personas,
                                                 )
@@ -1438,7 +1435,7 @@ Tool Usage Instructions:
                                                     # Link to persona if we have it and haven't already
                                                     if final_persona:
                                                         persona_match = (
-                                                            find_persona_by_name(
+                                                            find_persona_by_name_inline(
                                                                 final_persona, personas
                                                             )
                                                         )
@@ -1474,7 +1471,7 @@ Tool Usage Instructions:
                                                     persona_id_str = None
                                                     if final_persona:
                                                         persona_match = (
-                                                            find_persona_by_name(
+                                                            find_persona_by_name_inline(
                                                                 final_persona, personas
                                                             )
                                                         )
@@ -1674,7 +1671,7 @@ Tool Usage Instructions:
                                                     # Link to persona if we have it and haven't already
                                                     if final_persona:
                                                         persona_match = (
-                                                            find_persona_by_name(
+                                                            find_persona_by_name_inline(
                                                                 final_persona, personas
                                                             )
                                                         )
@@ -1710,7 +1707,7 @@ Tool Usage Instructions:
                                                     persona_id_str = None
                                                     if final_persona:
                                                         persona_match = (
-                                                            find_persona_by_name(
+                                                            find_persona_by_name_inline(
                                                                 final_persona, personas
                                                             )
                                                         )
@@ -1904,7 +1901,7 @@ Tool Usage Instructions:
                                                         # Link to persona if we have it and haven't already
                                                         if final_persona:
                                                             persona_match = (
-                                                                find_persona_by_name(
+                                                                find_persona_by_name_inline(
                                                                     final_persona,
                                                                     personas,
                                                                 )
@@ -1943,7 +1940,7 @@ Tool Usage Instructions:
                                                         persona_id_str = None
                                                         if final_persona:
                                                             persona_match = (
-                                                                find_persona_by_name(
+                                                                find_persona_by_name_inline(
                                                                     final_persona,
                                                                     personas,
                                                                 )

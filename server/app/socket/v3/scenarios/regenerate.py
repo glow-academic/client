@@ -432,7 +432,8 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # Set image generation context before creating tools (async)
             if images_enabled and final_profile_id:
-                await set_image_generation_context(
+                # Image generation context is now passed directly to background tasks (no-op removed)
+                # await set_image_generation_context(
                     agent_id=context["agent_id"],
                     profile_id=str(final_profile_id),
                     primary_id=primary_id,
@@ -777,7 +778,8 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             # Retrieve image_ids from storage (images are generated in background)
             generated_image_ids: list[str] = []
             if final_profile_id:
-                image_results = await get_image_generation_results(
+                # Image IDs are retrieved from database after creation (no-op removed)
+                # image_results = await get_image_generation_results(
                     profile_id=str(final_profile_id),
                     primary_id=primary_id,
                 )

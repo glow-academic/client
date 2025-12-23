@@ -16,7 +16,6 @@ from app.infra.activity.websocket_logger import log_websocket_activity
 from app.utils.agents.build_voice_agent import build_voice_agent
 from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
-from app.utils.personas.find_persona_by_name import find_persona_by_name
 from agents import function_tool
 from pydantic import Field
 
@@ -452,7 +451,55 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
                 logger.info(f"Speak tool called: persona={persona}, message_length={len(message)}")
                 
                 # Find persona by name
-                persona_match = find_persona_by_name(persona.strip() if persona else "", personas)
+                # Inline find_persona_by_name logic
+                def sanitize_persona_name(name: str) -> str:
+                    sanitized = "".join(c if c.isalnum() or c == " " else "" for c in name)
+                    sanitized = sanitized.replace(" ", "_").lower()
+                    return sanitized or "persona"
+                
+                def find_persona_by_name_inline(
+                    persona_name: str, personas: list[dict[str, Any]]
+                ) -> tuple[uuid.UUID, str] | None:
+                    if not persona_name or not persona_name.strip():
+                        return None
+                    persona_name_normalized = persona_name.strip()
+                    sanitized_search = sanitize_persona_name(persona_name_normalized)
+                    for persona in personas:
+                        persona_id_str = persona.get("persona_id") or persona.get("id")
+                        if not persona_id_str:
+                            continue
+                        persona_display_name = persona.get("persona_name") or persona.get("name", "")
+                        if not persona_display_name:
+                            continue
+                        if persona_name_normalized.lower() == persona_display_name.lower():
+                            try:
+                                persona_id = uuid.UUID(str(persona_id_str))
+                                return (persona_id, persona_display_name)
+                            except (ValueError, TypeError):
+                                continue
+                        sanitized_persona = sanitize_persona_name(persona_display_name)
+                        if sanitized_search == sanitized_persona:
+                            try:
+                                persona_id = uuid.UUID(str(persona_id_str))
+                                return (persona_id, persona_display_name)
+                            except (ValueError, TypeError):
+                                continue
+                    for persona in personas:
+                        persona_id_str = persona.get("persona_id") or persona.get("id")
+                        if not persona_id_str:
+                            continue
+                        persona_display_name = persona.get("persona_name") or persona.get("name", "")
+                        if not persona_display_name:
+                            continue
+                        if persona_name_normalized.lower() in persona_display_name.lower():
+                            try:
+                                persona_id = uuid.UUID(str(persona_id_str))
+                                return (persona_id, persona_display_name)
+                            except (ValueError, TypeError):
+                                continue
+                    return None
+                
+                persona_match = find_persona_by_name_inline(persona.strip() if persona else "", personas)
                 if not persona_match:
                     available_list = "\n".join(f"  - {p.get('persona_name') or p.get('name', '')}" for p in personas)
                     error_msg = f"Persona '{persona}' not found. Available personas:\n{available_list}"

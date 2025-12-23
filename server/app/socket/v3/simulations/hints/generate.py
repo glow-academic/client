@@ -10,8 +10,6 @@ from agents.items import TResponseInputItem
 from app.main import get_internal_sio, get_pool, sio
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.logging.db_logger import get_logger
@@ -262,8 +260,71 @@ async def _generate_hints_impl(
                 msg for msg in all_messages if msg["created_at"] <= message_created_at
             ]
 
-            # Build conversation history
-            conversation_history, _ = get_simulation_conversation_history(messages)
+            # Build conversation history (inlined from get_simulation_conversation_history)
+            from datetime import datetime
+            conversation_history: list[TResponseInputItem] = []
+            message_id_map: dict[str, int] = {}
+            message_number = 1
+
+            # Filter out error messages and make a list of all items
+            items = [msg for msg in messages if not msg.get("content", "").startswith("Error:")]
+
+            # sort items by created_at
+            items = sorted(items, key=lambda x: x.get("created_at", datetime.min))
+
+            # Group messages by type to handle consecutive responses
+            current_response_messages: list[dict[str, Any]] = []
+
+            for item in items:
+                # Handle both "type" (legacy/test) and "role" (database) fields
+                msg_type = item.get("type", "")
+                msg_role = item.get("role", "")
+                msg_content = item.get("content", "")
+                message_id = item.get("id", "")
+
+                # Check if this is a user message (type="query" or role="user")
+                is_user_message = (
+                    msg_type == "query" or msg_role == "user"
+                ) and msg_content != ""
+
+                if is_user_message:
+                    # If we have pending response messages, add the latest one
+                    if current_response_messages:
+                        latest_response = current_response_messages[-1]
+                        response_id = latest_response.get("id", "")
+                        content = latest_response.get("content", "")
+
+                        assistant_message_item: TResponseInputItem = {
+                            "role": "assistant",
+                            "content": content,
+                        }
+                        conversation_history.append(assistant_message_item)
+                        current_response_messages = []
+
+                    # Add the user message
+                    content = msg_content
+
+                    user_message_item: TResponseInputItem = {
+                        "role": "user",
+                        "content": content,
+                    }
+                    conversation_history.append(user_message_item)
+                # Check if this is an assistant message (type="response" or role="assistant")
+                elif (msg_type == "response" or msg_role == "assistant") and msg_content != "":
+                    # Collect response messages to find the latest one
+                    current_response_messages.append(item)
+
+            # Handle any remaining response messages at the end
+            if current_response_messages:
+                latest_response = current_response_messages[-1]
+                response_id = latest_response.get("id", "")
+                content = latest_response.get("content", "")
+
+                current_assistant_message_item: TResponseInputItem = {
+                    "role": "assistant",
+                    "content": content,
+                }
+                conversation_history.append(current_assistant_message_item)
 
             # Format scenario from context
             chat_scenario = format_chat_scenario(context["problem_statement"])
