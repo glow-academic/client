@@ -42,3 +42,46 @@ class LinkRunToGroupSqlRow(BaseModel):
     Columns returned by the SQL query.
     """
 
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/link_run_to_group_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class LinkRunToGroupApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    group_id: UUID
+    run_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/link_run_to_group_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class LinkRunToGroupApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+

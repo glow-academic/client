@@ -62,3 +62,55 @@ class CreateParameterSqlRow(BaseModel):
 
     parameter_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/parameters/create_parameter_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateParameterApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    name: str
+    description: str
+    active: bool
+    simulation_parameter: bool
+    document_parameter: bool
+    persona_parameter: bool
+    scenario_parameter: bool
+    video_parameter: bool
+    parameter_level_department_ids: list[str]
+    field_connections_json: dict[str, Any]
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/parameters/create_parameter_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateParameterApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    parameter_id: str
+    actor_name: str

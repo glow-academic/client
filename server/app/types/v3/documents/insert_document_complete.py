@@ -58,3 +58,55 @@ class InsertDocumentSqlRow(BaseModel):
 
     document_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/documents/insert_document_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class InsertDocumentApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    document_id: UUID
+    param_2: str
+    param_3: str
+    param_4: UUID
+    param_5: list[UUID]
+    param_6: list[UUID]
+    param_7: UUID
+    param_8: dict[str, Any]
+    param_9: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/documents/insert_document_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class InsertDocumentApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    document_id: str
+    actor_name: str

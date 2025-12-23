@@ -51,3 +51,51 @@ class CreateGradeSqlRow(BaseModel):
     """
 
     id: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/grading/create_grade_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class CreateGradeApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    run_id: UUID
+    rubric_id: UUID
+    description: str
+    passed: bool
+    score: int
+    time_taken: int
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/grading/create_grade_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateGradeApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    id: str

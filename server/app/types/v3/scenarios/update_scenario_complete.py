@@ -87,3 +87,70 @@ class UpdateScenarioSqlRow(BaseModel):
     scenario_id: str
     name: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/scenarios/update_scenario_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class UpdateScenarioApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    scenarioId: UUID
+    name: str
+    description: str
+    active: bool
+    objectives_enabled: bool
+    param_6: bool
+    param_7: bool
+    param_8: bool
+    param_9: bool
+    param_10: UUID
+    param_11: str
+    param_12: str
+    param_13: list[str]
+    param_14: list[str]
+    param_15: list[str]
+    param_16: list[str]
+    param_17: list[str]
+    param_18: list[str]
+    param_19: dict[str, Any]
+    param_20: UUID
+    param_21: UUID
+    param_22: list[str]
+    param_23: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/scenarios/update_scenario_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class UpdateScenarioApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    scenario_id: str
+    name: str
+    actor_name: str

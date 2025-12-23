@@ -94,3 +94,72 @@ class UpdateSimulationSqlRow(BaseModel):
 
     simulation_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/update_simulation_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class UpdateSimulationApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    simulationId: UUID
+    title: str
+    description: str
+    active: bool
+    practice_simulation: bool
+    department_ids: list[str]
+    scenario_ids: list[str]
+    scenario_active_flags: list[bool]
+    video_ids: list[str]
+    video_active_flags: list[bool]
+    scenario_hints_enabled: list[bool]
+    scenario_rubric_ids: list[str]
+    scenario_time_limit_seconds: list[int]
+    scenario_audio_enabled: list[bool]
+    scenario_text_enabled: list[bool]
+    unused: str
+    unused: str
+    unused: str
+    video_show_problem_statement: list[bool]
+    video_show_objectives: list[bool]
+    video_show_image: list[bool]
+    hint_agent_id: UUID
+    grade_text_agent_id: UUID
+    grade_voice_agent_id: UUID
+    simulation_text_agent_id: UUID
+    simulation_voice_agent_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/update_simulation_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class UpdateSimulationApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    simulation_id: str
+    actor_name: str

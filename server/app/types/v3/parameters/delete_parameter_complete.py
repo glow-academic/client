@@ -45,3 +45,48 @@ class DeleteParameterSqlRow(BaseModel):
     name: str
     usage_count: int
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/parameters/delete_parameter_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class DeleteParameterApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    parameterId: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/parameters/delete_parameter_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class DeleteParameterApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    name: str
+    usage_count: int
+    actor_name: str

@@ -44,3 +44,49 @@ class GetAuthProvidersSqlRow(BaseModel):
     slug: str
     provider_id: str
     name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/keycloak/get_auth_providers_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class GetAuthProvidersApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    department_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/keycloak/get_auth_providers_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetAuthProvidersApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    id: UUID
+    slug: str
+    provider_id: str
+    name: str

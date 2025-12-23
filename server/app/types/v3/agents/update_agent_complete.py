@@ -62,3 +62,56 @@ class UpdateAgentSqlRow(BaseModel):
 
     agent_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/agents/update_agent_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class UpdateAgentApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    agentId: UUID
+    name: str
+    description: str
+    model_id: UUID
+    active: bool
+    role: str
+    prompt_id: str
+    system_prompt: str
+    department_ids: list[str]
+    department_ids_for_prompt: list[str]
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/agents/update_agent_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class UpdateAgentApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    agent_id: str
+    actor_name: str

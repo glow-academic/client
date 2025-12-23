@@ -51,3 +51,54 @@ class ListModelsSqlRow(BaseModel):
     can_edit: bool
     can_delete: bool
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/models/list_models_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class ListModelsApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/models/list_models_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class ListModelsApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    model_id: str
+    name: str
+    description: str
+    active: bool
+    image_model: bool
+    updated_at: str
+    provider: str
+    base_url: str
+    can_edit: bool
+    can_delete: bool
+    actor_name: str

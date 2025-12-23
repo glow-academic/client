@@ -50,3 +50,50 @@ class CreateDepartmentSqlRow(BaseModel):
 
     department_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/departments/create_department_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class CreateDepartmentApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    title: str
+    description: str
+    active: bool
+    settings_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/departments/create_department_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateDepartmentApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    department_id: str
+    actor_name: str

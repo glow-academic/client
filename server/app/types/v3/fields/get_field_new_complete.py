@@ -47,3 +47,52 @@ class GetFieldNewSqlRow(BaseModel):
     user_role: str
     primary_department_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/fields/get_field_new_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class GetFieldNewApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    param_1: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/fields/get_field_new_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetFieldNewApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    department_mapping: dict[str, Any]
+    valid_department_ids: list[str]
+    parameter_mapping: dict[str, Any]
+    valid_parameter_ids: list[str]
+    user_role: str
+    primary_department_id: str
+    actor_name: str

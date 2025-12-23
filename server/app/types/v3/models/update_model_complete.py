@@ -59,3 +59,56 @@ class UpdateModelSqlRow(BaseModel):
     model_id: str
     model_name: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/models/update_model_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class UpdateModelApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    model_id: UUID
+    provider_id: UUID
+    name: str
+    description: str
+    active: bool
+    param_6: str
+    param_7: list[str]
+    param_8: str
+    param_9: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/models/update_model_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class UpdateModelApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    model_id: str
+    model_name: str
+    actor_name: str

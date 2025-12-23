@@ -47,3 +47,50 @@ class CreateUserMessageSqlRow(BaseModel):
     message_id: UUID
     created_at: str
     parent_id: UUID
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/create_user_message_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class CreateUserMessageApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    chat_id: UUID
+    message_content: str
+    run_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/create_user_message_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateUserMessageApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    message_id: UUID
+    created_at: str
+    parent_id: UUID

@@ -45,3 +45,48 @@ class DuplicateParameterSqlRow(BaseModel):
     parameter_id: str
     original_name: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/parameters/duplicate_parameter_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class DuplicateParameterApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    original_parameterId: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/parameters/duplicate_parameter_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class DuplicateParameterApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    parameter_id: str
+    original_name: str
+    actor_name: str

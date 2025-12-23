@@ -92,3 +92,72 @@ class CreateScenarioSqlRow(BaseModel):
 
     scenario_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/scenarios/create_scenario_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class CreateScenarioApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    name: str
+    description: str
+    active: bool
+    objectives_enabled: bool
+    images_enabled: bool
+    param_6: bool
+    param_7: bool
+    param_8: bool
+    param_9: UUID
+    param_10: str
+    param_11: str
+    param_12: list[str]
+    param_13: list[str]
+    param_14: list[str]
+    param_15: list[str]
+    param_16: list[str]
+    param_17: list[str]
+    param_18: list[str]
+    param_19: dict[str, Any]
+    param_20: list[str]
+    param_21: str
+    param_22: list[str]
+    param_23: dict[str, Any]
+    param_24: UUID
+    param_25: list[str]
+    param_26: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/scenarios/create_scenario_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateScenarioApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    scenario_id: str
+    actor_name: str

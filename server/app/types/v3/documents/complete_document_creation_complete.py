@@ -58,3 +58,55 @@ class CompleteDocumentCreationSqlRow(BaseModel):
 
     child_document_id: str
     upload_id: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/documents/complete_document_creation_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class CompleteDocumentCreationApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    parent_document_id: UUID
+    file_path: str
+    mime_type: str
+    file_size: int
+    param_5: str
+    param_6: str
+    param_7: UUID
+    param_8: UUID
+    param_9: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/documents/complete_document_creation_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CompleteDocumentCreationApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    child_document_id: str
+    upload_id: str

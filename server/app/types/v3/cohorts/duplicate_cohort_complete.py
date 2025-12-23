@@ -47,3 +47,50 @@ class DuplicateCohortSqlRow(BaseModel):
     title: str
     description: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/cohorts/duplicate_cohort_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class DuplicateCohortApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    original_cohort_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/cohorts/duplicate_cohort_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class DuplicateCohortApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    id: UUID
+    original_title: str
+    title: str
+    description: str
+    actor_name: str

@@ -43,3 +43,48 @@ class GetDepartmentDefaultSqlRow(BaseModel):
     profile_role: str
     settings_mapping: dict[str, Any]
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/departments/get_department_default_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class GetDepartmentDefaultApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    profileId: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/departments/get_department_default_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetDepartmentDefaultApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    profile_role: str
+    settings_mapping: dict[str, Any]
+    actor_name: str

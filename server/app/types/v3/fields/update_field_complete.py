@@ -55,3 +55,54 @@ class UpdateFieldSqlRow(BaseModel):
     field_id: str
     field_name: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/fields/update_field_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class UpdateFieldApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    param_1: UUID
+    param_2: str
+    param_3: str
+    param_4: bool
+    param_5: list[str]
+    param_6: list[str]
+    param_7: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/fields/update_field_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class UpdateFieldApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    field_id: str
+    field_name: str
+    actor_name: str

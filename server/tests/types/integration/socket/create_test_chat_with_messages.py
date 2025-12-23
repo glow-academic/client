@@ -48,3 +48,51 @@ class CreateTestChatWithMessagesSqlRow(BaseModel):
     system_message_id: str
     user_message_id: str
     assistant_message_id: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: tests/sql/integration/socket/create_test_chat_with_messages.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class CreateTestChatWithMessagesApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    scenario_id: UUID
+    run_id: UUID
+    attempt_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: tests/sql/integration/socket/create_test_chat_with_messages.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateTestChatWithMessagesApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    chat_id: str
+    system_message_id: str
+    user_message_id: str
+    assistant_message_id: str

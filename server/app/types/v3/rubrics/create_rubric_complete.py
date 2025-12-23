@@ -58,3 +58,53 @@ class CreateRubricSqlRow(BaseModel):
 
     rubric_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/rubrics/create_rubric_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateRubricApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    name: str
+    description: str
+    active: bool
+    points: int
+    passPoints: int
+    department_ids: list[str]
+    standard_groups: dict[str, Any]
+    rubric_agent_id: str
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/rubrics/create_rubric_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateRubricApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    rubric_id: str
+    actor_name: str

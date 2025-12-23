@@ -59,3 +59,64 @@ class GetCohortNewSqlRow(BaseModel):
     department_mapping: dict[str, Any]
     primary_department_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/cohorts/get_cohort_new_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class GetCohortNewApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    param_1: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/cohorts/get_cohort_new_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetCohortNewApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    title: str
+    description: str
+    department_ids: list[str]
+    active: bool
+    can_edit: bool
+    profile_ids: list[str]
+    simulation_ids: list[str]
+    valid_department_ids: list[str]
+    valid_simulation_ids: list[str]
+    valid_profile_ids: list[str]
+    simulations_list: dict[str, Any]
+    simulation_mapping: dict[str, Any]
+    profile_mapping: dict[str, Any]
+    staff: dict[str, Any]
+    cohort_mapping: dict[str, Any]
+    department_mapping_for_staff: dict[str, Any]
+    department_mapping: dict[str, Any]
+    primary_department_id: str
+    actor_name: str

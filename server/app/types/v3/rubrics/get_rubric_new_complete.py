@@ -54,3 +54,57 @@ class GetRubricNewSqlRow(BaseModel):
     primary_department_id: str
     agent_mapping: dict[str, Any]
     valid_agent_ids: list[str]
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/rubrics/get_rubric_new_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetRubricNewApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/rubrics/get_rubric_new_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetRubricNewApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    name: str
+    description: str
+    active: bool
+    points: int
+    passpoints: int
+    department_ids: list[str]
+    department_mapping: dict[str, Any]
+    valid_department_ids: list[str]
+    user_role: str
+    actor_name: str
+    standard_groups_complete: dict[str, Any]
+    primary_department_id: str
+    agent_mapping: dict[str, Any]
+    valid_agent_ids: list[str]

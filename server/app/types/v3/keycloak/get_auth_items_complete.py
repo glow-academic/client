@@ -45,3 +45,49 @@ class GetAuthItemsSqlRow(BaseModel):
     name: str
     value: str
     encrypted: bool
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/keycloak/get_auth_items_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class GetAuthItemsApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    auth_id: UUID
+    department_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/keycloak/get_auth_items_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetAuthItemsApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    name: str
+    value: str
+    encrypted: bool

@@ -40,3 +40,45 @@ class CreateTestScenarioSqlRow(BaseModel):
     """
 
     id: UUID
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: tests/sql/integration/socket/create_test_scenario.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateTestScenarioApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    name: str
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: tests/sql/integration/socket/create_test_scenario.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateTestScenarioApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    id: UUID

@@ -43,3 +43,47 @@ class UpdateChatCreatedAtSqlRow(BaseModel):
     """
 
     chat_id: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/attempts/update_chat_created_at_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class UpdateChatCreatedAtApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    createdAt: str
+    chatId: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/attempts/update_chat_created_at_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class UpdateChatCreatedAtApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    chat_id: str

@@ -43,3 +43,45 @@ class UpdateProfileToInactiveSqlRow(BaseModel):
     """
 
     profile_id: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/profile/update_profile_to_inactive_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class UpdateProfileToInactiveApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    last_active: str
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/profile/update_profile_to_inactive_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class UpdateProfileToInactiveApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    profile_id: str

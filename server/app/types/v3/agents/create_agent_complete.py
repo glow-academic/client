@@ -59,3 +59,55 @@ class CreateAgentSqlRow(BaseModel):
 
     agent_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/agents/create_agent_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+from pydantic import Field
+
+
+class CreateAgentApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    name: str
+    description: str
+    model_id: UUID
+    active: bool
+    role: str
+    prompt_id: UUID | None = None
+    system_prompt: str | None = None
+    department_ids: list[UUID] = Field(default_factory=list)
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/agents/create_agent_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateAgentApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    agent_id: str
+    actor_name: str

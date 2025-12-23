@@ -59,3 +59,59 @@ class StartSimulationAttemptSqlRow(BaseModel):
     video_id: str
     simulation_data: dict[str, Any]
     scenario_metadata: dict[str, Any]
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/start_simulation_attempt_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class StartSimulationAttemptApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    simulation_id: UUID
+    infinite_mode: bool
+    scenario_id_override: str
+    trace_id: str
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/start_simulation_attempt_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class StartSimulationAttemptApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    attempt_id: str
+    chat_id: str
+    chat_title: str
+    scenario_id: str
+    scenario_name: str
+    problem_statement: str
+    needs_generation: bool
+    content_type: str
+    video_id: str
+    simulation_data: dict[str, Any]
+    scenario_metadata: dict[str, Any]

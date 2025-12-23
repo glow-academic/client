@@ -54,3 +54,52 @@ class UpdateProviderSqlRow(BaseModel):
 
     provider_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/providers/update_provider_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class UpdateProviderApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    provider_id: UUID
+    name: str
+    description: str
+    value: str
+    active: bool
+    base_url: str
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/providers/update_provider_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class UpdateProviderApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    provider_id: str
+    actor_name: str

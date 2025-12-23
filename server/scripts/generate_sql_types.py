@@ -129,7 +129,7 @@ def _sql_path_to_types_path(sql_path: str) -> tuple[str, str] | None:
 
 def generate_registry_entry(
     sql_path: str, types_path: str, route_name: str
-) -> tuple[str, str, str, str, str] | None:
+) -> tuple[str, str, str, str, str, str, str] | None:
     """Generate registry entry for a SQL file.
 
     Args:
@@ -138,7 +138,7 @@ def generate_registry_entry(
         route_name: Route name (e.g., "get_agent_new")
 
     Returns:
-        Tuple of (registry_type, sql_path, module_path, input_class_name, output_class_name) or None if invalid
+        Tuple of (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class) or None if invalid
         registry_type is either "app" or "test"
     """
     # Process app/sql/v3/ files
@@ -147,10 +147,12 @@ def generate_registry_entry(
         module_path = types_path.replace(".py", "").replace("/", ".")
 
         # Generate class names
-        input_class_name = _to_class_name(route_name, "SqlParams")
-        output_class_name = _to_class_name(route_name, "SqlRow")
+        sql_params_class = _to_class_name(route_name, "SqlParams")
+        sql_row_class = _to_class_name(route_name, "SqlRow")
+        api_request_class = _to_class_name(route_name, "ApiRequest")
+        api_response_class = _to_class_name(route_name, "ApiResponse")
 
-        return ("app", sql_path, module_path, input_class_name, output_class_name)
+        return ("app", sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
     
     # Process test SQL files
     if sql_path.startswith("tests/sql/integration/"):
@@ -158,21 +160,23 @@ def generate_registry_entry(
         module_path = types_path.replace(".py", "").replace("/", ".")
 
         # Generate class names
-        input_class_name = _to_class_name(route_name, "SqlParams")
-        output_class_name = _to_class_name(route_name, "SqlRow")
+        sql_params_class = _to_class_name(route_name, "SqlParams")
+        sql_row_class = _to_class_name(route_name, "SqlRow")
+        api_request_class = _to_class_name(route_name, "ApiRequest")
+        api_response_class = _to_class_name(route_name, "ApiResponse")
 
-        return ("test", sql_path, module_path, input_class_name, output_class_name)
+        return ("test", sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
     
     return None
 
 
 def write_registry_file(
-    registry_entries: list[tuple[str, str, str, str, str]], registry_type: str, server_root: Path
+    registry_entries: list[tuple[str, str, str, str, str, str, str]], registry_type: str, server_root: Path
 ) -> None:
     """Write registry file mapping SQL paths to type classes.
 
     Args:
-        registry_entries: List of (registry_type, sql_path, module_path, input_class_name, output_class_name) tuples
+        registry_entries: List of (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class) tuples
         registry_type: Either "app" or "test"
         server_root: Server root directory
     """
@@ -203,43 +207,64 @@ def write_registry_file(
     ]
 
     # Add TYPE_CHECKING imports for all types (for type checkers)
-    # registry_entries is (registry_type, sql_path, module_path, input_class_name, output_class_name)
-    for _, sql_path, module_path, input_class_name, output_class_name in sorted(registry_entries, key=lambda x: x[1]):
-        lines.append(f"    from {module_path} import {input_class_name}, {output_class_name}")
+    # registry_entries is (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
+    for _, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(registry_entries, key=lambda x: x[1]):
+        lines.append(f"    from {module_path} import {sql_params_class}, {sql_row_class}, {api_request_class}, {api_response_class}")
 
     lines.append("")
     lines.append("")
-    lines.append("_registry: dict[str, tuple[str, str, str]] = {")
+    lines.append("_registry: dict[str, tuple[str, str, str, str, str]] = {")
 
     # Add registry entries
-    # registry_entries is (registry_type, sql_path, module_path, input_class_name, output_class_name)
-    for _, sql_path, module_path, input_class_name, output_class_name in sorted(registry_entries, key=lambda x: x[1]):
+    # registry_entries is (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
+    for _, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(registry_entries, key=lambda x: x[1]):
         lines.append(f'    "{sql_path}": (')
         lines.append(f'        "{module_path}",')
-        lines.append(f'        "{input_class_name}",')
-        lines.append(f'        "{output_class_name}",')
+        lines.append(f'        "{sql_params_class}",')
+        lines.append(f'        "{sql_row_class}",')
+        lines.append(f'        "{api_request_class}",')
+        lines.append(f'        "{api_response_class}",')
         lines.append("    ),")
 
     lines.append("}")
     lines.append("")
     lines.append("")
     lines.append("def get_sql_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:")
-    lines.append('    """Get input and output types for a SQL file path.')
+    lines.append('    """Get SQL input and output types for a SQL file path.')
     lines.append("    ")
     lines.append("    Uses lazy imports to avoid loading all types at startup.")
     lines.append('    """')
     lines.append('    if sql_path not in _registry:')
     lines.append('        raise ValueError(f"No types found for SQL path: {sql_path}")')
     lines.append("    ")
-    lines.append("    module_path, input_class_name, output_class_name = _registry[sql_path]")
+    lines.append("    module_path, sql_params_class, sql_row_class, _, _ = _registry[sql_path]")
     lines.append("    ")
     lines.append("    # Dynamic import")
     lines.append("    import importlib")
     lines.append("    module = importlib.import_module(module_path)")
-    lines.append("    input_type = getattr(module, input_class_name)")
-    lines.append("    output_type = getattr(module, output_class_name)")
+    lines.append("    sql_params_type = getattr(module, sql_params_class)")
+    lines.append("    sql_row_type = getattr(module, sql_row_class)")
     lines.append("    ")
-    lines.append("    return input_type, output_type")
+    lines.append("    return sql_params_type, sql_row_type")
+    lines.append("")
+    lines.append("")
+    lines.append("def get_api_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:")
+    lines.append('    """Get API request and response types for a SQL file path.')
+    lines.append("    ")
+    lines.append("    Uses lazy imports to avoid loading all types at startup.")
+    lines.append('    """')
+    lines.append('    if sql_path not in _registry:')
+    lines.append('        raise ValueError(f"No types found for SQL path: {sql_path}")')
+    lines.append("    ")
+    lines.append("    module_path, _, _, api_request_class, api_response_class = _registry[sql_path]")
+    lines.append("    ")
+    lines.append("    # Dynamic import")
+    lines.append("    import importlib")
+    lines.append("    module = importlib.import_module(module_path)")
+    lines.append("    api_request_type = getattr(module, api_request_class)")
+    lines.append("    api_response_type = getattr(module, api_response_class)")
+    lines.append("    ")
+    lines.append("    return api_request_type, api_response_type")
     lines.append("")
     lines.append("")
     lines.append("# Overload declarations for load_sql_typed() - provides strong type hints")
@@ -247,12 +272,12 @@ def write_registry_file(
     lines.append("if TYPE_CHECKING:")
     
     # Generate overload declarations for each SQL file
-    # registry_entries is (registry_type, sql_path, module_path, input_class_name, output_class_name)
-    for _, sql_path, module_path, input_class_name, output_class_name in sorted(registry_entries, key=lambda x: x[1]):
+    # registry_entries is (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
+    for _, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(registry_entries, key=lambda x: x[1]):
         lines.append("    @overload")
         lines.append("    def load_sql_typed(")
         lines.append(f'        file_path: Literal["{sql_path}"]')
-        lines.append(f"    ) -> tuple[SqlString, Type[{input_class_name}], Type[{output_class_name}]]: ...")
+        lines.append(f"    ) -> tuple[SqlString, Type[{sql_params_class}], Type[{sql_row_class}]]: ...")
         lines.append("")
     
     # Add fallback overload for any string (for runtime compatibility)
@@ -313,6 +338,68 @@ def write_registry_file(
     lines.append("    # Get types from registry")
     lines.append("    input_type, output_type = get_sql_types(file_path)")
     lines.append("    return sql_string, input_type, output_type")
+    lines.append("")
+    lines.append("")
+    lines.append("# Overload declarations for load_api_types() - provides strong type hints")
+    lines.append("# Auto-generated by sql-compile. Do not edit manually.")
+    lines.append("if TYPE_CHECKING:")
+    
+    # Generate overload declarations for each SQL file
+    # registry_entries is (registry_type, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class)
+    for _, sql_path, module_path, sql_params_class, sql_row_class, api_request_class, api_response_class in sorted(registry_entries, key=lambda x: x[1]):
+        lines.append("    @overload")
+        lines.append("    def load_api_types(")
+        lines.append(f'        file_path: Literal["{sql_path}"]')
+        lines.append(f"    ) -> tuple[Type[{api_request_class}], Type[{api_response_class}]]: ...")
+        lines.append("")
+    
+    # Add fallback overload for any string (for runtime compatibility)
+    lines.append("    @overload")
+    lines.append("    def load_api_types(")
+    lines.append("        file_path: str")
+    lines.append("    ) -> tuple[Type[BaseModel], Type[BaseModel]]: ...")
+    lines.append("")
+    lines.append("")
+    lines.append("def load_api_types(")
+    lines.append("    file_path: str,")
+    lines.append(") -> tuple[Type[TInput], Type[TOutput]]:")
+    lines.append('    """Load API request and response types for a SQL file path.')
+    lines.append("")
+    lines.append("    Returns the generated Pydantic model classes for API request and response.")
+    lines.append("    API request excludes profile_id (obtained from request header).")
+    lines.append("    API response matches SQL response structure (can be customized later).")
+    lines.append("")
+    lines.append("    The overloads provide strong type hints - when you use a literal string path,")
+    lines.append("    the IDE will know the exact ApiRequestType and ApiResponseType classes.")
+    lines.append("")
+    lines.append("    Args:")
+    lines.append('        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")')
+    lines.append("")
+    lines.append("    Returns:")
+    lines.append("        Tuple of (ApiRequestType, ApiResponseType) where:")
+    lines.append("        - ApiRequestType: Pydantic model class for API request (e.g., GetAgentNewApiRequest)")
+    lines.append("          Excludes profile_id field")
+    lines.append("        - ApiResponseType: Pydantic model class for API response (e.g., GetAgentNewApiResponse)")
+    lines.append("")
+    lines.append("    Raises:")
+    lines.append("        ValueError: If no types are found for the SQL file path")
+    lines.append("        ImportError: If the type classes cannot be imported")
+    lines.append("")
+    lines.append("    Example:")
+    lines.append('        ```python')
+    if registry_type == "app":
+        lines.append('        ApiRequestType, ApiResponseType = load_api_types("app/sql/v3/agents/get_agent_new_complete.sql")')
+    else:
+        lines.append('        ApiRequestType, ApiResponseType = load_api_types("tests/sql/integration/infra/activity/insert_test_profile.sql")')
+    lines.append("        ")
+    lines.append("        # Type-safe usage - IDE will show fields when you type ApiRequestType(...)")
+    lines.append('        request = ApiRequestType(...)  # No profile_id field')
+    lines.append('        response = ApiResponseType(...)  # Same structure as SQL response')
+    lines.append("        ```")
+    lines.append('    """')
+    lines.append("    # Get types from registry")
+    lines.append("    api_request_type, api_response_type = get_api_types(file_path)")
+    lines.append("    return api_request_type, api_response_type")
 
     registry_file.write_text("\n".join(lines))
 

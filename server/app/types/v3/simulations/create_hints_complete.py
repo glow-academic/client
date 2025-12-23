@@ -43,3 +43,47 @@ class CreateHintsSqlRow(BaseModel):
     """
 
     hint_ids: dict[str, Any]
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/create_hints_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class CreateHintsApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    message_id: UUID
+    hint_texts: list[str]
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/create_hints_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateHintsApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    hint_ids: dict[str, Any]

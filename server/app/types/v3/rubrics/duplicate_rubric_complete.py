@@ -45,3 +45,48 @@ class DuplicateRubricSqlRow(BaseModel):
     rubric_id: str
     original_name: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/rubrics/duplicate_rubric_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class DuplicateRubricApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    originalRubricId: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/rubrics/duplicate_rubric_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class DuplicateRubricApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    rubric_id: str
+    original_name: str
+    actor_name: str

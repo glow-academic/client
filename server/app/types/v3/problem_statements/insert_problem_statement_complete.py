@@ -47,3 +47,49 @@ class InsertProblemStatementSqlRow(BaseModel):
     """
 
     problem_statement_id: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/problem_statements/insert_problem_statement_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class InsertProblemStatementApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    problem_statement: str
+    problem_statement_name: str
+    scenario_id: UUID
+    active: bool
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/problem_statements/insert_problem_statement_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class InsertProblemStatementApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    problem_statement_id: str

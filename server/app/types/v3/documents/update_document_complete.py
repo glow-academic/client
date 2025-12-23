@@ -65,3 +65,58 @@ class UpdateDocumentSqlRow(BaseModel):
     document_id: str
     document_name: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/documents/update_document_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class UpdateDocumentApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    documentId: UUID
+    name: str
+    description: str
+    active: bool
+    template: bool
+    department_id: UUID
+    field_ids: list[str]
+    classify_agent_id: UUID
+    document_agent_id: UUID
+    template_upload_id: UUID
+    template_args: dict[str, Any]
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/documents/update_document_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class UpdateDocumentApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    document_id: str
+    document_name: str
+    actor_name: str

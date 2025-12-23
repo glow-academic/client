@@ -6,7 +6,7 @@ import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.types.registry import load_sql_typed
+from app.types.registry import load_api_types, load_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
@@ -16,6 +16,7 @@ from utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/agents/get_agent_new_complete.sql"
 _sql_query, GetAgentNewSqlParams, GetAgentNewSqlRow = load_sql_typed(SQL_PATH)
+GetAgentNewApiRequest, GetAgentNewApiResponse = load_api_types(SQL_PATH)
 
 
 router = APIRouter()
@@ -23,17 +24,17 @@ router = APIRouter()
 
 @router.post(
     "/new",
-    response_model=GetAgentNewSqlRow,
+    response_model=GetAgentNewApiResponse,
     dependencies=[
         audit_activity("agent.new", "{{ actor.name }} opened new agent form")
     ],
 )
 async def get_agent_new(
-    request: GetAgentNewSqlParams,
+    request: GetAgentNewApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetAgentNewSqlRow:
+) -> GetAgentNewApiResponse:
     """Get default agent detail metadata for creating new agents."""
     tags = ["agents"]  # From router tags
 
@@ -46,7 +47,7 @@ async def get_agent_new(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return GetAgentNewSqlRow.model_validate(cached["data"])
+        return GetAgentNewApiResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -61,8 +62,8 @@ async def get_agent_new(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Create params from request, but override profile_id with header value
-        params = GetAgentNewSqlParams(**request.model_dump(exclude={"profile_id"}), profile_id=profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetAgentNewSqlParams(**request.model_dump(), profile_id=profile_id)
         sql_query = _sql_query
         sql_params = params.to_tuple()
         
@@ -77,18 +78,21 @@ async def get_agent_new(
         if result.actor_name:
             audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
+        # Convert SQL result to API response
+        api_response = GetAgentNewApiResponse.model_validate(result.model_dump())
+
         # Cache response
         await set_cached(
             cache_key_val,
-            {"data": result.model_dump()},
+            {"data": api_response.model_dump()},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        # Return typed SQL result directly
-        return result
+        # Return API response
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

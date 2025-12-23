@@ -57,3 +57,55 @@ class UpdateCohortSqlRow(BaseModel):
     id: UUID
     title: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/cohorts/update_cohort_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class UpdateCohortApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    cohort_id: UUID
+    title: str
+    description: str
+    active: bool
+    department_ids: list[str]
+    param_6: list[str]
+    param_7: list[str]
+    param_8: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/cohorts/update_cohort_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class UpdateCohortApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    id: UUID
+    title: str
+    actor_name: str

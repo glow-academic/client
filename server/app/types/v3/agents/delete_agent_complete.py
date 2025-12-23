@@ -46,3 +46,49 @@ class DeleteAgentSqlRow(BaseModel):
     deleted: bool
     name: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/agents/delete_agent_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class DeleteAgentApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    agent_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/agents/delete_agent_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class DeleteAgentApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    usage_count: int
+    deleted: bool
+    name: str
+    actor_name: str

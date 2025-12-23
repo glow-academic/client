@@ -65,3 +65,69 @@ class GetParameterDetailSqlRow(BaseModel):
     valid_persona_ids: list[str]
     document_mapping: dict[str, Any]
     valid_document_ids: list[str]
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/parameters/get_parameter_detail_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class GetParameterDetailApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    param_1: UUID
+    param_2: str
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/parameters/get_parameter_detail_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetParameterDetailApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    name: str
+    description: str
+    active: bool
+    simulation_parameter: bool
+    document_parameter: bool
+    persona_parameter: bool
+    scenario_parameter: bool
+    video_parameter: bool
+    department_ids: list[str]
+    persona_ids: list[str]
+    document_ids: list[str]
+    can_edit: bool
+    actor_name: str
+    parameter_items_json: dict[str, Any]
+    department_mapping: dict[str, Any]
+    valid_department_ids: list[str]
+    field_mapping: dict[str, Any]
+    valid_field_ids: list[str]
+    field_connections_json: dict[str, Any]
+    persona_mapping: dict[str, Any]
+    valid_persona_ids: list[str]
+    document_mapping: dict[str, Any]
+    valid_document_ids: list[str]

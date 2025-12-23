@@ -52,3 +52,50 @@ class CreateFieldSqlRow(BaseModel):
 
     field_id: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/fields/create_field_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateFieldApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    name: str
+    description: str
+    active: bool
+    department_ids: list[str]
+    conditional_parameter_ids: list[str]
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/fields/create_field_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class CreateFieldApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    field_id: str
+    actor_name: str

@@ -61,3 +61,65 @@ class GetAuthDetailSqlRow(BaseModel):
     can_edit: bool
     actor_name: str
     auth_items: list[GetAuthDetailAuthItemsItem]
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/auth/get_auth_detail_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class GetAuthDetailApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    param_1: UUID
+    param_2: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/auth/get_auth_detail_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetAuthDetailAuthItemsItem(BaseModel):
+    """Generated nested model."""
+
+    auth_item_id: str
+    name: str
+    description: str
+    position: int
+    active: bool
+    value_masked: str
+    key_id: str
+    encrypted: int
+
+
+class GetAuthDetailApiResponse(BaseModel):
+    """API response data after nesting.
+
+    Structure matches nest_many() output.
+    """
+
+    name: str
+    description: str
+    active: int
+    can_edit: bool
+    actor_name: str
+    auth_items: list[GetAuthDetailAuthItemsItem]

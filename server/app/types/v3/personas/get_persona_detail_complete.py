@@ -66,3 +66,69 @@ class GetPersonaDetailSqlRow(BaseModel):
     example_ids: list[str]
     example_mapping: dict[str, Any]
     examples_history: dict[str, Any]
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/personas/get_persona_detail_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class GetPersonaDetailApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    persona_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/personas/get_persona_detail_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetPersonaDetailApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    name: str
+    description: str
+    active: bool
+    color: str
+    icon: str
+    instructions: str
+    text_agent_id: str
+    voice_agent_id: str
+    department_ids: list[str]
+    dept_mapping: dict[str, Any]
+    valid_department_ids: list[str]
+    agent_mapping: dict[str, Any]
+    valid_agent_ids: list[str]
+    usage_count: int
+    user_role: str
+    actor_name: str
+    parameter_mapping: dict[str, Any]
+    linked_parameter_ids: list[str]
+    field_mapping: dict[str, Any]
+    valid_parameter_item_ids: list[str]
+    parameter_field_ids: list[str]
+    example_ids: list[str]
+    example_mapping: dict[str, Any]
+    examples_history: dict[str, Any]

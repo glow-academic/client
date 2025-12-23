@@ -52,3 +52,56 @@ class DeleteDepartmentSqlRow(BaseModel):
     total_usage: int
     deleted: bool
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/departments/delete_department_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class DeleteDepartmentApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    departmentId: UUID
+    current_profile_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/departments/delete_department_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class DeleteDepartmentApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    department_id: str
+    title: str
+    simulation_count: int
+    scenario_count: int
+    persona_count: int
+    document_count: int
+    cohort_count: int
+    total_usage: int
+    deleted: bool
+    actor_name: str

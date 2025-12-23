@@ -56,3 +56,61 @@ class GetKeyNewSqlRow(BaseModel):
     model_mapping: dict[str, Any]
     can_edit: bool
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/keys/get_key_new_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class GetKeyNewApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    profileId: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/keys/get_key_new_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetKeyNewApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    key_id: str
+    name: str
+    key_masked: str
+    description: str
+    active: bool
+    created_at: str
+    updated_at: str
+    department_ids: list[str]
+    model_ids: list[str]
+    department_mapping: dict[str, Any]
+    valid_department_ids: list[str]
+    user_role: str
+    department_id: str
+    model_mapping: dict[str, Any]
+    can_edit: bool
+    actor_name: str

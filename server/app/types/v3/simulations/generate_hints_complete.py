@@ -70,3 +70,73 @@ class GenerateHintsSqlRow(BaseModel):
     earliest_run_created_at: str
     documents: dict[str, Any]
     run_id: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/generate_hints_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class GenerateHintsApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    message_id: UUID
+    chat_id: UUID
+    department_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/generate_hints_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GenerateHintsApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    message_id: str
+    message_created_at: str
+    chat_id: str
+    attempt_id_out: str
+    scenario_id: str
+    trace_id: str
+    chat_title: str
+    simulation_id: str
+    problem_statement: str
+    agent_id: str
+    agent_name: str
+    system_prompt: str
+    temperature: Any
+    reasoning: str
+    model_id: str
+    model_name: str
+    provider_name: str
+    base_url: str
+    api_key: str
+    provider_id: str
+    profile_id: str
+    req_per_day: int
+    runs_today_count: int
+    earliest_run_created_at: str
+    documents: dict[str, Any]
+    run_id: str

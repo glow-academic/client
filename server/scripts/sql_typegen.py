@@ -137,7 +137,7 @@ def generate_request_model(
         elif param.is_optional:
             lines.append(f"    {field_name}: {field_type} = None")
         else:
-        lines.append(f"    {field_name}: {field_type}")
+            lines.append(f"    {field_name}: {field_type}")
 
     # Add to_tuple() method
     lines.append("")
@@ -474,7 +474,7 @@ def generate_nested_types(
     generated_classes: dict[str, str] = {}
     all_class_code: list[str] = []
 
-    def _process_value(value: Any, key: str, parent_prefix: str = ""):
+    def _process_value(value: Any, key: str, parent_prefix: str = "") -> None:
         """Recursively process nested values."""
         if isinstance(value, list) and value:
             # Check if list contains dicts
@@ -647,20 +647,238 @@ def generate_response_model(
     return "\n".join(lines)
 
 
+def generate_api_request_model(
+    metadata: SQLMetadata, route_name: str
+) -> str:
+    """Generate Pydantic API request model from SQL metadata.
+    
+    Creates an API request model identical to SqlParams but excludes profile_id.
+    This allows routes to accept requests without profile_id in the body,
+    while SQL queries still receive profile_id from the request header.
+
+    Args:
+        metadata: SQL metadata with parameter information
+        route_name: Route name for class naming (e.g., "create_agent")
+
+    Returns:
+        Python code string for Pydantic model
+    """
+    class_name = _to_class_name(route_name, "ApiRequest")
+
+    # Filter out profile_id parameter
+    api_params = [p for p in metadata.parameters if p.name != "profile_id"]
+    
+    # Check if we need UUID import (excluding profile_id)
+    needs_uuid = any(
+        "UUID" in param.python_type for param in api_params
+    )
+    
+    # Check if we need Field import (for defaults)
+    needs_field = any(
+        param.default_value is not None for param in api_params
+    )
+
+    lines = [
+        '"""API request model generated from SQL introspection.',
+        "",
+        f"Generated from: {metadata.sql_path}",
+        "",
+        "API request model excludes profile_id (obtained from request header).",
+        '"""',
+        "",
+        "from typing import Any",
+    ]
+    
+    if needs_uuid:
+        lines.append("from uuid import UUID")
+    
+    lines.append("")
+    lines.append("from pydantic import BaseModel")
+    
+    if needs_field:
+        lines.append("from pydantic import Field")
+    
+    lines.append("")
+    lines.append("")
+    lines.append(f"class {class_name}(BaseModel):")
+    lines.append('    """API request parameters.')
+    lines.append("")
+    lines.append("    Excludes profile_id (obtained from request header).")
+    lines.append('    """')
+    lines.append("")
+
+    # Add fields for each parameter (excluding profile_id)
+    for param in api_params:
+        field_name = _sanitize_field_name(param.name)
+        field_type = _to_pydantic_field_type(param.python_type, param.is_optional)
+        
+        # Handle defaults
+        if param.default_value is not None:
+            # Convert default value to Python expression
+            if param.default_value == "{}":
+                # Empty list/dict default
+                if "list" in field_type:
+                    default_expr = "Field(default_factory=list)"
+                elif "dict" in field_type:
+                    default_expr = "Field(default_factory=dict)"
+                else:
+                    default_expr = "None"
+            elif param.default_value == "None" or param.default_value.lower() == "null":
+                default_expr = "None"
+            else:
+                # Try to parse as literal
+                default_expr = param.default_value
+            
+            lines.append(f"    {field_name}: {field_type} = {default_expr}")
+        elif param.is_optional:
+            lines.append(f"    {field_name}: {field_type} = None")
+        else:
+            lines.append(f"    {field_name}: {field_type}")
+
+    return "\n".join(lines)
+
+
+def generate_api_response_model(
+    metadata: SQLMetadata, route_name: str
+) -> str:
+    """Generate Pydantic API response model from SQL metadata.
+    
+    For now, generates identical structure to SqlRow. Can be customized later
+    to exclude sensitive fields or add computed properties.
+
+    Args:
+        metadata: SQL metadata with return column information
+        route_name: Route name for class naming (e.g., "create_agent")
+
+    Returns:
+        Python code string for Pydantic model
+    """
+    class_name = _to_class_name(route_name, "ApiResponse")
+
+    # Detect list prefixes from column names
+    list_prefixes = detect_list_prefixes(metadata.returns)
+
+    # If no list prefixes detected, fall back to flat structure
+    if not list_prefixes:
+        # Original flat generation
+        lines = [
+            '"""API response model generated from SQL introspection.',
+            "",
+            f"Generated from: {metadata.sql_path}",
+            "",
+            "For now, identical to SQL response structure.",
+            '"""',
+            "",
+            "from typing import Any",
+            "",
+            "from pydantic import BaseModel",
+            "",
+            "",
+            f"class {class_name}(BaseModel):",
+            '    """API response data.',
+            "",
+            "    Structure matches SQL query result.",
+            '    """',
+            "",
+        ]
+
+        # Add fields for each return column
+        for col in metadata.returns:
+            field_name = _sanitize_field_name(col.name)
+            field_type = _to_pydantic_field_type(col.python_type)
+            lines.append(f"    {field_name}: {field_type}")
+
+        return "\n".join(lines)
+
+    # Generate nested structure using nest_many()
+    sample_rows = create_sample_rows(metadata.returns, list_prefixes, num_samples=3)
+    nested_data = nest_many(sample_rows, list_prefixes=list_prefixes)
+
+    # Generate nested model classes
+    nested_classes_code, generated_classes = generate_nested_types(
+        nested_data, route_name
+    )
+
+    # Build the main response model
+    lines = [
+        '"""API response model generated from SQL introspection.',
+        "",
+        f"Generated from: {metadata.sql_path}",
+        "",
+        "For now, identical to SQL response structure.",
+        '"""',
+        "",
+        "from typing import Any",
+        "",
+        "from pydantic import BaseModel",
+        "",
+    ]
+
+    # Add nested class definitions if any
+    if nested_classes_code:
+        lines.append("")
+        lines.append(nested_classes_code)
+        lines.append("")
+
+    lines.append("")
+    lines.append(f"class {class_name}(BaseModel):")
+    lines.append('    """API response data after nesting.')
+    lines.append("")
+    lines.append("    Structure matches nest_many() output.")
+    lines.append('    """')
+    lines.append("")
+
+    # Generate fields based on nested structure
+    for key, value in nested_data.items():
+        field_type = _generate_type_from_value(value, key, generated_classes, route_name)
+
+        # If it's a dict of objects, use the generated class
+        if isinstance(value, dict) and value:
+            first_val = next(iter(value.values()))
+            if isinstance(first_val, dict):
+                # Find the corresponding generated class
+                item_class_name = _to_class_name(
+                    f"{route_name}_{key}_item", ""
+                )
+                if item_class_name in generated_classes:
+                    field_type = f"dict[str, {item_class_name}]"
+
+        # If it's a list of dicts, use the generated class
+        elif isinstance(value, list) and value:
+            first_item = value[0]
+            if isinstance(first_item, dict):
+                item_class_name = _to_class_name(
+                    f"{route_name}_{key}_item", ""
+                )
+                if item_class_name in generated_classes:
+                    field_type = f"list[{item_class_name}]"
+
+        sanitized_key = _sanitize_field_name(key)
+        lines.append(f"    {sanitized_key}: {field_type}")
+
+    return "\n".join(lines)
+
+
 def generate_types_file(
     metadata: SQLMetadata, route_name: str
 ) -> str:
-    """Generate complete types file with request and response models.
+    """Generate complete types file with SQL and API request/response models.
 
     Args:
         metadata: SQL metadata
         route_name: Route name (e.g., "create_agent")
 
     Returns:
-        Complete Python file content
+        Complete Python file content with all four types:
+        - SqlParams (SQL input with profile_id)
+        - SqlRow (SQL output)
+        - ApiRequest (API input without profile_id)
+        - ApiResponse (API output, same as SqlRow for now)
     """
-    request_model = generate_request_model(metadata, route_name)
-    response_model = generate_response_model(metadata, route_name)
+    sql_request_model = generate_request_model(metadata, route_name)
+    sql_response_model = generate_response_model(metadata, route_name)
+    api_request_model = generate_api_request_model(metadata, route_name)
+    api_response_model = generate_api_response_model(metadata, route_name)
 
-    return f"{request_model}\n\n\n{response_model}\n"
+    return f"{sql_request_model}\n\n\n{sql_response_model}\n\n\n{api_request_model}\n\n\n{api_response_model}\n"
 

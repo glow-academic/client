@@ -47,3 +47,50 @@ class DeleteSimulationSqlRow(BaseModel):
     usage_count: int
     deleted: bool
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/delete_simulation_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class DeleteSimulationApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    simulationId: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/simulations/delete_simulation_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class DeleteSimulationApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    simulation_id: str
+    title: str
+    usage_count: int
+    deleted: bool
+    actor_name: str

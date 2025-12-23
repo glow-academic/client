@@ -61,3 +61,65 @@ class GetEvalNewSqlRow(BaseModel):
     can_edit: bool
     can_delete: bool
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/evals/get_eval_new_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetEvalNewApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/evals/get_eval_new_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class GetEvalNewApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    eval_id: str
+    name: str
+    description: str
+    rubric_id: str
+    eval_agent_id: str
+    agent_id: str
+    agent_ids: list[str]
+    model_run_ids: list[str]
+    active: bool
+    dynamic: bool
+    department_ids: list[str]
+    valid_department_ids: list[str]
+    department_mapping: dict[str, Any]
+    eval_agent_mapping: dict[str, Any]
+    valid_eval_agent_ids: list[str]
+    agent_mapping: dict[str, Any]
+    valid_agent_ids: list[str]
+    rubric_mapping: dict[str, Any]
+    valid_rubric_ids: list[str]
+    can_edit: bool
+    can_delete: bool
+    actor_name: str

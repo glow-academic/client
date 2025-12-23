@@ -16,95 +16,136 @@ TOutput = TypeVar("TOutput", bound=BaseModel)
 SqlString = str
 
 if TYPE_CHECKING:
-    from tests.types.integration.infra.activity.get_activity_by_message import GetActivityByMessageSqlParams, GetActivityByMessageSqlRow
-    from tests.types.integration.infra.activity.get_activity_by_message_and_endpoint import GetActivityByMessageAndEndpointSqlParams, GetActivityByMessageAndEndpointSqlRow
-    from tests.types.integration.infra.activity.insert_test_profile import InsertTestProfileSqlParams, InsertTestProfileSqlRow
-    from tests.types.integration.infra.error.mock_select_test import MockSelectTestSqlParams, MockSelectTestSqlRow
-    from tests.types.integration.socket.create_test_chat_with_messages import CreateTestChatWithMessagesSqlParams, CreateTestChatWithMessagesSqlRow
-    from tests.types.integration.socket.create_test_eval_with_runs import CreateTestEvalWithRunsSqlParams, CreateTestEvalWithRunsSqlRow
-    from tests.types.integration.socket.create_test_persona import CreateTestPersonaSqlParams, CreateTestPersonaSqlRow
-    from tests.types.integration.socket.create_test_scenario import CreateTestScenarioSqlParams, CreateTestScenarioSqlRow
-    from tests.types.integration.socket.create_test_scenario_with_dependencies import CreateTestScenarioWithDependenciesSqlParams, CreateTestScenarioWithDependenciesSqlRow
-    from tests.types.integration.socket.create_test_simulation import CreateTestSimulationSqlParams, CreateTestSimulationSqlRow
-    from tests.types.integration.socket.create_test_simulation_attempt import CreateTestSimulationAttemptSqlParams, CreateTestSimulationAttemptSqlRow
+    from tests.types.integration.infra.activity.get_activity_by_message import GetActivityByMessageSqlParams, GetActivityByMessageSqlRow, GetActivityByMessageApiRequest, GetActivityByMessageApiResponse
+    from tests.types.integration.infra.activity.get_activity_by_message_and_endpoint import GetActivityByMessageAndEndpointSqlParams, GetActivityByMessageAndEndpointSqlRow, GetActivityByMessageAndEndpointApiRequest, GetActivityByMessageAndEndpointApiResponse
+    from tests.types.integration.infra.activity.insert_test_profile import InsertTestProfileSqlParams, InsertTestProfileSqlRow, InsertTestProfileApiRequest, InsertTestProfileApiResponse
+    from tests.types.integration.infra.error.mock_select_test import MockSelectTestSqlParams, MockSelectTestSqlRow, MockSelectTestApiRequest, MockSelectTestApiResponse
+    from tests.types.integration.socket.create_test_chat_with_messages import CreateTestChatWithMessagesSqlParams, CreateTestChatWithMessagesSqlRow, CreateTestChatWithMessagesApiRequest, CreateTestChatWithMessagesApiResponse
+    from tests.types.integration.socket.create_test_eval_with_runs import CreateTestEvalWithRunsSqlParams, CreateTestEvalWithRunsSqlRow, CreateTestEvalWithRunsApiRequest, CreateTestEvalWithRunsApiResponse
+    from tests.types.integration.socket.create_test_persona import CreateTestPersonaSqlParams, CreateTestPersonaSqlRow, CreateTestPersonaApiRequest, CreateTestPersonaApiResponse
+    from tests.types.integration.socket.create_test_scenario import CreateTestScenarioSqlParams, CreateTestScenarioSqlRow, CreateTestScenarioApiRequest, CreateTestScenarioApiResponse
+    from tests.types.integration.socket.create_test_scenario_with_dependencies import CreateTestScenarioWithDependenciesSqlParams, CreateTestScenarioWithDependenciesSqlRow, CreateTestScenarioWithDependenciesApiRequest, CreateTestScenarioWithDependenciesApiResponse
+    from tests.types.integration.socket.create_test_simulation import CreateTestSimulationSqlParams, CreateTestSimulationSqlRow, CreateTestSimulationApiRequest, CreateTestSimulationApiResponse
+    from tests.types.integration.socket.create_test_simulation_attempt import CreateTestSimulationAttemptSqlParams, CreateTestSimulationAttemptSqlRow, CreateTestSimulationAttemptApiRequest, CreateTestSimulationAttemptApiResponse
 
 
-_registry: dict[str, tuple[str, str, str]] = {
+_registry: dict[str, tuple[str, str, str, str, str]] = {
     "tests/sql/integration/infra/activity/get_activity_by_message.sql": (
         "tests.types.integration.infra.activity.get_activity_by_message",
         "GetActivityByMessageSqlParams",
         "GetActivityByMessageSqlRow",
+        "GetActivityByMessageApiRequest",
+        "GetActivityByMessageApiResponse",
     ),
     "tests/sql/integration/infra/activity/get_activity_by_message_and_endpoint.sql": (
         "tests.types.integration.infra.activity.get_activity_by_message_and_endpoint",
         "GetActivityByMessageAndEndpointSqlParams",
         "GetActivityByMessageAndEndpointSqlRow",
+        "GetActivityByMessageAndEndpointApiRequest",
+        "GetActivityByMessageAndEndpointApiResponse",
     ),
     "tests/sql/integration/infra/activity/insert_test_profile.sql": (
         "tests.types.integration.infra.activity.insert_test_profile",
         "InsertTestProfileSqlParams",
         "InsertTestProfileSqlRow",
+        "InsertTestProfileApiRequest",
+        "InsertTestProfileApiResponse",
     ),
     "tests/sql/integration/infra/error/mock_select_test.sql": (
         "tests.types.integration.infra.error.mock_select_test",
         "MockSelectTestSqlParams",
         "MockSelectTestSqlRow",
+        "MockSelectTestApiRequest",
+        "MockSelectTestApiResponse",
     ),
     "tests/sql/integration/socket/create_test_chat_with_messages.sql": (
         "tests.types.integration.socket.create_test_chat_with_messages",
         "CreateTestChatWithMessagesSqlParams",
         "CreateTestChatWithMessagesSqlRow",
+        "CreateTestChatWithMessagesApiRequest",
+        "CreateTestChatWithMessagesApiResponse",
     ),
     "tests/sql/integration/socket/create_test_eval_with_runs.sql": (
         "tests.types.integration.socket.create_test_eval_with_runs",
         "CreateTestEvalWithRunsSqlParams",
         "CreateTestEvalWithRunsSqlRow",
+        "CreateTestEvalWithRunsApiRequest",
+        "CreateTestEvalWithRunsApiResponse",
     ),
     "tests/sql/integration/socket/create_test_persona.sql": (
         "tests.types.integration.socket.create_test_persona",
         "CreateTestPersonaSqlParams",
         "CreateTestPersonaSqlRow",
+        "CreateTestPersonaApiRequest",
+        "CreateTestPersonaApiResponse",
     ),
     "tests/sql/integration/socket/create_test_scenario.sql": (
         "tests.types.integration.socket.create_test_scenario",
         "CreateTestScenarioSqlParams",
         "CreateTestScenarioSqlRow",
+        "CreateTestScenarioApiRequest",
+        "CreateTestScenarioApiResponse",
     ),
     "tests/sql/integration/socket/create_test_scenario_with_dependencies.sql": (
         "tests.types.integration.socket.create_test_scenario_with_dependencies",
         "CreateTestScenarioWithDependenciesSqlParams",
         "CreateTestScenarioWithDependenciesSqlRow",
+        "CreateTestScenarioWithDependenciesApiRequest",
+        "CreateTestScenarioWithDependenciesApiResponse",
     ),
     "tests/sql/integration/socket/create_test_simulation.sql": (
         "tests.types.integration.socket.create_test_simulation",
         "CreateTestSimulationSqlParams",
         "CreateTestSimulationSqlRow",
+        "CreateTestSimulationApiRequest",
+        "CreateTestSimulationApiResponse",
     ),
     "tests/sql/integration/socket/create_test_simulation_attempt.sql": (
         "tests.types.integration.socket.create_test_simulation_attempt",
         "CreateTestSimulationAttemptSqlParams",
         "CreateTestSimulationAttemptSqlRow",
+        "CreateTestSimulationAttemptApiRequest",
+        "CreateTestSimulationAttemptApiResponse",
     ),
 }
 
 
 def get_sql_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
-    """Get input and output types for a SQL file path.
+    """Get SQL input and output types for a SQL file path.
     
     Uses lazy imports to avoid loading all types at startup.
     """
     if sql_path not in _registry:
         raise ValueError(f"No types found for SQL path: {sql_path}")
     
-    module_path, input_class_name, output_class_name = _registry[sql_path]
+    module_path, sql_params_class, sql_row_class, _, _ = _registry[sql_path]
     
     # Dynamic import
     import importlib
     module = importlib.import_module(module_path)
-    input_type = getattr(module, input_class_name)
-    output_type = getattr(module, output_class_name)
+    sql_params_type = getattr(module, sql_params_class)
+    sql_row_type = getattr(module, sql_row_class)
     
-    return input_type, output_type
+    return sql_params_type, sql_row_type
+
+
+def get_api_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
+    """Get API request and response types for a SQL file path.
+    
+    Uses lazy imports to avoid loading all types at startup.
+    """
+    if sql_path not in _registry:
+        raise ValueError(f"No types found for SQL path: {sql_path}")
+    
+    module_path, _, _, api_request_class, api_response_class = _registry[sql_path]
+    
+    # Dynamic import
+    import importlib
+    module = importlib.import_module(module_path)
+    api_request_type = getattr(module, api_request_class)
+    api_response_type = getattr(module, api_response_class)
+    
+    return api_request_type, api_response_type
 
 
 # Overload declarations for load_sql_typed() - provides strong type hints
@@ -219,3 +260,106 @@ def load_sql_typed(
     # Get types from registry
     input_type, output_type = get_sql_types(file_path)
     return sql_string, input_type, output_type
+
+
+# Overload declarations for load_api_types() - provides strong type hints
+# Auto-generated by sql-compile. Do not edit manually.
+if TYPE_CHECKING:
+    @overload
+    def load_api_types(
+        file_path: Literal["tests/sql/integration/infra/activity/get_activity_by_message.sql"]
+    ) -> tuple[Type[GetActivityByMessageApiRequest], Type[GetActivityByMessageApiResponse]]: ...
+
+    @overload
+    def load_api_types(
+        file_path: Literal["tests/sql/integration/infra/activity/get_activity_by_message_and_endpoint.sql"]
+    ) -> tuple[Type[GetActivityByMessageAndEndpointApiRequest], Type[GetActivityByMessageAndEndpointApiResponse]]: ...
+
+    @overload
+    def load_api_types(
+        file_path: Literal["tests/sql/integration/infra/activity/insert_test_profile.sql"]
+    ) -> tuple[Type[InsertTestProfileApiRequest], Type[InsertTestProfileApiResponse]]: ...
+
+    @overload
+    def load_api_types(
+        file_path: Literal["tests/sql/integration/infra/error/mock_select_test.sql"]
+    ) -> tuple[Type[MockSelectTestApiRequest], Type[MockSelectTestApiResponse]]: ...
+
+    @overload
+    def load_api_types(
+        file_path: Literal["tests/sql/integration/socket/create_test_chat_with_messages.sql"]
+    ) -> tuple[Type[CreateTestChatWithMessagesApiRequest], Type[CreateTestChatWithMessagesApiResponse]]: ...
+
+    @overload
+    def load_api_types(
+        file_path: Literal["tests/sql/integration/socket/create_test_eval_with_runs.sql"]
+    ) -> tuple[Type[CreateTestEvalWithRunsApiRequest], Type[CreateTestEvalWithRunsApiResponse]]: ...
+
+    @overload
+    def load_api_types(
+        file_path: Literal["tests/sql/integration/socket/create_test_persona.sql"]
+    ) -> tuple[Type[CreateTestPersonaApiRequest], Type[CreateTestPersonaApiResponse]]: ...
+
+    @overload
+    def load_api_types(
+        file_path: Literal["tests/sql/integration/socket/create_test_scenario.sql"]
+    ) -> tuple[Type[CreateTestScenarioApiRequest], Type[CreateTestScenarioApiResponse]]: ...
+
+    @overload
+    def load_api_types(
+        file_path: Literal["tests/sql/integration/socket/create_test_scenario_with_dependencies.sql"]
+    ) -> tuple[Type[CreateTestScenarioWithDependenciesApiRequest], Type[CreateTestScenarioWithDependenciesApiResponse]]: ...
+
+    @overload
+    def load_api_types(
+        file_path: Literal["tests/sql/integration/socket/create_test_simulation.sql"]
+    ) -> tuple[Type[CreateTestSimulationApiRequest], Type[CreateTestSimulationApiResponse]]: ...
+
+    @overload
+    def load_api_types(
+        file_path: Literal["tests/sql/integration/socket/create_test_simulation_attempt.sql"]
+    ) -> tuple[Type[CreateTestSimulationAttemptApiRequest], Type[CreateTestSimulationAttemptApiResponse]]: ...
+
+    @overload
+    def load_api_types(
+        file_path: str
+    ) -> tuple[Type[BaseModel], Type[BaseModel]]: ...
+
+
+def load_api_types(
+    file_path: str,
+) -> tuple[Type[TInput], Type[TOutput]]:
+    """Load API request and response types for a SQL file path.
+
+    Returns the generated Pydantic model classes for API request and response.
+    API request excludes profile_id (obtained from request header).
+    API response matches SQL response structure (can be customized later).
+
+    The overloads provide strong type hints - when you use a literal string path,
+    the IDE will know the exact ApiRequestType and ApiResponseType classes.
+
+    Args:
+        file_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")
+
+    Returns:
+        Tuple of (ApiRequestType, ApiResponseType) where:
+        - ApiRequestType: Pydantic model class for API request (e.g., GetAgentNewApiRequest)
+          Excludes profile_id field
+        - ApiResponseType: Pydantic model class for API response (e.g., GetAgentNewApiResponse)
+
+    Raises:
+        ValueError: If no types are found for the SQL file path
+        ImportError: If the type classes cannot be imported
+
+    Example:
+        ```python
+        ApiRequestType, ApiResponseType = load_api_types("tests/sql/integration/infra/activity/insert_test_profile.sql")
+        
+        # Type-safe usage - IDE will show fields when you type ApiRequestType(...)
+        request = ApiRequestType(...)  # No profile_id field
+        response = ApiResponseType(...)  # Same structure as SQL response
+        ```
+    """
+    # Get types from registry
+    api_request_type, api_response_type = get_api_types(file_path)
+    return api_request_type, api_response_type

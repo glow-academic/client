@@ -45,3 +45,49 @@ class DuplicateDepartmentSqlRow(BaseModel):
     new_department_id: str
     original_title: str
     actor_name: str
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/departments/duplicate_department_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class DuplicateDepartmentApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    department_id: UUID
+    current_profile_id: UUID
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/departments/duplicate_department_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class DuplicateDepartmentApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    new_department_id: str
+    original_title: str
+    actor_name: str

@@ -56,3 +56,58 @@ class StartEvalAttemptSqlRow(BaseModel):
     conversation_agent_id: str
     conversation_max_turns: int
     pending_run_ids: list[str]
+
+
+"""API request model generated from SQL introspection.
+
+Generated from: app/sql/v3/evals/start_eval_attempt_complete.sql
+
+API request model excludes profile_id (obtained from request header).
+"""
+
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class StartEvalAttemptApiRequest(BaseModel):
+    """API request parameters.
+
+    Excludes profile_id (obtained from request header).
+    """
+
+    eval_id: UUID
+    conversation_mode: bool
+    conversation_agent_id: UUID
+    conversation_max_turns: int
+
+
+"""API response model generated from SQL introspection.
+
+Generated from: app/sql/v3/evals/start_eval_attempt_complete.sql
+
+For now, identical to SQL response structure.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class StartEvalAttemptApiResponse(BaseModel):
+    """API response data.
+
+    Structure matches SQL query result.
+    """
+
+    attempt_id: str
+    eval_id: str
+    agent_id: str
+    eval_agent_id: str
+    rubric_id: str
+    dynamic: bool
+    conversation_mode: bool
+    conversation_agent_id: str
+    conversation_max_turns: int
+    pending_run_ids: list[str]
