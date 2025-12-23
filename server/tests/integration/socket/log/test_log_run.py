@@ -147,7 +147,11 @@ async def test_log_run_with_developer_messages(
 
     # Assert - verify developer messages were saved
     dev_messages = await db.fetch(
-        "SELECT content FROM model_run_developer_messages WHERE run_id = $1",
+        """SELECT mc.content 
+           FROM messages m
+           JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+           JOIN message_runs mr ON mr.message_id = m.id
+           WHERE m.role = 'developer' AND mr.run_id = $1""",
         run_id,
     )
     assert len(dev_messages) == 1

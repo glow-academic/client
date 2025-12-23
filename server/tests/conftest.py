@@ -37,7 +37,7 @@ os.environ["E2E_STORAGE"] = os.getenv("E2E_STORAGE", "")
 server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
 
-from app.main import close_db_pool, init_db_pool  # noqa: E402
+from app.main import close_db_pool, get_pool, init_db_pool  # noqa: E402
 from utils.test_db import get_test_db_url  # noqa: E402
 
 # Store the test database URL for direct connections
@@ -51,17 +51,32 @@ _test_db_url: str | None = None
 async def initialize_test_db() -> AsyncGenerator[None, None]:
     """Spin up disposable Postgres via init_db_pool and tear it down.
 
-    This initializes the test container and applies the schema.
+    This initializes the test container and applies the schema, base, and university data.
     Individual tests create their own connections to avoid event loop issues.
     """
     global _test_db_url
 
-    schema_file = Path(__file__).parent.parent.parent / "database" / "schema.sql"
+    database_dir = Path(__file__).parent.parent.parent / "database"
+    schema_file = database_dir / "schema.sql"
+    base_file = database_dir / "base.sql"
+    university_file = database_dir / "university.sql"
 
     if not schema_file.exists():
         raise FileNotFoundError(
             f"Schema file not found: {schema_file}\n"
             "Please run 'make export-db schema' to generate it."
+        )
+
+    if not base_file.exists():
+        raise FileNotFoundError(
+            f"Base file not found: {base_file}\n"
+            "Please run 'make export-db base' to generate it."
+        )
+
+    if not university_file.exists():
+        raise FileNotFoundError(
+            f"University file not found: {university_file}\n"
+            "Please run 'make export-db university' to generate it."
         )
 
     await init_db_pool()
@@ -71,6 +86,28 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
     _test_db_url = get_test_db_url()
     if _test_db_url is None:
         raise RuntimeError("Test database URL not available")
+
+    # Load base.sql and university.sql after schema is applied
+    pool = get_pool()
+    if pool is None:
+        raise RuntimeError("Database pool not available")
+
+    async def load_sql_file(file_path: Path, file_name: str) -> None:
+        """Load and execute a SQL file, filtering out pg_dump meta-commands."""
+        sql_content = file_path.read_text()
+        # Filter out pg_dump meta-commands (lines starting with \) that can't be executed via asyncpg
+        # These are psql meta-commands, not SQL
+        filtered_sql = "\n".join(
+            line for line in sql_content.split("\n")
+            if not line.strip().startswith("\\")
+        )
+        async with pool.acquire() as conn:
+            await conn.execute(filtered_sql)
+        print(f"🗄️  Test {file_name} applied to disposable database")
+
+    # Load base.sql and university.sql
+    await load_sql_file(base_file, "base.sql")
+    await load_sql_file(university_file, "university.sql")
 
     try:
         yield

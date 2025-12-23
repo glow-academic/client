@@ -348,12 +348,16 @@ connect-db:
 # Export database (schema, base, university, or organization)
 export-db:
 	@if [ -z "$(ARGS)" ]; then \
-		echo "Usage: make export-db {schema|base|university|organization}"; \
-		exit 1; \
+		echo "Exporting all database files (schema, base, university)..."; \
+		(cd database/scripts && bash export-db.sh schema); \
+		(cd database/scripts && bash export-db.sh base); \
+		(cd database/scripts && bash export-db.sh university); \
+		echo "✅ Database export completed (schema, base, university)"; \
+	else \
+		echo "Exporting database: $(ARGS)..."; \
+		cd database/scripts && bash export-db.sh $(ARGS); \
+		echo "✅ Database export completed"; \
 	fi
-	@echo "Exporting database: $(ARGS)..."
-	@cd database/scripts && bash export-db.sh $(ARGS)
-	@echo "✅ Database export completed"
 
 # Start database with fresh data (interactive setup)
 fresh-db:

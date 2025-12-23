@@ -78,7 +78,7 @@ async def connect(
                     async with pool.acquire() as conn:
                         async with conn.transaction():
                             sql = load_sql(
-                                "sql/v3/profile/update_profile_to_inactive_complete.sql"
+                                "app/sql/v3/profile/update_profile_to_inactive_complete.sql"
                             )
                             last_active = datetime.now(UTC)
                             await conn.fetchrow(sql, profile_id, last_active)
@@ -101,7 +101,7 @@ async def connect(
                 async with pool.acquire() as conn:
                     async with conn.transaction():
                         sql = load_sql(
-                            "sql/v3/profile/update_profile_to_active_complete.sql"
+                            "app/sql/v3/profile/update_profile_to_active_complete.sql"
                         )
                         last_active = datetime.now(UTC)
                         await conn.fetchrow(sql, profile_id, last_active)

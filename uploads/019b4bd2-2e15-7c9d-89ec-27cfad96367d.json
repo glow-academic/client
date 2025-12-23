@@ -1,0 +1,10 @@
+[
+  {
+    "role": "system",
+    "content": "Test system prompt"
+  },
+  {
+    "role": "assistant",
+    "content": "Test output"
+  }
+]
