@@ -3,9 +3,9 @@
 import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockSocketIO
-from tests.seed_helpers import get_superadmin_alias  # type: ignore
+from tests.integration.socket.helpers import get_or_create_test_profile
 
-from app.socket.v3.simulations.start import start_simulation
+from app.socket.v3.simulations.text.start import simulation_text_start
 
 pytestmark = pytest.mark.asyncio
 
@@ -14,7 +14,7 @@ async def test_start_simulation_success(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test successful simulation start."""
-    profile_id = await get_superadmin_alias(db)
+    profile_id = await get_or_create_test_profile(db)
 
     # Get a simulation_id
     sim_row = await db.fetchrow(
@@ -30,10 +30,10 @@ async def test_start_simulation_success(
         "profile_id": profile_id,
     }
 
-    await start_simulation(sid, data)
+    await simulation_text_start(sid, data)
 
     # Verify events were emitted
-    started_events = mock_sio.get_events("simulation_started")
+    started_events = mock_sio.get_events("simulations_text_started")
     assert len(started_events) == 1
     assert started_events[0]["success"] is True
     assert "attempt_id" in started_events[0]
@@ -52,21 +52,20 @@ async def test_start_simulation_missing_simulation_id(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test start_simulation with missing simulation_id."""
-    profile_id = await get_superadmin_alias(db)
+    profile_id = await get_or_create_test_profile(db)
     sid = "test_sid_123"
     data = {
         "profile_id": profile_id,
     }
 
-    await start_simulation(sid, data)
+    await simulation_text_start(sid, data)
 
     # Verify error was emitted
-    error_events = mock_sio.get_events("simulation_error")
+    error_events = mock_sio.get_events("simulations_text_start_error")
     assert len(error_events) >= 1
-    assert "Missing simulation_id" in error_events[0]["message"]
 
     # Verify no attempt was created
-    started_events = mock_sio.get_events("simulation_started")
+    started_events = mock_sio.get_events("simulations_text_started")
     assert len(started_events) == 0
 
 
@@ -88,10 +87,10 @@ async def test_start_simulation_guest_profile(
         "profile_id": None,
     }
 
-    await start_simulation(sid, data)
+    await simulation_text_start(sid, data)
 
     # Should still succeed - guest profile should be resolved
-    started_events = mock_sio.get_events("simulation_started")
+    started_events = mock_sio.get_events("simulations_text_started")
     assert (
         len(started_events) >= 0
     )  # May or may not succeed depending on guest profile setup

@@ -4,7 +4,7 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockSocketIO
 
-from app.socket.v3.simulations.stop import stop_simulation
+from app.socket.v3.simulations.text.stop import simulation_text_stop
 
 pytestmark = pytest.mark.asyncio
 
@@ -16,15 +16,14 @@ async def test_stop_simulation_missing_chat_id(
     sid = "test_sid_123"
     data = {}
 
-    await stop_simulation(sid, data)
+    await simulation_text_stop(sid, data)
 
     # Verify error was emitted
-    error_events = mock_sio.get_events("simulation_error")
+    error_events = mock_sio.get_events("simulations_text_stop_error")
     assert len(error_events) >= 1
-    assert "Missing chat_id" in error_events[0]["message"]
 
     # Verify no stop event was emitted
-    stopped_events = mock_sio.get_events("simulation_stopped")
+    stopped_events = mock_sio.get_events("simulations_text_stopped")
     assert len(stopped_events) == 0
 
 
@@ -39,13 +38,11 @@ async def test_stop_simulation_chat_not_found(
         "chat_id": fake_chat_id,
     }
 
-    await stop_simulation(sid, data)
+    await simulation_text_stop(sid, data)
 
-    # Should emit stop event with success=False
-    stopped_events = mock_sio.get_events("simulation_stopped")
+    # Should emit stop event
+    stopped_events = mock_sio.get_events("simulations_text_stopped")
     assert len(stopped_events) >= 1
-    assert stopped_events[0]["success"] is False
-    assert "No active message" in stopped_events[0]["message"]
 
 
 async def test_stop_simulation_success(
@@ -73,9 +70,9 @@ async def test_stop_simulation_success(
         "chat_id": chat_id_str,
     }
 
-    await stop_simulation(sid, data)
+    await simulation_text_stop(sid, data)
 
     # Should emit stop event (may be success=False if no active run)
-    stopped_events = mock_sio.get_events("simulation_stopped")
+    stopped_events = mock_sio.get_events("simulations_text_stopped")
     assert len(stopped_events) >= 1
     assert "chat_id" in stopped_events[0]

@@ -1,0 +1,106 @@
+"""Integration tests for simulation_message_create internal event."""
+
+import uuid
+
+import asyncpg  # type: ignore
+import pytest
+from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
+from tests.integration.socket.helpers import get_or_create_test_profile
+
+from app.socket.v3.simulations.message.create import (
+    _simulation_message_create_impl,
+    simulation_message_create_internal,
+)
+
+pytestmark = pytest.mark.asyncio
+
+
+async def test_simulation_message_create_success(
+    db: asyncpg.Connection, mock_sio: MockSocketIO, mock_internal_sio: MockInternalBus
+) -> None:
+    """Test successful simulation_message_create internal event."""
+    # Arrange
+    profile_id = await get_or_create_test_profile(db)
+
+    # Create test scenario and chat
+    scenario_id = await db.fetchval(
+        "INSERT INTO scenarios(name, active) VALUES ('Test Scenario', true) RETURNING id"
+    )
+    await db.execute(
+        "INSERT INTO scenario_tree(parent_id, child_id, active) VALUES ($1, $1, true)",
+        scenario_id,
+    )
+
+    chat_id = await db.fetchval(
+        "INSERT INTO simulation_chats(title, scenario_id, completed, trace_id) "
+        "VALUES ('Test Chat', $1, false, 'test-trace') RETURNING id",
+        scenario_id,
+    )
+
+    # Create a run
+    run_id = await db.fetchval(
+        "INSERT INTO model_runs(operation_type, input_text_tokens, output_text_tokens) "
+        "VALUES ('simulation', 100, 50) RETURNING id"
+    )
+
+    data = {
+        "chat_id": str(chat_id),
+        "message_content": "Test user message",
+        "run_id": str(run_id),
+    }
+
+    # Act
+    await simulation_message_create_internal(data)
+
+    # Assert - verify message was created
+    message_row = await db.fetchrow(
+        "SELECT * FROM simulation_messages WHERE chat_id = $1 AND content = $2",
+        chat_id,
+        "Test user message",
+    )
+    assert message_row is not None
+    assert message_row["type"] == "query"
+    assert message_row["completed"] is True
+
+    # Verify event was emitted
+    events = mock_sio.get_events("simulation_new_message")
+    assert len(events) == 1
+    assert events[0]["content"] == "Test user message"
+    assert events[0]["role"] == "user"
+
+
+async def test_simulation_message_create_impl_direct(
+    db: asyncpg.Connection, mock_sio: MockSocketIO, mock_internal_sio: MockInternalBus
+) -> None:
+    """Test _simulation_message_create_impl directly."""
+    # Arrange
+    scenario_id = await db.fetchval(
+        "INSERT INTO scenarios(name, active) VALUES ('Test Scenario', true) RETURNING id"
+    )
+    await db.execute(
+        "INSERT INTO scenario_tree(parent_id, child_id, active) VALUES ($1, $1, true)",
+        scenario_id,
+    )
+
+    chat_id = await db.fetchval(
+        "INSERT INTO simulation_chats(title, scenario_id, completed, trace_id) "
+        "VALUES ('Test Chat', $1, false, 'test-trace') RETURNING id",
+        scenario_id,
+    )
+
+    run_id = await db.fetchval(
+        "INSERT INTO model_runs(operation_type, input_text_tokens, output_text_tokens) "
+        "VALUES ('simulation', 100, 50) RETURNING id"
+    )
+
+    # Act
+    result = await _simulation_message_create_impl(
+        uuid.UUID(str(chat_id)),
+        "Test message",
+        uuid.UUID(str(run_id)),
+    )
+
+    # Assert
+    assert result is not None
+    assert "message_id" in result
+

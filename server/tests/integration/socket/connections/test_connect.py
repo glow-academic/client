@@ -2,9 +2,9 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.socket.v3.connections.connect import connect
+from app.socket.v3.connect import connect
 from tests.integration.socket.conftest import MockSocketIO
-from tests.seed_helpers import get_superadmin_alias  # type: ignore
+from tests.integration.socket.helpers import get_or_create_test_profile
 
 pytestmark = pytest.mark.asyncio
 
@@ -14,7 +14,7 @@ async def test_connect_with_profile_id_success(
 ) -> None:
     """Test successful connection with profile_id."""
     # Arrange
-    profile_id = await get_superadmin_alias(db)
+    profile_id = await get_or_create_test_profile(db)
     sid = "test_sid_123"
     environ = {"QUERY_STRING": f"profileId={profile_id}"}
     auth = {}
@@ -109,7 +109,7 @@ async def test_connect_profile_takeover(
 ) -> None:
     """Test profile connection when profile already has active socket."""
     # Arrange
-    profile_id = await get_superadmin_alias(db)
+    profile_id = await get_or_create_test_profile(db)
     old_sid = "old_sid_123"
     new_sid = "new_sid_456"
 
@@ -147,15 +147,9 @@ async def test_connect_invalid_guest_profile_id_string(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test that invalid profile ID strings are treated as invalid/missing."""
-    # Arrange - ensure there's a default guest profile
-    # First, clear any existing default guest profiles
-    await db.execute(
-        "UPDATE profiles SET default_profile = false WHERE role = 'guest' AND default_profile = true"
-    )
-
-    # Create a new default guest profile
+    # Arrange - create a guest profile for testing
     guest_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, role, default_profile) "
+        "INSERT INTO profiles(first_name, last_name, role, active) "
         "VALUES('Guest', 'User', 'guest', true) "
         "RETURNING id"
     )

@@ -4,10 +4,10 @@ import asyncpg  # type: ignore
 import pytest
 from app.infra.v3.websocket.add_guest_socket import add_guest_socket
 from app.infra.v3.websocket.set_active_connection import set_active_connection
-from app.socket.v3.connections.connect import connect
-from app.socket.v3.connections.disconnect import disconnect
+from app.socket.v3.connect import connect
+from app.socket.v3.disconnect import disconnect
 from tests.integration.socket.conftest import MockSocketIO
-from tests.seed_helpers import get_superadmin_alias  # type: ignore
+from tests.integration.socket.helpers import get_or_create_test_profile
 
 pytestmark = pytest.mark.asyncio
 
@@ -17,7 +17,7 @@ async def test_disconnect_with_profile_success(
 ) -> None:
     """Test profile disconnection cleanup."""
     # Arrange - connect a profile first
-    profile_id = await get_superadmin_alias(db)
+    profile_id = await get_or_create_test_profile(db)
     sid = "test_sid_profile"
     environ = {"QUERY_STRING": f"profileId={profile_id}"}
     auth = {}
@@ -72,7 +72,7 @@ async def test_disconnect_removes_active_connections(
 ) -> None:
     """Test that disconnect removes all active chat connections."""
     # Arrange - connect a profile and set up active connections
-    profile_id = await get_superadmin_alias(db)
+    profile_id = await get_or_create_test_profile(db)
     sid = "test_sid_active"
     environ = {"QUERY_STRING": f"profileId={profile_id}"}
     auth = {}
