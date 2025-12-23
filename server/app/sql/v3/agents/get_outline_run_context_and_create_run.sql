@@ -194,12 +194,12 @@ context_data AS (
         COALESCE(
             (SELECT json_agg(
                 json_build_object(
-                    'item_name', pi.name,
-                    'item_description', pi.description,
+                    'item_name', f.name,
+                    'item_description', f.description,
                     'param_name', pa.name,
                     'param_description', pa.description
                 )
-                ORDER BY array_position(p.parameter_item_ids, pi.id)
+                ORDER BY array_position(p.parameter_item_ids, f.id)
             )
             FROM fields f
             JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
@@ -210,6 +210,7 @@ context_data AS (
         ) as parameter_items,
         
         -- Personas data (aggregated as JSON array when video_id provided)
+        -- Note: After migration 90, videos are linked to scenarios, so get personas via scenario_videos -> scenario_personas
         CASE 
             WHEN (SELECT video_id FROM params) IS NOT NULL THEN
                 COALESCE(
@@ -219,12 +220,13 @@ context_data AS (
                             'name', p.name,
                             'description', COALESCE(p.description, '')
                         )
-                        ORDER BY vp.persona_id
+                        ORDER BY sp.persona_id
                     )
-                    FROM video_personas vp
-                    JOIN personas p ON p.id = vp.persona_id
+                    FROM scenario_videos sv
+                    JOIN scenario_personas sp ON sp.scenario_id = sv.scenario_id AND sp.active = true
+                    JOIN personas p ON p.id = sp.persona_id AND p.active = true
                     CROSS JOIN params p_params
-                    WHERE vp.video_id = p_params.video_id AND vp.active = true AND p.active = true
+                    WHERE sv.video_id = p_params.video_id AND sv.active = true
                     ),
                     '[]'::json
                 )

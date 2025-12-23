@@ -212,24 +212,28 @@ model_mapping_data AS (
 key_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
-            dk.key_id,
+            k.id,
             jsonb_build_object(
-                'name', dk.name,
+                'name', k.name,
                 'description', CASE 
-                    WHEN LENGTH(dk.key) > 4 THEN LEFT(dk.key, 4) || '****'
+                    WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
                     ELSE '****'
                 END,
                 'key_masked', CASE 
-                    WHEN LENGTH(dk.key) > 4 THEN LEFT(dk.key, 4) || '****'
+                    WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
                     ELSE '****'
                 END,
-                'active', dk.active
+                'active', k.active
             )
-        ) FILTER (WHERE dk.key_id IS NOT NULL),
+        ) FILTER (WHERE k.id IS NOT NULL),
         '{}'::jsonb
     ) as key_mapping,
-    array_agg(dk.key_id ORDER BY dk.name) as key_ids
-    FROM (SELECT NULL::uuid as key_id, NULL::text as name, NULL::boolean as active WHERE false) dk
+    array_agg(k.id ORDER BY k.name) as key_ids
+    FROM keys k
+    JOIN setting_provider_keys spk ON spk.key_id = k.id AND spk.active = true
+    JOIN settings s ON s.id = spk.settings_id AND s.active = true
+    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+    WHERE ds.department_id = $1::uuid AND ds.active = true AND k.active = true
 ),
 model_key_associations AS (
     -- Get model-key associations for this department via settings
@@ -307,7 +311,7 @@ settings_mapping_data AS (
                 'settings_id', s.id::text,
                 'created_at', s.created_at::text,
                 'active', s.active,
-                'department_ids', COALESCE(sdd.department_ids, NULL)
+                'department_ids', sdd.department_ids
             )
         ) FILTER (WHERE s.id IS NOT NULL),
         '{}'::jsonb

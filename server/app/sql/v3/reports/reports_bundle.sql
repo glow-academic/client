@@ -467,7 +467,7 @@
                     *,
                     COUNT(*) OVER() AS total_count
                 FROM all_metrics
-                ORDER BY created_at DESC NULLS LAST
+                ORDER BY profile_id
                 LIMIT 100 OFFSET 0
             ),
             -- Use paginated_metrics directly (emails already included from profile_metrics)

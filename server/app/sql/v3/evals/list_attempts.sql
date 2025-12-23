@@ -139,7 +139,7 @@ paginated_attempts AS (
     SELECT *
     FROM filtered_attempts
     ORDER BY attempt_created_at DESC
-    LIMIT $7 OFFSET ($6 * $7)
+    LIMIT $7::int OFFSET (($6::int * $7::int))
 ),
 -- Get total count
 total_count AS (
@@ -167,13 +167,12 @@ SELECT
         '[]'::jsonb
     ) as attempts,
     COALESCE((SELECT count FROM total_count), 0) as total_count,
-    $6 as page,
-    $7 as page_size,
+    $6::int as page,
+    $7::int as page_size,
     CASE 
         WHEN $7::int > 0 THEN CEIL(COALESCE((SELECT count FROM total_count), 0)::float / $7::float)
         ELSE 0
     END as total_pages,
-    up.actor_name
+    (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
 FROM paginated_attempts
-CROSS JOIN user_profile up
 

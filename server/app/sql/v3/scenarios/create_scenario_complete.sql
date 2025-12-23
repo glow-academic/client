@@ -344,7 +344,7 @@ link_videos AS (
     WHERE COALESCE(array_length($20::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, video_id) DO UPDATE SET
         active = CASE 
-            WHEN video_id::text = $21 THEN true
+            WHEN (scenario_videos.video_id)::text = $21 THEN true
             ELSE false
         END,
         updated_at = NOW()

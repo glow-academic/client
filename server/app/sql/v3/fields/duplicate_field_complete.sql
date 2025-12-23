@@ -2,7 +2,7 @@ WITH resolve_profile_id AS (
     SELECT $2::uuid as resolved_profile_id
 ),
 user_profile AS (
-    SELECT name as actor_name
+    SELECT p.first_name || ' ' || p.last_name as actor_name
     FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),

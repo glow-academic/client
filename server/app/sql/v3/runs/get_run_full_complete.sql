@@ -105,8 +105,8 @@ messages_grouped AS (
                     'content', mc.content,
                     'type', CASE 
                         WHEN m.role = 'user' THEN 'query'
-                        WHEN m.role = 'assistant' OR m.role = 'response' THEN 'response'
-                        ELSE m.role
+                        WHEN m.role = 'assistant' THEN 'response'
+                        ELSE m.role::text
                     END,
                     'completed', m.completed
                 ) ORDER BY m.created_at
@@ -148,7 +148,7 @@ hints_data AS (
                         '[]'::jsonb
                     )
                 )
-            ) FILTER (WHERE m.role = 'assistant' OR m.role = 'response'),
+            ) FILTER (WHERE m.role = 'assistant'),
             '[]'::jsonb
         ) as hints
     FROM chats c
@@ -163,7 +163,7 @@ hints_data AS (
     CROSS JOIN run_base rb
     WHERE c.id = ANY(cil.chat_ids)
       AND r.id = rb.id
-      AND (m.role = 'assistant' OR m.role = 'response')
+      AND m.role = 'assistant'
     GROUP BY c.id
 ),
 grades_data AS (

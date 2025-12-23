@@ -10,21 +10,21 @@ WITH actor_profile AS (
     WHERE p.id = $2::uuid
 ),
 personas_usage_check AS (
-    SELECT COUNT(*) as usage_count
-    FROM personas
-    WHERE model_id = $1
+    -- Personas are no longer directly linked to models (persona_text_model dropped in migration 44)
+    -- So there's no direct usage check needed for personas
+    SELECT 0 as usage_count
 ),
 agents_usage_check AS (
     SELECT COUNT(*) as usage_count
     FROM agents
-    WHERE model_id = $1
+    WHERE model_id = $1::uuid
 ),
 model_info AS (
-    SELECT name FROM models WHERE id = $1
+    SELECT name FROM models WHERE id = $1::uuid
 ),
 delete_result AS (
     DELETE FROM models 
-    WHERE id = $1 
+    WHERE id = $1::uuid 
       AND (SELECT usage_count FROM personas_usage_check) = 0
       AND (SELECT usage_count FROM agents_usage_check) = 0
       AND EXISTS(SELECT 1 FROM model_info)

@@ -46,7 +46,7 @@ valid_depts AS (
         ) as dept_mapping,
         array_agg(d.id::text ORDER BY d.title) as dept_ids
     FROM departments d
-    JOIN resolve_profile_id rpi ON true
+    CROSS JOIN resolve_profile_id rpi
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true AND pd.active = true
 ),
@@ -59,7 +59,7 @@ user_has_prompt_access AS (
     -- Check if user has access to prompt via department links
     SELECT EXISTS(
         SELECT 1 FROM prompt_departments pd
-        JOIN resolve_profile_id rpi ON true
+        CROSS JOIN resolve_profile_id rpi
         JOIN profile_departments pdp ON pdp.department_id = pd.department_id
         WHERE pd.prompt_id = $1::uuid AND pd.active = true
         AND pdp.profile_id = rpi.resolved_profile_id AND pdp.active = true
@@ -124,9 +124,9 @@ SELECT
         ELSE false
     END as can_edit
 FROM prompt_data pd
-LEFT JOIN prompt_departments_data pdd ON true
-LEFT JOIN prompt_agents_data paad ON true
-LEFT JOIN prompt_personas_data pppd ON true
+CROSS JOIN prompt_departments_data pdd
+CROSS JOIN prompt_agents_data paad
+CROSS JOIN prompt_personas_data pppd
 CROSS JOIN valid_depts vd
 CROSS JOIN profile_data pr
 CROSS JOIN user_has_prompt_access uhpa

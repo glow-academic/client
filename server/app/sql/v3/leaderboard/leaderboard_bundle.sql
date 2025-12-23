@@ -22,7 +22,7 @@ filt AS (
     WHERE a.attempt_created_at >= $1 
       AND a.attempt_created_at < $2
       AND a.is_general = TRUE
-      AND ($3::text[] IS NULL OR a.profile_role = ANY($3::text[]))
+      AND ($3::text[] IS NULL OR a.profile_role::text = ANY($3::text[]))
       AND ($4::uuid[] IS NULL OR a.simulation_id IN (
           SELECT DISTINCT s.id
           FROM simulations s

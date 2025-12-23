@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-db typecheck-client build-client openapi-gen gen-client-types sql-compile sql-types
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop stop-keycloak install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db export-db typecheck-client build-client openapi-gen gen-client-types sql-compile sql-types sql-format
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -334,6 +334,11 @@ sql-compile: check-venv
 # Alias for sql-compile
 sql-types: sql-compile
 
+# Check for unused SQL files
+sql-format: check-venv
+	@echo "Checking for unused SQL files..."
+	@$(VENV_PYTHON) server/scripts/check_unused_sql.py
+
 # Connect to database
 connect-db:
 	@echo "Connecting to database..."
@@ -378,6 +383,7 @@ help:
 	@echo "  migrate-db-all - Run all database migrations"
 	@echo "  sql-compile    - Compile SQL files and generate types (migration safety gate)"
 	@echo "  sql-types      - Alias for sql-compile"
+	@echo "  sql-format     - Check for unused SQL files"
 	@echo "  connect-db     - Connect to database"
 	@echo "  fresh-db       - Interactive setup for fresh database"
 	@echo "  export-db      - Export database (schema|base|university|organization)"
