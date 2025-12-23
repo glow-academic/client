@@ -6436,7 +6436,10 @@ export interface components {
             /** Totalpages */
             totalPages: number;
         };
-        /** AgentDetailResponse */
+        /**
+         * AgentDetailResponse
+         * @description API response for agent detail.
+         */
         AgentDetailResponse: {
             /** Name */
             name: string;
@@ -6488,7 +6491,9 @@ export interface components {
             valid_department_ids: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__agents__detail__DepartmentMappingItem"];
+                [key: string]: {
+                    [key: string]: string;
+                };
             };
             /** Department Prompt Links */
             department_prompt_links: {
@@ -6496,13 +6501,19 @@ export interface components {
             };
             /** Prompt Mapping */
             prompt_mapping: {
-                [key: string]: components["schemas"]["PromptInfo"];
+                [key: string]: {
+                    [key: string]: unknown;
+                };
             };
             /** Debug Info */
-            debug_info: components["schemas"]["app__api__v3__agents__detail__DebugInfoItem"][];
+            debug_info: {
+                [key: string]: string;
+            }[];
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__agents__detail__ModelMappingItem"];
+                [key: string]: {
+                    [key: string]: unknown;
+                };
             };
             /** Reasoning Mapping */
             reasoning_mapping: {
@@ -6511,7 +6522,10 @@ export interface components {
             /** Can Edit */
             can_edit: boolean;
         };
-        /** AgentsListResponse */
+        /**
+         * AgentsListResponse
+         * @description API response for agents list with dict mappings.
+         */
         AgentsListResponse: {
             /** Agents */
             agents: components["schemas"]["GetAgentsListAgentsItem"][];
@@ -6527,6 +6541,8 @@ export interface components {
                     [key: string]: string;
                 };
             };
+            /** Actor Name */
+            actor_name: string;
         };
         /** AggregatedResults */
         AggregatedResults: {
@@ -12714,26 +12730,6 @@ export interface components {
             };
         };
         /**
-         * PromptInfo
-         * @description Prompt information for version history.
-         */
-        PromptInfo: {
-            /** System Prompt */
-            system_prompt: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
          * ProviderDetailRequest
          * @description Request for provider detail.
          */
@@ -15591,15 +15587,8 @@ export interface components {
             /** Value */
             value: number;
         };
-        /** UpdateAgentApiResponse */
-        UpdateAgentApiResponse: {
-            /** Agent Id */
-            agent_id: string;
-            /** Actor Name */
-            actor_name: string;
-        };
-        /** UpdateAgentRequest */
-        UpdateAgentRequest: {
+        /** UpdateAgentApiRequest */
+        UpdateAgentApiRequest: {
             /**
              * Agent Id
              * Format: uuid
@@ -15632,6 +15621,13 @@ export interface components {
             model_reasoning_level_id?: string | null;
             /** Model Voice Ids */
             model_voice_ids?: string[] | null;
+        };
+        /** UpdateAgentApiResponse */
+        UpdateAgentApiResponse: {
+            /** Agent Id */
+            agent_id: string;
+            /** Actor Name */
+            actor_name: string;
         };
         /**
          * UpdateAuthRequest
@@ -16613,58 +16609,6 @@ export interface components {
             transcript: string;
             /** Upload Id */
             upload_id?: string | null;
-        };
-        /**
-         * DebugInfoItem
-         * @description Debug information item.
-         */
-        app__api__v3__agents__detail__DebugInfoItem: {
-            /** Created At */
-            created_at: string;
-            /** Model Id */
-            model_id: string;
-            /** Content */
-            content: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__agents__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * ModelMappingItem
-         * @description Model mapping item.
-         */
-        app__api__v3__agents__detail__ModelMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Input Modalities */
-            input_modalities?: string[] | null;
-            /** Output Modalities */
-            output_modalities?: string[] | null;
-            /** Temperature Lower */
-            temperature_lower?: number | null;
-            /** Temperature Upper */
-            temperature_upper?: number | null;
-            /** Temperature Levels */
-            temperature_levels?: {
-                [key: string]: string | boolean;
-            }[] | null;
-            /** Reasoning Options */
-            reasoning_options?: {
-                [key: string]: string;
-            }[] | null;
-            /** Available Voices */
-            available_voices?: {
-                [key: string]: string;
-            }[] | null;
         };
         /** AttemptItem */
         app__api__v3__attempts__full__AttemptItem: {
@@ -24453,7 +24397,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateAgentRequest"];
+                "application/json": components["schemas"]["UpdateAgentApiRequest"];
             };
         };
         responses: {

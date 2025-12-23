@@ -8164,7 +8164,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateAgentRequest"
+                "$ref": "#/components/schemas/UpdateAgentApiRequest"
               }
             }
           }
@@ -21951,7 +21951,10 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__agents__detail__DepartmentMappingItem"
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -21965,21 +21968,26 @@
           },
           "prompt_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/PromptInfo"
+              "additionalProperties": true,
+              "type": "object"
             },
             "type": "object",
             "title": "Prompt Mapping"
           },
           "debug_info": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__agents__detail__DebugInfoItem"
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
             },
             "type": "array",
             "title": "Debug Info"
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__agents__detail__ModelMappingItem"
+              "additionalProperties": true,
+              "type": "object"
             },
             "type": "object",
             "title": "Model Mapping"
@@ -22027,7 +22035,8 @@
           "reasoning_mapping",
           "can_edit"
         ],
-        "title": "AgentDetailResponse"
+        "title": "AgentDetailResponse",
+        "description": "API response for agent detail."
       },
       "AgentsListResponse": {
         "properties": {
@@ -22057,15 +22066,21 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "actor_name": {
+            "type": "string",
+            "title": "Actor Name"
           }
         },
         "type": "object",
         "required": [
           "agents",
           "model_mapping",
-          "department_mapping"
+          "department_mapping",
+          "actor_name"
         ],
-        "title": "AgentsListResponse"
+        "title": "AgentsListResponse",
+        "description": "API response for agents list with dict mappings."
       },
       "AggregatedResults": {
         "properties": {
@@ -38119,60 +38134,6 @@
         "title": "ProfileNewResponse",
         "description": "Response with default profile details and metadata."
       },
-      "PromptInfo": {
-        "properties": {
-          "system_prompt": {
-            "type": "string",
-            "title": "System Prompt"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "system_prompt",
-          "name",
-          "description",
-          "created_at",
-          "updated_at",
-          "department_ids",
-          "can_delete"
-        ],
-        "title": "PromptInfo",
-        "description": "Prompt information for version history."
-      },
       "ProviderDetailRequest": {
         "properties": {
           "providerId": {
@@ -45976,25 +45937,7 @@
         ],
         "title": "UnitItem"
       },
-      "UpdateAgentApiResponse": {
-        "properties": {
-          "agent_id": {
-            "type": "string",
-            "title": "Agent Id"
-          },
-          "actor_name": {
-            "type": "string",
-            "title": "Actor Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "actor_name"
-        ],
-        "title": "UpdateAgentApiResponse"
-      },
-      "UpdateAgentRequest": {
+      "UpdateAgentApiRequest": {
         "properties": {
           "agent_id": {
             "type": "string",
@@ -46062,7 +46005,8 @@
           "model_temperature_level_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -46073,7 +46017,8 @@
           "model_reasoning_level_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -46105,7 +46050,25 @@
           "active",
           "role"
         ],
-        "title": "UpdateAgentRequest"
+        "title": "UpdateAgentApiRequest"
+      },
+      "UpdateAgentApiResponse": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "actor_name": {
+            "type": "string",
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "actor_name"
+        ],
+        "title": "UpdateAgentApiResponse"
       },
       "UpdateAuthRequest": {
         "properties": {
@@ -48890,176 +48853,6 @@
         ],
         "title": "VoiceUserTranscriptPayload",
         "description": "Request to send user transcript from voice simulation."
-      },
-      "app__api__v3__agents__detail__DebugInfoItem": {
-        "properties": {
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          }
-        },
-        "type": "object",
-        "required": [
-          "created_at",
-          "model_id",
-          "content"
-        ],
-        "title": "DebugInfoItem",
-        "description": "Debug information item."
-      },
-      "app__api__v3__agents__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__agents__detail__ModelMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "input_modalities": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Modalities"
-          },
-          "output_modalities": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Modalities"
-          },
-          "temperature_lower": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Lower"
-          },
-          "temperature_upper": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Upper"
-          },
-          "temperature_levels": {
-            "anyOf": [
-              {
-                "items": {
-                  "additionalProperties": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "boolean"
-                      }
-                    ]
-                  },
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature Levels"
-          },
-          "reasoning_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Options"
-          },
-          "available_voices": {
-            "anyOf": [
-              {
-                "items": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Available Voices"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ModelMappingItem",
-        "description": "Model mapping item."
       },
       "app__api__v3__attempts__full__AttemptItem": {
         "properties": {

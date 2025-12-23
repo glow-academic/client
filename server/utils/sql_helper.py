@@ -43,6 +43,7 @@ async def execute_sql_typed(
     sql_path: str,
     params: HasToTuple | None = None,
     list_prefixes: set[str] | None = None,
+    dict_prefixes: dict[str, str] | None = None,
 ) -> BaseModel:
     """Execute SQL query with typed parameters and return typed result.
 
@@ -55,6 +56,7 @@ async def execute_sql_typed(
         sql_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")
         params: Optional Pydantic model instance with parameters (e.g., GetAgentNewSqlParams)
         list_prefixes: Optional set of list prefixes for nest_many (e.g., {"model_mapping", "department_mapping"})
+        dict_prefixes: Optional dict mapping list prefix to key field name (e.g., {"model_mapping": "id"})
 
     Returns:
         Typed result matching the SQL output type (e.g., GetAgentNewSqlRow)
@@ -71,7 +73,8 @@ async def execute_sql_typed(
                 conn,
                 "app/sql/v3/agents/get_agent_new_complete.sql",
                 params=params,
-                list_prefixes={"model_mapping", "department_mapping"}
+                list_prefixes={"model_mapping", "department_mapping"},
+                dict_prefixes={"model_mapping": "id", "department_mapping": "id"}
             )
         )
         # result is typed as GetAgentNewSqlRow
@@ -97,9 +100,18 @@ async def execute_sql_typed(
 
     # Apply nest_many if we have rows
     if rows:
-        nested_data = nest_many(rows, list_prefixes=list_prefixes or set())
-        # Parse into typed output
-        return OutputTypeClass(**nested_data)
+        nested_data = nest_many(
+            rows,
+            list_prefixes=list_prefixes or set(),
+            dict_prefixes=dict_prefixes,
+        )
+        # If dict_prefixes is used, structure won't match type definition (lists vs dicts)
+        # Use model_construct to bypass validation while still getting typed access
+        if dict_prefixes:
+            return OutputTypeClass.model_construct(**nested_data)
+        else:
+            # Parse into typed output with validation
+            return OutputTypeClass(**nested_data)
     else:
         # Return empty result with defaults
         return OutputTypeClass()

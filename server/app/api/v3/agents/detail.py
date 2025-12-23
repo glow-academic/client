@@ -1,15 +1,13 @@
 """Agent detail endpoint."""
 
-from datetime import datetime
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetAgentDetailApiRequest, GetAgentDetailApiResponse,
-                           GetAgentDetailSqlParams, GetAgentDetailSqlRow,
-                           load_sql_query)
+from app.sql.types import (GetAgentDetailApiRequest, GetAgentDetailSqlParams,
+                           GetAgentDetailSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
@@ -21,29 +19,8 @@ from utils.sql_helper import execute_sql_typed
 SQL_PATH = "app/sql/v3/agents/get_agent_detail_complete.sql"
 
 
-# Inline mapping types (DHH style - no shared types)
-class DepartmentMappingItem(BaseModel):
-    """Department mapping item."""
-
-    name: str
-    description: str
-
-
-class ModelMappingItem(BaseModel):
-    """Model mapping item."""
-
-    name: str
-    description: str
-    # Optional fields that may be present in model_mapping
-    input_modalities: list[str] | None = None
-    output_modalities: list[str] | None = None
-    temperature_lower: float | None = None
-    temperature_upper: float | None = None
-    temperature_levels: list[dict[str, str | bool]] | None = None
-    reasoning_options: list[dict[str, str]] | None = None
-    available_voices: list[dict[str, str]] | None = None  # List of {id, voice} objects
-
-
+# Response model matching actual API structure (dicts for mappings)
+# TODO: Update SQL type generation to support dict outputs, then use GetAgentDetailApiResponse
 class ReasoningMappingItem(BaseModel):
     """Reasoning mapping item."""
 
@@ -51,68 +28,37 @@ class ReasoningMappingItem(BaseModel):
     description: str
 
 
-# Type aliases for Dict mappings
-DepartmentMapping = dict[str, DepartmentMappingItem]
-ModelMapping = dict[str, ModelMappingItem]
 ReasoningMapping = dict[str, ReasoningMappingItem]
 
 
-# Inline request/response schemas
-class AgentDetailRequest(BaseModel):
-    agentId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-# Inline schemas
-class DebugInfoItem(BaseModel):
-    """Debug information item."""
-
-    created_at: str
-    model_id: str
-    content: str
-
-
-class PromptInfo(BaseModel):
-    """Prompt information for version history."""
-
-    system_prompt: str
-    name: str
-    description: str
-    created_at: str
-    updated_at: str
-    department_ids: list[str] | None
-    can_delete: bool
-
-
 class AgentDetailResponse(BaseModel):
+    """API response for agent detail."""
     name: str
     description: str
     system_prompt: str
     prompt_id: str | None
-    temperature: float  # Selected temperature value (for backward compatibility)
+    temperature: float
     model_id: str
-    reasoning: str | None  # Selected reasoning value (for backward compatibility)
+    reasoning: str | None
     active: bool
     role: str
     selected_temperature_level_id: str | None
     selected_reasoning_level_id: str | None
     selected_voice_ids: list[str]
     valid_model_ids: list[str]
-    reasoning_options: list[dict[str, str]]  # List of {id, reasoning_level} objects
+    reasoning_options: list[dict[str, str]]
     temperature_lower: float
     temperature_upper: float
-    temperature_levels: list[
-        dict[str, str | bool]
-    ]  # List of {id, temperature, is_upper} objects
-    valid_voices: list[str]  # Selected voice names (for backward compatibility)
-    available_voices: list[dict[str, str]]  # List of {id, voice} objects
+    temperature_levels: list[dict[str, str | bool]]
+    valid_voices: list[str]
+    available_voices: list[dict[str, str]]
     department_ids: list[str]
     valid_department_ids: list[str]
-    department_mapping: DepartmentMapping
+    department_mapping: dict[str, dict[str, str]]
     department_prompt_links: dict[str, str]
-    prompt_mapping: dict[str, PromptInfo]
-    debug_info: list[DebugInfoItem]
-    model_mapping: ModelMapping
+    prompt_mapping: dict[str, dict[str, Any]]
+    debug_info: list[dict[str, str]]
+    model_mapping: dict[str, dict[str, Any]]
     reasoning_mapping: ReasoningMapping
     can_edit: bool
 
@@ -167,6 +113,7 @@ async def get_agent_detail(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper (single row result)
+        # Use dict_prefixes to convert lists to dicts for mappings
         result = cast(
             GetAgentDetailSqlRow,
             await execute_sql_typed(
@@ -182,6 +129,12 @@ async def get_agent_detail(
                     "reasoning_options",
                     "temperature_levels",
                     "available_voices",
+                },
+                dict_prefixes={
+                    "model_mapping": "id",
+                    "department_mapping": "id",
+                    "prompt_mapping": "id",
+                    "department_prompt_links": "department_id",
                 },
             ),
         )
@@ -203,180 +156,48 @@ async def get_agent_detail(
                 status_code=404, detail=f"Agent {request.agent_id} not found"
             )
 
-        # Parse debug_info from nested list (nest_many returns list)
-        debug_info: list[DebugInfoItem] = []
-        debug_info_list = result_dict.get("debug_info", [])
-        if isinstance(debug_info_list, list):
-            for item in debug_info_list:
-                if isinstance(item, dict):
-                    created_at_value = item.get("created_at")
-                    if created_at_value:
-                        if isinstance(created_at_value, str):
-                            created_at_str = created_at_value
-                        elif isinstance(created_at_value, datetime):
-                            created_at_str = created_at_value.isoformat()
-                        else:
-                            created_at_str = str(created_at_value)
-                    else:
-                        created_at_str = ""
-                    debug_info.append(
-                        DebugInfoItem(
-                            created_at=created_at_str,
-                            model_id=item.get("model_id", ""),
-                            content=item.get("content", ""),
-                        )
-                    )
+        # Convert dict mappings to expected format
+        # result.model_mapping, result.department_mapping, etc. are now dicts (from dict_prefixes)
+        model_mapping_dict: dict[str, dict[str, Any]] = {}
+        if isinstance(result_dict.get("model_mapping"), dict):
+            for model_id, model_item in result_dict["model_mapping"].items():
+                if isinstance(model_item, dict):
+                    model_mapping_dict[str(model_id)] = model_item
 
-        # Parse model_mapping from nested list (nest_many returns list)
-        # Convert list to dict keyed by model_id
-        model_mapping: ModelMapping = {}
-        model_mapping_list = result_dict.get("model_mapping", [])
-        if isinstance(model_mapping_list, list):
-            for model_data in model_mapping_list:
-                if isinstance(model_data, dict):
-                    model_id = model_data.get("id")
-                    if model_id:
-                        # Get nested lists for temperature_levels, reasoning_options, available_voices
-                        temperature_levels_list = model_data.get("temperature_levels", [])
-                        reasoning_options_list = model_data.get("reasoning_options", [])
-                        available_voices_list = model_data.get("available_voices", [])
-                        
-                        # Convert nested lists to expected format
-                        temperature_levels_formatted = []
-                        if isinstance(temperature_levels_list, list):
-                            for level in temperature_levels_list:
-                                if isinstance(level, dict):
-                                    temperature_levels_formatted.append({
-                                        "id": level.get("id", ""),
-                                        "temperature": level.get("temperature", ""),
-                                        "is_upper": level.get("is_upper", False),
-                                    })
-                        
-                        reasoning_options_formatted = []
-                        if isinstance(reasoning_options_list, list):
-                            for opt in reasoning_options_list:
-                                if isinstance(opt, dict):
-                                    reasoning_options_formatted.append({
-                                        "id": opt.get("id", ""),
-                                        "reasoning_level": opt.get("reasoning_level", ""),
-                                    })
-                        
-                        available_voices_formatted = []
-                        if isinstance(available_voices_list, list):
-                            for voice in available_voices_list:
-                                if isinstance(voice, dict):
-                                    available_voices_formatted.append({
-                                        "id": voice.get("id", ""),
-                                        "voice": voice.get("voice", ""),
-                                    })
-                        
-                        model_mapping[str(model_id)] = ModelMappingItem(
-                            name=model_data.get("name", ""),
-                            description=model_data.get("description", ""),
-                            input_modalities=model_data.get("input_modalities") or None,
-                            output_modalities=model_data.get("output_modalities") or None,
-                            temperature_lower=float(model_data.get("temperature_lower", 0.0)) if model_data.get("temperature_lower") is not None else None,
-                            temperature_upper=float(model_data.get("temperature_upper", 1.0)) if model_data.get("temperature_upper") is not None else None,
-                            temperature_levels=temperature_levels_formatted if temperature_levels_formatted else None,
-                            reasoning_options=reasoning_options_formatted if reasoning_options_formatted else None,
-                            available_voices=available_voices_formatted if available_voices_formatted else None,
-                        )
+        department_mapping_dict: dict[str, dict[str, str]] = {}
+        if isinstance(result_dict.get("department_mapping"), dict):
+            for dept_id, dept_item in result_dict["department_mapping"].items():
+                if isinstance(dept_item, dict):
+                    department_mapping_dict[str(dept_id)] = {
+                        "name": dept_item.get("name", ""),
+                        "description": dept_item.get("description", ""),
+                    }
 
-        # Parse valid_model_ids from array (already an array from SQL)
-        valid_model_ids: list[str] = []
-        valid_model_ids_data = result_dict.get("valid_model_ids")
-        if isinstance(valid_model_ids_data, list):
-            valid_model_ids = [str(mid) for mid in valid_model_ids_data if mid]
+        prompt_mapping_dict: dict[str, dict[str, Any]] = {}
+        if isinstance(result_dict.get("prompt_mapping"), dict):
+            for prompt_id, prompt_item in result_dict["prompt_mapping"].items():
+                if isinstance(prompt_item, dict):
+                    # Ensure timestamps are strings and department_ids is list[str] | None
+                    prompt_dict = dict(prompt_item)
+                    if "created_at" in prompt_dict and not isinstance(prompt_dict["created_at"], str):
+                        prompt_dict["created_at"] = str(prompt_dict["created_at"])
+                    if "updated_at" in prompt_dict and not isinstance(prompt_dict["updated_at"], str):
+                        prompt_dict["updated_at"] = str(prompt_dict["updated_at"])
+                    if "department_ids" in prompt_dict and prompt_dict["department_ids"]:
+                        if isinstance(prompt_dict["department_ids"], list):
+                            prompt_dict["department_ids"] = [str(did) for did in prompt_dict["department_ids"]]
+                    prompt_mapping_dict[str(prompt_id)] = prompt_dict
 
-        # Parse department_ids from array
-        department_ids_raw = result_dict.get("department_ids")
-        department_ids: list[str] = []
-        if department_ids_raw and isinstance(department_ids_raw, (list, tuple)):
-            department_ids = [str(did) for did in department_ids_raw if did]
+        department_prompt_links_dict: dict[str, str] = {}
+        if isinstance(result_dict.get("department_prompt_links"), dict):
+            for dept_id, link_item in result_dict["department_prompt_links"].items():
+                if isinstance(link_item, dict):
+                    prompt_id_val = link_item.get("prompt_id")
+                    if prompt_id_val:
+                        department_prompt_links_dict[str(dept_id)] = str(prompt_id_val)
 
-        # Parse valid_department_ids from array
-        valid_department_ids_raw = result_dict.get("valid_department_ids")
-        valid_department_ids: list[str] = []
-        if valid_department_ids_raw and isinstance(
-            valid_department_ids_raw, (list, tuple)
-        ):
-            valid_department_ids = [str(did) for did in valid_department_ids_raw if did]
-
-        # Parse department_mapping from nested list (nest_many returns list)
-        # Convert list to dict keyed by department_id
-        department_mapping: DepartmentMapping = {}
-        department_mapping_list = result_dict.get("department_mapping", [])
-        if isinstance(department_mapping_list, list):
-            for dept_data in department_mapping_list:
-                if isinstance(dept_data, dict):
-                    dept_id = dept_data.get("id")
-                    if dept_id:
-                        department_mapping[str(dept_id)] = DepartmentMappingItem(
-                            name=dept_data.get("name", ""),
-                            description=dept_data.get("description", ""),
-                        )
-
-        # Parse prompt_mapping from nested list (nest_many returns list)
-        # Convert list to dict keyed by prompt_id
-        prompt_mapping: dict[str, PromptInfo] = {}
-        prompt_mapping_list = result_dict.get("prompt_mapping", [])
-        if isinstance(prompt_mapping_list, list):
-            for prompt_data in prompt_mapping_list:
-                if isinstance(prompt_data, dict):
-                    prompt_id = prompt_data.get("id")
-                    if prompt_id:
-                        dept_ids = prompt_data.get("department_ids")
-                        if isinstance(dept_ids, list):
-                            dept_ids = [str(did) for did in dept_ids if did]
-                        elif dept_ids is None:
-                            dept_ids = None
-                        
-                        # Format timestamps
-                        created_at = prompt_data.get("created_at")
-                        if created_at and hasattr(created_at, "isoformat"):
-                            created_at = created_at.isoformat()
-                        elif created_at and not isinstance(created_at, str):
-                            created_at = str(created_at)
-                        else:
-                            created_at = created_at or ""
-                        
-                        updated_at = prompt_data.get("updated_at")
-                        if updated_at and hasattr(updated_at, "isoformat"):
-                            updated_at = updated_at.isoformat()
-                        elif updated_at and not isinstance(updated_at, str):
-                            updated_at = str(updated_at)
-                        else:
-                            updated_at = updated_at or ""
-                        
-                        prompt_mapping[str(prompt_id)] = PromptInfo(
-                            system_prompt=prompt_data.get("system_prompt", ""),
-                            name=prompt_data.get("name", ""),
-                            description=prompt_data.get("description", ""),
-                            created_at=created_at,
-                            updated_at=updated_at,
-                            department_ids=dept_ids,
-                            can_delete=prompt_data.get("can_delete", False),
-                        )
-
-        # Parse prompt_id
-        prompt_id = result_dict.get("prompt_id")
-        if prompt_id:
-            prompt_id = str(prompt_id)
-
-        # Parse department_prompt_links from nested list (nest_many returns list)
-        # Convert list to dict keyed by department_id
-        department_prompt_links: dict[str, str] = {}
-        department_prompt_links_list = result_dict.get("department_prompt_links", [])
-        if isinstance(department_prompt_links_list, list):
-            for link_data in department_prompt_links_list:
-                if isinstance(link_data, dict):
-                    dept_id = link_data.get("department_id")
-                    prompt_id = link_data.get("prompt_id")
-                    if dept_id and prompt_id:
-                        department_prompt_links[str(dept_id)] = str(prompt_id)
-
-        # Build reasoning_mapping
-        reasoning_mapping = {
+        # Build reasoning_mapping (constant, not from SQL)
+        reasoning_mapping: ReasoningMapping = {
             "none": ReasoningMappingItem(
                 name="None", description="No extended reasoning"
             ),
@@ -395,94 +216,87 @@ async def get_agent_detail(
             ),
         }
 
-        # Parse reasoning_options from nested list (nest_many returns list)
-        reasoning_options: list[dict[str, str]] = []
+        # Convert lists to expected format (these remain as lists)
+        debug_info_list = result_dict.get("debug_info", [])
+        debug_info: list[dict[str, str]] = []
+        if isinstance(debug_info_list, list):
+            for item in debug_info_list:
+                if isinstance(item, dict):
+                    debug_info.append({
+                        "created_at": str(item.get("created_at", "")),
+                        "model_id": str(item.get("model_id", "")),
+                        "content": str(item.get("content", "")),
+                    })
+
         reasoning_options_list = result_dict.get("reasoning_options", [])
+        reasoning_options: list[dict[str, str]] = []
         if isinstance(reasoning_options_list, list):
             for opt in reasoning_options_list:
                 if isinstance(opt, dict):
                     reasoning_options.append({
-                        "id": opt.get("id", ""),
-                        "reasoning_level": opt.get("reasoning_level", ""),
+                        "id": str(opt.get("id", "")),
+                        "reasoning_level": str(opt.get("reasoning_level", "")),
                     })
 
-        # Parse temperature_levels from nested list (nest_many returns list)
-        temperature_levels: list[dict[str, str | bool]] = []
         temperature_levels_list = result_dict.get("temperature_levels", [])
+        temperature_levels: list[dict[str, str | bool]] = []
         if isinstance(temperature_levels_list, list):
             for level in temperature_levels_list:
                 if isinstance(level, dict):
                     temperature_levels.append({
-                        "id": level.get("id", ""),
-                        "temperature": level.get("temperature", ""),
-                        "is_upper": level.get("is_upper", False),
+                        "id": str(level.get("id", "")),
+                        "temperature": str(level.get("temperature", "")),
+                        "is_upper": bool(level.get("is_upper", False)),
                     })
 
-        # Parse selected_voice_ids from array (already an array from SQL)
-        selected_voice_ids: list[str] = []
-        selected_voice_ids_data = result_dict.get("selected_voice_ids")
-        if isinstance(selected_voice_ids_data, list):
-            selected_voice_ids = [str(voice_id) for voice_id in selected_voice_ids_data if voice_id]
-
-        # Parse valid_voices from array (already an array from SQL)
-        valid_voices: list[str] = []
-        valid_voices_data = result_dict.get("valid_voices")
-        if isinstance(valid_voices_data, list):
-            valid_voices = [str(voice) for voice in valid_voices_data if voice]
-
-        # Parse available_voices from nested list (nest_many returns list)
-        available_voices: list[dict[str, str]] = []
         available_voices_list = result_dict.get("available_voices", [])
+        available_voices: list[dict[str, str]] = []
         if isinstance(available_voices_list, list):
             for voice in available_voices_list:
                 if isinstance(voice, dict):
                     available_voices.append({
-                        "id": voice.get("id", ""),
-                        "voice": voice.get("voice", ""),
+                        "id": str(voice.get("id", "")),
+                        "voice": str(voice.get("voice", "")),
                     })
 
-        # Get can_edit from SQL result
-        can_edit = result_dict.get("can_edit", False)
-
         # Set audit context with data from SQL query
-        actor_name = result_dict.get("actor_name")
-        agent_name = result_dict.get("name")
-        if actor_name:
+        if result.actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": profile_id},
-                agent={"name": agent_name, "id": str(request.agent_id)},
+                actor={"name": result.actor_name, "id": profile_id},
+                agent={"name": result.name, "id": str(request.agent_id)},
             )
 
+        # Convert SQL result to API response
         response_data = AgentDetailResponse(
-            name=result_dict["name"],
-            description=result_dict["description"],
-            system_prompt=result_dict["system_prompt"],
-            prompt_id=prompt_id,
-            temperature=float(result_dict.get("temperature", 0.0)),
-            model_id=result_dict["model_id"],
-            reasoning=result_dict.get("reasoning"),
-            active=result_dict["active"],
-            role=result_dict["role"],
-            selected_temperature_level_id=result_dict.get("selected_temperature_level_id"),
-            selected_reasoning_level_id=result_dict.get("selected_reasoning_level_id"),
-            selected_voice_ids=selected_voice_ids,
-            department_ids=department_ids,
-            valid_department_ids=valid_department_ids,
-            department_mapping=department_mapping,
-            department_prompt_links=department_prompt_links,
-            prompt_mapping=prompt_mapping,
-            valid_model_ids=valid_model_ids,
-            reasoning_options=reasoning_options if reasoning_options else [],
-            temperature_lower=float(result_dict.get("temperature_lower", 0.0)),
-            temperature_upper=float(result_dict.get("temperature_upper", 1.0)),
+            name=result.name,
+            description=result.description,
+            system_prompt=result.system_prompt,
+            prompt_id=result.prompt_id if result.prompt_id else None,
+            temperature=result.temperature,
+            model_id=result.model_id,
+            reasoning=result.reasoning if result.reasoning else None,
+            active=result.active,
+            role=result.role,
+            selected_temperature_level_id=result.selected_temperature_level_id if result.selected_temperature_level_id else None,
+            selected_reasoning_level_id=result.selected_reasoning_level_id if result.selected_reasoning_level_id else None,
+            selected_voice_ids=result.selected_voice_ids,
+            department_ids=result.department_ids,
+            valid_department_ids=result.valid_department_ids,
+            department_mapping=department_mapping_dict,
+            department_prompt_links=department_prompt_links_dict,
+            prompt_mapping=prompt_mapping_dict,
+            valid_model_ids=result.valid_model_ids,
+            reasoning_options=reasoning_options,
+            temperature_lower=result.temperature_lower,
+            temperature_upper=result.temperature_upper,
             temperature_levels=temperature_levels,
-            valid_voices=valid_voices,
+            valid_voices=result.valid_voices,
             available_voices=available_voices,
             debug_info=debug_info,
-            model_mapping=model_mapping,
+            model_mapping=model_mapping_dict,
             reasoning_mapping=reasoning_mapping,
-            can_edit=can_edit,
+            can_edit=result.can_edit,
         )
 
         # Cache response (model_mapping now includes all fields via ModelMappingItem)

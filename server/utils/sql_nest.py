@@ -110,7 +110,7 @@ def _process_nested_lists(
 
     processed_items: list[dict[str, Any]] = []
     # Group items by their non-nested-list keys to aggregate nested lists
-    item_groups: dict[tuple, dict[str, Any]] = {}
+    item_groups: dict[tuple[Any, ...], dict[str, Any]] = {}
 
     for item in items:
         # Separate nested list columns from regular columns
@@ -188,12 +188,14 @@ def nest_many(
     rows: Iterable[Mapping[str, Any]],
     *,
     list_prefixes: set[str] = set(),
+    dict_prefixes: dict[str, str] | None = None,
     sep: str = "__",
     auto_detect_nested: bool = True,
 ) -> dict[str, Any]:
     """Convert multiple rows to nested dictionary with list aggregation.
 
     Automatically detects and handles nested list prefixes within top-level lists.
+    Optionally converts lists to dicts keyed by a specified field.
 
     Example:
         Input rows:
@@ -218,14 +220,27 @@ def nest_many(
                 ]
             }]}
 
+    Example with dict_prefixes:
+        Input rows:
+            [{"model_mapping__id": "1", "model_mapping__name": "Model1"},
+             {"model_mapping__id": "2", "model_mapping__name": "Model2"}]
+        With dict_prefixes={"model_mapping": "id"}:
+        Output:
+            {"model_mapping": {
+                "1": {"id": "1", "name": "Model1"},
+                "2": {"id": "2", "name": "Model2"}
+            }}
+
     Args:
         rows: Iterable of row dictionaries
         list_prefixes: Set of prefixes that should become lists (e.g., {"departments"})
+        dict_prefixes: Optional dict mapping list prefix to key field name (e.g., {"model_mapping": "id"})
         sep: Separator for nested keys (default: "__")
         auto_detect_nested: If True, automatically detect nested list prefixes (default: True)
 
     Returns:
-        Nested dictionary with lists for specified prefixes and nested lists automatically grouped
+        Nested dictionary with lists for specified prefixes (or dicts if dict_prefixes specified)
+        and nested lists automatically grouped
     """
     rows_list = list(rows)
     if not rows_list:
@@ -283,6 +298,25 @@ def nest_many(
         else:
             # No nested lists, just nest the objects
             base[prefix] = [nest_row(item, sep=sep) for item in items]
+
+    # Convert lists to dicts if dict_prefixes specified
+    if dict_prefixes:
+        for prefix, key_field in dict_prefixes.items():
+            if prefix in base and isinstance(base[prefix], list):
+                # Convert list to dict keyed by the specified field
+                result_dict: dict[str, Any] = {}
+                for item in base[prefix]:
+                    if isinstance(item, dict):
+                        key_value = item.get(key_field)
+                        if key_value is not None:
+                            # Convert key to string for consistency
+                            result_dict[str(key_value)] = item
+                    else:
+                        # Handle Pydantic models or other objects
+                        key_value = getattr(item, key_field, None)
+                        if key_value is not None:
+                            result_dict[str(key_value)] = item
+                base[prefix] = result_dict
 
     return base
 

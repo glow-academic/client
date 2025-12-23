@@ -6,9 +6,9 @@ import asyncpg
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetAgentsListApiRequest, GetAgentsListApiResponse,
-                           GetAgentsListAgentsItem, GetAgentsListSqlParams,
-                           GetAgentsListSqlRow, load_sql_query)
+from app.sql.types import (GetAgentsListAgentsItem, GetAgentsListApiRequest,
+                           GetAgentsListSqlParams, GetAgentsListSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
@@ -19,11 +19,14 @@ from utils.sql_helper import execute_sql_typed
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/agents/get_agents_list_complete.sql"
 
-# Extended response model for list endpoint (aggregates multiple rows)
+# Response model matching actual API structure (dicts for mappings)
+# TODO: Update SQL type generation to support dict outputs, then use GetAgentsListApiResponse
 class AgentsListResponse(BaseModel):
+    """API response for agents list with dict mappings."""
     agents: list[GetAgentsListAgentsItem]
     model_mapping: dict[str, dict[str, str]]
     department_mapping: dict[str, dict[str, str]]
+    actor_name: str
 
 
 router = APIRouter()
@@ -73,6 +76,7 @@ async def list_agents(
         sql_params = params.to_tuple()
 
         # Execute query with typed helper and nesting
+        # Use dict_prefixes to convert model_mapping and department_mapping lists to dicts
         result = cast(
             GetAgentsListSqlRow,
             await execute_sql_typed(
@@ -80,109 +84,83 @@ async def list_agents(
                 SQL_PATH,
                 params=params,
                 list_prefixes={"agents", "model_mapping", "department_mapping"},
+                dict_prefixes={"model_mapping": "id", "department_mapping": "id"},
             ),
         )
 
+        # Set audit context
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+
+        # Filter department_mapping to only include departments assigned to at least one agent
+        # Collect all department IDs actually assigned to agents
+        # Use model_dump() to access data since model_construct returns dict-like structures
         result_dict = result.model_dump()
-
-        # Convert lists to dicts for model_mapping and department_mapping
-        # nest_many returns lists, but we need dicts keyed by id
-        model_mapping_list = result_dict.get("model_mapping", [])
-        model_mapping: dict[str, dict[str, str]] = {}
-        if isinstance(model_mapping_list, list):
-            for model in model_mapping_list:
-                if isinstance(model, dict):
-                    model_id = model.get("id")
-                    if model_id:
-                        model_mapping[str(model_id)] = {
-                            "name": model.get("name", ""),
-                            "description": model.get("description", ""),
-                        }
-                else:
-                    # Handle Pydantic model
-                    model_id = getattr(model, "id", None)
-                    if model_id:
-                        model_mapping[str(model_id)] = {
-                            "name": getattr(model, "name", ""),
-                            "description": getattr(model, "description", ""),
-                        }
-
-        department_mapping_list = result_dict.get("department_mapping", [])
-        department_mapping: dict[str, dict[str, str]] = {}
-        if isinstance(department_mapping_list, list):
-            for dept in department_mapping_list:
-                if isinstance(dept, dict):
-                    dept_id = dept.get("id")
-                    if dept_id:
-                        department_mapping[str(dept_id)] = {
-                            "name": dept.get("name", ""),
-                            "description": dept.get("description", ""),
-                        }
-                else:
-                    # Handle Pydantic model
-                    dept_id = getattr(dept, "id", None)
-                    if dept_id:
-                        department_mapping[str(dept_id)] = {
-                            "name": getattr(dept, "name", ""),
-                            "description": getattr(dept, "description", ""),
-                        }
-
-        # Get agents list
         agents_list = result_dict.get("agents", [])
+        assigned_department_ids = set()
+        if agents_list:
+            for agent in agents_list:
+                if isinstance(agent, dict):
+                    dept_ids = agent.get("department_ids", [])
+                    if dept_ids:
+                        assigned_department_ids.update(dept_ids)
+                else:
+                    # Handle Pydantic model
+                    if hasattr(agent, "department_ids") and agent.department_ids:
+                        assigned_department_ids.update(agent.department_ids)
+        
+        # Convert dict mappings to the expected format
+        # result.department_mapping and result.model_mapping are now dicts (from dict_prefixes)
+        model_mapping_raw = result_dict.get("model_mapping", {})
+        department_mapping_raw = result_dict.get("department_mapping", {})
+        
+        model_mapping_dict: dict[str, dict[str, str]] = {}
+        if isinstance(model_mapping_raw, dict):
+            for model_id, model_item in model_mapping_raw.items():
+                if isinstance(model_item, dict):
+                    model_mapping_dict[str(model_id)] = {
+                        "name": model_item.get("name", ""),
+                        "description": model_item.get("description", ""),
+                    }
+        
+        department_mapping_dict: dict[str, dict[str, str]] = {}
+        if isinstance(department_mapping_raw, dict):
+            for dept_id, dept_item in department_mapping_raw.items():
+                # Only include departments assigned to at least one agent
+                if str(dept_id) in assigned_department_ids:
+                    if isinstance(dept_item, dict):
+                        department_mapping_dict[str(dept_id)] = {
+                            "name": dept_item.get("name", ""),
+                            "description": dept_item.get("description", ""),
+                        }
+
+        # Convert agents list - ensure items are proper Pydantic models
         agents: list[GetAgentsListAgentsItem] = []
         for agent_data in agents_list:
             if isinstance(agent_data, dict):
-                # Format updated_at if needed (should already be text from SQL, but handle just in case)
-                updated_at = agent_data.get("updated_at")
-                if updated_at and hasattr(updated_at, "isoformat"):
-                    agent_data["updated_at"] = updated_at.isoformat()
-                elif updated_at and not isinstance(updated_at, str):
-                    agent_data["updated_at"] = str(updated_at)
-                
-                # Ensure department_ids is a list of strings
-                dept_ids = agent_data.get("department_ids", [])
-                if dept_ids:
-                    agent_data["department_ids"] = [str(d) for d in dept_ids]
-                else:
-                    agent_data["department_ids"] = []
-                
                 agents.append(GetAgentsListAgentsItem(**agent_data))
+            else:
+                agents.append(agent_data)
 
-        # Collect all department IDs actually assigned to agents
-        assigned_department_ids = set()
-        for agent in agents:
-            if agent.department_ids:
-                assigned_department_ids.update(agent.department_ids)
-        
-        # Filter department_mapping to only include departments assigned to at least one agent
-        filtered_department_mapping = {
-            did: d
-            for (did, d) in department_mapping.items()
-            if did in assigned_department_ids
-        }
-
-        # Set audit context
-        actor_name = result_dict.get("actor_name")
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
-
-        response_data = AgentsListResponse(
+        # Convert SQL result to API response
+        api_response = AgentsListResponse(
             agents=agents,
-            model_mapping=model_mapping,
-            department_mapping=filtered_department_mapping,
+            model_mapping=model_mapping_dict,
+            department_mapping=department_mapping_dict,
+            actor_name=result_dict.get("actor_name", ""),
         )
 
         # Cache response
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": api_response.model_dump()},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

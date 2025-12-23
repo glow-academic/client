@@ -4,6 +4,8 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+
+import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -11,19 +13,11 @@ from app.sql.types import (UpdateAgentApiRequest, UpdateAgentApiResponse,
                            UpdateAgentSqlParams, UpdateAgentSqlRow,
                            load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/agents/update_agent_complete.sql"
-
-
-# Extended request model with additional fields not in SQL (handled separately)
-class UpdateAgentRequest(UpdateAgentApiRequest):
-    model_temperature_level_id: str | None = None
-    model_reasoning_level_id: str | None = None
-    model_voice_ids: list[str] | None = None
 
 
 router = APIRouter()
@@ -39,7 +33,7 @@ router = APIRouter()
     ],
 )
 async def update_agent(
-    request: UpdateAgentRequest,
+    request: UpdateAgentApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -75,71 +69,42 @@ async def update_agent(
             ) from None
 
         async with conn.transaction():
-            # Ensure department_ids is always an array (empty array if None)
-            dept_ids = request.department_ids if request.department_ids else []
-            dept_ids_for_prompt = (
-                request.department_ids_for_prompt
-                if request.department_ids_for_prompt
-                else []
-            )
-            model_voice_ids = request.model_voice_ids if request.model_voice_ids else []
-
             # Convert API request to SQL params (add profile_id from header)
-            # Note: After SQL types are regenerated, UpdateAgentSqlParams will include
-            # model_temperature_level_id, model_reasoning_level_id, and model_voice_ids
-            request_dict = request.model_dump(exclude={"department_ids", "department_ids_for_prompt", "model_voice_ids"})
-            # For now, we'll need to construct params manually since types haven't been regenerated
-            # After regeneration, this can be simplified to:
-            # params = UpdateAgentSqlParams(
-            #     **request_dict,
-            #     department_ids=dept_ids,
-            #     department_ids_for_prompt=dept_ids_for_prompt,
-            #     model_voice_ids=model_voice_ids,
-            #     profile_id=profile_id,
-            # )
+            # Ensure arrays are never None (use empty list as default)
+            request_dict = request.model_dump()
+            if not request_dict.get("department_ids"):
+                request_dict["department_ids"] = []
+            if not request_dict.get("department_ids_for_prompt"):
+                request_dict["department_ids_for_prompt"] = []
+            if not request_dict.get("model_voice_ids"):
+                request_dict["model_voice_ids"] = []
             
-            # Temporary: Use load_sql and execute directly until types are regenerated
-            from utils.sql_helper import load_sql
-            sql_query = load_sql(SQL_PATH)
-            sql_params = (
-                request.agent_id,
-                request.name,
-                request.description,
-                request.model_id,
-                request.active,
-                request.role,
-                request.prompt_id,
-                request.system_prompt or "",
-                dept_ids,
-                dept_ids_for_prompt,
-                uuid.UUID(request.model_temperature_level_id) if request.model_temperature_level_id else None,
-                uuid.UUID(request.model_reasoning_level_id) if request.model_reasoning_level_id else None,
-                model_voice_ids,
-                profile_id,
+            params = UpdateAgentSqlParams(**request_dict, profile_id=profile_id)
+            sql_params = params.to_tuple()
+
+            # Execute SQL with typed helper
+            result = cast(
+                UpdateAgentSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
-            
-            # Execute query
-            rows = await conn.fetch(sql_query, *sql_params)
-            if not rows:
+
+            if not result.agent_id:
                 raise HTTPException(status_code=404, detail="Agent not found or update not permitted")
-            
-            result_dict = dict(rows[0])
-            agent_id = result_dict["agent_id"]
-            actor_name = result_dict["actor_name"]
 
             # Set audit context with data from SQL query
-            if actor_name:
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
+                    actor={"name": result.actor_name, "id": profile_id},
                     agent={"name": request.name, "id": str(request.agent_id)},
                 )
-            
-            # Create response from result
-            api_response = UpdateAgentApiResponse(
-                agent_id=agent_id,
-                actor_name=actor_name,
-            )
+
+            # Convert SQL result to API response
+            api_response = UpdateAgentApiResponse.model_validate(result.model_dump())
 
         # Response already created above
 
