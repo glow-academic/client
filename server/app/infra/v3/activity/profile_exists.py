@@ -15,6 +15,10 @@ async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:
         True if profile exists, False otherwise
     """
     sql = load_sql("app/sql/v3/infrastructure/activity/profile_exists_complete.sql")
-    result = await conn.fetchval(sql, profile_id)
-    return bool(result) if result is not None else False
+    try:
+        result = await conn.fetchval(sql, profile_id)
+        return bool(result) if result is not None else False
+    except (asyncpg.DataError, ValueError):
+        # Invalid UUID format - profile cannot exist
+        return False
 

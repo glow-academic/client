@@ -15,7 +15,10 @@ class TestProfileExists:
     ) -> None:
         """Test profile_exists returns True for existing profile."""
         # Arrange
-        profile_id = await db.fetchval("SELECT id FROM profiles LIMIT 1")
+        profile_id = await db.fetchval(
+            "INSERT INTO profiles(first_name, last_name, role, active) "
+            "VALUES ('Test', 'User', 'member', true) RETURNING id"
+        )
         assert profile_id is not None
 
         # Act

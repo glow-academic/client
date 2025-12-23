@@ -1,9 +1,8 @@
 """Integration tests for app.infra.v3.error.handle_route_error."""
 
 import pytest
-from fastapi import HTTPException, Request
-from fastapi.testclient import TestClient
 from app.infra.v3.error.handle_route_error import handle_route_error
+from fastapi import HTTPException
 
 
 class TestHandleRouteError:
@@ -50,9 +49,17 @@ class TestHandleRouteError:
         route_path = "/api/v3/test"
         operation = "test_operation"
         
-        # Create a mock request
-        app = TestClient(lambda: None).app
-        request = Request({"type": "http", "method": "GET", "path": route_path})
+        # Create a proper Request object with required scope fields
+        from starlette.requests import Request as StarletteRequest
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": route_path,
+            "headers": [],
+            "query_string": b"",
+            "server": ("localhost", 8000),
+        }
+        request = StarletteRequest(scope)
 
         # Act & Assert
         with pytest.raises(HTTPException):

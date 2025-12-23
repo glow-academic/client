@@ -1,8 +1,7 @@
 """Integration tests for app.infra.v3.error.log_and_raise_error."""
 
 import pytest
-from fastapi import HTTPException, Request
-from fastapi.testclient import TestClient
+from fastapi import HTTPException
 from app.infra.v3.error.log_and_raise_error import log_and_raise_error
 
 
@@ -54,9 +53,17 @@ class TestLogAndRaiseError:
         route_path = "/api/v3/test"
         operation = "test_operation"
         
-        # Create a mock request
-        app = TestClient(lambda: None).app
-        request = Request({"type": "http", "method": "GET", "path": route_path})
+        # Create a proper Request object with required scope fields
+        from starlette.requests import Request as StarletteRequest
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": route_path,
+            "headers": [],
+            "query_string": b"",
+            "server": ("localhost", 8000),
+        }
+        request = StarletteRequest(scope)
 
         # Act & Assert
         with pytest.raises(HTTPException) as exc_info:
