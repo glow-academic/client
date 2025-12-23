@@ -154,7 +154,7 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
 
             # Link questions to scenario
             link_questions_sql = load_sql(
-                "sql/v3/scenarios/link_questions_to_scenario.sql"
+                "app/sql/v3/scenarios/link_questions_to_scenario.sql"
             )
             try:
                 for question_id in question_ids:
@@ -176,7 +176,7 @@ async def _scenario_tool_questions_impl(sid: str, data: dict[str, Any]) -> None:
             if validated.question_timestamps and video_id_uuid:
                 # Link timestamps to scenario_question_times
                 save_timestamps_sql = load_sql(
-                    "sql/v3/scenarios/save_question_timestamps.sql"
+                    "app/sql/v3/scenarios/save_question_timestamps.sql"
                 )
                 try:
                     timestamps_json = json.dumps(validated.question_timestamps)

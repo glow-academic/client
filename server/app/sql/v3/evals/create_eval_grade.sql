@@ -5,6 +5,14 @@
 
 INSERT INTO grades 
 (run_id, rubric_id, description, passed, score, time_taken, created_at)
-VALUES ($1::uuid, $7::uuid, $3::text, $4::boolean, $5::numeric, $6::numeric, NOW())
+SELECT 
+    $1::uuid,
+    $7::uuid,
+    $3::text,
+    $4::boolean,
+    $5::numeric,
+    $6::numeric,
+    NOW()
+WHERE ($2::uuid IS NOT NULL OR $2::uuid IS NULL)  -- Use $2 to help PostgreSQL infer type
 RETURNING id::text as grade_id
 

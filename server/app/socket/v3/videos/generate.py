@@ -117,7 +117,7 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
             # This validates rate limits and creates run atomically
             # Note: Video generation doesn't have profile_id in payload, so we use None (defaults to guest)
             sql_query = load_sql(
-                "sql/v3/agents/get_video_run_context_and_create_run.sql"
+                "app/sql/v3/agents/get_video_run_context_and_create_run.sql"
             )
             try:
                 context_row = await conn.fetchrow(sql_query, str(video_id), None)

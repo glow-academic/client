@@ -1272,7 +1272,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                     if not department_id:
                         # Last resort: get any active department
                         sql = load_sql(
-                            "sql/v3/departments/get_all_active_departments.sql"
+                            "app/sql/v3/departments/get_all_active_departments.sql"
                         )
                         all_dept_rows = await conn.fetch(sql)
                         if all_dept_rows and len(all_dept_rows) > 0:

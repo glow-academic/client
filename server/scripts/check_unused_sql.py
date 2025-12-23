@@ -54,7 +54,11 @@ def extract_all_load_sql_paths(python_files: list[Path]) -> set[str]:
     """Extract all SQL file paths referenced in load_sql() calls.
 
     Reads all Python files once and extracts all load_sql() paths.
-    Returns a set of all referenced SQL file paths.
+    Returns a set of all referenced SQL file paths in normalized format (app/sql/v3/...).
+    
+    Normalizes paths to standard format:
+    - sql/v3/... -> app/sql/v3/... (legacy format, should be migrated)
+    - app/sql/v3/... -> app/sql/v3/... (standard format)
     """
     referenced_paths = set()
 
@@ -66,7 +70,12 @@ def extract_all_load_sql_paths(python_files: list[Path]) -> set[str]:
         try:
             content = py_file.read_text(encoding="utf-8")
             matches = pattern.findall(content)
-            referenced_paths.update(matches)
+            for match in matches:
+                # Normalize paths: sql/v3/... -> app/sql/v3/...
+                normalized = match
+                if match.startswith("sql/v3/"):
+                    normalized = "app/" + match
+                referenced_paths.add(normalized)
         except Exception:
             # Skip files that can't be read (permissions, encoding issues, etc.)
             continue

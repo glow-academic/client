@@ -138,7 +138,7 @@ async def _document_generate_impl(
             # Get all context data AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
             sql_query = load_sql(
-                "sql/v3/agents/get_document_run_context_and_create_run.sql"
+                "app/sql/v3/agents/get_document_run_context_and_create_run.sql"
             )
             try:
                 context_row = await conn.fetchrow(
@@ -306,7 +306,7 @@ async def _document_generate_impl(
                 field_ids_uuid = [uuid.UUID(fid) for fid in data.fieldIds]
                 field_ids_str = [str(fid) for fid in field_ids_uuid]
                 sql_query_fields = load_sql(
-                    "sql/v3/agents/get_document_template_context.sql"
+                    "app/sql/v3/agents/get_document_template_context.sql"
                 )
                 fields_row = await conn.fetchrow(sql_query_fields, field_ids_str)
                 if fields_row and fields_row.get("fields"):

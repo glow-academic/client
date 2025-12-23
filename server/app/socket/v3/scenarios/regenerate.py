@@ -155,7 +155,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # Get previous run for this scenario
             sql_get_previous_run = load_sql(
-                "sql/v3/messages/get_previous_run_for_entity.sql"
+                "app/sql/v3/messages/get_previous_run_for_entity.sql"
             )
             previous_run_row = await conn.fetchrow(
                 sql_get_previous_run,
@@ -231,7 +231,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             )
 
             sql = load_sql(
-                "sql/v3/agents/get_scenario_regeneration_run_context_and_create_run.sql"
+                "app/sql/v3/agents/get_scenario_regeneration_run_context_and_create_run.sql"
             )
             try:
                 context_row = await conn.fetchrow(
@@ -706,7 +706,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             user_message_id: uuid.UUID | None = None
             if data.userInstructions and data.userInstructions.strip():
                 sql_create_user = load_sql(
-                    "sql/v3/messages/create_user_message_with_branch.sql"
+                    "app/sql/v3/messages/create_user_message_with_branch.sql"
                 )
                 user_result = await conn.fetchrow(
                     sql_create_user,
@@ -724,7 +724,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 assistant_parent_id = user_message_id if user_message_id else parent_message_id
 
                 sql_create_assistant = load_sql(
-                    "sql/v3/messages/create_assistant_message_with_branch.sql"
+                    "app/sql/v3/messages/create_assistant_message_with_branch.sql"
                 )
                 await conn.fetchrow(
                     sql_create_assistant,

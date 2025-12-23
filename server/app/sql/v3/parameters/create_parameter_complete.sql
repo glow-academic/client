@@ -14,7 +14,7 @@ WITH user_profile AS (
 validate_create_permissions AS (
     -- Validate department permissions for create operation (parameter-level departments)
     SELECT validate_department_create_permissions(
-        up.role,
+        up.role::text,
         $9::text[]
     ) as validation_passed
     FROM user_profile up
@@ -94,28 +94,10 @@ link_fields_to_parameter AS (
         "default" = EXCLUDED."default",
         updated_at = NOW()
 ),
-new_items AS (
-    -- Return field_id as item_id for compatibility
-    SELECT 
-        field_id as item_id,
-        field_name as item_name
-    FROM new_fields
-),
 link_departments AS (
-    -- Link departments to fields if provided
-    INSERT INTO field_departments (field_id, department_id, active, created_at, updated_at)
-    SELECT 
-        fwo.field_id::uuid,
-        dept_id::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM fields_with_order fwo
-    CROSS JOIN UNNEST(fwo.department_ids) as dept_id
-    WHERE fwo.department_ids IS NOT NULL AND array_length(fwo.department_ids, 1) > 0
-    ON CONFLICT (field_id, department_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
+    -- NOTE: Field-level departments are not supported in this route
+    -- This CTE is kept for compatibility but does nothing
+    SELECT 1 WHERE false
 ),
 link_parameter_departments AS (
     -- Link departments to parameter if provided at parameter level

@@ -2,14 +2,13 @@
 -- Parameters: $1 = scenario_id (uuid), $2 = video_id (uuid), $3 = question_timestamps (jsonb)
 -- question_timestamps structure: {"question_id": [time1, time2, ...]}
 -- Deactivates existing timestamps and inserts new ones
-DO $$
-BEGIN
-    -- Deactivate existing timestamps for this scenario/video combination
+-- Returns: inserted_count (integer)
+WITH deactivate_timestamps AS (
     UPDATE scenario_question_times
     SET active = false, updated_at = NOW()
-    WHERE scenario_id = $1::uuid AND video_id = $2::uuid;
-
-    -- Insert new timestamps
+    WHERE scenario_id = $1::uuid AND video_id = $2::uuid
+),
+insert_timestamps AS (
     INSERT INTO scenario_question_times (scenario_id, question_id, video_id, time, active, created_at, updated_at)
     SELECT 
         $1::uuid,
@@ -25,7 +24,8 @@ BEGIN
     AND jsonb_typeof($3::jsonb) = 'object'
     ON CONFLICT (scenario_id, question_id, video_id, time) DO UPDATE SET
         active = true,
-        updated_at = NOW();
-END $$;
-SELECT COUNT(*)::int as inserted_count FROM scenario_question_times WHERE scenario_id = $1::uuid AND video_id = $2::uuid AND active = true;
+        updated_at = NOW()
+    RETURNING 1
+)
+SELECT COUNT(*)::int as inserted_count FROM insert_timestamps;
 

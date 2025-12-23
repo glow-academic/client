@@ -105,7 +105,7 @@ async def _scenario_tool_problem_statement_impl(sid: str, data: dict[str, Any]) 
         async with pool.acquire() as conn:
             # Use description as problem_statement, title as name
             sql = load_sql(
-                "sql/v3/problem_statements/insert_problem_statement_complete.sql"
+                "app/sql/v3/problem_statements/insert_problem_statement_complete.sql"
             )
             scenario_id_uuid = (
                 uuid.UUID(validated.scenario_id) if validated.scenario_id else None

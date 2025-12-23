@@ -1,5 +1,5 @@
 -- Update simulation with departments, scenarios, and videos in a single transaction
--- Parameters: $1=simulationId, $2=title, $3=description, $4=active, $5=practice_simulation, $6=department_ids (nullable text array), $7=scenario_ids (text array), $8=scenario_active_flags (bool array), $9=video_ids (text array), $10=video_active_flags (bool array), $11=scenario_hints_enabled (bool array), $12=scenario_rubric_ids (text array, nullable), $13=scenario_time_limit_seconds (int array, nullable), $14=scenario_audio_enabled (bool array), $15=scenario_text_enabled (bool array), $19=video_show_problem_statement (bool array), $20=video_show_objectives (bool array), $21=video_show_image (bool array), $22=hint_agent_id (text, nullable), $23=grade_text_agent_id (text, nullable), $24=grade_voice_agent_id (text, nullable), $25=simulation_text_agent_id (text, nullable), $26=simulation_voice_agent_id (text, nullable), $27=profile_id (uuid)
+-- Parameters: $1=simulationId, $2=title, $3=description, $4=active, $5=practice_simulation, $6=department_ids (nullable text array), $7=scenario_ids (text array), $8=scenario_active_flags (bool array), $9=video_ids (text array), $10=video_active_flags (bool array), $11=scenario_hints_enabled (bool array), $12=scenario_rubric_ids (text array, nullable), $13=scenario_time_limit_seconds (int array, nullable), $14=scenario_audio_enabled (bool array), $15=scenario_text_enabled (bool array), $16=unused (text), $17=unused (text), $18=unused (text), $19=video_show_problem_statement (bool array), $20=video_show_objectives (bool array), $21=video_show_image (bool array), $22=hint_agent_id (text, nullable), $23=grade_text_agent_id (text, nullable), $24=grade_voice_agent_id (text, nullable), $25=simulation_text_agent_id (text, nullable), $26=simulation_voice_agent_id (text, nullable), $27=profile_id (uuid)
 -- Note: scenario_ids/scenario_active_flags and video_ids/video_active_flags must be same length and order within each type
 -- Positions are unified: scenarios get positions 1..N, videos get positions N+1..M
 -- Note: rubric_id and time_limit are now per-scenario, not simulation-level
@@ -9,6 +9,10 @@ WITH user_profile AS (
         p.first_name || ' ' || p.last_name as actor_name
     FROM profiles p
     WHERE p.id = $27::uuid
+        -- Use $16, $17, $18 to help PostgreSQL infer types (even though unused)
+        AND ($16::text IS NULL OR $16::text IS NOT NULL)
+        AND ($17::text IS NULL OR $17::text IS NOT NULL)
+        AND ($18::text IS NULL OR $18::text IS NOT NULL)
 ),
 object_current_departments AS (
     -- Get simulation's current active department links

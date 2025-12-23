@@ -56,17 +56,10 @@ new_prompt AS (
     RETURNING id::text as prompt_id
 ),
 link_prompt AS (
-    -- Link persona to prompt if prompt was created
-    INSERT INTO persona_prompts (persona_id, prompt_id, active, created_at, updated_at)
-    SELECT 
-        np.persona_id::uuid,
-        newp.prompt_id::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM new_persona np
-    CROSS JOIN new_prompt newp
-    RETURNING persona_id::text
+    -- NOTE: persona_prompts table was dropped in migration 44
+    -- Personas are now linked to prompts via agents, not directly
+    -- This CTE is kept for compatibility but does nothing
+    SELECT 1 WHERE false
 ),
 copy_departments AS (
     -- Copy department links from original persona

@@ -173,7 +173,7 @@ async def run_eval_single_run(
 
             # Create new run for agent being evaluated
             sql_create_agent_run = load_sql(
-                "sql/v3/model_runs/create_model_run_complete.sql"
+                "app/sql/v3/model_runs/create_model_run_complete.sql"
             )
             agent_run_row = await conn.fetchrow(
                 sql_create_agent_run,
@@ -217,7 +217,7 @@ async def run_eval_single_run(
             agent_run_id_uuid = uuid.UUID(agent_run_id)
             if modified_system_prompt:
                 sql_link_sys_dev = load_sql(
-                    "sql/v3/model_runs/link_system_developer_messages_to_run.sql"
+                    "app/sql/v3/model_runs/link_system_developer_messages_to_run.sql"
                 )
                 await conn.fetchrow(
                     sql_link_sys_dev,
@@ -300,7 +300,7 @@ async def run_eval_single_run(
 
                 # Create assistant message with branch
                 sql_create_assistant = load_sql(
-                    "sql/v3/messages/create_assistant_message_with_branch.sql"
+                    "app/sql/v3/messages/create_assistant_message_with_branch.sql"
                 )
                 await conn.fetchrow(
                     sql_create_assistant,
@@ -460,7 +460,7 @@ async def run_eval_single_run(
         eval_run_id_uuid = uuid.UUID(eval_run_id)
         if context["system_prompt"]:
             sql_link_sys_dev = load_sql(
-                "sql/v3/model_runs/link_system_developer_messages_to_run.sql"
+                "app/sql/v3/model_runs/link_system_developer_messages_to_run.sql"
             )
             await conn.fetchrow(
                 sql_link_sys_dev,
@@ -541,7 +541,7 @@ async def run_eval_single_run(
 
             # Create assistant message with branch
             sql_create_assistant = load_sql(
-                "sql/v3/messages/create_assistant_message_with_branch.sql"
+                "app/sql/v3/messages/create_assistant_message_with_branch.sql"
             )
             await conn.fetchrow(
                 sql_create_assistant,

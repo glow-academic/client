@@ -103,7 +103,10 @@ profile_cohorts AS (
 profile_departments_agg AS (
     SELECT 
         pd.profile_id,
-        ARRAY_AGG(pd.department_id::text ORDER BY d.title) as department_ids
+        CASE 
+            WHEN COUNT(pd.department_id) > 0 THEN ARRAY_AGG(pd.department_id::text ORDER BY d.title)
+            ELSE ARRAY[]::text[]
+        END as department_ids
     FROM profile_departments pd
     JOIN departments d ON d.id = pd.department_id
     WHERE pd.active = true
@@ -135,10 +138,13 @@ profile_total_runs AS (
 all_cohort_ids AS (
     SELECT DISTINCT unnest(cohort_ids)::uuid as cohort_id
     FROM profile_cohorts
+    WHERE cohort_ids IS NOT NULL AND array_length(cohort_ids, 1) > 0
 ),
 all_department_ids AS (
-    SELECT DISTINCT unnest(department_ids)::uuid as department_id
-    FROM profile_departments_agg
+    SELECT DISTINCT dept_id::uuid as department_id
+    FROM profile_departments_agg pda
+    CROSS JOIN LATERAL unnest(pda.department_ids) as dept_id
+    WHERE pda.department_ids IS NOT NULL AND array_length(pda.department_ids, 1) > 0
 ),
 cohort_mapping_data AS (
     SELECT COALESCE(jsonb_object_agg(
@@ -160,7 +166,7 @@ department_mapping_data AS (
         )
     ), '{}'::jsonb) as department_mapping
     FROM departments d
-    WHERE (d.id = $1::uuid OR d.id = ANY(ARRAY(SELECT department_id::uuid FROM all_department_ids)))
+    WHERE (d.id = $1::uuid OR EXISTS (SELECT 1 FROM all_department_ids WHERE department_id = d.id))
     AND d.active = true
 ),
 department_models AS (
@@ -212,7 +218,7 @@ model_mapping_data AS (
 key_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
-            k.id,
+            k.id::text,
             jsonb_build_object(
                 'name', k.name,
                 'description', CASE 
@@ -228,7 +234,7 @@ key_mapping_data AS (
         ) FILTER (WHERE k.id IS NOT NULL),
         '{}'::jsonb
     ) as key_mapping,
-    array_agg(k.id ORDER BY k.name) as key_ids
+    array_agg(k.id::text ORDER BY k.name) as key_ids
     FROM keys k
     JOIN setting_provider_keys spk ON spk.key_id = k.id AND spk.active = true
     JOIN settings s ON s.id = spk.settings_id AND s.active = true
@@ -297,7 +303,10 @@ settings_departments_data AS (
     -- Get department_ids for each setting
     SELECT 
         ds.settings_id,
-        ARRAY_AGG(ds.department_id::text ORDER BY ds.created_at) as department_ids
+        CASE 
+            WHEN COUNT(ds.department_id) > 0 THEN ARRAY_AGG(ds.department_id::text ORDER BY ds.created_at) FILTER (WHERE ds.department_id IS NOT NULL)
+            ELSE ARRAY[]::text[]
+        END as department_ids
     FROM department_settings ds
     WHERE ds.active = true
     GROUP BY ds.settings_id
@@ -311,7 +320,7 @@ settings_mapping_data AS (
                 'settings_id', s.id::text,
                 'created_at', s.created_at::text,
                 'active', s.active,
-                'department_ids', sdd.department_ids
+                'department_ids', CASE WHEN sdd.department_ids IS NULL THEN ARRAY[]::text[] ELSE sdd.department_ids END
             )
         ) FILTER (WHERE s.id IS NOT NULL),
         '{}'::jsonb

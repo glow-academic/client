@@ -11,7 +11,8 @@ WITH user_profile AS (
 object_current_departments AS (
     -- NOTE: department_keys table was removed in migration 74
     -- Keys are now linked to departments through settings
-    SELECT ARRAY[]::text[] as department_ids
+    -- Use $6 to help PostgreSQL infer type (even though it's not used)
+    SELECT COALESCE($6::text[], ARRAY[]::text[]) as department_ids
 ),
 user_departments AS (
     -- Get user's departments
@@ -22,7 +23,7 @@ user_departments AS (
 validate_update_permissions AS (
     -- Validate department permissions for update operation
     SELECT validate_department_update_permissions(
-        up.role,
+        up.role::text,
         ocd.department_ids,
         ud.department_ids
     ) as validation_passed

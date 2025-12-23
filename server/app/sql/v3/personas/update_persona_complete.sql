@@ -63,55 +63,22 @@ link_departments AS (
         updated_at = NOW()
 ),
 deactivate_parameters AS (
-    -- Soft-delete removed parameters (set active = false for parameters not in new list)
-    UPDATE parameter_personas
-    SET active = false, updated_at = NOW()
-    WHERE persona_id = $1::uuid
-    AND active = true
-    AND (
-        COALESCE(array_length($10::text[], 1), 0) = 0
-        OR parameter_id NOT IN (SELECT unnest($10::text[])::uuid)
-    )
+    -- NOTE: parameter_personas table was dropped in migration 91
+    -- Parameters are now linked to personas via persona_parameter flag and persona_fields
+    -- This CTE is kept for compatibility but does nothing
+    SELECT 1 WHERE false
 ),
 link_parameters AS (
-    -- Insert or reactivate parameter links if provided (array is never NULL, but may be empty)
-    INSERT INTO parameter_personas (parameter_id, persona_id, active, created_at, updated_at)
-    SELECT 
-        param_id::uuid,
-        $1::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM UNNEST($10::text[]) as param_id
-    WHERE COALESCE(array_length($10::text[], 1), 0) > 0
-    ON CONFLICT (parameter_id, persona_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
+    -- NOTE: parameter_personas table was dropped in migration 91
+    -- Parameters are now linked to personas via persona_parameter flag and persona_fields
+    -- This CTE is kept for compatibility but does nothing
+    SELECT 1 WHERE false
 ),
 backfill_persona_fields AS (
-    -- Backfill persona_fields for linked parameters (use default field)
-    -- Only runs if persona_fields table exists
-    INSERT INTO persona_fields (persona_id, field_id, active, created_at, updated_at)
-    SELECT DISTINCT
-        pp.persona_id,
-        pf.field_id,
-        TRUE,
-        NOW(),
-        NOW()
-    FROM parameter_personas pp
-    JOIN parameter_fields pf ON pf.parameter_id = pp.parameter_id AND pf.active = TRUE AND pf.default = TRUE
-    WHERE pp.persona_id = $1::uuid
-    AND pp.active = TRUE
-    AND NOT EXISTS (
-        SELECT 1 FROM persona_fields pf2
-        WHERE pf2.persona_id = pp.persona_id
-        AND pf2.field_id = pf.field_id
-        AND pf2.active = TRUE
-    )
-    AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'persona_fields')
-    ON CONFLICT (persona_id, field_id) DO UPDATE SET
-        active = TRUE,
-        updated_at = NOW()
+    -- NOTE: parameter_personas table was dropped in migration 91
+    -- Parameters are now linked to personas via persona_parameter flag and persona_fields
+    -- This CTE is kept for compatibility but does nothing
+    SELECT 1 WHERE false
 ),
 replace_examples AS (
     -- Delete all existing example links

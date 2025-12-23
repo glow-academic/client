@@ -8,9 +8,13 @@
 --   $6 = primary_department_id (uuid) - new primary department (NULL to skip)
 -- Returns: updated_count (integer), validation_errors (text[])
 
-WITH current_user_role AS (
+WITH role_param AS (
+    -- Use $3::text to help PostgreSQL infer type (even if NULL)
+    SELECT $3::text as role_value
+),
+current_user_role AS (
     -- Get current user's role for validation
-    SELECT role FROM profiles WHERE id = $1
+    SELECT role FROM profiles WHERE id = $1::uuid
 ),
 profile_validation AS (
     -- Validate each profile and check permissions
@@ -18,30 +22,32 @@ profile_validation AS (
         p.id,
         p.role as current_role,
         cur.role as validator_role,
+        rp.role_value,
         -- Check if role assignment is allowed (hierarchy check)
         CASE 
-            WHEN $3 IS NULL THEN true  -- Not updating role
+            WHEN rp.role_value IS NULL THEN true  -- Not updating role
             WHEN cur.role = 'superadmin' THEN true
-            WHEN cur.role = 'admin' AND $3 IN ('instructional', 'member', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND $3 IN ('member', 'guest') THEN true
-            WHEN cur.role = 'member' AND $3 = 'guest' THEN true
+            WHEN cur.role = 'admin' AND rp.role_value IN ('instructional', 'member', 'guest') THEN true
+            WHEN cur.role = 'instructional' AND rp.role_value IN ('member', 'guest') THEN true
+            WHEN cur.role = 'member' AND rp.role_value = 'guest' THEN true
             ELSE false
         END as can_assign_role,
         -- Check if role level is acceptable (cannot assign equal or higher role)
         CASE 
-            WHEN $3 IS NULL THEN true  -- Not updating role
+            WHEN rp.role_value IS NULL THEN true  -- Not updating role
             WHEN cur.role = 'superadmin' THEN true  -- Superadmin can assign any role
-            WHEN p.id = $1 THEN true  -- Can update own role
+            WHEN p.id = $1::uuid THEN true  -- Can update own role
             WHEN cur.role = 'superadmin' THEN true
-            WHEN cur.role = 'admin' AND $3 IN ('instructional', 'member', 'guest') THEN true
-            WHEN cur.role = 'instructional' AND $3 IN ('member', 'guest') THEN true
-            WHEN cur.role = 'member' AND $3 = 'guest' THEN true
+            WHEN cur.role = 'admin' AND rp.role_value IN ('instructional', 'member', 'guest') THEN true
+            WHEN cur.role = 'instructional' AND rp.role_value IN ('member', 'guest') THEN true
+            WHEN cur.role = 'member' AND rp.role_value = 'guest' THEN true
             ELSE false
         END as role_level_ok,
         -- All profiles can be edited based on role hierarchy
         true as can_edit_default
     FROM unnest($2::uuid[]) as profile_id
     CROSS JOIN current_user_role cur
+    CROSS JOIN role_param rp
     JOIN profiles p ON p.id = profile_id
 ),
 validated_profiles AS (
@@ -54,7 +60,7 @@ profile_update AS (
     -- Update profiles table with dynamic SET clauses
     UPDATE profiles
     SET 
-        role = COALESCE($3::profile_role, role),
+        role = COALESCE((SELECT CAST(rp.role_value AS profile_role) FROM role_param rp WHERE rp.role_value IS NOT NULL LIMIT 1), role),
         active = COALESCE($4::boolean, active),
         updated_at = NOW()
     WHERE id IN (SELECT id FROM validated_profiles)
@@ -79,10 +85,10 @@ department_update AS (
     -- Update primary department if provided (skip if NULL)
     UPDATE profile_departments
     SET 
-        department_id = $6,
+        department_id = $6::uuid,
         updated_at = NOW()
     WHERE profile_id IN (SELECT id FROM profile_update)
-        AND $6 IS NOT NULL  -- Only update if value provided (not skipping)
+        AND $6::uuid IS NOT NULL  -- Only update if value provided (not skipping)
     RETURNING profile_id
 )
 SELECT COUNT(*)::integer as updated_count

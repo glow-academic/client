@@ -230,7 +230,7 @@ async def generate_image_background(
 
             # Link image to upload via junction table
             sql_insert_image_upload = load_sql(
-                "sql/v3/images/insert_image_upload_complete.sql"
+                "app/sql/v3/images/insert_image_upload_complete.sql"
             )
             image_upload_row = await conn.fetchrow(
                 sql_insert_image_upload,

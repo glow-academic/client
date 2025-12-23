@@ -17,11 +17,12 @@
                     p.last_name, 
                     ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
                     (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
-                    p.role
+                    p.role,
+                    p.created_at
                 FROM profiles p
                 LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
                 WHERE TRUE
-                GROUP BY p.id, p.first_name, p.last_name, p.role
+                GROUP BY p.id, p.first_name, p.last_name, p.role, p.created_at
             ),
             filt AS (
                 SELECT a.* FROM analytics a
@@ -36,6 +37,7 @@
                     fp.emails,
                     fp.primary_email,
                     fp.role,
+                    fp.created_at,
                     AVG(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS avg_score,
                     MAX(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS highest_score,
                     COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
@@ -43,7 +45,7 @@
                     AVG(f.time_taken_seconds / 60.0) FILTER (WHERE f.time_taken_seconds IS NOT NULL) AS avg_time_minutes
                 FROM filtered_profiles fp
                 LEFT JOIN filt f ON f.profile_id = fp.id
-                GROUP BY fp.id, fp.first_name, fp.last_name, fp.emails, fp.primary_email, fp.role
+                GROUP BY fp.id, fp.first_name, fp.last_name, fp.emails, fp.primary_email, fp.role, fp.created_at
             ),
             -- Total time spent per profile (SUM with 30-minute cap per chat, matching dashboard)
             total_time_per_profile AS (

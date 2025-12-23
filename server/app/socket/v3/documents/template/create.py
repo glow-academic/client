@@ -84,7 +84,7 @@ async def _document_template_create_impl(
 
                 # Create template and link to document and run
                 sql_create_template = load_sql(
-                    "sql/v3/documents/create_template_and_link.sql"
+                    "app/sql/v3/documents/create_template_and_link.sql"
                 )
                 template_result = await conn.fetchrow(
                     sql_create_template,
@@ -104,7 +104,7 @@ async def _document_template_create_impl(
 
                 # Fetch updated template_mapping
                 sql_get_template_mapping = load_sql(
-                    "sql/v3/documents/get_template_mapping.sql"
+                    "app/sql/v3/documents/get_template_mapping.sql"
                 )
                 mapping_row = await conn.fetchrow(
                     sql_get_template_mapping, str(document_id)

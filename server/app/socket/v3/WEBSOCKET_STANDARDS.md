@@ -28,7 +28,7 @@ This document defines the standards and best practices for WebSocket event handl
 **Example:**
 ```python
 # Good: Atomic context + run creation
-sql = load_sql("sql/v3/agents/get_simulation_run_context_and_create_run.sql")
+sql = load_sql("app/sql/v3/agents/get_simulation_run_context_and_create_run.sql")
 context_row = await conn.fetchrow(sql, str(chat_id_uuid))
 model_run_id = uuid.UUID(context_row["run_id"])
 
@@ -78,7 +78,7 @@ await internal_sio.emit(
 **Example:**
 ```python
 # Good: SQL in separate file
-sql = load_sql("sql/v3/departments/get_department_title.sql")
+sql = load_sql("app/sql/v3/departments/get_department_title.sql")
 dept_row = await conn.fetchrow(sql, department_id)
 
 # Bad: Inline SQL
