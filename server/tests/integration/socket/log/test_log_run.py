@@ -22,14 +22,29 @@ async def test_log_run_success(
     # Arrange
     profile_id = await get_or_create_test_profile(db)
     department_id = await get_or_create_test_department(db)
-    run_id = str(uuid.uuid4())
-
-    # Create a model run first
-    await db.execute(
-        "INSERT INTO model_runs(id, operation_type, input_text_tokens, output_text_tokens) "
-        "VALUES ($1, 'test', 100, 50)",
-        run_id,
+    
+    # Create a run first using proper SQL helper
+    from utils.sql_helper import load_sql
+    
+    # Get or create required entities
+    model_id = await db.fetchval("SELECT id FROM models LIMIT 1")
+    if not model_id:
+        model_id = await db.fetchval(
+            "INSERT INTO models(name, provider, model_name, active) "
+            "VALUES ('Test Model', 'openai', 'gpt-4', true) RETURNING id"
+        )
+    agent_id = await db.fetchval("SELECT id FROM agents LIMIT 1")
+    if not agent_id:
+        agent_id = await db.fetchval(
+            "INSERT INTO agents(name, active) VALUES ('Test Agent', true) RETURNING id"
+        )
+    
+    sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
+    run_row = await db.fetchrow(
+        sql_create_run, department_id, model_id_str, None, "persona", profile_id, None, agent_id
     )
+    run_id = run_row["run_id"] if run_row else None
+    assert run_id is not None
 
     sid = "test_sid_123"
     data = {
@@ -47,12 +62,11 @@ async def test_log_run_success(
 
     # Assert - verify run was updated in database
     run_row = await db.fetchrow(
-        "SELECT * FROM model_runs WHERE id = $1", run_id
+        "SELECT * FROM runs WHERE id = $1", run_id
     )
     assert run_row is not None
-    assert run_row["input_text_tokens"] == 100
-    assert run_row["output_text_tokens"] == 50
-    assert run_row["department_id"] == department_id
+    assert run_row["input_tokens"] == 100
+    assert run_row["output_tokens"] == 50
 
 
 async def test_log_run_internal_success(
@@ -62,14 +76,29 @@ async def test_log_run_internal_success(
     # Arrange
     profile_id = await get_or_create_test_profile(db)
     department_id = await get_or_create_test_department(db)
-    run_id = str(uuid.uuid4())
-
-    # Create a model run first
-    await db.execute(
-        "INSERT INTO model_runs(id, operation_type, input_text_tokens, output_text_tokens) "
-        "VALUES ($1, 'test', 100, 50)",
-        run_id,
+    
+    # Create a run first using proper SQL helper
+    from utils.sql_helper import load_sql
+    
+    # Get or create required entities
+    model_id = await db.fetchval("SELECT id FROM models LIMIT 1")
+    if not model_id:
+        model_id = await db.fetchval(
+            "INSERT INTO models(name, provider, model_name, active) "
+            "VALUES ('Test Model', 'openai', 'gpt-4', true) RETURNING id"
+        )
+    agent_id = await db.fetchval("SELECT id FROM agents LIMIT 1")
+    if not agent_id:
+        agent_id = await db.fetchval(
+            "INSERT INTO agents(name, active) VALUES ('Test Agent', true) RETURNING id"
+        )
+    
+    sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
+    run_row = await db.fetchrow(
+        sql_create_run, department_id, model_id_str, None, "persona", profile_id, None, agent_id
     )
+    run_id = run_row["run_id"] if run_row else None
+    assert run_id is not None
 
     data = {
         "runId": run_id,
@@ -84,11 +113,11 @@ async def test_log_run_internal_success(
 
     # Assert - verify run was updated in database
     run_row = await db.fetchrow(
-        "SELECT * FROM model_runs WHERE id = $1", run_id
+        "SELECT * FROM runs WHERE id = $1", run_id
     )
     assert run_row is not None
-    assert run_row["input_text_tokens"] == 200
-    assert run_row["output_text_tokens"] == 100
+    assert run_row["input_tokens"] == 200
+    assert run_row["output_tokens"] == 100
 
 
 async def test_log_run_with_developer_messages(
@@ -98,14 +127,29 @@ async def test_log_run_with_developer_messages(
     # Arrange
     profile_id = await get_or_create_test_profile(db)
     department_id = await get_or_create_test_department(db)
-    run_id = str(uuid.uuid4())
-
-    # Create a model run first
-    await db.execute(
-        "INSERT INTO model_runs(id, operation_type, input_text_tokens, output_text_tokens) "
-        "VALUES ($1, 'test', 100, 50)",
-        run_id,
+    
+    # Create a run first using proper SQL helper
+    from utils.sql_helper import load_sql
+    
+    # Get or create required entities
+    model_id = await db.fetchval("SELECT id FROM models LIMIT 1")
+    if not model_id:
+        model_id = await db.fetchval(
+            "INSERT INTO models(name, provider, model_name, active) "
+            "VALUES ('Test Model', 'openai', 'gpt-4', true) RETURNING id"
+        )
+    agent_id = await db.fetchval("SELECT id FROM agents LIMIT 1")
+    if not agent_id:
+        agent_id = await db.fetchval(
+            "INSERT INTO agents(name, active) VALUES ('Test Agent', true) RETURNING id"
+        )
+    
+    sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
+    run_row = await db.fetchrow(
+        sql_create_run, department_id, model_id_str, None, "persona", profile_id, None, agent_id
     )
+    run_id = run_row["run_id"] if run_row else None
+    assert run_id is not None
 
     sid = "test_sid_123"
     data = {

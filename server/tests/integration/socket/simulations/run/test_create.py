@@ -5,7 +5,10 @@ import uuid
 import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
-from tests.integration.socket.helpers import get_or_create_test_profile
+from tests.integration.socket.helpers import (
+    get_or_create_test_department,
+    get_or_create_test_profile,
+)
 
 from app.socket.v3.simulations.run.create import (
     simulation_run_create_internal,
@@ -24,12 +27,10 @@ async def test_simulation_run_create_success(
     department_id = await get_or_create_test_department(db)
 
     # Get or create required entities
-    model_id = await db.fetchval("SELECT id FROM models LIMIT 1")
-    if not model_id:
-        model_id = await db.fetchval(
-            "INSERT INTO models(name, provider, model_name, active) "
-            "VALUES ('Test Model', 'openai', 'gpt-4', true) RETURNING id"
-        )
+    from tests.integration.socket.helpers import get_or_create_test_model
+    
+    model_id_str = await get_or_create_test_model(db)
+    model_id = model_id_str
 
     persona_id = await db.fetchval("SELECT id FROM personas LIMIT 1")
     if not persona_id:
@@ -45,7 +46,7 @@ async def test_simulation_run_create_success(
 
     data = {
         "department_id": str(department_id),
-        "model_id": str(model_id),
+        "model_id": model_id_str,
         "persona_id": str(persona_id),
         "profile_id": str(profile_id),
         "agent_id": str(agent_id),

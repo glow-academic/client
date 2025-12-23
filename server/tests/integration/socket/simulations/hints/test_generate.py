@@ -8,7 +8,7 @@ from tests.integration.socket.helpers import (
     get_or_create_test_profile,
 )
 
-from app.socket.v3.simulations.hints.generate import generate_hints
+from app.socket.v3.simulations.hints.generate import simulation_hints_generate
 
 pytestmark = pytest.mark.asyncio
 
@@ -55,7 +55,7 @@ async def test_simulation_hints_generate_success(
     }
 
     # Act
-    await generate_hints(sid, data)
+    await simulation_hints_generate(sid, data)
 
     # Assert - verify progress event was emitted
     progress_events = mock_sio.get_events("simulations_text_hint_generation_progress")
@@ -81,7 +81,7 @@ async def test_simulation_hints_generate_missing_chat_id(
     }
 
     # Act
-    await generate_hints(sid, data)
+    await simulation_hints_generate(sid, data)
 
     # Assert - verify error was emitted (validation error)
     progress_events = mock_sio.get_events("simulations_text_hint_generation_progress")

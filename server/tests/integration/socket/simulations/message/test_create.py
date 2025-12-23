@@ -4,13 +4,10 @@ import uuid
 
 import asyncpg  # type: ignore
 import pytest
+from app.socket.v3.simulations.message.create import (
+    _simulation_message_create_impl, simulation_message_create_internal)
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import get_or_create_test_profile
-
-from app.socket.v3.simulations.message.create import (
-    _simulation_message_create_impl,
-    simulation_message_create_internal,
-)
 
 pytestmark = pytest.mark.asyncio
 
@@ -38,10 +35,24 @@ async def test_simulation_message_create_success(
     )
 
     # Create a run
-    run_id = await db.fetchval(
-        "INSERT INTO model_runs(operation_type, input_text_tokens, output_text_tokens) "
-        "VALUES ('simulation', 100, 50) RETURNING id"
+    # Create a run using the proper SQL helper
+    from tests.integration.socket.helpers import get_or_create_test_model
+    from utils.sql_helper import load_sql
+    
+    sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
+    # Get or create required entities
+    model_id_str = await get_or_create_test_model(db)
+    agent_id = await db.fetchval("SELECT id FROM agents LIMIT 1")
+    if not agent_id:
+        agent_id = await db.fetchval(
+            "INSERT INTO agents(name, active) VALUES ('Test Agent', true) RETURNING id"
+        )
+    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    run_row = await db.fetchrow(
+        sql_create_run, dept_id, model_id_str, None, "persona", profile_id, None, agent_id
     )
+    run_id = run_row["run_id"] if run_row else None
+    assert run_id is not None
 
     data = {
         "chat_id": str(chat_id),
@@ -88,10 +99,27 @@ async def test_simulation_message_create_impl_direct(
         scenario_id,
     )
 
-    run_id = await db.fetchval(
-        "INSERT INTO model_runs(operation_type, input_text_tokens, output_text_tokens) "
-        "VALUES ('simulation', 100, 50) RETURNING id"
+    # Create a run using the proper SQL helper
+    from utils.sql_helper import load_sql
+    sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
+    # Get or create required entities
+    model_id = await db.fetchval("SELECT id FROM models LIMIT 1")
+    if not model_id:
+        model_id = await db.fetchval(
+            "INSERT INTO models(name, provider, model_name, active) "
+            "VALUES ('Test Model', 'openai', 'gpt-4', true) RETURNING id"
+        )
+    agent_id = await db.fetchval("SELECT id FROM agents LIMIT 1")
+    if not agent_id:
+        agent_id = await db.fetchval(
+            "INSERT INTO agents(name, active) VALUES ('Test Agent', true) RETURNING id"
+        )
+    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    run_row = await db.fetchrow(
+        sql_create_run, dept_id, model_id, None, "persona", None, None, agent_id
     )
+    run_id = run_row["run_id"] if run_row else None
+    assert run_id is not None
 
     # Act
     result = await _simulation_message_create_impl(

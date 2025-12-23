@@ -12,17 +12,13 @@ sim AS (
         title,
         description,
         active,
-        practice_simulation,
-        time_limit,
-        rubric_id
+        practice_simulation
     )
     VALUES (
         COALESCE($3, 'Test Simulation'),
         'Test Description',
         true,
-        false,
-        60,
-        (SELECT id FROM rubric)
+        false
     )
     RETURNING id
 )

@@ -73,3 +73,29 @@ async def get_or_create_test_department(
     # Create new department
     return await create_test_department(db, title=title)
 
+
+async def get_or_create_test_model(
+    db: asyncpg.Connection, name: str = "Test Model"
+) -> str:
+    """Get existing model or create a new one with provider."""
+    model_id = await db.fetchval("SELECT id FROM models WHERE active = true LIMIT 1")
+    if model_id:
+        return str(model_id)
+
+    # Create provider first
+    provider_id = await db.fetchval("SELECT id FROM providers WHERE active = true LIMIT 1")
+    if not provider_id:
+        provider_id = await db.fetchval(
+            "INSERT INTO providers(name, description, value, active) "
+            "VALUES ('Test Provider', 'Test Provider Description', 'openai', true) RETURNING id"
+        )
+
+    # Create model
+    model_id = await db.fetchval(
+        "INSERT INTO models(name, description, value, provider_id, active) "
+        "VALUES ($1, 'Test Model Description', 'gpt-4', $2, true) RETURNING id",
+        name,
+        provider_id,
+    )
+    return str(model_id)
+

@@ -3,7 +3,10 @@
 import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
-from tests.integration.socket.helpers import get_or_create_test_profile
+from tests.integration.socket.helpers import (
+    get_or_create_test_department,
+    get_or_create_test_profile,
+)
 
 from app.socket.v3.simulations.text.practice import simulation_text_practice
 
