@@ -10,6 +10,9 @@ from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
 from app.main import (get_hint_storage, get_internal_sio, get_pool,
                       get_simulation_tool_calls_dict, sio)
+from app.socket.v3.simulations.message.create import (
+    _simulation_message_create_impl)
+from app.socket.v3.simulations.group.link import _simulation_group_link_impl
 from app.socket.v3.simulations.streaming.message import (
     _simulation_message_complete_impl, _simulation_message_start_impl,
     _simulation_message_token_impl)
@@ -354,93 +357,43 @@ async def _simulation_text_send_impl(
                         # For now, skip message creation and create it after run creation
                         pass
                     else:
+                        # Emit internal event to create user message (separate event for database operations)
                         run_id_for_message = latest_run_row["run_id"]
-                        # Create message without run_id
-                        sql = load_sql("sql/v3/simulations/create_message.sql")
-                        user_message_row = await conn.fetchrow(
-                            sql, "user", message_str, True, None
+                        user_message_result = await _simulation_message_create_impl(
+                            chat_id_uuid,
+                            message_str,
+                            uuid.UUID(run_id_for_message),
+                            sid,
                         )
-                        user_message = {
-                            "id": user_message_row["id"],
-                            "created_at": user_message_row["created_at"],
-                        }
-                        # Link message to run via message_runs
-                        sql_link = load_sql(
-                            "sql/v3/simulations/link_message_to_run.sql"
-                        )
-                        await conn.execute(
-                            sql_link,
-                            str(user_message["id"]),
-                            run_id_for_message,
-                        )
-
-                        # Create branch from latest message to new user message (if latest exists)
-                        sql_latest = load_sql(
-                            "sql/v3/simulations/get_latest_message.sql"
-                        )
-                        latest_message_row = await conn.fetchrow(
-                            sql_latest, str(chat_id_uuid)
-                        )
-                        if latest_message_row:
-                            latest_id_str = str(latest_message_row["id"])
-                            user_id_str = str(user_message["id"])
-                            # Prevent self-references (parent_id != child_id)
-                            if latest_id_str != user_id_str:
-                                sql_branch = load_sql(
-                                    "sql/v3/simulations/create_message_branch.sql"
+                        if user_message_result:
+                            user_message = {
+                                "id": uuid.UUID(user_message_result["message_id"]),
+                                "created_at": user_message_result["created_at"],
+                            }
+                            # Emit message_sent event for tour progression and cross-component communication
+                            await message_sent(
+                                MessageSentPayload(
+                                    message_id=user_message_result["message_id"],
+                                    chat_id=str(chat_id_uuid),
+                                    message=message_str,
+                                    created_at=user_message_result["created_at"],
+                                ),
+                                room=f"simulation_{chat_id_uuid}",
+                            )
+                            # Log activity
+                            try:
+                                await log_websocket_activity(
+                                    sid=sid,
+                                    event_key="simulations.text.message_sent",
+                                    template="{{ actor.name }} sent message in simulation",
+                                    context={"chat_id": str(chat_id_uuid)},
+                                    endpoint="/socket/v3/simulations/text/send",
+                                    error=False,
                                 )
-                                await conn.execute(
-                                    sql_branch,
-                                    latest_id_str,
-                                    user_id_str,
-                                )
-                                logger.info(
-                                    f"Created branch from message {latest_id_str} to user message {user_id_str}"
-                                )
-                            else:
+                            except Exception as log_error:
                                 logger.warning(
-                                    f"Skipping branch creation: latest message ID ({latest_id_str}) equals user message ID ({user_id_str})"
+                                    f"Error logging simulation send activity: {log_error}"
                                 )
-
-                        # 2. Emit user message to connected clients
-                        logger.info(
-                            f"Emitting user message to room simulation_{chat_id_uuid}"
-                        )
-                        await simulation_new_message(
-                            SimulationNewMessagePayload(
-                                message_id=str(user_message["id"]),
-                                chat_id=str(chat_id_uuid),
-                                role="user",
-                                content=message_str,
-                                completed=True,
-                                created_at=user_message["created_at"].isoformat(),
-                            ),
-                            room=f"simulation_{chat_id_uuid}",
-                        )
-                        # Emit message_sent event for tour progression and cross-component communication
-                        await message_sent(
-                            MessageSentPayload(
-                                message_id=str(user_message["id"]),
-                                chat_id=str(chat_id_uuid),
-                                message=message_str,
-                                created_at=user_message["created_at"].isoformat(),
-                            ),
-                            room=f"simulation_{chat_id_uuid}",
-                        )
-                        # Log activity
-                        try:
-                            await log_websocket_activity(
-                                sid=sid,
-                                event_key="simulations.text.message_sent",
-                                template="{{ actor.name }} sent message in simulation",
-                                context={"chat_id": str(chat_id_uuid)},
-                                endpoint="/socket/v3/simulations/text/send",
-                                error=False,
-                            )
-                        except Exception as log_error:
-                            logger.warning(
-                                f"Error logging simulation send activity: {log_error}"
-                            )
                 else:
                     if is_retry:
                         logger.info(
@@ -631,59 +584,8 @@ async def _simulation_text_send_impl(
                     )
                     model_run_id = uuid.UUID(model_run_row["run_id"])
 
-                    # Link run to chat's group if not already linked (now uses groups/group_runs)
-                    # Get or create group for chat, then link run to group
-                    chat_group_row = await conn.fetchrow(
-                        """
-                        WITH chat_group AS (
-                            SELECT cg.group_id
-                            FROM chat_groups cg
-                            WHERE cg.chat_id = $1::uuid
-                            LIMIT 1
-                        ),
-                        create_group_if_needed AS (
-                            INSERT INTO groups (created_at, updated_at)
-                            SELECT NOW(), NOW()
-                            WHERE NOT EXISTS (SELECT 1 FROM chat_group)
-                            RETURNING id as group_id
-                        ),
-                        create_chat_group_if_needed AS (
-                            INSERT INTO chat_groups (chat_id, group_id, created_at, updated_at)
-                            SELECT $1::uuid, cg.group_id, NOW(), NOW()
-                            FROM create_group_if_needed cg
-                            WHERE NOT EXISTS (SELECT 1 FROM chat_group)
-                            ON CONFLICT (chat_id, group_id) DO NOTHING
-                            RETURNING group_id
-                        ),
-                        selected_group AS (
-                            SELECT group_id FROM chat_group
-                            UNION ALL
-                            SELECT group_id FROM create_group_if_needed
-                            UNION ALL
-                            SELECT group_id FROM create_chat_group_if_needed
-                        )
-                        SELECT group_id FROM selected_group
-                        LIMIT 1
-                        """,
-                        str(chat_id_uuid),
-                    )
-                    if chat_group_row:
-                        group_id = chat_group_row["group_id"]
-                        await conn.execute(
-                            """
-                            INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-                            VALUES (
-                                $1::uuid, 
-                                $2::uuid, 
-                                COALESCE((SELECT MAX(idx) FROM group_runs WHERE group_id = $1::uuid), -1) + 1,
-                                NOW(), 
-                                NOW()
-                            )
-                            ON CONFLICT (group_id, run_id) DO NOTHING
-                            """,
-                            str(group_id),
-                            str(model_run_id),
-                        )
+                    # Emit internal event to link run to group (separate event for database operations)
+                    await _simulation_group_link_impl(chat_id_uuid, model_run_id, sid)
 
                     # Link system/developer messages to run
                     sql_link_sys_dev = load_sql(
@@ -703,56 +605,18 @@ async def _simulation_text_send_impl(
                         and message_str.strip() != ""
                         and not is_retry
                     ):
-                        # Create message without run_id
-                        sql = load_sql("sql/v3/simulations/create_message.sql")
-                        user_message_row = await conn.fetchrow(
-                            sql, "user", message_str, True, None
+                        # Emit internal event to create user message (separate event for database operations)
+                        user_message_result = await _simulation_message_create_impl(
+                            chat_id_uuid,
+                            message_str,
+                            model_run_id,
+                            sid,
                         )
-                        user_message = {
-                            "id": user_message_row["id"],
-                            "created_at": user_message_row["created_at"],
-                        }
-                        # Link message to run via message_runs
-                        sql_link = load_sql(
-                            "sql/v3/simulations/link_message_to_run.sql"
-                        )
-                        await conn.execute(
-                            sql_link,
-                            str(user_message["id"]),
-                            str(model_run_id),
-                        )
-                        # Link to message_tree: developer → user (or system → user if no developer)
-                        # Get system/developer messages for this run
-                        sys_dev_result = await conn.fetchrow(
-                            sql_link_sys_dev,
-                            str(model_run_id),
-                            context.get("department_id"),
-                            str(chat_id_uuid),
-                        )
-                        if sys_dev_result and user_message:
-                            dev_msg_id = sys_dev_result.get("developer_message_id")
-                            sys_msg_id = sys_dev_result.get("system_message_id")
-                            user_msg_id = str(user_message["id"])
-                            # Link developer → user (if developer exists and IDs are different)
-                            if dev_msg_id and str(dev_msg_id) != user_msg_id:
-                                sql_branch = load_sql(
-                                    "sql/v3/simulations/create_message_branch.sql"
-                                )
-                                await conn.execute(
-                                    sql_branch,
-                                    str(dev_msg_id),
-                                    user_msg_id,
-                                )
-                            # Link system → user (if system exists, no developer, and IDs are different)
-                            elif sys_msg_id and str(sys_msg_id) != user_msg_id:
-                                sql_branch = load_sql(
-                                    "sql/v3/simulations/create_message_branch.sql"
-                                )
-                                await conn.execute(
-                                    sql_branch,
-                                    str(sys_msg_id),
-                                    user_msg_id,
-                                )
+                        if user_message_result:
+                            user_message = {
+                                "id": uuid.UUID(user_message_result["message_id"]),
+                                "created_at": user_message_result["created_at"],
+                            }
 
                     # Get all personas for this scenario and create persona tools
                     sql_personas = load_sql("sql/v3/voice/get_chat_personas.sql")
@@ -953,58 +817,8 @@ Tool Usage Instructions:
                     )
 
                     # Link run to chat's group if not already linked (now uses groups/group_runs)
-                    # Get or create group for chat, then link run to group
-                    chat_group_row = await conn.fetchrow(
-                        """
-                        WITH chat_group AS (
-                            SELECT cg.group_id
-                            FROM chat_groups cg
-                            WHERE cg.chat_id = $1::uuid
-                            LIMIT 1
-                        ),
-                        create_group_if_needed AS (
-                            INSERT INTO groups (created_at, updated_at)
-                            SELECT NOW(), NOW()
-                            WHERE NOT EXISTS (SELECT 1 FROM chat_group)
-                            RETURNING id as group_id
-                        ),
-                        create_chat_group_if_needed AS (
-                            INSERT INTO chat_groups (chat_id, group_id, created_at, updated_at)
-                            SELECT $1::uuid, cg.group_id, NOW(), NOW()
-                            FROM create_group_if_needed cg
-                            WHERE NOT EXISTS (SELECT 1 FROM chat_group)
-                            ON CONFLICT (chat_id, group_id) DO NOTHING
-                            RETURNING group_id
-                        ),
-                        selected_group AS (
-                            SELECT group_id FROM chat_group
-                            UNION ALL
-                            SELECT group_id FROM create_group_if_needed
-                            UNION ALL
-                            SELECT group_id FROM create_chat_group_if_needed
-                        )
-                        SELECT group_id FROM selected_group
-                        LIMIT 1
-                        """,
-                        str(chat_id_uuid),
-                    )
-                    if chat_group_row:
-                        group_id = chat_group_row["group_id"]
-                        await conn.execute(
-                            """
-                            INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-                            VALUES (
-                                $1::uuid, 
-                                $2::uuid, 
-                                COALESCE((SELECT MAX(idx) FROM group_runs WHERE group_id = $1::uuid), -1) + 1,
-                                NOW(), 
-                                NOW()
-                            )
-                            ON CONFLICT (group_id, run_id) DO NOTHING
-                            """,
-                            str(group_id),
-                            str(model_run_id),
-                        )
+                    # Emit internal event to link run to group (separate event for database operations)
+                    await _simulation_group_link_impl(chat_id_uuid, model_run_id, sid)
 
                     # Link system/developer messages to run
                     sql_link_sys_dev = load_sql(
@@ -1024,56 +838,18 @@ Tool Usage Instructions:
                         and message_str.strip() != ""
                         and not is_retry
                     ):
-                        # Create message without run_id
-                        sql = load_sql("sql/v3/simulations/create_message.sql")
-                        user_message_row = await conn.fetchrow(
-                            sql, "user", message_str, True, None
+                        # Emit internal event to create user message (separate event for database operations)
+                        user_message_result = await _simulation_message_create_impl(
+                            chat_id_uuid,
+                            message_str,
+                            model_run_id,
+                            sid,
                         )
-                        user_message = {
-                            "id": user_message_row["id"],
-                            "created_at": user_message_row["created_at"],
-                        }
-                        # Link message to run via message_runs
-                        sql_link = load_sql(
-                            "sql/v3/simulations/link_message_to_run.sql"
-                        )
-                        await conn.execute(
-                            sql_link,
-                            str(user_message["id"]),
-                            str(model_run_id),
-                        )
-                        # Link to message_tree: developer → user (or system → user if no developer)
-                        # Get system/developer messages for this run
-                        sys_dev_result = await conn.fetchrow(
-                            sql_link_sys_dev,
-                            str(model_run_id),
-                            context.get("department_id"),
-                            str(chat_id_uuid),
-                        )
-                        if sys_dev_result and user_message:
-                            dev_msg_id = sys_dev_result.get("developer_message_id")
-                            sys_msg_id = sys_dev_result.get("system_message_id")
-                            user_msg_id = str(user_message["id"])
-                            # Link developer → user (if developer exists and IDs are different)
-                            if dev_msg_id and str(dev_msg_id) != user_msg_id:
-                                sql_branch = load_sql(
-                                    "sql/v3/simulations/create_message_branch.sql"
-                                )
-                                await conn.execute(
-                                    sql_branch,
-                                    str(dev_msg_id),
-                                    user_msg_id,
-                                )
-                            # Link system → user (if system exists, no developer, and IDs are different)
-                            elif sys_msg_id and str(sys_msg_id) != user_msg_id:
-                                sql_branch = load_sql(
-                                    "sql/v3/simulations/create_message_branch.sql"
-                                )
-                                await conn.execute(
-                                    sql_branch,
-                                    str(sys_msg_id),
-                                    user_msg_id,
-                                )
+                        if user_message_result:
+                            user_message = {
+                                "id": uuid.UUID(user_message_result["message_id"]),
+                                "created_at": user_message_result["created_at"],
+                            }
 
                     # Get tool calls tracking dict for this chat
                     tool_calls_dict = get_simulation_tool_calls_dict()

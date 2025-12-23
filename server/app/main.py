@@ -544,6 +544,18 @@ from app.socket.v3.scenarios.tools.video import scenario_tool_video  # noqa: F40
 from app.socket.v3.simulations.hints.generate import (
     simulation_hints_generate_internal,  # noqa: F401
 )
+from app.socket.v3.simulations.hints.create import (
+    simulation_hints_create_internal,  # noqa: F401
+)
+from app.socket.v3.simulations.message.create import (
+    simulation_message_create_internal,  # noqa: F401
+)
+from app.socket.v3.simulations.group.link import (
+    simulation_group_link_internal,  # noqa: F401
+)
+from app.socket.v3.documents.template.create import (
+    document_template_create_internal,  # noqa: F401
+)
 
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]

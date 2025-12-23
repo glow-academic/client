@@ -295,7 +295,9 @@ async def _generate_hints_impl(
                     hint_desc = f"A concise, practical teaching strategy or communication tip for the GTA. This is hint #{i} of 3 required hints."
 
                 # Create function with proper closure capture
-                def make_hint_function(hint_number: int, description: str):
+                def make_hint_function(
+                    hint_number: int, description: str
+                ) -> Callable[[str], Awaitable[str]]:
                     async def provide_hint(hint: str = Field(description=description)) -> str:
                         """Provide a strategic hint for the GTA."""
                         if not profile_id_str or not chat_id:
@@ -390,79 +392,24 @@ async def _generate_hints_impl(
                     f"Got: hint_1={bool(hint_1)}, hint_2={bool(hint_2)}, hint_3={bool(hint_3)}"
                 )
 
-            # Create SimulationHints records using transaction
-            from app.main import transaction
+            # Emit internal event to create hints (separate event for database operations)
+            hints_list = [hint_1, hint_2, hint_3]
+            non_empty_hints = [h for h in hints_list if h and h.strip()]
 
-            hint_ids: list[dict[str, Any]] = []
-            hints_for_event: list[HintItem] = []
-            async with transaction(conn):
-                for i, hint_text in enumerate([hint_1, hint_2, hint_3], 1):
-                    if hint_text:  # Only save non-empty hints
-                        # Get the next idx for this message
-                        sql_max_idx = """
-                            SELECT COALESCE(MAX(idx), -1) + 1 as next_idx
-                            FROM simulation_hints
-                            WHERE simulation_message_id = $1::uuid
-                        """
-                        max_idx_row = await conn.fetchrow(sql_max_idx, str(message_id))
-                        next_idx = max_idx_row["next_idx"] if max_idx_row else 0
+            if non_empty_hints:
+                await internal_sio.emit(
+                    "simulation_hints_create",
+                    {
+                        "chat_id": str(chat_id),
+                        "message_id": str(message_id),
+                        "hints": non_empty_hints,
+                    },
+                )
 
-                        # Insert the hint
-                        sql_insert = """
-                            WITH inserted AS (
-                                INSERT INTO simulation_hints (simulation_message_id, idx, hint)
-                                VALUES ($1::uuid, $2::integer, $3::text)
-                                RETURNING simulation_message_id, idx
-                            )
-                            SELECT 
-                                simulation_message_id::text as simulation_message_id,
-                                idx::integer as idx
-                            FROM inserted
-                        """
-                        hint_result_row = await conn.fetchrow(
-                            sql_insert, str(message_id), next_idx, hint_text
-                        )
-                        hint_result = {
-                            "simulation_message_id": hint_result_row[
-                                "simulation_message_id"
-                            ],
-                            "idx": hint_result_row["idx"],
-                        }
-                        hint_ids.append(hint_result)
-                        # Store hint text for event emission
-                        hints_for_event.append(
-                            HintItem(
-                                idx=hint_result_row["idx"],
-                                hint=hint_text,
-                            )
-                        )
-                        logger.info(
-                            f"Created hint {i} (idx={hint_result['idx']}): {hint_text[:80]}..."
-                        )
-
+            # Note: Completion event will be emitted by simulation_hints_create handler
+            # after hints are successfully created in the database
             logger.info(
-                f"Successfully generated {len(hint_ids)} hints for message {message_id} "
-                f"in chat {chat_id}"
-            )
-
-            # Emit completion event
-            await hint_generation_progress(
-                HintGenerationProgressPayload(
-                    type="complete",
-                    message="Hint generation completed successfully",
-                    chat_id=str(chat_id),
-                    message_id=str(message_id),
-                    hint_ids=[
-                        f"{h['simulation_message_id']}_{h['idx']}" for h in hint_ids
-                    ],
-                    hints_count=len(hint_ids),
-                    hints=hints_for_event,
-                ),
-                room=f"simulation_{chat_id}",
-            )
-
-            logger.info(
-                f"Hint generation completed: {len(hint_ids)} hints created"
+                f"Hint generation completed: {len(non_empty_hints)} hints to be created"
             )
         except Exception as e:
             logger.error(

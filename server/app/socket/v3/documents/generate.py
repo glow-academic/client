@@ -424,120 +424,19 @@ async def _document_generate_impl(
                 )
                 return
 
-            # Save template HTML to file and create upload record
-            upload_uuid = uuid.uuid4()
-            file_path = f"{upload_uuid}.html"
-            full_path = os.path.join(UPLOAD_FOLDER, file_path)
-
-            # Ensure uploads directory exists
-            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-            # Write template HTML to file
-            with open(full_path, "w", encoding="utf-8") as f:
-                f.write(template_html)
-
-            # Create upload record
-            sql_insert_upload = load_sql("sql/v3/uploads/insert_upload.sql")
-            upload_id_result = await conn.fetchrow(
-                sql_insert_upload,
-                file_path,
-                "text/html",
-                len(template_html.encode("utf-8")),
-            )
-            upload_id = upload_id_result["id"]
-
-            # If documentId is provided, create template and link to document and run
-            template_mapping: dict[str, Any] | None = None
-            if data.documentId:
-                try:
-                    document_id = uuid.UUID(data.documentId)
-                    template_schema_jsonb = json.dumps(template_schema)
-                    template_name = f"Template for {data.documentName or 'Document'}"
-
-                    # Create template and link to document and run
-                    sql_create_template = load_sql(
-                        "sql/v3/documents/create_template_and_link.sql"
-                    )
-                    template_result = await conn.fetchrow(
-                        sql_create_template,
-                        str(document_id),
-                        str(uuid.UUID(upload_id)),
-                        template_name,
-                        template_schema_jsonb,
-                        True,  # active = true
-                        str(model_run_id),  # run_id
-                    )
-
-                    if template_result:
-                        template_id = template_result["template_id"]
-                        logger.info(
-                            f"Created template {template_id} and linked to document {document_id} and run {model_run_id}"
-                        )
-
-                    # Fetch updated template_mapping to return in response (using new document_templates)
-                    sql_get_template_mapping = """
-                        SELECT 
-                            COALESCE(
-                                jsonb_object_agg(
-                                    t.upload_id::text,
-                                    jsonb_build_object(
-                                        'template_args', t.args,
-                                        'active', dt.active,
-                                        'created_at', dt.created_at::text,
-                                        'updated_at', dt.updated_at::text
-                                    )
-                                ),
-                                '{}'::jsonb
-                            ) as template_mapping
-                        FROM document_templates dt
-                        JOIN templates t ON t.id = dt.template_id
-                        WHERE dt.document_id = $1
-                    """
-                    mapping_row = await conn.fetchrow(
-                        sql_get_template_mapping, str(document_id)
-                    )
-                    if mapping_row and mapping_row.get("template_mapping"):
-                        mapping_data = mapping_row["template_mapping"]
-                        if isinstance(mapping_data, str):
-                            try:
-                                template_mapping = json.loads(mapping_data)
-                            except json.JSONDecodeError:
-                                logger.warning(
-                                    f"Failed to parse template_mapping JSON: {mapping_data}"
-                                )
-                                template_mapping = {}
-                        elif isinstance(mapping_data, dict):
-                            template_mapping = mapping_data
-                        else:
-                            template_mapping = {}
-
-                    # Invalidate documents cache
-                    await invalidate_tags(["documents"])
-                    logger.info(
-                        f"Template saved to document {document_id} with upload_id {upload_id}"
-                    )
-                except ValueError as e:
-                    logger.warning(
-                        f"Invalid documentId provided: {data.documentId}, template not saved: {e}"
-                    )
-                except Exception as e:
-                    logger.error(
-                        f"Failed to save template to document {data.documentId}: {e}",
-                        exc_info=True,
-                    )
-
-            # Emit completion event
-            await document_template_generation_complete(
-                DocumentTemplateGenerationCompletePayload(
-                    success=True,
-                    message="Document template generated successfully",
-                    template_html=template_html,
-                    template_schema=template_schema,
-                    upload_id=upload_id,
-                    template_mapping=template_mapping,
-                    trace_id=trace_id,
-                ),
-                room=sid,
+            # Emit internal event to create template (separate event for database operations)
+            # Completion event will be emitted by the create handler
+            await internal_sio.emit(
+                "document_template_create",
+                {
+                    "document_id": data.documentId,
+                    "document_name": data.documentName,
+                    "template_html": template_html,
+                    "template_schema": template_schema,
+                    "run_id": str(model_run_id),
+                    "sid": sid,
+                    "room": sid,
+                },
             )
             # Log activity
             try:
