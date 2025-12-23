@@ -176,32 +176,8 @@ valid_department_ids_list AS (
     SELECT array_agg(id::text ORDER BY name) as dept_ids
     FROM user_departments
 ),
-model_reasoning_levels_data AS (
-    SELECT 
-        mrl.model_id::text as model_id,
-        jsonb_agg(mrl.reasoning_level::text ORDER BY 
-            CASE mrl.reasoning_level
-                WHEN 'none' THEN 1
-                WHEN 'minimal' THEN 2
-                WHEN 'low' THEN 3
-                WHEN 'medium' THEN 4
-                WHEN 'high' THEN 5
-            END
-        ) as reasoning_levels
-    FROM model_reasoning_levels mrl
-    WHERE mrl.active = true
-    GROUP BY mrl.model_id
-),
-model_temperature_levels_data AS (
-    SELECT 
-        mtl.model_id::text as model_id,
-        MIN(mtl.temperature) FILTER (WHERE mtl.is_upper = false) as temperature_lower,
-        MAX(mtl.temperature) FILTER (WHERE mtl.is_upper = true) as temperature_upper,
-        jsonb_agg(DISTINCT mtl.temperature::text) as temperature_values
-    FROM model_temperature_levels mtl
-    WHERE mtl.active = true
-    GROUP BY mtl.model_id
-),
+-- Removed jsonb_agg - using flat columns with __ convention instead
+-- Removed jsonb_agg - using flat columns with __ convention instead
 -- Agent selected options from junction tables
 agent_selected_voices AS (
     SELECT 
@@ -230,20 +206,7 @@ agent_selected_reasoning AS (
     JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id
     WHERE arl.active = true AND mrl.active = true
 ),
--- Available model options
-model_voices_data AS (
-    SELECT 
-        mv.model_id::text as model_id,
-        jsonb_agg(
-            jsonb_build_object(
-                'id', mv.id::text,
-                'voice', mv.voice::text
-            ) ORDER BY mv.voice::text
-        ) as voices
-    FROM model_voices mv
-    WHERE mv.active = true
-    GROUP BY mv.model_id
-),
+-- Removed jsonb_agg - using flat columns with __ convention instead
 model_temperature_levels_data_with_ids AS (
     SELECT 
         mtl.model_id::text as model_id,

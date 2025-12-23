@@ -11,6 +11,10 @@ import asyncpg  # type: ignore
 from pydantic import BaseModel
 from utils.sql_nest import nest_many
 
+# Cache for SQL metadata introspection to avoid repeated PREPARE calls
+# Type: dict[str, SQLMetadata | None]
+_metadata_cache: dict[str, Any] = {}
+
 
 class HasToTuple(Protocol):
     """Protocol for parameter models that have to_tuple() method."""
@@ -38,6 +42,62 @@ def load_sql(file_path: str) -> str:
     return sql_path.read_text()
 
 
+def _detect_dict_prefixes_simple(columns: list[Any], list_prefixes: set[str]) -> dict[str, str]:
+    """Detect dict prefixes: if list prefix has an 'id' field AND multiple fields, convert to dict.
+    
+    Simple rule: if a list prefix has a column prefix__id AND has multiple fields (not just id),
+    convert to dict keyed by id. This distinguishes mappings (dicts) from simple lists.
+    Only applies to top-level prefixes (not nested within other prefixes).
+    No pattern matching - purely based on column structure.
+    
+    Args:
+        columns: List of column metadata objects with 'name' attribute
+        list_prefixes: Set of detected list prefixes
+        
+    Returns:
+        Dict mapping prefix to key field name (e.g., {"model_mapping": "id"})
+    """
+    dict_prefixes: dict[str, str] = {}
+    sep = "__"
+    
+    # Find all top-level prefixes (not nested within other prefixes)
+    top_level_prefixes = set()
+    for prefix in list_prefixes:
+        # Check if this prefix is nested within another prefix
+        is_nested = any(
+            other_prefix != prefix and prefix.startswith(other_prefix + sep)
+            for other_prefix in list_prefixes
+        )
+        if not is_nested:
+            top_level_prefixes.add(prefix)
+    
+    # Prefixes that should remain as lists (even if they have id fields)
+    list_only_prefixes = {"reasoning_options", "temperature_levels", "available_voices", "debug_info"}
+    
+    for prefix in top_level_prefixes:
+        # Skip prefixes that should always be lists
+        if prefix in list_only_prefixes:
+            continue
+            
+        prefix_key = prefix + sep
+        # Count fields for this prefix
+        prefix_fields = [col.name for col in columns if col.name.startswith(prefix_key)]
+        
+        # Only convert to dict if prefix has multiple fields (indicating it's a mapping, not a simple list)
+        if len(prefix_fields) > 1:
+            id_field_name = prefix + sep + "id"
+            # Check if this prefix has an 'id' field
+            if any(col.name == id_field_name for col in columns):
+                dict_prefixes[prefix] = "id"
+            # Special case: department_prompt_links uses department_id as key
+            elif prefix == "department_prompt_links":
+                dept_id_field = prefix + sep + "department_id"
+                if any(col.name == dept_id_field for col in columns):
+                    dict_prefixes[prefix] = "department_id"
+    
+    return dict_prefixes
+
+
 async def execute_sql_typed(
     conn: asyncpg.Connection,
     sql_path: str,
@@ -51,19 +111,23 @@ async def execute_sql_typed(
     typed OutputType instance. This provides a convenient wrapper for
     the common pattern of: get_sql_types -> fetch -> nest_many -> parse.
 
+    Auto-detects list_prefixes and dict_prefixes from SQL column names if not provided.
+    - list_prefixes: Detected from columns with __ that appear multiple times
+    - dict_prefixes: Detected if list prefix has a prefix__id column
+
     Args:
         conn: Database connection
         sql_path: Relative path from server root (e.g., "app/sql/v3/agents/get_agent_new_complete.sql")
         params: Optional Pydantic model instance with parameters (e.g., GetAgentNewSqlParams)
-        list_prefixes: Optional set of list prefixes for nest_many (e.g., {"model_mapping", "department_mapping"})
-        dict_prefixes: Optional dict mapping list prefix to key field name (e.g., {"model_mapping": "id"})
+        list_prefixes: Optional set of list prefixes for nest_many (auto-detected if None)
+        dict_prefixes: Optional dict mapping list prefix to key field name (auto-detected if None)
 
     Returns:
         Typed result matching the SQL output type (e.g., GetAgentNewSqlRow)
 
     Example:
         ```python
-        from app.sql.types import GetAgentNewSqlParams, GetAgentNewSqlRow, load_sql_query
+        from app.sql.types import GetAgentNewSqlParams, GetAgentNewSqlRow
         from typing import cast
         
         params = GetAgentNewSqlParams(profile_id="...")
@@ -73,8 +137,7 @@ async def execute_sql_typed(
                 conn,
                 "app/sql/v3/agents/get_agent_new_complete.sql",
                 params=params,
-                list_prefixes={"model_mapping", "department_mapping"},
-                dict_prefixes={"model_mapping": "id", "department_mapping": "id"}
+                # list_prefixes and dict_prefixes auto-detected from column names!
             )
         )
         # result is typed as GetAgentNewSqlRow
@@ -84,12 +147,42 @@ async def execute_sql_typed(
     from typing import Type
 
     from app.sql.types import get_sql_types, load_sql_query
+    from scripts.sql_introspect import ColumnMetadata, introspect_sql_file
+    from scripts.sql_typegen import detect_list_prefixes
 
     # Load SQL query and types separately
     sql_query = load_sql_query(sql_path)
     InputType, OutputType = get_sql_types(sql_path)
     # Type annotation to help type checker understand OutputType is Type[BaseModel]
     OutputTypeClass: Type[BaseModel] = OutputType
+
+    # Auto-detect list_prefixes and dict_prefixes if not provided
+    if list_prefixes is None or dict_prefixes is None:
+        # Get or cache metadata
+        if sql_path not in _metadata_cache:
+            metadata = await introspect_sql_file(sql_path, conn)
+            if metadata.error:
+                # If introspection fails, fall back to empty sets
+                _metadata_cache[sql_path] = None  # type: ignore
+            else:
+                _metadata_cache[sql_path] = metadata
+        
+        cached_metadata = _metadata_cache.get(sql_path)
+        if cached_metadata is not None and cached_metadata.returns:
+            metadata = cached_metadata
+            # Auto-detect list_prefixes
+            if list_prefixes is None:
+                list_prefixes = detect_list_prefixes(cached_metadata.returns)
+            
+            # Auto-detect dict_prefixes
+            if dict_prefixes is None and list_prefixes:
+                dict_prefixes = _detect_dict_prefixes_simple(cached_metadata.returns, list_prefixes)
+        else:
+            # Fallback to empty sets if introspection failed
+            if list_prefixes is None:
+                list_prefixes = set()
+            if dict_prefixes is None:
+                dict_prefixes = {}
 
     # Execute query
     if params:
@@ -113,6 +206,7 @@ async def execute_sql_typed(
             # Parse into typed output with validation
             return OutputTypeClass(**nested_data)
     else:
-        # Return empty result with defaults
-        return OutputTypeClass()
+        # Return empty result with defaults - use model_construct to avoid validation errors
+        # when SQL returns no rows (e.g., CROSS JOINs with empty CTEs)
+        return OutputTypeClass.model_construct()
 

@@ -71,7 +71,6 @@ async def get_agent_new(
                 conn,
                 SQL_PATH,
                 params=params,
-                list_prefixes={"model_mapping", "department_mapping"},
             ),
         )
 

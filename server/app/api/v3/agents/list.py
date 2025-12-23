@@ -66,53 +66,25 @@ async def list_agents(
         sql_params = params.to_tuple()
 
         # Execute query with typed helper and nesting
-        # Use dict_prefixes to convert model_mapping and department_mapping lists to dicts
+        # Prefixes auto-detected from SQL column names
+        # Department filtering handled in SQL WHERE clause
         result = cast(
             GetAgentsListSqlRow,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
                 params=params,
-                list_prefixes={"agents", "model_mapping", "department_mapping"},
-                dict_prefixes={"model_mapping": "id", "department_mapping": "id"},
             ),
         )
 
         # Set audit context
-        if result.actor_name:
-            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+        # Handle case where SQL returns no rows (empty CROSS JOINs)
+        actor_name = getattr(result, "actor_name", None)
+        if actor_name:
+            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Get runtime structure (dict_prefixes converts lists to dicts at runtime)
-        result_dict = result.model_dump()
-        
-        # Filter department_mapping to only include departments assigned to at least one agent
-        # Collect all department IDs actually assigned to agents
-        assigned_department_ids = set()
-        agents_list = result_dict.get("agents", [])
-        for agent in agents_list:
-            if isinstance(agent, dict):
-                dept_ids = agent.get("department_ids", [])
-                if dept_ids:
-                    assigned_department_ids.update(dept_ids)
-            elif hasattr(agent, "department_ids") and agent.department_ids:
-                assigned_department_ids.update(agent.department_ids)
-        
-        # Filter department_mapping dict to only include assigned departments
-        department_mapping_dict = result_dict.get("department_mapping", {})
-        if isinstance(department_mapping_dict, dict):
-            filtered_department_mapping = {
-                str(dept_id): dept_item
-                for dept_id, dept_item in department_mapping_dict.items()
-                if str(dept_id) in assigned_department_ids
-            }
-        else:
-            filtered_department_mapping = {}
-
-        # Convert SQL result to API response
-        api_response = GetAgentsListApiResponse.model_validate({
-            **result_dict,
-            "department_mapping": filtered_department_mapping,
-        })
+        # Convert SQL result to API response (no manual filtering needed - SQL handles it)
+        api_response = GetAgentsListApiResponse.model_validate(result.model_dump())
 
         # Cache response
         await set_cached(

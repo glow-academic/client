@@ -71,33 +71,18 @@ async def get_agent_detail(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper (single row result)
-        # Use dict_prefixes to convert lists to dicts for mappings
+        # Prefixes auto-detected from SQL column names
         result = cast(
             GetAgentDetailSqlRow,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
                 params=params,
-                list_prefixes={
-                    "model_mapping",
-                    "department_mapping",
-                    "prompt_mapping",
-                    "department_prompt_links",
-                    "debug_info",
-                    "reasoning_options",
-                    "temperature_levels",
-                    "available_voices",
-                },
-                dict_prefixes={
-                    "model_mapping": "id",
-                    "department_mapping": "id",
-                    "prompt_mapping": "id",
-                    "department_prompt_links": "department_id",
-                },
             ),
         )
 
         # Check if result is empty (no access or not found)
+        # SQL handles access control via WHERE clause, so empty result means no access or not found
         result_dict = result.model_dump()
         if not result_dict.get("agent_id"):
             # Check if agent exists but user doesn't have department access

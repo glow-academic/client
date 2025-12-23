@@ -53,16 +53,21 @@ all_department_ids AS (
     SELECT DISTINCT unnest(department_ids)::uuid as department_id
     FROM agent_departments_data
     WHERE department_ids IS NOT NULL
-    UNION
-    SELECT department_id FROM user_departments
 ),
 department_mapping_data AS (
+    -- Only include departments that are actually assigned to at least one agent
+    -- Use UNION with dummy row to ensure at least one row exists for CROSS JOIN
     SELECT 
         d.id::text as department_id,
         d.title::text as department_name,
         COALESCE(d.description, '')::text as department_description
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM all_department_ids)
+    UNION ALL
+    -- Dummy row to ensure CROSS JOIN always produces at least one row
+    SELECT NULL::text, NULL::text, NULL::text
+    WHERE NOT EXISTS (SELECT 1 FROM departments d WHERE d.id IN (SELECT department_id FROM all_department_ids))
+    LIMIT 1
 ),
 all_model_ids AS (
     SELECT DISTINCT model_id
@@ -76,6 +81,11 @@ model_mapping_data AS (
         COALESCE(m.description, '')::text as model_description
     FROM models m
     WHERE m.id IN (SELECT model_id FROM all_model_ids)
+    UNION ALL
+    -- Dummy row to ensure CROSS JOIN always produces at least one row
+    SELECT NULL::text, NULL::text, NULL::text
+    WHERE NOT EXISTS (SELECT 1 FROM models m WHERE m.id IN (SELECT model_id FROM all_model_ids))
+    LIMIT 1
 )
 SELECT 
     -- Agents columns with __ prefix
