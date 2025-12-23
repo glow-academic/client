@@ -317,10 +317,10 @@ SELECT
     ai.active,
     ai.role,
     -- Selected options from junction tables
-    COALESCE(ast.selected_temperature_level_id, NULL)::text as selected_temperature_level_id,
+    COALESCE(ast.selected_temperature_level_id, '')::text as selected_temperature_level_id,
     COALESCE(ast.selected_temperature, 0.7) as temperature,
-    COALESCE(asr.selected_reasoning_level_id, NULL)::text as selected_reasoning_level_id,
-    COALESCE(asr.selected_reasoning, NULL)::text as reasoning,
+    COALESCE(asr.selected_reasoning_level_id, '')::text as selected_reasoning_level_id,
+    COALESCE(asr.selected_reasoning, '')::text as reasoning,
     COALESCE(asv.selected_voice_ids, '[]'::jsonb) as selected_voice_ids,
     COALESCE(asv.selected_voices, '[]'::jsonb) as valid_voices,
     COALESCE(add.department_ids, ARRAY[]::text[]) as department_ids,

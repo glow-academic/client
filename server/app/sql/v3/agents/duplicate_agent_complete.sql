@@ -34,9 +34,15 @@ source_agent AS (
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
 ),
 new_prompt AS (
-    INSERT INTO prompts (system_prompt, created_at, updated_at)
-    SELECT system_prompt, NOW(), NOW()
-    FROM source_agent
+    INSERT INTO prompts (name, description, system_prompt, created_at, updated_at)
+    SELECT 
+        COALESCE(pr.name, 'Agent Prompt') || ' Copy',
+        COALESCE(pr.description, ''),
+        sa.system_prompt, 
+        NOW(), 
+        NOW()
+    FROM source_agent sa
+    LEFT JOIN prompts pr ON pr.id = sa.prompt_id
     RETURNING id as prompt_id
 ),
 new_agent AS (

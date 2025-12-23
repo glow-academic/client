@@ -1,13 +1,15 @@
 """Agent update endpoint."""
 
 import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import load_api_types, load_sql_query, load_sql_typed
+from app.sql.types import (UpdateAgentApiRequest, UpdateAgentApiResponse,
+                           UpdateAgentSqlParams, UpdateAgentSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
@@ -15,8 +17,6 @@ from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/agents/update_agent_complete.sql"
-UpdateAgentSqlParams, UpdateAgentSqlRow = load_sql_typed(SQL_PATH)
-UpdateAgentApiRequest, UpdateAgentApiResponse = load_api_types(SQL_PATH)
 
 
 # Extended request model with additional fields not in SQL (handled separately)
@@ -84,8 +84,10 @@ async def update_agent(
             )
 
             # Convert API request to SQL params (add profile_id from header)
+            # Exclude department_ids from model_dump to avoid conflict, then set explicitly
+            request_dict = request.model_dump(exclude={"department_ids", "department_ids_for_prompt"})
             params = UpdateAgentSqlParams(
-                **request.model_dump(),
+                **request_dict,
                 department_ids=dept_ids,
                 department_ids_for_prompt=dept_ids_for_prompt,
                 profile_id=profile_id,
@@ -93,10 +95,13 @@ async def update_agent(
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper
-            result = await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
+            result = cast(
+                UpdateAgentSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
 
             agent_id = result.agent_id

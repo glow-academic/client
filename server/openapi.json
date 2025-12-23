@@ -31637,19 +31637,19 @@
             "type": "string",
             "title": "Primary Department Id"
           },
-          "model_mapping": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentNewModelMappingItem"
-            },
-            "type": "array",
-            "title": "Model Mapping"
-          },
           "department_mapping": {
             "items": {
               "$ref": "#/components/schemas/GetAgentNewDepartmentMappingItem"
             },
             "type": "array",
             "title": "Department Mapping"
+          },
+          "model_mapping": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewModelMappingItem"
+            },
+            "type": "array",
+            "title": "Model Mapping"
           }
         },
         "type": "object",
@@ -31659,8 +31659,8 @@
           "user_role",
           "actor_name",
           "primary_department_id",
-          "model_mapping",
-          "department_mapping"
+          "department_mapping",
+          "model_mapping"
         ],
         "title": "GetAgentNewApiResponse"
       },
@@ -31689,10 +31689,6 @@
       },
       "GetAgentNewModelMappingAvailableVoicesItem": {
         "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
           "voice": {
             "type": "string",
             "title": "Voice"
@@ -31700,25 +31696,12 @@
         },
         "type": "object",
         "required": [
-          "id",
           "voice"
         ],
         "title": "GetAgentNewModelMappingAvailableVoicesItem"
       },
       "GetAgentNewModelMappingItem": {
         "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
           "temperature_lower": {
             "type": "number",
             "title": "Temperature Lower"
@@ -31741,19 +31724,19 @@
             "type": "array",
             "title": "Output Modalities"
           },
-          "reasoning_options": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentNewModelMappingReasoningOptionsItem"
-            },
-            "type": "array",
-            "title": "Reasoning Options"
-          },
           "available_voices": {
             "items": {
               "$ref": "#/components/schemas/GetAgentNewModelMappingAvailableVoicesItem"
             },
             "type": "array",
             "title": "Available Voices"
+          },
+          "reasoning_options": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewModelMappingReasoningOptionsItem"
+            },
+            "type": "array",
+            "title": "Reasoning Options"
           },
           "temperature_levels": {
             "items": {
@@ -31765,25 +31748,18 @@
         },
         "type": "object",
         "required": [
-          "id",
-          "name",
-          "description",
           "temperature_lower",
           "temperature_upper",
           "input_modalities",
           "output_modalities",
-          "reasoning_options",
           "available_voices",
+          "reasoning_options",
           "temperature_levels"
         ],
         "title": "GetAgentNewModelMappingItem"
       },
       "GetAgentNewModelMappingReasoningOptionsItem": {
         "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
           "reasoning_level": {
             "type": "string",
             "title": "Reasoning Level"
@@ -31791,17 +31767,12 @@
         },
         "type": "object",
         "required": [
-          "id",
           "reasoning_level"
         ],
         "title": "GetAgentNewModelMappingReasoningOptionsItem"
       },
       "GetAgentNewModelMappingTemperatureLevelsItem": {
         "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
           "temperature": {
             "type": "string",
             "title": "Temperature"
@@ -31813,7 +31784,6 @@
         },
         "type": "object",
         "required": [
-          "id",
           "temperature",
           "is_upper"
         ],

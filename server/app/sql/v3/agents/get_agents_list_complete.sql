@@ -52,7 +52,7 @@ SELECT
     a.id::text as agent_id,
     a.name::text as name,
     a.description::text as description,
-    mrl.reasoning_level::text as reasoning,
+    COALESCE(mrl.reasoning_level::text, '') as reasoning,
     COALESCE(mtl.temperature, 0.0)::float as temperature,
     a.model_id::text as model_id,
     a.role::text as role,

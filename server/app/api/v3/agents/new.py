@@ -1,12 +1,14 @@
 """Agent new endpoint."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import load_api_types, load_sql_query, load_sql_typed
+from app.sql.types import (GetAgentNewApiRequest, GetAgentNewApiResponse,
+                           GetAgentNewSqlParams, GetAgentNewSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
@@ -15,8 +17,6 @@ from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/agents/get_agent_new_complete.sql"
-GetAgentNewSqlParams, GetAgentNewSqlRow = load_sql_typed(SQL_PATH)
-GetAgentNewApiRequest, GetAgentNewApiResponse = load_api_types(SQL_PATH)
 
 
 router = APIRouter()
@@ -65,11 +65,14 @@ async def get_agent_new(
         params = GetAgentNewSqlParams(**request.model_dump(), profile_id=profile_id)
         sql_params = params.to_tuple()
         
-        result = await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-            list_prefixes={"model_mapping", "department_mapping"},
+        result = cast(
+            GetAgentNewSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+                list_prefixes={"model_mapping", "department_mapping"},
+            ),
         )
 
         # Set audit context if actor_name is available

@@ -163,4 +163,6 @@ SELECT
     ap.actor_name
 FROM update_agent ua
 CROSS JOIN actor_profile ap
+CROSS JOIN validate_update_permissions vup
+WHERE vup.validation_passed = true
 

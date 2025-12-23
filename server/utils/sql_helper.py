@@ -4,16 +4,11 @@ Routes have full control over transaction and execution.
 This follows DHH principles - route owns the execution.
 """
 
-from typing import TYPE_CHECKING, Any, Protocol
+from pathlib import Path
+from typing import Any, Protocol, cast
 
 import asyncpg  # type: ignore
 from pydantic import BaseModel
-
-if TYPE_CHECKING:
-    from app.sql.types import load_sql_typed
-
-from pathlib import Path
-
 from utils.sql_nest import nest_many
 
 
@@ -53,7 +48,7 @@ async def execute_sql_typed(
 
     Loads SQL with types, executes query, applies nest_many, and returns
     typed OutputType instance. This provides a convenient wrapper for
-    the common pattern of: load_sql_typed -> fetch -> nest_many -> parse.
+    the common pattern of: get_sql_types -> fetch -> nest_many -> parse.
 
     Args:
         conn: Database connection
@@ -66,24 +61,32 @@ async def execute_sql_typed(
 
     Example:
         ```python
-        sql_query = load_sql_query("app/sql/v3/agents/get_agent_new_complete.sql")
-        InputType, OutputType = load_sql_typed("app/sql/v3/agents/get_agent_new_complete.sql")
-        params = InputType(profile_id="...")
-        result = await execute_sql_typed(
-            conn,
-            "app/sql/v3/agents/get_agent_new_complete.sql",
-            params=params,
-            list_prefixes={"model_mapping", "department_mapping"}
+        from app.sql.types import GetAgentNewSqlParams, GetAgentNewSqlRow, load_sql_query
+        from typing import cast
+        
+        params = GetAgentNewSqlParams(profile_id="...")
+        result = cast(
+            GetAgentNewSqlRow,
+            await execute_sql_typed(
+                conn,
+                "app/sql/v3/agents/get_agent_new_complete.sql",
+                params=params,
+                list_prefixes={"model_mapping", "department_mapping"}
+            )
         )
-        # result is typed as OutputType (GetAgentNewSqlRow)
+        # result is typed as GetAgentNewSqlRow
         ```
     """
     # Import here to avoid circular imports
-    from app.sql.types import load_sql_query, load_sql_typed
+    from typing import Type
+
+    from app.sql.types import get_sql_types, load_sql_query
 
     # Load SQL query and types separately
     sql_query = load_sql_query(sql_path)
-    InputType, OutputType = load_sql_typed(sql_path)
+    InputType, OutputType = get_sql_types(sql_path)
+    # Type annotation to help type checker understand OutputType is Type[BaseModel]
+    OutputTypeClass: Type[BaseModel] = OutputType
 
     # Execute query
     if params:
@@ -96,8 +99,8 @@ async def execute_sql_typed(
     if rows:
         nested_data = nest_many(rows, list_prefixes=list_prefixes or set())
         # Parse into typed output
-        return OutputType(**nested_data)  # type: ignore[return-value]
+        return OutputTypeClass(**nested_data)
     else:
         # Return empty result with defaults
-        return OutputType()  # type: ignore[return-value]
+        return OutputTypeClass()
 

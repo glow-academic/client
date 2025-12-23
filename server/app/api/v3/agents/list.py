@@ -6,7 +6,13 @@ import asyncpg
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import load_api_types, load_sql_query, load_sql_typed
+from app.sql.types import (
+    GetAgentsListApiRequest,
+    GetAgentsListApiResponse,
+    GetAgentsListSqlParams,
+    GetAgentsListSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
@@ -17,8 +23,6 @@ from utils.sql_nest import nest_many
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/agents/get_agents_list_complete.sql"
-GetAgentsListSqlParams, GetAgentsListSqlRow = load_sql_typed(SQL_PATH)
-GetAgentsListApiRequest, GetAgentsListApiResponse = load_api_types(SQL_PATH)
 
 # Extended response model for list endpoint (aggregates multiple rows)
 class AgentsListResponse(BaseModel):

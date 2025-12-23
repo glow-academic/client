@@ -1,20 +1,20 @@
 """Agent delete endpoint."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import load_api_types, load_sql_query, load_sql_typed
+from app.sql.types import (DeleteAgentApiRequest, DeleteAgentApiResponse,
+                           DeleteAgentSqlParams, DeleteAgentSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/agents/delete_agent_complete.sql"
-DeleteAgentSqlParams, DeleteAgentSqlRow = load_sql_typed(SQL_PATH)
-DeleteAgentApiRequest, DeleteAgentApiResponse = load_api_types(SQL_PATH)
 
 
 router = APIRouter()
@@ -55,10 +55,13 @@ async def delete_agent(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper
-        result = await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
+        result = cast(
+            DeleteAgentSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
         if result.usage_count > 0:

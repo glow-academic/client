@@ -10358,10 +10358,10 @@ export interface components {
             actor_name: string;
             /** Primary Department Id */
             primary_department_id: string;
-            /** Model Mapping */
-            model_mapping: components["schemas"]["GetAgentNewModelMappingItem"][];
             /** Department Mapping */
             department_mapping: components["schemas"]["GetAgentNewDepartmentMappingItem"][];
+            /** Model Mapping */
+            model_mapping: components["schemas"]["GetAgentNewModelMappingItem"][];
         };
         /** GetAgentNewDepartmentMappingItem */
         GetAgentNewDepartmentMappingItem: {
@@ -10374,19 +10374,11 @@ export interface components {
         };
         /** GetAgentNewModelMappingAvailableVoicesItem */
         GetAgentNewModelMappingAvailableVoicesItem: {
-            /** Id */
-            id: string;
             /** Voice */
             voice: string;
         };
         /** GetAgentNewModelMappingItem */
         GetAgentNewModelMappingItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
             /** Temperature Lower */
             temperature_lower: number;
             /** Temperature Upper */
@@ -10395,24 +10387,20 @@ export interface components {
             input_modalities: string[];
             /** Output Modalities */
             output_modalities: string[];
-            /** Reasoning Options */
-            reasoning_options: components["schemas"]["GetAgentNewModelMappingReasoningOptionsItem"][];
             /** Available Voices */
             available_voices: components["schemas"]["GetAgentNewModelMappingAvailableVoicesItem"][];
+            /** Reasoning Options */
+            reasoning_options: components["schemas"]["GetAgentNewModelMappingReasoningOptionsItem"][];
             /** Temperature Levels */
             temperature_levels: components["schemas"]["GetAgentNewModelMappingTemperatureLevelsItem"][];
         };
         /** GetAgentNewModelMappingReasoningOptionsItem */
         GetAgentNewModelMappingReasoningOptionsItem: {
-            /** Id */
-            id: string;
             /** Reasoning Level */
             reasoning_level: string;
         };
         /** GetAgentNewModelMappingTemperatureLevelsItem */
         GetAgentNewModelMappingTemperatureLevelsItem: {
-            /** Id */
-            id: string;
             /** Temperature */
             temperature: string;
             /** Is Upper */

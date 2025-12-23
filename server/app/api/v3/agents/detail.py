@@ -2,13 +2,15 @@
 
 import json
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import load_api_types, load_sql_query, load_sql_typed
+from app.sql.types import (GetAgentDetailApiRequest, GetAgentDetailApiResponse,
+                           GetAgentDetailSqlParams, GetAgentDetailSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
@@ -18,8 +20,6 @@ from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/agents/get_agent_detail_complete.sql"
-GetAgentDetailSqlParams, GetAgentDetailSqlRow = load_sql_typed(SQL_PATH)
-GetAgentDetailApiRequest, GetAgentDetailApiResponse = load_api_types(SQL_PATH)
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -140,7 +140,8 @@ async def get_agent_detail(
     tags = ["agents"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = request.model_dump()
+    # Use mode='json' to serialize UUIDs to strings for JSON compatibility
+    body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
@@ -167,11 +168,14 @@ async def get_agent_detail(
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper (single row result)
-        result = await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-            list_prefixes={"model_mapping", "department_mapping"},
+        result = cast(
+            GetAgentDetailSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+                list_prefixes={"model_mapping", "department_mapping"},
+            ),
         )
 
         # Check if result is empty (no access or not found)
