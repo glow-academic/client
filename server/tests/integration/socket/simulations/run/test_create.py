@@ -76,12 +76,10 @@ async def test_simulation_run_create_impl_direct(
     profile_id = await get_or_create_test_profile(db)
     department_id = await get_or_create_test_department(db)
 
-    model_id = await db.fetchval("SELECT id FROM models LIMIT 1")
-    if not model_id:
-        model_id = await db.fetchval(
-            "INSERT INTO models(name, provider, model_name, active) "
-            "VALUES ('Test Model', 'openai', 'gpt-4', true) RETURNING id"
-        )
+    from tests.integration.socket.helpers import get_or_create_test_model
+    
+    model_id_str = await get_or_create_test_model(db)
+    model_id = model_id_str
 
     persona_id = await db.fetchval("SELECT id FROM personas LIMIT 1")
     if not persona_id:

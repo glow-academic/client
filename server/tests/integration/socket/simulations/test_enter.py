@@ -25,7 +25,7 @@ async def test_simulation_enter_success(
 
     # Create chat
     chat_id = await db.fetchval(
-        "INSERT INTO simulation_chats(title, scenario_id, completed, trace_id) VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
+        "INSERT INTO chats(title, scenario_id, completed, trace_id) VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
         scenario_id,
     )
 
@@ -40,7 +40,7 @@ async def test_simulation_enter_success(
     await simulation_enter(sid, data)
 
     # Assert - verify chat created_at was updated
-    chat_row = await db.fetchrow("SELECT created_at FROM simulation_chats WHERE id = $1", chat_id)
+    chat_row = await db.fetchrow("SELECT created_at FROM chats WHERE id = $1", chat_id)
     assert chat_row is not None
     assert chat_row["created_at"] is not None
 
@@ -80,7 +80,7 @@ async def test_simulation_enter_invalid_created_at(
         "INSERT INTO scenarios(name, active) VALUES ('Test Scenario', true) RETURNING id"
     )
     chat_id = await db.fetchval(
-        "INSERT INTO simulation_chats(title, scenario_id, completed, trace_id) VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
+        "INSERT INTO chats(title, scenario_id, completed, trace_id) VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
         scenario_id,
     )
 

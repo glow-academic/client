@@ -41,7 +41,7 @@ async def test_simulation_text_end_success(
 
     # Assert - verify chat was marked as completed
     chat_row = await db.fetchrow(
-        "SELECT * FROM simulation_chats WHERE id = $1", chat_id
+        "SELECT * FROM chats WHERE id = $1", chat_id
     )
     assert chat_row is not None
     # Chat should be marked as completed

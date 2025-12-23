@@ -33,7 +33,7 @@ async def test_simulation_messages_link_success(
     )
 
     chat_id = await db.fetchval(
-        "INSERT INTO simulation_chats(title, scenario_id, completed, trace_id) "
+        "INSERT INTO chats(title, scenario_id, completed, trace_id) "
         "VALUES ('Test Chat', $1, false, 'test-trace') RETURNING id",
         scenario_id,
     )
@@ -92,7 +92,7 @@ async def test_simulation_messages_link_impl_direct(
     )
 
     chat_id = await db.fetchval(
-        "INSERT INTO simulation_chats(title, scenario_id, completed, trace_id) "
+        "INSERT INTO chats(title, scenario_id, completed, trace_id) "
         "VALUES ('Test Chat', $1, false, 'test-trace') RETURNING id",
         scenario_id,
     )

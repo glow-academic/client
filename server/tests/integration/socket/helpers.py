@@ -99,3 +99,20 @@ async def get_or_create_test_model(
     )
     return str(model_id)
 
+
+async def get_or_create_test_agent(
+    db: asyncpg.Connection, name: str = "Test Agent", description: str = "Test Description"
+) -> str:
+    """Get existing agent or create a new one."""
+    agent_id = await db.fetchval("SELECT id FROM agents WHERE active = true LIMIT 1")
+    if agent_id:
+        return str(agent_id)
+
+    # Create agent
+    agent_id = await db.fetchval(
+        "INSERT INTO agents(name, description, active) VALUES ($1, $2, true) RETURNING id",
+        name,
+        description,
+    )
+    return str(agent_id)
+

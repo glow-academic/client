@@ -77,7 +77,7 @@ async def test_simulation_text_start_success(
 
     # Verify chat was created
     chat_row = await db.fetchrow(
-        "SELECT sc.* FROM simulation_chats sc "
+        "SELECT sc.* FROM chats sc "
         "JOIN attempt_chats ac ON ac.chat_id = sc.id "
         "WHERE ac.attempt_id = $1",
         attempt_row["id"],

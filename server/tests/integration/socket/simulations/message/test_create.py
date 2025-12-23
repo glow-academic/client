@@ -29,7 +29,7 @@ async def test_simulation_message_create_success(
     )
 
     chat_id = await db.fetchval(
-        "INSERT INTO simulation_chats(title, scenario_id, completed, trace_id) "
+        "INSERT INTO chats(title, scenario_id, completed, trace_id) "
         "VALUES ('Test Chat', $1, false, 'test-trace') RETURNING id",
         scenario_id,
     )
@@ -94,7 +94,7 @@ async def test_simulation_message_create_impl_direct(
     )
 
     chat_id = await db.fetchval(
-        "INSERT INTO simulation_chats(title, scenario_id, completed, trace_id) "
+        "INSERT INTO chats(title, scenario_id, completed, trace_id) "
         "VALUES ('Test Chat', $1, false, 'test-trace') RETURNING id",
         scenario_id,
     )
@@ -103,20 +103,17 @@ async def test_simulation_message_create_impl_direct(
     from utils.sql_helper import load_sql
     sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
     # Get or create required entities
-    model_id = await db.fetchval("SELECT id FROM models LIMIT 1")
-    if not model_id:
-        model_id = await db.fetchval(
-            "INSERT INTO models(name, provider, model_name, active) "
-            "VALUES ('Test Model', 'openai', 'gpt-4', true) RETURNING id"
-        )
+    from tests.integration.socket.helpers import get_or_create_test_model
+    
+    model_id_str = await get_or_create_test_model(db)
     agent_id = await db.fetchval("SELECT id FROM agents LIMIT 1")
     if not agent_id:
         agent_id = await db.fetchval(
-            "INSERT INTO agents(name, active) VALUES ('Test Agent', true) RETURNING id"
+            "INSERT INTO agents(name, description, active) VALUES ('Test Agent', 'Test Description', true) RETURNING id"
         )
     dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
     run_row = await db.fetchrow(
-        sql_create_run, dept_id, model_id, None, "persona", None, None, agent_id
+        sql_create_run, dept_id, model_id_str, None, "persona", None, None, agent_id
     )
     run_id = run_row["run_id"] if run_row else None
     assert run_id is not None

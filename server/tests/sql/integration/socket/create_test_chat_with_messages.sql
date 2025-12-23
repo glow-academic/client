@@ -2,7 +2,7 @@
 -- Parameters: $1 = scenario_id (UUID), $2 = run_id (UUID), $3 = attempt_id (UUID, optional)
 -- Returns: chat_id (UUID), system_message_id (UUID), user_message_id (UUID), assistant_message_id (UUID)
 WITH new_chat AS (
-    INSERT INTO simulation_chats(title, scenario_id, completed, trace_id)
+    INSERT INTO chats(title, scenario_id, completed, trace_id)
     VALUES ('Test Chat', $1::uuid, false, 'test-trace-id')
     RETURNING id as chat_id
 ),

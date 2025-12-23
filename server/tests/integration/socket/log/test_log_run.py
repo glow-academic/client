@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 import pytest
 from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
 from tests.integration.socket.helpers import (
+    get_or_create_test_agent,
     get_or_create_test_department,
+    get_or_create_test_model,
     get_or_create_test_profile,
 )
 
@@ -27,21 +29,13 @@ async def test_log_run_success(
     from utils.sql_helper import load_sql
     
     # Get or create required entities
-    model_id = await db.fetchval("SELECT id FROM models LIMIT 1")
-    if not model_id:
-        model_id = await db.fetchval(
-            "INSERT INTO models(name, provider, model_name, active) "
-            "VALUES ('Test Model', 'openai', 'gpt-4', true) RETURNING id"
-        )
-    agent_id = await db.fetchval("SELECT id FROM agents LIMIT 1")
-    if not agent_id:
-        agent_id = await db.fetchval(
-            "INSERT INTO agents(name, active) VALUES ('Test Agent', true) RETURNING id"
-        )
+    model_id_str = await get_or_create_test_model(db)
+    agent_id_str = await get_or_create_test_agent(db)
+    agent_id = agent_id_str
     
     sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
     run_row = await db.fetchrow(
-        sql_create_run, department_id, model_id_str, None, "persona", profile_id, None, agent_id
+        sql_create_run, department_id, model_id_str, None, "agent", profile_id, None, agent_id_str
     )
     run_id = run_row["run_id"] if run_row else None
     assert run_id is not None
@@ -81,21 +75,13 @@ async def test_log_run_internal_success(
     from utils.sql_helper import load_sql
     
     # Get or create required entities
-    model_id = await db.fetchval("SELECT id FROM models LIMIT 1")
-    if not model_id:
-        model_id = await db.fetchval(
-            "INSERT INTO models(name, provider, model_name, active) "
-            "VALUES ('Test Model', 'openai', 'gpt-4', true) RETURNING id"
-        )
-    agent_id = await db.fetchval("SELECT id FROM agents LIMIT 1")
-    if not agent_id:
-        agent_id = await db.fetchval(
-            "INSERT INTO agents(name, active) VALUES ('Test Agent', true) RETURNING id"
-        )
+    model_id_str = await get_or_create_test_model(db)
+    agent_id_str = await get_or_create_test_agent(db)
+    agent_id = agent_id_str
     
     sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
     run_row = await db.fetchrow(
-        sql_create_run, department_id, model_id_str, None, "persona", profile_id, None, agent_id
+        sql_create_run, department_id, model_id_str, None, "agent", profile_id, None, agent_id_str
     )
     run_id = run_row["run_id"] if run_row else None
     assert run_id is not None
@@ -132,21 +118,13 @@ async def test_log_run_with_developer_messages(
     from utils.sql_helper import load_sql
     
     # Get or create required entities
-    model_id = await db.fetchval("SELECT id FROM models LIMIT 1")
-    if not model_id:
-        model_id = await db.fetchval(
-            "INSERT INTO models(name, provider, model_name, active) "
-            "VALUES ('Test Model', 'openai', 'gpt-4', true) RETURNING id"
-        )
-    agent_id = await db.fetchval("SELECT id FROM agents LIMIT 1")
-    if not agent_id:
-        agent_id = await db.fetchval(
-            "INSERT INTO agents(name, active) VALUES ('Test Agent', true) RETURNING id"
-        )
+    model_id_str = await get_or_create_test_model(db)
+    agent_id_str = await get_or_create_test_agent(db)
+    agent_id = agent_id_str
     
     sql_create_run = load_sql("app/sql/v3/model_runs/create_model_run_complete.sql")
     run_row = await db.fetchrow(
-        sql_create_run, department_id, model_id_str, None, "persona", profile_id, None, agent_id
+        sql_create_run, department_id, model_id_str, None, "agent", profile_id, None, agent_id_str
     )
     run_id = run_row["run_id"] if run_row else None
     assert run_id is not None

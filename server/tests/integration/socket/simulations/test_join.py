@@ -24,7 +24,7 @@ async def test_simulation_join_success(
 
     # Create chat
     chat_id = await db.fetchval(
-        "INSERT INTO simulation_chats(title, scenario_id, completed, trace_id) VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
+        "INSERT INTO chats(title, scenario_id, completed, trace_id) VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
         scenario_id,
     )
 
@@ -60,7 +60,7 @@ async def test_simulation_join_custom_chat_type(
         "INSERT INTO scenarios(name, active) VALUES ('Test Scenario', true) RETURNING id"
     )
     chat_id = await db.fetchval(
-        "INSERT INTO simulation_chats(title, scenario_id, completed, trace_id) VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
+        "INSERT INTO chats(title, scenario_id, completed, trace_id) VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
         scenario_id,
     )
 

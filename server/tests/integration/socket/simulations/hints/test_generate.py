@@ -2,13 +2,10 @@
 
 import asyncpg  # type: ignore
 import pytest
-from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
-from tests.integration.socket.helpers import (
-    get_or_create_test_department,
-    get_or_create_test_profile,
-)
-
 from app.socket.v3.simulations.hints.generate import simulation_hints_generate
+from tests.integration.socket.conftest import MockInternalBus, MockSocketIO
+from tests.integration.socket.helpers import (get_or_create_test_department,
+                                              get_or_create_test_profile)
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,7 +25,7 @@ async def test_simulation_hints_generate_success(
 
     # Create chat
     chat_id = await db.fetchval(
-        "INSERT INTO simulation_chats(title, scenario_id, completed, trace_id) VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
+        "INSERT INTO chats(title, scenario_id, completed, trace_id) VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
         scenario_id,
     )
 

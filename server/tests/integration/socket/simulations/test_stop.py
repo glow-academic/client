@@ -59,7 +59,7 @@ async def test_stop_simulation_success(
 
     # Create a simulation_chat
     chat_id = await db.fetchval(
-        "INSERT INTO simulation_chats (title, scenario_id, completed, trace_id) "
+        "INSERT INTO chats (title, scenario_id, completed, trace_id) "
         "VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
         scenario_id,
     )
