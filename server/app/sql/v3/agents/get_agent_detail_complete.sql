@@ -1,7 +1,13 @@
 -- Get agent detail with prompts, departments, and access control
--- Parameters: $1 = agent_id (uuid), $2 = profile_id (uuid)
-
-WITH agent_info AS (
+-- @params
+--   agent_id: uuid
+--   profile_id: uuid
+-- All parameters are cast exactly once in params CTE for reliable type introspection
+WITH params AS (
+    SELECT $1::uuid AS agent_id,
+           $2::uuid AS profile_id
+),
+agent_info AS (
     SELECT 
         id::text as agent_id,
         name,
@@ -9,8 +15,8 @@ WITH agent_info AS (
         model_id::text,
         active,
         role::text
-    FROM agents
-    WHERE id = $1::uuid
+    FROM params x
+    JOIN agents ON agents.id = x.agent_id
 ),
 agent_active_prompt AS (
     SELECT 
@@ -19,9 +25,9 @@ agent_active_prompt AS (
         pr.system_prompt,
         pr.created_at as prompt_created_at,
         pr.updated_at as prompt_updated_at
-    FROM agent_prompts ap
+    FROM params x
+    JOIN agent_prompts ap ON ap.agent_id = x.agent_id AND ap.active = true
     JOIN prompts pr ON pr.id = ap.prompt_id
-    WHERE ap.agent_id = $1::uuid AND ap.active = true
     LIMIT 1
 ),
 agent_all_prompts AS (
@@ -34,9 +40,9 @@ agent_all_prompts AS (
         pr.description as prompt_description,
         pr.created_at as prompt_created_at,
         pr.updated_at as prompt_updated_at
-    FROM agent_prompts ap
+    FROM params x
+    JOIN agent_prompts ap ON ap.agent_id = x.agent_id
     JOIN prompts pr ON pr.id = ap.prompt_id
-    WHERE ap.agent_id = $1::uuid
     UNION
     -- Also get all prompts from agent_department_prompts (department-specific prompts)
     SELECT DISTINCT
@@ -47,24 +53,24 @@ agent_all_prompts AS (
         pr.description as prompt_description,
         pr.created_at as prompt_created_at,
         pr.updated_at as prompt_updated_at
-    FROM agent_department_prompts adp
+    FROM params x
+    JOIN agent_department_prompts adp ON adp.agent_id = x.agent_id AND adp.active = true
     JOIN prompts pr ON pr.id = adp.prompt_id
-    WHERE adp.agent_id = $1::uuid AND adp.active = true
 ),
 prompt_departments_data AS (
     SELECT 
         adp.prompt_id::text as prompt_id,
         ARRAY_AGG(adp.department_id::text ORDER BY adp.created_at) as department_ids
-    FROM agent_department_prompts adp
-    WHERE adp.agent_id = $1::uuid AND adp.active = true
+    FROM params x
+    JOIN agent_department_prompts adp ON adp.agent_id = x.agent_id AND adp.active = true
     GROUP BY adp.prompt_id
 ),
 default_prompt_count AS (
     -- Count default prompts (from agent_prompts, not department-specific)
     -- Always return at least one row with count (0 if no prompts)
     SELECT COALESCE(COUNT(DISTINCT ap.prompt_id), 0)::integer as count
-    FROM agent_prompts ap
-    WHERE ap.agent_id = $1::uuid
+    FROM params x
+    JOIN agent_prompts ap ON ap.agent_id = x.agent_id
 ),
 prompt_mapping_data AS (
     SELECT 
@@ -98,8 +104,8 @@ agent_departments_data AS (
     SELECT 
         ad.agent_id::text as agent_id,
         ARRAY_AGG(ad.department_id::text ORDER BY ad.created_at) as department_ids
-    FROM agent_departments ad
-    WHERE ad.agent_id = $1::uuid AND ad.active = true
+    FROM params x
+    JOIN agent_departments ad ON ad.agent_id = x.agent_id AND ad.active = true
     GROUP BY ad.agent_id
 ),
 agent_department_prompt_links AS (
@@ -109,8 +115,8 @@ agent_department_prompt_links AS (
                 adp.department_id::text,
                 adp.prompt_id::text
             )
-            FROM agent_department_prompts adp
-            WHERE adp.agent_id = $1::uuid AND adp.active = true),
+            FROM params x
+            JOIN agent_department_prompts adp ON adp.agent_id = x.agent_id AND adp.active = true),
             '{}'::jsonb
         ) as department_prompt_links
 ),
@@ -119,11 +125,11 @@ debug_data AS (
         di.created_at,
         mrm.model_id::text,
         di.content
-    FROM runs mr
+    FROM params x
+    JOIN runs mr ON mr.agent_id = x.agent_id
     JOIN debug_info di ON di.run_id = mr.id
     JOIN run_models mrm ON mrm.run_id = mr.id
-    WHERE mr.agent_id = $1::uuid
-    AND mrm.active = true
+    WHERE mrm.active = true
     ORDER BY di.created_at DESC
     LIMIT 100
 ),
@@ -164,30 +170,28 @@ user_profile AS (
     SELECT 
         role,
         COALESCE(first_name || ' ' || last_name, 'System') as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 user_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
-    FROM departments d
-    JOIN profile_departments pd ON pd.department_id = d.id
-    WHERE d.active = true
-    AND pd.profile_id = $2::uuid
-    AND pd.active = true
+    FROM params x
+    JOIN departments d ON d.active = true
+    JOIN profile_departments pd ON pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true
 ),
 user_has_agent_access AS (
     -- Check if user has access to agent via department links
     SELECT EXISTS(
-        SELECT 1 FROM agent_departments ad
+        SELECT 1 FROM params x
+        JOIN agent_departments ad ON ad.agent_id = x.agent_id AND ad.active = true
         JOIN user_departments ud ON ud.id = ad.department_id::uuid
-        WHERE ad.agent_id = $1::uuid AND ad.active = true
     ) OR EXISTS(
-        SELECT 1 FROM profiles p
-        WHERE p.id = $2::uuid AND p.role = 'superadmin'
+        SELECT 1 FROM params x
+        JOIN profiles p ON p.id = x.profile_id AND p.role = 'superadmin'
     ) OR (
         -- Default agents (no department links) are accessible to all
-        SELECT COUNT(*) FROM agent_departments ad
-        WHERE ad.agent_id = $1::uuid AND ad.active = true
+        SELECT COUNT(*) FROM params x
+        JOIN agent_departments ad ON ad.agent_id = x.agent_id AND ad.active = true
     ) = 0 as has_access
 ),
 valid_departments_data AS (

@@ -1,11 +1,18 @@
 -- Duplicate agent with profile_id for auditing
--- Parameters: $1 = agent_id (uuid), $2 = profile_id (uuid)
-WITH actor_profile AS (
+-- @params
+--   agent_id: uuid
+--   profile_id: uuid
+-- All parameters are cast exactly once in params CTE for reliable type introspection
+WITH params AS (
+    SELECT $1::uuid AS agent_id,
+           $2::uuid AS profile_id
+),
+actor_profile AS (
     SELECT 
-        $2::uuid as profile_id,
+        x.profile_id,
         COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 source_agent AS (
     SELECT 
@@ -19,12 +26,12 @@ source_agent AS (
         -- Get temperature and reasoning from junction tables
         atl.model_temperature_level_id,
         arl.model_reasoning_level_id
-    FROM agents a
+    FROM params x
+    JOIN agents a ON a.id = x.agent_id
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts pr ON pr.id = ap.prompt_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
-    WHERE a.id = $1::uuid
 ),
 new_prompt AS (
     INSERT INTO prompts (system_prompt, created_at, updated_at)

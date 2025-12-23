@@ -6,22 +6,15 @@ import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import load_api_types, load_sql_query, load_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DuplicateAgentRequest(BaseModel):
-    agentId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DuplicateAgentResponse(BaseModel):
-    success: bool
-    agentId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/agents/duplicate_agent_complete.sql"
+DuplicateAgentSqlParams, DuplicateAgentSqlRow = load_sql_typed(SQL_PATH)
+DuplicateAgentApiRequest, DuplicateAgentApiResponse = load_api_types(SQL_PATH)
 
 
 router = APIRouter()
@@ -29,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/duplicate",
-    response_model=DuplicateAgentResponse,
+    response_model=DuplicateAgentApiResponse,
     dependencies=[
         audit_activity(
             "agent.duplicated", "{{ actor.name }} duplicated agent '{{ agent.name }}'"
@@ -37,15 +30,15 @@ router = APIRouter()
     ],
 )
 async def duplicate_agent(
-    request: DuplicateAgentRequest,
+    request: DuplicateAgentApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DuplicateAgentResponse:
+) -> DuplicateAgentApiResponse:
     """Duplicate an agent."""
     tags = ["agents"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -57,16 +50,20 @@ async def duplicate_agent(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/agents/duplicate_agent.sql")
-        sql_params = (request.agentId, profile_id)
-        new_agent_row = await conn.fetchrow(sql_query, request.agentId, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = DuplicateAgentSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        if not new_agent_row:
-            raise HTTPException(status_code=500, detail="Failed to duplicate agent")
+        # Execute SQL with typed helper
+        result = await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        )
 
-        agent_id = new_agent_row["agent_id"]
-        actor_name = new_agent_row.get("actor_name")
-        agent_name = new_agent_row.get("agent_name")
+        agent_id = result.agent_id
+        actor_name = result.actor_name
+        agent_name = result.agent_name
 
         # Set audit context with data from SQL query
         if actor_name:
@@ -76,17 +73,14 @@ async def duplicate_agent(
                 agent={"name": agent_name, "id": agent_id},
             )
 
-        result_data = DuplicateAgentResponse(
-            success=True,
-            agentId=agent_id,
-            message="Agent duplicated successfully",
-        )
+        # Convert SQL result to API response
+        api_response = DuplicateAgentApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

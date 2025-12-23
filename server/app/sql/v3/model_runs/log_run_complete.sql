@@ -1,27 +1,37 @@
 -- Complete log_run handler: token updates + message logging in single transaction
--- Parameters: 
---   $1=run_id (uuid)
---   $2=department_id (uuid, nullable)
---   $3=input_text_tokens (integer)
---   $4=input_audio_tokens (integer, nullable, use 0 if not provided)
---   $5=input_image_tokens (integer, nullable, use 0 if not provided)
---   $6=output_text_tokens (integer)
---   $7=output_audio_tokens (integer, nullable, use 0 if not provided)
---   $8=cached_text_tokens (integer, nullable, use 0 if not provided)
---   $9=cached_audio_tokens (integer, nullable, use 0 if not provided)
---   $10=developer_contents (text[], array of developer message contents)
---   $11=assistant_output (text, nullable)
--- 
--- Handles both text-only and audio/image/text token scenarios in one query
--- Links system messages, developer messages, creates assistant message, and links message_tree
-
-WITH run_info AS (
+-- @params
+--   run_id: uuid
+--   department_id?: uuid
+--   input_text_tokens: integer
+--   input_audio_tokens?: integer
+--   input_image_tokens?: integer
+--   output_text_tokens: integer
+--   output_audio_tokens?: integer
+--   cached_text_tokens?: integer
+--   cached_audio_tokens?: integer
+--   developer_contents: text[] = {}
+--   assistant_output?: text
+-- All parameters are cast exactly once in params CTE for reliable type introspection
+WITH params AS (
+    SELECT $1::uuid AS run_id,
+           $2::uuid AS department_id,
+           $3::integer AS input_text_tokens,
+           $4::integer AS input_audio_tokens,
+           $5::integer AS input_image_tokens,
+           $6::integer AS output_text_tokens,
+           $7::integer AS output_audio_tokens,
+           $8::integer AS cached_text_tokens,
+           $9::integer AS cached_audio_tokens,
+           COALESCE($10::text[], ARRAY[]::text[]) AS developer_contents,
+           NULLIF($11::text, '') AS assistant_output
+),
+run_info AS (
     SELECT 
         r.id as run_id,
         r.agent_id,
         (SELECT rp.persona_id FROM run_personas rp WHERE rp.run_id = r.id AND rp.active = true LIMIT 1) as persona_id,
         COALESCE(
-            $2::uuid,
+            x.department_id,
             -- Try to get department from chat
             (SELECT sd.department_id FROM runs r2
              JOIN group_runs gr ON gr.run_id = r2.id
@@ -29,44 +39,46 @@ WITH run_info AS (
              JOIN chat_groups cg ON cg.group_id = g.id
              JOIN chats c ON c.id = cg.chat_id
              JOIN scenario_departments sd ON sd.scenario_id = c.scenario_id AND sd.active = true
-             WHERE r2.id = r.id LIMIT 1),
+             WHERE r2.id = x.run_id LIMIT 1),
             -- Try to get department from profile
             (SELECT pd.department_id FROM run_profiles rpf
              JOIN profile_departments pd ON pd.profile_id = rpf.profile_id AND pd.active = true
-             WHERE rpf.run_id = r.id AND rpf.active = true LIMIT 1),
+             WHERE rpf.run_id = x.run_id AND rpf.active = true LIMIT 1),
             -- Fallback to any active department
             (SELECT id FROM departments WHERE active = true LIMIT 1)
         ) as department_id
-    FROM runs r
-    WHERE r.id = $1::uuid
+    FROM params x
+    JOIN runs r ON r.id = x.run_id
 ),
 -- Token update: handle both text-only and audio/image/text scenarios
 has_audio_or_image AS (
     SELECT 
-        COALESCE($4, 0) > 0 OR COALESCE($5, 0) > 0 OR COALESCE($7, 0) > 0 OR COALESCE($9, 0) > 0 as has_audio_image
+        COALESCE(x.input_audio_tokens, 0) > 0 OR COALESCE(x.input_image_tokens, 0) > 0 OR COALESCE(x.output_audio_tokens, 0) > 0 OR COALESCE(x.cached_audio_tokens, 0) > 0 as has_audio_image
+    FROM params x
 ),
 update_run AS (
     UPDATE runs 
     SET 
         input_tokens = CASE 
             WHEN (SELECT has_audio_image FROM has_audio_or_image) THEN
-                COALESCE($3, 0) + COALESCE($4, 0) + COALESCE($5, 0)
+                COALESCE(x.input_text_tokens, 0) + COALESCE(x.input_audio_tokens, 0) + COALESCE(x.input_image_tokens, 0)
             ELSE
-                COALESCE($3, 0)
+                COALESCE(x.input_text_tokens, 0)
         END,
         output_tokens = CASE 
             WHEN (SELECT has_audio_image FROM has_audio_or_image) THEN
-                COALESCE($6, 0) + COALESCE($7, 0)
+                COALESCE(x.output_text_tokens, 0) + COALESCE(x.output_audio_tokens, 0)
             ELSE
-                COALESCE($6, 0)
+                COALESCE(x.output_text_tokens, 0)
         END,
         cached_input_tokens = CASE 
             WHEN (SELECT has_audio_image FROM has_audio_or_image) THEN
-                COALESCE($8, 0) + COALESCE($9, 0)
+                COALESCE(x.cached_text_tokens, 0) + COALESCE(x.cached_audio_tokens, 0)
             ELSE
-                COALESCE($8, 0)
+                COALESCE(x.cached_text_tokens, 0)
         END
-    WHERE id = $1::uuid
+    FROM params x
+    WHERE runs.id = x.run_id
     RETURNING id, input_tokens, output_tokens, cached_input_tokens
 ),
 -- Get unit IDs for pricing
@@ -92,11 +104,12 @@ upsert_input_text_usage AS (
         ur.id,
         'input'::pricing_type,
         mtu.id,
-        $3,
+        x.input_text_tokens,
         now()
-    FROM update_run ur
+    FROM params x
+    CROSS JOIN update_run ur
     CROSS JOIN million_text_unit mtu
-    WHERE $3 > 0 AND mtu.id IS NOT NULL
+    WHERE x.input_text_tokens > 0 AND mtu.id IS NOT NULL
     ON CONFLICT (run_id, pricing_type, unit_id) 
     DO UPDATE SET 
         count = EXCLUDED.count,
@@ -108,11 +121,12 @@ upsert_input_audio_usage AS (
         ur.id,
         'input'::pricing_type,
         mau.id,
-        $4,
+        x.input_audio_tokens,
         now()
-    FROM update_run ur
+    FROM params x
+    CROSS JOIN update_run ur
     CROSS JOIN million_audio_unit mau
-    WHERE COALESCE($4, 0) > 0 AND mau.id IS NOT NULL
+    WHERE COALESCE(x.input_audio_tokens, 0) > 0 AND mau.id IS NOT NULL
     ON CONFLICT (run_id, pricing_type, unit_id) 
     DO UPDATE SET 
         count = EXCLUDED.count,
@@ -124,11 +138,12 @@ upsert_input_image_usage AS (
         ur.id,
         'input'::pricing_type,
         miu.id,
-        $5,
+        x.input_image_tokens,
         now()
-    FROM update_run ur
+    FROM params x
+    CROSS JOIN update_run ur
     CROSS JOIN million_image_unit miu
-    WHERE COALESCE($5, 0) > 0 AND miu.id IS NOT NULL
+    WHERE COALESCE(x.input_image_tokens, 0) > 0 AND miu.id IS NOT NULL
     ON CONFLICT (run_id, pricing_type, unit_id) 
     DO UPDATE SET 
         count = EXCLUDED.count,
@@ -140,11 +155,12 @@ upsert_output_text_usage AS (
         ur.id,
         'output'::pricing_type,
         mtu.id,
-        $6,
+        x.output_text_tokens,
         now()
-    FROM update_run ur
+    FROM params x
+    CROSS JOIN update_run ur
     CROSS JOIN million_text_unit mtu
-    WHERE $6 > 0 AND mtu.id IS NOT NULL
+    WHERE x.output_text_tokens > 0 AND mtu.id IS NOT NULL
     ON CONFLICT (run_id, pricing_type, unit_id) 
     DO UPDATE SET 
         count = EXCLUDED.count,
@@ -156,11 +172,12 @@ upsert_output_audio_usage AS (
         ur.id,
         'output'::pricing_type,
         mau.id,
-        $7,
+        x.output_audio_tokens,
         now()
-    FROM update_run ur
+    FROM params x
+    CROSS JOIN update_run ur
     CROSS JOIN million_audio_unit mau
-    WHERE COALESCE($7, 0) > 0 AND mau.id IS NOT NULL
+    WHERE COALESCE(x.output_audio_tokens, 0) > 0 AND mau.id IS NOT NULL
     ON CONFLICT (run_id, pricing_type, unit_id) 
     DO UPDATE SET 
         count = EXCLUDED.count,
@@ -172,11 +189,12 @@ upsert_cached_text_usage AS (
         ur.id,
         'cached'::pricing_type,
         mtu.id,
-        $8,
+        x.cached_text_tokens,
         now()
-    FROM update_run ur
+    FROM params x
+    CROSS JOIN update_run ur
     CROSS JOIN million_text_unit mtu
-    WHERE COALESCE($8, 0) > 0 AND mtu.id IS NOT NULL
+    WHERE COALESCE(x.cached_text_tokens, 0) > 0 AND mtu.id IS NOT NULL
     ON CONFLICT (run_id, pricing_type, unit_id) 
     DO UPDATE SET 
         count = EXCLUDED.count,
@@ -188,11 +206,12 @@ upsert_cached_audio_usage AS (
         ur.id,
         'cached'::pricing_type,
         mau.id,
-        $9,
+        x.cached_audio_tokens,
         now()
-    FROM update_run ur
+    FROM params x
+    CROSS JOIN update_run ur
     CROSS JOIN million_audio_unit mau
-    WHERE COALESCE($9, 0) > 0 AND mau.id IS NOT NULL
+    WHERE COALESCE(x.cached_audio_tokens, 0) > 0 AND mau.id IS NOT NULL
     ON CONFLICT (run_id, pricing_type, unit_id) 
     DO UPDATE SET 
         count = EXCLUDED.count,
@@ -297,8 +316,9 @@ system_message AS (
 -- Link system message to run
 link_system AS (
     INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT sm.system_message_id, $1::uuid, NOW(), NOW()
-    FROM system_message sm
+    SELECT sm.system_message_id, x.run_id, NOW(), NOW()
+    FROM params x
+    CROSS JOIN system_message sm
     ON CONFLICT (message_id, run_id) DO UPDATE SET updated_at = NOW()
     RETURNING message_id as system_message_id
 ),
@@ -307,8 +327,9 @@ developer_contents_array AS (
     SELECT 
         t.content,
         t.idx
-    FROM unnest($10::text[]) WITH ORDINALITY AS t(content, idx)
-    WHERE $10 IS NOT NULL AND array_length($10::text[], 1) > 0
+    FROM params x
+    CROSS JOIN unnest(x.developer_contents) WITH ORDINALITY AS t(content, idx)
+    WHERE x.developer_contents IS NOT NULL AND array_length(x.developer_contents, 1) > 0
 ),
 developer_contents_filtered AS (
     SELECT 
@@ -433,8 +454,9 @@ all_developer_messages AS (
 -- Link developer messages to run (preserve order for parent selection)
 link_developers AS (
     INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT adm.message_id, $1::uuid, NOW(), NOW()
-    FROM all_developer_messages adm
+    SELECT adm.message_id, x.run_id, NOW(), NOW()
+    FROM params x
+    CROSS JOIN all_developer_messages adm
     ORDER BY adm.first_idx
     ON CONFLICT (message_id, run_id) 
     DO UPDATE SET updated_at = NOW()
@@ -462,27 +484,31 @@ link_system_to_developer AS (
 assistant_message AS (
     INSERT INTO messages (role, completed, audio, created_at, updated_at)
     SELECT 'assistant'::message_role, true, false, NOW(), NOW()
-    WHERE $11::text IS NOT NULL AND trim($11::text) != ''
+    FROM params x
+    WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
     RETURNING id as assistant_message_id, created_at, updated_at
 ),
 assistant_tool_call AS (
     INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
     SELECT 'log_run_assistant_' || am.assistant_message_id::text, NULL, true, am.created_at, am.updated_at
-    FROM assistant_message am
-    WHERE $11::text IS NOT NULL AND trim($11::text) != ''
+    FROM params x
+    CROSS JOIN assistant_message am
+    WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
     RETURNING id as tool_call_id, created_at, updated_at
 ),
 insert_assistant_content AS (
     INSERT INTO message_content (message_id, idx, content, tool_call_id, created_at, updated_at)
-    SELECT am.assistant_message_id, 0, trim($11::text), atc.tool_call_id, am.created_at, am.updated_at
-    FROM assistant_message am
+    SELECT am.assistant_message_id, 0, trim(x.assistant_output), atc.tool_call_id, am.created_at, am.updated_at
+    FROM params x
+    CROSS JOIN assistant_message am
     CROSS JOIN assistant_tool_call atc
-    WHERE $11::text IS NOT NULL AND trim($11::text) != ''
+    WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
 ),
 link_assistant AS (
     INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT am.assistant_message_id, $1::uuid, NOW(), NOW()
-    FROM assistant_message am
+    SELECT am.assistant_message_id, x.run_id, NOW(), NOW()
+    FROM params x
+    CROSS JOIN assistant_message am
     ON CONFLICT (message_id, run_id) 
     DO UPDATE SET updated_at = NOW()
 ),
@@ -518,5 +544,5 @@ create_assistant_branch AS (
         active = true,
         updated_at = NOW()
 )
-SELECT 1
+SELECT 1 AS success
 

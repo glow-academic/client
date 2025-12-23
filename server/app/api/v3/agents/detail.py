@@ -8,12 +8,18 @@ import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import load_api_types, load_sql_query, load_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/agents/get_agent_detail_complete.sql"
+GetAgentDetailSqlParams, GetAgentDetailSqlRow = load_sql_typed(SQL_PATH)
+GetAgentDetailApiRequest, GetAgentDetailApiResponse = load_api_types(SQL_PATH)
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -125,7 +131,7 @@ router = APIRouter()
     ],
 )
 async def get_agent_detail(
-    request: AgentDetailRequest,
+    request: GetAgentDetailApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -144,7 +150,7 @@ async def get_agent_detail(
         response.headers["X-Cache-Hit"] = "1"
         return AgentDetailResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -156,15 +162,25 @@ async def get_agent_detail(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/agents/get_agent_detail_complete.sql")
-        sql_params = (request.agentId, profile_id)
-        result = await conn.fetchrow(sql_query, request.agentId, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetAgentDetailSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        if not result:
+        # Execute SQL with typed helper (single row result)
+        result = await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+            list_prefixes={"model_mapping", "department_mapping"},
+        )
+
+        # Check if result is empty (no access or not found)
+        result_dict = result.model_dump()
+        if not result_dict.get("agent_id"):
             # Check if agent exists but user doesn't have department access
             agent_exists_check = await conn.fetchval(
                 "SELECT EXISTS(SELECT 1 FROM agents WHERE id = $1)",
-                request.agentId,
+                request.agent_id,
             )
             if agent_exists_check:
                 raise HTTPException(
@@ -172,12 +188,12 @@ async def get_agent_detail(
                     detail="You don't have access to this agent. It may be restricted to other departments.",
                 )
             raise HTTPException(
-                status_code=404, detail=f"Agent {request.agentId} not found"
+                status_code=404, detail=f"Agent {request.agent_id} not found"
             )
 
-        # Parse debug_info from JSONB
+        # Parse debug_info from JSONB (result is typed, but JSONB fields need parsing)
         debug_info: list[DebugInfoItem] = []
-        debug_info_data = result["debug_info"]
+        debug_info_data = result_dict.get("debug_info")
         if isinstance(debug_info_data, str):
             debug_info_data = json.loads(debug_info_data)
         if debug_info_data and isinstance(debug_info_data, list):
@@ -205,7 +221,7 @@ async def get_agent_detail(
         # Store raw model_mapping_data with modalities for response
         model_mapping: ModelMapping = {}
         model_mapping_with_modalities: dict[str, dict[str, Any]] = {}
-        model_mapping_data = result["model_mapping"]
+        model_mapping_data = result_dict.get("model_mapping")
         if isinstance(model_mapping_data, str):
             model_mapping_data = json.loads(model_mapping_data)
 
@@ -309,20 +325,20 @@ async def get_agent_detail(
 
         # Parse valid_model_ids from JSONB
         valid_model_ids: list[str] = []
-        valid_model_ids_data = result["valid_model_ids"]
+        valid_model_ids_data = result_dict.get("valid_model_ids")
         if isinstance(valid_model_ids_data, str):
             valid_model_ids_data = json.loads(valid_model_ids_data)
         if valid_model_ids_data and isinstance(valid_model_ids_data, list):
             valid_model_ids = [str(mid) for mid in valid_model_ids_data if mid]
 
         # Parse department_ids from array
-        department_ids_raw = result.get("department_ids")
+        department_ids_raw = result_dict.get("department_ids")
         department_ids: list[str] = []
         if department_ids_raw and isinstance(department_ids_raw, (list, tuple)):
             department_ids = [str(did) for did in department_ids_raw if did]
 
         # Parse valid_department_ids from array
-        valid_department_ids_raw = result.get("valid_department_ids")
+        valid_department_ids_raw = result_dict.get("valid_department_ids")
         valid_department_ids: list[str] = []
         if valid_department_ids_raw and isinstance(
             valid_department_ids_raw, (list, tuple)
@@ -331,7 +347,7 @@ async def get_agent_detail(
 
         # Parse department_mapping from JSONB
         department_mapping: DepartmentMapping = {}
-        department_mapping_data = result.get("department_mapping")
+        department_mapping_data = result_dict.get("department_mapping")
         if isinstance(department_mapping_data, str):
             department_mapping_data = json.loads(department_mapping_data)
         if department_mapping_data and isinstance(department_mapping_data, dict):
@@ -344,7 +360,7 @@ async def get_agent_detail(
 
         # Parse prompt_mapping from JSONB
         prompt_mapping: dict[str, PromptInfo] = {}
-        prompt_mapping_data = result.get("prompt_mapping")
+        prompt_mapping_data = result_dict.get("prompt_mapping")
         if isinstance(prompt_mapping_data, str):
             prompt_mapping_data = json.loads(prompt_mapping_data)
         if prompt_mapping_data and isinstance(prompt_mapping_data, dict):
@@ -366,13 +382,13 @@ async def get_agent_detail(
                     )
 
         # Parse prompt_id
-        prompt_id = result.get("prompt_id")
+        prompt_id = result_dict.get("prompt_id")
         if prompt_id:
             prompt_id = str(prompt_id)
 
         # Parse department_prompt_links from JSONB
         department_prompt_links: dict[str, str] = {}
-        department_prompt_links_data = result.get("department_prompt_links")
+        department_prompt_links_data = result_dict.get("department_prompt_links")
         if isinstance(department_prompt_links_data, str):
             department_prompt_links_data = json.loads(department_prompt_links_data)
         if department_prompt_links_data and isinstance(
@@ -405,7 +421,7 @@ async def get_agent_detail(
 
         # Parse reasoning_options from JSONB (list of {id, reasoning_level} objects)
         reasoning_options: list[dict[str, str]] = []
-        reasoning_options_data = result.get("reasoning_options")
+        reasoning_options_data = result_dict.get("reasoning_options")
         if isinstance(reasoning_options_data, str):
             reasoning_options_data = json.loads(reasoning_options_data)
         if reasoning_options_data and isinstance(reasoning_options_data, list):
@@ -419,7 +435,7 @@ async def get_agent_detail(
 
         # Parse temperature_levels from JSONB (list of {id, temperature, is_upper} objects)
         temperature_levels: list[dict[str, str | bool]] = []
-        temperature_levels_data = result.get("temperature_levels")
+        temperature_levels_data = result_dict.get("temperature_levels")
         if isinstance(temperature_levels_data, str):
             temperature_levels_data = json.loads(temperature_levels_data)
         if temperature_levels_data and isinstance(temperature_levels_data, list):
@@ -433,7 +449,7 @@ async def get_agent_detail(
 
         # Parse selected_voice_ids from JSONB
         selected_voice_ids: list[str] = []
-        selected_voice_ids_data = result.get("selected_voice_ids")
+        selected_voice_ids_data = result_dict.get("selected_voice_ids")
         if isinstance(selected_voice_ids_data, str):
             selected_voice_ids_data = json.loads(selected_voice_ids_data)
         if selected_voice_ids_data and isinstance(selected_voice_ids_data, list):
@@ -443,7 +459,7 @@ async def get_agent_detail(
 
         # Parse valid_voices from JSONB (selected voice names for backward compatibility)
         valid_voices: list[str] = []
-        valid_voices_data = result.get("valid_voices")
+        valid_voices_data = result_dict.get("valid_voices")
         if isinstance(valid_voices_data, str):
             valid_voices_data = json.loads(valid_voices_data)
         if valid_voices_data and isinstance(valid_voices_data, list):
@@ -451,7 +467,7 @@ async def get_agent_detail(
 
         # Parse available_voices from JSONB (list of {id, voice} objects)
         available_voices: list[dict[str, str]] = []
-        available_voices_data = result.get("available_voices")
+        available_voices_data = result_dict.get("available_voices")
         if isinstance(available_voices_data, str):
             available_voices_data = json.loads(available_voices_data)
         if available_voices_data and isinstance(available_voices_data, list):
@@ -462,30 +478,30 @@ async def get_agent_detail(
             ]
 
         # Get can_edit from SQL result
-        can_edit = result.get("can_edit", False)
+        can_edit = result_dict.get("can_edit", False)
 
         # Set audit context with data from SQL query
-        actor_name = result.get("actor_name")
-        agent_name = result.get("name")
+        actor_name = result_dict.get("actor_name")
+        agent_name = result_dict.get("name")
         if actor_name:
             audit_set(
                 http_request,
                 actor={"name": actor_name, "id": profile_id},
-                agent={"name": agent_name, "id": request.agentId},
+                agent={"name": agent_name, "id": str(request.agent_id)},
             )
 
         response_data = AgentDetailResponse(
-            name=result["name"],
-            description=result["description"],
-            system_prompt=result["system_prompt"],
+            name=result_dict["name"],
+            description=result_dict["description"],
+            system_prompt=result_dict["system_prompt"],
             prompt_id=prompt_id,
-            temperature=float(result.get("temperature", 0.0)),
-            model_id=result["model_id"],
-            reasoning=result.get("reasoning"),
-            active=result["active"],
-            role=result["role"],
-            selected_temperature_level_id=result.get("selected_temperature_level_id"),
-            selected_reasoning_level_id=result.get("selected_reasoning_level_id"),
+            temperature=float(result_dict.get("temperature", 0.0)),
+            model_id=result_dict["model_id"],
+            reasoning=result_dict.get("reasoning"),
+            active=result_dict["active"],
+            role=result_dict["role"],
+            selected_temperature_level_id=result_dict.get("selected_temperature_level_id"),
+            selected_reasoning_level_id=result_dict.get("selected_reasoning_level_id"),
             selected_voice_ids=selected_voice_ids,
             department_ids=department_ids,
             valid_department_ids=valid_department_ids,
@@ -494,8 +510,8 @@ async def get_agent_detail(
             prompt_mapping=prompt_mapping,
             valid_model_ids=valid_model_ids,
             reasoning_options=reasoning_options if reasoning_options else [],
-            temperature_lower=float(result.get("temperature_lower", 0.0)),
-            temperature_upper=float(result.get("temperature_upper", 1.0)),
+            temperature_lower=float(result_dict.get("temperature_lower", 0.0)),
+            temperature_upper=float(result_dict.get("temperature_upper", 1.0)),
             temperature_levels=temperature_levels,
             valid_voices=valid_voices,
             available_voices=available_voices,

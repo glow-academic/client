@@ -112,42 +112,46 @@ def generate_request_model(
     lines.append("")
 
     # Add fields for each parameter
-    for param in metadata.parameters:
-        field_name = _sanitize_field_name(param.name)
-        field_type = _to_pydantic_field_type(param.python_type, param.is_optional)
-        
-        # Handle defaults
-        if param.default_value is not None:
-            # Convert default value to Python expression
-            if param.default_value == "{}":
-                # Empty list/dict default
-                if "list" in field_type:
-                    default_expr = "Field(default_factory=list)"
-                elif "dict" in field_type:
-                    default_expr = "Field(default_factory=dict)"
-                else:
-                    default_expr = "None"
-            elif param.default_value == "None" or param.default_value.lower() == "null":
-                default_expr = "None"
-            else:
-                # Try to parse as literal
-                default_expr = param.default_value
+    if not metadata.parameters:
+        # No parameters - add pass statement
+        lines.append("    pass")
+    else:
+        for param in metadata.parameters:
+            field_name = _sanitize_field_name(param.name)
+            field_type = _to_pydantic_field_type(param.python_type, param.is_optional)
             
-            lines.append(f"    {field_name}: {field_type} = {default_expr}")
-        elif param.is_optional:
-            lines.append(f"    {field_name}: {field_type} = None")
-        else:
-            lines.append(f"    {field_name}: {field_type}")
+            # Handle defaults
+            if param.default_value is not None:
+                # Convert default value to Python expression
+                if param.default_value == "{}":
+                    # Empty list/dict default
+                    if "list" in field_type:
+                        default_expr = "Field(default_factory=list)"
+                    elif "dict" in field_type:
+                        default_expr = "Field(default_factory=dict)"
+                    else:
+                        default_expr = "None"
+                elif param.default_value == "None" or param.default_value.lower() == "null":
+                    default_expr = "None"
+                else:
+                    # Try to parse as literal
+                    default_expr = param.default_value
+                
+                lines.append(f"    {field_name}: {field_type} = {default_expr}")
+            elif param.is_optional:
+                lines.append(f"    {field_name}: {field_type} = None")
+            else:
+                lines.append(f"    {field_name}: {field_type}")
 
-    # Add to_tuple() method
-    lines.append("")
-    lines.append("    def to_tuple(self) -> tuple[Any, ...]:")
-    lines.append('        """Convert model to tuple in parameter order ($1, $2, ...)."""')
-    lines.append("        return (")
-    for param in metadata.parameters:
-        field_name = _sanitize_field_name(param.name)
-        lines.append(f"            self.{field_name},")
-    lines.append("        )")
+        # Add to_tuple() method
+        lines.append("")
+        lines.append("    def to_tuple(self) -> tuple[Any, ...]:")
+        lines.append('        """Convert model to tuple in parameter order ($1, $2, ...)."""')
+        lines.append("        return (")
+        for param in metadata.parameters:
+            field_name = _sanitize_field_name(param.name)
+            lines.append(f"            self.{field_name},")
+        lines.append("        )")
 
     return "\n".join(lines)
 
@@ -624,10 +628,14 @@ def generate_response_model(
         ]
 
         # Add fields for each return column
-        for col in metadata.returns:
-            field_name = _sanitize_field_name(col.name)
-            field_type = _to_pydantic_field_type(col.python_type)
-            lines.append(f"    {field_name}: {field_type}")
+        if not metadata.returns:
+            # No return columns - add pass statement
+            lines.append("    pass")
+        else:
+            for col in metadata.returns:
+                field_name = _sanitize_field_name(col.name)
+                field_type = _to_pydantic_field_type(col.python_type)
+                lines.append(f"    {field_name}: {field_type}")
 
         return "\n".join(lines)
 
@@ -688,39 +696,43 @@ def generate_response_model(
     lines.append("")
 
     # Generate fields based on nested structure
-    for key, value in nested_data.items():
-        # Try to use PostgreSQL type from column metadata for top-level fields
-        sql_field_type: str | None = None
-        if top_level_type_map and key in top_level_type_map:
-            sql_field_type = top_level_type_map[key]
-        
-        # Fall back to value inference
-        if sql_field_type is None:
-            sql_field_type = _generate_type_from_value(value, key, generated_classes, route_name)
+    if not nested_data:
+        # No return columns - add pass statement
+        lines.append("    pass")
+    else:
+        for key, value in nested_data.items():
+            # Try to use PostgreSQL type from column metadata for top-level fields
+            sql_field_type: str | None = None
+            if top_level_type_map and key in top_level_type_map:
+                sql_field_type = top_level_type_map[key]
+            
+            # Fall back to value inference
+            if sql_field_type is None:
+                sql_field_type = _generate_type_from_value(value, key, generated_classes, route_name)
 
-        # If it's a dict of objects, use the generated class
-        if isinstance(value, dict) and value:
-            first_val = next(iter(value.values()))
-            if isinstance(first_val, dict):
-                # Find the corresponding generated class
-                item_class_name = _to_class_name(
-                    f"{route_name}_{key}_item", ""
-                )
-                if item_class_name in generated_classes:
-                    sql_field_type = f"dict[str, {item_class_name}]"
+            # If it's a dict of objects, use the generated class
+            if isinstance(value, dict) and value:
+                first_val = next(iter(value.values()))
+                if isinstance(first_val, dict):
+                    # Find the corresponding generated class
+                    item_class_name = _to_class_name(
+                        f"{route_name}_{key}_item", ""
+                    )
+                    if item_class_name in generated_classes:
+                        sql_field_type = f"dict[str, {item_class_name}]"
 
-        # If it's a list of dicts, use the generated class
-        elif isinstance(value, list) and value:
-            first_item = value[0]
-            if isinstance(first_item, dict):
-                item_class_name = _to_class_name(
-                    f"{route_name}_{key}_item", ""
-                )
-                if item_class_name in generated_classes:
-                    sql_field_type = f"list[{item_class_name}]"
+            # If it's a list of dicts, use the generated class
+            elif isinstance(value, list) and value:
+                first_item = value[0]
+                if isinstance(first_item, dict):
+                    item_class_name = _to_class_name(
+                        f"{route_name}_{key}_item", ""
+                    )
+                    if item_class_name in generated_classes:
+                        sql_field_type = f"list[{item_class_name}]"
 
-        sanitized_key = _sanitize_field_name(key)
-        lines.append(f"    {sanitized_key}: {sql_field_type}")
+            sanitized_key = _sanitize_field_name(key)
+            lines.append(f"    {sanitized_key}: {sql_field_type}")
 
     return "\n".join(lines)
 
@@ -786,32 +798,36 @@ def generate_api_request_model(
     lines.append("")
 
     # Add fields for each parameter (excluding profile_id)
-    for param in api_params:
-        field_name = _sanitize_field_name(param.name)
-        field_type = _to_pydantic_field_type(param.python_type, param.is_optional)
-        
-        # Handle defaults
-        if param.default_value is not None:
-            # Convert default value to Python expression
-            if param.default_value == "{}":
-                # Empty list/dict default
-                if "list" in field_type:
-                    default_expr = "Field(default_factory=list)"
-                elif "dict" in field_type:
-                    default_expr = "Field(default_factory=dict)"
-                else:
-                    default_expr = "None"
-            elif param.default_value == "None" or param.default_value.lower() == "null":
-                default_expr = "None"
-            else:
-                # Try to parse as literal
-                default_expr = param.default_value
+    if not api_params:
+        # No parameters (or only profile_id which was filtered out) - add pass statement
+        lines.append("    pass")
+    else:
+        for param in api_params:
+            field_name = _sanitize_field_name(param.name)
+            field_type = _to_pydantic_field_type(param.python_type, param.is_optional)
             
-            lines.append(f"    {field_name}: {field_type} = {default_expr}")
-        elif param.is_optional:
-            lines.append(f"    {field_name}: {field_type} = None")
-        else:
-            lines.append(f"    {field_name}: {field_type}")
+            # Handle defaults
+            if param.default_value is not None:
+                # Convert default value to Python expression
+                if param.default_value == "{}":
+                    # Empty list/dict default
+                    if "list" in field_type:
+                        default_expr = "Field(default_factory=list)"
+                    elif "dict" in field_type:
+                        default_expr = "Field(default_factory=dict)"
+                    else:
+                        default_expr = "None"
+                elif param.default_value == "None" or param.default_value.lower() == "null":
+                    default_expr = "None"
+                else:
+                    # Try to parse as literal
+                    default_expr = param.default_value
+                
+                lines.append(f"    {field_name}: {field_type} = {default_expr}")
+            elif param.is_optional:
+                lines.append(f"    {field_name}: {field_type} = None")
+            else:
+                lines.append(f"    {field_name}: {field_type}")
 
     return "\n".join(lines)
 
@@ -861,10 +877,14 @@ def generate_api_response_model(
         ]
 
         # Add fields for each return column
-        for col in metadata.returns:
-            field_name = _sanitize_field_name(col.name)
-            field_type = _to_pydantic_field_type(col.python_type)
-            lines.append(f"    {field_name}: {field_type}")
+        if not metadata.returns:
+            # No return columns - add pass statement
+            lines.append("    pass")
+        else:
+            for col in metadata.returns:
+                field_name = _sanitize_field_name(col.name)
+                field_type = _to_pydantic_field_type(col.python_type)
+                lines.append(f"    {field_name}: {field_type}")
 
         return "\n".join(lines)
 
@@ -927,39 +947,43 @@ def generate_api_response_model(
     lines.append("")
 
     # Generate fields based on nested structure
-    for key, value in nested_data.items():
-        # Try to use PostgreSQL type from column metadata for top-level fields
-        api_field_type: str | None = None
-        if top_level_type_map and key in top_level_type_map:
-            api_field_type = top_level_type_map[key]
-        
-        # Fall back to value inference
-        if api_field_type is None:
-            api_field_type = _generate_type_from_value(value, key, generated_classes, route_name)
+    if not nested_data:
+        # No return columns - add pass statement
+        lines.append("    pass")
+    else:
+        for key, value in nested_data.items():
+            # Try to use PostgreSQL type from column metadata for top-level fields
+            api_field_type: str | None = None
+            if top_level_type_map and key in top_level_type_map:
+                api_field_type = top_level_type_map[key]
+            
+            # Fall back to value inference
+            if api_field_type is None:
+                api_field_type = _generate_type_from_value(value, key, generated_classes, route_name)
 
-        # If it's a dict of objects, use the generated class
-        if isinstance(value, dict) and value:
-            first_val = next(iter(value.values()))
-            if isinstance(first_val, dict):
-                # Find the corresponding generated class
-                item_class_name = _to_class_name(
-                    f"{route_name}_{key}_item", ""
-                )
-                if item_class_name in generated_classes:
-                    api_field_type = f"dict[str, {item_class_name}]"
+            # If it's a dict of objects, use the generated class
+            if isinstance(value, dict) and value:
+                first_val = next(iter(value.values()))
+                if isinstance(first_val, dict):
+                    # Find the corresponding generated class
+                    item_class_name = _to_class_name(
+                        f"{route_name}_{key}_item", ""
+                    )
+                    if item_class_name in generated_classes:
+                        api_field_type = f"dict[str, {item_class_name}]"
 
-        # If it's a list of dicts, use the generated class
-        elif isinstance(value, list) and value:
-            first_item = value[0]
-            if isinstance(first_item, dict):
-                item_class_name = _to_class_name(
-                    f"{route_name}_{key}_item", ""
-                )
-                if item_class_name in generated_classes:
-                    api_field_type = f"list[{item_class_name}]"
+            # If it's a list of dicts, use the generated class
+            elif isinstance(value, list) and value:
+                first_item = value[0]
+                if isinstance(first_item, dict):
+                    item_class_name = _to_class_name(
+                        f"{route_name}_{key}_item", ""
+                    )
+                    if item_class_name in generated_classes:
+                        api_field_type = f"list[{item_class_name}]"
 
-        sanitized_key = _sanitize_field_name(key)
-        lines.append(f"    {sanitized_key}: {api_field_type}")
+            sanitized_key = _sanitize_field_name(key)
+            lines.append(f"    {sanitized_key}: {api_field_type}")
 
     return "\n".join(lines)
 

@@ -1,14 +1,21 @@
-WITH user_departments AS (
+-- Get agents list with permissions
+-- @params
+--   profile_id: uuid
+-- All parameters are cast exactly once in params CTE for reliable type introspection
+WITH params AS (
+    SELECT $1::uuid AS profile_id
+),
+user_departments AS (
     SELECT department_id
-    FROM profile_departments
-    WHERE profile_id = $1::uuid AND active = true
+    FROM params x
+    JOIN profile_departments ON profile_departments.profile_id = x.profile_id AND profile_departments.active = true
 ),
 user_profile AS (
     SELECT 
         role,
         COALESCE(first_name || ' ' || last_name, 'System') as actor_name
-    FROM profiles 
-    WHERE id = $1::uuid
+    FROM params x
+    JOIN profiles ON profiles.id = x.profile_id
 ),
 agent_department_links AS (
     SELECT 

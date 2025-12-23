@@ -7840,7 +7840,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AgentsListRequest"
+                "$ref": "#/components/schemas/GetAgentsListApiRequest"
               }
             }
           }
@@ -7921,7 +7921,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AgentDetailRequest"
+                "$ref": "#/components/schemas/GetAgentDetailApiRequest"
               }
             }
           }
@@ -8083,7 +8083,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateAgentRequest"
+                "$ref": "#/components/schemas/CreateAgentApiRequest"
               }
             }
           }
@@ -8094,7 +8094,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateAgentResponse"
+                  "$ref": "#/components/schemas/CreateAgentApiResponse"
                 }
               }
             }
@@ -8175,7 +8175,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateAgentResponse"
+                  "$ref": "#/components/schemas/UpdateAgentApiResponse"
                 }
               }
             }
@@ -8245,7 +8245,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DuplicateAgentRequest"
+                "$ref": "#/components/schemas/DuplicateAgentApiRequest"
               }
             }
           }
@@ -8256,7 +8256,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DuplicateAgentResponse"
+                  "$ref": "#/components/schemas/DuplicateAgentApiResponse"
                 }
               }
             }
@@ -8326,7 +8326,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteAgentRequest"
+                "$ref": "#/components/schemas/DeleteAgentApiRequest"
               }
             }
           }
@@ -8337,7 +8337,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteAgentResponse"
+                  "$ref": "#/components/schemas/DeleteAgentApiResponse"
                 }
               }
             }
@@ -21795,19 +21795,6 @@
         "title": "ActivityListResponse",
         "description": "Response for activity list endpoint."
       },
-      "AgentDetailRequest": {
-        "properties": {
-          "agentId": {
-            "type": "string",
-            "title": "Agentid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "agentId"
-        ],
-        "title": "AgentDetailRequest"
-      },
       "AgentDetailResponse": {
         "properties": {
           "name": {
@@ -22042,115 +22029,31 @@
         ],
         "title": "AgentDetailResponse"
       },
-      "AgentItem": {
-        "properties": {
-          "agent_id": {
-            "type": "string",
-            "title": "Agent Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
-          },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "name",
-          "description",
-          "reasoning",
-          "temperature",
-          "model_id",
-          "role",
-          "department_ids",
-          "updated_at",
-          "can_edit",
-          "can_duplicate",
-          "can_delete"
-        ],
-        "title": "AgentItem"
-      },
-      "AgentsListRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "AgentsListRequest"
-      },
       "AgentsListResponse": {
         "properties": {
           "agents": {
             "items": {
-              "$ref": "#/components/schemas/AgentItem"
+              "$ref": "#/components/schemas/GetAgentsListApiResponse"
             },
             "type": "array",
             "title": "Agents"
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__agents__list__ModelMappingItem"
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
             },
             "type": "object",
             "title": "Model Mapping"
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__agents__list__DepartmentMappingItem"
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -24654,7 +24557,7 @@
         "title": "ContinuationOption",
         "description": "A single continuation option for a scenario."
       },
-      "CreateAgentRequest": {
+      "CreateAgentApiRequest": {
         "properties": {
           "name": {
             "type": "string",
@@ -24664,23 +24567,9 @@
             "type": "string",
             "title": "Description"
           },
-          "prompt_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompt Id"
-          },
-          "system_prompt": {
-            "type": "string",
-            "title": "System Prompt"
-          },
           "model_id": {
             "type": "string",
+            "format": "uuid",
             "title": "Model Id"
           },
           "active": {
@@ -24691,24 +24580,42 @@
             "type": "string",
             "title": "Role"
           },
-          "department_ids": {
+          "prompt_id": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Prompt Id"
+          },
+          "system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Prompt"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
             "title": "Department Ids"
           },
           "model_temperature_level_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -24719,7 +24626,8 @@
           "model_reasoning_level_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -24731,7 +24639,8 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -24746,37 +24655,29 @@
         "required": [
           "name",
           "description",
-          "prompt_id",
-          "system_prompt",
           "model_id",
           "active",
-          "role",
-          "department_ids"
+          "role"
         ],
-        "title": "CreateAgentRequest"
+        "title": "CreateAgentApiRequest"
       },
-      "CreateAgentResponse": {
+      "CreateAgentApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "agentId": {
+          "agent_id": {
             "type": "string",
-            "title": "Agentid"
+            "title": "Agent Id"
           },
-          "message": {
+          "actor_name": {
             "type": "string",
-            "title": "Message"
+            "title": "Actor Name"
           }
         },
         "type": "object",
         "required": [
-          "success",
-          "agentId",
-          "message"
+          "agent_id",
+          "actor_name"
         ],
-        "title": "CreateAgentResponse"
+        "title": "CreateAgentApiResponse"
       },
       "CreateAuthRequest": {
         "properties": {
@@ -27467,6 +27368,48 @@
         "title": "DecryptKeyResponse",
         "description": "Response from decrypt key."
       },
+      "DeleteAgentApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id"
+        ],
+        "title": "DeleteAgentApiRequest"
+      },
+      "DeleteAgentApiResponse": {
+        "properties": {
+          "usage_count": {
+            "type": "integer",
+            "title": "Usage Count"
+          },
+          "deleted": {
+            "type": "boolean",
+            "title": "Deleted"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "actor_name": {
+            "type": "string",
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usage_count",
+          "deleted",
+          "name",
+          "actor_name"
+        ],
+        "title": "DeleteAgentApiResponse"
+      },
       "DeleteAgentPromptRequest": {
         "properties": {
           "agentId": {
@@ -27513,37 +27456,6 @@
           "message"
         ],
         "title": "DeleteAgentPromptResponse"
-      },
-      "DeleteAgentRequest": {
-        "properties": {
-          "agentId": {
-            "type": "string",
-            "title": "Agentid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "agentId"
-        ],
-        "title": "DeleteAgentRequest"
-      },
-      "DeleteAgentResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteAgentResponse"
       },
       "DeleteAuthRequest": {
         "properties": {
@@ -28853,41 +28765,42 @@
         "title": "DocumentsListResponse",
         "description": "Response for documents list."
       },
-      "DuplicateAgentRequest": {
+      "DuplicateAgentApiRequest": {
         "properties": {
-          "agentId": {
+          "agent_id": {
             "type": "string",
-            "title": "Agentid"
+            "format": "uuid",
+            "title": "Agent Id"
           }
         },
         "type": "object",
         "required": [
-          "agentId"
+          "agent_id"
         ],
-        "title": "DuplicateAgentRequest"
+        "title": "DuplicateAgentApiRequest"
       },
-      "DuplicateAgentResponse": {
+      "DuplicateAgentApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "agentId": {
+          "agent_id": {
             "type": "string",
-            "title": "Agentid"
+            "title": "Agent Id"
           },
-          "message": {
+          "agent_name": {
             "type": "string",
-            "title": "Message"
+            "title": "Agent Name"
+          },
+          "actor_name": {
+            "type": "string",
+            "title": "Actor Name"
           }
         },
         "type": "object",
         "required": [
-          "success",
-          "agentId",
-          "message"
+          "agent_id",
+          "agent_name",
+          "actor_name"
         ],
-        "title": "DuplicateAgentResponse"
+        "title": "DuplicateAgentApiResponse"
       },
       "DuplicateAuthRequest": {
         "properties": {
@@ -31677,11 +31590,24 @@
         "title": "GenerateVideoPayload",
         "description": "Request to generate a video."
       },
+      "GetAgentDetailApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id"
+        ],
+        "title": "GetAgentDetailApiRequest"
+      },
       "GetAgentNewApiRequest": {
         "properties": {},
         "type": "object",
-        "title": "GetAgentNewApiRequest",
-        "description": "API request parameters.\n\nExcludes profile_id (obtained from request header)."
+        "title": "GetAgentNewApiRequest"
       },
       "GetAgentNewApiResponse": {
         "properties": {
@@ -31736,8 +31662,7 @@
           "model_mapping",
           "department_mapping"
         ],
-        "title": "GetAgentNewApiResponse",
-        "description": "API response data after nesting.\n\nStructure matches nest_many() output."
+        "title": "GetAgentNewApiResponse"
       },
       "GetAgentNewDepartmentMappingItem": {
         "properties": {
@@ -31760,8 +31685,7 @@
           "name",
           "description"
         ],
-        "title": "GetAgentNewDepartmentMappingItem",
-        "description": "Generated nested model."
+        "title": "GetAgentNewDepartmentMappingItem"
       },
       "GetAgentNewModelMappingAvailableVoicesItem": {
         "properties": {
@@ -31779,8 +31703,7 @@
           "id",
           "voice"
         ],
-        "title": "GetAgentNewModelMappingAvailableVoicesItem",
-        "description": "Generated nested model."
+        "title": "GetAgentNewModelMappingAvailableVoicesItem"
       },
       "GetAgentNewModelMappingItem": {
         "properties": {
@@ -31818,6 +31741,13 @@
             "type": "array",
             "title": "Output Modalities"
           },
+          "reasoning_options": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentNewModelMappingReasoningOptionsItem"
+            },
+            "type": "array",
+            "title": "Reasoning Options"
+          },
           "available_voices": {
             "items": {
               "$ref": "#/components/schemas/GetAgentNewModelMappingAvailableVoicesItem"
@@ -31831,13 +31761,6 @@
             },
             "type": "array",
             "title": "Temperature Levels"
-          },
-          "reasoning_options": {
-            "items": {
-              "$ref": "#/components/schemas/GetAgentNewModelMappingReasoningOptionsItem"
-            },
-            "type": "array",
-            "title": "Reasoning Options"
           }
         },
         "type": "object",
@@ -31849,12 +31772,11 @@
           "temperature_upper",
           "input_modalities",
           "output_modalities",
+          "reasoning_options",
           "available_voices",
-          "temperature_levels",
-          "reasoning_options"
+          "temperature_levels"
         ],
-        "title": "GetAgentNewModelMappingItem",
-        "description": "Generated nested model."
+        "title": "GetAgentNewModelMappingItem"
       },
       "GetAgentNewModelMappingReasoningOptionsItem": {
         "properties": {
@@ -31872,8 +31794,7 @@
           "id",
           "reasoning_level"
         ],
-        "title": "GetAgentNewModelMappingReasoningOptionsItem",
-        "description": "Generated nested model."
+        "title": "GetAgentNewModelMappingReasoningOptionsItem"
       },
       "GetAgentNewModelMappingTemperatureLevelsItem": {
         "properties": {
@@ -31896,8 +31817,129 @@
           "temperature",
           "is_upper"
         ],
-        "title": "GetAgentNewModelMappingTemperatureLevelsItem",
-        "description": "Generated nested model."
+        "title": "GetAgentNewModelMappingTemperatureLevelsItem"
+      },
+      "GetAgentsListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetAgentsListApiRequest"
+      },
+      "GetAgentsListApiResponse": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "reasoning": {
+            "type": "string",
+            "title": "Reasoning"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "model_description": {
+            "type": "string",
+            "title": "Model Description"
+          },
+          "actor_name": {
+            "type": "string",
+            "title": "Actor Name"
+          },
+          "department_mapping": {
+            "items": {
+              "$ref": "#/components/schemas/GetAgentsListDepartmentMappingItem"
+            },
+            "type": "array",
+            "title": "Department Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "name",
+          "description",
+          "reasoning",
+          "temperature",
+          "model_id",
+          "role",
+          "updated_at",
+          "department_ids",
+          "can_edit",
+          "can_duplicate",
+          "can_delete",
+          "model_name",
+          "model_description",
+          "actor_name",
+          "department_mapping"
+        ],
+        "title": "GetAgentsListApiResponse"
+      },
+      "GetAgentsListDepartmentMappingItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "title": "GetAgentsListDepartmentMappingItem"
       },
       "GradeItem": {
         "properties": {
@@ -45995,11 +46037,30 @@
         ],
         "title": "UnitItem"
       },
+      "UpdateAgentApiResponse": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "actor_name": {
+            "type": "string",
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "actor_name"
+        ],
+        "title": "UpdateAgentApiResponse"
+      },
       "UpdateAgentRequest": {
         "properties": {
-          "agentId": {
+          "agent_id": {
             "type": "string",
-            "title": "Agentid"
+            "format": "uuid",
+            "title": "Agent Id"
           },
           "name": {
             "type": "string",
@@ -46009,23 +46070,9 @@
             "type": "string",
             "title": "Description"
           },
-          "prompt_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompt Id"
-          },
-          "system_prompt": {
-            "type": "string",
-            "title": "System Prompt"
-          },
           "model_id": {
             "type": "string",
+            "format": "uuid",
             "title": "Model Id"
           },
           "active": {
@@ -46036,32 +46083,41 @@
             "type": "string",
             "title": "Role"
           },
-          "department_ids": {
+          "prompt_id": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Prompt Id"
+          },
+          "system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Prompt"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Department Ids"
           },
           "department_ids_for_prompt": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Department Ids For Prompt"
           },
           "model_temperature_level_id": {
@@ -46103,35 +46159,14 @@
         },
         "type": "object",
         "required": [
-          "agentId",
+          "agent_id",
           "name",
           "description",
-          "prompt_id",
-          "system_prompt",
           "model_id",
           "active",
-          "role",
-          "department_ids"
+          "role"
         ],
         "title": "UpdateAgentRequest"
-      },
-      "UpdateAgentResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateAgentResponse"
       },
       "UpdateAuthRequest": {
         "properties": {
@@ -49077,44 +49112,6 @@
               }
             ],
             "title": "Available Voices"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ModelMappingItem",
-        "description": "Model mapping item."
-      },
-      "app__api__v3__agents__list__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__agents__list__ModelMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
           }
         },
         "type": "object",

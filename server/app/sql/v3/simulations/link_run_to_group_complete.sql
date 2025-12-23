@@ -1,6 +1,6 @@
 -- Link run to group via group_runs junction table
 -- Parameters: $1=group_id (uuid), $2=run_id (uuid)
--- Returns: 1 if successful
+-- Returns: group_id, run_id, idx
 -- Uses ON CONFLICT to handle duplicate links gracefully
 INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
 VALUES (
@@ -11,4 +11,5 @@ VALUES (
     NOW()
 )
 ON CONFLICT (group_id, run_id) DO NOTHING
+RETURNING group_id::text, run_id::text, idx
 

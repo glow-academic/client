@@ -6,21 +6,15 @@ import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import load_api_types, load_sql_query, load_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DeleteAgentRequest(BaseModel):
-    agentId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DeleteAgentResponse(BaseModel):
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/agents/delete_agent_complete.sql"
+DeleteAgentSqlParams, DeleteAgentSqlRow = load_sql_typed(SQL_PATH)
+DeleteAgentApiRequest, DeleteAgentApiResponse = load_api_types(SQL_PATH)
 
 
 router = APIRouter()
@@ -28,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/delete",
-    response_model=DeleteAgentResponse,
+    response_model=DeleteAgentApiResponse,
     dependencies=[
         audit_activity(
             "agent.deleted", "{{ actor.name }} deleted agent '{{ agent.name }}'"
@@ -36,15 +30,15 @@ router = APIRouter()
     ],
 )
 async def delete_agent(
-    request: DeleteAgentRequest,
+    request: DeleteAgentApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DeleteAgentResponse:
+) -> DeleteAgentApiResponse:
     """Delete an agent."""
     tags = ["agents"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -56,37 +50,39 @@ async def delete_agent(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Delete agent with usage check (single query)
-        sql_query = load_sql("app/sql/v3/agents/delete_agent_complete.sql")
-        sql_params = (request.agentId, profile_id)
-        result = await conn.fetchrow(sql_query, request.agentId, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = DeleteAgentSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        if result and result["usage_count"] > 0:
+        # Execute SQL with typed helper
+        result = await execute_sql_typed(
+            conn,
+            SQL_PATH,
+            params=params,
+        )
+
+        if result.usage_count > 0:
             raise HTTPException(
                 status_code=400, detail="Cannot delete agent: agent is in use"
             )
 
         # Set audit context with data from SQL query
-        actor_name = result.get("actor_name") if result else None
-        agent_name = result.get("name", "Unknown") if result else "Unknown"
-        if actor_name:
+        if result.actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": profile_id},
-                agent={"name": agent_name, "id": request.agentId},
+                actor={"name": result.actor_name, "id": profile_id},
+                agent={"name": result.name, "id": str(request.agent_id)},
             )
 
-        # Note: DELETE is idempotent - deleting non-existent entity is considered success
-
-        result_data = DeleteAgentResponse(
-            success=True, message="Agent deleted successfully"
-        )
+        # Convert SQL result to API response
+        # Note: API response matches SQL response structure (usage_count, deleted, name, actor_name)
+        api_response = DeleteAgentApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

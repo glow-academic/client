@@ -6436,11 +6436,6 @@ export interface components {
             /** Totalpages */
             totalPages: number;
         };
-        /** AgentDetailRequest */
-        AgentDetailRequest: {
-            /** Agentid */
-            agentId: string;
-        };
         /** AgentDetailResponse */
         AgentDetailResponse: {
             /** Name */
@@ -6516,46 +6511,21 @@ export interface components {
             /** Can Edit */
             can_edit: boolean;
         };
-        /** AgentItem */
-        AgentItem: {
-            /** Agent Id */
-            agent_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** Model Id */
-            model_id: string;
-            /** Role */
-            role: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Updated At */
-            updated_at: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /** AgentsListRequest */
-        AgentsListRequest: Record<string, never>;
         /** AgentsListResponse */
         AgentsListResponse: {
             /** Agents */
-            agents: components["schemas"]["AgentItem"][];
+            agents: components["schemas"]["GetAgentsListApiResponse"][];
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__agents__list__ModelMappingItem"];
+                [key: string]: {
+                    [key: string]: string;
+                };
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__agents__list__DepartmentMappingItem"];
+                [key: string]: {
+                    [key: string]: string;
+                };
             };
         };
         /** AggregatedResults */
@@ -7506,24 +7476,27 @@ export interface components {
             /** Timetaken */
             timeTaken: number | null;
         };
-        /** CreateAgentRequest */
-        CreateAgentRequest: {
+        /** CreateAgentApiRequest */
+        CreateAgentApiRequest: {
             /** Name */
             name: string;
             /** Description */
             description: string;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** System Prompt */
-            system_prompt: string;
-            /** Model Id */
+            /**
+             * Model Id
+             * Format: uuid
+             */
             model_id: string;
             /** Active */
             active: boolean;
             /** Role */
             role: string;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** System Prompt */
+            system_prompt?: string | null;
             /** Department Ids */
-            department_ids: string[] | null;
+            department_ids?: string[];
             /** Model Temperature Level Id */
             model_temperature_level_id?: string | null;
             /** Model Reasoning Level Id */
@@ -7531,14 +7504,12 @@ export interface components {
             /** Model Voice Ids */
             model_voice_ids?: string[] | null;
         };
-        /** CreateAgentResponse */
-        CreateAgentResponse: {
-            /** Success */
-            success: boolean;
-            /** Agentid */
-            agentId: string;
-            /** Message */
-            message: string;
+        /** CreateAgentApiResponse */
+        CreateAgentApiResponse: {
+            /** Agent Id */
+            agent_id: string;
+            /** Actor Name */
+            actor_name: string;
         };
         /**
          * CreateAuthRequest
@@ -8532,6 +8503,25 @@ export interface components {
             /** Key */
             key: string;
         };
+        /** DeleteAgentApiRequest */
+        DeleteAgentApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+        };
+        /** DeleteAgentApiResponse */
+        DeleteAgentApiResponse: {
+            /** Usage Count */
+            usage_count: number;
+            /** Deleted */
+            deleted: boolean;
+            /** Name */
+            name: string;
+            /** Actor Name */
+            actor_name: string;
+        };
         /** DeleteAgentPromptRequest */
         DeleteAgentPromptRequest: {
             /** Agentid */
@@ -8543,18 +8533,6 @@ export interface components {
         };
         /** DeleteAgentPromptResponse */
         DeleteAgentPromptResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /** DeleteAgentRequest */
-        DeleteAgentRequest: {
-            /** Agentid */
-            agentId: string;
-        };
-        /** DeleteAgentResponse */
-        DeleteAgentResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -9143,19 +9121,22 @@ export interface components {
             /** Document Type Options */
             document_type_options: string[];
         };
-        /** DuplicateAgentRequest */
-        DuplicateAgentRequest: {
-            /** Agentid */
-            agentId: string;
+        /** DuplicateAgentApiRequest */
+        DuplicateAgentApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
         };
-        /** DuplicateAgentResponse */
-        DuplicateAgentResponse: {
-            /** Success */
-            success: boolean;
-            /** Agentid */
-            agentId: string;
-            /** Message */
-            message: string;
+        /** DuplicateAgentApiResponse */
+        DuplicateAgentApiResponse: {
+            /** Agent Id */
+            agent_id: string;
+            /** Agent Name */
+            agent_name: string;
+            /** Actor Name */
+            actor_name: string;
         };
         /**
          * DuplicateAuthRequest
@@ -10355,19 +10336,17 @@ export interface components {
             /** Imagereferenceid */
             imageReferenceId?: string | null;
         };
-        /**
-         * GetAgentNewApiRequest
-         * @description API request parameters.
-         *
-         *     Excludes profile_id (obtained from request header).
-         */
+        /** GetAgentDetailApiRequest */
+        GetAgentDetailApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+        };
+        /** GetAgentNewApiRequest */
         GetAgentNewApiRequest: Record<string, never>;
-        /**
-         * GetAgentNewApiResponse
-         * @description API response data after nesting.
-         *
-         *     Structure matches nest_many() output.
-         */
+        /** GetAgentNewApiResponse */
         GetAgentNewApiResponse: {
             /** Valid Model Ids */
             valid_model_ids: string[];
@@ -10384,10 +10363,7 @@ export interface components {
             /** Department Mapping */
             department_mapping: components["schemas"]["GetAgentNewDepartmentMappingItem"][];
         };
-        /**
-         * GetAgentNewDepartmentMappingItem
-         * @description Generated nested model.
-         */
+        /** GetAgentNewDepartmentMappingItem */
         GetAgentNewDepartmentMappingItem: {
             /** Id */
             id: string;
@@ -10396,20 +10372,14 @@ export interface components {
             /** Description */
             description: string;
         };
-        /**
-         * GetAgentNewModelMappingAvailableVoicesItem
-         * @description Generated nested model.
-         */
+        /** GetAgentNewModelMappingAvailableVoicesItem */
         GetAgentNewModelMappingAvailableVoicesItem: {
             /** Id */
             id: string;
             /** Voice */
             voice: string;
         };
-        /**
-         * GetAgentNewModelMappingItem
-         * @description Generated nested model.
-         */
+        /** GetAgentNewModelMappingItem */
         GetAgentNewModelMappingItem: {
             /** Id */
             id: string;
@@ -10425,27 +10395,21 @@ export interface components {
             input_modalities: string[];
             /** Output Modalities */
             output_modalities: string[];
+            /** Reasoning Options */
+            reasoning_options: components["schemas"]["GetAgentNewModelMappingReasoningOptionsItem"][];
             /** Available Voices */
             available_voices: components["schemas"]["GetAgentNewModelMappingAvailableVoicesItem"][];
             /** Temperature Levels */
             temperature_levels: components["schemas"]["GetAgentNewModelMappingTemperatureLevelsItem"][];
-            /** Reasoning Options */
-            reasoning_options: components["schemas"]["GetAgentNewModelMappingReasoningOptionsItem"][];
         };
-        /**
-         * GetAgentNewModelMappingReasoningOptionsItem
-         * @description Generated nested model.
-         */
+        /** GetAgentNewModelMappingReasoningOptionsItem */
         GetAgentNewModelMappingReasoningOptionsItem: {
             /** Id */
             id: string;
             /** Reasoning Level */
             reasoning_level: string;
         };
-        /**
-         * GetAgentNewModelMappingTemperatureLevelsItem
-         * @description Generated nested model.
-         */
+        /** GetAgentNewModelMappingTemperatureLevelsItem */
         GetAgentNewModelMappingTemperatureLevelsItem: {
             /** Id */
             id: string;
@@ -10453,6 +10417,52 @@ export interface components {
             temperature: string;
             /** Is Upper */
             is_upper: boolean;
+        };
+        /** GetAgentsListApiRequest */
+        GetAgentsListApiRequest: Record<string, never>;
+        /** GetAgentsListApiResponse */
+        GetAgentsListApiResponse: {
+            /** Agent Id */
+            agent_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Reasoning */
+            reasoning: string;
+            /** Temperature */
+            temperature: number;
+            /** Model Id */
+            model_id: string;
+            /** Role */
+            role: string;
+            /** Updated At */
+            updated_at: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Model Name */
+            model_name: string;
+            /** Model Description */
+            model_description: string;
+            /** Actor Name */
+            actor_name: string;
+            /** Department Mapping */
+            department_mapping: components["schemas"]["GetAgentsListDepartmentMappingItem"][];
+        };
+        /** GetAgentsListDepartmentMappingItem */
+        GetAgentsListDepartmentMappingItem: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /** GradeItem */
         GradeItem: {
@@ -15604,41 +15614,47 @@ export interface components {
             /** Value */
             value: number;
         };
+        /** UpdateAgentApiResponse */
+        UpdateAgentApiResponse: {
+            /** Agent Id */
+            agent_id: string;
+            /** Actor Name */
+            actor_name: string;
+        };
         /** UpdateAgentRequest */
         UpdateAgentRequest: {
-            /** Agentid */
-            agentId: string;
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
             /** Description */
             description: string;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** System Prompt */
-            system_prompt: string;
-            /** Model Id */
+            /**
+             * Model Id
+             * Format: uuid
+             */
             model_id: string;
             /** Active */
             active: boolean;
             /** Role */
             role: string;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** System Prompt */
+            system_prompt?: string | null;
             /** Department Ids */
-            department_ids: string[] | null;
+            department_ids?: string[];
             /** Department Ids For Prompt */
-            department_ids_for_prompt?: string[] | null;
+            department_ids_for_prompt?: string[];
             /** Model Temperature Level Id */
             model_temperature_level_id?: string | null;
             /** Model Reasoning Level Id */
             model_reasoning_level_id?: string | null;
             /** Model Voice Ids */
             model_voice_ids?: string[] | null;
-        };
-        /** UpdateAgentResponse */
-        UpdateAgentResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
         };
         /**
          * UpdateAuthRequest
@@ -16672,26 +16688,6 @@ export interface components {
             available_voices?: {
                 [key: string]: string;
             }[] | null;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__agents__list__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * ModelMappingItem
-         * @description Model mapping item.
-         */
-        app__api__v3__agents__list__ModelMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
         };
         /** AttemptItem */
         app__api__v3__attempts__full__AttemptItem: {
@@ -24336,7 +24332,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AgentsListRequest"];
+                "application/json": components["schemas"]["GetAgentsListApiRequest"];
             };
         };
         responses: {
@@ -24372,7 +24368,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AgentDetailRequest"];
+                "application/json": components["schemas"]["GetAgentDetailApiRequest"];
             };
         };
         responses: {
@@ -24444,7 +24440,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAgentRequest"];
+                "application/json": components["schemas"]["CreateAgentApiRequest"];
             };
         };
         responses: {
@@ -24454,7 +24450,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAgentResponse"];
+                    "application/json": components["schemas"]["CreateAgentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24490,7 +24486,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateAgentResponse"];
+                    "application/json": components["schemas"]["UpdateAgentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24516,7 +24512,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DuplicateAgentRequest"];
+                "application/json": components["schemas"]["DuplicateAgentApiRequest"];
             };
         };
         responses: {
@@ -24526,7 +24522,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DuplicateAgentResponse"];
+                    "application/json": components["schemas"]["DuplicateAgentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24552,7 +24548,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteAgentRequest"];
+                "application/json": components["schemas"]["DeleteAgentApiRequest"];
             };
         };
         responses: {
@@ -24562,7 +24558,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteAgentResponse"];
+                    "application/json": components["schemas"]["DeleteAgentApiResponse"];
                 };
             };
             /** @description Validation Error */

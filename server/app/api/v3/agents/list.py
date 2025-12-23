@@ -6,6 +6,7 @@ import asyncpg
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import load_api_types, load_sql_query, load_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
@@ -14,52 +15,16 @@ from utils.cache.set_cached import set_cached
 from utils.sql_helper import load_sql
 from utils.sql_nest import nest_many
 
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/agents/get_agents_list_complete.sql"
+GetAgentsListSqlParams, GetAgentsListSqlRow = load_sql_typed(SQL_PATH)
+GetAgentsListApiRequest, GetAgentsListApiResponse = load_api_types(SQL_PATH)
 
-# Inline mapping types (DHH style - no shared types)
-class DepartmentMappingItem(BaseModel):
-    """Department mapping item."""
-
-    name: str
-    description: str
-
-
-class ModelMappingItem(BaseModel):
-    """Model mapping item."""
-
-    name: str
-    description: str
-
-
-# Type aliases for Dict mappings
-DepartmentMapping = dict[str, DepartmentMappingItem]
-ModelMapping = dict[str, ModelMappingItem]
-
-
-# Inline request/response schemas
-class AgentsListRequest(BaseModel):
-    pass
-    # profileId removed - comes from X-Profile-Id header
-
-
-class AgentItem(BaseModel):
-    agent_id: str
-    name: str
-    description: str
-    reasoning: str | None
-    temperature: float
-    model_id: str
-    role: str
-    department_ids: list[str] | None
-    updated_at: str
-    can_edit: bool
-    can_duplicate: bool
-    can_delete: bool
-
-
+# Extended response model for list endpoint (aggregates multiple rows)
 class AgentsListResponse(BaseModel):
-    agents: list[AgentItem]
-    model_mapping: ModelMapping
-    department_mapping: DepartmentMapping
+    agents: list[GetAgentsListApiResponse]
+    model_mapping: dict[str, dict[str, str]]
+    department_mapping: dict[str, dict[str, str]]
 
 
 router = APIRouter()
@@ -73,7 +38,7 @@ router = APIRouter()
     ],
 )
 async def list_agents(
-    request: AgentsListRequest,
+    request: GetAgentsListApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -92,11 +57,10 @@ async def list_agents(
         response.headers["X-Cache-Hit"] = "1"
         return AgentsListResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Load SQL string
         # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
@@ -105,11 +69,12 @@ async def list_agents(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/agents/get_agents_list_complete.sql")
-        sql_params = (profile_id,)
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetAgentsListSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        # Execute query
-        rows = await conn.fetch(sql_query, profile_id)
+        # Execute query (returns multiple rows)
+        rows = await conn.fetch(sql_query, *sql_params)
 
         if not rows:
             # Return empty response
@@ -128,31 +93,30 @@ async def list_agents(
             response.headers["X-Cache-Hit"] = "0"
             return response_data
 
-        # Use nest_many to handle department_mapping list
-        # Since department_mapping is shared across all rows, we'll get it from the nested result
+        # Process rows individually and aggregate
+        # Use nest_many on all rows to extract department_mapping (shared across rows)
         nested_data = nest_many(rows, list_prefixes={"department_mapping"})
 
         # Extract department_mapping list and convert to dict
-        # nest_many removes the prefix, so "department_mapping__id" becomes "id" in the nested list
         department_mapping_list = nested_data.get("department_mapping", [])
-        department_mapping: dict[str, DepartmentMappingItem] = {}
+        department_mapping: dict[str, dict[str, str]] = {}
         for dept in department_mapping_list:
-            dept_id = dept.get("id")  # This is from "department_mapping__id"
+            dept_id = dept.get("id")
             if dept_id:
-                department_mapping[dept_id] = DepartmentMappingItem(
-                    name=dept.get("name", ""),  # This is from "department_mapping__name"
-                    description=dept.get("description", ""),  # This is from "department_mapping__description"
-                )
+                department_mapping[dept_id] = {
+                    "name": dept.get("name", ""),
+                    "description": dept.get("description", ""),
+                }
 
-        # Get actor name from nested data
-        actor_name = nested_data.get("actor_name")
+        # Get actor name from first row (same for all rows)
+        actor_name = rows[0].get("actor_name") if rows else None
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Build agents list and model mapping from original rows (deduplicate by agent_id)
+        # Build agents list and model mapping from rows (deduplicate by agent_id)
         seen_agents: set[str] = set()
-        agents: list[AgentItem] = []
-        model_mapping: ModelMapping = {}
+        agents: list[GetAgentsListApiResponse] = []
+        model_mapping: dict[str, dict[str, str]] = {}
 
         for row in rows:
             agent_id = row["agent_id"]
@@ -163,13 +127,13 @@ async def list_agents(
             # Add to model mapping if we have model info
             model_id = row["model_id"]
             if model_id and model_id not in model_mapping:
-                model_mapping[model_id] = ModelMappingItem(
-                    name=row["model_name"] or "",
-                    description=row["model_description"] or "",
-                )
+                model_mapping[model_id] = {
+                    "name": row["model_name"] or "",
+                    "description": row["model_description"] or "",
+                }
 
             # Parse department_ids
-            dept_ids = None
+            dept_ids = []
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
 
@@ -180,24 +144,15 @@ async def list_agents(
             elif not isinstance(updated_at, str):
                 updated_at = str(updated_at)
 
-            agents.append(
-                AgentItem(
-                    agent_id=agent_id,
-                    name=row["name"],
-                    description=row["description"],
-                    reasoning=row["reasoning"],
-                    temperature=float(row["temperature"])
-                    if row["temperature"] is not None
-                    else 0.0,
-                    model_id=model_id,
-                    role=row["role"],
-                    department_ids=dept_ids,
-                    updated_at=updated_at,
-                    can_edit=row["can_edit"],
-                    can_duplicate=row["can_duplicate"],
-                    can_delete=row["can_delete"],
-                )
-            )
+            # Create typed agent item from row data
+            agent_dict = dict(row)
+            agent_dict["department_ids"] = dept_ids
+            agent_dict["updated_at"] = updated_at
+            # Process nested department_mapping for this row
+            row_nested = nest_many([row], list_prefixes={"department_mapping"})
+            agent_dict["department_mapping"] = row_nested.get("department_mapping", [])
+            agent_item = GetAgentsListApiResponse(**agent_dict)
+            agents.append(agent_item)
 
         # Collect all department IDs actually assigned to agents
         assigned_department_ids = set()

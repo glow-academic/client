@@ -139,7 +139,7 @@ def write_consolidated_types_file(
     # Collect all unique imports
     all_imports: set[str] = set()
     all_imports.add("from typing import Any")
-    all_imports.add("from typing import TYPE_CHECKING, Literal, Type, TypeVar, overload")
+    all_imports.add("from typing import TYPE_CHECKING, Literal, Type, TypeVar, overload, cast")
     all_imports.add("from pydantic import BaseModel")
     
     # Scan type definitions for imports
@@ -194,6 +194,9 @@ def write_consolidated_types_file(
     lines.append("# ============================================================================")
     lines.append("")
     
+    # Track which classes have already been written to avoid duplicates
+    written_classes: set[str] = set()
+    
     # Add all class definitions
     for _, sql_path, types_content, _, _, _, _ in sorted(type_definitions, key=lambda x: x[0]):
         # Split types_content by triple newlines to get each class section
@@ -209,14 +212,22 @@ def write_consolidated_types_file(
             class_lines: list[str] = []
             in_docstring = False
             docstring_delimiter = None
+            class_name: str | None = None
             
             for line in section_lines:
                 # Skip imports
                 if line.strip().startswith("from ") or line.strip().startswith("import "):
                     continue
                 
-                # Track docstrings
+                # Extract class name if this is a class definition line
                 stripped = line.strip()
+                if stripped.startswith("class ") and "(" in stripped:
+                    # Extract class name: "class ClassName(BaseModel):" -> "ClassName"
+                    class_match = stripped.split("(")[0].replace("class", "").strip()
+                    if class_match:
+                        class_name = class_match
+                
+                # Track docstrings
                 if stripped.startswith('"""') or stripped.startswith("'''"):
                     # Check if it's opening or closing
                     quote_count = stripped.count('"""') + stripped.count("'''")
@@ -241,9 +252,49 @@ def write_consolidated_types_file(
                 # Include everything else (class definitions and their content)
                 class_lines.append(line)
             
+            # Check if this class has already been written
+            if class_name and class_name in written_classes:
+                # Skip duplicate class definition
+                continue
+            
             # Add the class definition (skip if empty)
             if class_lines and any(l.strip().startswith("class ") for l in class_lines):
-                lines.extend(class_lines)
+                # Track written classes and handle duplicate fields
+                if class_name:
+                    written_classes.add(class_name)
+                    # Check for duplicate field names within the class
+                    field_names: set[str] = set()
+                    deduplicated_lines: list[str] = []
+                    in_class = False
+                    for cls_line in class_lines:
+                        stripped_line = cls_line.strip()
+                        # Detect class definition start
+                        if stripped_line.startswith("class ") and "(" in stripped_line:
+                            in_class = True
+                            deduplicated_lines.append(cls_line)
+                            continue
+                        # Detect class end (empty line or next class)
+                        if in_class and (not stripped_line or stripped_line.startswith("class ")):
+                            if not stripped_line:
+                                deduplicated_lines.append(cls_line)
+                            else:
+                                # Next class starts, reset
+                                in_class = False
+                                deduplicated_lines.append(cls_line)
+                            continue
+                        # Within class, check for duplicate field definitions
+                        if in_class and ":" in stripped_line and not stripped_line.startswith("#"):
+                            # Extract field name: "field_name: type" -> "field_name"
+                            field_match = stripped_line.split(":")[0].strip()
+                            if field_match and field_match not in ("pass", "def", "return"):
+                                if field_match in field_names:
+                                    # Skip duplicate field
+                                    continue
+                                field_names.add(field_match)
+                        deduplicated_lines.append(cls_line)
+                    lines.extend(deduplicated_lines)
+                else:
+                    lines.extend(class_lines)
                 lines.append("")
     
     lines.append("")
@@ -440,7 +491,7 @@ def write_consolidated_types_file(
     lines.append('    """')
     lines.append("    # Get types from registry")
     lines.append("    input_type, output_type = get_sql_types(file_path)")
-    lines.append("    return input_type, output_type")
+    lines.append("    return cast(tuple[Type[TInput], Type[TOutput]], (input_type, output_type))")
     lines.append("")
     lines.append("")
     lines.append("# Overload declarations for load_api_types() - provides strong type hints")
@@ -504,7 +555,7 @@ def write_consolidated_types_file(
     lines.append('    """')
     lines.append("    # Get types from registry")
     lines.append("    api_request_type, api_response_type = get_api_types(file_path)")
-    lines.append("    return api_request_type, api_response_type")
+    lines.append("    return cast(tuple[Type[TInput], Type[TOutput]], (api_request_type, api_response_type))")
 
     types_file.write_text("\n".join(lines))
 

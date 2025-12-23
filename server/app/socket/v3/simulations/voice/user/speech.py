@@ -296,7 +296,7 @@ async def _simulation_voice_user_speech_impl(
                         chat_group_row = await conn.fetchrow(sql_get_group, str(chat_id_uuid))
                         if chat_group_row:
                             group_id = chat_group_row["group_id"]
-                            sql_link_run = load_sql("app/sql/v3/simulations/link_run_to_group.sql")
+                            sql_link_run = load_sql("app/sql/v3/simulations/link_run_to_group_complete.sql")
                             await conn.execute(sql_link_run, str(group_id), str(run_id))
 
                         # Link message to run (if message exists)
