@@ -1,20 +1,19 @@
 """Leaderboard bundle v3 API endpoint."""
 
 import json
+from datetime import datetime
 from enum import Enum
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from app.infra.activity.audit import audit_activity, audit_set
+from app.infra.error.handle_route_error import handle_route_error
+from app.main import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
-
-from app.main import get_db
-from app.infra.activity.audit import audit_activity, audit_set
-from datetime import datetime
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from app.infra.error.handle_route_error import handle_route_error
 from utils.sql_helper import load_sql
 
 
@@ -164,21 +163,7 @@ async def get_leaderboard(
         # Leaderboard shows aggregated data across all profiles
         profile_id = request.state.profile_id
 
-        # Build WHERE clause inline
-        conditions = []
-        params: list[Any] = []
-        param_counter = 1
-
-        # Date filters - convert ISO strings to datetime objects
-        conditions.append(f"a.attempt_created_at >= ${param_counter}")
-        params.append(datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")))
-        param_counter += 1
-
-        conditions.append(f"a.attempt_created_at < ${param_counter}")
-        params.append(datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")))
-        param_counter += 1
-
-        # Simulation type filters
+        # Build simulation type filter (complex conditional logic, kept as dynamic)
         sim_filters = [f.value for f in filters.simulationFilters] if filters.simulationFilters else ["general"]
         sim_conditions = []
 
@@ -194,53 +179,24 @@ async def get_leaderboard(
                     "(a.is_archived = TRUE OR (a.is_general = FALSE AND a.is_practice = FALSE))"
                 )
 
+        simulation_type_filter = ""
         if sim_conditions:
-            conditions.append(f"({' OR '.join(sim_conditions)})")
+            simulation_type_filter = f"AND ({' OR '.join(sim_conditions)})"
 
-        # Profile filter - not used for leaderboard (shows aggregated data)
-
-        # Role filter
-        if filters.roles:
-            conditions.append(f"a.profile_role = ANY(${param_counter})")
-            params.append(filters.roles)
-            param_counter += 1
-
-        # Simulation filter by cohorts
-        if filters.cohortIds:
-            conditions.append(
-                f"""a.simulation_id IN (
-                    SELECT DISTINCT s.id
-                    FROM simulations s
-                    WHERE s.active = TRUE
-                      AND (
-                          EXISTS (
-                              SELECT 1 
-                              FROM cohort_simulations cs 
-                              WHERE cs.simulation_id = s.id 
-                                AND cs.cohort_id = ANY(${param_counter}::uuid[])
-                                AND cs.active = TRUE
-                          )
-                          OR
-                          (s.practice_simulation = TRUE 
-                           AND NOT EXISTS (
-                               SELECT 1 
-                               FROM cohort_simulations cs2 
-                               WHERE cs2.simulation_id = s.id 
-                                 AND cs2.active = TRUE
-                           ))
-                      )
-                )"""
-            )
-            params.append(filters.cohortIds)
-            param_counter += 1
-
-        where_clause = " AND ".join(conditions) if conditions else "TRUE"
+        # Build parameters (dates are always present, role and cohort are optional)
+        params: list[Any] = [
+            datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
+            datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),    # $2
+            filters.roles if filters.roles else None,                          # $3
+            filters.cohortIds if filters.cohortIds else None,                  # $4
+        ]
 
         # Load SQL template
         sql_template = load_sql("app/sql/v3/leaderboard/leaderboard_bundle.sql")
 
-        # Replace WHERE clause placeholder
-        sql_query = sql_template.replace("{WHERE_CLAUSE}", where_clause)
+        # Replace simulation type filter (default is "AND a.is_general = TRUE", replaced with actual filter)
+        # Default ensures SQL compiles; route replaces with actual simulation type filter
+        sql_query = sql_template.replace("AND a.is_general = TRUE", simulation_type_filter if simulation_type_filter else "AND a.is_general = TRUE")
         sql_params = tuple(params)
 
         # Disable JIT compilation for this complex query to avoid re-compilation overhead

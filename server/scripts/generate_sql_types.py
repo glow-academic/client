@@ -7,6 +7,7 @@ for request/response types.
 
 import asyncio
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -186,7 +187,6 @@ async def main() -> int:
                     # Extract the object name (function, relation, column)
                     if "function" in error_msg:
                         # Extract function name
-                        import re
                         match = re.search(r"function (\w+)\([^)]+\) does not exist", error_msg)
                         if match:
                             core_error = f"function {match.group(1)} does not exist"

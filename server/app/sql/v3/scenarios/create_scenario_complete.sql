@@ -26,7 +26,7 @@ WITH user_profile AS (
 validate_create_permissions AS (
     -- Validate department permissions for create operation
     SELECT validate_department_create_permissions(
-        up.role,
+        up.role::text,
         $13::text[]
     ) as validation_passed
     FROM user_profile up
@@ -371,9 +371,9 @@ link_question_times AS (
     INSERT INTO scenario_question_times (scenario_id, question_id, video_id, time, active, created_at, updated_at)
     SELECT 
         ns.scenario_id::uuid,
-        q_id::uuid,
-        v_id::uuid,
-        time_val,
+        (q_entry.key)::uuid as question_id,
+        (v_entry.key)::uuid as video_id,
+        time_val::numeric as time,
         true,
         NOW(),
         NOW()
@@ -409,12 +409,12 @@ link_image_departments AS (
 link_video_departments AS (
     INSERT INTO video_departments (video_id, department_id, active, created_at, updated_at)
     SELECT DISTINCT
-        video_id::uuid,
+        vid::uuid as video_id,
         dept_id::uuid,
         true,
         NOW(),
         NOW()
-    FROM UNNEST($20::text[]) as video_id
+    FROM UNNEST($20::text[]) as vid
     CROSS JOIN UNNEST($13::text[]) as dept_id
     WHERE COALESCE(array_length($20::text[], 1), 0) > 0
     AND COALESCE(array_length($13::text[], 1), 0) > 0

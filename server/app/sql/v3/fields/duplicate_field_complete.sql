@@ -10,8 +10,7 @@ original_field AS (
     SELECT 
         f.id,
         f.name,
-        f.description,
-        f.default_field
+        f.description
     FROM fields f
     WHERE f.id = $1::uuid
 ),
@@ -30,15 +29,11 @@ original_departments AS (
 new_field AS (
     INSERT INTO fields (
         name,
-        description,
-        value,
-        default_field
+        description
     )
     SELECT 
         of.name || ' (Copy)',
-        of.description,
-        of.value,
-        of.default_field
+        of.description
     FROM original_field of
     RETURNING id::text as field_id, name as field_name
 ),

@@ -10,7 +10,8 @@ WITH attempt_video_check AS (
         sa.simulation_id
     FROM simulation_attempts sa
     JOIN simulations s ON s.id = sa.simulation_id
-    JOIN simulation_videos sv ON sv.simulation_id = s.id AND sv.active = true
+    JOIN simulation_scenarios ss ON ss.simulation_id = s.id AND ss.active = true
+    JOIN scenario_videos sv ON sv.scenario_id = ss.scenario_id AND sv.active = true
     JOIN videos v ON v.id = sv.video_id AND v.active = true
     WHERE sa.id = $1::uuid AND v.id = $2::uuid
     LIMIT 1

@@ -49,7 +49,7 @@ link_to_runs AS (
     INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
     SELECT 
         dm.id,
-        run_id,
+        run_id::uuid,
         NOW(),
         NOW()
     FROM developer_msg dm

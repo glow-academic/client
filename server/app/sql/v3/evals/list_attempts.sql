@@ -170,7 +170,7 @@ SELECT
     $6 as page,
     $7 as page_size,
     CASE 
-        WHEN $7 > 0 THEN CEIL(COALESCE((SELECT count FROM total_count), 0)::float / $7)
+        WHEN $7::int > 0 THEN CEIL(COALESCE((SELECT count FROM total_count), 0)::float / $7::float)
         ELSE 0
     END as total_pages,
     up.actor_name

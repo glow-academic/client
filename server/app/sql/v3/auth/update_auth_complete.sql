@@ -14,18 +14,16 @@ auth_id_resolved AS (
     SELECT $1::uuid as auth_id
 ),
 delete_existing_keys AS (
-    -- Delete all existing auth_item_keys links
-    DELETE FROM auth_item_keys
-    WHERE auth_item_id IN (
-        SELECT id FROM auth_items WHERE auth_id = (SELECT auth_id FROM auth_id_resolved)
-    )
+    -- NOTE: auth_item_keys table was removed in migration 74
+    -- Keys are now linked through settings (setting_auth_keys, setting_provider_keys)
+    -- This CTE is kept for compatibility but does nothing
+    SELECT 1 WHERE false
 ),
 delete_existing_values AS (
-    -- Delete all existing auth_item_values
-    DELETE FROM auth_item_values
-    WHERE auth_item_id IN (
-        SELECT id FROM auth_items WHERE auth_id = (SELECT auth_id FROM auth_id_resolved)
-    )
+    -- NOTE: auth_item_values table was removed in migration 74
+    -- Values are now managed through settings (setting_auth_values)
+    -- This CTE is kept for compatibility but does nothing
+    SELECT 1 WHERE false
 ),
 delete_existing_items AS (
     -- Delete all existing auth items (cascade will handle keys/values)
@@ -79,22 +77,10 @@ new_items AS (
     RETURNING id::text as item_id, encrypted
 ),
 link_encrypted_keys AS (
-    -- Link encrypted items to keys via auth_item_keys
-    INSERT INTO auth_item_keys (auth_item_id, key_id, active, created_at, updated_at)
-    SELECT 
-        ni.item_id::uuid,
-        ie.item_key_id::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM new_items ni
-    JOIN items_expanded ie ON ni.encrypted = ie.item_encrypted
-    WHERE ni.encrypted = true 
-      AND ie.item_key_id IS NOT NULL 
-      AND ie.item_key_id != ''
-    ON CONFLICT (auth_item_id, key_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
+    -- NOTE: auth_item_keys table was removed in migration 74
+    -- Keys are now linked through settings (setting_auth_keys, setting_provider_keys)
+    -- This CTE is kept for compatibility but does nothing
+    SELECT 1 WHERE false
 )
 SELECT 
     ua.auth_id,

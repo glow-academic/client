@@ -37,7 +37,7 @@ profile_insert AS (
         pd.profile_id,
         pd.first_name,
         pd.last_name,
-        pd.role,
+        pd.role::profile_role,
         true  -- active
     FROM profiles_data pd
     WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE existing_emails IS NOT NULL)

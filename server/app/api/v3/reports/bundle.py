@@ -1,22 +1,21 @@
 """Reports bundle v3 API endpoint."""
 
 import json
+from datetime import datetime
 from enum import Enum
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.api.v3.dashboard.bundle import MetricResponse
 from app.api.v3.reports.export import router as export_router
-from app.main import get_db
 from app.infra.activity.audit import audit_activity, audit_set
-from datetime import datetime
+from app.infra.error.handle_route_error import handle_route_error
+from app.main import get_db
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from app.infra.error.handle_route_error import handle_route_error
 from utils.sql_helper import load_sql
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -317,12 +316,15 @@ async def get_reports(
         offset = page * page_size
         limit_offset_clause = f"LIMIT {page_size} OFFSET {offset}"
 
-        # Replace placeholders in SQL template
-        sql_query = sql_template.replace("{PROFILE_WHERE_CLAUSE}", profile_where)
-        sql_query = sql_query.replace("{ANALYTICS_WHERE_CLAUSE}", analytics_where)
-        sql_query = sql_query.replace("{ORDER_BY_CLAUSE}", order_by_clause)
-        sql_query = sql_query.replace("{LIMIT_OFFSET_CLAUSE}", limit_offset_clause)
-        sql_query = sql_query.replace("{JSON_AGG_ORDER_BY}", json_agg_order_by)
+        # Replace SQL text (defaults ensure SQL compiles; route replaces with actual values)
+        # WHERE clauses: Replace "WHERE TRUE" with actual filters
+        sql_query = sql_template.replace("WHERE TRUE", f"WHERE {profile_where}", 1)  # First occurrence (filtered_profiles)
+        sql_query = sql_query.replace("WHERE TRUE", f"WHERE {analytics_where}", 1)  # Second occurrence (filt)
+        # ORDER BY: Replace default with actual sort column
+        sql_query = sql_query.replace("ORDER BY created_at DESC NULLS LAST", order_by_clause, 1)  # First occurrence (paginated_metrics)
+        sql_query = sql_query.replace("ORDER BY created_at DESC NULLS LAST", json_agg_order_by)  # Second occurrence (json_agg)
+        # LIMIT/OFFSET: Replace default with actual pagination
+        sql_query = sql_query.replace("LIMIT 100 OFFSET 0", limit_offset_clause)
         sql_params = tuple(params)
 
         # Disable JIT compilation for this complex query to avoid re-compilation overhead

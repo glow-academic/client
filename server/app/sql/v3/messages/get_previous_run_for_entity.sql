@@ -24,11 +24,11 @@ WITH previous_runs AS (
     
     UNION ALL
     
-    -- Get previous runs for outline via outline_runs (outlines are not created by tool_calls, so keep original)
-    SELECT DISTINCT or_.run_id, or_.created_at
-    FROM outline_runs or_
-    WHERE or_.outline_id = $1::uuid
-    AND $2::text = 'outline'
+    -- NOTE: outline_runs table was removed in migration 90
+    -- Outlines are no longer a separate entity
+    -- This branch returns no rows for 'outline' entity type
+    SELECT DISTINCT NULL::uuid as run_id, NULL::timestamptz as created_at
+    WHERE false AND $2::text = 'outline'
 ),
 latest_run AS (
     -- Get the most recent run

@@ -9,12 +9,12 @@ SELECT
         '[]'::json
     ) as document_ids,
     COALESCE(
-        json_agg(DISTINCT spi.parameter_item_id::text) FILTER (WHERE spi.parameter_item_id IS NOT NULL),
+        json_agg(DISTINCT sf.field_id::text) FILTER (WHERE sf.field_id IS NOT NULL),
         '[]'::json
     ) as parameter_item_ids
 FROM scenarios s
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id AND sd.active = true
-LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id AND spi.active = true
+LEFT JOIN scenario_fields sf ON sf.scenario_id = s.id AND sf.active = true
 WHERE s.id = $1::uuid
 GROUP BY s.id, s.scenario_agent_id
 

@@ -13,10 +13,9 @@ WITH questions_data AS (
 ),
 create_questions AS (
     -- Create questions (or get existing if they match exactly)
-    INSERT INTO questions (question_text, type, allow_multiple, active, created_at, updated_at)
+    INSERT INTO questions (question_text, allow_multiple, active, created_at, updated_at)
     SELECT DISTINCT
         qd.question_text,
-        qd.question_type::question_type,
         qd.allow_multiple,
         true,
         NOW(),
@@ -24,18 +23,16 @@ create_questions AS (
     FROM questions_data qd
     WHERE qd.question_text IS NOT NULL AND qd.question_text != ''
     ON CONFLICT DO NOTHING
-    RETURNING id::uuid as question_id, question_text, type, allow_multiple
+    RETURNING id::uuid as question_id, question_text, allow_multiple
 ),
 get_existing_questions AS (
     -- Get existing questions that match
     SELECT 
         q.id as question_id,
         q.question_text,
-        q.type,
         q.allow_multiple
     FROM questions q
     JOIN questions_data qd ON q.question_text = qd.question_text 
-        AND q.type::text = qd.question_type 
         AND q.allow_multiple = qd.allow_multiple
     WHERE q.active = true
 ),
@@ -53,7 +50,6 @@ options_data AS (
         COALESCE((opt->>'is_correct')::boolean, false) as is_correct
     FROM all_questions aq
     JOIN questions_data qd ON aq.question_text = qd.question_text 
-        AND aq.type::text = qd.question_type 
         AND aq.allow_multiple = qd.allow_multiple
     CROSS JOIN jsonb_array_elements(qd.options_json) as opt
     WHERE qd.question_type = 'choice' AND qd.options_json IS NOT NULL
@@ -124,7 +120,6 @@ link_question_answers AS (
 SELECT DISTINCT
     aq.question_id,
     aq.question_text,
-    aq.type,
     aq.allow_multiple
 FROM all_questions aq
 ORDER BY aq.question_id;

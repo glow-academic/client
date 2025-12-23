@@ -75,12 +75,14 @@ profile_role_lookup AS (
     FROM resolve_profile_id rpi
 ),
 -- Filter analytics for items: for member mode include profileId filter
--- NOTE: WHERE clause here is built dynamically - see route implementation
 -- Also filter by simulation_ids from cohorts (new filtering order)
+-- Parameters: $1=start_date, $2=end_date (for date filtering)
 filt AS (
     SELECT a.* 
     FROM analytics a, profile_role_lookup prl, resolve_profile_id rpi
-    WHERE {WHERE_CLAUSE_PLACEHOLDER}
+    WHERE a.attempt_created_at >= $1 
+      AND a.attempt_created_at < $2 
+      AND a.is_general = TRUE
       AND (NOT prl.is_member_mode OR a.profile_id = rpi.resolved_profile_id)
       -- Filter by simulation_ids from cohorts (new filtering order)
       AND (cardinality($4::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))

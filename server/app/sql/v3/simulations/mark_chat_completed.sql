@@ -1,6 +1,7 @@
--- Mark simulation chat as completed
+-- Mark chat as completed
 -- Parameters: $1=chat_id (uuid)
-UPDATE simulation_chats
-SET completed = true
+UPDATE chats
+SET completed = true,
+    updated_at = NOW()
 WHERE id = $1::uuid
 

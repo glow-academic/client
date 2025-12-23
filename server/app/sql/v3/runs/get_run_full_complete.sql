@@ -49,27 +49,46 @@ scenarios_data AS (
         jsonb_build_object(
             'id', s.id::text,
             'name', s.name,
-            'problemStatement', s.problem_statement,
-            'departmentId', s.department_id::text,
+            'problemStatement', COALESCE(
+                (SELECT ps.problem_statement
+                 FROM scenario_problem_statements sps
+                 JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+                 WHERE sps.scenario_id = s.id AND sps.active = true
+                 LIMIT 1),
+                NULL
+            ),
+            'departmentId', COALESCE(
+                (SELECT sd.department_id::text
+                 FROM scenario_departments sd
+                 WHERE sd.scenario_id = s.id AND sd.active = true
+                 LIMIT 1),
+                NULL
+            ),
             'active', s.active,
-            'personaId', s.persona_id::text,
+            'personaId', COALESCE(
+                (SELECT sp.persona_id::text
+                 FROM scenario_personas sp
+                 WHERE sp.scenario_id = s.id AND sp.active = true
+                 LIMIT 1),
+                NULL
+            ),
             'personaName', per.name,
             'personaIcon', per.icon,
             'personaColor', per.color,
             'createdAt', s.created_at,
             'updatedAt', s.updated_at,
             'generated', s.generated,
-            'defaultScenario', s.default_scenario,
-            'copyPasteAllowed', s.copy_paste_allowed,
             'objectives', COALESCE(
-                (SELECT array_agg(so.objective ORDER BY so.idx)
+                (SELECT array_agg(o.objective ORDER BY so.idx)
                  FROM scenario_objectives so
+                 JOIN objectives o ON o.id = so.objective_id
                  WHERE so.scenario_id = s.id),
                 NULL
             )
         ) as scenario_data
     FROM scenarios s
-    LEFT JOIN personas per ON per.id = s.persona_id
+    LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
+    LEFT JOIN personas per ON per.id = sp.persona_id
     CROSS JOIN chats_base cb
     WHERE s.id = cb.scenario_id
 ),

@@ -25,4 +25,5 @@ SELECT
 FROM stopped_runs sr
 CROSS JOIN eval_info ei
 CROSS JOIN actor_profile ap
+GROUP BY ei.eval_name, ap.actor_name
 

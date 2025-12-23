@@ -2,7 +2,7 @@
 -- Parameters: $1=scenarioId, $2=profile_id (uuid, required)
 -- Returns: scenario_id, name, usage_count, deleted (boolean), actor_name
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH actor_profile AS (
     SELECT 
         $2::uuid as resolved_profile_id,
         COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name

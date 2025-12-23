@@ -12,7 +12,6 @@ parameter_items_data AS (
         f.id,
         f.name,
         COALESCE(f.description, '') as description,
-        f.value,
         fp.parameter_id,
         p.name as parameter_name,
         p.document_parameter
@@ -31,13 +30,12 @@ parameter_items_data AS (
           fd.department_id IN (SELECT department_id FROM user_departments)
           OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
       )
-    GROUP BY f.id, f.name, f.description, f.value, fp.parameter_id, p.id, p.name, p.document_parameter
+    GROUP BY f.id, f.name, f.description, fp.parameter_id, p.id, p.name, p.document_parameter
 )
 SELECT 
     id::text,
     name,
     description,
-    value,
     parameter_id::text,
     parameter_name,
     document_parameter

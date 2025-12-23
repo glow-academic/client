@@ -3,7 +3,7 @@
 --             $5=profile_ids (text[]), $6=simulation_ids (text[]), $7=profile_id (uuid, required)
 -- Returns: id, actor_name
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH actor_profile AS (
     SELECT 
         $7::uuid as resolved_profile_id,
         p.first_name || ' ' || p.last_name as actor_name

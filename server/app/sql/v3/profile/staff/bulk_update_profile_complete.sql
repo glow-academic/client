@@ -54,8 +54,8 @@ profile_update AS (
     -- Update profiles table with dynamic SET clauses
     UPDATE profiles
     SET 
-        role = COALESCE($3, role),
-        active = COALESCE($4, active),
+        role = COALESCE($3::profile_role, role),
+        active = COALESCE($4::boolean, active),
         updated_at = NOW()
     WHERE id IN (SELECT id FROM validated_profiles)
     RETURNING id

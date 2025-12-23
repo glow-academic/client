@@ -14,7 +14,7 @@ WITH user_profile AS (
 validate_create_permissions AS (
     -- Validate department permissions for create operation
     SELECT validate_department_create_permissions(
-        up.role,
+        up.role::text,
         $5::text[]
     ) as validation_passed
     FROM user_profile up

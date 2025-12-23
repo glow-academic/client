@@ -78,7 +78,7 @@ field_connections_fixed AS (
 ),
 link_fields_to_parameter AS (
     -- Link existing fields to parameter via parameter_fields junction with default and active flags
-    INSERT INTO parameter_fields (parameter_id, field_id, default, active, created_at, updated_at)
+    INSERT INTO parameter_fields (parameter_id, field_id, "default", active, created_at, updated_at)
     SELECT 
         np.parameter_id::uuid,
         fcf.field_id,
@@ -91,7 +91,7 @@ link_fields_to_parameter AS (
     WHERE EXISTS (SELECT 1 FROM fields f WHERE f.id = fcf.field_id AND f.active = true)
     ON CONFLICT (parameter_id, field_id) DO UPDATE SET
         active = EXCLUDED.active,
-        default = EXCLUDED.default,
+        "default" = EXCLUDED."default",
         updated_at = NOW()
 ),
 new_items AS (

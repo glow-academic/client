@@ -25,7 +25,7 @@ user_departments AS (
 validate_update_permissions AS (
     -- Validate department permissions for update operation
     SELECT validate_department_update_permissions(
-        up.role,
+        up.role::text,
         ocd.department_ids,
         ud.department_ids
     ) as validation_passed
@@ -84,8 +84,9 @@ replace_scenarios AS (
     DELETE FROM simulation_scenarios WHERE simulation_id = $1::uuid
 ),
 replace_videos AS (
-    -- Delete all existing video links
-    DELETE FROM simulation_videos WHERE simulation_id = $1::uuid
+    -- Videos are now linked via scenarios, not directly to simulations
+    -- This CTE is kept for compatibility but does nothing
+    SELECT 1 WHERE false
 ),
 scenarios_data AS (
     -- Prepare scenarios with their active flags, switch flags, rubric_id, time_limit_seconds
@@ -214,26 +215,11 @@ link_scenarios AS (
     FROM scenarios_with_order swo
 ),
 link_videos AS (
-    -- Insert new videos with proper ordering (active first, then inactive), continuing position from scenarios
-    INSERT INTO simulation_videos (simulation_id, video_id, active, position, show_problem_statement, show_objectives, show_image, created_at, updated_at)
-    SELECT 
-        $1::uuid,
-        vwo.video_id::uuid,
-        vwo.active_flag,
-        vwo.position,
-        vwo.show_problem_statement,
-        vwo.show_objectives,
-        vwo.show_image,
-        NOW(),
-        NOW()
-    FROM videos_with_order vwo
-    ON CONFLICT (simulation_id, video_id) DO UPDATE SET
-        active = EXCLUDED.active,
-        position = EXCLUDED.position,
-        show_problem_statement = EXCLUDED.show_problem_statement,
-        show_objectives = EXCLUDED.show_objectives,
-        show_image = EXCLUDED.show_image,
-        updated_at = NOW()
+    -- NOTE: simulation_videos table was removed in migration 90
+    -- Videos are now linked to scenarios, not directly to simulations
+    -- This CTE is kept for compatibility but does nothing
+    -- TODO: Reimplement video linking through scenario_videos if needed
+    SELECT 1 WHERE false
 )
 SELECT 
     us.simulation_id,

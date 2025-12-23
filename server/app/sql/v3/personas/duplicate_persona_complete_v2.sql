@@ -17,8 +17,7 @@ original_persona AS (
         p.color,
         p.icon
     FROM personas p
-    LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
-    LEFT JOIN prompts pr ON pr.id = pp.prompt_id
+    LEFT JOIN prompts pr ON pr.id IS NULL
     WHERE p.id = $1
 ),
 original_departments AS (

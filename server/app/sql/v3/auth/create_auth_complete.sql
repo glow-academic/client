@@ -5,7 +5,7 @@
 -- Values are managed separately in settings page, not included here
 -- Returns: auth_id, actor_name
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH actor_profile AS (
     SELECT 
         $5::uuid as resolved_profile_id,
         p.first_name || ' ' || p.last_name as actor_name
@@ -56,22 +56,10 @@ new_items AS (
     RETURNING id::text as item_id, encrypted
 ),
 link_encrypted_keys AS (
-    -- Link encrypted items to keys via auth_item_keys
-    INSERT INTO auth_item_keys (auth_item_id, key_id, active, created_at, updated_at)
-    SELECT 
-        ni.item_id::uuid,
-        ie.item_key_id::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM new_items ni
-    JOIN items_expanded ie ON ni.encrypted = ie.item_encrypted
-    WHERE ni.encrypted = true 
-      AND ie.item_key_id IS NOT NULL 
-      AND ie.item_key_id != ''
-    ON CONFLICT (auth_item_id, key_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
+    -- NOTE: auth_item_keys table was removed in migration 74
+    -- Keys are now linked through settings (setting_auth_keys, setting_provider_keys)
+    -- This CTE is kept for compatibility but does nothing
+    SELECT 1 WHERE false
 )
 SELECT 
     na.auth_id,

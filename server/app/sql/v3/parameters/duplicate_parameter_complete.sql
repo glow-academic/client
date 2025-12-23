@@ -46,8 +46,7 @@ original_fields AS (
     SELECT 
         f.id as original_field_id,
         f.name,
-        f.description,
-        f.value
+        f.description
     FROM parameter_fields fp
     JOIN fields f ON f.id = fp.field_id
     WHERE fp.parameter_id = $1::uuid AND fp.active = true
@@ -64,13 +63,11 @@ new_fields AS (
     -- Create all fields (duplicates of original fields)
     INSERT INTO fields (
         name,
-        description,
-        value
+        description
     )
     SELECT 
         of.name,
-        of.description,
-        of.value
+        of.description
     FROM original_fields of
     RETURNING id::text as field_id, name as field_name
 ),

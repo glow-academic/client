@@ -229,7 +229,7 @@ key_mapping_data AS (
         '{}'::jsonb
     ) as key_mapping,
     array_agg(dk.key_id ORDER BY dk.name) as key_ids
-    FROM department_keys dk
+    FROM (SELECT NULL::uuid as key_id, NULL::text as name, NULL::boolean as active WHERE false) dk
 ),
 model_key_associations AS (
     -- Get model-key associations for this department via settings

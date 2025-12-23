@@ -19,8 +19,9 @@ question_option_check AS (
     FROM quiz_check qc
     JOIN quizzes q ON q.id = qc.quiz_id
     JOIN videos v ON v.id = q.video_id
-    JOIN video_questions vq ON vq.video_id = v.id AND vq.question_id = $2::uuid AND vq.active = true
-    JOIN questions q2 ON q2.id = vq.question_id AND q2.id = $2::uuid AND q2.active = true
+    JOIN scenario_videos sv ON sv.video_id = v.id AND sv.active = true
+    JOIN scenario_questions sq ON sq.scenario_id = sv.scenario_id AND sq.question_id = $2::uuid AND sq.active = true
+    JOIN questions q2 ON q2.id = sq.question_id AND q2.id = $2::uuid AND q2.active = true
     JOIN question_options qo ON qo.question_id = q2.id AND qo.option_id = $3::uuid AND qo.active = true
     JOIN options o ON o.id = qo.option_id AND o.id = $3::uuid AND o.active = true
     LIMIT 1

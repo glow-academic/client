@@ -716,9 +716,9 @@ filtered_chats AS (
     WHERE chat_id IS NOT NULL
 ),
 latest_grade_per_chat AS (
-    SELECT DISTINCT ON (cm.chat_id)
+    SELECT DISTINCT ON (c.id)
         scg.id,
-        cm.chat_id,
+        c.id AS chat_id,
         scg.rubric_id
     FROM grades scg
     JOIN runs r ON r.id = scg.run_id

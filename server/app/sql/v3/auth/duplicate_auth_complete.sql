@@ -7,7 +7,7 @@ WITH actor_profile AS (
     FROM profiles p
     WHERE p.id = $2::uuid
 ),
-WITH source_auth AS (
+source_auth AS (
     SELECT id, name, description, active
     FROM auth
     WHERE id = $1::uuid
@@ -28,8 +28,7 @@ new_auth AS (
 source_items AS (
     SELECT 
         ai.name,
-        ai.description,
-        ai.value
+        ai.description
     FROM source_auth sa
     JOIN auth_items ai ON ai.auth_id = sa.id
 ),
@@ -37,14 +36,12 @@ new_items AS (
     INSERT INTO auth_items (
         auth_id,
         name,
-        description,
-        value
+        description
     )
     SELECT 
         na.auth_id::uuid,
         si.name,
-        si.description,
-        si.value
+        si.description
     FROM new_auth na
     CROSS JOIN source_items si
     RETURNING id::text as item_id

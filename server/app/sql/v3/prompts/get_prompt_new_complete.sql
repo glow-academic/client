@@ -1,6 +1,9 @@
 -- Get default prompt structure for new prompt creation
 -- Parameters: $1=profileId (uuid)
-WITH user_departments AS (
+WITH resolve_profile_id AS (
+    SELECT $1::uuid as resolved_profile_id
+),
+user_departments AS (
     SELECT DISTINCT pd.department_id
     FROM resolve_profile_id rpi
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id

@@ -25,7 +25,7 @@ user_departments AS (
 validate_update_permissions AS (
     -- Validate department permissions for update operation
     SELECT validate_department_update_permissions(
-        up.role,
+        up.role::text,
         ocd.department_ids,
         ud.department_ids
     ) as validation_passed

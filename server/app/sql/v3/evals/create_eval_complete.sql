@@ -12,7 +12,7 @@ WITH user_profile AS (
 validate_create_permissions AS (
     -- Validate department permissions for create operation (convert uuid[] to text[])
     SELECT validate_department_create_permissions(
-        up.role,
+        up.role::text,
         ARRAY(SELECT dept_id::text FROM UNNEST(COALESCE($7::uuid[], ARRAY[]::uuid[])) as dept_id)
     ) as validation_passed
     FROM user_profile up

@@ -5,6 +5,6 @@
 
 INSERT INTO grades 
 (run_id, rubric_id, description, passed, score, time_taken, created_at)
-VALUES ($1::uuid, $7::uuid, $3, $4, $5, $6, NOW())
+VALUES ($1::uuid, $7::uuid, $3::text, $4::boolean, $5::numeric, $6::numeric, NOW())
 RETURNING id::text as grade_id
 

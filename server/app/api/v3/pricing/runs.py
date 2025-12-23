@@ -6,15 +6,14 @@ from enum import Enum
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from app.infra.activity.audit import audit_set
+from app.infra.error.handle_route_error import handle_route_error
+from app.main import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
-
-from app.main import get_db
-from app.infra.activity.audit import audit_set
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from app.infra.error.handle_route_error import handle_route_error
 from utils.sql_helper import load_sql
 
 
@@ -242,19 +241,18 @@ async def get_pricing_runs(
         # Also need ORDER BY in json_agg to preserve sort order
         json_agg_order_by = f"ORDER BY {sort_column} {sort_order} NULLS LAST"
 
-        # Build LIMIT/OFFSET clause
+        # Build LIMIT/OFFSET parameters
         page = filters.page or 0
         page_size = filters.pageSize or 10
         offset = page * page_size
-        limit_offset_clause = f"LIMIT {page_size} OFFSET {offset}"
 
         # Load SQL template
         sql_template = load_sql("app/sql/v3/pricing/runs.sql")
 
-        # Replace placeholders in SQL template
-        sql_query = sql_template.replace("{ORDER_BY_CLAUSE}", order_by_clause)
-        sql_query = sql_query.replace("{LIMIT_OFFSET_CLAUSE}", limit_offset_clause)
-        sql_query = sql_query.replace("{JSON_AGG_ORDER_BY}", json_agg_order_by)
+        # Replace ORDER BY clauses (column names cannot be parameterized in PostgreSQL, but route validates against whitelist)
+        # Default ORDER BY in SQL ensures compilation; we replace with actual sort column
+        sql_query = sql_template.replace("ORDER BY created_at DESC NULLS LAST", order_by_clause, 1)  # Replace first occurrence
+        sql_query = sql_query.replace("ORDER BY created_at DESC NULLS LAST", json_agg_order_by)  # Replace second occurrence
 
         sql_params = (
             start_dt,
@@ -268,6 +266,8 @@ async def get_pricing_runs(
             model_ids,
             profile_ids,
             actor_ids,
+            page_size,  # $12
+            offset,     # $13
         )
 
         # Disable JIT compilation for this complex query to avoid re-compilation overhead

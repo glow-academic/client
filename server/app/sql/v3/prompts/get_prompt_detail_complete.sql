@@ -1,6 +1,9 @@
 -- Get prompt detail with department relationships, agent relationships, persona relationships, and permissions
 -- Parameters: $1=promptId (uuid), $2=profileId (uuid)
-WITH prompt_data AS (
+WITH resolve_profile_id AS (
+    SELECT $2::uuid as resolved_profile_id
+),
+prompt_data AS (
     SELECT 
         pr.id as prompt_id,
         pr.name,
@@ -27,10 +30,7 @@ prompt_agents_data AS (
 ),
 prompt_personas_data AS (
     SELECT 
-        ARRAY_AGG(pp.persona_id::text ORDER BY p.name) as persona_ids
-    FROM persona_prompts pp
-    JOIN personas p ON p.id = pp.persona_id
-    WHERE pp.prompt_id = $1::uuid AND pp.active = true AND p.active = true
+        ARRAY[]::text[] as persona_ids
 ),
 valid_depts AS (
     SELECT 
@@ -102,9 +102,9 @@ persona_mapping_data AS (
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
-    FROM persona_prompts pp
-    JOIN personas p ON p.id = pp.persona_id
-    WHERE pp.prompt_id = $1::uuid AND pp.active = true AND p.active = true
+    FROM prompts pr
+    CROSS JOIN personas p ON false
+    WHERE pr.id = $1::uuid AND false
 )
 SELECT 
     pd.*,

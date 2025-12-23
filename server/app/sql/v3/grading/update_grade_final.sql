@@ -4,8 +4,7 @@
 UPDATE grades 
 SET description = $2::text,
     passed = $3::boolean,
-    score = $4::integer,
-    updated_at = NOW()
+    score = $4::integer
 WHERE id = $1::uuid
 RETURNING id::text
 

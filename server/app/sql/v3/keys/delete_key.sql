@@ -23,10 +23,8 @@ key_info AS (
     SELECT id, name FROM keys WHERE id = $1::uuid
 ),
 department_keys_data AS (
-    SELECT 
-        ARRAY_AGG(kd.department_id::text ORDER BY kd.created_at) as department_ids
-    FROM department_keys kd
-    WHERE kd.key_id = $1::uuid AND kd.active = true
+    -- NOTE: department_keys table was removed in migration 74
+    SELECT ARRAY[]::text[] as department_ids
 ),
 user_departments AS (
     SELECT department_id
@@ -40,15 +38,11 @@ check_permissions AS (
             -- Default keys (no department_ids) can only be deleted by superadmin
             WHEN COALESCE(kdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
             WHEN up.role = 'superadmin' THEN true
-            WHEN up.role = 'admin' AND (
-                COUNT(kd.key_id) FILTER (WHERE kd.department_id IN (SELECT department_id FROM user_departments)) > 0
-                OR NOT EXISTS (SELECT 1 FROM department_keys kd2 WHERE kd2.key_id = $1::uuid AND kd2.active = true)
-            ) THEN true
+            WHEN up.role = 'admin' THEN true
             ELSE false
         END as can_delete
     FROM user_profile up
-    LEFT JOIN department_keys kd ON kd.key_id = $1::uuid AND kd.active = true
-    LEFT JOIN department_keys_data kdd ON true
+    CROSS JOIN department_keys_data kdd
     GROUP BY up.role, kdd.department_ids
 ),
 delete_key AS (

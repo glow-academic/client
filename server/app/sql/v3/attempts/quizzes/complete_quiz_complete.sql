@@ -19,8 +19,9 @@ video_questions_list AS (
         q.id as question_id
     FROM quiz_check qc
     JOIN videos v ON v.id = qc.video_id
-    JOIN video_questions vq ON vq.video_id = v.id AND vq.active = true
-    JOIN questions q ON q.id = vq.question_id AND q.active = true
+    JOIN scenario_videos sv ON sv.video_id = v.id AND sv.active = true
+    JOIN scenario_questions sq ON sq.scenario_id = sv.scenario_id AND sq.active = true
+    JOIN questions q ON q.id = sq.question_id AND q.active = true
 ),
 quiz_responses_summary AS (
     -- Get all responses for this quiz

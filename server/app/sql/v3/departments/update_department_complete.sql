@@ -22,7 +22,7 @@ remove_existing_settings AS (
     -- Remove existing settings link if settingsId is null or different
     DELETE FROM department_settings
     WHERE department_id = $1::uuid
-      AND ($5 IS NULL OR settings_id != $5::uuid)
+      AND ($5::text IS NULL OR settings_id != $5::uuid)
 ),
 link_settings AS (
     -- Link settings if provided

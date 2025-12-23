@@ -12,7 +12,7 @@ WITH user_profile AS (
 validate_create_permissions AS (
     -- Validate department permissions for create operation
     SELECT validate_department_create_permissions(
-        up.role,
+        up.role::text,
         $5::text[]
     ) as validation_passed
     FROM user_profile up
@@ -34,20 +34,11 @@ new_key AS (
     RETURNING id::text as key_id, key
 ),
 link_departments AS (
-    -- Link departments if provided (array is never NULL, but may be empty)
-    INSERT INTO department_keys (key_id, department_id, active, created_at, updated_at)
-    SELECT 
-        nk.key_id::uuid,
-        dept_id::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM new_key nk
-    CROSS JOIN UNNEST($5::text[]) as dept_id
-    WHERE COALESCE(array_length($5::text[], 1), 0) > 0
-    ON CONFLICT (key_id, department_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
+    -- NOTE: department_keys table was removed in migration 74
+    -- Keys are now linked to departments through settings (setting_provider_keys, setting_auth_keys)
+    -- This CTE is kept for compatibility but does nothing
+    -- TODO: Reimplement department linking through settings if needed
+    SELECT 1 WHERE false
 )
 SELECT 
     nk.key_id,

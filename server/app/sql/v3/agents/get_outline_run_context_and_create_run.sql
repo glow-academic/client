@@ -13,7 +13,7 @@ policy_param_item AS (
     JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
     JOIN parameters p ON p.id = fp.parameter_id
     WHERE p.name = 'Document Type' AND p.document_parameter = true
-    AND f.value = 'policy'
+    AND f.name = 'policy'
     LIMIT 1
 ),
 video_info AS (
@@ -23,9 +23,10 @@ video_info AS (
         -- If video_id provided and no question_ids, get questions from video
         CASE 
             WHEN p.video_id IS NOT NULL AND (p.question_ids IS NULL OR array_length(p.question_ids, 1) IS NULL) THEN
-                (SELECT ARRAY_AGG(vq.question_id)
-                 FROM video_questions vq
-                 WHERE vq.video_id = p.video_id AND vq.active = true)
+                (SELECT ARRAY_AGG(sq.question_id)
+                 FROM scenario_videos sv
+                 JOIN scenario_questions sq ON sq.scenario_id = sv.scenario_id
+                 WHERE sv.video_id = p.video_id AND sv.active = true AND sq.active = true)
             ELSE p.question_ids
         END as effective_question_ids
     FROM params p
@@ -88,6 +89,13 @@ default_settings AS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
       )
+    LIMIT 1
+),
+default_guest AS (
+    SELECT sdg.profile_id::text as guest_profile_id
+    FROM settings_default_guest sdg
+    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+    WHERE sdg.active = true
     LIMIT 1
 ),
 profile_primary_department AS (
@@ -202,22 +210,26 @@ context_data AS (
         ) as parameter_items,
         
         -- Personas data (aggregated as JSON array when video_id provided)
-        COALESCE(
-            (SELECT json_agg(
-                json_build_object(
-                    'id', p.id::text,
-                    'name', p.name,
-                    'description', COALESCE(p.description, '')
+        CASE 
+            WHEN (SELECT video_id FROM params) IS NOT NULL THEN
+                COALESCE(
+                    (SELECT json_agg(
+                        json_build_object(
+                            'id', p.id::text,
+                            'name', p.name,
+                            'description', COALESCE(p.description, '')
+                        )
+                        ORDER BY vp.persona_id
+                    )
+                    FROM video_personas vp
+                    JOIN personas p ON p.id = vp.persona_id
+                    CROSS JOIN params p_params
+                    WHERE vp.video_id = p_params.video_id AND vp.active = true AND p.active = true
+                    ),
+                    '[]'::json
                 )
-                ORDER BY vp.persona_id
-            )
-            FROM video_personas vp
-            JOIN personas p ON p.id = vp.persona_id
-            CROSS JOIN params p_params
-            WHERE vp.video_id = p_params.video_id AND vp.active = true AND p.active = true
-            ),
-            '[]'::json
-        ) FILTER (WHERE (SELECT video_id FROM params) IS NOT NULL) as personas,
+            ELSE '[]'::json
+        END as personas,
         
         -- Video length (if video_id provided)
         vi.length_seconds as video_length_seconds,

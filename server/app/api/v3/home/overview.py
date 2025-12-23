@@ -4,15 +4,14 @@ import json
 from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
+from app.infra.activity.audit import audit_activity, audit_set
+from app.infra.error.handle_route_error import handle_route_error
+from app.main import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
-
-from app.main import get_db
-from app.infra.activity.audit import audit_activity, audit_set
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from app.infra.error.handle_route_error import handle_route_error
 from utils.sql_helper import load_sql
 
 
@@ -194,20 +193,14 @@ async def get_home_overview(
         # Guest profile IDs are resolved on the client side before calling this endpoint
         # SQL will infer role hierarchy from profileId
 
-        # Build WHERE clause for home overview
-        # Note: Home always shows general simulations only (hardcoded)
-        # The SQL file expects WHERE clause to use $1, $2 (dates) and simulation filter
+        # Load SQL query
+        # Note: Home always shows general simulations only (hardcoded in SQL)
+        # The SQL file uses $1, $2 (dates) for date filtering
         # Cohort and department filters are handled separately in the SQL via $4, $5
         # Simulation filtering by cohorts is handled via filtered_simulation_ids CTE
         from datetime import datetime
 
-        where_clause = "a.attempt_created_at >= $1 AND a.attempt_created_at < $2 AND a.is_general = TRUE"
-
-        # Load SQL template
-        sql_template = load_sql("app/sql/v3/home/home_overview.sql")
-
-        # Replace WHERE clause placeholder
-        sql_query = sql_template.replace("{WHERE_CLAUSE_PLACEHOLDER}", where_clause)
+        sql_query = load_sql("app/sql/v3/home/home_overview.sql")
 
         # Build parameter list matching SQL file expectations:
         # $1, $2: dates (for WHERE clause)

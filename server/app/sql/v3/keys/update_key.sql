@@ -9,10 +9,9 @@ WITH user_profile AS (
     WHERE p.id = $7::uuid
 ),
 object_current_departments AS (
-    -- Get key's current active department links
-    SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-    FROM department_keys
-    WHERE key_id = $1::uuid AND active = true
+    -- NOTE: department_keys table was removed in migration 74
+    -- Keys are now linked to departments through settings
+    SELECT ARRAY[]::text[] as department_ids
 ),
 user_departments AS (
     -- Get user's departments
@@ -49,25 +48,13 @@ update_key AS (
     RETURNING id::text as key_id, key, name as key_name
 ),
 replace_departments AS (
-    -- Deactivate all existing department links
-    UPDATE department_keys 
-    SET active = false, updated_at = NOW()
-    WHERE key_id = $1::uuid AND active = true
+    -- NOTE: department_keys table was removed in migration 74
+    SELECT 1 WHERE false
 ),
 link_departments AS (
-    -- Insert new department links if provided (array is never NULL, but may be empty)
-    INSERT INTO department_keys (key_id, department_id, active, created_at, updated_at)
-    SELECT 
-        $1::uuid,
-        dept_id::uuid,
-        true,
-        NOW(),
-        NOW()
-    FROM UNNEST($6::text[]) as dept_id
-    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
-    ON CONFLICT (key_id, department_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
+    -- NOTE: department_keys table was removed in migration 74
+    -- Keys are now linked to departments through settings
+    SELECT 1 WHERE false
 )
 SELECT 
     uk.key_id,

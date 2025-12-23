@@ -87,10 +87,6 @@ check_other_links AS (
             SELECT 1 FROM agent_prompts WHERE prompt_id = $2::uuid
             UNION ALL
             SELECT 1 FROM agent_department_prompts WHERE prompt_id = $2::uuid AND active = true
-            UNION ALL
-            SELECT 1 FROM persona_prompts WHERE prompt_id = $2::uuid
-            UNION ALL
-            SELECT 1 FROM persona_department_prompts WHERE prompt_id = $2::uuid AND active = true
         ) THEN false ELSE true END as can_delete_prompt
 )
 -- Delete prompt record if no other links exist

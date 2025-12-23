@@ -1,7 +1,11 @@
 -- Leaderboard bundle query - complete leaderboard metrics with all profile data
--- WHERE clause is built dynamically and inserted at the placeholder below
--- Parameters are passed from the WHERE clause builder
--- Simulation filtering by cohorts is handled inline in the WHERE clause
+-- Parameters:
+--   $1 = start_date (timestamp) - required
+--   $2 = end_date (timestamp) - required
+--   $3 = roles (text[] | NULL) - optional role filter
+--   $4 = cohort_ids (uuid[] | NULL) - optional cohort filter
+-- Note: Simulation type filters (general/practice/archived) are built dynamically by route
+--       due to complex conditional logic that's difficult to parameterize
 
 WITH
 -- Get colors from active settings (defaults if no settings found)
@@ -14,7 +18,33 @@ settings_colors AS (
     LIMIT 1
 ),
 filt AS (
-    SELECT * FROM analytics a WHERE {WHERE_CLAUSE}
+    SELECT * FROM analytics a 
+    WHERE a.attempt_created_at >= $1 
+      AND a.attempt_created_at < $2
+      AND a.is_general = TRUE
+      AND ($3::text[] IS NULL OR a.profile_role = ANY($3::text[]))
+      AND ($4::uuid[] IS NULL OR a.simulation_id IN (
+          SELECT DISTINCT s.id
+          FROM simulations s
+          WHERE s.active = TRUE
+            AND (
+                EXISTS (
+                    SELECT 1 
+                    FROM cohort_simulations cs 
+                    WHERE cs.simulation_id = s.id 
+                      AND cs.cohort_id = ANY($4::uuid[])
+                      AND cs.active = TRUE
+                )
+                OR
+                (s.practice_simulation = TRUE 
+                 AND NOT EXISTS (
+                     SELECT 1 
+                     FROM cohort_simulations cs2 
+                     WHERE cs2.simulation_id = s.id 
+                       AND cs2.active = TRUE
+                 ))
+            )
+      ))
 ),
 profile_stats AS (
     SELECT

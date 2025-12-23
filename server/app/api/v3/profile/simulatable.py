@@ -4,16 +4,15 @@ import json
 from typing import Annotated, Any
 
 import asyncpg
+from app.api.v3.profile.detail import ProfileItem
+from app.infra.activity.audit import audit_activity, audit_set
+from app.infra.error.handle_route_error import handle_route_error
+from app.main import get_db
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
-
-from app.api.v3.profile.detail import ProfileItem
-from app.main import get_db
-from app.infra.activity.audit import audit_activity, audit_set
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from app.infra.error.handle_route_error import handle_route_error
 from utils.sql_helper import load_sql
 
 router = APIRouter()
@@ -73,23 +72,13 @@ async def search_simulatable_profiles(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Load base SQL query
+        # Load SQL query
         sql_query = load_sql("app/sql/v3/profile/search_simulatable_profiles.sql")
 
-        # Build search WHERE clause
-        search_where_clause = ""
-        params: list[Any] = [profile_id, request.limit]
-
-        # Search query filter (if provided)
-        if request.query and request.query.strip():
-            search_term = f"%{request.query.strip()}%"
-            # Cast role enum to text for ILIKE comparison
-            # Also check concatenated full name for queries like "default admin"
-            search_where_clause = "AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true AND pe.email ILIKE $3) OR p.role::text ILIKE $3 OR (p.first_name || ' ' || p.last_name) ILIKE $3)"
-            params.append(search_term)
-
-        # Replace placeholder in SQL
-        sql_query = sql_query.replace("{search_where_clause}", search_where_clause)
+        # Build parameters: always pass $3 (search term), NULL if no search
+        # $1: profile_id, $2: limit, $3: search (optional)
+        search_term = request.query.strip() if request.query and request.query.strip() else None
+        params: list[Any] = [profile_id, request.limit, search_term]
 
         result = await conn.fetchrow(sql_query, *params)
 

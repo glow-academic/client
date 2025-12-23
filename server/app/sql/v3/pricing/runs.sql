@@ -11,6 +11,9 @@
 --   $9 = model_ids (uuid[] | NULL) - filter by model IDs
 --   $10 = profile_ids (uuid[] | NULL) - filter by profile IDs
 --   $11 = actor_ids (uuid[] | NULL) - filter by agent/persona IDs (combined)
+--   $12 = limit (integer) - page size for pagination
+--   $13 = offset (integer) - offset for pagination
+-- Note: ORDER BY clause is built dynamically by route (column names cannot be parameterized)
 -- Returns: JSONB object with data (paginated groups), totalCount, page, pageSize, totalPages, filter options, mappings
 
 WITH resolve_profile_id AS (
@@ -274,13 +277,15 @@ actor_options_cte AS (
     ORDER BY actor_name
 ),
 -- Add pagination and sorting
+-- Note: ORDER BY clause is replaced dynamically by route (column names cannot be parameterized in PostgreSQL)
+-- Default ORDER BY ensures SQL compiles; route replaces with actual sort column
 paginated_groups AS (
     SELECT
         *,
         COUNT(*) OVER() AS total_count
     FROM groups_with_runs
-    {ORDER_BY_CLAUSE}
-    {LIMIT_OFFSET_CLAUSE}
+    ORDER BY created_at DESC NULLS LAST
+    LIMIT $12 OFFSET $13
 ),
 -- Build mappings (same as summary endpoint)
 model_pricing_aggregated AS (
@@ -355,7 +360,7 @@ SELECT jsonb_build_object(
                 'total_output_tokens', total_output_tokens,
                 'total_cost', total_cost,
                 'runs', runs
-            ) {JSON_AGG_ORDER_BY}
+            ) ORDER BY created_at DESC NULLS LAST
         ) FROM paginated_groups),
         '[]'::jsonb
     ),

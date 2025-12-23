@@ -20,12 +20,12 @@
                     p.role
                 FROM profiles p
                 LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
-                WHERE {PROFILE_WHERE_CLAUSE}
+                WHERE TRUE
                 GROUP BY p.id, p.first_name, p.last_name, p.role
             ),
             filt AS (
                 SELECT a.* FROM analytics a
-                WHERE {ANALYTICS_WHERE_CLAUSE}
+                WHERE TRUE
                   AND a.profile_id IN (SELECT id FROM filtered_profiles)
             ),
             profile_metrics AS (
@@ -146,7 +146,7 @@
                 SELECT
                     pc.profile_id,
                     sg.id,
-                    rc_bundle.chat_id AS simulation_chat_id,
+                    c_bundle.id AS simulation_chat_id,
                     sg.created_at,
                     (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
                 FROM grades sg
@@ -460,13 +460,15 @@
                 ORDER BY scenario_title
             ),
             -- Add pagination and sorting to all_metrics
+            -- Note: ORDER BY and LIMIT/OFFSET are replaced dynamically by route
+            -- Defaults ensure SQL compiles; route replaces with actual values
             paginated_metrics AS (
                 SELECT
                     *,
                     COUNT(*) OVER() AS total_count
                 FROM all_metrics
-                {ORDER_BY_CLAUSE}
-                {LIMIT_OFFSET_CLAUSE}
+                ORDER BY created_at DESC NULLS LAST
+                LIMIT 100 OFFSET 0
             ),
             -- Use paginated_metrics directly (emails already included from profile_metrics)
             paginated_metrics_with_emails AS (
@@ -676,7 +678,7 @@
                             END
                         )
                     )
-                ) {JSON_AGG_ORDER_BY}) FROM paginated_metrics_with_emails), '[]'::json),
+                ) ORDER BY created_at DESC) FROM paginated_metrics_with_emails), '[]'::json),
                 'totalCount', COALESCE((SELECT total_count FROM (SELECT * FROM paginated_metrics LIMIT 1) pm_count), 0),
                 'profileOptions', COALESCE((
                     SELECT json_agg(json_build_object(

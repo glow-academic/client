@@ -173,12 +173,12 @@ context_data AS (
         
         -- Attempt data
         ai.id::text as attempt_id,
-        ai.simulation_id::text,
+        ai.simulation_id::text as attempt_simulation_id,
         ai.total_chats,
         
         -- Simulation data
         si.id::text as simulation_id,
-        si.rubric_id::text,
+        si.rubric_id::text as simulation_rubric_id,
         si.department_id::text,
         si.time_limit,
         si.grade_voice_agent_id,
@@ -344,7 +344,8 @@ SELECT
     cd.simulation_id,
     cd.total_chats,
     cd.simulation_id as simulation_id_out,
-    cd.rubric_id,
+    cd.rubric_id as rubric_id_out,
+    cd.simulation_rubric_id,
     cd.department_id,
     cd.time_limit,
     cd.grade_voice_agent_id,

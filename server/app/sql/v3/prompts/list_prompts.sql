@@ -27,12 +27,10 @@ prompt_agents_data AS (
 ),
 prompt_personas_data AS (
     SELECT 
-        pp.prompt_id,
-        ARRAY_AGG(pp.persona_id::text ORDER BY p.name) as persona_ids
-    FROM persona_prompts pp
-    JOIN personas p ON p.id = pp.persona_id
-    WHERE pp.active = true AND p.active = true
-    GROUP BY pp.prompt_id
+        pr.id as prompt_id,
+        ARRAY[]::text[] as persona_ids
+    FROM prompts pr
+    GROUP BY pr.id
 ),
 prompt_data AS (
     SELECT 

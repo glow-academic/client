@@ -75,7 +75,7 @@ attempt_tests_data AS (
         t.created_at as test_created_at,
         t.updated_at as test_updated_at
     FROM attempt_data ad
-    JOIN attempt_tests at ON at.attempt_id = ad.id
+    JOIN attempt_tests at ON at.attempt_id = ad.attempt_id
     JOIN tests t ON t.id = at.test_id
 ),
 -- Map tests to original runs using trace_id

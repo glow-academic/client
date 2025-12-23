@@ -125,7 +125,7 @@ context_data AS (
         -- Model data
         m.id::text as model_id,
         m.value as model_name,
-        COALESCE(p.value::text, '') as provider,
+        COALESCE(prov.value::text, '') as provider,
         COALESCE(me.base_url, '') as base_url,
         k.key as api_key,
         
@@ -157,9 +157,9 @@ context_data AS (
     LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN providers p ON p.id = m.provider_id
+    LEFT JOIN providers prov ON prov.id = m.provider_id
     CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p.id 
+    LEFT JOIN setting_provider_keys spk ON spk.provider_id = prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true

@@ -2,7 +2,7 @@
 -- Parameters: $1=name, $2=description, $3=value, $4=active, $5=base_url (text, nullable), $6=profile_id (uuid, required)
 -- Returns: provider_id, actor_name
 -- profile_id is always a UUID (required in request body)
-actor_profile AS (
+WITH actor_profile AS (
     SELECT 
         $6::uuid as resolved_profile_id,
         p.first_name || ' ' || p.last_name as actor_name

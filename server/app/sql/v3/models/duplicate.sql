@@ -12,18 +12,18 @@ source_model AS (
         name,
         description,
         active,
-        provider
+        provider_id
     FROM models
     WHERE id = $1
 )
 INSERT INTO models (
-    provider,
+    provider_id,
     name,
     description,
     active
 )
 SELECT 
-    sm.provider,
+    sm.provider_id,
     sm.name,
     sm.description || ' Copy',
     sm.active

@@ -1,3 +1,9 @@
+-- Search simulatable profiles query
+-- Parameters (in order):
+-- $1: profile_id (uuid) - requester's profile ID
+-- $2: limit (integer) - maximum number of results
+-- $3: search (text, optional) - search term for first_name, last_name, email, role. NULL or empty returns all profiles (up to limit)
+
 WITH requester_role AS (
     SELECT role
     FROM profiles p
@@ -37,7 +43,7 @@ simulatable_data AS (
         WHEN rr.role = 'instructional' THEN p.role IN ('member', 'guest')
         ELSE false
       END
-      {search_where_clause}
+      AND ($3::text IS NULL OR $3::text = '' OR (p.first_name ILIKE '%' || $3::text || '%' OR p.last_name ILIKE '%' || $3::text || '%' OR EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true AND pe.email ILIKE '%' || $3::text || '%') OR p.role::text ILIKE '%' || $3::text || '%' OR (p.first_name || ' ' || p.last_name) ILIKE '%' || $3::text || '%'))
     GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
              prl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id

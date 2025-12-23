@@ -3,7 +3,6 @@
 WITH update_documents AS (
     UPDATE documents
     SET 
-        type = $2,
         updated_at = NOW()
     WHERE id = ANY($1::uuid[])
     RETURNING id::text as document_id
