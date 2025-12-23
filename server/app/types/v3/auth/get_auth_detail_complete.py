@@ -31,15 +31,28 @@ from typing import Any
 from pydantic import BaseModel
 
 
-class GetAuthDetailSqlRow(BaseModel):
-    """SQL query result row.
+class GetAuthDetailAuthItemsItem(BaseModel):
+    """Generated nested model."""
 
-    Columns returned by the SQL query.
+    auth_item_id: str
+    name: str
+    description: str
+    position: int
+    active: bool
+    value_masked: str
+    key_id: str
+    encrypted: int
+
+
+class GetAuthDetailSqlRow(BaseModel):
+    """SQL query result row after nesting.
+
+    Structure matches nest_many() output.
     """
 
     name: str
     description: str
-    active: bool
+    active: int
     can_edit: bool
-    auth_items_json: dict[str, Any]
     actor_name: str
+    auth_items: list[GetAuthDetailAuthItemsItem]

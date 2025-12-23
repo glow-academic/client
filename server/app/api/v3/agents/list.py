@@ -1,6 +1,5 @@
 """Agent list endpoint."""
 
-import json
 from typing import Annotated, Any
 
 import asyncpg
@@ -13,6 +12,7 @@ from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import load_sql
+from utils.sql_nest import nest_many
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -111,19 +111,55 @@ async def list_agents(
         # Execute query
         rows = await conn.fetch(sql_query, profile_id)
 
-        # Get actor name from first row (same for all rows)
-        actor_name = rows[0]["actor_name"] if rows else None
+        if not rows:
+            # Return empty response
+            response_data = AgentsListResponse(
+                agents=[],
+                model_mapping={},
+                department_mapping={},
+            )
+            await set_cached(
+                cache_key_val,
+                {"data": response_data.model_dump()},
+                ttl=60,
+                tags=tags,
+            )
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "0"
+            return response_data
 
-        # Set audit context
+        # Use nest_many to handle department_mapping list
+        # Since department_mapping is shared across all rows, we'll get it from the nested result
+        nested_data = nest_many(rows, list_prefixes={"department_mapping"})
+
+        # Extract department_mapping list and convert to dict
+        # nest_many removes the prefix, so "department_mapping__id" becomes "id" in the nested list
+        department_mapping_list = nested_data.get("department_mapping", [])
+        department_mapping: dict[str, DepartmentMappingItem] = {}
+        for dept in department_mapping_list:
+            dept_id = dept.get("id")  # This is from "department_mapping__id"
+            if dept_id:
+                department_mapping[dept_id] = DepartmentMappingItem(
+                    name=dept.get("name", ""),  # This is from "department_mapping__name"
+                    description=dept.get("description", ""),  # This is from "department_mapping__description"
+                )
+
+        # Get actor name from nested data
+        actor_name = nested_data.get("actor_name")
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Build model mapping and department mapping from the single result set
-        model_mapping: ModelMapping = {}
-        department_mapping: dict[str, DepartmentMappingItem] = {}
+        # Build agents list and model mapping from original rows (deduplicate by agent_id)
+        seen_agents: set[str] = set()
         agents: list[AgentItem] = []
+        model_mapping: ModelMapping = {}
 
         for row in rows:
+            agent_id = row["agent_id"]
+            if agent_id in seen_agents:
+                continue
+            seen_agents.add(agent_id)
+
             # Add to model mapping if we have model info
             model_id = row["model_id"]
             if model_id and model_id not in model_mapping:
@@ -137,18 +173,6 @@ async def list_agents(
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
 
-            # Parse department_mapping from first row (same for all agents)
-            if not department_mapping and row.get("department_mapping"):
-                dm = row["department_mapping"]
-                if isinstance(dm, str):
-                    dm = json.loads(dm)
-                if isinstance(dm, dict):
-                    for did, ddata in dm.items():
-                        if isinstance(ddata, dict):
-                            department_mapping[did] = DepartmentMappingItem(
-                                name=ddata["name"], description=ddata["description"]
-                            )
-
             # Format updated_at
             updated_at = row["updated_at"]
             if hasattr(updated_at, "isoformat"):
@@ -158,14 +182,14 @@ async def list_agents(
 
             agents.append(
                 AgentItem(
-                    agent_id=row["agent_id"],
+                    agent_id=agent_id,
                     name=row["name"],
                     description=row["description"],
                     reasoning=row["reasoning"],
                     temperature=float(row["temperature"])
                     if row["temperature"] is not None
                     else 0.0,
-                    model_id=row["model_id"],
+                    model_id=model_id,
                     role=row["role"],
                     department_ids=dept_ids,
                     updated_at=updated_at,

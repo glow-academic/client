@@ -31,16 +31,58 @@ from typing import Any
 from pydantic import BaseModel
 
 
-class GetAgentNewSqlRow(BaseModel):
-    """SQL query result row.
+class GetAgentNewDepartmentMappingItem(BaseModel):
+    """Generated nested model."""
 
-    Columns returned by the SQL query.
+    id: str
+    name: str
+    description: str
+
+class GetAgentNewModelMappingTemperatureLevelsItem(BaseModel):
+    """Generated nested model."""
+
+    id: str
+    temperature: str
+    is_upper: bool
+
+class GetAgentNewModelMappingReasoningOptionsItem(BaseModel):
+    """Generated nested model."""
+
+    id: str
+    reasoning_level: str
+
+class GetAgentNewModelMappingAvailableVoicesItem(BaseModel):
+    """Generated nested model."""
+
+    id: str
+    voice: str
+
+class GetAgentNewModelMappingItem(BaseModel):
+    """Generated nested model."""
+
+    id: str
+    name: str
+    description: str
+    temperature_lower: Any | None
+    temperature_upper: Any | None
+    input_modalities: str
+    input_modality: str
+    output_modality: str
+    temperature_levels: list[GetAgentNewModelMappingTemperatureLevelsItem]
+    reasoning_options: list[GetAgentNewModelMappingReasoningOptionsItem]
+    available_voices: list[GetAgentNewModelMappingAvailableVoicesItem]
+
+
+class GetAgentNewSqlRow(BaseModel):
+    """SQL query result row after nesting.
+
+    Structure matches nest_many() output.
     """
 
-    model_mapping: dict[str, Any]
-    valid_model_ids: dict[str, Any]
-    valid_department_ids: list[str]
-    department_mapping: dict[str, Any]
+    valid_model_ids: list[Any]
+    valid_department_ids: list[Any]
     user_role: str
     actor_name: str
     primary_department_id: str
+    department_mapping: list[GetAgentNewDepartmentMappingItem]
+    model_mapping: list[GetAgentNewModelMappingItem]

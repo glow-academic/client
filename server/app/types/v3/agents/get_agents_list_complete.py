@@ -31,25 +31,33 @@ from typing import Any
 from pydantic import BaseModel
 
 
-class GetAgentsListSqlRow(BaseModel):
-    """SQL query result row.
+class GetAgentsListDepartmentMappingItem(BaseModel):
+    """Generated nested model."""
 
-    Columns returned by the SQL query.
+    id: str
+    name: str
+    description: str
+
+
+class GetAgentsListSqlRow(BaseModel):
+    """SQL query result row after nesting.
+
+    Structure matches nest_many() output.
     """
 
     agent_id: str
     name: str
     description: str
     reasoning: str
-    temperature: Any
+    temperature: Any | None
     model_id: str
     role: str
     updated_at: str
-    department_ids: list[str]
+    department_ids: list[Any]
     can_edit: bool
     can_duplicate: bool
     can_delete: bool
     model_name: str
     model_description: str
-    department_mapping: dict[str, Any]
     actor_name: str
+    department_mapping: list[GetAgentsListDepartmentMappingItem]

@@ -1,18 +1,23 @@
 """Agent new endpoint."""
 
-import json
-from typing import Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.types.registry import load_sql_typed
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import load_sql
+from utils.sql_nest import nest_many
+
+if TYPE_CHECKING:
+    from app.types.v3.agents.get_agent_new_complete import (
+        GetAgentNewSqlParams, GetAgentNewSqlRow)
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -124,136 +129,135 @@ async def get_agent_new(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/agents/get_agent_new_complete.sql")
+        # Example using load_sql_typed() - returns SQL string and type classes with type hints
+        sql_query, InputType, OutputType = load_sql_typed("app/sql/v3/agents/get_agent_new_complete.sql")
+        # InputType: Type[GetAgentNewSqlParams] - for input parameters (empty in this case, profile_id comes from header)
+        # OutputType: Type[GetAgentNewSqlRow] - for output rows (nested structure after nest_many)
+        
+        # Type-safe parameter creation example (if you had parameters):
+        # params = InputType(param1=value1, param2=value2)
+        # sql_params = params.to_tuple()
+        
         sql_params = (profile_id,)
-        result = await conn.fetchrow(sql_query, profile_id)
+        rows = await conn.fetch(sql_query, profile_id)
 
-        actor_name = result.get("actor_name") if result else None
+        if not rows:
+            # Return defaults if no rows
+            response_data = AgentDetailResponse(
+                name="",
+                description="",
+                system_prompt="",
+                prompt_id=None,
+                temperature=0.7,
+                model_id="",
+                reasoning="none",
+                active=True,
+                role="assistant",
+                department_ids=[],
+                valid_department_ids=[],
+                department_mapping={},
+                department_prompt_links={},
+                prompt_mapping={},
+                valid_model_ids=[],
+                reasoning_options=["none", "minimal", "low", "medium", "high"],
+                temperature_lower=0.0,
+                temperature_upper=1.0,
+                debug_info=[],
+                model_mapping={},
+                reasoning_mapping={
+                    "none": ReasoningMappingItem(name="None", description="No extended reasoning"),
+                    "minimal": ReasoningMappingItem(name="Minimal", description="Basic reasoning for straightforward tasks"),
+                    "low": ReasoningMappingItem(name="Low", description="Light reasoning for simple problem-solving"),
+                    "medium": ReasoningMappingItem(name="Medium", description="Balanced reasoning for moderate complexity"),
+                    "high": ReasoningMappingItem(name="High", description="Deep reasoning for complex, multi-step problems"),
+                },
+                can_edit=False,
+            )
+            await set_cached(cache_key_val, {"data": response_data.model_dump()}, ttl=60, tags=tags)
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "0"
+            return response_data
+
+        # Use enhanced nest_many to handle top-level lists and nested lists automatically
+        # Nested lists (temperature_levels, reasoning_options, available_voices) are automatically grouped
+        nested_data = nest_many(rows, list_prefixes={"model_mapping", "department_mapping"})
+        
+        # Optional: Validate structure matches OutputType (helps catch schema mismatches early)
+        # typed_output = OutputType(**nested_data)  # Would raise ValidationError if structure doesn't match
+
+        # Get scalar values from nested data
+        actor_name = nested_data.get("actor_name")
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Initialize defaults
+        user_role = nested_data.get("user_role", "trainee")
+        primary_department_id = nested_data.get("primary_department_id")
+        valid_model_ids = [str(mid) for mid in nested_data.get("valid_model_ids", []) if mid]
+        valid_department_ids = [str(did) for did in nested_data.get("valid_department_ids", []) if did]
+
+        # Convert model_mapping list to dict
+        # Enhanced nest_many automatically handles nested lists (temperature_levels, reasoning_options, available_voices)
+        # We only need to collect unique input_modality/output_modality values (they're scalar fields, not nested lists)
+        model_mapping_list = nested_data.get("model_mapping", [])
         model_mapping: ModelMapping = {}
-        valid_model_ids: list[str] = []
+        
+        # Collect unique modalities for each model (scalar fields that appear multiple times)
+        modality_collector: dict[str, dict[str, set[str]]] = {}
+        for row in rows:
+            model_id = row.get("model_mapping__id")
+            if model_id:
+                if model_id not in modality_collector:
+                    modality_collector[model_id] = {"input": set(), "output": set()}
+                if row.get("model_mapping__input_modality"):
+                    modality_collector[model_id]["input"].add(row["model_mapping__input_modality"])
+                if row.get("model_mapping__output_modality"):
+                    modality_collector[model_id]["output"].add(row["model_mapping__output_modality"])
+        
+        # Build ModelMapping from nested_data (nested lists already handled by nest_many)
+        for model in model_mapping_list:
+            model_id = model.get("id")
+            if not model_id:
+                continue
+            
+            # Extract nested lists (already grouped by enhanced nest_many)
+            temperature_levels = model.get("temperature_levels", [])
+            reasoning_options = model.get("reasoning_options", [])
+            available_voices = model.get("available_voices", [])
+            
+            # Get unique modalities (collected separately since they're scalar fields, not nested lists)
+            input_mods = sorted(list(modality_collector.get(model_id, {}).get("input", set()))) if modality_collector.get(model_id, {}).get("input") else None
+            output_mods = sorted(list(modality_collector.get(model_id, {}).get("output", set()))) if modality_collector.get(model_id, {}).get("output") else None
+            
+            # Sort nested lists for consistency (nest_many may not preserve order)
+            if temperature_levels:
+                temperature_levels = sorted(temperature_levels, key=lambda x: x.get("temperature", ""))
+            if reasoning_options:
+                reasoning_options = sorted(reasoning_options, key=lambda x: x.get("reasoning_level", ""))
+            if available_voices:
+                available_voices = sorted(available_voices, key=lambda x: x.get("voice", ""))
+            
+            model_mapping[model_id] = ModelMappingItem(
+                name=model.get("name", ""),
+                description=model.get("description", ""),
+                input_modalities=input_mods,
+                output_modalities=output_mods,
+                temperature_lower=float(model.get("temperature_lower", 0.0)) if model.get("temperature_lower") is not None else None,
+                temperature_upper=float(model.get("temperature_upper", 1.0)) if model.get("temperature_upper") is not None else None,
+                temperature_levels=temperature_levels if temperature_levels else None,
+                reasoning_options=reasoning_options if reasoning_options else None,
+                available_voices=available_voices if available_voices else None,
+            )
+
+        # Convert department_mapping list to dict
+        department_mapping_list = nested_data.get("department_mapping", [])
         department_mapping: DepartmentMapping = {}
-        valid_department_ids: list[str] = []
-
-        if result:
-            # Parse model_mapping from JSONB (with modalities, temperature_levels, reasoning_options)
-            model_mapping_data = result["model_mapping"]
-            model_mapping_with_modalities: dict[str, dict[str, Any]] = {}
-            if isinstance(model_mapping_data, str):
-                model_mapping_data = json.loads(model_mapping_data)
-            if model_mapping_data and isinstance(model_mapping_data, dict):
-                for model_id, model_data in model_mapping_data.items():
-                    if isinstance(model_data, dict):
-                        # Parse modalities
-                        modalities_data = model_data.get("modalities")
-                        modalities_dict: dict[str, list[str]] = {
-                            "input": [],
-                            "output": [],
-                        }
-                        if modalities_data:
-                            if isinstance(modalities_data, str):
-                                modalities_data = json.loads(modalities_data)
-                            if isinstance(modalities_data, dict):
-                                input_mods = modalities_data.get("input", [])
-                                output_mods = modalities_data.get("output", [])
-                                if isinstance(input_mods, str):
-                                    input_mods = json.loads(input_mods)
-                                if isinstance(output_mods, str):
-                                    output_mods = json.loads(output_mods)
-                                modalities_dict = {
-                                    "input": [str(m) for m in input_mods]
-                                    if isinstance(input_mods, list)
-                                    else [],
-                                    "output": [str(m) for m in output_mods]
-                                    if isinstance(output_mods, list)
-                                    else [],
-                                }
-
-                        # Parse temperature_levels and reasoning_options
-                        temperature_levels_data = model_data.get(
-                            "temperature_levels", []
-                        )
-                        if isinstance(temperature_levels_data, str):
-                            temperature_levels_data = json.loads(
-                                temperature_levels_data
-                            )
-                        if not isinstance(temperature_levels_data, list):
-                            temperature_levels_data = []
-
-                        reasoning_options_data = model_data.get("reasoning_options", [])
-                        if isinstance(reasoning_options_data, str):
-                            reasoning_options_data = json.loads(reasoning_options_data)
-                        if not isinstance(reasoning_options_data, list):
-                            reasoning_options_data = []
-
-                        # Parse available_voices
-                        available_voices_data = model_data.get("available_voices", [])
-                        if isinstance(available_voices_data, str):
-                            available_voices_data = json.loads(available_voices_data)
-                        if not isinstance(available_voices_data, list):
-                            available_voices_data = []
-
-                        # Create ModelMappingItem for typed response (with optional fields)
-                        model_mapping[model_id] = ModelMappingItem(
-                            name=model_data.get("name", ""),
-                            description=model_data.get("description", ""),
-                            input_modalities=modalities_dict["input"]
-                            if modalities_dict["input"]
-                            else None,
-                            output_modalities=modalities_dict["output"]
-                            if modalities_dict["output"]
-                            else None,
-                            temperature_lower=float(
-                                model_data.get("temperature_lower", 0.0)
-                            )
-                            if model_data.get("temperature_lower") is not None
-                            else None,
-                            temperature_upper=float(
-                                model_data.get("temperature_upper", 1.0)
-                            )
-                            if model_data.get("temperature_upper") is not None
-                            else None,
-                            temperature_levels=temperature_levels_data
-                            if temperature_levels_data
-                            else None,
-                            reasoning_options=reasoning_options_data
-                            if reasoning_options_data
-                            else None,
-                            available_voices=available_voices_data
-                            if available_voices_data
-                            else None,
-                        )
-
-            # Parse valid_model_ids from JSONB
-            valid_model_ids_data = result["valid_model_ids"]
-            if isinstance(valid_model_ids_data, str):
-                valid_model_ids_data = json.loads(valid_model_ids_data)
-            if valid_model_ids_data and isinstance(valid_model_ids_data, list):
-                valid_model_ids = [str(mid) for mid in valid_model_ids_data if mid]
-
-            # Parse valid_department_ids from array
-            valid_department_ids_raw = result.get("valid_department_ids")
-            if valid_department_ids_raw and isinstance(
-                valid_department_ids_raw, (list, tuple)
-            ):
-                valid_department_ids = [
-                    str(did) for did in valid_department_ids_raw if did
-                ]
-
-            # Parse department_mapping from JSONB
-            department_mapping_data = result.get("department_mapping")
-            if isinstance(department_mapping_data, str):
-                department_mapping_data = json.loads(department_mapping_data)
-            if department_mapping_data and isinstance(department_mapping_data, dict):
-                for dept_id, dept_data in department_mapping_data.items():
-                    if isinstance(dept_data, dict):
-                        department_mapping[dept_id] = DepartmentMappingItem(
-                            name=dept_data.get("name", ""),
-                            description=dept_data.get("description", ""),
-                        )
+        for dept in department_mapping_list:
+            dept_id = dept.get("id")
+            if dept_id:
+                department_mapping[dept_id] = DepartmentMappingItem(
+                    name=dept.get("name", ""),
+                    description=dept.get("description", ""),
+                )
 
         # Build reasoning_mapping
         reasoning_mapping = {
@@ -276,9 +280,9 @@ async def get_agent_new(
         }
 
         # Get user role and primary department for default behavior
-        user_role = result.get("user_role", "trainee") if result else "trainee"
+        user_role = nested_data.get("user_role", "trainee")
         is_superadmin = user_role == "superadmin"
-        primary_department_id = result.get("primary_department_id") if result else None
+        primary_department_id = nested_data.get("primary_department_id")
 
         # Set default department_ids based on role
         # Superadmin: [] (empty = all departments = default object)

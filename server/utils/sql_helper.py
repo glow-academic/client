@@ -23,3 +23,4 @@ def load_sql(file_path: str) -> str:
     """
     sql_path = Path(__file__).parent.parent / file_path
     return sql_path.read_text()
+

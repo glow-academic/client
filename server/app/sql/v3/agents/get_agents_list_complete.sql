@@ -1,7 +1,7 @@
 WITH user_departments AS (
     SELECT department_id
     FROM profile_departments
-    WHERE profile_id = $1 AND active = true
+    WHERE profile_id = $1::uuid AND active = true
 ),
 user_profile AS (
     SELECT 
@@ -34,40 +34,36 @@ all_department_ids AS (
     SELECT department_id FROM user_departments
 ),
 department_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            d.id::text,
-            jsonb_build_object(
-                'name', d.title,
-                'description', COALESCE(d.description, '')
-            )
-        ) FILTER (WHERE d.id IS NOT NULL),
-        '{}'::jsonb
-    ) as mapping
+    SELECT 
+        d.id::text as department_id,
+        d.title::text as department_name,
+        COALESCE(d.description, '')::text as department_description
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM all_department_ids)
 )
 SELECT 
     a.id::text as agent_id,
-    a.name,
-    a.description,
-    mrl.reasoning_level as reasoning,
-    COALESCE(mtl.temperature, 0.0) as temperature,
-    a.model_id::text,
-    a.role::text,
-    a.updated_at,
-    COALESCE(addd.department_ids, NULL) as department_ids,
-    CASE WHEN up.role IN ('admin', 'superadmin') THEN true ELSE false END as can_edit,
-    true as can_duplicate,
+    a.name::text as name,
+    a.description::text as description,
+    mrl.reasoning_level::text as reasoning,
+    COALESCE(mtl.temperature, 0.0)::float as temperature,
+    a.model_id::text as model_id,
+    a.role::text as role,
+    a.updated_at::timestamptz as updated_at,
+    COALESCE(addd.department_ids, NULL)::text[] as department_ids,
+    CASE WHEN up.role IN ('admin', 'superadmin') THEN true::boolean ELSE false::boolean END as can_edit,
+    true::boolean as can_duplicate,
     CASE 
-        WHEN COALESCE(adl.total_links, 0) > 0 THEN false
-        WHEN up.role = 'superadmin' THEN true
-        ELSE false
+        WHEN COALESCE(adl.total_links, 0) > 0 THEN false::boolean
+        WHEN up.role = 'superadmin' THEN true::boolean
+        ELSE false::boolean
     END as can_delete,
-    m.name as model_name,
-    COALESCE(m.description, '') as model_description,
-    dmd.mapping as department_mapping,
-    up.actor_name
+    m.name::text as model_name,
+    COALESCE(m.description, '')::text as model_description,
+    dmd.department_id::text as "department_mapping__id",
+    dmd.department_name::text as "department_mapping__name",
+    dmd.department_description::text as "department_mapping__description",
+    up.actor_name::text as actor_name
 FROM agents a
 CROSS JOIN user_profile up
 LEFT JOIN agent_department_links adl ON adl.agent_id = a.id
@@ -82,7 +78,7 @@ LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AN
 LEFT JOIN models m ON m.id = a.model_id
 CROSS JOIN department_mapping_data dmd
 GROUP BY a.id, a.name, a.description, mrl.reasoning_level, COALESCE(mtl.temperature, 0.0), a.model_id, a.role, a.updated_at,
-         addd.department_ids, adl.total_links, up.role, up.actor_name, m.name, m.description, dmd.mapping
+         addd.department_ids, adl.total_links, up.role, up.actor_name, m.name, m.description, dmd.department_id, dmd.department_name, dmd.department_description
 HAVING 
     -- Include if has matching department link OR has no department links at all (cross-dept)
     COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0

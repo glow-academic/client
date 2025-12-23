@@ -25,44 +25,37 @@ auth_data AS (
 auth_items_data AS (
     -- Get all auth items (values managed separately in settings page)
     SELECT 
-        ai.id as auth_item_id,
-        ai.name,
-        ai.description,
-        ai.position,
-        ai.active,
-        ai.encrypted,
+        ai.id::uuid as auth_item_id,
+        ai.name::text as name,
+        ai.description::text as description,
+        ai.position::integer as position,
+        ai.active::boolean as active,
+        ai.encrypted::boolean as encrypted,
         NULL::text as key_id,
         CASE 
-            WHEN ai.encrypted THEN '****'
+            WHEN ai.encrypted THEN '****'::text
             ELSE ''::text
         END as value_masked
     FROM auth_id_resolved aid
     JOIN auth_items ai ON ai.auth_id = aid.auth_id
-),
-items_json AS (
-    SELECT COALESCE(
-        jsonb_agg(
-            jsonb_build_object(
-                'auth_item_id', auth_item_id::text,
-                'name', name,
-                'description', description,
-                'position', position,
-                'active', active,
-                'value_masked', value_masked,
-                'key_id', key_id,
-                'encrypted', encrypted
-            )
-            ORDER BY position
-        ),
-        '[]'::jsonb
-    ) as items
-    FROM auth_items_data
+    ORDER BY ai.position
 )
 SELECT 
-    ad.*,
-    ij.items as auth_items_json,
-    up.actor_name
+    ad.name::text as name,
+    ad.description::text as description,
+    ad.active::boolean as active,
+    ad.can_edit::boolean as can_edit,
+    aid.auth_item_id::text as "auth_items__auth_item_id",
+    aid.name::text as "auth_items__name",
+    aid.description::text as "auth_items__description",
+    aid.position::integer as "auth_items__position",
+    aid.active::boolean as "auth_items__active",
+    aid.value_masked::text as "auth_items__value_masked",
+    aid.key_id::text as "auth_items__key_id",
+    aid.encrypted::boolean as "auth_items__encrypted",
+    up.actor_name::text as actor_name
 FROM auth_data ad
-CROSS JOIN items_json ij
 CROSS JOIN user_profile up
+LEFT JOIN auth_items_data aid ON true
+WHERE ad.name IS NOT NULL
 

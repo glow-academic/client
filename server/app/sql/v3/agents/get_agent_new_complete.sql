@@ -47,24 +47,25 @@ valid_models AS (
 model_modalities_data AS (
     SELECT 
         mm.model_id::text as model_id,
-        jsonb_agg(mm.modality::text ORDER BY mm.modality::text) FILTER (WHERE mm.is_input = true) as input_modalities,
-        jsonb_agg(mm.modality::text ORDER BY mm.modality::text) FILTER (WHERE mm.is_input = false) as output_modalities
+        mm.modality::text as modality,
+        mm.is_input::boolean as is_input
     FROM model_modalities mm
     WHERE mm.active = true
-    GROUP BY mm.model_id
 ),
 model_temperature_levels_data_with_ids AS (
     SELECT 
         mtl.model_id::text as model_id,
-        MIN(mtl.temperature) FILTER (WHERE mtl.is_upper = false) as temperature_lower,
-        MAX(mtl.temperature) FILTER (WHERE mtl.is_upper = true) as temperature_upper,
-        jsonb_agg(
-            jsonb_build_object(
-                'id', mtl.id::text,
-                'temperature', mtl.temperature::text,
-                'is_upper', mtl.is_upper
-            ) ORDER BY mtl.temperature::text
-        ) as temperature_levels
+        mtl.id::text as temperature_level_id,
+        mtl.temperature::text as temperature_value,
+        mtl.is_upper::boolean as is_upper
+    FROM model_temperature_levels mtl
+    WHERE mtl.active = true
+),
+model_temperature_levels_bounds AS (
+    SELECT 
+        mtl.model_id::text as model_id,
+        MIN(mtl.temperature) FILTER (WHERE mtl.is_upper = false)::float as temperature_lower,
+        MAX(mtl.temperature) FILTER (WHERE mtl.is_upper = true)::float as temperature_upper
     FROM model_temperature_levels mtl
     WHERE mtl.active = true
     GROUP BY mtl.model_id
@@ -72,44 +73,26 @@ model_temperature_levels_data_with_ids AS (
 model_reasoning_levels_data_with_ids AS (
     SELECT 
         mrl.model_id::text as model_id,
-        jsonb_agg(
-            jsonb_build_object(
-                'id', mrl.id::text,
-                'reasoning_level', mrl.reasoning_level::text
-            ) ORDER BY mrl.reasoning_level::text
-        ) as reasoning_levels
+        mrl.id::text as reasoning_level_id,
+        mrl.reasoning_level::text as reasoning_level_value
     FROM model_reasoning_levels mrl
     WHERE mrl.active = true
-    GROUP BY mrl.model_id
 ),
 model_voices_data AS (
     SELECT 
         mv.model_id::text as model_id,
-        jsonb_agg(
-            jsonb_build_object(
-                'id', mv.id::text,
-                'voice', mv.voice::text
-            ) ORDER BY mv.voice::text
-        ) as voices
+        mv.id::text as voice_id,
+        mv.voice::text as voice_value
     FROM model_voices mv
     WHERE mv.active = true
-    GROUP BY mv.model_id
 ),
 all_models_with_modalities AS (
-    SELECT 
+    SELECT DISTINCT
         vm.model_id,
         vm.name,
         vm.description,
-        vm.active,
-        COALESCE(
-            jsonb_build_object(
-                'input', COALESCE(mmod.input_modalities, '[]'::jsonb),
-                'output', COALESCE(mmod.output_modalities, '[]'::jsonb)
-            ),
-            jsonb_build_object('input', '[]'::jsonb, 'output', '[]'::jsonb)
-        ) as modalities
+        vm.active
     FROM valid_models vm
-    LEFT JOIN model_modalities_data mmod ON mmod.model_id = vm.model_id
 ),
 user_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
@@ -120,56 +103,49 @@ user_departments AS (
     AND pd.profile_id = rpi.resolved_profile_id
     AND pd.active = true
 ),
+valid_departments_list AS (
+    SELECT array_agg(ud.id::text ORDER BY ud.name) as dept_ids
+    FROM user_departments ud
+),
 valid_departments_data AS (
     SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                ud.id::text,
-                jsonb_build_object(
-                    'name', ud.name,
-                    'description', COALESCE(ud.description, '')
-                )
-            ),
-            '{}'::jsonb
-        ) as dept_mapping,
-        array_agg(ud.id::text ORDER BY ud.name) as dept_ids
+        ud.id::text as department_id,
+        ud.name::text as department_name,
+        COALESCE(ud.description, '')::text as department_description
     FROM user_departments ud
 )
 SELECT 
-    COALESCE(
-        (SELECT jsonb_object_agg(
-            amwm.model_id,
-            jsonb_build_object(
-                'name', amwm.name, 
-                'description', amwm.description,
-                'modalities', amwm.modalities,
-                'input_modalities', COALESCE((amwm.modalities->>'input')::jsonb, '[]'::jsonb),
-                'output_modalities', COALESCE((amwm.modalities->>'output')::jsonb, '[]'::jsonb),
-                'temperature_lower', COALESCE(mtl.temperature_lower, 0.0),
-                'temperature_upper', COALESCE(mtl.temperature_upper, 1.0),
-                'temperature_levels', COALESCE(mtl.temperature_levels, '[]'::jsonb),
-                'reasoning_options', COALESCE(mrl.reasoning_levels, '[]'::jsonb),
-                'available_voices', COALESCE(mv.voices, '[]'::jsonb)
-            )
-        )
-        FROM all_models_with_modalities amwm
-        LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = amwm.model_id
-        LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = amwm.model_id
-        LEFT JOIN model_voices_data mv ON mv.model_id = amwm.model_id),
-        '{}'::jsonb
-    ) as model_mapping,
-    COALESCE(
-        (SELECT jsonb_agg(amwm.model_id ORDER BY amwm.name)
-        FROM all_models_with_modalities amwm),
-        '[]'::jsonb
-    ) as valid_model_ids,
-    COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
-    COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
-    up.role as user_role,
-    up.actor_name,
-    pdi.department_id as primary_department_id
+    amwm.model_id::text as "model_mapping__id",
+    amwm.name::text as "model_mapping__name",
+    amwm.description::text as "model_mapping__description",
+    COALESCE(mtb.temperature_lower, 0.0)::float as "model_mapping__temperature_lower",
+    COALESCE(mtb.temperature_upper, 1.0)::float as "model_mapping__temperature_upper",
+    mmod.modality::text as "model_mapping__input_modalities",
+    CASE WHEN mmod.is_input = true THEN mmod.modality::text ELSE NULL::text END as "model_mapping__input_modality",
+    CASE WHEN mmod.is_input = false THEN mmod.modality::text ELSE NULL::text END as "model_mapping__output_modality",
+    mtl.temperature_level_id::text as "model_mapping__temperature_levels__id",
+    mtl.temperature_value::text as "model_mapping__temperature_levels__temperature",
+    mtl.is_upper::boolean as "model_mapping__temperature_levels__is_upper",
+    mrl.reasoning_level_id::text as "model_mapping__reasoning_options__id",
+    mrl.reasoning_level_value::text as "model_mapping__reasoning_options__reasoning_level",
+    mv.voice_id::text as "model_mapping__available_voices__id",
+    mv.voice_value::text as "model_mapping__available_voices__voice",
+    vdd.department_id::text as "department_mapping__id",
+    vdd.department_name::text as "department_mapping__name",
+    vdd.department_description::text as "department_mapping__description",
+    (SELECT array_agg(amwm2.model_id::text ORDER BY amwm2.name) FROM all_models_with_modalities amwm2)::text[] as valid_model_ids,
+    COALESCE((SELECT dept_ids FROM valid_departments_list LIMIT 1), ARRAY[]::text[])::text[] as valid_department_ids,
+    up.role::text as user_role,
+    up.actor_name::text as actor_name,
+    pdi.department_id::text as primary_department_id
 FROM (SELECT 1) dummy
+CROSS JOIN all_models_with_modalities amwm
 CROSS JOIN valid_departments_data vdd
 CROSS JOIN user_profile up
 LEFT JOIN primary_department_id pdi ON true
+LEFT JOIN model_temperature_levels_bounds mtb ON mtb.model_id = amwm.model_id
+LEFT JOIN model_modalities_data mmod ON mmod.model_id = amwm.model_id
+LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = amwm.model_id
+LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = amwm.model_id
+LEFT JOIN model_voices_data mv ON mv.model_id = amwm.model_id
 

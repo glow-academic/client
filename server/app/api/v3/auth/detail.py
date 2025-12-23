@@ -1,6 +1,5 @@
 """Auth detail endpoint."""
 
-import json
 import uuid
 from typing import Annotated, Any
 
@@ -14,6 +13,7 @@ from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import load_sql
+from utils.sql_nest import nest_many
 
 
 # Inline request/response schemas
@@ -89,9 +89,9 @@ async def get_auth_detail(
 
         sql_query = load_sql("app/sql/v3/auth/get_auth_detail_complete.sql")
         sql_params = (uuid.UUID(request.authId), profile_id)
-        result = await conn.fetchrow(sql_query, uuid.UUID(request.authId), profile_id)
+        rows = await conn.fetch(sql_query, uuid.UUID(request.authId), profile_id)
 
-        if not result:
+        if not rows:
             # Check if auth exists but user doesn't have access
             auth_exists_check = await conn.fetchval(
                 "SELECT EXISTS(SELECT 1 FROM auth WHERE id = $1)",
@@ -106,33 +106,31 @@ async def get_auth_detail(
                 status_code=404, detail=f"Auth not found: {request.authId}"
             )
 
-        # Parse auth_items from JSONB
+        # Use nest_many to group rows by auth_items
+        nested_data = nest_many(rows, list_prefixes={"auth_items"})
+
+        # Extract auth_items from nested data
         auth_items: list[AuthItemDetail] = []
-        items_data = result.get("auth_items_json")
-        if isinstance(items_data, str):
-            items_data = json.loads(items_data)
-        if items_data and isinstance(items_data, list):
-            for item_data in items_data:
-                if isinstance(item_data, dict):
-                    auth_items.append(
-                        AuthItemDetail(
-                            auth_item_id=item_data.get("auth_item_id", ""),
-                            name=item_data.get("name", ""),
-                            description=item_data.get("description", ""),
-                            position=item_data.get("position", 1),
-                            active=item_data.get("active", True),
-                            value_masked=item_data.get("value_masked", "****"),
-                            key_id=item_data.get("key_id"),
-                            encrypted=item_data.get("encrypted", True),
-                        )
-                    )
+        auth_items_list = nested_data.get("auth_items", [])
+        for item_data in auth_items_list:
+            auth_items.append(
+                AuthItemDetail(
+                    auth_item_id=item_data.get("auth_item_id", ""),
+                    name=item_data.get("name", ""),
+                    description=item_data.get("description", ""),
+                    position=item_data.get("position", 1),
+                    active=item_data.get("active", True),
+                    value_masked=item_data.get("value_masked", "****"),
+                    key_id=item_data.get("key_id"),
+                    encrypted=item_data.get("encrypted", True),
+                )
+            )
 
-        # Get can_edit from SQL
-        can_edit = result.get("can_edit", False)
+        # Get scalar values from nested data (same for all rows)
+        can_edit = nested_data.get("can_edit", False)
+        actor_name = nested_data.get("actor_name")
+        auth_name = nested_data.get("name")
 
-        # Set audit context with data from SQL query
-        actor_name = result.get("actor_name")
-        auth_name = result.get("name")
         if actor_name:
             audit_set(
                 http_request,
@@ -141,9 +139,9 @@ async def get_auth_detail(
             )
 
         response_data = AuthDetailResponse(
-            name=result["name"],
-            description=result["description"],
-            active=result["active"],
+            name=nested_data.get("name", ""),
+            description=nested_data.get("description", ""),
+            active=nested_data.get("active", False),
             auth_items=auth_items,
             can_edit=can_edit,
         )
