@@ -22,10 +22,6 @@ from app.infra.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.logging.db_logger import get_logger
-from app.utils.scenario.image_generation import (
-    get_image_generation_results,
-    set_image_generation_context,
-)
 from app.utils.sql_helper import load_sql
 from app.utils.tools.build_pydantic_fields import build_function_signature_string
 from agents import Tool, function_tool
@@ -431,15 +427,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             clean_input_items = [item for item in input_items if item is not None]
 
             # Set image generation context before creating tools (async)
-            if images_enabled and final_profile_id:
-                # Image generation context is now passed directly to background tasks (no-op removed)
-                # await set_image_generation_context(
-                    agent_id=context["agent_id"],
-                    profile_id=str(final_profile_id),
-                    primary_id=primary_id,
-                    department_id=str(department_id) if department_id else None,
-                    room=sid,  # WebSocket room for emitting events
-                )
+            # Image generation context is now passed directly to background tasks (no-op removed)
 
             # Create scenario generation tools inline (same as generate handler)
             # Use closure variables to collect results directly (no storage needed)
@@ -777,21 +765,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # Retrieve image_ids from storage (images are generated in background)
             generated_image_ids: list[str] = []
-            if final_profile_id:
-                # Image IDs are retrieved from database after creation (no-op removed)
-                # image_results = await get_image_generation_results(
-                    profile_id=str(final_profile_id),
-                    primary_id=primary_id,
-                )
-                # image_results["images"] contains list of image_ids (strings)
-                image_ids = image_results.get("images", [])
-                if image_ids:
-                    generated_image_ids = image_ids
-                    logger.info(
-                        f"Retrieved {len(generated_image_ids)} image IDs from storage "
-                        f"(generation in progress in background)"
-                    )
-                    # Don't clear storage - background tasks will clean up individual image contexts
+            # Image IDs are retrieved from database after creation (no-op removed)
 
             # Emit completion event
             await scenario_regeneration_complete(

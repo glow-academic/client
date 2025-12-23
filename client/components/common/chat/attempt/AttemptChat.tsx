@@ -1200,11 +1200,11 @@ export default function AttemptChat({
     );
     socket.on("simulations_text_message_error", handleSimulationMessageError);
     socket.on("simulations_text_stopped", handleSimulationStopped);
-    socket.on("simulations_text_continued", handleSimulationContinued);
+    socket.on("simulations_text_ended", handleSimulationContinued);
     socket.on("simulations_text_end_all_completed", handleEndAllCompleted);
     socket.on("simulations_text_send_error", handleSendSimulationMessageError);
     socket.on("simulations_text_stop_error", handleStopSimulationError);
-    socket.on("simulations_text_next_error", handleContinueSimulationError);
+    socket.on("simulations_text_end_error", handleContinueSimulationError);
     socket.on(
       "simulations_text_grading_progress",
       handleSimulationGradingProgress
@@ -1275,14 +1275,14 @@ export default function AttemptChat({
       );
       socket.off("simulation_message_error", handleSimulationMessageError);
       socket.off("simulations_text_stopped", handleSimulationStopped);
-      socket.off("simulations_text_continued", handleSimulationContinued);
+      socket.off("simulations_text_ended", handleSimulationContinued);
       socket.off("simulations_text_end_all_completed", handleEndAllCompleted);
       socket.off(
         "simulation_text_send_error",
         handleSendSimulationMessageError
       );
       socket.off("simulation_text_stop_error", handleStopSimulationError);
-      socket.off("simulation_text_next_error", handleContinueSimulationError);
+      socket.off("simulations_text_end_error", handleContinueSimulationError);
       socket.off(
         "simulation_grading_progress",
         handleSimulationGradingProgress

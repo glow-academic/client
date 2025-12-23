@@ -114,7 +114,7 @@ export function SimulationControls({
         if (previousChatId) {
           continueData.previous_chat_id = previousChatId;
         }
-        socket.emit("simulation_text_next", continueData);
+        socket.emit("simulation_text_end", continueData);
       } catch (error) {
         toast.error(`Failed to end chat: ${error}`);
         setEndChatLoading(false);
@@ -148,7 +148,7 @@ export function SimulationControls({
         if (previousChatMap) {
           continueData.previous_chat_map = previousChatMap;
         }
-        socket.emit("simulation_text_next", continueData);
+        socket.emit("simulation_text_end", continueData);
       } catch (error) {
         toast.error(`Failed to end all chats: ${error}`);
         // Only reset on error - success/completion handled by WebSocket events
@@ -254,8 +254,8 @@ export function SimulationControls({
       }
     };
 
-    socket.on("simulations_text_continued", handleSimulationContinued);
-    socket.on("simulations_text_next_error", handleSimulationError);
+    socket.on("simulations_text_ended", handleSimulationContinued);
+    socket.on("simulations_text_end_error", handleSimulationError);
     socket.on("simulations_text_end_all_started", handleEndAllStarted);
     socket.on("simulations_text_end_chat_started", handleEndChatStarted);
     socket.on("simulations_text_end_all_completed", handleEndAllCompleted);
@@ -265,8 +265,8 @@ export function SimulationControls({
     );
 
     return () => {
-      socket.off("simulations_text_continued", handleSimulationContinued);
-      socket.off("simulations_text_next_error", handleSimulationError);
+      socket.off("simulations_text_ended", handleSimulationContinued);
+      socket.off("simulations_text_end_error", handleSimulationError);
       socket.off("simulations_text_end_all_started", handleEndAllStarted);
       socket.off("simulations_text_end_chat_started", handleEndChatStarted);
       socket.off("simulations_text_end_all_completed", handleEndAllCompleted);
@@ -496,7 +496,7 @@ export function SimulationControls({
     setEndingAction("endChat");
 
     try {
-      socket.emit("simulation_text_next", {
+      socket.emit("simulation_text_end", {
         chat_id: currentChatId,
         attempt_id: attemptId,
         end_all: false,

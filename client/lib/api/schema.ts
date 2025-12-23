@@ -3485,29 +3485,9 @@ export interface paths {
         put?: never;
         /**
          * Simulation Text End Api
-         * @description Client-to-server event: End a simulation chat session.
+         * @description Client-to-server event: End simulation chat.
          */
         post: operations["simulation_text_end_api_socket_v3_client_simulations_text_end_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v3/client/simulations/text/next": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Simulation Text Next Api
-         * @description Client-to-server event: Continue to next scenario in simulation attempt.
-         */
-        post: operations["simulation_text_next_api_socket_v3_client_simulations_text_next_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4634,26 +4614,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/text/ended": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Simulation Text Ended Api
-         * @description Server-to-client event: Simulation chat session ended successfully.
-         */
-        post: operations["simulation_text_ended_api_socket_v3_server_simulations_text_ended_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v3/server/simulations/text/end_error": {
         parameters: {
             query?: never;
@@ -4665,7 +4625,7 @@ export interface paths {
         put?: never;
         /**
          * Simulation Text End Error Api
-         * @description Server-to-client event: Error occurred while ending simulation chat session.
+         * @description Server-to-client event: Error occurred while ending simulation.
          */
         post: operations["simulation_text_end_error_api_socket_v3_server_simulations_text_end_error_post"];
         delete?: never;
@@ -4674,7 +4634,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v3/server/simulations/text/next_error": {
+    "/socket/v3/server/simulations/text/ended": {
         parameters: {
             query?: never;
             header?: never;
@@ -4684,30 +4644,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Simulation Text Next Error Api
-         * @description Server-to-client event: Error occurred while continuing simulation.
+         * Simulation Ended Api
+         * @description Server-to-client event: Simulation ended successfully.
          */
-        post: operations["simulation_text_next_error_api_socket_v3_server_simulations_text_next_error_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v3/server/simulations/text/continued": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Simulation Continued Api
-         * @description Server-to-client event: Simulation continued to next scenario.
-         */
-        post: operations["simulation_continued_api_socket_v3_server_simulations_text_continued_post"];
+        post: operations["simulation_ended_api_socket_v3_server_simulations_text_ended_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7183,16 +7123,6 @@ export interface components {
             documentIds: string[];
         };
         /**
-         * ChatStoppedPayload
-         * @description Response indicating chat session stopped successfully.
-         */
-        ChatStoppedPayload: {
-            /** Chat Id */
-            chat_id: string;
-            /** Chat Type */
-            chat_type: string;
-        };
-        /**
          * ClassifyUploadRequest
          * @description Request body for upload classification.
          */
@@ -7502,37 +7432,6 @@ export interface components {
             percentage: number | null;
             /** Timetaken */
             timeTaken: number | null;
-        };
-        /**
-         * ContinueSimulationErrorPayload
-         * @description Response indicating an error occurred while continuing simulation.
-         */
-        ContinueSimulationErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * ContinueSimulationPayload
-         * @description Request to continue simulation to next chat.
-         */
-        ContinueSimulationPayload: {
-            /** Chat Id */
-            chat_id: string;
-            /** Attempt Id */
-            attempt_id: string;
-            /**
-             * End All
-             * @default false
-             */
-            end_all: boolean;
-            /** Previous Chat Id */
-            previous_chat_id?: string | null;
-            /** Previous Chat Map */
-            previous_chat_map?: {
-                [key: string]: string | null;
-            } | null;
         };
         /** CreateAgentRequest */
         CreateAgentRequest: {
@@ -9445,6 +9344,37 @@ export interface components {
             chat_id: string;
             /** Attempt Id */
             attempt_id: string;
+        };
+        /**
+         * EndSimulationErrorPayload
+         * @description Response indicating an error occurred while ending simulation.
+         */
+        EndSimulationErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * EndSimulationPayload
+         * @description Request to end simulation chat.
+         */
+        EndSimulationPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Attempt Id */
+            attempt_id: string;
+            /**
+             * End All
+             * @default false
+             */
+            end_all: boolean;
+            /** Previous Chat Id */
+            previous_chat_id?: string | null;
+            /** Previous Chat Map */
+            previous_chat_map?: {
+                [key: string]: string | null;
+            } | null;
         };
         /**
          * EvalAttemptFullRequest
@@ -14339,10 +14269,18 @@ export interface components {
             practiceSimulation: boolean;
         };
         /**
-         * SimulationContinuedPayload
-         * @description Response indicating simulation was continued successfully.
+         * SimulationDetailRequest
+         * @description Request to get simulation details.
          */
-        SimulationContinuedPayload: {
+        SimulationDetailRequest: {
+            /** Simulationid */
+            simulationId: string;
+        };
+        /**
+         * SimulationEndedPayload
+         * @description Response indicating simulation was ended successfully.
+         */
+        SimulationEndedPayload: {
             /** Success */
             success: boolean;
             /** Message */
@@ -14355,14 +14293,6 @@ export interface components {
             is_attempt_finished?: boolean | null;
             /** Simulation Grade Id */
             simulation_grade_id?: string | null;
-        };
-        /**
-         * SimulationDetailRequest
-         * @description Request to get simulation details.
-         */
-        SimulationDetailRequest: {
-            /** Simulationid */
-            simulationId: string;
         };
         /**
          * SimulationEnterErrorPayload
@@ -14745,29 +14675,6 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
-        };
-        /**
-         * SimulationTextEndErrorPayload
-         * @description Response indicating an error occurred while ending simulation chat session.
-         */
-        SimulationTextEndErrorPayload: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SimulationTextEndPayload
-         * @description Request to end a simulation chat session.
-         */
-        SimulationTextEndPayload: {
-            /** Chat Id */
-            chat_id: string;
-            /**
-             * Chat Type
-             * @default assistant
-             */
-            chat_type: string;
         };
         /**
          * SimulationToolCallCompletePayload
@@ -27229,42 +27136,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SimulationTextEndPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    simulation_text_next_api_socket_v3_client_simulations_text_next_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ContinueSimulationPayload"];
+                "application/json": components["schemas"]["EndSimulationPayload"];
             };
         };
         responses: {
@@ -29250,41 +29122,6 @@ export interface operations {
             };
         };
     };
-    simulation_text_ended_api_socket_v3_server_simulations_text_ended_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChatStoppedPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     simulation_text_end_error_api_socket_v3_server_simulations_text_end_error_post: {
         parameters: {
             query?: never;
@@ -29294,7 +29131,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SimulationTextEndErrorPayload"];
+                "application/json": components["schemas"]["EndSimulationErrorPayload"];
             };
         };
         responses: {
@@ -29320,7 +29157,7 @@ export interface operations {
             };
         };
     };
-    simulation_text_next_error_api_socket_v3_server_simulations_text_next_error_post: {
+    simulation_ended_api_socket_v3_server_simulations_text_ended_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -29329,42 +29166,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ContinueSimulationErrorPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    simulation_continued_api_socket_v3_server_simulations_text_continued_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationContinuedPayload"];
+                "application/json": components["schemas"]["SimulationEndedPayload"];
             };
         };
         responses: {

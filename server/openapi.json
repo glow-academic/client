@@ -13972,13 +13972,13 @@
           "socket-client"
         ],
         "summary": "Simulation Text End Api",
-        "description": "Client-to-server event: End a simulation chat session.",
+        "description": "Client-to-server event: End simulation chat.",
         "operationId": "simulation_text_end_api_socket_v3_client_simulations_text_end_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SimulationTextEndPayload"
+                "$ref": "#/components/schemas/EndSimulationPayload"
               }
             }
           },
@@ -13995,61 +13995,6 @@
                   },
                   "type": "object",
                   "title": "Response Simulation Text End Api Socket V3 Client Simulations Text End Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ]
-      }
-    },
-    "/socket/v3/client/simulations/text/next": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-client",
-          "socket-client",
-          "socket-client"
-        ],
-        "summary": "Simulation Text Next Api",
-        "description": "Client-to-server event: Continue to next scenario in simulation attempt.",
-        "operationId": "simulation_text_next_api_socket_v3_client_simulations_text_next_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ContinueSimulationPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Simulation Text Next Api Socket V3 Client Simulations Text Next Post"
                 }
               }
             }
@@ -17105,61 +17050,6 @@
         ]
       }
     },
-    "/socket/v3/server/simulations/text/ended": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Simulation Text Ended Api",
-        "description": "Server-to-client event: Simulation chat session ended successfully.",
-        "operationId": "simulation_text_ended_api_socket_v3_server_simulations_text_ended_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChatStoppedPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Simulation Text Ended Api Socket V3 Server Simulations Text Ended Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
     "/socket/v3/server/simulations/text/end_error": {
       "post": {
         "tags": [
@@ -17169,13 +17059,13 @@
           "socket-server"
         ],
         "summary": "Simulation Text End Error Api",
-        "description": "Server-to-client event: Error occurred while ending simulation chat session.",
+        "description": "Server-to-client event: Error occurred while ending simulation.",
         "operationId": "simulation_text_end_error_api_socket_v3_server_simulations_text_end_error_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SimulationTextEndErrorPayload"
+                "$ref": "#/components/schemas/EndSimulationErrorPayload"
               }
             }
           },
@@ -17215,7 +17105,7 @@
         ]
       }
     },
-    "/socket/v3/server/simulations/text/next_error": {
+    "/socket/v3/server/simulations/text/ended": {
       "post": {
         "tags": [
           "socket",
@@ -17223,14 +17113,14 @@
           "socket-server",
           "socket-server"
         ],
-        "summary": "Simulation Text Next Error Api",
-        "description": "Server-to-client event: Error occurred while continuing simulation.",
-        "operationId": "simulation_text_next_error_api_socket_v3_server_simulations_text_next_error_post",
+        "summary": "Simulation Ended Api",
+        "description": "Server-to-client event: Simulation ended successfully.",
+        "operationId": "simulation_ended_api_socket_v3_server_simulations_text_ended_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ContinueSimulationErrorPayload"
+                "$ref": "#/components/schemas/SimulationEndedPayload"
               }
             }
           },
@@ -17246,62 +17136,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Simulation Text Next Error Api Socket V3 Server Simulations Text Next Error Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v3/server/simulations/text/continued": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server",
-          "socket-server",
-          "socket-server"
-        ],
-        "summary": "Simulation Continued Api",
-        "description": "Server-to-client event: Simulation continued to next scenario.",
-        "operationId": "simulation_continued_api_socket_v3_server_simulations_text_continued_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SimulationContinuedPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Simulation Continued Api Socket V3 Server Simulations Text Continued Post"
+                  "title": "Response Simulation Ended Api Socket V3 Server Simulations Text Ended Post"
                 }
               }
             }
@@ -23840,25 +23675,6 @@
         ],
         "title": "ChatItem"
       },
-      "ChatStoppedPayload": {
-        "properties": {
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "chat_type": {
-            "type": "string",
-            "title": "Chat Type"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id",
-          "chat_type"
-        ],
-        "title": "ChatStoppedPayload",
-        "description": "Response indicating chat session stopped successfully."
-      },
       "ClassifyUploadRequest": {
         "properties": {
           "parameterIds": {
@@ -24608,81 +24424,6 @@
         ],
         "title": "ContinuationOption",
         "description": "A single continuation option for a scenario."
-      },
-      "ContinueSimulationErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "ContinueSimulationErrorPayload",
-        "description": "Response indicating an error occurred while continuing simulation."
-      },
-      "ContinueSimulationPayload": {
-        "properties": {
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "attempt_id": {
-            "type": "string",
-            "title": "Attempt Id"
-          },
-          "end_all": {
-            "type": "boolean",
-            "title": "End All",
-            "default": false
-          },
-          "previous_chat_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Previous Chat Id"
-          },
-          "previous_chat_map": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Previous Chat Map"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id",
-          "attempt_id"
-        ],
-        "title": "ContinueSimulationPayload",
-        "description": "Request to continue simulation to next chat."
       },
       "CreateAgentRequest": {
         "properties": {
@@ -29466,6 +29207,81 @@
         ],
         "title": "EndChatStartedPayload",
         "description": "Response indicating end chat operation started."
+      },
+      "EndSimulationErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "EndSimulationErrorPayload",
+        "description": "Response indicating an error occurred while ending simulation."
+      },
+      "EndSimulationPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "end_all": {
+            "type": "boolean",
+            "title": "End All",
+            "default": false
+          },
+          "previous_chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chat Id"
+          },
+          "previous_chat_map": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Chat Map"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "attempt_id"
+        ],
+        "title": "EndSimulationPayload",
+        "description": "Request to end simulation chat."
       },
       "EvalAttemptFullRequest": {
         "properties": {
@@ -42885,7 +42701,21 @@
         "title": "SimulationContextItem",
         "description": "Simplified simulation item for profile context."
       },
-      "SimulationContinuedPayload": {
+      "SimulationDetailRequest": {
+        "properties": {
+          "simulationId": {
+            "type": "string",
+            "title": "Simulationid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulationId"
+        ],
+        "title": "SimulationDetailRequest",
+        "description": "Request to get simulation details."
+      },
+      "SimulationEndedPayload": {
         "properties": {
           "success": {
             "type": "boolean",
@@ -42940,22 +42770,8 @@
           "completed_chat_id",
           "next_chat_id"
         ],
-        "title": "SimulationContinuedPayload",
-        "description": "Response indicating simulation was continued successfully."
-      },
-      "SimulationDetailRequest": {
-        "properties": {
-          "simulationId": {
-            "type": "string",
-            "title": "Simulationid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "simulationId"
-        ],
-        "title": "SimulationDetailRequest",
-        "description": "Request to get simulation details."
+        "title": "SimulationEndedPayload",
+        "description": "Response indicating simulation was ended successfully."
       },
       "SimulationEnterErrorPayload": {
         "properties": {
@@ -43900,44 +43716,6 @@
         ],
         "title": "SimulationStoppedPayload",
         "description": "Response indicating simulation was stopped successfully."
-      },
-      "SimulationTextEndErrorPayload": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "SimulationTextEndErrorPayload",
-        "description": "Response indicating an error occurred while ending simulation chat session."
-      },
-      "SimulationTextEndPayload": {
-        "properties": {
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "chat_type": {
-            "type": "string",
-            "title": "Chat Type",
-            "default": "assistant"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id"
-        ],
-        "title": "SimulationTextEndPayload",
-        "description": "Request to end a simulation chat session."
       },
       "SimulationToolCallCompletePayload": {
         "properties": {
