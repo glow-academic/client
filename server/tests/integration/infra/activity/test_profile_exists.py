@@ -3,6 +3,7 @@
 import asyncpg
 import pytest
 from app.infra.v3.activity.profile_exists import profile_exists
+from utils.sql_helper import load_sql
 
 pytestmark = pytest.mark.asyncio
 
@@ -15,10 +16,8 @@ class TestProfileExists:
     ) -> None:
         """Test profile_exists returns True for existing profile."""
         # Arrange
-        profile_id = await db.fetchval(
-            "INSERT INTO profiles(first_name, last_name, role, active) "
-            "VALUES ('Test', 'User', 'member', true) RETURNING id"
-        )
+        insert_profile_sql = load_sql("tests/sql/integration/infra/activity/insert_test_profile.sql")
+        profile_id = await db.fetchval(insert_profile_sql)
         assert profile_id is not None
 
         # Act

@@ -3,6 +3,7 @@
 import pytest
 from app.infra.v3.error.handle_route_error import handle_route_error
 from fastapi import HTTPException
+from utils.sql_helper import load_sql
 
 
 class TestHandleRouteError:
@@ -29,7 +30,7 @@ class TestHandleRouteError:
         error = ValueError("Test error")
         route_path = "/api/v3/test"
         operation = "test_operation"
-        sql_query = "SELECT * FROM test"
+        sql_query = load_sql("tests/sql/integration/infra/error/mock_select_test.sql")
         sql_params = ("param1", "param2")
 
         # Act & Assert

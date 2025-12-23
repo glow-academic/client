@@ -3,6 +3,7 @@
 import asyncpg
 import pytest
 from app.infra.v3.activity.insert import insert_activity
+from utils.sql_helper import load_sql
 
 pytestmark = pytest.mark.asyncio
 
@@ -15,10 +16,8 @@ class TestInsertActivity:
     ) -> None:
         """Test successful activity insertion."""
         # Arrange
-        profile_id = await db.fetchval(
-            "INSERT INTO profiles(first_name, last_name, role, active) "
-            "VALUES ('Test', 'User', 'member', true) RETURNING id"
-        )
+        insert_profile_sql = load_sql("tests/sql/integration/infra/activity/insert_test_profile.sql")
+        profile_id = await db.fetchval(insert_profile_sql)
         assert profile_id is not None
 
         # Act
@@ -31,8 +30,9 @@ class TestInsertActivity:
         )
 
         # Assert
+        get_activity_sql = load_sql("tests/sql/integration/infra/activity/get_activity_by_message_and_endpoint.sql")
         activity = await db.fetchrow(
-            "SELECT * FROM activity WHERE message = $1 AND endpoint = $2",
+            get_activity_sql,
             "Test activity message",
             "/api/v3/test",
         )
@@ -47,10 +47,8 @@ class TestInsertActivity:
     ) -> None:
         """Test activity insertion with error flag."""
         # Arrange
-        profile_id = await db.fetchval(
-            "INSERT INTO profiles(first_name, last_name, role, active) "
-            "VALUES ('Test', 'User', 'member', true) RETURNING id"
-        )
+        insert_profile_sql = load_sql("tests/sql/integration/infra/activity/insert_test_profile.sql")
+        profile_id = await db.fetchval(insert_profile_sql)
         assert profile_id is not None
 
         # Act
@@ -63,8 +61,9 @@ class TestInsertActivity:
         )
 
         # Assert
+        get_activity_sql = load_sql("tests/sql/integration/infra/activity/get_activity_by_message.sql")
         activity = await db.fetchrow(
-            "SELECT * FROM activity WHERE message = $1",
+            get_activity_sql,
             "Error occurred",
         )
         assert activity is not None
@@ -84,8 +83,9 @@ class TestInsertActivity:
         )
 
         # Assert
+        get_activity_sql = load_sql("tests/sql/integration/infra/activity/get_activity_by_message.sql")
         activity = await db.fetchrow(
-            "SELECT * FROM activity WHERE message = $1",
+            get_activity_sql,
             "Anonymous activity",
         )
         assert activity is not None
@@ -108,8 +108,9 @@ class TestInsertActivity:
         )
 
         # Assert
+        get_activity_sql = load_sql("tests/sql/integration/infra/activity/get_activity_by_message.sql")
         activity = await db.fetchrow(
-            "SELECT * FROM activity WHERE message = $1",
+            get_activity_sql,
             "Activity with fake profile",
         )
         assert activity is not None

@@ -3,6 +3,7 @@
 import pytest
 from fastapi import HTTPException
 from app.infra.v3.error.log_and_raise_error import log_and_raise_error
+from utils.sql_helper import load_sql
 
 
 class TestLogAndRaiseError:
@@ -31,7 +32,7 @@ class TestLogAndRaiseError:
         error = ValueError("Test error")
         route_path = "/api/v3/test"
         operation = "test_operation"
-        sql_query = "SELECT * FROM test"
+        sql_query = load_sql("tests/sql/integration/infra/error/mock_select_test.sql")
         sql_params = ("param1", "param2")
 
         # Act & Assert

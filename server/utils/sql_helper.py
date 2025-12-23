@@ -13,8 +13,10 @@ def load_sql(file_path: str) -> str:
     Routes have full control over transaction and execution.
     This follows DHH principles - route owns the execution.
 
+    Supports both app/sql/ and tests/sql/ paths.
+
     Args:
-        file_path: Relative path from server root (e.g., "app/sql/v3/profile/get_profile.sql")
+        file_path: Relative path from server root (e.g., "app/sql/v3/profile/get_profile.sql" or "tests/sql/integration/infra/activity/insert_test_profile.sql")
 
     Returns:
         SQL string with parameter placeholders ($1, $2, etc.)

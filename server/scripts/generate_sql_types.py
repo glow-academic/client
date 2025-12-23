@@ -27,6 +27,9 @@ def _sql_path_to_types_path(sql_path: str) -> tuple[str, str] | None:
     Example:
         "app/sql/v3/agents/create_agent_complete.sql" ->
         ("app/types/v3/agents/create_agent.py", "create_agent")
+        
+        "tests/sql/integration/infra/activity/insert_test_profile.sql" ->
+        ("tests/types/integration/infra/activity/insert_test_profile.py", "insert_test_profile")
 
     Args:
         sql_path: SQL file path relative to server root
@@ -36,31 +39,57 @@ def _sql_path_to_types_path(sql_path: str) -> tuple[str, str] | None:
     """
     # Pattern: app/sql/v3/[resource]/[operation]_complete.sql
     # -> app/types/v3/[resource]/[operation]_complete.py
-    if not sql_path.startswith("app/sql/v3/"):
-        return None
+    if sql_path.startswith("app/sql/v3/"):
+        # Remove prefix and replace sql with types
+        relative = sql_path[len("app/sql/v3/") :]
 
-    # Remove prefix and replace sql with types
-    relative = sql_path[len("app/sql/v3/") :]
+        # Split into resource and filename
+        parts = relative.split("/")
+        if len(parts) != 2:
+            return None
 
-    # Split into resource and filename
-    parts = relative.split("/")
-    if len(parts) != 2:
-        return None
+        resource, filename = parts
 
-    resource, filename = parts
+        # Remove _complete.sql suffix
+        if not filename.endswith("_complete.sql"):
+            return None
 
-    # Remove _complete.sql suffix
-    if not filename.endswith("_complete.sql"):
-        return None
+        operation = filename[: -len("_complete.sql")]
 
-    operation = filename[: -len("_complete.sql")]
+        # Build types path
+        types_path = f"app/types/v3/{resource}/{operation}_complete.py"
+        # Route name is just the operation (resource is already in the path)
+        route_name = operation.replace("-", "_")
 
-    # Build types path
-    types_path = f"app/types/v3/{resource}/{operation}_complete.py"
-    # Route name is just the operation (resource is already in the path)
-    route_name = operation.replace("-", "_")
+        return types_path, route_name
+    
+    # Pattern: tests/sql/integration/infra/[resource]/[operation].sql
+    # -> tests/types/integration/infra/[resource]/[operation].py
+    if sql_path.startswith("tests/sql/integration/infra/"):
+        # Remove prefix and replace sql with types
+        relative = sql_path[len("tests/sql/integration/infra/") :]
 
-    return types_path, route_name
+        # Split into resource and filename
+        parts = relative.split("/")
+        if len(parts) != 2:
+            return None
+
+        resource, filename = parts
+
+        # Remove .sql suffix
+        if not filename.endswith(".sql"):
+            return None
+
+        operation = filename[: -len(".sql")]
+
+        # Build types path
+        types_path = f"tests/types/integration/infra/{resource}/{operation}.py"
+        # Route name is just the operation (resource is already in the path)
+        route_name = operation.replace("-", "_")
+
+        return types_path, route_name
+
+    return None
 
 
 async def generate_types_for_sql_file(
@@ -81,6 +110,9 @@ async def generate_types_for_sql_file(
         metadata = await introspect_sql_file(sql_path, conn)
 
         if metadata.error:
+            # For test SQL files, treat introspection errors as skips (they're often mocks/seeds)
+            if sql_path.startswith("tests/sql/"):
+                return True, f"Skipping {sql_path} (introspection failed: {metadata.error})"
             return False, metadata.error
 
         # Convert SQL path to types path
@@ -105,6 +137,9 @@ async def generate_types_for_sql_file(
         return True, f"Generated {types_file.relative_to(server_root)}"
 
     except Exception as e:
+        # For test SQL files, treat exceptions as skips (they're often mocks/seeds)
+        if sql_path.startswith("tests/sql/"):
+            return True, f"Skipping {sql_path} (error during processing: {str(e)})"
         return False, f"Error processing {sql_path}: {str(e)}"
 
 
@@ -122,15 +157,21 @@ async def main() -> int:
     # Get server root
     server_root = Path(__file__).parent.parent
 
-    # Find all SQL files
-    sql_dir = server_root / "app" / "sql" / "v3"
-    if not sql_dir.exists():
-        print(f"❌ SQL directory not found: {sql_dir}")
-        return 1
-
-    sql_files = list(sql_dir.rglob("*.sql"))
+    # Find all SQL files from both app and tests directories
+    sql_files: list[Path] = []
+    
+    # Process app/sql/v3/
+    app_sql_dir = server_root / "app" / "sql" / "v3"
+    if app_sql_dir.exists():
+        sql_files.extend(app_sql_dir.rglob("*.sql"))
+    
+    # Process tests/sql/integration/infra/
+    tests_sql_dir = server_root / "tests" / "sql" / "integration" / "infra"
+    if tests_sql_dir.exists():
+        sql_files.extend(tests_sql_dir.rglob("*.sql"))
+    
     if not sql_files:
-        print(f"⚠️  No SQL files found in {sql_dir}")
+        print(f"⚠️  No SQL files found in {app_sql_dir} or {tests_sql_dir}")
         return 0
 
     print(f"🔍 Found {len(sql_files)} SQL files to process")

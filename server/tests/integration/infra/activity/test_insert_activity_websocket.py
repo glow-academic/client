@@ -3,6 +3,7 @@
 import asyncpg
 import pytest
 from app.infra.v3.activity.insert_websocket import insert_activity_websocket
+from utils.sql_helper import load_sql
 
 pytestmark = pytest.mark.asyncio
 
@@ -15,10 +16,8 @@ class TestInsertActivityWebsocket:
     ) -> None:
         """Test successful websocket activity insertion."""
         # Arrange
-        profile_id = await db.fetchval(
-            "INSERT INTO profiles(first_name, last_name, role, active) "
-            "VALUES ('Test', 'User', 'member', true) RETURNING id"
-        )
+        insert_profile_sql = load_sql("tests/sql/integration/infra/activity/insert_test_profile.sql")
+        profile_id = await db.fetchval(insert_profile_sql)
         assert profile_id is not None
 
         # Act
@@ -31,8 +30,9 @@ class TestInsertActivityWebsocket:
         )
 
         # Assert
+        get_activity_sql = load_sql("tests/sql/integration/infra/activity/get_activity_by_message_and_endpoint.sql")
         activity = await db.fetchrow(
-            "SELECT * FROM activity WHERE message = $1 AND endpoint = $2",
+            get_activity_sql,
             "WebSocket event occurred",
             "/socket/v3/test",
         )
@@ -47,10 +47,8 @@ class TestInsertActivityWebsocket:
     ) -> None:
         """Test websocket activity insertion with error flag."""
         # Arrange
-        profile_id = await db.fetchval(
-            "INSERT INTO profiles(first_name, last_name, role, active) "
-            "VALUES ('Test', 'User', 'member', true) RETURNING id"
-        )
+        insert_profile_sql = load_sql("tests/sql/integration/infra/activity/insert_test_profile.sql")
+        profile_id = await db.fetchval(insert_profile_sql)
         assert profile_id is not None
 
         # Act
@@ -63,8 +61,9 @@ class TestInsertActivityWebsocket:
         )
 
         # Assert
+        get_activity_sql = load_sql("tests/sql/integration/infra/activity/get_activity_by_message.sql")
         activity = await db.fetchrow(
-            "SELECT * FROM activity WHERE message = $1",
+            get_activity_sql,
             "WebSocket error",
         )
         assert activity is not None
@@ -84,8 +83,9 @@ class TestInsertActivityWebsocket:
         )
 
         # Assert
+        get_activity_sql = load_sql("tests/sql/integration/infra/activity/get_activity_by_message.sql")
         activity = await db.fetchrow(
-            "SELECT * FROM activity WHERE message = $1",
+            get_activity_sql,
             "Anonymous websocket activity",
         )
         assert activity is not None
