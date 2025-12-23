@@ -15554,6 +15554,61 @@
         ]
       }
     },
+    "/socket/v3/client/simulations/hints/generate": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Simulation Hints Generate Api",
+        "description": "Client-to-server event: Generate hints for a simulation message.",
+        "operationId": "simulation_hints_generate_api_socket_v3_client_simulations_hints_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateHintsPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Hints Generate Api Socket V3 Client Simulations Hints Generate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
     "/socket/v3/client/scenarios/generate": {
       "post": {
         "tags": [
@@ -19353,6 +19408,61 @@
         },
         "x-cache-tags": [
           "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/hints/generation_progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Hint Generation Progress Api",
+        "description": "Server-to-client event: Hint generation progress update.",
+        "operationId": "hint_generation_progress_api_socket_v3_server_simulations_hints_generation_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HintGenerationProgressPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Hint Generation Progress Api Socket V3 Server Simulations Hints Generation Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
           "socket-server",
           "socket-server"
         ]
@@ -31177,6 +31287,30 @@
         ],
         "title": "GenerateDocumentTemplatePayload",
         "description": "Request to generate a document template."
+      },
+      "GenerateHintsPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "department_id": {
+            "type": "string",
+            "title": "Department Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "message_id",
+          "department_id"
+        ],
+        "title": "GenerateHintsPayload",
+        "description": "Request to generate hints for a simulation message."
       },
       "GenerateImagePayload": {
         "properties": {

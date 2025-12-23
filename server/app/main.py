@@ -540,6 +540,11 @@ from app.socket.v3.scenarios.tools.statement import (
 # Import scenario tools to register internal_sio handlers
 from app.socket.v3.scenarios.tools.video import scenario_tool_video  # noqa: F401
 
+# Import simulation hints to register internal_sio handler
+from app.socket.v3.simulations.hints.generate import (
+    simulation_hints_generate_internal,  # noqa: F401
+)
+
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]
 

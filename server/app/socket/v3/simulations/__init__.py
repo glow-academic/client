@@ -32,6 +32,12 @@ from .streaming import (
 from .streaming import (
     server_router as streaming_server_router,
 )
+from .hints import (
+    client_router as hints_client_router,
+)
+from .hints import (
+    server_router as hints_server_router,
+)
 from .text import (
     client_router as text_client_router,
 )
@@ -55,6 +61,7 @@ client_router.include_router(text_client_router)
 client_router.include_router(voice_client_router)
 client_router.include_router(grading_client_router)
 client_router.include_router(streaming_client_router)
+client_router.include_router(hints_client_router)
 
 server_router.include_router(enter_server_router)
 server_router.include_router(join_server_router)
@@ -63,3 +70,4 @@ server_router.include_router(text_server_router)
 server_router.include_router(voice_server_router)
 server_router.include_router(grading_server_router)
 server_router.include_router(streaming_server_router)
+server_router.include_router(hints_server_router)

@@ -4054,6 +4054,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/client/simulations/hints/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Hints Generate Api
+         * @description Client-to-server event: Generate hints for a simulation message.
+         */
+        post: operations["simulation_hints_generate_api_socket_v3_client_simulations_hints_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/client/scenarios/generate": {
         parameters: {
             query?: never;
@@ -5448,6 +5468,26 @@ export interface paths {
          * @description Server-to-client event: Message improvement tool error.
          */
         post: operations["message_improvement_tool_error_api_socket_v3_server_simulations_message_improvement_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/hints/generation_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hint Generation Progress Api
+         * @description Server-to-client event: Hint generation progress update.
+         */
+        post: operations["hint_generation_progress_api_socket_v3_server_simulations_hints_generation_progress_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10193,6 +10233,18 @@ export interface components {
             documentDescription?: string | null;
             /** Fieldids */
             fieldIds?: string[] | null;
+        };
+        /**
+         * GenerateHintsPayload
+         * @description Request to generate hints for a simulation message.
+         */
+        GenerateHintsPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Department Id */
+            department_id: string;
         };
         /**
          * GenerateImagePayload
@@ -28183,6 +28235,41 @@ export interface operations {
             };
         };
     };
+    simulation_hints_generate_api_socket_v3_client_simulations_hints_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateHintsPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     generate_scenario_api_socket_v3_client_scenarios_generate_post: {
         parameters: {
             query?: never;
@@ -30608,6 +30695,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MessageImprovementToolErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    hint_generation_progress_api_socket_v3_server_simulations_hints_generation_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HintGenerationProgressPayload"];
             };
         };
         responses: {
