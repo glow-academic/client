@@ -7,13 +7,9 @@ import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateAgentApiRequest,
-    CreateAgentApiResponse,
-    CreateAgentSqlParams,
-    CreateAgentSqlRow,
-    load_sql_query,
-)
+from app.sql.types import (CreateAgentApiRequest, CreateAgentApiResponse,
+                           CreateAgentSqlParams, CreateAgentSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
@@ -72,14 +68,8 @@ async def create_agent(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            # Ensure arrays are never None (use empty list as default)
-            request_dict = request.model_dump()
-            if not request_dict.get("department_ids"):
-                request_dict["department_ids"] = []
-            if not request_dict.get("model_voice_ids"):
-                request_dict["model_voice_ids"] = []
-            
-            params = CreateAgentSqlParams(**request_dict, profile_id=profile_id)
+            # Pydantic models handle array defaults via Field(default_factory=list)
+            params = CreateAgentSqlParams(**request.model_dump(), profile_id=profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper (unified query handles all inserts)

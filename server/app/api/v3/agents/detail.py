@@ -10,7 +10,6 @@ from app.sql.types import (GetAgentDetailApiRequest, GetAgentDetailApiResponse,
                            GetAgentDetailSqlParams, GetAgentDetailSqlRow,
                            load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
@@ -83,8 +82,7 @@ async def get_agent_detail(
 
         # Check if result is empty (no access or not found)
         # SQL handles access control via WHERE clause, so empty result means no access or not found
-        result_dict = result.model_dump()
-        if not result_dict.get("agent_id"):
+        if not result.agent_id:
             # Check if agent exists but user doesn't have department access
             agent_exists_check = await conn.fetchval(
                 "SELECT EXISTS(SELECT 1 FROM agents WHERE id = $1)",
@@ -108,7 +106,7 @@ async def get_agent_detail(
             )
 
         # Convert SQL result to API response
-        response_data = GetAgentDetailApiResponse.model_validate(result_dict)
+        response_data = GetAgentDetailApiResponse.model_validate(result.model_dump())
 
         # Cache response (model_mapping now includes all fields via ModelMappingItem)
         await set_cached(

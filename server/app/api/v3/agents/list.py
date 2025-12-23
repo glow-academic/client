@@ -49,7 +49,7 @@ async def list_agents(
         response.headers["X-Cache-Hit"] = "1"
         return GetAgentsListApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -78,10 +78,8 @@ async def list_agents(
         )
 
         # Set audit context
-        # Handle case where SQL returns no rows (empty CROSS JOINs)
-        actor_name = getattr(result, "actor_name", None)
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
         # Convert SQL result to API response (no manual filtering needed - SQL handles it)
         api_response = GetAgentsListApiResponse.model_validate(result.model_dump())

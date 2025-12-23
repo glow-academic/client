@@ -4,8 +4,6 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-
-import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -70,16 +68,8 @@ async def update_agent(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            # Ensure arrays are never None (use empty list as default)
-            request_dict = request.model_dump()
-            if not request_dict.get("department_ids"):
-                request_dict["department_ids"] = []
-            if not request_dict.get("department_ids_for_prompt"):
-                request_dict["department_ids_for_prompt"] = []
-            if not request_dict.get("model_voice_ids"):
-                request_dict["model_voice_ids"] = []
-            
-            params = UpdateAgentSqlParams(**request_dict, profile_id=profile_id)
+            # Pydantic models handle array defaults via Field(default_factory=list)
+            params = UpdateAgentSqlParams(**request.model_dump(), profile_id=profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper
