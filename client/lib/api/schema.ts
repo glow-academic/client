@@ -10256,54 +10256,52 @@ export interface components {
         GetAgentDetailApiResponse: {
             /** Agent Exists */
             agent_exists: boolean;
-            /** Agent Id */
-            agent_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** System Prompt */
-            system_prompt: string;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** Model Id */
-            model_id: string;
-            /** Active */
-            active: boolean;
-            /** Role */
-            role: string;
-            /** Selected Temperature Level Id */
-            selected_temperature_level_id: string;
-            /** Temperature */
-            temperature: number;
-            /** Selected Reasoning Level Id */
-            selected_reasoning_level_id: string;
-            /** Reasoning */
-            reasoning: string;
-            /** Selected Voice Ids */
-            selected_voice_ids: string[];
-            /** Valid Voices */
-            valid_voices: string[];
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Temperature Lower */
-            temperature_lower: number;
-            /** Temperature Upper */
-            temperature_upper: number;
-            /** Valid Model Ids */
-            valid_model_ids: string[];
+            /** Role */
+            role: string;
+            /** Selected Voice Ids */
+            selected_voice_ids: string[];
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Selected Reasoning Level Id */
+            selected_reasoning_level_id: string;
             /** Actor Name */
             actor_name: string;
-            /** Reasoning Options */
-            reasoning_options: components["schemas"]["GetAgentDetailReasoningOptionsItem"][];
+            /** Description */
+            description: string;
+            /** Temperature Lower */
+            temperature_lower: number;
+            /** Name */
+            name: string;
+            /** Reasoning */
+            reasoning: string;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Temperature Upper */
+            temperature_upper: number;
+            /** Active */
+            active: boolean;
+            /** Selected Temperature Level Id */
+            selected_temperature_level_id: string;
+            /** Valid Model Ids */
+            valid_model_ids: string[];
+            /** System Prompt */
+            system_prompt: string;
+            /** Agent Id */
+            agent_id: string;
+            /** Valid Voices */
+            valid_voices: string[];
+            /** Model Id */
+            model_id: string;
+            /** Temperature */
+            temperature: number;
+            /** Valid Department Ids */
+            valid_department_ids: string[];
             /** Temperature Levels */
-            temperature_levels: components["schemas"]["GetAgentDetailTemperatureLevelsItem"][];
-            /** Available Voices */
-            available_voices: components["schemas"]["GetAgentDetailAvailableVoicesItem"][];
+            temperature_levels: {
+                [key: string]: components["schemas"]["GetAgentDetailTemperatureLevelsItem"];
+            };
             /** Model Mapping */
             model_mapping: {
                 [key: string]: components["schemas"]["GetAgentDetailModelMappingItem"];
@@ -10312,15 +10310,25 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["GetAgentDetailDepartmentMappingItem"];
             };
+            /** Department Prompt Links */
+            department_prompt_links: {
+                [key: string]: components["schemas"]["GetAgentDetailDepartmentPromptLinksItem"];
+            };
+            /** Debug Info */
+            debug_info: {
+                [key: string]: components["schemas"]["GetAgentDetailDebugInfoItem"];
+            };
+            /** Available Voices */
+            available_voices: {
+                [key: string]: components["schemas"]["GetAgentDetailAvailableVoicesItem"];
+            };
             /** Prompt Mapping */
             prompt_mapping: {
                 [key: string]: components["schemas"]["GetAgentDetailPromptMappingItem"];
             };
-            /** Debug Info */
-            debug_info: components["schemas"]["GetAgentDetailDebugInfoItem"][];
-            /** Department Prompt Links */
-            department_prompt_links: {
-                [key: string]: components["schemas"]["GetAgentDetailDepartmentPromptLinksItem"];
+            /** Reasoning Options */
+            reasoning_options: {
+                [key: string]: components["schemas"]["GetAgentDetailReasoningOptionsItem"];
             };
         };
         /** GetAgentDetailAvailableVoicesItem */
@@ -10355,13 +10363,6 @@ export interface components {
             /** Prompt Id */
             prompt_id: string;
         };
-        /** GetAgentDetailModelMappingAvailableVoicesItem */
-        GetAgentDetailModelMappingAvailableVoicesItem: {
-            /** Id */
-            id: string;
-            /** Voice */
-            voice: string;
-        };
         /** GetAgentDetailModelMappingItem */
         GetAgentDetailModelMappingItem: {
             /** Id */
@@ -10371,35 +10372,25 @@ export interface components {
             /** Description */
             description: string;
             /** Input Modalities */
-            input_modalities: string[];
+            input_modalities: unknown[];
             /** Output Modalities */
-            output_modalities: string[];
+            output_modalities: unknown[];
             /** Temperature Lower */
             temperature_lower: number;
             /** Temperature Upper */
             temperature_upper: number;
-            /** Reasoning Options */
-            reasoning_options: components["schemas"]["GetAgentDetailModelMappingReasoningOptionsItem"][];
             /** Temperature Levels */
-            temperature_levels: components["schemas"]["GetAgentDetailModelMappingTemperatureLevelsItem"][];
+            temperature_levels: {
+                [key: string]: unknown;
+            };
+            /** Reasoning Options */
+            reasoning_options: {
+                [key: string]: unknown;
+            };
             /** Available Voices */
-            available_voices: components["schemas"]["GetAgentDetailModelMappingAvailableVoicesItem"][];
-        };
-        /** GetAgentDetailModelMappingReasoningOptionsItem */
-        GetAgentDetailModelMappingReasoningOptionsItem: {
-            /** Id */
-            id: string;
-            /** Reasoning Level */
-            reasoning_level: string;
-        };
-        /** GetAgentDetailModelMappingTemperatureLevelsItem */
-        GetAgentDetailModelMappingTemperatureLevelsItem: {
-            /** Id */
-            id: string;
-            /** Temperature */
-            temperature: string;
-            /** Is Upper */
-            is_upper: boolean;
+            available_voices: {
+                [key: string]: unknown;
+            };
         };
         /** GetAgentDetailPromptMappingItem */
         GetAgentDetailPromptMappingItem: {
@@ -10416,9 +10407,9 @@ export interface components {
             /** Updated At */
             updated_at: string;
             /** Department Ids */
-            department_ids: string[];
+            department_ids: unknown[];
             /** Can Delete */
-            can_delete: boolean;
+            can_delete: number;
         };
         /** GetAgentDetailReasoningOptionsItem */
         GetAgentDetailReasoningOptionsItem: {
@@ -10434,22 +10425,22 @@ export interface components {
             /** Temperature */
             temperature: string;
             /** Is Upper */
-            is_upper: boolean;
+            is_upper: number;
         };
         /** GetAgentNewApiRequest */
         GetAgentNewApiRequest: Record<string, never>;
         /** GetAgentNewApiResponse */
         GetAgentNewApiResponse: {
+            /** User Role */
+            user_role: string;
+            /** Primary Department Id */
+            primary_department_id: string;
+            /** Actor Name */
+            actor_name: string;
             /** Valid Model Ids */
             valid_model_ids: string[];
             /** Valid Department Ids */
             valid_department_ids: string[];
-            /** User Role */
-            user_role: string;
-            /** Actor Name */
-            actor_name: string;
-            /** Primary Department Id */
-            primary_department_id: string;
             /** Model Mapping */
             model_mapping: {
                 [key: string]: components["schemas"]["GetAgentNewModelMappingItem"];
@@ -10468,13 +10459,6 @@ export interface components {
             /** Description */
             description: string;
         };
-        /** GetAgentNewModelMappingAvailableVoicesItem */
-        GetAgentNewModelMappingAvailableVoicesItem: {
-            /** Id */
-            id: string;
-            /** Voice */
-            voice: string;
-        };
         /** GetAgentNewModelMappingItem */
         GetAgentNewModelMappingItem: {
             /** Id */
@@ -10488,31 +10472,21 @@ export interface components {
             /** Temperature Upper */
             temperature_upper: number;
             /** Input Modalities */
-            input_modalities: string[];
+            input_modalities: unknown[];
             /** Output Modalities */
-            output_modalities: string[];
-            /** Reasoning Options */
-            reasoning_options: components["schemas"]["GetAgentNewModelMappingReasoningOptionsItem"][];
+            output_modalities: unknown[];
             /** Temperature Levels */
-            temperature_levels: components["schemas"]["GetAgentNewModelMappingTemperatureLevelsItem"][];
+            temperature_levels: {
+                [key: string]: unknown;
+            };
+            /** Reasoning Options */
+            reasoning_options: {
+                [key: string]: unknown;
+            };
             /** Available Voices */
-            available_voices: components["schemas"]["GetAgentNewModelMappingAvailableVoicesItem"][];
-        };
-        /** GetAgentNewModelMappingReasoningOptionsItem */
-        GetAgentNewModelMappingReasoningOptionsItem: {
-            /** Id */
-            id: string;
-            /** Reasoning Level */
-            reasoning_level: string;
-        };
-        /** GetAgentNewModelMappingTemperatureLevelsItem */
-        GetAgentNewModelMappingTemperatureLevelsItem: {
-            /** Id */
-            id: string;
-            /** Temperature */
-            temperature: string;
-            /** Is Upper */
-            is_upper: boolean;
+            available_voices: {
+                [key: string]: unknown;
+            };
         };
         /** GetAgentsListAgentsItem */
         GetAgentsListAgentsItem: {
@@ -10533,13 +10507,13 @@ export interface components {
             /** Updated At */
             updated_at: string;
             /** Department Ids */
-            department_ids: string[];
+            department_ids: unknown[];
             /** Can Edit */
-            can_edit: boolean;
+            can_edit: number;
             /** Can Duplicate */
-            can_duplicate: boolean;
+            can_duplicate: number;
             /** Can Delete */
-            can_delete: boolean;
+            can_delete: number;
             /** Model Name */
             model_name: string;
             /** Model Description */
@@ -10553,16 +10527,18 @@ export interface components {
         GetAgentsListApiResponse: {
             /** Actor Name */
             actor_name: string;
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["GetAgentsListDepartmentMappingItem"];
-            };
             /** Model Mapping */
             model_mapping: {
                 [key: string]: components["schemas"]["GetAgentsListModelMappingItem"];
             };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["GetAgentsListDepartmentMappingItem"];
+            };
             /** Agents */
-            agents: components["schemas"]["GetAgentsListAgentsItem"][];
+            agents: {
+                [key: string]: components["schemas"]["GetAgentsListAgentsItem"];
+            };
         };
         /** GetAgentsListDepartmentMappingItem */
         GetAgentsListDepartmentMappingItem: {

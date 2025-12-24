@@ -206,15 +206,21 @@ export default function Agent({
             ? modelInfo.temperature_upper
             : 1.0;
         const tempLevels = modelInfo.temperature_levels;
-        if (Array.isArray(tempLevels) && tempLevels.length > 0) {
-          levels = tempLevels.map((l) => {
-            const levelObj = l as Record<string, string | boolean>;
-            return {
-              id: String(levelObj["id"] || ""),
-              temperature: String(levelObj["temperature"] || ""),
-              is_upper: Boolean(levelObj["is_upper"] || false),
-            };
-          });
+        // Handle both dict and array formats (backward compatibility)
+        if (tempLevels && typeof tempLevels === 'object') {
+          const levelsArray = Array.isArray(tempLevels) 
+            ? tempLevels 
+            : Object.values(tempLevels);
+          if (levelsArray.length > 0) {
+            levels = levelsArray.map((l) => {
+              const levelObj = l as Record<string, string | boolean>;
+              return {
+                id: String(levelObj["id"] || ""),
+                temperature: String(levelObj["temperature"] || ""),
+                is_upper: Boolean(levelObj["is_upper"] || false),
+              };
+            });
+          }
         }
       }
     }
@@ -230,11 +236,13 @@ export default function Agent({
             is_upper: boolean;
           }>;
         };
-      levels = (agentDetailWithLevels?.temperature_levels || []) as Array<{
-        id: string;
-        temperature: string;
-        is_upper: boolean;
-      }>;
+      const tempLevels = agentDetailWithLevels?.temperature_levels;
+      // Handle both dict and array formats (backward compatibility)
+      levels = Array.isArray(tempLevels)
+        ? (tempLevels as Array<{ id: string; temperature: string; is_upper: boolean }>)
+        : (tempLevels && typeof tempLevels === 'object'
+            ? Object.values(tempLevels) as Array<{ id: string; temperature: string; is_upper: boolean }>
+            : []);
       lower = agentDetailData?.temperature_lower ?? 0.0;
       upper = agentDetailData?.temperature_upper ?? 1.0;
     }
@@ -269,11 +277,15 @@ export default function Agent({
       if (modelInfo && "available_voices" in modelInfo) {
         const modelVoices = (
           modelInfo as AgentModelMappingItem & {
-            available_voices?: Array<{ id: string; voice: string }>;
+            available_voices?: Array<{ id: string; voice: string }> | Record<string, { id: string; voice: string }>;
           }
         ).available_voices;
-        if (Array.isArray(modelVoices)) {
-          voices = modelVoices.map((v) => ({
+        // Handle both dict and array formats (backward compatibility)
+        if (modelVoices && typeof modelVoices === 'object') {
+          const voicesArray = Array.isArray(modelVoices)
+            ? modelVoices
+            : Object.values(modelVoices);
+          voices = voicesArray.map((v) => ({
             id: String(v["id"] || ""),
             voice: String(v["voice"] || ""),
           }));
@@ -283,12 +295,12 @@ export default function Agent({
 
     // Fallback to agentDetail if no model selected or model doesn't have voices
     if (voices.length === 0 && agentDetail?.available_voices) {
-      voices = (
-        agentDetail.available_voices as Array<{
-          id: string;
-          voice: string;
-        }>
-      ).map((v) => ({
+      const agentVoices = agentDetail.available_voices;
+      // Handle both dict and array formats (backward compatibility)
+      const voicesArray = Array.isArray(agentVoices)
+        ? agentVoices
+        : (agentVoices && typeof agentVoices === 'object' ? Object.values(agentVoices) : []);
+      voices = voicesArray.map((v) => ({
         id: v.id || "",
         voice: v.voice || "",
       }));
@@ -1380,27 +1392,40 @@ export default function Agent({
                       selectedModelId in modelMapping
                     ) {
                       const modelInfo = modelMapping[selectedModelId];
-                      if (
-                        modelInfo?.reasoning_options &&
-                        Array.isArray(modelInfo.reasoning_options) &&
-                        modelInfo.reasoning_options.length > 0
-                      ) {
-                        return modelInfo.reasoning_options.map((opt) => {
-                          const optObj = opt as Record<string, string>;
-                          return {
-                            id: String(optObj["id"] || ""),
-                            reasoning_level: String(
-                              optObj["reasoning_level"] || "",
-                            ),
-                          };
-                        }) as Array<{
-                          id: string;
-                          reasoning_level: string;
-                        }>;
+                      // Handle both dict and array formats (backward compatibility)
+                      if (modelInfo?.reasoning_options && typeof modelInfo.reasoning_options === 'object') {
+                        const reasoningOptionsArray = Array.isArray(modelInfo.reasoning_options)
+                          ? modelInfo.reasoning_options
+                          : Object.values(modelInfo.reasoning_options);
+                        if (reasoningOptionsArray.length > 0) {
+                          return reasoningOptionsArray.map((opt) => {
+                            const optObj = opt as Record<string, string>;
+                            return {
+                              id: String(optObj["id"] || ""),
+                              reasoning_level: String(
+                                optObj["reasoning_level"] || "",
+                              ),
+                            };
+                          }) as Array<{
+                            id: string;
+                            reasoning_level: string;
+                          }>;
+                        }
                       }
                     }
                     // Fallback to agentDetail
-                    return (agentDetail?.reasoning_options || []) as Array<{
+                    const agentReasoningOptions = agentDetail?.reasoning_options;
+                    // Handle both dict and array formats (backward compatibility)
+                    if (agentReasoningOptions && typeof agentReasoningOptions === 'object') {
+                      const reasoningOptionsArray = Array.isArray(agentReasoningOptions)
+                        ? agentReasoningOptions
+                        : Object.values(agentReasoningOptions);
+                      return reasoningOptionsArray as Array<{
+                        id: string;
+                        reasoning_level: string;
+                      }>;
+                    }
+                    return [] as Array<{
                       id: string;
                       reasoning_level: string;
                     }>;

@@ -85,8 +85,13 @@ export default function Agents({
   // Use server-provided data directly
   const agentsData = serverListData;
 
-  // Extract data from response
-  const agents = useMemo(() => agentsData?.agents || [], [agentsData?.agents]);
+  // Extract data from response - convert dict to array for table
+  const agents = useMemo(() => {
+    const agentsDict = agentsData?.agents || {};
+    const agentsArray = Object.values(agentsDict);
+    // Sort by idx if present, otherwise keep original order
+    return agentsArray.sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0));
+  }, [agentsData?.agents]);
   const modelMapping = useMemo(
     () =>
       (agentsData?.model_mapping as Record<

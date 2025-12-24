@@ -45,278 +45,214 @@ def nest_row(row: Mapping[str, Any], sep: str = "__") -> dict[str, Any]:
     return out
 
 
-def _detect_nested_list_prefixes(
-    rows: list[Mapping[str, Any]],
-    top_level_prefix: str,
+def nest(
+    rows: Iterable[Mapping[str, Any]] | Mapping[str, Any],
     sep: str = "__",
-) -> set[str]:
-    """Detect nested list prefixes within a top-level list prefix.
+) -> dict[str, Any]:
+    """Universal nesting based purely on __ convention.
 
-    Scans columns like `prefix__nested__field1`, `prefix__nested__field2` and detects
-    that `nested` is a list prefix within `prefix`.
+    Auto-detects everything from column naming patterns. No configuration needed.
+    Works with single rows or multiple rows.
 
-    Args:
-        rows: List of row dictionaries
-        top_level_prefix: Top-level prefix to scan within (e.g., "model_mapping")
-        sep: Separator for nested keys (default: "__")
+    Patterns:
+    - prefix__key_field__field_name → dict[prefix][key_value][field_name]
+    - prefix__key_field → the key value itself (indicates key field for dict)
+    - prefix__field → scalar field under prefix (if no key_field pattern exists)
+    - field → top-level scalar
 
-    Returns:
-        Set of nested list prefixes (e.g., {"temperature_levels", "reasoning_options"})
-    """
-    nested_prefixes: set[str] = set()
-    prefix_key = top_level_prefix + sep
-
-    # Scan all columns to find nested list patterns
-    for row in rows:
-        for key in row.keys():
-            if not key.startswith(prefix_key):
-                continue
-
-            # Remove top-level prefix to get remainder
-            remainder = key[len(prefix_key):]
-            if not remainder:
-                continue
-
-            # Split remainder to find nested prefix
-            parts = remainder.split(sep)
-            if len(parts) >= 2:
-                # Pattern: prefix__nested__field -> nested is a list prefix
-                nested_prefix = parts[0]
-                nested_prefixes.add(nested_prefix)
-
-    return nested_prefixes
-
-
-def _process_nested_lists(
-    items: list[dict[str, Any]],
-    nested_prefixes: set[str],
-    sep: str = "__",
-) -> list[dict[str, Any]]:
-    """Process nested lists within list items.
-
-    For each item, groups nested list prefixes into lists.
-
-    Args:
-        items: List of item dictionaries (may have nested list columns)
-        nested_prefixes: Set of nested list prefixes to group
-        sep: Separator for nested keys (default: "__")
-
-    Returns:
-        List of items with nested lists grouped
-    """
-    if not nested_prefixes:
-        # No nested lists, just nest the objects
-        return [nest_row(item, sep=sep) for item in items]
-
-    processed_items: list[dict[str, Any]] = []
-    # Group items by their non-nested-list keys to aggregate nested lists
-    item_groups: dict[tuple[Any, ...], dict[str, Any]] = {}
-
-    for item in items:
-        # Separate nested list columns from regular columns
-        nested_data: dict[str, list[dict[str, Any]]] = {p: [] for p in nested_prefixes}
-        regular_data: dict[str, Any] = {}
-
-        for key, value in item.items():
-            # Check if this key belongs to a nested list prefix
-            found_nested = False
-            for nested_prefix in nested_prefixes:
-                nested_key = nested_prefix + sep
-                if key.startswith(nested_key):
-                    # Extract field name after nested prefix
-                    field_name = key[len(nested_key):]
-                    found_nested = True
-                    # We'll process this in the grouping phase
-                    break
-
-            if not found_nested:
-                regular_data[key] = value
-
-        # Create a key from regular data to group items with same base values
-        # Use a tuple of sorted items for grouping
-        # Convert lists to tuples so they can be hashed (for dictionary key)
-        def make_hashable(value: Any) -> Any:
-            if isinstance(value, list):
-                return tuple(make_hashable(item) for item in value)
-            if isinstance(value, dict):
-                return tuple(sorted((k, make_hashable(v)) for k, v in value.items()))
-            return value
-        
-        group_key = tuple(sorted((k, make_hashable(v)) for k, v in regular_data.items()))
-
-        if group_key not in item_groups:
-            # First time seeing this group, initialize
-            item_groups[group_key] = {
-                **regular_data,
-                **{p: [] for p in nested_prefixes},
+    Example (multiple rows):
+        Input rows:
+            [
+                {
+                    "actor_name": "John",
+                    "agents__agent_id": "agent-1",
+                    "agents__agent_id__name": "Agent A",
+                    "model_mapping__id": "model-1",
+                    "model_mapping__id__name": "GPT-4"
+                },
+                {
+                    "actor_name": "John",
+                    "agents__agent_id": "agent-2",
+                    "agents__agent_id__name": "Agent B",
+                    "model_mapping__id": "model-2",
+                    "model_mapping__id__name": "Claude"
+                }
+            ]
+        Output:
+            {
+                "actor_name": "John",
+                "agents": {
+                    "agent-1": {"agent_id": "agent-1", "name": "Agent A"},
+                    "agent-2": {"agent_id": "agent-2", "name": "Agent B"}
+                },
+                "model_mapping": {
+                    "model-1": {"id": "model-1", "name": "GPT-4"},
+                    "model-2": {"id": "model-2", "name": "Claude"}
+                }
             }
 
-        # Collect nested list items for this group
-        for nested_prefix in nested_prefixes:
-            nested_key = nested_prefix + sep
-            nested_item: dict[str, Any] = {}
-            has_nested_data = False
-
-            for key, value in item.items():
-                if key.startswith(nested_key):
-                    field_name = key[len(nested_key):]
-                    nested_item[field_name] = value
-                    if value is not None:
-                        has_nested_data = True
-
-            if has_nested_data and nested_item:
-                # Check if this nested item is already in the list (deduplicate)
-                if nested_item not in item_groups[group_key][nested_prefix]:
-                    item_groups[group_key][nested_prefix].append(nested_item)
-
-    # Convert grouped data back to list of items
-    for group_data in item_groups.values():
-        # Nest the regular data first
-        nested_regular = nest_row(
-            {k: v for k, v in group_data.items() if k not in nested_prefixes},
-            sep=sep,
-        )
-        # Attach nested lists
-        for nested_prefix in nested_prefixes:
-            nested_regular[nested_prefix] = group_data[nested_prefix]
-        processed_items.append(nested_regular)
-
-    return processed_items
-
-
-def nest_many(
-    rows: Iterable[Mapping[str, Any]],
-    *,
-    list_prefixes: set[str] = set(),
-    dict_prefixes: dict[str, str] | None = None,
-    sep: str = "__",
-    auto_detect_nested: bool = True,
-) -> dict[str, Any]:
-    """Convert multiple rows to nested dictionary with list aggregation.
-
-    Automatically detects and handles nested list prefixes within top-level lists.
-    Optionally converts lists to dicts keyed by a specified field.
-
-    Example:
-        Input rows:
-            [{"agentId": "123", "departments__id": "1", "departments__name": "Dept1"},
-             {"agentId": "123", "departments__id": "2", "departments__name": "Dept2"}]
-        Output:
-            {"agentId": "123", "departments": [{"id": "1", "name": "Dept1"}, {"id": "2", "name": "Dept2"}]}
-
-    Example with nested lists:
-        Input rows:
-            [{"model_mapping__id": "1", "model_mapping__name": "Model1",
-              "model_mapping__temperature_levels__id": "t1", "model_mapping__temperature_levels__temp": "0.5"},
-             {"model_mapping__id": "1", "model_mapping__name": "Model1",
-              "model_mapping__temperature_levels__id": "t2", "model_mapping__temperature_levels__temp": "0.7"}]
-        Output:
-            {"model_mapping": [{
-                "id": "1",
-                "name": "Model1",
-                "temperature_levels": [
-                    {"id": "t1", "temp": "0.5"},
-                    {"id": "t2", "temp": "0.7"}
-                ]
-            }]}
-
-    Example with dict_prefixes:
-        Input rows:
-            [{"model_mapping__id": "1", "model_mapping__name": "Model1"},
-             {"model_mapping__id": "2", "model_mapping__name": "Model2"}]
-        With dict_prefixes={"model_mapping": "id"}:
-        Output:
-            {"model_mapping": {
-                "1": {"id": "1", "name": "Model1"},
-                "2": {"id": "2", "name": "Model2"}
-            }}
+    Example (single row):
+        Input: {"agent__name": "Test", "agent__id": "123", "success": True}
+        Output: {"agent": {"name": "Test", "id": "123"}, "success": True}
 
     Args:
-        rows: Iterable of row dictionaries
-        list_prefixes: Set of prefixes that should become lists (e.g., {"departments"})
-        dict_prefixes: Optional dict mapping list prefix to key field name (e.g., {"model_mapping": "id"})
+        rows: Single row dictionary or iterable of row dictionaries
         sep: Separator for nested keys (default: "__")
-        auto_detect_nested: If True, automatically detect nested list prefixes (default: True)
 
     Returns:
-        Nested dictionary with lists for specified prefixes (or dicts if dict_prefixes specified)
-        and nested lists automatically grouped
+        Nested dictionary with dicts for collections, scalars for top-level fields
     """
+    # Handle single row case - just use nest_row
+    if isinstance(rows, Mapping):
+        return nest_row(rows, sep=sep)
+    
+    # Handle multiple rows - aggregate into dicts
     rows_list = list(rows)
     if not rows_list:
         return {}
 
-    # Detect nested list prefixes for each top-level prefix
-    nested_prefix_map: dict[str, set[str]] = {}
-    if auto_detect_nested:
-        for prefix in list_prefixes:
-            nested_prefixes = _detect_nested_list_prefixes(rows_list, prefix, sep=sep)
-            if nested_prefixes:
-                nested_prefix_map[prefix] = nested_prefixes
-
-    # Start with first row's scalar + nested (non-list) fields
-    base: dict[str, Any] = {}
-    list_acc: dict[str, list[dict[str, Any]]] = {p: [] for p in list_prefixes}
-
+    # Step 1: Parse all column names to detect structure
+    column_info: dict[str, dict[str, Any]] = {}
+    all_column_names: set[str] = set()
+    
+    # Collect all column names from all rows
     for row in rows_list:
-        row_dict = dict(row)
-
-        # Build an item dict per list prefix from columns like "departments__id"
-        for prefix in list_prefixes:
-            item: dict[str, Any] = {}
-            prefix_key = prefix + sep
-
-            for k, v in row_dict.items():
-                if k.startswith(prefix_key):
-                    # Remove prefix and separator to get the field name
-                    field_name = k[len(prefix_key):]
-                    item[field_name] = v
-
-            # If the row has no items for this prefix (LEFT JOIN), item might be all None
-            if item and any(v is not None for v in item.values()):
-                # Check if this item is already in the accumulator (deduplicate)
-                # Use a simple check - if exact match exists, skip
-                if item not in list_acc[prefix]:
-                    list_acc[prefix].append(item)
-
-        # Build base once from the first row excluding list columns
-        if not base:
-            filtered = {
-                k: v
-                for k, v in row_dict.items()
-                if not any(k.startswith(p + sep) for p in list_prefixes)
+        all_column_names.update(row.keys())
+    
+    for col_name in all_column_names:
+        if col_name in column_info:
+            continue  # Already parsed
+        
+        parts = col_name.split(sep)
+        
+        if len(parts) == 1:
+            # Top-level scalar: "actor_name"
+            column_info[col_name] = {
+                "type": "scalar",
+                "path": [],
+                "field": parts[0]
             }
-            base = nest_row(filtered, sep=sep)
-
-    # Process nested lists for each top-level list
-    for prefix, items in list_acc.items():
-        if prefix in nested_prefix_map and nested_prefix_map[prefix]:
-            # Process nested lists within this prefix
-            base[prefix] = _process_nested_lists(
-                items, nested_prefix_map[prefix], sep=sep
+        
+        elif len(parts) == 2:
+            # prefix__field: Could be key field or scalar field
+            prefix = parts[0]
+            field = parts[1]
+            
+            # Check if this is a key field (prefix__key_field pattern)
+            # We'll determine this by checking if there are prefix__key_field__field_name columns
+            has_nested_fields = any(
+                other_col.startswith(f"{prefix}__{field}__") 
+                for other_col in all_column_names
             )
-        else:
-            # No nested lists, just nest the objects
-            base[prefix] = [nest_row(item, sep=sep) for item in items]
+            
+            if has_nested_fields:
+                # This is a key field: prefix__key_field
+                column_info[col_name] = {
+                    "type": "key_field",
+                    "prefix": prefix,
+                    "key_field": field
+                }
+            else:
+                # This is a scalar field: prefix__field
+                column_info[col_name] = {
+                    "type": "scalar_field",
+                    "prefix": prefix,
+                    "field": field
+                }
+        
+        elif len(parts) >= 3:
+            # prefix__key_field__field_name or nested: prefix__key1__key2__field
+            prefix = parts[0]
+            key_field = parts[1]
+            field = parts[-1]
+            key_path = parts[1:-1]  # All middle parts
+            
+            column_info[col_name] = {
+                "type": "dict_item",
+                "prefix": prefix,
+                "key_field": key_field,
+                "key_path": key_path,
+                "field": field
+            }
+    
+    # Step 2: Build result structure
+    result: dict[str, Any] = {}
+    
+    # Collect all prefixes that should become dicts
+    dict_prefixes: dict[str, str] = {}  # prefix -> key_field
+    
+    for col_name, info in column_info.items():
+        if info["type"] == "key_field":
+            prefix = info["prefix"]
+            key_field = info["key_field"]
+            dict_prefixes[prefix] = key_field
+    
+    # Step 3: Process top-level scalars
+    for col_name, info in column_info.items():
+        if info["type"] == "scalar":
+            # Use value from first row (all rows should have same value)
+            result[info["field"]] = rows_list[0].get(col_name)
+    
+    # Step 4: Process dict collections
+    for prefix, key_field in dict_prefixes.items():
+        collection: dict[str, Any] = {}
+        
+        for row in rows_list:
+            # Get the key value from prefix__key_field column
+            key_col = f"{prefix}__{key_field}"
+            key_value = row.get(key_col)
+            
+            if key_value is None:
+                continue
+            
+            key_str = str(key_value)
+            
+            # Initialize dict entry if not seen
+            if key_str not in collection:
+                collection[key_str] = {
+                    key_field: key_value
+                }
+            
+            # Build a temporary row with just this prefix's columns (relative to prefix__key_field)
+            temp_row: dict[str, Any] = {}
+            for col_name, value in row.items():
+                if col_name.startswith(f"{prefix}__{key_field}__"):
+                    # Remove prefix__key_field__ to get relative path
+                    relative_path = col_name[len(f"{prefix}__{key_field}__"):]
+                    temp_row[relative_path] = value
+                elif col_name == f"{prefix}__{key_field}":
+                    # Skip the key field itself (already set)
+                    continue
+            
+            # Use nest_row to create nested structure from relative paths
+            if temp_row:
+                nested_item = nest_row(temp_row, sep=sep)
+                # Merge nested_item into collection[key_str]
+                for nested_key, nested_value in nested_item.items():
+                    if nested_key != key_field:  # Don't overwrite the key field
+                        collection[key_str][nested_key] = nested_value
+        
+        # Always add the prefix to result, even if empty (for API response validation)
+        result[prefix] = collection
+    
+    # Step 5: Process scalar fields under prefixes (prefix__field without key_field pattern)
+    for col_name, info in column_info.items():
+        if info["type"] == "scalar_field":
+            prefix = info["prefix"]
+            field = info["field"]
+            
+            # Only add if prefix is not already a dict collection
+            if prefix not in result:
+                result[prefix] = {}
+            
+            if isinstance(result[prefix], dict) and not any(
+                k.startswith(f"{prefix}__") and k != col_name 
+                for k in all_column_names
+            ):
+                # Use value from first row
+                result[prefix][field] = rows_list[0].get(col_name)
+    
+    return result
 
-    # Convert lists to dicts if dict_prefixes specified
-    if dict_prefixes:
-        for prefix, key_field in dict_prefixes.items():
-            if prefix in base and isinstance(base[prefix], list):
-                # Convert list to dict keyed by the specified field
-                result_dict: dict[str, Any] = {}
-                for item in base[prefix]:
-                    if isinstance(item, dict):
-                        key_value = item.get(key_field)
-                        if key_value is not None:
-                            # Convert key to string for consistency
-                            result_dict[str(key_value)] = item
-                    else:
-                        # Handle Pydantic models or other objects
-                        key_value = getattr(item, key_field, None)
-                        if key_value is not None:
-                            result_dict[str(key_value)] = item
-                base[prefix] = result_dict
 
-    return base
 

@@ -88,34 +88,34 @@ model_mapping_data AS (
     LIMIT 1
 )
 SELECT 
-    -- Agents columns with __ prefix
+    -- Agents columns: prefix__key_field__field_name pattern
     fa.id::text as "agents__agent_id",
-    fa.name::text as "agents__name",
-    fa.description::text as "agents__description",
-    COALESCE(mrl.reasoning_level::text, '')::text as "agents__reasoning",
-    COALESCE(mtl.temperature, 0.0)::float as "agents__temperature",
-    fa.model_id::text as "agents__model_id",
-    fa.role::text as "agents__role",
-    fa.updated_at::text as "agents__updated_at",
-    COALESCE(addd.department_ids, ARRAY[]::text[])::text[] as "agents__department_ids",
-    CASE WHEN up.role IN ('admin', 'superadmin') THEN true::boolean ELSE false::boolean END as "agents__can_edit",
-    true::boolean as "agents__can_duplicate",
+    fa.name::text as "agents__agent_id__name",
+    fa.description::text as "agents__agent_id__description",
+    COALESCE(mrl.reasoning_level::text, '')::text as "agents__agent_id__reasoning",
+    COALESCE(mtl.temperature, 0.0)::float as "agents__agent_id__temperature",
+    fa.model_id::text as "agents__agent_id__model_id",
+    fa.role::text as "agents__agent_id__role",
+    fa.updated_at::text as "agents__agent_id__updated_at",
+    COALESCE(addd.department_ids, ARRAY[]::text[])::text[] as "agents__agent_id__department_ids",
+    CASE WHEN up.role IN ('admin', 'superadmin') THEN true::boolean ELSE false::boolean END as "agents__agent_id__can_edit",
+    true::boolean as "agents__agent_id__can_duplicate",
     CASE 
         WHEN COALESCE(adl.total_links, 0) > 0 THEN false::boolean
         WHEN up.role = 'superadmin' THEN true::boolean
         ELSE false::boolean
-    END as "agents__can_delete",
-    m.name::text as "agents__model_name",
-    COALESCE(m.description, '')::text as "agents__model_description",
-    up.actor_name::text as "agents__actor_name",
-    -- Model mapping columns with __ prefix
+    END as "agents__agent_id__can_delete",
+    m.name::text as "agents__agent_id__model_name",
+    COALESCE(m.description, '')::text as "agents__agent_id__model_description",
+    up.actor_name::text as "agents__agent_id__actor_name",
+    -- Model mapping columns: prefix__key_field__field_name pattern
     mmd.model_id::text as "model_mapping__id",
-    mmd.model_name::text as "model_mapping__name",
-    mmd.model_description::text as "model_mapping__description",
-    -- Department mapping columns with __ prefix
+    mmd.model_name::text as "model_mapping__id__name",
+    mmd.model_description::text as "model_mapping__id__description",
+    -- Department mapping columns: prefix__key_field__field_name pattern
     dmd.department_id::text as "department_mapping__id",
-    dmd.department_name::text as "department_mapping__name",
-    dmd.department_description::text as "department_mapping__description",
+    dmd.department_name::text as "department_mapping__id__name",
+    dmd.department_description::text as "department_mapping__id__description",
     -- Top-level actor_name (same for all rows)
     up.actor_name::text as actor_name
 FROM filtered_agents fa

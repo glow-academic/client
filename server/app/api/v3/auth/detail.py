@@ -13,7 +13,7 @@ from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import load_sql
-from utils.sql_nest import nest_many
+from utils.sql_nest import nest
 
 
 # Inline request/response schemas
@@ -106,13 +106,13 @@ async def get_auth_detail(
                 status_code=404, detail=f"Auth not found: {request.authId}"
             )
 
-        # Use nest_many to group rows by auth_items
-        nested_data = nest_many(rows, list_prefixes={"auth_items"})
+        # Use nest to group rows by auth_items (now returns dict)
+        nested_data = nest(rows)
 
-        # Extract auth_items from nested data
+        # Extract auth_items from nested data (now a dict keyed by auth_item_id)
         auth_items: list[AuthItemDetail] = []
-        auth_items_list = nested_data.get("auth_items", [])
-        for item_data in auth_items_list:
+        auth_items_dict = nested_data.get("auth_items", {})
+        for item_data in auth_items_dict.values():
             auth_items.append(
                 AuthItemDetail(
                     auth_item_id=item_data.get("auth_item_id", ""),

@@ -46,13 +46,13 @@ SELECT
     ad.active::boolean as active,
     ad.can_edit::boolean as can_edit,
     aid.auth_item_id::text as "auth_items__auth_item_id",
-    aid.name::text as "auth_items__name",
-    aid.description::text as "auth_items__description",
-    aid.position::integer as "auth_items__position",
-    aid.active::boolean as "auth_items__active",
-    aid.value_masked::text as "auth_items__value_masked",
-    aid.key_id::text as "auth_items__key_id",
-    aid.encrypted::boolean as "auth_items__encrypted",
+    aid.name::text as "auth_items__auth_item_id__name",
+    aid.description::text as "auth_items__auth_item_id__description",
+    aid.position::integer as "auth_items__auth_item_id__position",
+    aid.active::boolean as "auth_items__auth_item_id__active",
+    aid.value_masked::text as "auth_items__auth_item_id__value_masked",
+    aid.key_id::text as "auth_items__auth_item_id__key_id",
+    aid.encrypted::boolean as "auth_items__auth_item_id__encrypted",
     up.actor_name::text as actor_name
 FROM auth_data ad
 CROSS JOIN user_profile up

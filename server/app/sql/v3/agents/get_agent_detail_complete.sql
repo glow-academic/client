@@ -282,54 +282,54 @@ SELECT
     COALESCE((SELECT array_agg(model_id::text ORDER BY name) FROM all_models WHERE active = true), ARRAY[]::text[])::text[] as valid_model_ids,
     -- Top-level actor name
     up.actor_name::text as actor_name,
-    -- Department mapping with __ prefix
+    -- Department mapping: prefix__key_field__field_name pattern
     vdd.department_id::text as "department_mapping__id",
-    vdd.department_name::text as "department_mapping__name",
-    vdd.department_description::text as "department_mapping__description",
-    -- Prompt mapping with __ prefix
+    vdd.department_name::text as "department_mapping__id__name",
+    vdd.department_description::text as "department_mapping__id__description",
+    -- Prompt mapping: prefix__key_field__field_name pattern
     pmd.prompt_id::text as "prompt_mapping__id",
-    pmd.system_prompt::text as "prompt_mapping__system_prompt",
-    pmd.prompt_name::text as "prompt_mapping__name",
-    pmd.prompt_description::text as "prompt_mapping__description",
-    pmd.prompt_created_at::text as "prompt_mapping__created_at",
-    pmd.prompt_updated_at::text as "prompt_mapping__updated_at",
-    COALESCE(pmd.department_ids, ARRAY[]::text[])::text[] as "prompt_mapping__department_ids",
-    pmd.can_delete::boolean as "prompt_mapping__can_delete",
-    -- Department prompt links with __ prefix
+    pmd.system_prompt::text as "prompt_mapping__id__system_prompt",
+    pmd.prompt_name::text as "prompt_mapping__id__name",
+    pmd.prompt_description::text as "prompt_mapping__id__description",
+    pmd.prompt_created_at::text as "prompt_mapping__id__created_at",
+    pmd.prompt_updated_at::text as "prompt_mapping__id__updated_at",
+    COALESCE(pmd.department_ids, ARRAY[]::text[])::text[] as "prompt_mapping__id__department_ids",
+    pmd.can_delete::boolean as "prompt_mapping__id__can_delete",
+    -- Department prompt links: prefix__key_field__field_name pattern (keyed by department_id)
     adpl.department_id::text as "department_prompt_links__department_id",
-    adpl.prompt_id::text as "department_prompt_links__prompt_id",
-    -- Debug info with __ prefix
+    adpl.prompt_id::text as "department_prompt_links__department_id__prompt_id",
+    -- Debug info: prefix__key_field__field_name pattern (keyed by created_at)
     dd.created_at::text as "debug_info__created_at",
-    dd.model_id::text as "debug_info__model_id",
-    dd.content::text as "debug_info__content",
-    -- Model mapping with __ prefix
+    dd.model_id::text as "debug_info__created_at__model_id",
+    dd.content::text as "debug_info__created_at__content",
+    -- Model mapping: prefix__key_field__field_name pattern
     am.model_id::text as "model_mapping__id",
-    am.name::text as "model_mapping__name",
-    am.description::text as "model_mapping__description",
-    COALESCE((SELECT array_agg(modality::text ORDER BY modality) FROM model_modalities_data WHERE model_id = am.model_id AND is_input = true), ARRAY[]::text[])::text[] as "model_mapping__input_modalities",
-    COALESCE((SELECT array_agg(modality::text ORDER BY modality) FROM model_modalities_data WHERE model_id = am.model_id AND is_input = false), ARRAY[]::text[])::text[] as "model_mapping__output_modalities",
-    COALESCE(mtb.temperature_lower, 0.0)::float as "model_mapping__temperature_lower",
-    COALESCE(mtb.temperature_upper, 1.0)::float as "model_mapping__temperature_upper",
-    -- Model temperature levels with nested __ prefix
-    mtl.temperature_level_id::text as "model_mapping__temperature_levels__id",
-    mtl.temperature_value::text as "model_mapping__temperature_levels__temperature",
-    mtl.is_upper::boolean as "model_mapping__temperature_levels__is_upper",
-    -- Model reasoning options with nested __ prefix
-    mrl.reasoning_level_id::text as "model_mapping__reasoning_options__id",
-    mrl.reasoning_level_value::text as "model_mapping__reasoning_options__reasoning_level",
-    -- Model available voices with nested __ prefix
-    mvf.voice_id::text as "model_mapping__available_voices__id",
-    mvf.voice_value::text as "model_mapping__available_voices__voice",
-    -- Reasoning options for selected model with __ prefix
+    am.name::text as "model_mapping__id__name",
+    am.description::text as "model_mapping__id__description",
+    COALESCE((SELECT array_agg(modality::text ORDER BY modality) FROM model_modalities_data WHERE model_id = am.model_id AND is_input = true), ARRAY[]::text[])::text[] as "model_mapping__id__input_modalities",
+    COALESCE((SELECT array_agg(modality::text ORDER BY modality) FROM model_modalities_data WHERE model_id = am.model_id AND is_input = false), ARRAY[]::text[])::text[] as "model_mapping__id__output_modalities",
+    COALESCE(mtb.temperature_lower, 0.0)::float as "model_mapping__id__temperature_lower",
+    COALESCE(mtb.temperature_upper, 1.0)::float as "model_mapping__id__temperature_upper",
+    -- Model temperature levels: nested dict pattern model_mapping__id__temperature_levels__id__field
+    mtl.temperature_level_id::text as "model_mapping__id__temperature_levels__id",
+    mtl.temperature_value::text as "model_mapping__id__temperature_levels__id__temperature",
+    mtl.is_upper::boolean as "model_mapping__id__temperature_levels__id__is_upper",
+    -- Model reasoning options: nested dict pattern model_mapping__id__reasoning_options__id__field
+    mrl.reasoning_level_id::text as "model_mapping__id__reasoning_options__id",
+    mrl.reasoning_level_value::text as "model_mapping__id__reasoning_options__id__reasoning_level",
+    -- Model available voices: nested dict pattern model_mapping__id__available_voices__id__field
+    mvf.voice_id::text as "model_mapping__id__available_voices__id",
+    mvf.voice_value::text as "model_mapping__id__available_voices__id__voice",
+    -- Reasoning options for selected model: prefix__key_field__field_name pattern
     mrl_selected.reasoning_level_id::text as "reasoning_options__id",
-    mrl_selected.reasoning_level_value::text as "reasoning_options__reasoning_level",
-    -- Temperature levels for selected model with __ prefix
+    mrl_selected.reasoning_level_value::text as "reasoning_options__id__reasoning_level",
+    -- Temperature levels for selected model: prefix__key_field__field_name pattern
     mtl_selected.temperature_level_id::text as "temperature_levels__id",
-    mtl_selected.temperature_value::text as "temperature_levels__temperature",
-    mtl_selected.is_upper::boolean as "temperature_levels__is_upper",
-    -- Available voices for selected model with __ prefix
+    mtl_selected.temperature_value::text as "temperature_levels__id__temperature",
+    mtl_selected.is_upper::boolean as "temperature_levels__id__is_upper",
+    -- Available voices for selected model: prefix__key_field__field_name pattern
     mvf_selected.voice_id::text as "available_voices__id",
-    mvf_selected.voice_value::text as "available_voices__voice"
+    mvf_selected.voice_value::text as "available_voices__id__voice"
 FROM agent_exists_check aec
 CROSS JOIN user_profile up
 CROSS JOIN user_has_agent_access uhaa

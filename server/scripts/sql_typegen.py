@@ -6,7 +6,7 @@ Generates Pydantic models from SQL metadata for request/response types.
 from typing import Any
 
 from scripts.sql_introspect import ColumnMetadata, SQLMetadata
-from utils.sql_nest import nest_many
+from utils.sql_nest import nest
 
 
 def _to_pydantic_field_type(python_type: str, is_optional: bool = False) -> str:
@@ -156,86 +156,70 @@ def generate_request_model(
     return "\n".join(lines)
 
 
-def detect_list_prefixes(columns: list[ColumnMetadata]) -> set[str]:
-    """Detect list prefixes from column names with __ patterns.
+def detect_dict_prefixes_universal(columns: list[ColumnMetadata]) -> dict[str, str]:
+    """Detect dict prefixes from column naming convention.
 
-    Scans column names for prefixes that appear multiple times, indicating
-    they should become lists when using nest_many().
+    Detects patterns like `prefix__key_field` and `prefix__key_field__field_name`
+    to identify dict collections and their key fields.
 
     Args:
         columns: List of column metadata
 
     Returns:
-        Set of list prefixes (e.g., {"model_mapping", "department_mapping"})
-    """
-    prefix_counts: dict[str, int] = {}
-    sep = "__"
-
-    for col in columns:
-        if sep not in col.name:
-            continue
-
-        # Extract prefix (everything before the first __)
-        prefix = col.name.split(sep)[0]
-        prefix_counts[prefix] = prefix_counts.get(prefix, 0) + 1
-
-    # Prefixes that appear multiple times are likely list prefixes
-    # (they'll be aggregated across multiple rows)
-    list_prefixes = {prefix for prefix, count in prefix_counts.items() if count > 1}
-
-    return list_prefixes
-
-
-def detect_dict_prefixes(columns: list[ColumnMetadata], list_prefixes: set[str]) -> dict[str, str]:
-    """Detect which list prefixes should become dicts and their key fields.
-
-    Analyzes column structure to determine if a list prefix should be a dict:
-    - If prefix has an `id` field (e.g., `model_mapping__id`), it's likely a dict keyed by `id`
-    - Common patterns: `*_mapping`, `*_links` → dicts
-    - Other list prefixes → remain as lists
-
-    Args:
-        columns: List of column metadata
-        list_prefixes: Set of detected list prefixes
-
-    Returns:
-        Dict mapping prefix to key field name (e.g., {"model_mapping": "id", "department_mapping": "id"})
+        Dict mapping prefix to key field name (e.g., {"agents": "agent_id", "model_mapping": "id"})
     """
     dict_prefixes: dict[str, str] = {}
     sep = "__"
+    all_column_names = {col.name for col in columns}
 
-    for prefix in list_prefixes:
-        # Common patterns that should be dicts (mappings and links)
-        is_mapping = prefix.endswith("_mapping")
-        is_links = prefix.endswith("_links")
+    # Step 1: Find all prefix__key_field patterns (key fields)
+    key_field_columns: dict[str, str] = {}  # prefix -> key_field
+    
+    for col in columns:
+        parts = col.name.split(sep)
+        if len(parts) == 2:
+            prefix = parts[0]
+            field = parts[1]
+            
+            # Check if there are prefix__key_field__field_name columns
+            has_nested_fields = any(
+                other_col.startswith(f"{prefix}__{field}__")
+                for other_col in all_column_names
+            )
+            
+            if has_nested_fields:
+                # This is a key field: prefix__key_field
+                key_field_columns[prefix] = field
+    
+    # Step 2: Also check for prefix__key_field__field_name patterns directly
+    # (in case key_field column is missing but nested fields exist)
+    for col in columns:
+        parts = col.name.split(sep)
+        if len(parts) >= 3:
+            prefix = parts[0]
+            key_field = parts[1]
+            
+            # If we haven't seen this prefix yet, add it
+            if prefix not in key_field_columns:
+                key_field_columns[prefix] = key_field
+    
+    return key_field_columns
 
-        # Only make it a dict if it matches mapping/links pattern AND has an id field
-        if is_mapping or is_links:
-            # Check if this prefix has an `id` field (exactly `prefix__id`)
-            has_id_field = False
-            id_field_name = prefix + sep + "id"
-            for col in columns:
-                if col.name == id_field_name:
-                    has_id_field = True
-                    break
 
-            # Only make it a dict if it has an id field (for keying)
-            if has_id_field:
-                dict_prefixes[prefix] = "id"
-            else:
-                # Find first field after prefix to use as key
-                for col in columns:
-                    if col.name.startswith(prefix + sep):
-                        parts = col.name.split(sep)
-                        if len(parts) >= 2:
-                            dict_prefixes[prefix] = parts[1]
-                            break
+# Keep old functions for backward compatibility (deprecated)
+def detect_list_prefixes(columns: list[ColumnMetadata]) -> set[str]:
+    """Deprecated: Use detect_dict_prefixes_universal instead."""
+    dict_prefixes = detect_dict_prefixes_universal(columns)
+    return set(dict_prefixes.keys())
 
-    return dict_prefixes
+
+def detect_dict_prefixes(columns: list[ColumnMetadata], list_prefixes: set[str] | None = None) -> dict[str, str]:
+    """Deprecated: Use detect_dict_prefixes_universal instead."""
+    return detect_dict_prefixes_universal(columns)
 
 
 def _python_type_to_sample_value(python_type: str) -> Any:
-    """Convert Python type string to a sample value for nest_many().
+    """Convert Python type string to a sample value for nest.
 
     Args:
         python_type: Python type string (e.g., "str", "list[str]", "int")
@@ -272,17 +256,17 @@ def _python_type_to_sample_value(python_type: str) -> Any:
 
 
 def create_sample_rows(
-    columns: list[ColumnMetadata], list_prefixes: set[str], num_samples: int = 3
+    columns: list[ColumnMetadata], dict_prefixes: set[str], num_samples: int = 3
 ) -> list[dict[str, Any]]:
     """Generate sample row dictionaries from column metadata.
 
-    Creates sample rows with appropriate types for use with nest_many().
-    Multiple rows are created to simulate list aggregation, with different
-    values for list prefix columns to ensure proper aggregation.
+    Creates sample rows with appropriate types for use with nest.
+    Multiple rows are created to simulate dict aggregation, with different
+    values for dict prefix columns to ensure proper aggregation.
 
     Args:
         columns: List of column metadata
-        list_prefixes: Set of prefixes that should become lists
+        dict_prefixes: Set of prefixes that should become dicts
         num_samples: Number of sample rows to generate
 
     Returns:
@@ -296,14 +280,14 @@ def create_sample_rows(
             # Generate sample values
             value = _python_type_to_sample_value(col.python_type)
 
-            # Check if this column belongs to a list prefix
-            is_list_prefix_col = False
-            for prefix in list_prefixes:
+            # Check if this column belongs to a dict prefix
+            is_dict_prefix_col = False
+            for prefix in dict_prefixes:
                 if col.name.startswith(prefix + "__"):
-                    is_list_prefix_col = True
+                    is_dict_prefix_col = True
                     break
 
-            if is_list_prefix_col:
+            if is_dict_prefix_col:
                 # For list prefix columns, vary values to simulate multiple items
                 if isinstance(value, str):
                     # Create unique values for each row to simulate aggregation
@@ -593,11 +577,11 @@ def generate_nested_types(
 ) -> tuple[str, dict[str, str]]:
     """Recursively generate Pydantic model classes from nested structure.
 
-    Analyzes the output of nest_many() and generates appropriate Pydantic
+    Analyzes the output of nest and generates appropriate Pydantic
     model classes for nested objects, handling nested lists within lists.
 
     Args:
-        nested_data: Nested dictionary from nest_many() output
+        nested_data: Nested dictionary from nest output
         route_name: Route name for class naming
         prefix: Prefix for generated class names
 
@@ -640,7 +624,7 @@ def generate_nested_types(
                         generated_classes[item_class_name] = item_code
 
         elif isinstance(value, dict) and value:
-            # Check if it's a dict of objects (though nest_many returns lists, not dicts)
+            # Check if it's a dict of objects (nest returns dicts)
             first_val = next(iter(value.values()))
             if isinstance(first_val, dict):
                 # Generate class for the item type
@@ -668,7 +652,7 @@ def generate_response_model(
 ) -> str:
     """Generate Pydantic response model from SQL metadata with nesting support.
 
-    Uses nest_many() to determine the nested structure, then generates
+    Uses nest to determine the nested structure, then generates
     types that match what routes actually use.
 
     Args:
@@ -680,11 +664,11 @@ def generate_response_model(
     """
     class_name = _to_class_name(route_name, "SqlRow")
 
-    # Detect list prefixes from column names
-    list_prefixes = detect_list_prefixes(metadata.returns)
+    # Detect dict prefixes from column naming convention
+    dict_prefixes = detect_dict_prefixes_universal(metadata.returns)
 
-    # If no list prefixes detected, fall back to flat structure
-    if not list_prefixes:
+    # If no dict prefixes detected, fall back to flat structure
+    if not dict_prefixes:
         # Original flat generation
         lines = [
             '"""SQL response row model generated from SQL introspection.',
@@ -720,16 +704,17 @@ def generate_response_model(
 
         return "\n".join(lines)
 
-    # Generate nested structure using nest_many()
-    sample_rows = create_sample_rows(metadata.returns, list_prefixes, num_samples=3)
-    nested_data = nest_many(sample_rows, list_prefixes=list_prefixes)
+    # Generate nested structure using nest
+    from utils.sql_nest import nest
+    sample_rows = create_sample_rows(metadata.returns, set(dict_prefixes.keys()), num_samples=3)
+    nested_data = nest(sample_rows)
 
     # Create a mapping from field name to PostgreSQL type for top-level fields
     top_level_type_map: dict[str, str] = {}
     top_level_optional_map: dict[str, bool] = {}
     for col in metadata.returns:
-        # Top-level fields don't have list prefixes
-        if not any(col.name.startswith(prefix + "__") for prefix in list_prefixes):
+        # Top-level fields don't have dict prefixes
+        if not any(col.name.startswith(prefix + "__") for prefix in dict_prefixes.keys()):
             field_name = _sanitize_field_name(col.name)
             top_level_type_map[field_name] = col.python_type
             top_level_optional_map[field_name] = col.is_optional
@@ -739,7 +724,7 @@ def generate_response_model(
     column_optional_map: dict[str, bool] = {}
     for col in metadata.returns:
         # Map column names (like "model_mapping__input_modalities") to their PostgreSQL types
-        for prefix in list_prefixes:
+        for prefix in dict_prefixes.keys():
             if col.name.startswith(prefix + "__"):
                 field_path = col.name  # e.g., "model_mapping__input_modalities"
                 field_name = col.name[len(prefix) + 2:]  # e.g., "input_modalities"
@@ -777,7 +762,7 @@ def generate_response_model(
     lines.append(f"class {class_name}(BaseModel):")
     lines.append('    """SQL query result row after nesting.')
     lines.append("")
-    lines.append("    Structure matches nest_many() output.")
+    lines.append("    Structure matches nest output.")
     lines.append('    """')
     lines.append("")
 
@@ -813,7 +798,7 @@ def generate_response_model(
                     if item_class_name in generated_classes:
                         sql_field_type = f"dict[str, {item_class_name}]"
 
-            # If it's a list of dicts, use the generated class
+            # If it's a list of dicts (legacy support), use the generated class
             elif isinstance(value, list) and value:
                 first_item = value[0]
                 if isinstance(first_item, dict):
@@ -948,11 +933,11 @@ def generate_api_response_model(
     """
     class_name = _to_class_name(route_name, "ApiResponse")
 
-    # Detect list prefixes from column names
-    list_prefixes = detect_list_prefixes(metadata.returns)
+    # Detect dict prefixes from column naming convention
+    dict_prefixes = detect_dict_prefixes_universal(metadata.returns)
 
-    # If no list prefixes detected, fall back to flat structure
-    if not list_prefixes:
+    # If no dict prefixes detected, fall back to flat structure
+    if not dict_prefixes:
         # Original flat generation
         lines = [
             '"""API response model generated from SQL introspection.',
@@ -990,23 +975,17 @@ def generate_api_response_model(
 
         return "\n".join(lines)
 
-    # Detect dict prefixes for API responses (mappings should be dicts)
-    dict_prefixes = detect_dict_prefixes(metadata.returns, list_prefixes)
-
-    # Generate nested structure using nest_many() with dict_prefixes for API responses
-    sample_rows = create_sample_rows(metadata.returns, list_prefixes, num_samples=3)
-    nested_data = nest_many(
-        sample_rows,
-        list_prefixes=list_prefixes,
-        dict_prefixes=dict_prefixes if dict_prefixes else None,
-    )
+    # Generate nested structure using nest for API responses
+    from utils.sql_nest import nest
+    sample_rows = create_sample_rows(metadata.returns, set(dict_prefixes.keys()), num_samples=3)
+    nested_data = nest(sample_rows)
 
     # Create a mapping from field name to PostgreSQL type for top-level fields
     top_level_type_map: dict[str, str] = {}
     top_level_optional_map: dict[str, bool] = {}
     for col in metadata.returns:
-        # Top-level fields don't have list prefixes
-        if not any(col.name.startswith(prefix + "__") for prefix in list_prefixes):
+        # Top-level fields don't have dict prefixes
+        if not any(col.name.startswith(prefix + "__") for prefix in dict_prefixes.keys()):
             field_name = _sanitize_field_name(col.name)
             top_level_type_map[field_name] = col.python_type
             top_level_optional_map[field_name] = col.is_optional
@@ -1016,7 +995,7 @@ def generate_api_response_model(
     column_optional_map: dict[str, bool] = {}
     for col in metadata.returns:
         # Map column names (like "model_mapping__input_modalities") to their PostgreSQL types
-        for prefix in list_prefixes:
+        for prefix in dict_prefixes.keys():
             if col.name.startswith(prefix + "__"):
                 field_path = col.name  # e.g., "model_mapping__input_modalities"
                 field_name = col.name[len(prefix) + 2:]  # e.g., "input_modalities"
@@ -1037,7 +1016,7 @@ def generate_api_response_model(
         "",
         f"Generated from: {metadata.sql_path}",
         "",
-        "Structure matches nest_many() output with dict_prefixes applied.",
+        "Structure matches nest output.",
         '"""',
         "",
         "from typing import Any",
@@ -1056,7 +1035,7 @@ def generate_api_response_model(
     lines.append(f"class {class_name}(BaseModel):")
     lines.append('    """API response data after nesting.')
     lines.append("")
-    lines.append("    Structure matches nest_many() output with dict_prefixes applied.")
+    lines.append("    Structure matches nest output.")
     lines.append('    """')
     lines.append("")
 
@@ -1105,7 +1084,7 @@ def generate_api_response_model(
                     if item_class_name in generated_classes:
                         api_field_type = f"dict[str, {item_class_name}]"
 
-            # If it's a list of dicts, use the generated class
+            # If it's a list of dicts (legacy support), use the generated class
             elif isinstance(value, list) and value:
                 first_item = value[0]
                 if isinstance(first_item, dict):

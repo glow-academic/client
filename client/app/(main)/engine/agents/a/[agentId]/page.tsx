@@ -30,7 +30,7 @@ const getAgent = async (
 ): Promise<AgentDetailOut> => {
   return api.post(
     "/agents/detail",
-    { body: { agentId } },
+    { body: { agent_id: agentId } },
     {
       cache: "no-store",
       headers: {
