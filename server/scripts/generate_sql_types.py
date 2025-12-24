@@ -306,6 +306,8 @@ def write_consolidated_types_file(
                         stripped_line = cls_line.strip()
                         # Detect class definition start
                         if stripped_line.startswith("class ") and "(" in stripped_line:
+                            # Clear field_names when starting a new class to avoid cross-class deduplication
+                            field_names.clear()
                             in_class = True
                             deduplicated_lines.append(cls_line)
                             continue

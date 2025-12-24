@@ -211,6 +211,81 @@ def _extract_param_names_from_params_cte(sql_text: str) -> dict[int, str]:
     return param_names
 
 
+def _detect_nullable_columns(sql_text: str, column_names: list[str]) -> set[str]:
+    """Detect columns that can be NULL based on SQL patterns.
+    
+    Checks for:
+    1. COALESCE(column, NULL) patterns - redundant COALESCE that still allows NULL
+    2. LEFT JOIN patterns - columns from LEFT JOINed tables can be NULL
+    
+    Args:
+        sql_text: SQL query text
+        column_names: List of column names from introspection
+        
+    Returns:
+        Set of column names that are nullable
+    """
+    nullable_columns: set[str] = set()
+    sql_upper = sql_text.upper()
+    
+    # Pattern 1: Detect COALESCE(..., NULL) patterns
+    # This is redundant and indicates the field can be NULL
+    import re
+    # Match: COALESCE(column, NULL) or COALESCE(alias.column, NULL) ... AS column_name
+    # Look for the full pattern including the AS clause to match column names accurately
+    coalesce_null_pattern = r'COALESCE\s*\(\s*([\w.]+)\s*,\s*NULL\s*\)[^,]*?\s+AS\s+(\w+)'
+    matches = re.finditer(coalesce_null_pattern, sql_text, re.IGNORECASE)
+    for match in matches:
+        # Extract the column name from the AS clause
+        as_column_name = match.group(2).lower()
+        # Check if this matches any of our column names
+        for col_name in column_names:
+            if as_column_name == col_name.lower():
+                nullable_columns.add(col_name)
+                break
+    
+    # Also check for COALESCE patterns without explicit AS (fallback)
+    # Match: COALESCE(column, NULL) or COALESCE(alias.column, NULL)
+    coalesce_null_pattern_fallback = r'COALESCE\s*\(\s*([\w.]+)\s*,\s*NULL\s*\)'
+    matches_fallback = re.finditer(coalesce_null_pattern_fallback, sql_upper, re.IGNORECASE)
+    for match in matches_fallback:
+        # Extract column reference (could be alias.column or just column)
+        column_ref = match.group(1).lower()
+        # Try to match against column names (handle aliases)
+        for col_name in column_names:
+            # Check if column_ref matches the column name or ends with it
+            if column_ref == col_name.lower() or column_ref.endswith('.' + col_name.lower()):
+                nullable_columns.add(col_name)
+    
+    # Pattern 2: Detect LEFT JOIN patterns
+    # Find all LEFT JOINs and extract table aliases
+    left_join_pattern = r'LEFT\s+JOIN\s+[\w.]+\s+(\w+)'
+    left_join_matches = re.finditer(left_join_pattern, sql_upper, re.IGNORECASE)
+    left_join_aliases: set[str] = set()
+    for match in left_join_matches:
+        alias = match.group(1).lower()
+        left_join_aliases.add(alias)
+    
+    # Check if columns come from LEFT JOINed tables
+    # Look for column references like alias.column in SELECT clause
+    select_pattern = r'SELECT\s+(.*?)(?:\s+FROM|\s+WHERE|\s+ORDER|\s+GROUP|\Z)'
+    select_match = re.search(select_pattern, sql_text, re.IGNORECASE | re.DOTALL)
+    if select_match:
+        select_clause = select_match.group(1)
+        # Find column references with aliases
+        for col_name in column_names:
+            # Look for patterns like "alias.column AS column_name" or "alias.column::type AS column_name"
+            # Also check for direct references in COALESCE
+            col_ref_pattern = rf'(\w+)\.{re.escape(col_name.lower())}'
+            col_matches = re.finditer(col_ref_pattern, select_clause, re.IGNORECASE)
+            for col_match in col_matches:
+                alias = col_match.group(1).lower()
+                if alias in left_join_aliases:
+                    nullable_columns.add(col_name)
+    
+    return nullable_columns
+
+
 async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, bool]:
     """Map Postgres OID to Python type string.
 
@@ -337,16 +412,23 @@ async def introspect_sql_file(
             # Get return column types
             return_types: list[ColumnMetadata] = []
             attrs = stmt.get_attributes()
+            column_names = [attr.name for attr in attrs]
+            
+            # Detect nullable columns from SQL patterns
+            nullable_columns = _detect_nullable_columns(sql_text, column_names)
+            
             for attr in attrs:
                 python_type, is_array = await _oid_to_python_type(
                     attr.type.oid, conn
                 )
+                is_optional = attr.name in nullable_columns
                 return_types.append(
                     ColumnMetadata(
                         name=attr.name,
                         python_type=python_type,
                         pg_oid=attr.type.oid,
                         is_array=is_array,
+                        is_optional=is_optional,
                     )
                 )
 

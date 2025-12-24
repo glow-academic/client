@@ -45,7 +45,7 @@ async def disconnect(sid: str) -> None:
                 async with pool.acquire() as conn:
                     async with conn.transaction():
                         sql = load_sql(
-                            "sql/v3/profile/update_profile_to_inactive_complete.sql"
+                            "app/sql/v3/profile/update_profile_to_inactive_complete.sql"
                         )
                         last_active = datetime.now(UTC)
                         await conn.fetchrow(sql, profile_to_cleanup, last_active)

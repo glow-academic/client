@@ -436,6 +436,7 @@ def _generate_nested_model_class(
     generated_classes: dict[str, str] | None = None,
     route_name: str = "",
     column_type_map: dict[str, str] | None = None,
+    column_optional_map: dict[str, bool] | None = None,
 ) -> tuple[str, dict[str, str]]:
     """Generate a Pydantic model class from nested data structure.
 
@@ -522,9 +523,15 @@ def _generate_nested_model_class(
             for path in possible_paths:
                 if path in column_type_map:
                     pg_type = column_type_map[path]
-                    # Always preserve the PostgreSQL type, but make it nullable if value is None
-                    # Note: PostgreSQL types from introspection don't include | None, so we add it if value is None
-                    if value is None:
+                    # Check if field is optional from column_optional_map or if value is None
+                    is_optional = False
+                    if column_optional_map and path in column_optional_map:
+                        is_optional = column_optional_map[path]
+                    elif value is None:
+                        # Fallback: if value is None in sample data, mark as optional
+                        is_optional = True
+                    
+                    if is_optional:
                         # Remove any existing | None and add it back
                         base_type = pg_type.replace(" | None", "").strip()
                         field_type = f"{base_type} | None"
@@ -548,9 +555,23 @@ def _generate_nested_model_class(
                 if nested_class_name:
                     field_type = f"list[{nested_class_name}]"
         
+        # Check if field is optional (from column_optional_map or value is None)
+        is_field_optional = False
+        if column_optional_map:
+            # Try to find optional flag for this field
+            for path in possible_paths if 'possible_paths' in locals() else [key]:
+                if path in column_optional_map:
+                    is_field_optional = column_optional_map[path]
+                    break
+        if not is_field_optional and value is None:
+            is_field_optional = True
+        
         # Sanitize field name
         sanitized_key = _sanitize_field_name(key)
-        lines.append(f"{indent_str}    {sanitized_key}: {field_type}")
+        if is_field_optional and "| None" in field_type:
+            lines.append(f"{indent_str}    {sanitized_key}: {field_type} = None")
+        else:
+            lines.append(f"{indent_str}    {sanitized_key}: {field_type}")
         fields_added = True
 
     # If no fields were generated, add pass statement
@@ -568,6 +589,7 @@ def generate_nested_types(
     route_name: str,
     prefix: str = "",
     column_type_map: dict[str, str] | None = None,
+    column_optional_map: dict[str, bool] | None = None,
 ) -> tuple[str, dict[str, str]]:
     """Recursively generate Pydantic model classes from nested structure.
 
@@ -610,7 +632,7 @@ def generate_nested_types(
 
                     # Now generate the class for this item (nested classes are already generated)
                     item_code, updated_classes = _generate_nested_model_class(
-                        first_item, item_class_name, indent=0, generated_classes=generated_classes, route_name=route_name, column_type_map=column_type_map
+                        first_item, item_class_name, indent=0, generated_classes=generated_classes, route_name=route_name, column_type_map=column_type_map, column_optional_map=column_optional_map
                     )
                     generated_classes.update(updated_classes)
                     if item_code:
@@ -628,7 +650,7 @@ def generate_nested_types(
                 )
                 if item_class_name not in generated_classes:
                     item_code, _ = _generate_nested_model_class(
-                        first_val, item_class_name, indent=0, generated_classes=generated_classes
+                        first_val, item_class_name, indent=0, generated_classes=generated_classes, column_type_map=column_type_map, column_optional_map=column_optional_map
                     )
                     if item_code:
                         all_class_code.append(item_code)
@@ -690,8 +712,11 @@ def generate_response_model(
         else:
             for col in metadata.returns:
                 field_name = _sanitize_field_name(col.name)
-                field_type = _to_pydantic_field_type(col.python_type)
-                lines.append(f"    {field_name}: {field_type}")
+                field_type = _to_pydantic_field_type(col.python_type, col.is_optional)
+                if col.is_optional:
+                    lines.append(f"    {field_name}: {field_type} = None")
+                else:
+                    lines.append(f"    {field_name}: {field_type}")
 
         return "\n".join(lines)
 
@@ -701,14 +726,17 @@ def generate_response_model(
 
     # Create a mapping from field name to PostgreSQL type for top-level fields
     top_level_type_map: dict[str, str] = {}
+    top_level_optional_map: dict[str, bool] = {}
     for col in metadata.returns:
         # Top-level fields don't have list prefixes
         if not any(col.name.startswith(prefix + "__") for prefix in list_prefixes):
             field_name = _sanitize_field_name(col.name)
             top_level_type_map[field_name] = col.python_type
+            top_level_optional_map[field_name] = col.is_optional
 
-    # Create column type map for nested fields
+    # Create column type map for nested fields (includes optional info)
     column_type_map: dict[str, str] = {}
+    column_optional_map: dict[str, bool] = {}
     for col in metadata.returns:
         # Map column names (like "model_mapping__input_modalities") to their PostgreSQL types
         for prefix in list_prefixes:
@@ -717,11 +745,13 @@ def generate_response_model(
                 field_name = col.name[len(prefix) + 2:]  # e.g., "input_modalities"
                 column_type_map[field_path] = col.python_type  # Full path lookup
                 column_type_map[field_name] = col.python_type  # Field name lookup
+                column_optional_map[field_path] = col.is_optional
+                column_optional_map[field_name] = col.is_optional
                 break
 
     # Generate nested model classes
     nested_classes_code, generated_classes = generate_nested_types(
-        nested_data, route_name, column_type_map=column_type_map
+        nested_data, route_name, column_type_map=column_type_map, column_optional_map=column_optional_map
     )
 
     # Build the main response model
@@ -759,12 +789,18 @@ def generate_response_model(
         for key, value in nested_data.items():
             # Try to use PostgreSQL type from column metadata for top-level fields
             sql_field_type: str | None = None
+            is_field_optional = False
             if top_level_type_map and key in top_level_type_map:
                 sql_field_type = top_level_type_map[key]
+                if top_level_optional_map and key in top_level_optional_map:
+                    is_field_optional = top_level_optional_map[key]
             
             # Fall back to value inference
             if sql_field_type is None:
                 sql_field_type = _generate_type_from_value(value, key, generated_classes, route_name)
+                # If value is None, mark as optional
+                if value is None:
+                    is_field_optional = True
 
             # If it's a dict of objects, use the generated class
             if isinstance(value, dict) and value:
@@ -788,7 +824,14 @@ def generate_response_model(
                         sql_field_type = f"list[{item_class_name}]"
 
             sanitized_key = _sanitize_field_name(key)
-            lines.append(f"    {sanitized_key}: {sql_field_type}")
+            # Apply optional type if needed
+            if is_field_optional and "| None" not in sql_field_type:
+                sql_field_type = f"{sql_field_type} | None"
+            
+            if is_field_optional:
+                lines.append(f"    {sanitized_key}: {sql_field_type} = None")
+            else:
+                lines.append(f"    {sanitized_key}: {sql_field_type}")
 
     return "\n".join(lines)
 
@@ -939,8 +982,11 @@ def generate_api_response_model(
         else:
             for col in metadata.returns:
                 field_name = _sanitize_field_name(col.name)
-                field_type = _to_pydantic_field_type(col.python_type)
-                lines.append(f"    {field_name}: {field_type}")
+                field_type = _to_pydantic_field_type(col.python_type, col.is_optional)
+                if col.is_optional:
+                    lines.append(f"    {field_name}: {field_type} = None")
+                else:
+                    lines.append(f"    {field_name}: {field_type}")
 
         return "\n".join(lines)
 
@@ -957,14 +1003,17 @@ def generate_api_response_model(
 
     # Create a mapping from field name to PostgreSQL type for top-level fields
     top_level_type_map: dict[str, str] = {}
+    top_level_optional_map: dict[str, bool] = {}
     for col in metadata.returns:
         # Top-level fields don't have list prefixes
         if not any(col.name.startswith(prefix + "__") for prefix in list_prefixes):
             field_name = _sanitize_field_name(col.name)
             top_level_type_map[field_name] = col.python_type
+            top_level_optional_map[field_name] = col.is_optional
 
-    # Create column type map for nested fields
+    # Create column type map for nested fields (includes optional info)
     column_type_map: dict[str, str] = {}
+    column_optional_map: dict[str, bool] = {}
     for col in metadata.returns:
         # Map column names (like "model_mapping__input_modalities") to their PostgreSQL types
         for prefix in list_prefixes:
@@ -973,11 +1022,13 @@ def generate_api_response_model(
                 field_name = col.name[len(prefix) + 2:]  # e.g., "input_modalities"
                 column_type_map[field_path] = col.python_type  # Full path lookup
                 column_type_map[field_name] = col.python_type  # Field name lookup
+                column_optional_map[field_path] = col.is_optional
+                column_optional_map[field_name] = col.is_optional
                 break
 
     # Generate nested model classes
     nested_classes_code, generated_classes = generate_nested_types(
-        nested_data, route_name, column_type_map=column_type_map
+        nested_data, route_name, column_type_map=column_type_map, column_optional_map=column_optional_map
     )
 
     # Build the main response model
@@ -1017,12 +1068,18 @@ def generate_api_response_model(
         for key, value in nested_data.items():
             # Try to use PostgreSQL type from column metadata for top-level fields
             api_field_type: str | None = None
+            is_field_optional = False
             if top_level_type_map and key in top_level_type_map:
                 api_field_type = top_level_type_map[key]
+                if top_level_optional_map and key in top_level_optional_map:
+                    is_field_optional = top_level_optional_map[key]
             
             # Fall back to value inference
             if api_field_type is None:
                 api_field_type = _generate_type_from_value(value, key, generated_classes, route_name)
+                # If value is None, mark as optional
+                if value is None:
+                    is_field_optional = True
 
             # Check if this prefix should be a dict (from dict_prefixes detection)
             if key in dict_prefixes:
@@ -1059,7 +1116,14 @@ def generate_api_response_model(
                         api_field_type = f"list[{item_class_name}]"
 
             sanitized_key = _sanitize_field_name(key)
-            lines.append(f"    {sanitized_key}: {api_field_type}")
+            # Apply optional type if needed
+            if is_field_optional and "| None" not in api_field_type:
+                api_field_type = f"{api_field_type} | None"
+            
+            if is_field_optional:
+                lines.append(f"    {sanitized_key}: {api_field_type} = None")
+            else:
+                lines.append(f"    {sanitized_key}: {api_field_type}")
 
     return "\n".join(lines)
 
