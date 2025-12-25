@@ -1,35 +1,21 @@
 """Cohort update endpoint - v3 API."""
 
 import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db
+from app.sql.types import (UpdateCohortApiRequest, UpdateCohortApiResponse,
+                           UpdateCohortSqlParams, UpdateCohortSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class UpdateCohortRequest(BaseModel):
-    """Request for updating a cohort."""
-
-    cohortId: str
-    title: str
-    description: str | None = None
-    active: bool
-    department_ids: list[str] = []
-    profile_ids: list[str] = []
-    simulation_ids: list[str] = []
-
-
-class UpdateCohortResponse(BaseModel):
-    """Response for updating a cohort."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/cohorts/update_cohort_complete.sql"
 
 
 router = APIRouter()
@@ -37,7 +23,7 @@ router = APIRouter()
 
 @router.post(
     "/update",
-    response_model=UpdateCohortResponse,
+    response_model=UpdateCohortApiResponse,
     dependencies=[
         audit_activity(
             "cohort.updated", "{{ actor.name }} updated cohort '{{ cohort.name }}'"
@@ -45,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def update_cohort(
-    request: UpdateCohortRequest,
+    request: UpdateCohortApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateCohortResponse:
+) -> UpdateCohortApiResponse:
     """Update an existing cohort."""
     tags = ["cohorts"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -68,45 +54,51 @@ async def update_cohort(
         # Handle None description (cohorts.description is NOT NULL, so use empty string)
         description = request.description if request.description is not None else ""
 
-        # Single consolidated query: updates cohort, department, profile, and simulation relationships
-        sql_query = load_sql("app/sql/v3/cohorts/update_cohort_complete.sql")
-        sql_params = (
-            uuid.UUID(request.cohortId),
-            request.title,
-            description,
-            request.active,
-            request.department_ids if request.department_ids else [],
-            request.profile_ids if request.profile_ids else [],
-            request.simulation_ids if request.simulation_ids else [],
-            uuid.UUID(profile_id),
-        )
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = UpdateCohortSqlParams(
+                cohort_id=request.cohort_id,
+                title=request.title,
+                description=description,
+                active=request.active,
+                department_ids=request.department_ids if request.department_ids else [],
+                profile_ids=request.profile_ids if request.profile_ids else [],
+                simulation_ids=request.simulation_ids if request.simulation_ids else [],
+                profile_id=uuid.UUID(profile_id),
+            )
+            sql_params = params.to_tuple()
 
-        async with transaction(conn):
-            result = await conn.fetchrow(sql_query, *sql_params)
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                UpdateCohortSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
             if not result:
                 raise HTTPException(status_code=404, detail="Cohort not found")
 
-            actor_name = result.get("actor_name")
+            actor_name = result.actor_name
 
             # Set audit context with data from SQL query
             if actor_name:
                 audit_set(
                     http_request,
                     actor={"name": actor_name, "id": profile_id},
-                    cohort={"name": request.title, "id": request.cohortId},
+                    cohort={"name": request.title, "id": str(request.cohort_id)},
                 )
 
-        result = UpdateCohortResponse(
-            success=True,
-            message="Cohort updated successfully",
-        )
+        # Convert SQL result to API response (no manual conversion needed)
+        api_response = UpdateCohortApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

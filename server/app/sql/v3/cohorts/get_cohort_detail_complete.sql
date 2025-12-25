@@ -1,12 +1,85 @@
-WITH user_profile AS (
-    SELECT role FROM profiles WHERE id = $2
+-- Get cohort detail with simulations and mappings
+-- Converted to function with composite types
+
+BEGIN;
+
+-- 1) Drop functions that depend on these types first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_get_cohort_new_v3(uuid);
+DROP FUNCTION IF EXISTS api_get_cohort_detail_v3(uuid, uuid);
+DROP FUNCTION IF EXISTS api_get_cohort_search_v3(uuid, uuid, text, uuid[], int);
+
+-- 2) Drop types WITHOUT CASCADE
+DROP TYPE IF EXISTS types.q_get_cohort_detail_v3_simulation;
+DROP TYPE IF EXISTS types.q_get_cohort_detail_v3_simulation_for_picker;
+DROP TYPE IF EXISTS types.q_get_cohort_detail_v3_department;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_cohort_detail_v3_simulation AS (
+    simulation_id uuid,
+    name text,
+    description text,
+    time_limit bigint,
+    active boolean,
+    position int,
+    usage_count bigint,
+    success_rate int,
+    last_used timestamptz,
+    can_remove boolean
+);
+
+CREATE TYPE types.q_get_cohort_detail_v3_simulation_for_picker AS (
+    simulation_id uuid,
+    name text,
+    description text,
+    time_limit bigint,
+    department_ids text[]
+);
+
+CREATE TYPE types.q_get_cohort_detail_v3_department AS (
+    department_id uuid,
+    name text,
+    description text,
+    simulation_ids text[]
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_cohort_detail_v3(
+    cohort_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    title text,
+    description text,
+    department_ids text[],
+    active boolean,
+    updated_at timestamptz,
+    can_edit boolean,
+    profile_ids text[],
+    simulation_ids text[],
+    valid_department_ids text[],
+    valid_simulation_ids text[],
+    simulations types.q_get_cohort_detail_v3_simulation[],
+    simulations_for_picker types.q_get_cohort_detail_v3_simulation_for_picker[],
+    departments types.q_get_cohort_detail_v3_department[],
+    actor_name text
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT
+        cohort_id AS cohort_id,
+        profile_id AS profile_id
+),
+user_profile AS (
+    SELECT role FROM params x JOIN profiles p ON p.id = x.profile_id
 ),
 cohort_departments_data AS (
     SELECT 
         cd.cohort_id,
         ARRAY_AGG(cd.department_id::text ORDER BY cd.created_at) as department_ids
-    FROM cohort_departments cd
-    WHERE cd.cohort_id = $1 AND cd.active = true
+    FROM params x
+    JOIN cohort_departments cd ON cd.cohort_id = x.cohort_id AND cd.active = true
     GROUP BY cd.cohort_id
 ),
 cohort_department_access_check AS (
@@ -18,7 +91,7 @@ cohort_department_access_check AS (
                 SELECT 1 FROM cohort_departments cd 
                 WHERE cd.cohort_id = c.id 
                 AND cd.active = true 
-                AND cd.department_id IN (SELECT department_id FROM profile_departments pd WHERE pd.profile_id = $2 AND pd.active = true)
+                AND cd.department_id IN (SELECT department_id FROM params x JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true)
             ) THEN true
             WHEN NOT EXISTS (
                 SELECT 1 FROM cohort_departments cd2 
@@ -27,9 +100,9 @@ cohort_department_access_check AS (
             ) THEN true  -- Cross-department resource
             ELSE false
         END as has_access
-    FROM cohorts c
+    FROM params x
+    JOIN cohorts c ON c.id = x.cohort_id
     CROSS JOIN user_profile up
-    WHERE c.id = $1
 ),
 cohort_data AS (
     SELECT 
@@ -39,24 +112,25 @@ cohort_data AS (
         c.active,
         c.updated_at,
         COALESCE(cdd.department_ids, NULL) as department_ids
-    FROM cohorts c
+    FROM params x
+    JOIN cohorts c ON c.id = x.cohort_id
     LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
     INNER JOIN cohort_department_access_check cdac ON cdac.cohort_id = c.id AND cdac.has_access = true
-    WHERE c.id = $1
 ),
 cohort_profile_ids AS (
     SELECT cp.profile_id
-    FROM cohort_profiles cp
-    WHERE cp.cohort_id = $1 AND cp.active = true
+    FROM params x
+    JOIN cohort_profiles cp ON cp.cohort_id = x.cohort_id AND cp.active = true
 ),
 cohort_simulation_ids AS (
     SELECT cs.simulation_id, cs.active, cs.position
-    FROM cohort_simulations cs
-    WHERE cs.cohort_id = $1
+    FROM params x
+    JOIN cohort_simulations cs ON cs.cohort_id = x.cohort_id
 ),
 cohort_attempts AS (
     SELECT DISTINCT sa.id as attempt_id, sa.simulation_id, sa.created_at
-    FROM simulation_attempts sa
+    FROM params x
+    JOIN simulation_attempts sa ON true
     JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     WHERE ap.profile_id IN (SELECT profile_id FROM cohort_profile_ids)
 ),
@@ -112,9 +186,10 @@ cohort_simulation_stats AS (
 ),
 valid_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
-    FROM departments d
+    FROM params x
+    JOIN departments d ON true
     JOIN profile_departments pd ON pd.department_id = d.id
-    WHERE pd.profile_id = $2 AND d.active = true
+    WHERE pd.profile_id = x.profile_id AND d.active = true
 ),
 valid_dept_ids AS (
     SELECT id FROM valid_departments
@@ -125,10 +200,10 @@ cohort_is_default AS (
 ),
 valid_simulations AS (
     SELECT DISTINCT s.id
-    FROM simulations s
+    FROM params x
+    JOIN simulations s ON s.active = true
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     CROSS JOIN cohort_is_default cid
-    WHERE s.active = true
     GROUP BY s.id, cid.is_default
     HAVING 
         -- For default cohorts (no department links), include all simulations in the cohort
@@ -165,14 +240,43 @@ department_simulation_ids_with_cross AS (
         COALESCE(ARRAY(SELECT simulation_id FROM cross_dept_simulations), ARRAY[]::text[]) as simulation_ids
     FROM department_simulation_ids dsi
 ),
+simulation_mapping_data AS (
+    SELECT 
+        s.id as simulation_id,
+        s.title as name,
+        COALESCE(s.description, '') as description,
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        ) as time_limit,
+        COALESCE(sdd.department_ids, ARRAY[]::text[]) as department_ids
+    FROM params x
+    JOIN simulations s ON true
+    LEFT JOIN (
+        SELECT 
+            sd.simulation_id,
+            ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+        FROM simulation_departments sd
+        WHERE sd.active = true
+        GROUP BY sd.simulation_id
+    ) sdd ON sdd.simulation_id = s.id
+    CROSS JOIN cohort_is_default cid
+    WHERE 
+        -- For default cohorts, include all simulations in the cohort
+        (cid.is_default = true AND s.id IN (SELECT simulation_id FROM cohort_simulation_ids))
+        OR
+        -- For non-default cohorts, use valid_simulations filtering
+        (cid.is_default = false AND s.id IN (SELECT id FROM valid_simulations))
+),
 department_mapping_data AS (
     SELECT 
-        vd.id::text as department_id,
-        jsonb_build_object(
-            'name', vd.name,
-            'description', COALESCE(vd.description, ''),
-            'simulation_ids', COALESCE(dsic.simulation_ids, ARRAY[]::text[])
-        ) as dept_data
+        vd.id as department_id,
+        vd.name,
+        COALESCE(vd.description, '') as description,
+        COALESCE(dsic.simulation_ids, ARRAY[]::text[]) as simulation_ids
     FROM valid_departments vd
     LEFT JOIN department_simulation_ids_with_cross dsic ON dsic.department_id = vd.id
 ),
@@ -180,8 +284,8 @@ user_profile_for_cohort AS (
     SELECT 
         role,
         COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
-    FROM profiles p
-    WHERE p.id = $2
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 )
 SELECT 
     cd.title,
@@ -203,63 +307,31 @@ SELECT
      FROM valid_dept_ids) as valid_department_ids,
     (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
      FROM valid_simulations) as valid_simulation_ids,
-    (SELECT COALESCE(jsonb_agg(
-        jsonb_build_object(
-            'simulation_id', css.simulation_id::text,
-            'name', css.name,
-            'description', css.description,
-            'time_limit', css.time_limit,
-            'active', css.active,
-            'position', css.position,
-            'usage_count', css.usage_count,
-            'success_rate', css.success_rate,
-            'last_used', css.last_used,
-            'can_remove', CASE WHEN css.usage_count = 0 THEN true ELSE false END
-        ) ORDER BY css.position
-     ), '[]'::jsonb)
-     FROM cohort_simulation_stats css
-    ) as simulations_list,
-    (SELECT COALESCE(jsonb_object_agg(
-        s.id::text,
-        jsonb_build_object(
-            'name', s.title,
-            'description', COALESCE(s.description, ''),
-            'time_limit', COALESCE(
-                (SELECT SUM(stl.time_limit_seconds)
-                 FROM scenario_time_limits stl
-                 JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-                 WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
-                0
-            ),
-            'department_ids', CASE 
-                WHEN sdd.department_ids IS NOT NULL THEN to_jsonb(sdd.department_ids)
-                ELSE NULL::jsonb
-            END
-        )
-     ), '{}'::jsonb)
-     FROM simulations s
-     LEFT JOIN (
-         SELECT 
-             sd.simulation_id,
-             ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
-         FROM simulation_departments sd
-         WHERE sd.active = true
-         GROUP BY sd.simulation_id
-     ) sdd ON sdd.simulation_id = s.id
-     CROSS JOIN cohort_is_default cid
-     WHERE 
-         -- For default cohorts, include all simulations in the cohort
-         (cid.is_default = true AND s.id IN (SELECT simulation_id FROM cohort_simulation_ids))
-         OR
-         -- For non-default cohorts, use valid_simulations filtering
-         (cid.is_default = false AND s.id IN (SELECT id FROM valid_simulations))
-    ) as simulation_mapping,
-    (SELECT COALESCE(jsonb_object_agg(
-        dmd.department_id,
-        dmd.dept_data
-     ), '{}'::jsonb)
-     FROM department_mapping_data dmd
-    ) as department_mapping,
+    (SELECT COALESCE(
+        ARRAY_AGG(
+            (css.simulation_id, css.name, css.description, css.time_limit, css.active, css.position, css.usage_count, css.success_rate, css.last_used, CASE WHEN css.usage_count = 0 THEN true ELSE false END)::types.q_get_cohort_detail_v3_simulation
+            ORDER BY css.position
+        ),
+        '{}'::types.q_get_cohort_detail_v3_simulation[]
+    )
+     FROM cohort_simulation_stats css) as simulations,
+    (SELECT COALESCE(
+        ARRAY_AGG(
+            (smd.simulation_id, smd.name, smd.description, smd.time_limit, smd.department_ids)::types.q_get_cohort_detail_v3_simulation_for_picker
+        ),
+        '{}'::types.q_get_cohort_detail_v3_simulation_for_picker[]
+    )
+     FROM simulation_mapping_data smd) as simulations_for_picker,
+    (SELECT COALESCE(
+        ARRAY_AGG(
+            (dmd.department_id, dmd.name, dmd.description, dmd.simulation_ids)::types.q_get_cohort_detail_v3_department
+        ),
+        '{}'::types.q_get_cohort_detail_v3_department[]
+    )
+     FROM department_mapping_data dmd) as departments,
     upc.actor_name
 FROM cohort_data cd
 CROSS JOIN user_profile_for_cohort upc
+$$;
+
+COMMIT;

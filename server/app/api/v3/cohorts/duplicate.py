@@ -1,30 +1,21 @@
 """Cohort duplicate endpoint - v3 API."""
 
 import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db
+from app.sql.types import (DuplicateCohortApiRequest, DuplicateCohortApiResponse,
+                           DuplicateCohortSqlParams, DuplicateCohortSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class DuplicateCohortRequest(BaseModel):
-    """Request for duplicating a cohort."""
-
-    cohortId: str
-
-
-class DuplicateCohortResponse(BaseModel):
-    """Response for duplicating a cohort."""
-
-    success: bool
-    cohortId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/cohorts/duplicate_cohort_complete.sql"
 
 
 router = APIRouter()
@@ -32,7 +23,7 @@ router = APIRouter()
 
 @router.post(
     "/duplicate",
-    response_model=DuplicateCohortResponse,
+    response_model=DuplicateCohortApiResponse,
     dependencies=[
         audit_activity(
             "cohort.duplicated",
@@ -41,13 +32,15 @@ router = APIRouter()
     ],
 )
 async def duplicate_cohort(
-    request: DuplicateCohortRequest,
+    request: DuplicateCohortApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DuplicateCohortResponse:
+) -> DuplicateCohortApiResponse:
     """Duplicate a cohort with relationships."""
-    sql_query: str | None = None
+    tags = ["cohorts"]  # From router tags
+
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -59,42 +52,43 @@ async def duplicate_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Single consolidated query: gets original, creates duplicate, and copies relationships
-        sql_query = load_sql("app/sql/v3/cohorts/duplicate_cohort_complete.sql")
-        sql_params = (request.cohortId, profile_id)
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = DuplicateCohortSqlParams(
+                cohort_id=request.cohort_id,
+                profile_id=uuid.UUID(profile_id),
+            )
+            sql_params = params.to_tuple()
 
-        async with transaction(conn):
-            result = await conn.fetchrow(
-                sql_query, uuid.UUID(request.cohortId), uuid.UUID(profile_id)
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                DuplicateCohortSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
 
-            if not result or not result["id"]:
+            if not result or not result.id:
                 raise HTTPException(status_code=404, detail="Cohort not found")
 
-            new_cohort_id = str(result["id"])
-            cohort_name = result.get("title", "Unknown")
-            actor_name = result.get("actor_name")
-
             # Set audit context with data from SQL query
-            if actor_name:
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    cohort={"name": cohort_name, "id": new_cohort_id},
+                    actor={"name": result.actor_name, "id": profile_id},
+                    cohort={"name": result.title or "Unknown", "id": str(result.id)},
                 )
 
-        result_response = DuplicateCohortResponse(
-            success=True,
-            cohortId=new_cohort_id,
-            message=f"Cohort '{result['original_title']}' duplicated successfully",
-        )
+        # Convert SQL result to API response (no manual conversion needed)
+        api_response = DuplicateCohortApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
-        tags = ["cohorts"]  # From router tags
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_response
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

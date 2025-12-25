@@ -1,35 +1,20 @@
 """Cohort create endpoint - v3 API."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db
+from app.sql.types import (CreateCohortApiRequest, CreateCohortApiResponse,
+                           CreateCohortSqlParams, CreateCohortSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class CreateCohortRequest(BaseModel):
-    """Request for creating a cohort."""
-
-    title: str
-    description: str | None = None
-    active: bool = True
-    department_ids: list[str] = []
-    profile_ids: list[str] = []
-    simulation_ids: list[str] = []
-    # profileId removed - comes from X-Profile-Id header
-
-
-class CreateCohortResponse(BaseModel):
-    """Response for creating a cohort."""
-
-    success: bool
-    cohortId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/cohorts/create_cohort_complete.sql"
 
 
 router = APIRouter()
@@ -37,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/create",
-    response_model=CreateCohortResponse,
+    response_model=CreateCohortApiResponse,
     dependencies=[
         audit_activity(
             "cohort.created", "{{ actor.name }} created cohort '{{ cohort.title }}'"
@@ -45,21 +30,18 @@ router = APIRouter()
     ],
 )
 async def create_cohort(
-    request: CreateCohortRequest,
+    request: CreateCohortApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateCohortResponse:
+) -> CreateCohortApiResponse:
     """Create a new cohort."""
     tags = ["cohorts"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Handle None description (cohorts.description is NOT NULL, so use empty string)
-        description = request.description if request.description is not None else ""
-
         # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
@@ -68,46 +50,51 @@ async def create_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Single consolidated query: creates cohort and all relationships using arrays
-        sql_query = load_sql("app/sql/v3/cohorts/create_cohort_complete.sql")
-        sql_params = (
-            request.title,
-            description,
-            request.active,
-            request.department_ids if request.department_ids else [],
-            request.profile_ids if request.profile_ids else [],
-            request.simulation_ids if request.simulation_ids else [],
-            profile_id,
-        )
+        # Handle None description (cohorts.description is NOT NULL, so use empty string)
+        description = request.description if request.description is not None else ""
 
-        async with transaction(conn):
-            row = await conn.fetchrow(sql_query, *sql_params)
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = CreateCohortSqlParams(
+                title=request.title,
+                description=description,
+                active=request.active,
+                department_ids=request.department_ids if request.department_ids else [],
+                profile_ids=request.profile_ids if request.profile_ids else [],
+                simulation_ids=request.simulation_ids if request.simulation_ids else [],
+                profile_id=profile_id,
+            )
+            sql_params = params.to_tuple()
 
-            if not row:
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                CreateCohortSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result or not result.cohort_id:
                 raise HTTPException(status_code=500, detail="Failed to create cohort")
 
-            cohort_id = str(row["id"])
-            actor_name = row.get("actor_name")
-
             # Set audit context with data from SQL query
-            if actor_name:
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    cohort={"title": request.title, "id": cohort_id},
+                    actor={"name": result.actor_name, "id": profile_id},
+                    cohort={"title": request.title, "id": str(result.cohort_id)},
                 )
 
-        result = CreateCohortResponse(
-            success=True,
-            cohortId=cohort_id,
-            message="Cohort created successfully",
-        )
+        # Convert SQL result to API response (no manual conversion needed)
+        api_response = CreateCohortApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

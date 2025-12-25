@@ -1,13 +1,34 @@
 -- Duplicate cohort with relationships in single query (DHH style)
--- Parameters: $1=original_cohort_id (uuid), $2=profile_id (uuid)
--- Returns: id, title, description, actor_name
+-- Converted to function
 
-WITH actor_profile AS (
+BEGIN;
+
+DROP FUNCTION IF EXISTS api_duplicate_cohort_v3(uuid, uuid);
+
+CREATE OR REPLACE FUNCTION api_duplicate_cohort_v3(
+    cohort_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    id uuid,
+    title text,
+    original_title text,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT
+        cohort_id AS cohort_id,
+        profile_id AS profile_id
+),
+actor_profile AS (
     SELECT 
-        $2::uuid as profile_id,
+        x.profile_id AS profile_id,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 original_cohort AS (
     -- Get original cohort data
@@ -15,8 +36,8 @@ original_cohort AS (
         id,
         title,
         description
-    FROM cohorts
-    WHERE id = $1::uuid
+    FROM params x
+    JOIN cohorts c ON c.id = x.cohort_id
 ),
 new_cohort AS (
     -- Create duplicate cohort
@@ -44,25 +65,41 @@ copy_profiles AS (
     JOIN cohort_profiles cp ON cp.cohort_id = oc.id
 ),
 copy_simulations AS (
-    -- Copy simulation relationships
-    INSERT INTO cohort_simulations (cohort_id, simulation_id, active)
+    -- Copy simulation relationships with position
+    INSERT INTO cohort_simulations (cohort_id, simulation_id, active, position)
     SELECT 
         nc.id,
         cs.simulation_id,
-        cs.active
+        cs.active,
+        cs.position
     FROM new_cohort nc
     CROSS JOIN original_cohort oc
     JOIN cohort_simulations cs ON cs.cohort_id = oc.id
+),
+copy_departments AS (
+    -- Copy department relationships
+    INSERT INTO cohort_departments (cohort_id, department_id, active, created_at, updated_at)
+    SELECT 
+        nc.id,
+        cd.department_id,
+        cd.active,
+        NOW(),
+        NOW()
+    FROM new_cohort nc
+    CROSS JOIN original_cohort oc
+    JOIN cohort_departments cd ON cd.cohort_id = oc.id AND cd.active = true
 )
 -- Return new cohort info
 SELECT 
     nc.id,
-    oc.title as original_title,
     nc.title,
-    nc.description,
+    oc.title as original_title,
     ap.actor_name
 FROM new_cohort nc
 CROSS JOIN original_cohort oc
 CROSS JOIN actor_profile ap
 LIMIT 1
+$$;
+
+COMMIT;
 

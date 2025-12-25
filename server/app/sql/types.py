@@ -728,9 +728,9 @@ class GetAuthDetailSqlRow(BaseModel):
 
     active: bool
     can_edit: bool
-    name: str
-    actor_name: str
     description: str
+    actor_name: str
+    name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 class GetAuthDetailApiRequest(BaseModel):
@@ -742,9 +742,9 @@ class GetAuthDetailApiResponse(BaseModel):
 
     active: bool
     can_edit: bool
-    name: str
-    actor_name: str
     description: str
+    actor_name: str
+    name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 
@@ -831,9 +831,9 @@ class CreateCohortSqlParams(BaseModel):
     description: str
     active: bool
     department_ids: list[str]
-    param_5: list[str]
-    param_6: list[str]
-    param_7: UUID
+    profile_ids: list[str]
+    simulation_ids: list[str]
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -841,15 +841,15 @@ class CreateCohortSqlParams(BaseModel):
             self.description,
             self.active,
             self.department_ids,
-            self.param_5,
-            self.param_6,
-            self.param_7,
+            self.profile_ids,
+            self.simulation_ids,
+            self.profile_id,
         )
 
 class CreateCohortSqlRow(BaseModel):
 
-    id: UUID
-    actor_name: str
+    cohort_id: UUID | None = None
+    actor_name: str | None = None
 
 class CreateCohortApiRequest(BaseModel):
 
@@ -857,14 +857,13 @@ class CreateCohortApiRequest(BaseModel):
     description: str
     active: bool
     department_ids: list[str]
-    param_5: list[str]
-    param_6: list[str]
-    param_7: UUID
+    profile_ids: list[str]
+    simulation_ids: list[str]
 
 class CreateCohortApiResponse(BaseModel):
 
-    id: UUID
-    actor_name: str
+    cohort_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -883,10 +882,10 @@ class DeleteCohortSqlParams(BaseModel):
 
 class DeleteCohortSqlRow(BaseModel):
 
-    usage_count: int
-    deleted: bool
-    title: str
-    actor_name: str
+    usage_count: int | None = None
+    deleted: bool | None = None
+    title: str | None = None
+    actor_name: str | None = None
 
 class DeleteCohortApiRequest(BaseModel):
 
@@ -894,10 +893,10 @@ class DeleteCohortApiRequest(BaseModel):
 
 class DeleteCohortApiResponse(BaseModel):
 
-    usage_count: int
-    deleted: bool
-    title: str
-    actor_name: str
+    usage_count: int | None = None
+    deleted: bool | None = None
+    title: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -905,34 +904,32 @@ class DeleteCohortApiResponse(BaseModel):
 
 class DuplicateCohortSqlParams(BaseModel):
 
-    original_cohort_id: UUID
+    cohort_id: UUID
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.original_cohort_id,
+            self.cohort_id,
             self.profile_id,
         )
 
 class DuplicateCohortSqlRow(BaseModel):
 
-    id: UUID
-    original_title: str
-    title: str
-    description: str
-    actor_name: str
+    id: UUID | None = None
+    title: str | None = None
+    original_title: str | None = None
+    actor_name: str | None = None
 
 class DuplicateCohortApiRequest(BaseModel):
 
-    original_cohort_id: UUID
+    cohort_id: UUID
 
 class DuplicateCohortApiResponse(BaseModel):
 
-    id: UUID
-    original_title: str
-    title: str
-    description: str
-    actor_name: str
+    id: UUID | None = None
+    title: str | None = None
+    original_title: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -940,53 +937,19 @@ class DuplicateCohortApiResponse(BaseModel):
 
 class GetCohortDetailSqlParams(BaseModel):
 
-    param_1: UUID
-    param_2: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.param_1,
-            self.param_2,
-        )
+    pass
 
 class GetCohortDetailSqlRow(BaseModel):
 
-    title: str
-    description: str
-    department_ids: list[str] | None = None
-    active: bool
-    updated_at: str
-    can_edit: bool
-    profile_ids: list[str]
-    simulation_ids: list[str]
-    valid_department_ids: list[str]
-    valid_simulation_ids: list[str]
-    simulations_list: dict[str, Any]
-    simulation_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    actor_name: str
+    pass
 
 class GetCohortDetailApiRequest(BaseModel):
 
-    param_1: UUID
-    param_2: UUID
+    pass
 
 class GetCohortDetailApiResponse(BaseModel):
 
-    title: str
-    description: str
-    department_ids: list[str] | None = None
-    active: bool
-    updated_at: str
-    can_edit: bool
-    profile_ids: list[str]
-    simulation_ids: list[str]
-    valid_department_ids: list[str]
-    valid_simulation_ids: list[str]
-    simulations_list: dict[str, Any]
-    simulation_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    actor_name: str
+    pass
 
 
 
@@ -994,60 +957,330 @@ class GetCohortDetailApiResponse(BaseModel):
 
 class GetCohortNewSqlParams(BaseModel):
 
-    param_1: UUID
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.param_1,
+            self.profile_id,
         )
+
+class QGetCohortDetailV3Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    active: bool | None
+    position: int | None
+    usage_count: int | None
+    success_rate: int | None
+    last_used: str | None
+    can_remove: bool | None
+
+
+
+
+class QGetCohortDetailV3SimulationForPicker(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetCohortNewV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetCohortNewV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    simulation_ids: list[str] | None
+    staff_ids: list[str] | None
+
+
+
+
+class QGetCohortNewV3DepartmentForStaff(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetCohortNewV3Profile(BaseModel):
+
+    profile_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetCohortNewV3StaffItem(BaseModel):
+
+    profile_id: UUID | None
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email: str | None
+    name: str | None
+    role: str | None
+    initials: str | None
+    active: bool | None
+    last_active: str | None
+    cohort_ids: list[str] | None
+    department_ids: list[str] | None
+    primary_department_id: UUID | None
+    requests_per_day: int | None
+    total_requests: int | None
+    requests_in_last_day: int | None
+    can_edit: bool | None
+    can_delete: bool | None
+    can_remove: bool | None
 
 class GetCohortNewSqlRow(BaseModel):
 
-    title: str
-    description: str
+    title: str | None = None
+    description: str | None = None
     department_ids: list[str] | None = None
-    active: bool
-    can_edit: bool
-    profile_ids: list[str]
-    simulation_ids: list[str]
-    valid_department_ids: list[str]
-    valid_simulation_ids: list[str]
-    valid_profile_ids: list[str]
-    simulations_list: dict[str, Any]
-    simulation_mapping: dict[str, Any]
-    profile_mapping: dict[str, Any]
-    staff: dict[str, Any]
-    cohort_mapping: dict[str, Any]
-    department_mapping_for_staff: dict[str, Any]
-    department_mapping: dict[str, Any]
-    primary_department_id: str
-    actor_name: str
+    active: bool | None = None
+    can_edit: bool | None = None
+    profile_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    valid_simulation_ids: list[str] | None = None
+    valid_profile_ids: list[str] | None = None
+    simulations: list[QGetCohortDetailV3Simulation] | None = None
+    simulations_for_picker: list[QGetCohortDetailV3SimulationForPicker] | None = None
+    profiles: list[QGetCohortNewV3Profile] | None = None
+    staff: list[QGetCohortNewV3StaffItem] | None = None
+    cohorts: list[QGetCohortNewV3Cohort] | None = None
+    departments_for_staff: list[QGetCohortNewV3DepartmentForStaff] | None = None
+    departments: list[QGetCohortNewV3Department] | None = None
+    primary_department_id: str | None = None
+    actor_name: str | None = None
 
 class GetCohortNewApiRequest(BaseModel):
 
-    param_1: UUID
+    pass
 
 class GetCohortNewApiResponse(BaseModel):
 
-    title: str
-    description: str
+    title: str | None = None
+    description: str | None = None
     department_ids: list[str] | None = None
-    active: bool
-    can_edit: bool
-    profile_ids: list[str]
-    simulation_ids: list[str]
-    valid_department_ids: list[str]
-    valid_simulation_ids: list[str]
-    valid_profile_ids: list[str]
-    simulations_list: dict[str, Any]
-    simulation_mapping: dict[str, Any]
-    profile_mapping: dict[str, Any]
-    staff: dict[str, Any]
-    cohort_mapping: dict[str, Any]
-    department_mapping_for_staff: dict[str, Any]
-    department_mapping: dict[str, Any]
-    primary_department_id: str
-    actor_name: str
+    active: bool | None = None
+    can_edit: bool | None = None
+    profile_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    valid_simulation_ids: list[str] | None = None
+    valid_profile_ids: list[str] | None = None
+    simulations: list[QGetCohortDetailV3Simulation] | None = None
+    simulations_for_picker: list[QGetCohortDetailV3SimulationForPicker] | None = None
+    profiles: list[QGetCohortNewV3Profile] | None = None
+    staff: list[QGetCohortNewV3StaffItem] | None = None
+    cohorts: list[QGetCohortNewV3Cohort] | None = None
+    departments_for_staff: list[QGetCohortNewV3DepartmentForStaff] | None = None
+    departments: list[QGetCohortNewV3Department] | None = None
+    primary_department_id: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_cohort_search
+
+class GetCohortSearchSqlParams(BaseModel):
+
+    p_profile_id: UUID
+    p_cohort_id: UUID | None = None
+    p_query: str | None = None
+    p_dept_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    p_limit_count: int | None = 200
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_profile_id,
+            self.p_cohort_id,
+            self.p_query,
+            self.p_dept_ids,
+            self.p_limit_count,
+        )
+
+class QGetCohortSearchV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetCohortSearchV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetCohortSearchSqlRow(BaseModel):
+
+    staff: list[QGetCohortNewV3StaffItem] | None = None
+    cohorts: list[QGetCohortSearchV3Cohort] | None = None
+    departments: list[QGetCohortSearchV3Department] | None = None
+    actor_name: str | None = None
+
+class GetCohortSearchApiRequest(BaseModel):
+
+    p_profile_id: UUID
+    p_cohort_id: UUID | None = None
+    p_query: str | None = None
+    p_dept_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    p_limit_count: int | None = 200
+
+class GetCohortSearchApiResponse(BaseModel):
+
+    staff: list[QGetCohortNewV3StaffItem] | None = None
+    cohorts: list[QGetCohortSearchV3Cohort] | None = None
+    departments: list[QGetCohortSearchV3Department] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_cohorts_list
+
+class GetCohortsListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListCohortsV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    department_ids: list[str] | None
+    profile_ids: list[str] | None
+    simulation_ids: list[str] | None
+    usage_count: int | None
+    num_members: int | None
+    can_edit: bool | None
+    can_delete: bool | None
+    can_duplicate: bool | None
+    can_leave: bool | None
+    updated_at: str | None
+
+
+
+
+class QListCohortsV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListCohortsV3Profile(BaseModel):
+
+    profile_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListCohortsV3Scenario(BaseModel):
+
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    persona_ids: list[str] | None
+    persona_mapping: dict[str, Any] | None
+
+
+
+
+class QListCohortsV3Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    department_ids: list[str] | None
+    scenario_ids: list[str] | None
+
+class GetCohortsListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    cohorts: list[QListCohortsV3Cohort] | None = None
+    profiles: list[QListCohortsV3Profile] | None = None
+    simulations: list[QListCohortsV3Simulation] | None = None
+    scenarios: list[QListCohortsV3Scenario] | None = None
+    simulation_scenario_mapping: dict[str, Any] | None = None
+    departments: list[QListCohortsV3Department] | None = None
+
+class GetCohortsListApiRequest(BaseModel):
+
+    pass
+
+class GetCohortsListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    cohorts: list[QListCohortsV3Cohort] | None = None
+    profiles: list[QListCohortsV3Profile] | None = None
+    simulations: list[QListCohortsV3Simulation] | None = None
+    scenarios: list[QListCohortsV3Scenario] | None = None
+    simulation_scenario_mapping: dict[str, Any] | None = None
+    departments: list[QListCohortsV3Department] | None = None
+
+
+
+# Generated from: leave_cohort
+
+class LeaveCohortSqlParams(BaseModel):
+
+    cohort_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.cohort_id,
+            self.profile_id,
+        )
+
+class LeaveCohortSqlRow(BaseModel):
+
+    cohort_title: str | None = None
+    actor_name: str | None = None
+
+class LeaveCohortApiRequest(BaseModel):
+
+    cohort_id: UUID
+
+class LeaveCohortApiResponse(BaseModel):
+
+    cohort_title: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -1060,9 +1293,9 @@ class UpdateCohortSqlParams(BaseModel):
     description: str
     active: bool
     department_ids: list[str]
-    param_6: list[str]
-    param_7: list[str]
-    param_8: UUID
+    profile_ids: list[str]
+    simulation_ids: list[str]
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -1071,16 +1304,16 @@ class UpdateCohortSqlParams(BaseModel):
             self.description,
             self.active,
             self.department_ids,
-            self.param_6,
-            self.param_7,
-            self.param_8,
+            self.profile_ids,
+            self.simulation_ids,
+            self.profile_id,
         )
 
 class UpdateCohortSqlRow(BaseModel):
 
-    id: UUID
-    title: str
-    actor_name: str
+    id: str | None = None
+    title: str | None = None
+    actor_name: str | None = None
 
 class UpdateCohortApiRequest(BaseModel):
 
@@ -1089,15 +1322,14 @@ class UpdateCohortApiRequest(BaseModel):
     description: str
     active: bool
     department_ids: list[str]
-    param_6: list[str]
-    param_7: list[str]
-    param_8: UUID
+    profile_ids: list[str]
+    simulation_ids: list[str]
 
 class UpdateCohortApiResponse(BaseModel):
 
-    id: UUID
-    title: str
-    actor_name: str
+    id: str | None = None
+    title: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -5390,6 +5622,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetCohortNewApiRequest",
         "GetCohortNewApiResponse",
     ),
+    "app/sql/v3/cohorts/get_cohort_search_complete.sql": (
+        "GetCohortSearchSqlParams",
+        "GetCohortSearchSqlRow",
+        "GetCohortSearchApiRequest",
+        "GetCohortSearchApiResponse",
+    ),
+    "app/sql/v3/cohorts/get_cohorts_list_complete.sql": (
+        "GetCohortsListSqlParams",
+        "GetCohortsListSqlRow",
+        "GetCohortsListApiRequest",
+        "GetCohortsListApiResponse",
+    ),
+    "app/sql/v3/cohorts/leave_cohort_complete.sql": (
+        "LeaveCohortSqlParams",
+        "LeaveCohortSqlRow",
+        "LeaveCohortApiRequest",
+        "LeaveCohortApiResponse",
+    ),
     "app/sql/v3/cohorts/update_cohort_complete.sql": (
         "UpdateCohortSqlParams",
         "UpdateCohortSqlRow",
@@ -6029,6 +6279,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/cohorts/get_cohort_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/cohorts/get_cohort_search_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/cohorts/get_cohorts_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/cohorts/leave_cohort_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -226,11 +226,31 @@ export default function Cohort({
     return !cohortData.can_edit;
   }, [isEditMode, cohortData]);
 
-  // Filter valid IDs based on selected departments
-  const departmentMapping = useMemo(
-    () => cohortData?.department_mapping || {},
-    [cohortData?.department_mapping],
-  );
+  // Convert departments array to dictionary for efficient lookups (GenericPicker needs Record format)
+  const departmentMapping = useMemo(() => {
+    const departments = cohortData?.departments || [];
+    // Handle both array (new format) and object (legacy format) for backward compatibility
+    if (Array.isArray(departments)) {
+      return Object.fromEntries(
+        departments.map((item) => [item.department_id, item])
+      ) as Record<string, { department_id: string; name: string; description: string; simulation_ids: string[] }>;
+    }
+    // Legacy format (already a dictionary)
+    return departments as Record<string, { department_id: string; name: string; description: string; simulation_ids: string[] }>;
+  }, [cohortData?.departments]);
+
+  // Convert simulations_for_picker array to dictionary for efficient lookups
+  const simulationMapping = useMemo(() => {
+    const simulations = cohortData?.simulations_for_picker || [];
+    // Handle both array (new format) and object (legacy format) for backward compatibility
+    if (Array.isArray(simulations)) {
+      return Object.fromEntries(
+        simulations.map((item) => [item.simulation_id, item])
+      ) as Record<string, { simulation_id: string; name: string; description: string; time_limit: number; department_ids: string[] }>;
+    }
+    // Legacy format (already a dictionary)
+    return simulations as Record<string, { simulation_id: string; name: string; description: string; time_limit: number; department_ids: string[] }>;
+  }, [cohortData?.simulations_for_picker]);
 
   const validSimulationIds = useMemo(() => {
     const baseIds = cohortData?.valid_simulation_ids || [];
@@ -531,7 +551,7 @@ export default function Cohort({
     );
 
     return orderedIds.map((simulationId, index) => {
-      const simulation = cohortData?.simulation_mapping[simulationId];
+      const simulation = simulationMapping[simulationId];
       const simulationData = cohortData?.simulations?.find(
         (s) => s.simulation_id === simulationId,
       );
@@ -554,7 +574,7 @@ export default function Cohort({
   }, [
     searchParams,
     currentSimulationIds,
-    cohortData?.simulation_mapping,
+    simulationMapping,
     cohortData?.simulations,
     simulationActiveStates,
   ]);
@@ -783,7 +803,7 @@ export default function Cohort({
                   <Label htmlFor="department">Department</Label>
                   {formData?.departmentIds !== undefined ? (
                     <GenericPicker
-                      items={cohortData?.department_mapping || {}}
+                      items={departmentMapping}
                       itemIds={cohortData?.valid_department_ids || []}
                       selectedIds={formData.departmentIds || []}
                       onSelect={(ids) =>
@@ -877,16 +897,14 @@ export default function Cohort({
           <CardContent className="space-y-3 px-6">
             <SimulationCardGrid
               simulationMapping={useMemo(() => {
-                const mapping = cohortData?.simulation_mapping || {};
+                // Convert simulationMapping dictionary to format expected by SimulationCardGrid
                 return Object.fromEntries(
-                  Object.entries(mapping).map(([key, value]) => [
+                  Object.entries(simulationMapping).map(([key, value]) => [
                     key,
-                    typeof value === 'object' && value !== null && 'name' in value
-                      ? { name: String(value['name']), description: value['description'] ? String(value['description']) : undefined }
-                      : { name: String(value || key), description: undefined }
+                    { name: value.name, description: value.description }
                   ])
                 ) as Record<string, { name: string; description?: string }>;
-              }, [cohortData?.simulation_mapping])}
+              }, [simulationMapping])}
               validSimulationIds={validSimulationIds}
               selectedSimulationIds={
                 // Use searchParams as source of truth for ordering (like Simulation.tsx)
@@ -986,10 +1004,10 @@ export default function Cohort({
               {(currentSimulationIds.length || 0) !== 1 ? "s" : ""}:
               <ul className="mt-2 list-disc list-inside">
                 {currentSimulationIds.map((simId) => {
-                  const sim = cohortData?.simulation_mapping[simId];
+                  const sim = simulationMapping[simId];
                   return (
                     <li key={simId} className="text-sm">
-                      {String(sim?.['name'] || "Unknown Simulation")}
+                      {String(sim?.name || "Unknown Simulation")}
                     </li>
                   );
                 })}

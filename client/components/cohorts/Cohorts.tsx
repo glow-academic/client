@@ -114,37 +114,43 @@ export default function Cohorts({
     [cohortsData?.cohorts],
   );
 
-  // Use server-provided facet options directly (no client-side computation)
-  const profileOptions = useMemo(
-    () =>
-      (cohortsData?.profile_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [cohortsData?.profile_options],
-  );
-  const simulationOptions = useMemo(
-    () =>
-      (cohortsData?.simulation_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [cohortsData?.simulation_options],
-  );
-  const departmentOptions = useMemo(
-    () =>
-      (cohortsData?.department_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [cohortsData?.department_options],
-  );
+  // Convert full object arrays to options arrays for faceted filters
+  // Backend returns full objects as arrays (composite types), frontend needs options format
+  const profileOptions = useMemo(() => {
+    const profiles = cohortsData?.profiles || [];
+    // Handle both array (new format) and legacy format
+    const profilesArray = Array.isArray(profiles) ? profiles : Object.values(profiles);
+    return profilesArray
+      .map((item) => ({
+        value: String(item.profile_id || ""),
+        label: item.name || "",
+      }))
+      .filter((opt) => opt.value && opt.label);
+  }, [cohortsData?.profiles]);
+
+  const simulationOptions = useMemo(() => {
+    const simulations = cohortsData?.simulations || [];
+    // Handle both array (new format) and legacy format
+    const simulationsArray = Array.isArray(simulations) ? simulations : Object.values(simulations);
+    return simulationsArray
+      .map((item) => ({
+        value: String(item.simulation_id || ""),
+        label: item.name || "",
+      }))
+      .filter((opt) => opt.value && opt.label);
+  }, [cohortsData?.simulations]);
+
+  const departmentOptions = useMemo(() => {
+    const departments = cohortsData?.departments || [];
+    // Handle both array (new format) and legacy format
+    const departmentsArray = Array.isArray(departments) ? departments : Object.values(departments);
+    return departmentsArray
+      .map((item) => ({
+        value: String(item.department_id || ""),
+        label: item.name || "",
+      }))
+      .filter((opt) => opt.value && opt.label);
+  }, [cohortsData?.departments]);
 
   // Define table columns inline
   const columns: ColumnDef<(typeof cohorts)[number]>[] = useMemo(

@@ -1,30 +1,21 @@
 """Cohort leave endpoint - v3 API."""
 
 import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (LeaveCohortApiRequest, LeaveCohortApiResponse,
+                           LeaveCohortSqlParams, LeaveCohortSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class LeaveCohortRequest(BaseModel):
-    """Request for leaving a cohort."""
-
-    cohortId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class LeaveCohortResponse(BaseModel):
-    """Response for leaving a cohort."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/cohorts/leave_cohort_complete.sql"
 
 
 router = APIRouter()
@@ -32,7 +23,7 @@ router = APIRouter()
 
 @router.post(
     "/leave",
-    response_model=LeaveCohortResponse,
+    response_model=LeaveCohortApiResponse,
     dependencies=[
         audit_activity(
             "cohort.left", "{{ actor.name }} left cohort '{{ cohort.name }}'"
@@ -40,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def leave_cohort(
-    request: LeaveCohortRequest,
+    request: LeaveCohortApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> LeaveCohortResponse:
+) -> LeaveCohortApiResponse:
     """Remove profile from cohort (leave cohort)."""
     tags = ["cohorts"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -60,34 +51,42 @@ async def leave_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/cohorts/leave_cohort.sql")
-        sql_params = (uuid.UUID(request.cohortId), uuid.UUID(profile_id))
-        result_row = await conn.fetchrow(
-            sql_query, uuid.UUID(request.cohortId), uuid.UUID(profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = LeaveCohortSqlParams(
+            cohort_id=request.cohort_id,
+            profile_id=uuid.UUID(profile_id),
+        )
+        sql_params = params.to_tuple()
+
+        # Execute SQL with typed helper - automatically detects and calls function if present
+        result = cast(
+            LeaveCohortSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        if result_row:
-            cohort_name = result_row.get("cohort_title", "Unknown")
-            actor_name = result_row.get("actor_name")
+        if not result:
+            raise HTTPException(status_code=404, detail="Cohort not found or you are not a member")
 
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    cohort={"name": cohort_name, "id": request.cohortId},
-                )
+        # Set audit context with data from SQL query
+        if result.actor_name:
+            audit_set(
+                http_request,
+                actor={"name": result.actor_name, "id": profile_id},
+                cohort={"name": result.cohort_title or "Unknown", "id": str(request.cohort_id)},
+            )
 
-        result = LeaveCohortResponse(
-            success=True,
-            message="Successfully left cohort",
-        )
+        # Convert SQL result to API response (no manual conversion needed)
+        api_response = LeaveCohortApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

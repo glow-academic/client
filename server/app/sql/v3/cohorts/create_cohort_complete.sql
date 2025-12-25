@@ -1,14 +1,42 @@
 -- Create cohort with departments, profiles, and simulations in single query (DHH style)
--- Parameters: $1=title, $2=description, $3=active, $4=department_ids (text[]), 
---             $5=profile_ids (text[]), $6=simulation_ids (text[]), $7=profile_id (uuid, required)
--- Returns: id, actor_name
--- profile_id is always a UUID (required in request body)
-WITH actor_profile AS (
+-- Converted to function
+
+BEGIN;
+
+DROP FUNCTION IF EXISTS api_create_cohort_v3(text, text, boolean, text[], text[], text[], uuid);
+
+CREATE OR REPLACE FUNCTION api_create_cohort_v3(
+    title text,
+    description text,
+    active boolean,
+    department_ids text[],
+    profile_ids text[],
+    simulation_ids text[],
+    profile_id uuid
+)
+RETURNS TABLE (
+    cohort_id uuid,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT
+        title AS title,
+        COALESCE(NULLIF(description, ''), '') AS description,
+        active AS active,
+        COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
+        COALESCE(profile_ids, ARRAY[]::text[]) AS profile_ids,
+        COALESCE(simulation_ids, ARRAY[]::text[]) AS simulation_ids,
+        profile_id AS profile_id
+),
+actor_profile AS (
     SELECT 
-        $7::uuid as resolved_profile_id,
+        x.profile_id AS resolved_profile_id,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $7::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 new_cohort AS (
     -- Create cohort
@@ -17,7 +45,8 @@ new_cohort AS (
         description,
         active
     )
-    VALUES ($1, $2, $3)
+    SELECT x.title, x.description, x.active
+    FROM params x
     RETURNING id
 ),
 link_departments AS (
@@ -30,8 +59,9 @@ link_departments AS (
         NOW(),
         NOW()
     FROM new_cohort nc
-    CROSS JOIN UNNEST($4::text[]) as dept_id
-    WHERE COALESCE(array_length($4::text[], 1), 0) > 0
+    CROSS JOIN params x
+    CROSS JOIN UNNEST(x.department_ids) as dept_id
+    WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
     ON CONFLICT (cohort_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -41,11 +71,12 @@ link_profiles AS (
     INSERT INTO cohort_profiles (cohort_id, profile_id, active)
     SELECT 
         nc.id,
-        profile_id::uuid,
+        pid::uuid,
         true
     FROM new_cohort nc
-    CROSS JOIN UNNEST($5::text[]) as profile_id
-    WHERE COALESCE(array_length($5::text[], 1), 0) > 0
+    CROSS JOIN params x
+    CROSS JOIN UNNEST(x.profile_ids) as pid
+    WHERE COALESCE(array_length(x.profile_ids, 1), 0) > 0
     ON CONFLICT (cohort_id, profile_id) DO UPDATE SET
         active = true
 ),
@@ -54,8 +85,9 @@ simulations_with_order AS (
     SELECT 
         simulation_id::uuid,
         ROW_NUMBER() OVER () as position
-    FROM UNNEST($6::text[]) as simulation_id
-    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
+    FROM params x
+    CROSS JOIN UNNEST(x.simulation_ids) as simulation_id
+    WHERE COALESCE(array_length(x.simulation_ids, 1), 0) > 0
 ),
 link_simulations AS (
     -- Link simulations with position if provided (array may be empty)
@@ -67,12 +99,14 @@ link_simulations AS (
         swo.position
     FROM new_cohort nc
     CROSS JOIN simulations_with_order swo
-    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
 )
 -- Return cohort ID and actor name
 SELECT 
-    nc.id,
+    nc.id as cohort_id,
     ap.actor_name
 FROM new_cohort nc
 CROSS JOIN actor_profile ap
+$$;
+
+COMMIT;
 

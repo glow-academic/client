@@ -1,29 +1,21 @@
 """Cohort delete endpoint - v3 API."""
 
 import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (DeleteCohortApiRequest, DeleteCohortApiResponse,
+                           DeleteCohortSqlParams, DeleteCohortSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class DeleteCohortRequest(BaseModel):
-    """Request for deleting a cohort."""
-
-    cohortId: str
-
-
-class DeleteCohortResponse(BaseModel):
-    """Response for deleting a cohort."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/cohorts/delete_cohort_complete.sql"
 
 
 router = APIRouter()
@@ -31,7 +23,7 @@ router = APIRouter()
 
 @router.post(
     "/delete",
-    response_model=DeleteCohortResponse,
+    response_model=DeleteCohortApiResponse,
     dependencies=[
         audit_activity(
             "cohort.deleted", "{{ actor.name }} deleted cohort '{{ cohort.name }}'"
@@ -39,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def delete_cohort(
-    request: DeleteCohortRequest,
+    request: DeleteCohortApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DeleteCohortResponse:
+) -> DeleteCohortApiResponse:
     """Delete a cohort."""
     tags = ["cohorts"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -59,50 +51,45 @@ async def delete_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Delete cohort with usage check (single query)
-        sql_query = load_sql("app/sql/v3/cohorts/delete_cohort_complete.sql")
-        sql_params = (uuid.UUID(request.cohortId), uuid.UUID(profile_id))
-        result = await conn.fetchrow(
-            sql_query, uuid.UUID(request.cohortId), uuid.UUID(profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = DeleteCohortSqlParams(
+            cohort_id=request.cohort_id,
+            profile_id=uuid.UUID(profile_id),
+        )
+        sql_params = params.to_tuple()
+
+        # Execute SQL with typed helper - automatically detects and calls function if present
+        result = cast(
+            DeleteCohortSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        if not result:
-            # Cohort doesn't exist - idempotent delete
-            result_response = DeleteCohortResponse(
-                success=True,
-                message="Cohort deleted successfully",
-            )
-            await invalidate_tags(tags)
-            response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            return result_response
-
-        if result["usage_count"] > 0:
+        if result.usage_count and result.usage_count > 0:
             raise HTTPException(
                 status_code=400,
-                detail=f"Cannot delete cohort: has {result['usage_count']} profile link(s) (preserved for historical data)",
+                detail=f"Cannot delete cohort: has {result.usage_count} profile link(s) (preserved for historical data)",
             )
-
-        cohort_name = result.get("title", "Unknown")
-        actor_name = result.get("actor_name")
 
         # Set audit context with data from SQL query
-        if actor_name:
+        if result.actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": profile_id},
-                cohort={"name": cohort_name, "id": request.cohortId},
+                actor={"name": result.actor_name, "id": profile_id},
+                cohort={"name": result.title or "Unknown", "id": str(request.cohort_id)},
             )
 
-        result = DeleteCohortResponse(
-            success=True,
-            message="Cohort deleted successfully",
-        )
+        # Convert SQL result to API response (no manual conversion needed)
+        api_response = DeleteCohortApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result
+        return api_response
     except HTTPException:
         raise
     except Exception as e:
