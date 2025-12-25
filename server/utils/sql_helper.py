@@ -143,10 +143,34 @@ async def execute_sql_typed(
         
         if row:
             # Convert row to dict - asyncpg handles composite types automatically
-            # Composite arrays are decoded as list of dicts/records
+            # Composite arrays are decoded as list of Record objects
             row_dict = dict(row)
+            
+            # Recursively convert Record objects to dicts and datetime to strings for composite types
+            def convert_records_to_dicts(obj: Any) -> Any:
+                """Recursively convert asyncpg Record objects to dicts, datetime to ISO strings, and JSON strings to dicts."""
+                if isinstance(obj, asyncpg.Record):
+                    return {k: convert_records_to_dicts(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [convert_records_to_dicts(item) for item in obj]
+                elif isinstance(obj, dict):
+                    return {k: convert_records_to_dicts(v) for k, v in obj.items()}
+                elif isinstance(obj, str) and (obj.startswith('{') or obj.startswith('[')):
+                    # Try to parse JSON strings (JSONB fields from PostgreSQL)
+                    try:
+                        import json
+                        parsed = json.loads(obj)
+                        return convert_records_to_dicts(parsed)  # Recursively process parsed JSON
+                    except (json.JSONDecodeError, ValueError):
+                        return obj  # Not JSON, return as-is
+                elif hasattr(obj, 'isoformat'):  # datetime objects
+                    return obj.isoformat()
+                else:
+                    return obj
+            
+            row_dict = convert_records_to_dicts(row_dict)
+            
             # Use model_validate since we have the actual data structure
-            # asyncpg automatically decodes composite arrays to Python objects
             return OutputTypeClass.model_validate(row_dict)
         else:
             # Function returned no rows - return empty result

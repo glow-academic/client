@@ -7385,9 +7385,40 @@ export interface components {
             timeTaken: number | null;
         };
         /** CreateAgentApiRequest */
-        CreateAgentApiRequest: Record<string, never>;
+        CreateAgentApiRequest: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Model Id
+             * Format: uuid
+             */
+            model_id: string;
+            /** Active */
+            active: boolean;
+            /** Role */
+            role: string;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** System Prompt */
+            system_prompt?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Model Temperature Level Id */
+            model_temperature_level_id?: string | null;
+            /** Model Reasoning Level Id */
+            model_reasoning_level_id?: string | null;
+            /** Model Voice Ids */
+            model_voice_ids?: string[] | null;
+        };
         /** CreateAgentApiResponse */
-        CreateAgentApiResponse: Record<string, never>;
+        CreateAgentApiResponse: {
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /**
          * CreateAuthRequest
          * @description Request to create auth with nested items.
@@ -8381,9 +8412,22 @@ export interface components {
             key: string;
         };
         /** DeleteAgentApiRequest */
-        DeleteAgentApiRequest: Record<string, never>;
+        DeleteAgentApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+        };
         /** DeleteAgentApiResponse */
-        DeleteAgentApiResponse: Record<string, never>;
+        DeleteAgentApiResponse: {
+            /** Deleted */
+            deleted?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** DeleteAgentPromptRequest */
         DeleteAgentPromptRequest: {
             /** Agentid */
@@ -8984,9 +9028,22 @@ export interface components {
             document_type_options: string[];
         };
         /** DuplicateAgentApiRequest */
-        DuplicateAgentApiRequest: Record<string, never>;
+        DuplicateAgentApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+        };
         /** DuplicateAgentApiResponse */
-        DuplicateAgentApiResponse: Record<string, never>;
+        DuplicateAgentApiResponse: {
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Agent Name */
+            agent_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /**
          * DuplicateAuthRequest
          * @description Request to duplicate auth.
@@ -10186,17 +10243,104 @@ export interface components {
             imageReferenceId?: string | null;
         };
         /** GetAgentDetailApiRequest */
-        GetAgentDetailApiRequest: Record<string, never>;
+        GetAgentDetailApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+        };
         /** GetAgentDetailApiResponse */
-        GetAgentDetailApiResponse: Record<string, never>;
+        GetAgentDetailApiResponse: {
+            /** Agent Exists */
+            agent_exists?: boolean | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** System Prompt */
+            system_prompt?: string | null;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Role */
+            role?: string | null;
+            /** Selected Temperature Level Id */
+            selected_temperature_level_id?: string | null;
+            /** Temperature */
+            temperature?: number | null;
+            /** Selected Reasoning Level Id */
+            selected_reasoning_level_id?: string | null;
+            /** Reasoning */
+            reasoning?: string | null;
+            /** Selected Voice Ids */
+            selected_voice_ids?: string[] | null;
+            /** Valid Voices */
+            valid_voices?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Temperature Lower */
+            temperature_lower?: number | null;
+            /** Temperature Upper */
+            temperature_upper?: number | null;
+            /** Valid Model Ids */
+            valid_model_ids?: string[] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetAgentDetailV3Department"][] | null;
+            /** Prompts */
+            prompts?: components["schemas"]["QGetAgentDetailV3Prompt"][] | null;
+            /** Department Prompt Links */
+            department_prompt_links?: components["schemas"]["QGetAgentDetailV3DepartmentPromptLink"][] | null;
+            /** Debug Info */
+            debug_info?: components["schemas"]["QGetAgentDetailV3DebugInfo"][] | null;
+            /** Models */
+            models?: components["schemas"]["QGetAgentDetailV3Model"][] | null;
+            /** Reasoning Options */
+            reasoning_options?: components["schemas"]["QGetAgentDetailV3ReasoningOption"][] | null;
+            /** Temperature Levels */
+            temperature_levels?: components["schemas"]["QGetAgentDetailV3TemperatureLevel"][] | null;
+            /** Available Voices */
+            available_voices?: components["schemas"]["QGetAgentDetailV3AvailableVoice"][] | null;
+        };
         /** GetAgentNewApiRequest */
         GetAgentNewApiRequest: Record<string, never>;
         /** GetAgentNewApiResponse */
-        GetAgentNewApiResponse: Record<string, never>;
+        GetAgentNewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Valid Model Ids */
+            valid_model_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Models */
+            models?: components["schemas"]["QGetAgentNewV3Model"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetAgentNewV3Department"][] | null;
+        };
         /** GetAgentsListApiRequest */
         GetAgentsListApiRequest: Record<string, never>;
         /** GetAgentsListApiResponse */
-        GetAgentsListApiResponse: Record<string, never>;
+        GetAgentsListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Agents */
+            agents?: components["schemas"]["QListAgentsV3Agent"][] | null;
+        };
         /** GradeItem */
         GradeItem: {
             /** Id */
@@ -12577,6 +12721,175 @@ export interface components {
             status_options: {
                 [key: string]: string;
             }[];
+        };
+        /** QGetAgentDetailV3AvailableVoice */
+        QGetAgentDetailV3AvailableVoice: {
+            /** Id */
+            id: string | null;
+            /** Voice */
+            voice: string | null;
+        };
+        /** QGetAgentDetailV3DebugInfo */
+        QGetAgentDetailV3DebugInfo: {
+            /** Created At */
+            created_at: string | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Content */
+            content: string | null;
+        };
+        /** QGetAgentDetailV3Department */
+        QGetAgentDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetAgentDetailV3DepartmentPromptLink */
+        QGetAgentDetailV3DepartmentPromptLink: {
+            /** Department Id */
+            department_id: string | null;
+            /** Prompt Id */
+            prompt_id: string | null;
+        };
+        /** QGetAgentDetailV3Model */
+        QGetAgentDetailV3Model: {
+            /** Model Id */
+            model_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Input Modalities */
+            input_modalities: string[] | null;
+            /** Output Modalities */
+            output_modalities: string[] | null;
+            /** Temperature Lower */
+            temperature_lower: number | null;
+            /** Temperature Upper */
+            temperature_upper: number | null;
+            /** Temperature Levels */
+            temperature_levels: {
+                [key: string]: unknown;
+            } | null;
+            /** Reasoning Options */
+            reasoning_options: {
+                [key: string]: unknown;
+            } | null;
+            /** Available Voices */
+            available_voices: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** QGetAgentDetailV3Prompt */
+        QGetAgentDetailV3Prompt: {
+            /** Prompt Id */
+            prompt_id: string | null;
+            /** System Prompt */
+            system_prompt: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+        };
+        /** QGetAgentDetailV3ReasoningOption */
+        QGetAgentDetailV3ReasoningOption: {
+            /** Id */
+            id: string | null;
+            /** Reasoning Level */
+            reasoning_level: string | null;
+        };
+        /** QGetAgentDetailV3TemperatureLevel */
+        QGetAgentDetailV3TemperatureLevel: {
+            /** Id */
+            id: string | null;
+            /** Temperature */
+            temperature: string | null;
+            /** Is Upper */
+            is_upper: boolean | null;
+        };
+        /** QGetAgentNewV3Department */
+        QGetAgentNewV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetAgentNewV3Model */
+        QGetAgentNewV3Model: {
+            /** Model Id */
+            model_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Temperature Lower */
+            temperature_lower: number | null;
+            /** Temperature Upper */
+            temperature_upper: number | null;
+            /** Input Modalities */
+            input_modalities: string[] | null;
+            /** Output Modalities */
+            output_modalities: string[] | null;
+            /** Temperature Levels */
+            temperature_levels: {
+                [key: string]: unknown;
+            } | null;
+            /** Reasoning Options */
+            reasoning_options: {
+                [key: string]: unknown;
+            } | null;
+            /** Available Voices */
+            available_voices: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** QListAgentsV3Agent */
+        QListAgentsV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Temperature */
+            temperature: number | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Role */
+            role: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Duplicate */
+            can_duplicate: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Model Name */
+            model_name: string | null;
+            /** Model Description */
+            model_description: string | null;
+            /** Actor Name */
+            actor_name: string | null;
         };
         /**
          * QuestionItem
@@ -15318,9 +15631,47 @@ export interface components {
             value: number;
         };
         /** UpdateAgentApiRequest */
-        UpdateAgentApiRequest: Record<string, never>;
+        UpdateAgentApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Model Id
+             * Format: uuid
+             */
+            model_id: string;
+            /** Active */
+            active: boolean;
+            /** Role */
+            role: string;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** System Prompt */
+            system_prompt?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Ids For Prompt */
+            department_ids_for_prompt?: string[] | null;
+            /** Model Temperature Level Id */
+            model_temperature_level_id?: string | null;
+            /** Model Reasoning Level Id */
+            model_reasoning_level_id?: string | null;
+            /** Model Voice Ids */
+            model_voice_ids?: string[] | null;
+        };
         /** UpdateAgentApiResponse */
-        UpdateAgentApiResponse: Record<string, never>;
+        UpdateAgentApiResponse: {
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /**
          * UpdateAuthRequest
          * @description Request to update auth with nested items.

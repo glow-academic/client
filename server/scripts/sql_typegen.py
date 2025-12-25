@@ -1300,7 +1300,7 @@ def generate_api_response_model(
                 else:
                     lines.append(f"    {field_name}: {field_type}")
 
-        return "\n".join(lines), generated_composite_models
+        return "\n".join(lines)
 
     # Generate nested structure using nest for API responses
     from utils.sql_nest import nest

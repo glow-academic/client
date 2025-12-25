@@ -493,7 +493,8 @@ async def fetch_function_return_columns(
     # Split by commas, but be careful of commas inside type names
     # Pattern: col_name type [NOT NULL]
     # Handle array types like types.q_list_agents_v3_agent[]
-    col_pattern = r'(\w+)\s+([^,\n]+?)(?:\s+NOT\s+NULL)?(?=\s*,\s*\w+\s+|\s*$)'
+    # Updated pattern to handle multiline and trailing commas better
+    col_pattern = r'(\w+)\s+([^,\n]+?)(?:\s+NOT\s+NULL)?(?=\s*,|\s*$)'
     for match in re.finditer(col_pattern, columns_text, re.IGNORECASE):
         col_name = match.group(1)
         type_str = match.group(2)
@@ -507,6 +508,15 @@ async def fetch_function_return_columns(
         is_array = type_str.endswith("[]")
         base_type_str = type_str[:-2] if is_array else type_str
         
+        # Map PostgreSQL type aliases to actual type names
+        type_name_mapping = {
+            'boolean': 'bool',
+            'double precision': 'float8',
+            'character varying': 'varchar',
+            'character': 'char',
+        }
+        lookup_type = type_name_mapping.get(base_type_str.lower(), base_type_str)
+        
         # Get type OID from type name
         type_info = await conn.fetchrow(
             """
@@ -517,7 +527,7 @@ async def fetch_function_return_columns(
                OR t.typname = $1
             LIMIT 1;
             """,
-            base_type_str,
+            lookup_type,
         )
         
         if type_info:
