@@ -514,6 +514,9 @@ async def fetch_function_return_columns(
             'double precision': 'float8',
             'character varying': 'varchar',
             'character': 'char',
+            'bigint': 'int8',
+            'integer': 'int4',
+            'smallint': 'int2',
         }
         lookup_type = type_name_mapping.get(base_type_str.lower(), base_type_str)
         

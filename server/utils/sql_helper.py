@@ -148,7 +148,7 @@ async def execute_sql_typed(
             
             # Recursively convert Record objects to dicts and datetime to strings for composite types
             def convert_records_to_dicts(obj: Any) -> Any:
-                """Recursively convert asyncpg Record objects to dicts, datetime to ISO strings, and JSON strings to dicts."""
+                """Recursively convert asyncpg Record objects to dicts, datetime to ISO strings, UUID to strings, and JSON strings to dicts."""
                 if isinstance(obj, asyncpg.Record):
                     return {k: convert_records_to_dicts(v) for k, v in obj.items()}
                 elif isinstance(obj, list):
@@ -165,6 +165,8 @@ async def execute_sql_typed(
                         return obj  # Not JSON, return as-is
                 elif hasattr(obj, 'isoformat'):  # datetime objects
                     return obj.isoformat()
+                elif type(obj).__name__ == 'UUID' or (hasattr(obj, 'hex') and hasattr(obj, 'int')):  # UUID objects
+                    return str(obj)  # Convert UUID to string
                 else:
                     return obj
             

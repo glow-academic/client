@@ -27129,6 +27129,17 @@
       },
       "DeleteAgentApiResponse": {
         "properties": {
+          "usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Count"
+          },
           "deleted": {
             "anyOf": [
               {

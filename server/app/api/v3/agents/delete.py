@@ -64,7 +64,7 @@ async def delete_agent(
             ),
         )
 
-        if result.usage_count > 0:
+        if result.usage_count and result.usage_count > 0:
             raise HTTPException(
                 status_code=400, detail="Cannot delete agent: agent is in use"
             )

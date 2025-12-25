@@ -82,10 +82,10 @@ async def get_agent_new(
         # Convert SQL result to API response
         api_response = GetAgentNewApiResponse.model_validate(result.model_dump())
 
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": api_response.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )

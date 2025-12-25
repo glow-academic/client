@@ -85,12 +85,17 @@ export default function Agents({
   // Use server-provided data directly
   const agentsData = serverListData;
 
-  // Extract data from response - convert dict to array for table
+  // Extract data from response - agents is now an array (composite types)
   const agents = useMemo(() => {
-    const agentsDict = agentsData?.agents || {};
-    const agentsArray = Object.values(agentsDict);
-    // Sort by idx if present, otherwise keep original order
-    return agentsArray.sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0));
+    // API now returns agents as an array directly (no dict conversion needed)
+    const agentsArray = agentsData?.agents || [];
+    // Sort by updated_at descending (most recent first) if present
+    return agentsArray.sort((a, b) => {
+      if (a.updated_at && b.updated_at) {
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      }
+      return 0;
+    });
   }, [agentsData?.agents]);
   const modelMapping = useMemo(
     () =>

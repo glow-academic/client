@@ -19,6 +19,7 @@ sys.path.insert(0, str(server_dir))
 
 from scripts.sql_introspect import introspect_sql_file
 from scripts.sql_typegen import generate_types_file
+from utils.sql_helper import load_sql
 
 
 def _to_class_name(route_name: str, suffix: str) -> str:
@@ -500,8 +501,52 @@ def write_consolidated_types_file(
     types_file.write_text("\n".join(lines))
 
 
-async def generate_types_for_sql_file(
+def _detect_function_in_sql(sql_text: str) -> bool:
+    """Detect if SQL file contains a function definition.
+    
+    Args:
+        sql_text: SQL file content
+        
+    Returns:
+        True if SQL contains CREATE OR REPLACE FUNCTION
+    """
+    # Check for function definition pattern
+    # Match CREATE OR REPLACE FUNCTION (case insensitive, multiline)
+    pattern = r'CREATE\s+OR\s+REPLACE\s+FUNCTION'
+    return bool(re.search(pattern, sql_text, re.IGNORECASE | re.MULTILINE))
+
+
+async def execute_sql_file(
     sql_path: str, conn: asyncpg.Connection, server_root: Path
+) -> tuple[bool, str]:
+    """Execute SQL file on database (for functions/types).
+    
+    Args:
+        sql_path: SQL file path relative to server root
+        conn: Database connection
+        server_root: Server root directory
+        
+    Returns:
+        Tuple of (success, error_message)
+    """
+    try:
+        # Load SQL file
+        sql_text = load_sql(sql_path)
+        
+        # Only execute if it contains function definitions
+        if not _detect_function_in_sql(sql_text):
+            return True, f"Skipping {sql_path} (no function definition)"
+        
+        # Execute SQL file (may contain BEGIN/COMMIT blocks)
+        await conn.execute(sql_text)
+        return True, f"Executed {sql_path}"
+        
+    except Exception as e:
+        return False, f"Error executing {sql_path}: {str(e)}"
+
+
+async def generate_types_for_sql_file(
+    sql_path: str, conn: asyncpg.Connection, server_root: Path, skip_execution: bool = False
 ) -> tuple[bool, str, tuple[str, str, str, str, str, str, str] | None]:
     """Generate types for a single SQL file.
 
@@ -509,6 +554,7 @@ async def generate_types_for_sql_file(
         sql_path: SQL file path relative to server root
         conn: Database connection
         server_root: Server root directory
+        skip_execution: If True, skip SQL execution (already done in first pass)
 
     Returns:
         Tuple of (success, error_message, type_definition) where type_definition is:
@@ -598,12 +644,40 @@ async def main() -> int:
         skipped: list[str] = []
         type_definitions: list[tuple[str, str, str, str, str, str, str]] = []  # (sql_path, route_name, types_content, sql_params_class, sql_row_class, api_request_class, api_response_class)
 
+        # First pass: Execute all SQL files that contain functions/types
+        # This ensures functions and types exist in the database before introspection
+        print("\n📝 Executing SQL files with functions/types...")
+        execution_errors: list[tuple[str, str]] = []
+        
+        for sql_file in sorted(sql_files):
+            sql_path = str(sql_file.relative_to(server_root))
+            execute_success, execute_message = await execute_sql_file(sql_path, conn, server_root)
+            
+            if not execute_success:
+                # For test SQL files, treat execution errors as skips
+                if sql_path.startswith("tests/sql/"):
+                    print(f"⏭️  {execute_message}")
+                else:
+                    execution_errors.append((sql_path, execute_message))
+                    print(f"❌ {execute_message}")
+            elif "Executed" in execute_message:
+                print(f"✅ {execute_message}")
+        
+        if execution_errors:
+            print(f"\n⚠️  {len(execution_errors)} SQL files failed to execute:")
+            for sql_path, error_msg in execution_errors:
+                print(f"   - {sql_path}: {error_msg}")
+            print("\n   Continuing with type generation anyway...")
+        
+        # Second pass: Generate types for all SQL files
+        print("\n🔍 Generating types from SQL files...")
+        
         for sql_file in sorted(sql_files):
             # Get relative path from server root
             sql_path = str(sql_file.relative_to(server_root))
 
             success, message, type_definition = await generate_types_for_sql_file(
-                sql_path, conn, server_root
+                sql_path, conn, server_root, skip_execution=True
             )
 
             if success:

@@ -8421,6 +8421,8 @@ export interface components {
         };
         /** DeleteAgentApiResponse */
         DeleteAgentApiResponse: {
+            /** Usage Count */
+            usage_count?: number | null;
             /** Deleted */
             deleted?: boolean | null;
             /** Name */

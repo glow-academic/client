@@ -105,10 +105,10 @@ async def get_agent_detail(
         # Convert SQL result to API response
         response_data = GetAgentDetailApiResponse.model_validate(result.model_dump())
 
-        # Cache response (model_mapping now includes all fields via ModelMappingItem)
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": response_data.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )

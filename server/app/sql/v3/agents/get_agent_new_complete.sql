@@ -1,47 +1,39 @@
 -- Get default agent detail for creation
 -- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
--- Define composite types
-DO $$ 
-BEGIN
-    -- Model item type
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type t
-        JOIN pg_namespace n ON n.oid = t.typnamespace
-        WHERE n.nspname = 'types' 
-        AND t.typname = 'q_get_agent_new_v3_model'
-    ) THEN
-        CREATE TYPE types.q_get_agent_new_v3_model AS (
-            model_id text,
-            name text,
-            description text,
-            active boolean,
-            temperature_lower float,
-            temperature_upper float,
-            input_modalities text[],
-            output_modalities text[],
-            temperature_levels jsonb,
-            reasoning_options jsonb,
-            available_voices jsonb
-        );
-    END IF;
-    
-    -- Department item type
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type t
-        JOIN pg_namespace n ON n.oid = t.typnamespace
-        WHERE n.nspname = 'types' 
-        AND t.typname = 'q_get_agent_new_v3_department'
-    ) THEN
-        CREATE TYPE types.q_get_agent_new_v3_department AS (
-            department_id text,
-            name text,
-            description text
-        );
-    END IF;
-END $$;
+BEGIN;
 
--- Create function
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_get_agent_new_v3(uuid);
+
+-- 2) Drop types WITHOUT CASCADE
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DROP TYPE IF EXISTS types.q_get_agent_new_v3_model;
+DROP TYPE IF EXISTS types.q_get_agent_new_v3_department;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_agent_new_v3_model AS (
+    model_id text,
+    name text,
+    description text,
+    active boolean,
+    temperature_lower float,
+    temperature_upper float,
+    input_modalities text[],
+    output_modalities text[],
+    temperature_levels jsonb,
+    reasoning_options jsonb,
+    available_voices jsonb
+);
+
+CREATE TYPE types.q_get_agent_new_v3_department AS (
+    department_id text,
+    name text,
+    description text
+);
+
+-- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_agent_new_v3(profile_id uuid)
 RETURNS TABLE (
     actor_name text,
@@ -231,3 +223,5 @@ CROSS JOIN valid_departments_data vdd
 LEFT JOIN primary_department_id pdi ON true
 GROUP BY up.actor_name, up.role, pdi.department_id
 $$;
+
+COMMIT;

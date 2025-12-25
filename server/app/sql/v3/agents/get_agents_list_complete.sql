@@ -1,36 +1,36 @@
 -- Get agents list with permissions
 -- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
--- Define composite type for agent item
-DO $$ 
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type t
-        JOIN pg_namespace n ON n.oid = t.typnamespace
-        WHERE n.nspname = 'types' 
-        AND t.typname = 'q_list_agents_v3_agent'
-    ) THEN
-        CREATE TYPE types.q_list_agents_v3_agent AS (
-            agent_id uuid,
-            name text,
-            description text,
-            reasoning text,
-            temperature float,
-            model_id uuid,
-            role text,
-            updated_at timestamptz,
-            department_ids text[],
-            can_edit boolean,
-            can_duplicate boolean,
-            can_delete boolean,
-            model_name text,
-            model_description text,
-            actor_name text
-        );
-    END IF;
-END $$;
+BEGIN;
 
--- Create function
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_list_agents_v3(uuid);
+
+-- 2) Drop types WITHOUT CASCADE
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DROP TYPE IF EXISTS types.q_list_agents_v3_agent;
+
+-- 3) Recreate types
+CREATE TYPE types.q_list_agents_v3_agent AS (
+    agent_id uuid,
+    name text,
+    description text,
+    reasoning text,
+    temperature float,
+    model_id uuid,
+    role text,
+    updated_at timestamptz,
+    department_ids text[],
+    can_edit boolean,
+    can_duplicate boolean,
+    can_delete boolean,
+    model_name text,
+    model_description text,
+    actor_name text
+);
+
+-- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_list_agents_v3(profile_id uuid)
 RETURNS TABLE (
     actor_name text,
@@ -123,3 +123,5 @@ LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AN
 LEFT JOIN models m ON m.id = fa.model_id
 GROUP BY up.actor_name, up.role
 $$;
+
+COMMIT;

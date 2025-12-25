@@ -1,132 +1,82 @@
 -- Get agent detail with prompts, departments, and access control
 -- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
--- Define composite types
-DO $$ 
-BEGIN
-    -- Department item type
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type t
-        JOIN pg_namespace n ON n.oid = t.typnamespace
-        WHERE n.nspname = 'types' 
-        AND t.typname = 'q_get_agent_detail_v3_department'
-    ) THEN
-        CREATE TYPE types.q_get_agent_detail_v3_department AS (
-            department_id text,
-            name text,
-            description text
-        );
-    END IF;
-    
-    -- Prompt item type
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type t
-        JOIN pg_namespace n ON n.oid = t.typnamespace
-        WHERE n.nspname = 'types' 
-        AND t.typname = 'q_get_agent_detail_v3_prompt'
-    ) THEN
-        CREATE TYPE types.q_get_agent_detail_v3_prompt AS (
-            prompt_id text,
-            system_prompt text,
-            name text,
-            description text,
-            created_at text,
-            updated_at text,
-            department_ids text[],
-            can_delete boolean
-        );
-    END IF;
-    
-    -- Department prompt link type
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type t
-        JOIN pg_namespace n ON n.oid = t.typnamespace
-        WHERE n.nspname = 'types' 
-        AND t.typname = 'q_get_agent_detail_v3_department_prompt_link'
-    ) THEN
-        CREATE TYPE types.q_get_agent_detail_v3_department_prompt_link AS (
-            department_id text,
-            prompt_id text
-        );
-    END IF;
-    
-    -- Debug info type
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type t
-        JOIN pg_namespace n ON n.oid = t.typnamespace
-        WHERE n.nspname = 'types' 
-        AND t.typname = 'q_get_agent_detail_v3_debug_info'
-    ) THEN
-        CREATE TYPE types.q_get_agent_detail_v3_debug_info AS (
-            created_at text,
-            model_id text,
-            content text
-        );
-    END IF;
-    
-    -- Model item type (with nested JSONB for complex nested structures)
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type t
-        JOIN pg_namespace n ON n.oid = t.typnamespace
-        WHERE n.nspname = 'types' 
-        AND t.typname = 'q_get_agent_detail_v3_model'
-    ) THEN
-        CREATE TYPE types.q_get_agent_detail_v3_model AS (
-            model_id text,
-            name text,
-            description text,
-            input_modalities text[],
-            output_modalities text[],
-            temperature_lower float,
-            temperature_upper float,
-            temperature_levels jsonb,
-            reasoning_options jsonb,
-            available_voices jsonb
-        );
-    END IF;
-    
-    -- Reasoning option type
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type t
-        JOIN pg_namespace n ON n.oid = t.typnamespace
-        WHERE n.nspname = 'types' 
-        AND t.typname = 'q_get_agent_detail_v3_reasoning_option'
-    ) THEN
-        CREATE TYPE types.q_get_agent_detail_v3_reasoning_option AS (
-            id text,
-            reasoning_level text
-        );
-    END IF;
-    
-    -- Temperature level type
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type t
-        JOIN pg_namespace n ON n.oid = t.typnamespace
-        WHERE n.nspname = 'types' 
-        AND t.typname = 'q_get_agent_detail_v3_temperature_level'
-    ) THEN
-        CREATE TYPE types.q_get_agent_detail_v3_temperature_level AS (
-            id text,
-            temperature text,
-            is_upper boolean
-        );
-    END IF;
-    
-    -- Available voice type
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_type t
-        JOIN pg_namespace n ON n.oid = t.typnamespace
-        WHERE n.nspname = 'types' 
-        AND t.typname = 'q_get_agent_detail_v3_available_voice'
-    ) THEN
-        CREATE TYPE types.q_get_agent_detail_v3_available_voice AS (
-            id text,
-            voice text
-        );
-    END IF;
-END $$;
+BEGIN;
 
--- Create function
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_get_agent_detail_v3(uuid, uuid);
+
+-- 2) Drop types WITHOUT CASCADE
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DROP TYPE IF EXISTS types.q_get_agent_detail_v3_department;
+DROP TYPE IF EXISTS types.q_get_agent_detail_v3_prompt;
+DROP TYPE IF EXISTS types.q_get_agent_detail_v3_department_prompt_link;
+DROP TYPE IF EXISTS types.q_get_agent_detail_v3_debug_info;
+DROP TYPE IF EXISTS types.q_get_agent_detail_v3_model;
+DROP TYPE IF EXISTS types.q_get_agent_detail_v3_reasoning_option;
+DROP TYPE IF EXISTS types.q_get_agent_detail_v3_temperature_level;
+DROP TYPE IF EXISTS types.q_get_agent_detail_v3_available_voice;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_agent_detail_v3_department AS (
+    department_id text,
+    name text,
+    description text
+);
+
+CREATE TYPE types.q_get_agent_detail_v3_prompt AS (
+    prompt_id text,
+    system_prompt text,
+    name text,
+    description text,
+    created_at text,
+    updated_at text,
+    department_ids text[],
+    can_delete boolean
+);
+
+CREATE TYPE types.q_get_agent_detail_v3_department_prompt_link AS (
+    department_id text,
+    prompt_id text
+);
+
+CREATE TYPE types.q_get_agent_detail_v3_debug_info AS (
+    created_at text,
+    model_id text,
+    content text
+);
+
+CREATE TYPE types.q_get_agent_detail_v3_model AS (
+    model_id text,
+    name text,
+    description text,
+    input_modalities text[],
+    output_modalities text[],
+    temperature_lower float,
+    temperature_upper float,
+    temperature_levels jsonb,
+    reasoning_options jsonb,
+    available_voices jsonb
+);
+
+CREATE TYPE types.q_get_agent_detail_v3_reasoning_option AS (
+    id text,
+    reasoning_level text
+);
+
+CREATE TYPE types.q_get_agent_detail_v3_temperature_level AS (
+    id text,
+    temperature text,
+    is_upper boolean
+);
+
+CREATE TYPE types.q_get_agent_detail_v3_available_voice AS (
+    id text,
+    voice text
+);
+
+-- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_agent_detail_v3(
     agent_id uuid,
     profile_id uuid
@@ -570,3 +520,5 @@ GROUP BY aec.agent_exists, ai.agent_id, ai.name, ai.description, aap.system_prom
          up.role, uhaa.has_access
 LIMIT 1
 $$;
+
+COMMIT;

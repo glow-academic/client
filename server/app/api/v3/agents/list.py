@@ -82,10 +82,10 @@ async def list_agents(
         # Convert SQL result to API response (no manual filtering needed - SQL handles it)
         api_response = GetAgentsListApiResponse.model_validate(result.model_dump())
 
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": api_response.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )

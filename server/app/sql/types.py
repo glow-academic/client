@@ -99,6 +99,7 @@ class DeleteAgentSqlParams(BaseModel):
 
 class DeleteAgentSqlRow(BaseModel):
 
+    usage_count: int | None = None
     deleted: bool | None = None
     name: str | None = None
     actor_name: str | None = None
@@ -109,6 +110,7 @@ class DeleteAgentApiRequest(BaseModel):
 
 class DeleteAgentApiResponse(BaseModel):
 
+    usage_count: int | None = None
     deleted: bool | None = None
     name: str | None = None
     actor_name: str | None = None
@@ -724,11 +726,11 @@ class GetAuthDetailAuthItemsItem(BaseModel):
 
 class GetAuthDetailSqlRow(BaseModel):
 
-    description: str
-    actor_name: str
-    can_edit: bool
     active: bool
+    can_edit: bool
     name: str
+    actor_name: str
+    description: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 class GetAuthDetailApiRequest(BaseModel):
@@ -738,11 +740,11 @@ class GetAuthDetailApiRequest(BaseModel):
 
 class GetAuthDetailApiResponse(BaseModel):
 
-    description: str
-    actor_name: str
-    can_edit: bool
     active: bool
+    can_edit: bool
     name: str
+    actor_name: str
+    description: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 

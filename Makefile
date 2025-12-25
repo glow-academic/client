@@ -331,7 +331,15 @@ migrate-db-all:
 # Compile SQL files and generate types
 sql-compile: check-venv
 	@echo "Compiling SQL files and generating types..."
-	@$(VENV_PYTHON) server/scripts/generate_sql_types.py
+	@if [ -z "$$DB_USER" ] || [ -z "$$DB_PASSWORD" ] || [ -z "$$DB_NAME" ]; then \
+		echo "⚠️  Warning: DB_USER, DB_PASSWORD, or DB_NAME not set. Using defaults."; \
+	fi
+	@DB_USER="$${DB_USER:-myuser}" \
+	 DB_PASSWORD="$${DB_PASSWORD:-mypassword}" \
+	 DB_NAME="$${DB_NAME:-mydb}" \
+	 DB_HOST="$${DB_HOST:-localhost}" \
+	 DB_PORT="$${DB_PORT:-5432}" \
+	 $(VENV_PYTHON) server/scripts/generate_sql_types.py
 	@echo "✅ SQL compilation complete"
 
 # Watch SQL files and regenerate types on change
