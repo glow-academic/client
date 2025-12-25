@@ -65,9 +65,7 @@ async def list_agents(
         params = GetAgentsListSqlParams(**request.model_dump(), profile_id=profile_id)
         sql_params = params.to_tuple()
 
-        # Execute query with typed helper and nesting
-        # Prefixes auto-detected from SQL column names
-        # Department filtering handled in SQL WHERE clause
+        # Execute query with typed helper - automatically detects and calls function if present
         result = cast(
             GetAgentsListSqlRow,
             await execute_sql_typed(

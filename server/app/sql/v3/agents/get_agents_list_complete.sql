@@ -1,9 +1,46 @@
 -- Get agents list with permissions
--- @params
---   profile_id: uuid
--- All parameters are cast exactly once in params CTE for reliable type introspection
+-- Converted to function with composite types
+
+-- Define composite type for agent item
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types' 
+        AND t.typname = 'q_list_agents_v3_agent'
+    ) THEN
+        CREATE TYPE types.q_list_agents_v3_agent AS (
+            agent_id uuid,
+            name text,
+            description text,
+            reasoning text,
+            temperature float,
+            model_id uuid,
+            role text,
+            updated_at timestamptz,
+            department_ids text[],
+            can_edit boolean,
+            can_duplicate boolean,
+            can_delete boolean,
+            model_name text,
+            model_description text,
+            actor_name text
+        );
+    END IF;
+END $$;
+
+-- Create function
+CREATE OR REPLACE FUNCTION api_list_agents_v3(profile_id uuid)
+RETURNS TABLE (
+    actor_name text,
+    agents types.q_list_agents_v3_agent[]
+)
+LANGUAGE sql
+STABLE
+AS $$
 WITH params AS (
-    SELECT $1::uuid AS profile_id
+    SELECT profile_id AS profile_id
 ),
 user_departments AS (
     SELECT department_id
@@ -48,80 +85,33 @@ filtered_agents AS (
         -- Include if has matching department link OR has no department links at all (cross-dept)
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
-),
-all_department_ids AS (
-    SELECT DISTINCT unnest(department_ids)::uuid as department_id
-    FROM agent_departments_data
-    WHERE department_ids IS NOT NULL
-),
-department_mapping_data AS (
-    -- Only include departments that are actually assigned to at least one agent
-    -- Use UNION with dummy row to ensure at least one row exists for CROSS JOIN
-    SELECT 
-        d.id::text as department_id,
-        d.title::text as department_name,
-        COALESCE(d.description, '')::text as department_description
-    FROM departments d
-    WHERE d.id IN (SELECT department_id FROM all_department_ids)
-    UNION ALL
-    -- Dummy row to ensure CROSS JOIN always produces at least one row
-    SELECT NULL::text, NULL::text, NULL::text
-    WHERE NOT EXISTS (SELECT 1 FROM departments d WHERE d.id IN (SELECT department_id FROM all_department_ids))
-    LIMIT 1
-),
-all_model_ids AS (
-    SELECT DISTINCT model_id
-    FROM filtered_agents
-    WHERE model_id IS NOT NULL
-),
-model_mapping_data AS (
-    SELECT 
-        m.id::text as model_id,
-        m.name::text as model_name,
-        COALESCE(m.description, '')::text as model_description
-    FROM models m
-    WHERE m.id IN (SELECT model_id FROM all_model_ids)
-    UNION ALL
-    -- Dummy row to ensure CROSS JOIN always produces at least one row
-    SELECT NULL::text, NULL::text, NULL::text
-    WHERE NOT EXISTS (SELECT 1 FROM models m WHERE m.id IN (SELECT model_id FROM all_model_ids))
-    LIMIT 1
 )
 SELECT 
-    -- Agents columns: prefix__key_field__field_name pattern
-    fa.id::text as "agents__agent_id",
-    fa.name::text as "agents__agent_id__name",
-    fa.description::text as "agents__agent_id__description",
-    COALESCE(mrl.reasoning_level::text, '')::text as "agents__agent_id__reasoning",
-    COALESCE(mtl.temperature, 0.0)::float as "agents__agent_id__temperature",
-    fa.model_id::text as "agents__agent_id__model_id",
-    fa.role::text as "agents__agent_id__role",
-    fa.updated_at::text as "agents__agent_id__updated_at",
-    COALESCE(addd.department_ids, ARRAY[]::text[])::text[] as "agents__agent_id__department_ids",
-    CASE WHEN up.role IN ('admin', 'superadmin') THEN true::boolean ELSE false::boolean END as "agents__agent_id__can_edit",
-    true::boolean as "agents__agent_id__can_duplicate",
-    CASE 
-        WHEN COALESCE(adl.total_links, 0) > 0 THEN false::boolean
-        WHEN up.role = 'superadmin' THEN true::boolean
-        ELSE false::boolean
-    END as "agents__agent_id__can_delete",
-    m.name::text as "agents__agent_id__model_name",
-    COALESCE(m.description, '')::text as "agents__agent_id__model_description",
-    up.actor_name::text as "agents__agent_id__actor_name",
-    -- Model mapping columns: prefix__key_field__field_name pattern
-    mmd.model_id::text as "model_mapping__id",
-    mmd.model_name::text as "model_mapping__id__name",
-    mmd.model_description::text as "model_mapping__id__description",
-    -- Department mapping columns: prefix__key_field__field_name pattern
-    dmd.department_id::text as "department_mapping__id",
-    dmd.department_name::text as "department_mapping__id__name",
-    dmd.department_description::text as "department_mapping__id__description",
-    -- Top-level actor_name (same for all rows)
-    up.actor_name::text as actor_name
+    up.actor_name::text as actor_name,
+    COALESCE(
+        ARRAY_AGG(
+            (fa.id, fa.name, fa.description, 
+             COALESCE(mrl.reasoning_level::text, ''),
+             COALESCE(mtl.temperature, 0.0),
+             fa.model_id, fa.role, fa.updated_at,
+             COALESCE(addd.department_ids, ARRAY[]::text[]),
+             CASE WHEN up.role IN ('admin', 'superadmin') THEN true ELSE false END,
+             true,
+             CASE 
+                 WHEN COALESCE(adl.total_links, 0) > 0 THEN false
+                 WHEN up.role = 'superadmin' THEN true
+                 ELSE false
+             END,
+             m.name,
+             COALESCE(m.description, ''),
+             up.actor_name
+            )::types.q_list_agents_v3_agent
+            ORDER BY fa.name
+        ),
+        '{}'::types.q_list_agents_v3_agent[]
+    ) as agents
 FROM filtered_agents fa
 CROSS JOIN user_profile up
-CROSS JOIN model_mapping_data mmd
-CROSS JOIN department_mapping_data dmd
 LEFT JOIN agent_department_links adl ON adl.agent_id = fa.id
 LEFT JOIN agent_departments_data addd ON addd.agent_id = fa.id
 -- Join temperature from junction table
@@ -131,5 +121,5 @@ LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_i
 LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = fa.id AND arl.active = true
 LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true
 LEFT JOIN models m ON m.id = fa.model_id
-ORDER BY fa.name, mmd.model_name, dmd.department_name
-
+GROUP BY up.actor_name, up.role
+$$;

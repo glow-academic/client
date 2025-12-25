@@ -1,35 +1,45 @@
 -- Update agent with prompt and department links in a single transaction
--- @params
---   agent_id: uuid
---   name: text
---   description: text
---   model_id: uuid
---   active: boolean
---   role: agent_role
---   prompt_id?: uuid
---   system_prompt?: text
---   department_ids: text[] = {}
---   department_ids_for_prompt: text[] = {}
---   model_temperature_level_id?: uuid
---   model_reasoning_level_id?: uuid
---   model_voice_ids?: text[]
---   profile_id: uuid
--- All parameters are cast exactly once in params CTE for reliable type introspection
+-- Converted to function
+
+-- Create function
+CREATE OR REPLACE FUNCTION api_update_agent_v3(
+    agent_id uuid,
+    name text,
+    description text,
+    model_id uuid,
+    active boolean,
+    role agent_role,
+    profile_id uuid,
+    prompt_id uuid DEFAULT NULL,
+    system_prompt text DEFAULT NULL,
+    department_ids text[] DEFAULT ARRAY[]::text[],
+    department_ids_for_prompt text[] DEFAULT ARRAY[]::text[],
+    model_temperature_level_id uuid DEFAULT NULL,
+    model_reasoning_level_id uuid DEFAULT NULL,
+    model_voice_ids text[] DEFAULT ARRAY[]::text[]
+)
+RETURNS TABLE (
+    agent_id text,
+    actor_name text
+)
+LANGUAGE sql
+AS $$
 WITH params AS (
-    SELECT $1::uuid AS agent_id,
-           $2::text AS name,
-           $3::text AS description,
-           $4::uuid AS model_id,
-           $5::boolean AS active,
-           $6::agent_role AS role,
-           $7::uuid AS prompt_id,
-           NULLIF($8::text, '') AS system_prompt,
-           COALESCE($9::text[], ARRAY[]::text[]) AS department_ids,
-           COALESCE($10::text[], ARRAY[]::text[]) AS department_ids_for_prompt,
-           $11::uuid AS model_temperature_level_id,
-           $12::uuid AS model_reasoning_level_id,
-           COALESCE($13::text[], ARRAY[]::text[]) AS model_voice_ids,
-           $14::uuid AS profile_id
+    SELECT
+        agent_id AS agent_id,
+        name AS name,
+        description AS description,
+        model_id AS model_id,
+        active AS active,
+        role AS role,
+        prompt_id AS prompt_id,
+        NULLIF(system_prompt, '') AS system_prompt,
+        COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
+        COALESCE(department_ids_for_prompt, ARRAY[]::text[]) AS department_ids_for_prompt,
+        model_temperature_level_id AS model_temperature_level_id,
+        model_reasoning_level_id AS model_reasoning_level_id,
+        COALESCE(model_voice_ids, ARRAY[]::text[]) AS model_voice_ids,
+        profile_id AS profile_id
 ),
 user_profile AS (
     SELECT 
@@ -232,4 +242,4 @@ FROM update_agent ua
 CROSS JOIN actor_profile ap
 CROSS JOIN validate_update_permissions vup
 WHERE vup.validation_passed = true
-
+$$;

@@ -72,7 +72,7 @@ async def create_agent(
             params = CreateAgentSqlParams(**request.model_dump(), profile_id=profile_id)
             sql_params = params.to_tuple()
 
-            # Execute SQL with typed helper (unified query handles all inserts)
+            # Execute SQL with typed helper - automatically detects and calls function if present
             result = cast(
                 CreateAgentSqlRow,
                 await execute_sql_typed(

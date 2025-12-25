@@ -1,9 +1,62 @@
 -- Get default agent detail for creation
--- @params
---   profile_id: uuid
--- All parameters are cast exactly once in params CTE for reliable type introspection
+-- Converted to function with composite types
+
+-- Define composite types
+DO $$ 
+BEGIN
+    -- Model item type
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types' 
+        AND t.typname = 'q_get_agent_new_v3_model'
+    ) THEN
+        CREATE TYPE types.q_get_agent_new_v3_model AS (
+            model_id text,
+            name text,
+            description text,
+            active boolean,
+            temperature_lower float,
+            temperature_upper float,
+            input_modalities text[],
+            output_modalities text[],
+            temperature_levels jsonb,
+            reasoning_options jsonb,
+            available_voices jsonb
+        );
+    END IF;
+    
+    -- Department item type
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types' 
+        AND t.typname = 'q_get_agent_new_v3_department'
+    ) THEN
+        CREATE TYPE types.q_get_agent_new_v3_department AS (
+            department_id text,
+            name text,
+            description text
+        );
+    END IF;
+END $$;
+
+-- Create function
+CREATE OR REPLACE FUNCTION api_get_agent_new_v3(profile_id uuid)
+RETURNS TABLE (
+    actor_name text,
+    user_role text,
+    primary_department_id text,
+    valid_model_ids text[],
+    valid_department_ids text[],
+    models types.q_get_agent_new_v3_model[],
+    departments types.q_get_agent_new_v3_department[]
+)
+LANGUAGE sql
+STABLE
+AS $$
 WITH params AS (
-    SELECT $1::uuid AS profile_id
+    SELECT profile_id AS profile_id
 ),
 user_profile AS (
     SELECT 
@@ -25,7 +78,6 @@ user_departments_for_models AS (
     JOIN profile_departments pd ON pd.profile_id = x.profile_id
 ),
 valid_models AS (
-    -- Filter models by department: include if has matching department link OR has no department links at all (cross-dept)
     SELECT 
         m.id::text as model_id,
         m.name,
@@ -109,37 +161,73 @@ valid_departments_data AS (
         ud.name::text as department_name,
         COALESCE(ud.description, '')::text as department_description
     FROM user_departments ud
+),
+models_agg AS (
+    SELECT 
+        amwm.model_id,
+        amwm.name,
+        amwm.description,
+        amwm.active,
+        COALESCE(mtb.temperature_lower, 0.0) as temperature_lower,
+        COALESCE(mtb.temperature_upper, 1.0) as temperature_upper,
+        COALESCE((SELECT array_agg(mmod2.modality::text ORDER BY mmod2.modality) FROM model_modalities_data mmod2 WHERE mmod2.model_id = amwm.model_id AND mmod2.is_input = true), ARRAY[]::text[]) as input_modalities,
+        COALESCE((SELECT array_agg(mmod3.modality::text ORDER BY mmod3.modality) FROM model_modalities_data mmod3 WHERE mmod3.model_id = amwm.model_id AND mmod3.is_input = false), ARRAY[]::text[]) as output_modalities,
+        COALESCE(
+            jsonb_object_agg(
+                mtl.temperature_level_id,
+                jsonb_build_object('temperature', mtl.temperature_value, 'is_upper', mtl.is_upper)
+            ) FILTER (WHERE mtl.temperature_level_id IS NOT NULL),
+            '{}'::jsonb
+        ) as temperature_levels,
+        COALESCE(
+            jsonb_object_agg(
+                mrl.reasoning_level_id,
+                jsonb_build_object('reasoning_level', mrl.reasoning_level_value)
+            ) FILTER (WHERE mrl.reasoning_level_id IS NOT NULL),
+            '{}'::jsonb
+        ) as reasoning_options,
+        COALESCE(
+            jsonb_object_agg(
+                mv.voice_id,
+                jsonb_build_object('voice', mv.voice_value)
+            ) FILTER (WHERE mv.voice_id IS NOT NULL),
+            '{}'::jsonb
+        ) as available_voices
+    FROM all_models_with_modalities amwm
+    LEFT JOIN model_temperature_levels_bounds mtb ON mtb.model_id = amwm.model_id
+    LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = amwm.model_id
+    LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = amwm.model_id
+    LEFT JOIN model_voices_data mv ON mv.model_id = amwm.model_id
+    GROUP BY amwm.model_id, amwm.name, amwm.description, amwm.active, mtb.temperature_lower, mtb.temperature_upper
 )
 SELECT 
-    amwm.model_id::text as "model_mapping__id",
-    amwm.name::text as "model_mapping__id__name",
-    amwm.description::text as "model_mapping__id__description",
-    COALESCE(mtb.temperature_lower, 0.0)::float as "model_mapping__id__temperature_lower",
-    COALESCE(mtb.temperature_upper, 1.0)::float as "model_mapping__id__temperature_upper",
-    COALESCE((SELECT array_agg(mmod2.modality::text ORDER BY mmod2.modality) FROM model_modalities_data mmod2 WHERE mmod2.model_id = amwm.model_id AND mmod2.is_input = true), ARRAY[]::text[])::text[] as "model_mapping__id__input_modalities",
-    COALESCE((SELECT array_agg(mmod3.modality::text ORDER BY mmod3.modality) FROM model_modalities_data mmod3 WHERE mmod3.model_id = amwm.model_id AND mmod3.is_input = false), ARRAY[]::text[])::text[] as "model_mapping__id__output_modalities",
-    mtl.temperature_level_id::text as "model_mapping__id__temperature_levels__id",
-    mtl.temperature_value::text as "model_mapping__id__temperature_levels__id__temperature",
-    mtl.is_upper::boolean as "model_mapping__id__temperature_levels__id__is_upper",
-    mrl.reasoning_level_id::text as "model_mapping__id__reasoning_options__id",
-    mrl.reasoning_level_value::text as "model_mapping__id__reasoning_options__id__reasoning_level",
-    mv.voice_id::text as "model_mapping__id__available_voices__id",
-    mv.voice_value::text as "model_mapping__id__available_voices__id__voice",
-    vdd.department_id::text as "department_mapping__id",
-    vdd.department_name::text as "department_mapping__id__name",
-    vdd.department_description::text as "department_mapping__id__description",
+    up.actor_name::text as actor_name,
+    up.role::text as user_role,
+    pdi.department_id::text as primary_department_id,
     (SELECT array_agg(amwm2.model_id::text ORDER BY amwm2.name) FROM all_models_with_modalities amwm2)::text[] as valid_model_ids,
     COALESCE((SELECT dept_ids FROM valid_departments_list LIMIT 1), ARRAY[]::text[])::text[] as valid_department_ids,
-    up.role::text as user_role,
-    up.actor_name::text as actor_name,
-    pdi.department_id::text as primary_department_id
-FROM (SELECT 1) dummy
-CROSS JOIN all_models_with_modalities amwm
+    COALESCE(
+        ARRAY_AGG(
+            (ma.model_id, ma.name, ma.description, ma.active,
+             ma.temperature_lower, ma.temperature_upper,
+             ma.input_modalities, ma.output_modalities,
+             ma.temperature_levels, ma.reasoning_options, ma.available_voices
+            )::types.q_get_agent_new_v3_model
+            ORDER BY ma.name
+        ),
+        '{}'::types.q_get_agent_new_v3_model[]
+    ) as models,
+    COALESCE(
+        ARRAY_AGG(
+            (vdd.department_id, vdd.department_name, vdd.department_description
+            )::types.q_get_agent_new_v3_department
+            ORDER BY vdd.department_name
+        ),
+        '{}'::types.q_get_agent_new_v3_department[]
+    ) as departments
+FROM user_profile up
+CROSS JOIN models_agg ma
 CROSS JOIN valid_departments_data vdd
-CROSS JOIN user_profile up
 LEFT JOIN primary_department_id pdi ON true
-LEFT JOIN model_temperature_levels_bounds mtb ON mtb.model_id = amwm.model_id
-LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = amwm.model_id
-LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = amwm.model_id
-LEFT JOIN model_voices_data mv ON mv.model_id = amwm.model_id
-
+GROUP BY up.actor_name, up.role, pdi.department_id
+$$;

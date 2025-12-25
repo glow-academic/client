@@ -1,11 +1,174 @@
 -- Get agent detail with prompts, departments, and access control
--- @params
---   agent_id: uuid
---   profile_id: uuid
--- All parameters are cast exactly once in params CTE for reliable type introspection
+-- Converted to function with composite types
+
+-- Define composite types
+DO $$ 
+BEGIN
+    -- Department item type
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types' 
+        AND t.typname = 'q_get_agent_detail_v3_department'
+    ) THEN
+        CREATE TYPE types.q_get_agent_detail_v3_department AS (
+            department_id text,
+            name text,
+            description text
+        );
+    END IF;
+    
+    -- Prompt item type
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types' 
+        AND t.typname = 'q_get_agent_detail_v3_prompt'
+    ) THEN
+        CREATE TYPE types.q_get_agent_detail_v3_prompt AS (
+            prompt_id text,
+            system_prompt text,
+            name text,
+            description text,
+            created_at text,
+            updated_at text,
+            department_ids text[],
+            can_delete boolean
+        );
+    END IF;
+    
+    -- Department prompt link type
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types' 
+        AND t.typname = 'q_get_agent_detail_v3_department_prompt_link'
+    ) THEN
+        CREATE TYPE types.q_get_agent_detail_v3_department_prompt_link AS (
+            department_id text,
+            prompt_id text
+        );
+    END IF;
+    
+    -- Debug info type
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types' 
+        AND t.typname = 'q_get_agent_detail_v3_debug_info'
+    ) THEN
+        CREATE TYPE types.q_get_agent_detail_v3_debug_info AS (
+            created_at text,
+            model_id text,
+            content text
+        );
+    END IF;
+    
+    -- Model item type (with nested JSONB for complex nested structures)
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types' 
+        AND t.typname = 'q_get_agent_detail_v3_model'
+    ) THEN
+        CREATE TYPE types.q_get_agent_detail_v3_model AS (
+            model_id text,
+            name text,
+            description text,
+            input_modalities text[],
+            output_modalities text[],
+            temperature_lower float,
+            temperature_upper float,
+            temperature_levels jsonb,
+            reasoning_options jsonb,
+            available_voices jsonb
+        );
+    END IF;
+    
+    -- Reasoning option type
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types' 
+        AND t.typname = 'q_get_agent_detail_v3_reasoning_option'
+    ) THEN
+        CREATE TYPE types.q_get_agent_detail_v3_reasoning_option AS (
+            id text,
+            reasoning_level text
+        );
+    END IF;
+    
+    -- Temperature level type
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types' 
+        AND t.typname = 'q_get_agent_detail_v3_temperature_level'
+    ) THEN
+        CREATE TYPE types.q_get_agent_detail_v3_temperature_level AS (
+            id text,
+            temperature text,
+            is_upper boolean
+        );
+    END IF;
+    
+    -- Available voice type
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = 'types' 
+        AND t.typname = 'q_get_agent_detail_v3_available_voice'
+    ) THEN
+        CREATE TYPE types.q_get_agent_detail_v3_available_voice AS (
+            id text,
+            voice text
+        );
+    END IF;
+END $$;
+
+-- Create function
+CREATE OR REPLACE FUNCTION api_get_agent_detail_v3(
+    agent_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    agent_exists boolean,
+    agent_id text,
+    name text,
+    description text,
+    system_prompt text,
+    prompt_id text,
+    model_id text,
+    active boolean,
+    role text,
+    selected_temperature_level_id text,
+    temperature float,
+    selected_reasoning_level_id text,
+    reasoning text,
+    selected_voice_ids text[],
+    valid_voices text[],
+    department_ids text[],
+    valid_department_ids text[],
+    can_edit boolean,
+    temperature_lower float,
+    temperature_upper float,
+    valid_model_ids text[],
+    actor_name text,
+    departments types.q_get_agent_detail_v3_department[],
+    prompts types.q_get_agent_detail_v3_prompt[],
+    department_prompt_links types.q_get_agent_detail_v3_department_prompt_link[],
+    debug_info types.q_get_agent_detail_v3_debug_info[],
+    models types.q_get_agent_detail_v3_model[],
+    reasoning_options types.q_get_agent_detail_v3_reasoning_option[],
+    temperature_levels types.q_get_agent_detail_v3_temperature_level[],
+    available_voices types.q_get_agent_detail_v3_available_voice[]
+)
+LANGUAGE sql
+STABLE
+AS $$
 WITH params AS (
-    SELECT $1::uuid AS agent_id,
-           $2::uuid AS profile_id
+    SELECT agent_id AS agent_id,
+           profile_id AS profile_id
 ),
 agent_exists_check AS (
     -- Check if agent exists independently of access control
@@ -182,9 +345,6 @@ valid_department_ids_list AS (
     SELECT array_agg(id::text ORDER BY name) as dept_ids
     FROM user_departments
 ),
--- Removed jsonb_agg - using flat columns with __ convention instead
--- Removed jsonb_agg - using flat columns with __ convention instead
--- Agent selected options from junction tables
 agent_selected_voices AS (
     SELECT 
         av.agent_id::text as agent_id,
@@ -212,7 +372,6 @@ agent_selected_reasoning AS (
     JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id
     WHERE arl.active = true AND mrl.active = true
 ),
--- Removed jsonb_agg - using flat columns with __ convention instead
 model_temperature_levels_data_with_ids AS (
     SELECT 
         mtl.model_id::text as model_id,
@@ -246,6 +405,43 @@ model_voices_data_flat AS (
         mv.voice::text as voice_value
     FROM model_voices mv
     WHERE mv.active = true
+),
+models_agg AS (
+    SELECT 
+        am.model_id,
+        am.name,
+        am.description,
+        COALESCE((SELECT array_agg(modality::text ORDER BY modality) FROM model_modalities_data WHERE model_id = am.model_id AND is_input = true), ARRAY[]::text[]) as input_modalities,
+        COALESCE((SELECT array_agg(modality::text ORDER BY modality) FROM model_modalities_data WHERE model_id = am.model_id AND is_input = false), ARRAY[]::text[]) as output_modalities,
+        COALESCE(mtb.temperature_lower, 0.0) as temperature_lower,
+        COALESCE(mtb.temperature_upper, 1.0) as temperature_upper,
+        COALESCE(
+            jsonb_object_agg(
+                mtl.temperature_level_id,
+                jsonb_build_object('temperature', mtl.temperature_value, 'is_upper', mtl.is_upper)
+            ) FILTER (WHERE mtl.temperature_level_id IS NOT NULL),
+            '{}'::jsonb
+        ) as temperature_levels,
+        COALESCE(
+            jsonb_object_agg(
+                mrl.reasoning_level_id,
+                jsonb_build_object('reasoning_level', mrl.reasoning_level_value)
+            ) FILTER (WHERE mrl.reasoning_level_id IS NOT NULL),
+            '{}'::jsonb
+        ) as reasoning_options,
+        COALESCE(
+            jsonb_object_agg(
+                mvf.voice_id,
+                jsonb_build_object('voice', mvf.voice_value)
+            ) FILTER (WHERE mvf.voice_id IS NOT NULL),
+            '{}'::jsonb
+        ) as available_voices
+    FROM all_models am
+    LEFT JOIN model_temperature_levels_bounds mtb ON mtb.model_id = am.model_id
+    LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = am.model_id
+    LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = am.model_id
+    LEFT JOIN model_voices_data_flat mvf ON mvf.model_id = am.model_id
+    GROUP BY am.model_id, am.name, am.description, mtb.temperature_lower, mtb.temperature_upper
 )
 SELECT 
     -- Agent existence check (always returned)
@@ -282,54 +478,76 @@ SELECT
     COALESCE((SELECT array_agg(model_id::text ORDER BY name) FROM all_models WHERE active = true), ARRAY[]::text[])::text[] as valid_model_ids,
     -- Top-level actor name
     up.actor_name::text as actor_name,
-    -- Department mapping: prefix__key_field__field_name pattern
-    vdd.department_id::text as "department_mapping__id",
-    vdd.department_name::text as "department_mapping__id__name",
-    vdd.department_description::text as "department_mapping__id__description",
-    -- Prompt mapping: prefix__key_field__field_name pattern
-    pmd.prompt_id::text as "prompt_mapping__id",
-    pmd.system_prompt::text as "prompt_mapping__id__system_prompt",
-    pmd.prompt_name::text as "prompt_mapping__id__name",
-    pmd.prompt_description::text as "prompt_mapping__id__description",
-    pmd.prompt_created_at::text as "prompt_mapping__id__created_at",
-    pmd.prompt_updated_at::text as "prompt_mapping__id__updated_at",
-    COALESCE(pmd.department_ids, ARRAY[]::text[])::text[] as "prompt_mapping__id__department_ids",
-    pmd.can_delete::boolean as "prompt_mapping__id__can_delete",
-    -- Department prompt links: prefix__key_field__field_name pattern (keyed by department_id)
-    adpl.department_id::text as "department_prompt_links__department_id",
-    adpl.prompt_id::text as "department_prompt_links__department_id__prompt_id",
-    -- Debug info: prefix__key_field__field_name pattern (keyed by created_at)
-    dd.created_at::text as "debug_info__created_at",
-    dd.model_id::text as "debug_info__created_at__model_id",
-    dd.content::text as "debug_info__created_at__content",
-    -- Model mapping: prefix__key_field__field_name pattern
-    am.model_id::text as "model_mapping__id",
-    am.name::text as "model_mapping__id__name",
-    am.description::text as "model_mapping__id__description",
-    COALESCE((SELECT array_agg(modality::text ORDER BY modality) FROM model_modalities_data WHERE model_id = am.model_id AND is_input = true), ARRAY[]::text[])::text[] as "model_mapping__id__input_modalities",
-    COALESCE((SELECT array_agg(modality::text ORDER BY modality) FROM model_modalities_data WHERE model_id = am.model_id AND is_input = false), ARRAY[]::text[])::text[] as "model_mapping__id__output_modalities",
-    COALESCE(mtb.temperature_lower, 0.0)::float as "model_mapping__id__temperature_lower",
-    COALESCE(mtb.temperature_upper, 1.0)::float as "model_mapping__id__temperature_upper",
-    -- Model temperature levels: nested dict pattern model_mapping__id__temperature_levels__id__field
-    mtl.temperature_level_id::text as "model_mapping__id__temperature_levels__id",
-    mtl.temperature_value::text as "model_mapping__id__temperature_levels__id__temperature",
-    mtl.is_upper::boolean as "model_mapping__id__temperature_levels__id__is_upper",
-    -- Model reasoning options: nested dict pattern model_mapping__id__reasoning_options__id__field
-    mrl.reasoning_level_id::text as "model_mapping__id__reasoning_options__id",
-    mrl.reasoning_level_value::text as "model_mapping__id__reasoning_options__id__reasoning_level",
-    -- Model available voices: nested dict pattern model_mapping__id__available_voices__id__field
-    mvf.voice_id::text as "model_mapping__id__available_voices__id",
-    mvf.voice_value::text as "model_mapping__id__available_voices__id__voice",
-    -- Reasoning options for selected model: prefix__key_field__field_name pattern
-    mrl_selected.reasoning_level_id::text as "reasoning_options__id",
-    mrl_selected.reasoning_level_value::text as "reasoning_options__id__reasoning_level",
-    -- Temperature levels for selected model: prefix__key_field__field_name pattern
-    mtl_selected.temperature_level_id::text as "temperature_levels__id",
-    mtl_selected.temperature_value::text as "temperature_levels__id__temperature",
-    mtl_selected.is_upper::boolean as "temperature_levels__id__is_upper",
-    -- Available voices for selected model: prefix__key_field__field_name pattern
-    mvf_selected.voice_id::text as "available_voices__id",
-    mvf_selected.voice_value::text as "available_voices__id__voice"
+    -- Aggregated arrays
+    COALESCE(
+        ARRAY_AGG(
+            (vdd.department_id, vdd.department_name, vdd.department_description
+            )::types.q_get_agent_detail_v3_department
+            ORDER BY vdd.department_name
+        ) FILTER (WHERE uhaa.has_access = true),
+        '{}'::types.q_get_agent_detail_v3_department[]
+    ) as departments,
+    COALESCE(
+        ARRAY_AGG(
+            (pmd.prompt_id, pmd.system_prompt, pmd.prompt_name, pmd.prompt_description,
+             pmd.prompt_created_at::text, pmd.prompt_updated_at::text,
+             COALESCE(pmd.department_ids, ARRAY[]::text[]), pmd.can_delete
+            )::types.q_get_agent_detail_v3_prompt
+            ORDER BY pmd.prompt_created_at
+        ) FILTER (WHERE uhaa.has_access = true),
+        '{}'::types.q_get_agent_detail_v3_prompt[]
+    ) as prompts,
+    COALESCE(
+        ARRAY_AGG(
+            (adpl.department_id, adpl.prompt_id
+            )::types.q_get_agent_detail_v3_department_prompt_link
+            ORDER BY adpl.department_id, adpl.prompt_id
+        ) FILTER (WHERE uhaa.has_access = true AND adpl.department_id IS NOT NULL),
+        '{}'::types.q_get_agent_detail_v3_department_prompt_link[]
+    ) as department_prompt_links,
+    COALESCE(
+        ARRAY_AGG(
+            (dd.created_at::text, dd.model_id, dd.content
+            )::types.q_get_agent_detail_v3_debug_info
+            ORDER BY dd.created_at DESC
+        ) FILTER (WHERE uhaa.has_access = true AND dd.created_at IS NOT NULL),
+        '{}'::types.q_get_agent_detail_v3_debug_info[]
+    ) as debug_info,
+    COALESCE(
+        ARRAY_AGG(
+            (ma.model_id, ma.name, ma.description,
+             ma.input_modalities, ma.output_modalities,
+             ma.temperature_lower, ma.temperature_upper,
+             ma.temperature_levels, ma.reasoning_options, ma.available_voices
+            )::types.q_get_agent_detail_v3_model
+            ORDER BY ma.name
+        ) FILTER (WHERE uhaa.has_access = true),
+        '{}'::types.q_get_agent_detail_v3_model[]
+    ) as models,
+    COALESCE(
+        ARRAY_AGG(
+            (mrl_selected.reasoning_level_id, mrl_selected.reasoning_level_value
+            )::types.q_get_agent_detail_v3_reasoning_option
+            ORDER BY mrl_selected.reasoning_level_value
+        ) FILTER (WHERE uhaa.has_access = true AND mrl_selected.reasoning_level_id IS NOT NULL),
+        '{}'::types.q_get_agent_detail_v3_reasoning_option[]
+    ) as reasoning_options,
+    COALESCE(
+        ARRAY_AGG(
+            (mtl_selected.temperature_level_id, mtl_selected.temperature_value, mtl_selected.is_upper
+            )::types.q_get_agent_detail_v3_temperature_level
+            ORDER BY mtl_selected.temperature_value::float
+        ) FILTER (WHERE uhaa.has_access = true AND mtl_selected.temperature_level_id IS NOT NULL),
+        '{}'::types.q_get_agent_detail_v3_temperature_level[]
+    ) as temperature_levels,
+    COALESCE(
+        ARRAY_AGG(
+            (mvf_selected.voice_id, mvf_selected.voice_value
+            )::types.q_get_agent_detail_v3_available_voice
+            ORDER BY mvf_selected.voice_value
+        ) FILTER (WHERE uhaa.has_access = true AND mvf_selected.voice_id IS NOT NULL),
+        '{}'::types.q_get_agent_detail_v3_available_voice[]
+    ) as available_voices
 FROM agent_exists_check aec
 CROSS JOIN user_profile up
 CROSS JOIN user_has_agent_access uhaa
@@ -342,16 +560,13 @@ LEFT JOIN valid_departments_data vdd ON uhaa.has_access = true
 LEFT JOIN prompt_mapping_data pmd ON uhaa.has_access = true
 LEFT JOIN agent_department_prompt_links_data adpl ON uhaa.has_access = true
 LEFT JOIN debug_data dd ON uhaa.has_access = true
-LEFT JOIN all_models am ON uhaa.has_access = true
-LEFT JOIN model_temperature_levels_data_with_ids mtl ON mtl.model_id = am.model_id AND uhaa.has_access = true
-LEFT JOIN model_reasoning_levels_data_with_ids mrl ON mrl.model_id = am.model_id AND uhaa.has_access = true
-LEFT JOIN model_voices_data_flat mvf ON mvf.model_id = am.model_id AND uhaa.has_access = true
-LEFT JOIN model_temperature_levels_bounds mtb ON mtb.model_id = am.model_id AND uhaa.has_access = true
+LEFT JOIN models_agg ma ON uhaa.has_access = true
 LEFT JOIN model_reasoning_levels_data_with_ids mrl_selected ON mrl_selected.model_id = ai.model_id AND uhaa.has_access = true
 LEFT JOIN model_temperature_levels_data_with_ids mtl_selected ON mtl_selected.model_id = ai.model_id AND uhaa.has_access = true
 LEFT JOIN model_voices_data_flat mvf_selected ON mvf_selected.model_id = ai.model_id AND uhaa.has_access = true
--- Always return at least one row to check agent_exists and has_access
--- Filter to one row when has_access is true (to avoid cartesian product from CROSS JOINs)
--- When has_access is false, we still want one row to return agent_exists for error handling
+GROUP BY aec.agent_exists, ai.agent_id, ai.name, ai.description, aap.system_prompt, aap.prompt_id,
+         ai.model_id, ai.active, ai.role, ast.selected_temperature_level_id, ast.selected_temperature,
+         asr.selected_reasoning_level_id, asr.selected_reasoning, add.department_ids, up.actor_name,
+         up.role, uhaa.has_access
 LIMIT 1
-
+$$;

@@ -1,11 +1,22 @@
 -- Delete agent with usage check - returns usage_count and deleted (boolean)
--- @params
---   agent_id: uuid
---   profile_id: uuid
--- All parameters are cast exactly once in params CTE for reliable type introspection
+-- Converted to function
+
+-- Create function
+CREATE OR REPLACE FUNCTION api_delete_agent_v3(
+    agent_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    usage_count bigint,
+    deleted boolean,
+    name text,
+    actor_name text
+)
+LANGUAGE sql
+AS $$
 WITH params AS (
-    SELECT $1::uuid AS agent_id,
-           $2::uuid AS profile_id
+    SELECT agent_id AS agent_id,
+           profile_id AS profile_id
 ),
 actor_profile AS (
     SELECT 
@@ -36,4 +47,4 @@ SELECT
     ap.actor_name
 FROM actor_profile ap
 CROSS JOIN agent_info ai
-
+$$;

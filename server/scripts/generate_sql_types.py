@@ -530,8 +530,8 @@ async def generate_types_for_sql_file(
         if not route_name:
             return True, f"Skipping {sql_path} (doesn't match route pattern)", None
 
-        # Generate types content
-        types_content = generate_types_file(metadata, route_name)
+        # Generate types content (pass connection for composite type introspection)
+        types_content = await generate_types_file(metadata, route_name, conn)
 
         # Generate class names
         sql_params_class = _to_class_name(route_name, "SqlParams")

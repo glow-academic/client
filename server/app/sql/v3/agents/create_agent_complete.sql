@@ -1,32 +1,41 @@
 -- Create agent with prompt and department links in a single transaction
--- @params
---   name: text
---   description: text
---   model_id: uuid
---   active: boolean
---   role: agent_role
---   prompt_id?: uuid
---   system_prompt?: text
---   department_ids: uuid[] = {}
---   model_temperature_level_id?: uuid
---   model_reasoning_level_id?: uuid
---   model_voice_ids?: uuid[] = {}
---   profile_id: uuid
--- All parameters are cast exactly once in params CTE for reliable type introspection
+-- Converted to function
+
+-- Create function
+CREATE OR REPLACE FUNCTION api_create_agent_v3(
+    name text,
+    description text,
+    model_id uuid,
+    active boolean,
+    role agent_role,
+    profile_id uuid,
+    prompt_id uuid DEFAULT NULL,
+    system_prompt text DEFAULT NULL,
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    model_temperature_level_id uuid DEFAULT NULL,
+    model_reasoning_level_id uuid DEFAULT NULL,
+    model_voice_ids uuid[] DEFAULT ARRAY[]::uuid[]
+)
+RETURNS TABLE (
+    agent_id text,
+    actor_name text
+)
+LANGUAGE sql
+AS $$
 WITH params AS (
     SELECT
-        $1::text        AS name,
-        $2::text        AS description,
-        $3::uuid        AS model_id,
-        $4::boolean     AS active,
-        $5::agent_role  AS role,
-        $6::uuid        AS prompt_id,
-        NULLIF($7::text, '') AS system_prompt,
-        COALESCE($8::uuid[], ARRAY[]::uuid[]) AS department_ids,
-        $9::uuid        AS model_temperature_level_id,
-        $10::uuid       AS model_reasoning_level_id,
-        COALESCE($11::uuid[], ARRAY[]::uuid[]) AS model_voice_ids,
-        $12::uuid       AS profile_id
+        name AS name,
+        description AS description,
+        model_id AS model_id,
+        active AS active,
+        role AS role,
+        prompt_id AS prompt_id,
+        NULLIF(system_prompt, '') AS system_prompt,
+        COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
+        model_temperature_level_id AS model_temperature_level_id,
+        model_reasoning_level_id AS model_reasoning_level_id,
+        COALESCE(model_voice_ids, ARRAY[]::uuid[]) AS model_voice_ids,
+        profile_id AS profile_id
 ),
 user_profile AS (
     SELECT 
@@ -170,4 +179,4 @@ SELECT
     ap.actor_name
 FROM new_agent na
 CROSS JOIN actor_profile ap
-
+$$;

@@ -48,16 +48,6 @@ class GetActivityByMessageApiRequest(BaseModel):
 
     param_1: str
 
-class GetActivityByMessageApiResponse(BaseModel):
-
-    created_at: str
-    message: str
-    endpoint: str
-    error: bool
-    id: UUID
-    profile_id: UUID
-
-
 
 # Generated from: get_activity_by_message_and_endpoint
 
@@ -86,16 +76,6 @@ class GetActivityByMessageAndEndpointApiRequest(BaseModel):
     param_1: str
     param_2: str
 
-class GetActivityByMessageAndEndpointApiResponse(BaseModel):
-
-    created_at: str
-    message: str
-    endpoint: str
-    error: bool
-    id: UUID
-    profile_id: UUID
-
-
 
 # Generated from: insert_test_profile
 
@@ -110,11 +90,6 @@ class InsertTestProfileSqlRow(BaseModel):
 class InsertTestProfileApiRequest(BaseModel):
 
     pass
-
-class InsertTestProfileApiResponse(BaseModel):
-
-    id: UUID
-
 
 
 # Generated from: mock_select_test
@@ -135,16 +110,6 @@ class MockSelectTestSqlRow(BaseModel):
 class MockSelectTestApiRequest(BaseModel):
 
     pass
-
-class MockSelectTestApiResponse(BaseModel):
-
-    created_at: str
-    message: str
-    endpoint: str
-    error: bool
-    id: UUID
-    profile_id: UUID
-
 
 
 # Generated from: create_test_chat_with_messages
@@ -175,14 +140,6 @@ class CreateTestChatWithMessagesApiRequest(BaseModel):
     run_id: UUID
     attempt_id: UUID
 
-class CreateTestChatWithMessagesApiResponse(BaseModel):
-
-    chat_id: str
-    system_message_id: str
-    user_message_id: str
-    assistant_message_id: str
-
-
 
 # Generated from: create_test_eval_with_runs
 
@@ -211,13 +168,6 @@ class CreateTestEvalWithRunsApiRequest(BaseModel):
     eval_agent_id: UUID
     rubric_id: UUID
 
-class CreateTestEvalWithRunsApiResponse(BaseModel):
-
-    eval_id: str
-    run_id_1: str
-    run_id_2: str
-
-
 
 # Generated from: create_test_persona
 
@@ -238,11 +188,6 @@ class CreateTestPersonaApiRequest(BaseModel):
 
     name: str
 
-class CreateTestPersonaApiResponse(BaseModel):
-
-    persona_id: str
-
-
 
 # Generated from: create_test_scenario
 
@@ -262,11 +207,6 @@ class CreateTestScenarioSqlRow(BaseModel):
 class CreateTestScenarioApiRequest(BaseModel):
 
     name: str
-
-class CreateTestScenarioApiResponse(BaseModel):
-
-    id: UUID
-
 
 
 # Generated from: create_test_scenario_with_dependencies
@@ -294,11 +234,6 @@ class CreateTestScenarioWithDependenciesApiRequest(BaseModel):
     persona_id: UUID
     name: str
 
-class CreateTestScenarioWithDependenciesApiResponse(BaseModel):
-
-    scenario_id: str
-
-
 
 # Generated from: create_test_simulation
 
@@ -324,11 +259,6 @@ class CreateTestSimulationApiRequest(BaseModel):
     department_id: UUID
     rubric_id: UUID
     title: str
-
-class CreateTestSimulationApiResponse(BaseModel):
-
-    simulation_id: UUID
-
 
 
 # Generated from: create_test_simulation_attempt
@@ -357,14 +287,6 @@ class CreateTestSimulationAttemptApiRequest(BaseModel):
 
     department_id: UUID
     simulation_id: UUID
-
-class CreateTestSimulationAttemptApiResponse(BaseModel):
-
-    attempt_id: str
-    simulation_id: str
-    chat_id: str
-    scenario_id: str
-
 
 
 

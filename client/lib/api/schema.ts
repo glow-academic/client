@@ -7385,40 +7385,9 @@ export interface components {
             timeTaken: number | null;
         };
         /** CreateAgentApiRequest */
-        CreateAgentApiRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Model Id
-             * Format: uuid
-             */
-            model_id: string;
-            /** Active */
-            active: boolean;
-            /** Role */
-            role: string;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** System Prompt */
-            system_prompt?: string | null;
-            /** Department Ids */
-            department_ids?: string[];
-            /** Model Temperature Level Id */
-            model_temperature_level_id?: string | null;
-            /** Model Reasoning Level Id */
-            model_reasoning_level_id?: string | null;
-            /** Model Voice Ids */
-            model_voice_ids?: string[] | null;
-        };
+        CreateAgentApiRequest: Record<string, never>;
         /** CreateAgentApiResponse */
-        CreateAgentApiResponse: {
-            /** Agent Id */
-            agent_id: string;
-            /** Actor Name */
-            actor_name: string;
-        };
+        CreateAgentApiResponse: Record<string, never>;
         /**
          * CreateAuthRequest
          * @description Request to create auth with nested items.
@@ -8412,24 +8381,9 @@ export interface components {
             key: string;
         };
         /** DeleteAgentApiRequest */
-        DeleteAgentApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-        };
+        DeleteAgentApiRequest: Record<string, never>;
         /** DeleteAgentApiResponse */
-        DeleteAgentApiResponse: {
-            /** Usage Count */
-            usage_count: number;
-            /** Deleted */
-            deleted: boolean;
-            /** Name */
-            name: string;
-            /** Actor Name */
-            actor_name: string;
-        };
+        DeleteAgentApiResponse: Record<string, never>;
         /** DeleteAgentPromptRequest */
         DeleteAgentPromptRequest: {
             /** Agentid */
@@ -9030,22 +8984,9 @@ export interface components {
             document_type_options: string[];
         };
         /** DuplicateAgentApiRequest */
-        DuplicateAgentApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-        };
+        DuplicateAgentApiRequest: Record<string, never>;
         /** DuplicateAgentApiResponse */
-        DuplicateAgentApiResponse: {
-            /** Agent Id */
-            agent_id: string;
-            /** Agent Name */
-            agent_name: string;
-            /** Actor Name */
-            actor_name: string;
-        };
+        DuplicateAgentApiResponse: Record<string, never>;
         /**
          * DuplicateAuthRequest
          * @description Request to duplicate auth.
@@ -10245,319 +10186,17 @@ export interface components {
             imageReferenceId?: string | null;
         };
         /** GetAgentDetailApiRequest */
-        GetAgentDetailApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-        };
+        GetAgentDetailApiRequest: Record<string, never>;
         /** GetAgentDetailApiResponse */
-        GetAgentDetailApiResponse: {
-            /** Agent Exists */
-            agent_exists: boolean;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Role */
-            role: string;
-            /** Selected Voice Ids */
-            selected_voice_ids: string[];
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** Selected Reasoning Level Id */
-            selected_reasoning_level_id: string;
-            /** Actor Name */
-            actor_name: string;
-            /** Description */
-            description: string;
-            /** Temperature Lower */
-            temperature_lower: number;
-            /** Name */
-            name: string;
-            /** Reasoning */
-            reasoning: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Temperature Upper */
-            temperature_upper: number;
-            /** Active */
-            active: boolean;
-            /** Selected Temperature Level Id */
-            selected_temperature_level_id: string;
-            /** Valid Model Ids */
-            valid_model_ids: string[];
-            /** System Prompt */
-            system_prompt: string;
-            /** Agent Id */
-            agent_id: string;
-            /** Valid Voices */
-            valid_voices: string[];
-            /** Model Id */
-            model_id: string;
-            /** Temperature */
-            temperature: number;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Temperature Levels */
-            temperature_levels: {
-                [key: string]: components["schemas"]["GetAgentDetailTemperatureLevelsItem"];
-            };
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["GetAgentDetailModelMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["GetAgentDetailDepartmentMappingItem"];
-            };
-            /** Department Prompt Links */
-            department_prompt_links: {
-                [key: string]: components["schemas"]["GetAgentDetailDepartmentPromptLinksItem"];
-            };
-            /** Debug Info */
-            debug_info: {
-                [key: string]: components["schemas"]["GetAgentDetailDebugInfoItem"];
-            };
-            /** Available Voices */
-            available_voices: {
-                [key: string]: components["schemas"]["GetAgentDetailAvailableVoicesItem"];
-            };
-            /** Prompt Mapping */
-            prompt_mapping: {
-                [key: string]: components["schemas"]["GetAgentDetailPromptMappingItem"];
-            };
-            /** Reasoning Options */
-            reasoning_options: {
-                [key: string]: components["schemas"]["GetAgentDetailReasoningOptionsItem"];
-            };
-        };
-        /** GetAgentDetailAvailableVoicesItem */
-        GetAgentDetailAvailableVoicesItem: {
-            /** Id */
-            id: string;
-            /** Voice */
-            voice: string;
-        };
-        /** GetAgentDetailDebugInfoItem */
-        GetAgentDetailDebugInfoItem: {
-            /** Created At */
-            created_at: string;
-            /** Model Id */
-            model_id: string;
-            /** Content */
-            content: string;
-        };
-        /** GetAgentDetailDepartmentMappingItem */
-        GetAgentDetailDepartmentMappingItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /** GetAgentDetailDepartmentPromptLinksItem */
-        GetAgentDetailDepartmentPromptLinksItem: {
-            /** Department Id */
-            department_id: string;
-            /** Prompt Id */
-            prompt_id: string;
-        };
-        /** GetAgentDetailModelMappingItem */
-        GetAgentDetailModelMappingItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Input Modalities */
-            input_modalities: unknown[];
-            /** Output Modalities */
-            output_modalities: unknown[];
-            /** Temperature Lower */
-            temperature_lower: number;
-            /** Temperature Upper */
-            temperature_upper: number;
-            /** Temperature Levels */
-            temperature_levels: {
-                [key: string]: unknown;
-            };
-            /** Reasoning Options */
-            reasoning_options: {
-                [key: string]: unknown;
-            };
-            /** Available Voices */
-            available_voices: {
-                [key: string]: unknown;
-            };
-        };
-        /** GetAgentDetailPromptMappingItem */
-        GetAgentDetailPromptMappingItem: {
-            /** Id */
-            id: string;
-            /** System Prompt */
-            system_prompt: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: unknown[];
-            /** Can Delete */
-            can_delete: number;
-        };
-        /** GetAgentDetailReasoningOptionsItem */
-        GetAgentDetailReasoningOptionsItem: {
-            /** Id */
-            id: string;
-            /** Reasoning Level */
-            reasoning_level: string;
-        };
-        /** GetAgentDetailTemperatureLevelsItem */
-        GetAgentDetailTemperatureLevelsItem: {
-            /** Id */
-            id: string;
-            /** Temperature */
-            temperature: string;
-            /** Is Upper */
-            is_upper: number;
-        };
+        GetAgentDetailApiResponse: Record<string, never>;
         /** GetAgentNewApiRequest */
         GetAgentNewApiRequest: Record<string, never>;
         /** GetAgentNewApiResponse */
-        GetAgentNewApiResponse: {
-            /** User Role */
-            user_role: string;
-            /** Primary Department Id */
-            primary_department_id: string;
-            /** Actor Name */
-            actor_name: string;
-            /** Valid Model Ids */
-            valid_model_ids: string[];
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["GetAgentNewModelMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["GetAgentNewDepartmentMappingItem"];
-            };
-        };
-        /** GetAgentNewDepartmentMappingItem */
-        GetAgentNewDepartmentMappingItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /** GetAgentNewModelMappingItem */
-        GetAgentNewModelMappingItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Temperature Lower */
-            temperature_lower: number;
-            /** Temperature Upper */
-            temperature_upper: number;
-            /** Input Modalities */
-            input_modalities: unknown[];
-            /** Output Modalities */
-            output_modalities: unknown[];
-            /** Temperature Levels */
-            temperature_levels: {
-                [key: string]: unknown;
-            };
-            /** Reasoning Options */
-            reasoning_options: {
-                [key: string]: unknown;
-            };
-            /** Available Voices */
-            available_voices: {
-                [key: string]: unknown;
-            };
-        };
-        /** GetAgentsListAgentsItem */
-        GetAgentsListAgentsItem: {
-            /** Agent Id */
-            agent_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Reasoning */
-            reasoning: string;
-            /** Temperature */
-            temperature: number;
-            /** Model Id */
-            model_id: string;
-            /** Role */
-            role: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: unknown[];
-            /** Can Edit */
-            can_edit: number;
-            /** Can Duplicate */
-            can_duplicate: number;
-            /** Can Delete */
-            can_delete: number;
-            /** Model Name */
-            model_name: string;
-            /** Model Description */
-            model_description: string;
-            /** Actor Name */
-            actor_name: string;
-        };
+        GetAgentNewApiResponse: Record<string, never>;
         /** GetAgentsListApiRequest */
         GetAgentsListApiRequest: Record<string, never>;
         /** GetAgentsListApiResponse */
-        GetAgentsListApiResponse: {
-            /** Actor Name */
-            actor_name: string;
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["GetAgentsListModelMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["GetAgentsListDepartmentMappingItem"];
-            };
-            /** Agents */
-            agents: {
-                [key: string]: components["schemas"]["GetAgentsListAgentsItem"];
-            };
-        };
-        /** GetAgentsListDepartmentMappingItem */
-        GetAgentsListDepartmentMappingItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /** GetAgentsListModelMappingItem */
-        GetAgentsListModelMappingItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
+        GetAgentsListApiResponse: Record<string, never>;
         /** GradeItem */
         GradeItem: {
             /** Id */
@@ -15679,47 +15318,9 @@ export interface components {
             value: number;
         };
         /** UpdateAgentApiRequest */
-        UpdateAgentApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Model Id
-             * Format: uuid
-             */
-            model_id: string;
-            /** Active */
-            active: boolean;
-            /** Role */
-            role: string;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** System Prompt */
-            system_prompt?: string | null;
-            /** Department Ids */
-            department_ids?: string[];
-            /** Department Ids For Prompt */
-            department_ids_for_prompt?: string[];
-            /** Model Temperature Level Id */
-            model_temperature_level_id?: string | null;
-            /** Model Reasoning Level Id */
-            model_reasoning_level_id?: string | null;
-            /** Model Voice Ids */
-            model_voice_ids?: string[] | null;
-        };
+        UpdateAgentApiRequest: Record<string, never>;
         /** UpdateAgentApiResponse */
-        UpdateAgentApiResponse: {
-            /** Agent Id */
-            agent_id: string;
-            /** Actor Name */
-            actor_name: string;
-        };
+        UpdateAgentApiResponse: Record<string, never>;
         /**
          * UpdateAuthRequest
          * @description Request to update auth with nested items.

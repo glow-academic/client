@@ -231,6 +231,7 @@ def _detect_nullable_columns(sql_text: str, column_names: list[str]) -> set[str]
     # Pattern 1: Detect COALESCE(..., NULL) patterns
     # This is redundant and indicates the field can be NULL
     import re
+
     # Match: COALESCE(column, NULL) or COALESCE(alias.column, NULL) ... AS column_name
     # Look for the full pattern including the AS clause to match column names accurately
     coalesce_null_pattern = r'COALESCE\s*\(\s*([\w.]+)\s*,\s*NULL\s*\)[^,]*?\s+AS\s+(\w+)'
@@ -286,6 +287,458 @@ def _detect_nullable_columns(sql_text: str, column_names: list[str]) -> set[str]
     return nullable_columns
 
 
+async def fetch_composite_fields(
+    conn: asyncpg.Connection, full_type_name: str
+) -> list[tuple[str, str, bool]]:
+    """Fetch fields from a composite type.
+    
+    Args:
+        conn: Database connection
+        full_type_name: Full type name (e.g., 'types.q_list_agents_v3_agent')
+    
+    Returns:
+        List of (field_name, pg_type, not_null) tuples
+    """
+    rows = await conn.fetch(
+        """
+        SELECT
+          a.attname as field_name,
+          format_type(a.atttypid, a.atttypmod) as pg_type,
+          a.attnotnull as not_null
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        JOIN pg_attribute a ON a.attrelid = t.typrelid
+        WHERE (n.nspname || '.' || t.typname) = $1
+          AND a.attnum > 0
+          AND not a.attisdropped
+        ORDER BY a.attnum;
+        """,
+        full_type_name,
+    )
+    return [(r["field_name"], r["pg_type"], r["not_null"]) for r in rows]
+
+
+async def fetch_function_inputs(
+    conn: asyncpg.Connection, function_name: str, schema: str = "public"
+) -> list[tuple[str, int, bool, str | None]]:
+    """Fetch function input parameters from pg_proc.
+    
+    Args:
+        conn: Database connection
+        function_name: Function name (e.g., 'api_list_agents_v3')
+        schema: Schema name (default: 'public')
+    
+    Returns:
+        List of (param_name, type_oid, has_default, default_expr) tuples
+    """
+    # Get function signature text to parse defaults
+    func_sig = await conn.fetchrow(
+        """
+        SELECT pg_get_function_arguments(p.oid) as arguments
+        FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = $1
+          AND p.proname = $2
+          AND p.prokind = 'f';
+        """,
+        schema,
+        function_name,
+    )
+    
+    # Get basic parameter info
+    # Note: proargtypes only includes input parameters, but proargnames may include output parameters
+    # proargtypes is typically 0-indexed [0:N], proargnames is typically 1-indexed [1:M]
+    # generate_subscripts returns indices starting from the array's lower bound
+    rows = await conn.fetch(
+        """
+        SELECT
+          ord,
+          CASE 
+            WHEN p.proargnames IS NOT NULL 
+                 AND (ord + array_lower(p.proargnames, 1) - array_lower(p.proargtypes, 1)) 
+                     BETWEEN array_lower(p.proargnames, 1) AND array_upper(p.proargnames, 1)
+                 AND ord BETWEEN array_lower(p.proargtypes, 1) AND array_upper(p.proargtypes, 1)
+            THEN (p.proargnames)[ord + array_lower(p.proargnames, 1) - array_lower(p.proargtypes, 1)]
+            ELSE format('arg_%s', ord - array_lower(p.proargtypes, 1) + 1)
+          END as arg_name,
+          (p.proargtypes)[ord] as arg_type_oid
+        FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace
+        CROSS JOIN generate_subscripts(p.proargtypes, 1) as ord
+        WHERE n.nspname = $1
+          AND p.proname = $2
+          AND p.prokind = 'f'
+        ORDER BY ord;
+        """,
+        schema,
+        function_name,
+    )
+    
+    # Parse defaults from function signature if available
+    defaults_map: dict[int, tuple[bool, str | None]] = {}
+    if func_sig and func_sig["arguments"]:
+        import re
+        args_text = func_sig["arguments"]
+        # Pattern: param_name type DEFAULT value
+        default_pattern = r'(\w+)\s+[^,\s]+\s+DEFAULT\s+([^,]+)'
+        for match in re.finditer(default_pattern, args_text, re.IGNORECASE):
+            param_name = match.group(1)
+            default_value = match.group(2).strip()
+            # Find which parameter index this is
+            for i, row in enumerate(rows, start=1):
+                if row["arg_name"] == param_name:
+                    defaults_map[i] = (True, default_value)
+                    break
+    
+    result = []
+    for i, row in enumerate(rows, start=1):
+        has_default, default_expr = defaults_map.get(i, (False, None))
+        result.append((
+            row["arg_name"],
+            row["arg_type_oid"],
+            has_default,
+            default_expr
+        ))
+    
+    return result
+
+
+async def fetch_function_return_columns(
+    conn: asyncpg.Connection, function_name: str, schema: str = "public"
+) -> list[tuple[str, int, bool]]:
+    """Fetch return columns from a RETURNS TABLE function.
+    
+    For RETURNS TABLE functions, we parse the function definition
+    to extract column names and types from the RETURNS TABLE clause.
+    
+    Args:
+        conn: Database connection
+        function_name: Function name (e.g., 'api_list_agents_v3')
+        schema: Schema name (default: 'public')
+    
+    Returns:
+        List of (col_name, type_oid, not_null) tuples
+    """
+    # Get function definition text
+    func_def = await conn.fetchrow(
+        """
+        SELECT pg_get_functiondef(p.oid) as definition
+        FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = $1
+          AND p.proname = $2
+          AND p.prokind = 'f';
+        """,
+        schema,
+        function_name,
+    )
+    
+    if not func_def or not func_def.get("definition"):
+        return []
+    
+    definition = func_def["definition"]
+    if not definition:
+        return []
+    
+    # Parse RETURNS TABLE clause from definition
+    # Pattern: RETURNS TABLE (col_name type, col_name type, ...)
+    import re
+    returns_table_match = re.search(
+        r'RETURNS\s+TABLE\s*\(\s*(.*?)\s*\)',
+        definition,
+        re.IGNORECASE | re.DOTALL
+    )
+    
+    if not returns_table_match:
+        # Try calling function with proper type casts for NULL args
+        func_info = await conn.fetchrow(
+            """
+            SELECT 
+              p.proargtypes,
+              p.proargnames
+            FROM pg_proc p
+            JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname = $1
+              AND p.proname = $2
+              AND p.prokind = 'f';
+            """,
+            schema,
+            function_name,
+        )
+        
+        if not func_info:
+            return []
+        
+        # Build function call with properly typed NULL args
+        num_params = len(func_info["proargtypes"]) if func_info["proargtypes"] else 0
+        if num_params == 0:
+            try:
+                call_sql = f'SELECT * FROM "{schema}"."{function_name}"() LIMIT 0'
+                stmt = await conn.prepare(call_sql)
+                attrs = stmt.get_attributes()
+                return [(attr.name, attr.type.oid, True) for attr in attrs]
+            except Exception:
+                return []
+        else:
+            # Can't safely call with NULL args - return empty
+            return []
+    
+    # Parse column definitions from RETURNS TABLE clause
+    columns_text = returns_table_match.group(1)
+    if not columns_text:
+        return []
+    
+    columns: list[tuple[str, int, bool]] = []
+    
+    # Split by commas, but be careful of commas inside type names
+    # Pattern: col_name type [NOT NULL]
+    # Handle array types like types.q_list_agents_v3_agent[]
+    col_pattern = r'(\w+)\s+([^,\n]+?)(?:\s+NOT\s+NULL)?(?=\s*,\s*\w+\s+|\s*$)'
+    for match in re.finditer(col_pattern, columns_text, re.IGNORECASE):
+        col_name = match.group(1)
+        type_str = match.group(2)
+        
+        if not col_name or not type_str:
+            continue
+        
+        type_str = type_str.strip()
+        
+        # Handle array types (e.g., types.q_list_agents_v3_agent[])
+        is_array = type_str.endswith("[]")
+        base_type_str = type_str[:-2] if is_array else type_str
+        
+        # Get type OID from type name
+        type_info = await conn.fetchrow(
+            """
+            SELECT t.oid, t.typarray
+            FROM pg_type t
+            JOIN pg_namespace n ON n.oid = t.typnamespace
+            WHERE (n.nspname || '.' || t.typname) = $1
+               OR t.typname = $1
+            LIMIT 1;
+            """,
+            base_type_str,
+        )
+        
+        if type_info:
+            # If it's an array type, use the array OID (typarray points to the array type)
+            if is_array and type_info["typarray"]:
+                type_oid = type_info["typarray"]  # This is the array type OID
+            else:
+                type_oid = type_info["oid"]
+            # Check if NOT NULL is in the column definition
+            not_null = "NOT NULL" in columns_text[match.start():match.end()].upper()
+            columns.append((col_name, type_oid, not_null))
+    
+    return columns
+
+
+def _is_function_sql(sql_text: str) -> tuple[bool, str | None, str | None]:
+    """Detect if SQL contains a CREATE OR REPLACE FUNCTION.
+    
+    Args:
+        sql_text: SQL query text
+    
+    Returns:
+        Tuple of (is_function, function_name, schema_name)
+    """
+    import re
+
+    # Pattern: CREATE OR REPLACE FUNCTION [schema.]function_name
+    pattern = r'CREATE\s+OR\s+REPLACE\s+FUNCTION\s+(?:(\w+)\.)?(\w+)\s*\('
+    match = re.search(pattern, sql_text, re.IGNORECASE)
+    
+    if match:
+        schema = match.group(1) or "public"
+        func_name = match.group(2)
+        return True, func_name, schema
+    
+    return False, None, None
+
+
+async def introspect_function(
+    sql_path: str, conn: asyncpg.Connection, function_name: str, schema: str = "public"
+) -> SQLMetadata:
+    """Introspect a PostgreSQL function to extract parameter and return types.
+    
+    Args:
+        sql_path: Path to SQL file (for metadata)
+        conn: Database connection
+        function_name: Function name (e.g., 'api_list_agents_v3')
+        schema: Schema name (default: 'public')
+    
+    Returns:
+        SQLMetadata with parameter and return column information
+    """
+    try:
+        # Get input parameters
+        input_params = await fetch_function_inputs(conn, function_name, schema)
+        
+        param_types: list[ColumnMetadata] = []
+        for param_name, type_oid, has_default, default_expr in input_params:
+            python_type, is_array = await _oid_to_python_type(type_oid, conn)
+            
+            # Check if it's a composite type (need to handle differently)
+            type_info = await conn.fetchrow(
+                "SELECT typtype FROM pg_type WHERE oid = $1",
+                type_oid,
+            )
+            if type_info and type_info["typtype"] == "c":
+                # Composite type - we'll handle this in type generation
+                # For now, mark as composite
+                python_type = f"Composite({type_oid})"
+            
+            param_types.append(
+                ColumnMetadata(
+                    name=param_name,
+                    python_type=python_type,
+                    pg_oid=type_oid,
+                    is_array=is_array,
+                    is_optional=has_default,
+                    default_value=default_expr,
+                )
+            )
+        
+        # Get return columns - try calling function with NULL args
+        # But first, let's try to get from information_schema
+        return_cols = await fetch_function_return_columns(conn, function_name, schema)
+        
+        return_types: list[ColumnMetadata] = []
+        for col_name, type_oid, not_null in return_cols:
+            if type_oid == 0:
+                # Try to get from information_schema
+                continue
+            
+            # Check if it's an array first
+            type_info = await conn.fetchrow(
+                """
+                SELECT 
+                  typtype,
+                  typarray,
+                  (n.nspname || '.' || t.typname) as full_name
+                FROM pg_type t
+                JOIN pg_namespace n ON n.oid = t.typnamespace
+                WHERE t.oid = $1
+                """,
+                type_oid,
+            )
+            
+            if type_info:
+                typtype = type_info["typtype"]
+                typarray = type_info["typarray"]
+                full_name = type_info["full_name"]
+                
+                # Check if it's a composite type array
+                # PostgreSQL array types: if typarray != 0, this type IS the array type, and typarray points to the base type
+                # If typarray == 0, this might still be an array type (name starts with '_') - find base type by looking for type with typarray = this oid
+                if typarray != 0:
+                    # This type IS an array type - typarray points to the base type
+                    # Check if the base type (pointed to by typarray) is composite
+                    base_info = await conn.fetchrow(
+                        """
+                        SELECT 
+                          t.typtype, 
+                          (n.nspname || '.' || t.typname) as full_name
+                        FROM pg_type t
+                        JOIN pg_namespace n ON n.oid = t.typnamespace
+                        WHERE t.oid = $1
+                        """,
+                        typarray,
+                    )
+                    if base_info and (base_info["typtype"] == "c" or base_info["typtype"] == b"c"):
+                        # Composite array - base type is composite
+                        python_type = f"CompositeArray({base_info['full_name']})"
+                        is_array = True
+                    else:
+                        # Regular array, not composite
+                        python_type, is_array = await _oid_to_python_type(type_oid, conn)
+                elif (typtype == "b" or typtype == b"b") and full_name.startswith("types._"):
+                    # This is an array type (name starts with '_') - find the base type
+                    base_info = await conn.fetchrow(
+                        """
+                        SELECT 
+                          t.typtype, 
+                          (n.nspname || '.' || t.typname) as full_name
+                        FROM pg_type t
+                        JOIN pg_namespace n ON n.oid = t.typnamespace
+                        WHERE t.typarray = $1
+                        """,
+                        type_oid,
+                    )
+                    if base_info and (base_info["typtype"] == "c" or base_info["typtype"] == b"c"):
+                        # Composite array - base type is composite
+                        python_type = f"CompositeArray({base_info['full_name']})"
+                        is_array = True
+                    else:
+                        # Regular array, not composite
+                        python_type, is_array = await _oid_to_python_type(type_oid, conn)
+                elif typtype == "c" or typtype == b"c":
+                    # Composite type (not array)
+                    python_type = f"Composite({full_name})"
+                    is_array = False
+                elif typtype == "c" or typtype == b"c":
+                    # Composite type (not array)
+                    python_type = f"Composite({full_name})"
+                    is_array = False
+                else:
+                    python_type, is_array = await _oid_to_python_type(type_oid, conn)
+            else:
+                python_type, is_array = await _oid_to_python_type(type_oid, conn)
+            
+            return_types.append(
+                ColumnMetadata(
+                    name=col_name,
+                    python_type=python_type,
+                    pg_oid=type_oid,
+                    is_array=is_array,
+                    is_optional=not not_null,
+                )
+            )
+        
+        # If we couldn't get return columns from information_schema,
+        # try calling the function with NULL args (if it has defaults or is safe)
+        if not return_types:
+            # Try to call function to get structure
+            # This is risky, so we'll handle it carefully
+            try:
+                # Build call with NULL args
+                null_args = ", ".join(["NULL"] * len(input_params))
+                call_sql = f"SELECT * FROM {schema}.{function_name}({null_args}) LIMIT 0"
+                stmt = await conn.prepare(call_sql)
+                attrs = stmt.get_attributes()
+                
+                for attr in attrs:
+                    python_type, is_array = await _oid_to_python_type(
+                        attr.type.oid, conn
+                    )
+                    return_types.append(
+                        ColumnMetadata(
+                            name=attr.name,
+                            python_type=python_type,
+                            pg_oid=attr.type.oid,
+                            is_array=is_array,
+                            is_optional=False,
+                        )
+                    )
+            except Exception:
+                # Can't call function - that's okay, we'll handle it in type generation
+                pass
+        
+        return SQLMetadata(
+            sql_path=sql_path,
+            parameters=param_types,
+            returns=return_types,
+        )
+    
+    except Exception as e:
+        return SQLMetadata(
+            sql_path=sql_path,
+            parameters=[],
+            returns=[],
+            error=f"Failed to introspect function: {str(e)}",
+        )
+
+
 async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, bool]:
     """Map Postgres OID to Python type string.
 
@@ -325,6 +778,12 @@ async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, 
             # Postgres enums are represented as strings in Python/asyncpg
             if typtype == "e" or typtype == b"e":  # enum type
                 return "str", False
+            
+            # Handle composite types (typtype='c' or b'c')
+            # Composite types need special handling - we'll generate models for them
+            if typtype == "c" or typtype == b"c":  # composite type
+                # Return a special marker that includes the type name
+                return f"Composite({typname})", False
 
             # If this type has an array type (typarray != 0), it's a base type
             # If typarray is 0 and typname ends with [], it's an array type
@@ -400,6 +859,13 @@ async def introspect_sql_file(
     try:
         # Load SQL file
         sql_text = load_sql(sql_path)
+
+        # Check if this is a function definition
+        is_function, function_name, schema = _is_function_sql(sql_text)
+        if is_function and function_name:
+            # Introspect as function (use 'public' as default schema if None)
+            schema_name = schema or "public"
+            return await introspect_function(sql_path, conn, function_name, schema_name)
 
         # Use a unique name to avoid conflicts
         stmt_name = f"introspect_{abs(hash(sql_path)) % 1000000}"

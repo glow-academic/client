@@ -34,13 +34,13 @@ class CreateAgentSqlParams(BaseModel):
     model_id: UUID
     active: bool
     role: str
+    profile_id: UUID
     prompt_id: UUID | None = None
     system_prompt: str | None = None
-    department_ids: list[UUID] = Field(default_factory=list)
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     model_temperature_level_id: UUID | None = None
     model_reasoning_level_id: UUID | None = None
-    model_voice_ids: list[UUID] | None = Field(default_factory=list)
-    profile_id: UUID
+    model_voice_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -49,19 +49,19 @@ class CreateAgentSqlParams(BaseModel):
             self.model_id,
             self.active,
             self.role,
+            self.profile_id,
             self.prompt_id,
             self.system_prompt,
             self.department_ids,
             self.model_temperature_level_id,
             self.model_reasoning_level_id,
             self.model_voice_ids,
-            self.profile_id,
         )
 
 class CreateAgentSqlRow(BaseModel):
 
-    agent_id: str
-    actor_name: str
+    agent_id: str | None = None
+    actor_name: str | None = None
 
 class CreateAgentApiRequest(BaseModel):
 
@@ -72,16 +72,10 @@ class CreateAgentApiRequest(BaseModel):
     role: str
     prompt_id: UUID | None = None
     system_prompt: str | None = None
-    department_ids: list[UUID] = Field(default_factory=list)
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     model_temperature_level_id: UUID | None = None
     model_reasoning_level_id: UUID | None = None
-    model_voice_ids: list[UUID] | None = Field(default_factory=list)
-
-class CreateAgentApiResponse(BaseModel):
-
-    agent_id: str
-    actor_name: str
-
+    model_voice_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 
 # Generated from: delete_agent
@@ -99,22 +93,12 @@ class DeleteAgentSqlParams(BaseModel):
 
 class DeleteAgentSqlRow(BaseModel):
 
-    usage_count: int
-    deleted: bool
-    name: str
-    actor_name: str
+    name: str | None = None
+    actor_name: str | None = None
 
 class DeleteAgentApiRequest(BaseModel):
 
     agent_id: UUID
-
-class DeleteAgentApiResponse(BaseModel):
-
-    usage_count: int
-    deleted: bool
-    name: str
-    actor_name: str
-
 
 
 # Generated from: duplicate_agent
@@ -132,20 +116,13 @@ class DuplicateAgentSqlParams(BaseModel):
 
 class DuplicateAgentSqlRow(BaseModel):
 
-    agent_id: str
-    agent_name: str
-    actor_name: str
+    agent_id: str | None = None
+    agent_name: str | None = None
+    actor_name: str | None = None
 
 class DuplicateAgentApiRequest(BaseModel):
 
     agent_id: UUID
-
-class DuplicateAgentApiResponse(BaseModel):
-
-    agent_id: str
-    agent_name: str
-    actor_name: str
-
 
 
 # Generated from: get_agent_detail
@@ -161,133 +138,114 @@ class GetAgentDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
-class GetAgentDetailTemperatureLevelsItem(BaseModel):
+class QGetAgentDetailV3AvailableVoice(BaseModel):
 
-    id: str
-    temperature: str
-    is_upper: int
+    id: str | None
+    voice: str | None
 
-class GetAgentDetailModelMappingItem(BaseModel):
 
-    id: str
-    name: str
-    description: str
-    input_modalities: list[Any]
-    output_modalities: list[Any]
-    temperature_lower: float
-    temperature_upper: float
-    temperature_levels: dict[str, Any]
-    reasoning_options: dict[str, Any]
-    available_voices: dict[str, Any]
 
-class GetAgentDetailDepartmentMappingItem(BaseModel):
 
-    id: str
-    name: str
-    description: str
+class QGetAgentDetailV3DebugInfo(BaseModel):
 
-class GetAgentDetailDepartmentPromptLinksItem(BaseModel):
+    created_at: str | None
+    model_id: str | None
+    content: str | None
 
-    department_id: str
-    prompt_id: str
 
-class GetAgentDetailDebugInfoItem(BaseModel):
 
-    created_at: str
-    model_id: str
-    content: str
 
-class GetAgentDetailAvailableVoicesItem(BaseModel):
+class QGetAgentDetailV3Department(BaseModel):
 
-    id: str
-    voice: str
+    department_id: str | None
+    name: str | None
+    description: str | None
 
-class GetAgentDetailPromptMappingItem(BaseModel):
 
-    id: str
-    system_prompt: str
-    name: str
-    description: str
-    created_at: str
-    updated_at: str
-    department_ids: list[Any]
-    can_delete: int
 
-class GetAgentDetailReasoningOptionsItem(BaseModel):
 
-    id: str
-    reasoning_level: str
+class QGetAgentDetailV3DepartmentPromptLink(BaseModel):
+
+    department_id: str | None
+    prompt_id: str | None
+
+
+
+
+class QGetAgentDetailV3Model(BaseModel):
+
+    model_id: str | None
+    name: str | None
+    description: str | None
+    input_modalities: list[str] | None
+    output_modalities: list[str] | None
+    temperature_lower: float | None
+    temperature_upper: float | None
+    temperature_levels: dict[str, Any] | None
+    reasoning_options: dict[str, Any] | None
+    available_voices: dict[str, Any] | None
+
+
+
+
+class QGetAgentDetailV3Prompt(BaseModel):
+
+    prompt_id: str | None
+    system_prompt: str | None
+    name: str | None
+    description: str | None
+    created_at: str | None
+    updated_at: str | None
+    department_ids: list[str] | None
+    can_delete: bool | None
+
+
+
+
+class QGetAgentDetailV3ReasoningOption(BaseModel):
+
+    id: str | None
+    reasoning_level: str | None
+
+
+
+
+class QGetAgentDetailV3TemperatureLevel(BaseModel):
+
+    id: str | None
+    temperature: str | None
+    is_upper: bool | None
 
 class GetAgentDetailSqlRow(BaseModel):
 
-    agent_exists: bool
-    department_ids: list[str] | None = None
-    role: str
-    selected_voice_ids: list[str]
+    agent_id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    system_prompt: str | None = None
     prompt_id: str | None = None
-    selected_reasoning_level_id: str
-    actor_name: str
-    description: str
-    temperature_lower: float
-    name: str
-    reasoning: str
-    can_edit: bool
-    temperature_upper: float
-    active: bool
-    selected_temperature_level_id: str
-    valid_model_ids: list[str]
-    system_prompt: str
-    agent_id: str
-    valid_voices: list[str]
-    model_id: str
-    temperature: float
-    valid_department_ids: list[str]
-    temperature_levels: dict[str, GetAgentDetailTemperatureLevelsItem]
-    model_mapping: dict[str, GetAgentDetailModelMappingItem]
-    department_mapping: dict[str, GetAgentDetailDepartmentMappingItem]
-    department_prompt_links: dict[str, GetAgentDetailDepartmentPromptLinksItem]
-    debug_info: dict[str, GetAgentDetailDebugInfoItem]
-    available_voices: dict[str, GetAgentDetailAvailableVoicesItem]
-    prompt_mapping: dict[str, GetAgentDetailPromptMappingItem]
-    reasoning_options: dict[str, GetAgentDetailReasoningOptionsItem]
+    model_id: str | None = None
+    role: str | None = None
+    selected_temperature_level_id: str | None = None
+    selected_reasoning_level_id: str | None = None
+    reasoning: str | None = None
+    selected_voice_ids: list[str] | None = None
+    valid_voices: list[str] | None = None
+    department_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    valid_model_ids: list[str] | None = None
+    actor_name: str | None = None
+    departments: list[QGetAgentDetailV3Department] | None = None
+    prompts: list[QGetAgentDetailV3Prompt] | None = None
+    department_prompt_links: list[QGetAgentDetailV3DepartmentPromptLink] | None = None
+    debug_info: list[QGetAgentDetailV3DebugInfo] | None = None
+    models: list[QGetAgentDetailV3Model] | None = None
+    reasoning_options: list[QGetAgentDetailV3ReasoningOption] | None = None
+    temperature_levels: list[QGetAgentDetailV3TemperatureLevel] | None = None
+    available_voices: list[QGetAgentDetailV3AvailableVoice] | None = None
 
 class GetAgentDetailApiRequest(BaseModel):
 
     agent_id: UUID
-
-class GetAgentDetailApiResponse(BaseModel):
-
-    agent_exists: bool
-    department_ids: list[str] | None = None
-    role: str
-    selected_voice_ids: list[str]
-    prompt_id: str | None = None
-    selected_reasoning_level_id: str
-    actor_name: str
-    description: str
-    temperature_lower: float
-    name: str
-    reasoning: str
-    can_edit: bool
-    temperature_upper: float
-    active: bool
-    selected_temperature_level_id: str
-    valid_model_ids: list[str]
-    system_prompt: str
-    agent_id: str
-    valid_voices: list[str]
-    model_id: str
-    temperature: float
-    valid_department_ids: list[str]
-    temperature_levels: dict[str, GetAgentDetailTemperatureLevelsItem]
-    model_mapping: dict[str, GetAgentDetailModelMappingItem]
-    department_mapping: dict[str, GetAgentDetailDepartmentMappingItem]
-    department_prompt_links: dict[str, GetAgentDetailDepartmentPromptLinksItem]
-    debug_info: dict[str, GetAgentDetailDebugInfoItem]
-    available_voices: dict[str, GetAgentDetailAvailableVoicesItem]
-    prompt_mapping: dict[str, GetAgentDetailPromptMappingItem]
-    reasoning_options: dict[str, GetAgentDetailReasoningOptionsItem]
-
 
 
 # Generated from: get_agent_new
@@ -301,49 +259,42 @@ class GetAgentNewSqlParams(BaseModel):
             self.profile_id,
         )
 
-class GetAgentNewModelMappingItem(BaseModel):
+class QGetAgentNewV3Department(BaseModel):
 
-    id: str
-    name: str
-    description: str
-    temperature_lower: float
-    temperature_upper: float
-    input_modalities: list[Any]
-    output_modalities: list[Any]
-    temperature_levels: dict[str, Any]
-    reasoning_options: dict[str, Any]
-    available_voices: dict[str, Any]
+    department_id: str | None
+    name: str | None
+    description: str | None
 
-class GetAgentNewDepartmentMappingItem(BaseModel):
 
-    id: str
-    name: str
-    description: str
+
+
+class QGetAgentNewV3Model(BaseModel):
+
+    model_id: str | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    temperature_lower: float | None
+    temperature_upper: float | None
+    input_modalities: list[str] | None
+    output_modalities: list[str] | None
+    temperature_levels: dict[str, Any] | None
+    reasoning_options: dict[str, Any] | None
+    available_voices: dict[str, Any] | None
 
 class GetAgentNewSqlRow(BaseModel):
 
-    user_role: str
-    primary_department_id: str
-    actor_name: str
-    valid_model_ids: list[str]
-    valid_department_ids: list[str]
-    model_mapping: dict[str, GetAgentNewModelMappingItem]
-    department_mapping: dict[str, GetAgentNewDepartmentMappingItem]
+    actor_name: str | None = None
+    user_role: str | None = None
+    primary_department_id: str | None = None
+    valid_model_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    models: list[QGetAgentNewV3Model] | None = None
+    departments: list[QGetAgentNewV3Department] | None = None
 
 class GetAgentNewApiRequest(BaseModel):
 
     pass
-
-class GetAgentNewApiResponse(BaseModel):
-
-    user_role: str
-    primary_department_id: str
-    actor_name: str
-    valid_model_ids: list[str]
-    valid_department_ids: list[str]
-    model_mapping: dict[str, GetAgentNewModelMappingItem]
-    department_mapping: dict[str, GetAgentNewDepartmentMappingItem]
-
 
 
 # Generated from: get_agents_list
@@ -357,54 +308,32 @@ class GetAgentsListSqlParams(BaseModel):
             self.profile_id,
         )
 
-class GetAgentsListModelMappingItem(BaseModel):
+class QListAgentsV3Agent(BaseModel):
 
-    id: str
-    name: str
-    description: str
-
-class GetAgentsListDepartmentMappingItem(BaseModel):
-
-    id: str
-    name: str
-    description: str
-
-class GetAgentsListAgentsItem(BaseModel):
-
-    agent_id: str
-    name: str
-    description: str
-    reasoning: str
-    temperature: float
-    model_id: str
-    role: str
-    updated_at: str
-    department_ids: list[Any]
-    can_edit: int
-    can_duplicate: int
-    can_delete: int
-    model_name: str
-    model_description: str
-    actor_name: str
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    reasoning: str | None
+    temperature: float | None
+    model_id: UUID | None
+    role: str | None
+    updated_at: str | None
+    department_ids: list[str] | None
+    can_edit: bool | None
+    can_duplicate: bool | None
+    can_delete: bool | None
+    model_name: str | None
+    model_description: str | None
+    actor_name: str | None
 
 class GetAgentsListSqlRow(BaseModel):
 
-    actor_name: str
-    model_mapping: dict[str, GetAgentsListModelMappingItem]
-    department_mapping: dict[str, GetAgentsListDepartmentMappingItem]
-    agents: dict[str, GetAgentsListAgentsItem]
+    actor_name: str | None = None
+    agents: list[QListAgentsV3Agent] | None = None
 
 class GetAgentsListApiRequest(BaseModel):
 
     pass
-
-class GetAgentsListApiResponse(BaseModel):
-
-    actor_name: str
-    model_mapping: dict[str, GetAgentsListModelMappingItem]
-    department_mapping: dict[str, GetAgentsListDepartmentMappingItem]
-    agents: dict[str, GetAgentsListAgentsItem]
-
 
 
 # Generated from: update_agent
@@ -417,14 +346,14 @@ class UpdateAgentSqlParams(BaseModel):
     model_id: UUID
     active: bool
     role: str
+    profile_id: UUID
     prompt_id: UUID | None = None
     system_prompt: str | None = None
-    department_ids: list[str] = Field(default_factory=list)
-    department_ids_for_prompt: list[str] = Field(default_factory=list)
+    department_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids_for_prompt: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     model_temperature_level_id: UUID | None = None
     model_reasoning_level_id: UUID | None = None
-    model_voice_ids: list[str] | None = None
-    profile_id: UUID
+    model_voice_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -434,6 +363,7 @@ class UpdateAgentSqlParams(BaseModel):
             self.model_id,
             self.active,
             self.role,
+            self.profile_id,
             self.prompt_id,
             self.system_prompt,
             self.department_ids,
@@ -441,13 +371,12 @@ class UpdateAgentSqlParams(BaseModel):
             self.model_temperature_level_id,
             self.model_reasoning_level_id,
             self.model_voice_ids,
-            self.profile_id,
         )
 
 class UpdateAgentSqlRow(BaseModel):
 
-    agent_id: str
-    actor_name: str
+    agent_id: str | None = None
+    actor_name: str | None = None
 
 class UpdateAgentApiRequest(BaseModel):
 
@@ -459,17 +388,11 @@ class UpdateAgentApiRequest(BaseModel):
     role: str
     prompt_id: UUID | None = None
     system_prompt: str | None = None
-    department_ids: list[str] = Field(default_factory=list)
-    department_ids_for_prompt: list[str] = Field(default_factory=list)
+    department_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids_for_prompt: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
     model_temperature_level_id: UUID | None = None
     model_reasoning_level_id: UUID | None = None
-    model_voice_ids: list[str] | None = None
-
-class UpdateAgentApiResponse(BaseModel):
-
-    agent_id: str
-    actor_name: str
-
+    model_voice_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 
 # Generated from: bulk_archive_attempts
@@ -493,11 +416,6 @@ class BulkArchiveAttemptsApiRequest(BaseModel):
 
     archived: bool
     attemptIds: list[UUID]
-
-class BulkArchiveAttemptsApiResponse(BaseModel):
-
-    updated_count: int
-
 
 
 # Generated from: get_attempt_full
@@ -538,30 +456,6 @@ class GetAttemptFullApiRequest(BaseModel):
 
     param_1: UUID
 
-class GetAttemptFullApiResponse(BaseModel):
-
-    attempt: dict[str, Any]
-    simulation: dict[str, Any]
-    attemptProfiles: dict[str, Any]
-    chats: dict[str, Any]
-    scenarioDocuments: dict[str, Any]
-    aggregatedResults: dict[str, Any]
-    timer: dict[str, Any]
-    currentChatIndex: int
-    expectedChatCount: int
-    isSingleChatAttempt: bool
-    isLastAttempt: bool
-    showResults: bool
-    shouldShowControls: bool
-    remainingScenariosCount: int
-    isLastRemainingScenario: bool
-    canPickMultipleAlternatives: bool
-    isActive: bool
-    rubricStructure: dict[str, Any]
-    allSimulationScenarios: dict[str, Any]
-    availableContinuationOptions: dict[str, Any]
-
-
 
 # Generated from: update_chat_created_at
 
@@ -584,11 +478,6 @@ class UpdateChatCreatedAtApiRequest(BaseModel):
 
     createdAt: str
     chatId: UUID
-
-class UpdateChatCreatedAtApiResponse(BaseModel):
-
-    chat_id: str
-
 
 
 # Generated from: create_auth
@@ -622,12 +511,6 @@ class CreateAuthApiRequest(BaseModel):
     active: bool
     items_json: dict[str, Any]
 
-class CreateAuthApiResponse(BaseModel):
-
-    auth_id: str
-    actor_name: str
-
-
 
 # Generated from: delete_auth
 
@@ -652,13 +535,6 @@ class DeleteAuthApiRequest(BaseModel):
 
     auth_id: UUID
 
-class DeleteAuthApiResponse(BaseModel):
-
-    auth_id: str
-    name: str
-    actor_name: str
-
-
 
 # Generated from: duplicate_auth
 
@@ -682,13 +558,6 @@ class DuplicateAuthSqlRow(BaseModel):
 class DuplicateAuthApiRequest(BaseModel):
 
     source_auth_id: UUID
-
-class DuplicateAuthApiResponse(BaseModel):
-
-    auth_id: str
-    original_name: str
-    actor_name: str
-
 
 
 # Generated from: get_auth_detail
@@ -717,10 +586,10 @@ class GetAuthDetailAuthItemsItem(BaseModel):
 
 class GetAuthDetailSqlRow(BaseModel):
 
-    actor_name: str
-    description: str
     active: bool
+    description: str
     name: str
+    actor_name: str
     can_edit: bool
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
@@ -731,10 +600,10 @@ class GetAuthDetailApiRequest(BaseModel):
 
 class GetAuthDetailApiResponse(BaseModel):
 
-    actor_name: str
-    description: str
     active: bool
+    description: str
     name: str
+    actor_name: str
     can_edit: bool
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
@@ -762,15 +631,6 @@ class GetLoginDataSqlRow(BaseModel):
 class GetLoginDataApiRequest(BaseModel):
 
     department_id: UUID
-
-class GetLoginDataApiResponse(BaseModel):
-
-    providers_json: dict[str, Any]
-    departments_json: dict[str, Any]
-    guest_login_enabled: bool
-    default_department_id: str
-    realm_name: str
-
 
 
 # Generated from: update_auth
@@ -806,12 +666,6 @@ class UpdateAuthApiRequest(BaseModel):
     description: str
     active: bool
     items_json: dict[str, Any]
-
-class UpdateAuthApiResponse(BaseModel):
-
-    auth_id: str
-    actor_name: str
-
 
 
 # Generated from: create_cohort
@@ -852,12 +706,6 @@ class CreateCohortApiRequest(BaseModel):
     param_6: list[str]
     param_7: UUID
 
-class CreateCohortApiResponse(BaseModel):
-
-    id: UUID
-    actor_name: str
-
-
 
 # Generated from: delete_cohort
 
@@ -882,14 +730,6 @@ class DeleteCohortSqlRow(BaseModel):
 class DeleteCohortApiRequest(BaseModel):
 
     cohort_id: UUID
-
-class DeleteCohortApiResponse(BaseModel):
-
-    usage_count: int
-    deleted: bool
-    title: str
-    actor_name: str
-
 
 
 # Generated from: duplicate_cohort
@@ -916,15 +756,6 @@ class DuplicateCohortSqlRow(BaseModel):
 class DuplicateCohortApiRequest(BaseModel):
 
     original_cohort_id: UUID
-
-class DuplicateCohortApiResponse(BaseModel):
-
-    id: UUID
-    original_title: str
-    title: str
-    description: str
-    actor_name: str
-
 
 
 # Generated from: get_cohort_detail
@@ -961,24 +792,6 @@ class GetCohortDetailApiRequest(BaseModel):
 
     param_1: UUID
     param_2: UUID
-
-class GetCohortDetailApiResponse(BaseModel):
-
-    title: str
-    description: str
-    department_ids: list[str] | None = None
-    active: bool
-    updated_at: str
-    can_edit: bool
-    profile_ids: list[str]
-    simulation_ids: list[str]
-    valid_department_ids: list[str]
-    valid_simulation_ids: list[str]
-    simulations_list: dict[str, Any]
-    simulation_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    actor_name: str
-
 
 
 # Generated from: get_cohort_new
@@ -1017,29 +830,6 @@ class GetCohortNewSqlRow(BaseModel):
 class GetCohortNewApiRequest(BaseModel):
 
     param_1: UUID
-
-class GetCohortNewApiResponse(BaseModel):
-
-    title: str
-    description: str
-    department_ids: list[str] | None = None
-    active: bool
-    can_edit: bool
-    profile_ids: list[str]
-    simulation_ids: list[str]
-    valid_department_ids: list[str]
-    valid_simulation_ids: list[str]
-    valid_profile_ids: list[str]
-    simulations_list: dict[str, Any]
-    simulation_mapping: dict[str, Any]
-    profile_mapping: dict[str, Any]
-    staff: dict[str, Any]
-    cohort_mapping: dict[str, Any]
-    department_mapping_for_staff: dict[str, Any]
-    department_mapping: dict[str, Any]
-    primary_department_id: str
-    actor_name: str
-
 
 
 # Generated from: update_cohort
@@ -1084,13 +874,6 @@ class UpdateCohortApiRequest(BaseModel):
     param_7: list[str]
     param_8: UUID
 
-class UpdateCohortApiResponse(BaseModel):
-
-    id: UUID
-    title: str
-    actor_name: str
-
-
 
 # Generated from: create_department
 
@@ -1122,12 +905,6 @@ class CreateDepartmentApiRequest(BaseModel):
     description: str
     active: bool
     settings_id: UUID
-
-class CreateDepartmentApiResponse(BaseModel):
-
-    department_id: str
-    actor_name: str
-
 
 
 # Generated from: delete_department
@@ -1161,20 +938,6 @@ class DeleteDepartmentApiRequest(BaseModel):
     departmentId: UUID
     current_profile_id: UUID
 
-class DeleteDepartmentApiResponse(BaseModel):
-
-    department_id: str
-    title: str
-    simulation_count: int
-    scenario_count: int
-    persona_count: int
-    document_count: int
-    cohort_count: int
-    total_usage: int
-    deleted: bool
-    actor_name: str
-
-
 
 # Generated from: duplicate_department
 
@@ -1200,13 +963,6 @@ class DuplicateDepartmentApiRequest(BaseModel):
     department_id: UUID
     current_profile_id: UUID
 
-class DuplicateDepartmentApiResponse(BaseModel):
-
-    new_department_id: str
-    original_title: str
-    actor_name: str
-
-
 
 # Generated from: get_department_default
 
@@ -1228,13 +984,6 @@ class GetDepartmentDefaultSqlRow(BaseModel):
 class GetDepartmentDefaultApiRequest(BaseModel):
 
     profileId: UUID
-
-class GetDepartmentDefaultApiResponse(BaseModel):
-
-    profile_role: str
-    settings_mapping: dict[str, Any]
-    actor_name: str
-
 
 
 # Generated from: update_department
@@ -1272,13 +1021,6 @@ class UpdateDepartmentApiRequest(BaseModel):
     active: bool
     settings_id: str
     current_profile_id: UUID
-
-class UpdateDepartmentApiResponse(BaseModel):
-
-    id: UUID
-    title: str
-    actor_name: str
-
 
 
 # Generated from: complete_document_creation
@@ -1324,12 +1066,6 @@ class CompleteDocumentCreationApiRequest(BaseModel):
     param_7: UUID
     param_8: UUID
     param_9: UUID
-
-class CompleteDocumentCreationApiResponse(BaseModel):
-
-    child_document_id: str
-    upload_id: str
-
 
 
 # Generated from: get_document_detail
@@ -1385,42 +1121,6 @@ class GetDocumentDetailApiRequest(BaseModel):
     param_1: UUID
     param_2: UUID
 
-class GetDocumentDetailApiResponse(BaseModel):
-
-    document_id: str
-    name: str
-    description: str
-    active: bool
-    updated_at: str
-    classify_agent_id: str
-    document_agent_id: str
-    department_ids: list[str]
-    field_ids: list[str]
-    upload_id: str
-    template_upload_id: str
-    template_args: dict[str, Any]
-    file_path: str
-    template_file_path: str
-    template: bool
-    scenario_ids: list[str]
-    active_scenario_count: int
-    total_scenario_links: int
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    parameter_mapping: dict[str, Any]
-    linked_parameter_ids: list[str]
-    field_mapping: dict[str, Any]
-    valid_field_ids: list[str]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    template_id: str | None = None
-    template_mapping: dict[str, Any]
-    extension: str
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
-
 
 # Generated from: insert_document
 
@@ -1466,12 +1166,6 @@ class InsertDocumentApiRequest(BaseModel):
     param_8: dict[str, Any]
     param_9: UUID
 
-class InsertDocumentApiResponse(BaseModel):
-
-    document_id: str
-    actor_name: str
-
-
 
 # Generated from: render_template
 
@@ -1498,16 +1192,6 @@ class RenderTemplateSqlRow(BaseModel):
 class RenderTemplateApiRequest(BaseModel):
 
     document_id: UUID
-
-class RenderTemplateApiResponse(BaseModel):
-
-    template: bool
-    template_args: dict[str, Any]
-    file_path: str
-    upload_id: str
-    document_name: str
-    actor_name: str
-
 
 
 # Generated from: update_document
@@ -1563,13 +1247,6 @@ class UpdateDocumentApiRequest(BaseModel):
     template_upload_id: UUID
     template_args: dict[str, Any]
 
-class UpdateDocumentApiResponse(BaseModel):
-
-    document_id: str
-    document_name: str
-    actor_name: str
-
-
 
 # Generated from: create_eval
 
@@ -1617,12 +1294,6 @@ class CreateEvalApiRequest(BaseModel):
     active: bool
     dynamic: bool
 
-class CreateEvalApiResponse(BaseModel):
-
-    eval_id: str
-    actor_name: str
-
-
 
 # Generated from: get_eval_attempt_full
 
@@ -1648,15 +1319,6 @@ class GetEvalAttemptFullSqlRow(BaseModel):
 class GetEvalAttemptFullApiRequest(BaseModel):
 
     attempt_id: UUID
-
-class GetEvalAttemptFullApiResponse(BaseModel):
-
-    attempt: dict[str, Any]
-    eval: dict[str, Any]
-    runs: dict[str, Any]
-    status_summary: dict[str, Any]
-    actor_name: str
-
 
 
 # Generated from: get_eval_new
@@ -1699,32 +1361,6 @@ class GetEvalNewApiRequest(BaseModel):
 
     pass
 
-class GetEvalNewApiResponse(BaseModel):
-
-    eval_id: str
-    name: str
-    description: str
-    rubric_id: str
-    eval_agent_id: str
-    agent_id: str
-    agent_ids: list[str]
-    model_run_ids: list[str]
-    active: bool
-    dynamic: bool
-    department_ids: list[str]
-    valid_department_ids: list[str]
-    department_mapping: dict[str, Any]
-    eval_agent_mapping: dict[str, Any]
-    valid_eval_agent_ids: list[str]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    rubric_mapping: dict[str, Any]
-    valid_rubric_ids: list[str]
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
-
 
 # Generated from: start_eval_attempt
 
@@ -1763,20 +1399,6 @@ class StartEvalAttemptApiRequest(BaseModel):
     conversation_agent_id: UUID
     conversation_max_turns: int
 
-class StartEvalAttemptApiResponse(BaseModel):
-
-    attempt_id: str
-    eval_id: str
-    agent_id: str
-    eval_agent_id: str
-    rubric_id: str
-    dynamic: bool
-    conversation_mode: bool
-    conversation_agent_id: str
-    conversation_max_turns: int
-    pending_run_ids: list[str]
-
-
 
 # Generated from: create_field
 
@@ -1812,12 +1434,6 @@ class CreateFieldApiRequest(BaseModel):
     department_ids: list[str]
     conditional_parameter_ids: list[str]
 
-class CreateFieldApiResponse(BaseModel):
-
-    field_id: str
-    actor_name: str
-
-
 
 # Generated from: delete_field
 
@@ -1841,12 +1457,6 @@ class DeleteFieldApiRequest(BaseModel):
 
     param_1: UUID
     param_2: UUID
-
-class DeleteFieldApiResponse(BaseModel):
-
-    name: str
-    actor_name: str
-
 
 
 # Generated from: duplicate_field
@@ -1872,13 +1482,6 @@ class DuplicateFieldApiRequest(BaseModel):
 
     param_1: UUID
     param_2: UUID
-
-class DuplicateFieldApiResponse(BaseModel):
-
-    field_id: str
-    field_name: str
-    actor_name: str
-
 
 
 # Generated from: get_field_detail
@@ -1915,23 +1518,6 @@ class GetFieldDetailApiRequest(BaseModel):
     param_1: UUID
     param_2: UUID
 
-class GetFieldDetailApiResponse(BaseModel):
-
-    field_id: UUID
-    name: str
-    description: str
-    active: bool
-    department_ids: list[str] | None = None
-    parameter_ids: list[str]
-    conditional_parameter_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    parameter_mapping: dict[str, Any]
-    valid_parameter_ids: list[str]
-    can_edit: bool
-    actor_name: str
-
-
 
 # Generated from: get_field_new
 
@@ -1957,17 +1543,6 @@ class GetFieldNewSqlRow(BaseModel):
 class GetFieldNewApiRequest(BaseModel):
 
     param_1: UUID
-
-class GetFieldNewApiResponse(BaseModel):
-
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    parameter_mapping: dict[str, Any]
-    valid_parameter_ids: list[str]
-    user_role: str
-    primary_department_id: str
-    actor_name: str
-
 
 
 # Generated from: update_field
@@ -2009,13 +1584,6 @@ class UpdateFieldApiRequest(BaseModel):
     param_6: list[str]
     param_7: UUID
 
-class UpdateFieldApiResponse(BaseModel):
-
-    field_id: str
-    field_name: str
-    actor_name: str
-
-
 
 # Generated from: create_grade
 
@@ -2051,11 +1619,6 @@ class CreateGradeApiRequest(BaseModel):
     score: int
     time_taken: int
 
-class CreateGradeApiResponse(BaseModel):
-
-    id: str
-
-
 
 # Generated from: create_message_feedback
 
@@ -2088,11 +1651,6 @@ class CreateMessageFeedbackApiRequest(BaseModel):
     description: str
     type: str
 
-class CreateMessageFeedbackApiResponse(BaseModel):
-
-    id: str
-
-
 
 # Generated from: get_auth_items
 
@@ -2118,13 +1676,6 @@ class GetAuthItemsApiRequest(BaseModel):
     auth_id: UUID
     department_id: UUID
 
-class GetAuthItemsApiResponse(BaseModel):
-
-    name: str
-    value: str
-    encrypted: bool
-
-
 
 # Generated from: get_auth_providers
 
@@ -2147,14 +1698,6 @@ class GetAuthProvidersSqlRow(BaseModel):
 class GetAuthProvidersApiRequest(BaseModel):
 
     department_id: UUID
-
-class GetAuthProvidersApiResponse(BaseModel):
-
-    id: UUID
-    slug: str
-    provider_id: str
-    name: str
-
 
 
 # Generated from: get_key_detail
@@ -2193,25 +1736,6 @@ class GetKeyDetailApiRequest(BaseModel):
     keyId: UUID
     profileId: UUID
 
-class GetKeyDetailApiResponse(BaseModel):
-
-    key_id: UUID
-    name: str
-    key_masked: str
-    description: str
-    active: bool
-    created_at: str
-    updated_at: str
-    department_ids: list[str]
-    model_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    model_mapping: dict[str, Any]
-    can_edit: bool
-    actor_name: str
-
-
 
 # Generated from: get_key_new
 
@@ -2246,26 +1770,6 @@ class GetKeyNewSqlRow(BaseModel):
 class GetKeyNewApiRequest(BaseModel):
 
     profileId: UUID
-
-class GetKeyNewApiResponse(BaseModel):
-
-    key_id: str
-    name: str
-    key_masked: str
-    description: str
-    active: bool
-    created_at: str
-    updated_at: str
-    department_ids: list[str]
-    model_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    department_id: str
-    model_mapping: dict[str, Any]
-    can_edit: bool
-    actor_name: str
-
 
 
 # Generated from: create_model_run
@@ -2304,11 +1808,6 @@ class CreateModelRunApiRequest(BaseModel):
     key_id: UUID
     agent_id: UUID
 
-class CreateModelRunApiResponse(BaseModel):
-
-    run_id: str
-
-
 
 # Generated from: log_run
 
@@ -2323,7 +1822,7 @@ class LogRunSqlParams(BaseModel):
     output_audio_tokens: int | None = None
     cached_text_tokens: int | None = None
     cached_audio_tokens: int | None = None
-    developer_contents: list[str] = Field(default_factory=list)
+    developer_contents: list[str] = Field(default_factory=list)  # type: ignore[arg-type]
     assistant_output: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -2356,13 +1855,8 @@ class LogRunApiRequest(BaseModel):
     output_audio_tokens: int | None = None
     cached_text_tokens: int | None = None
     cached_audio_tokens: int | None = None
-    developer_contents: list[str] = Field(default_factory=list)
+    developer_contents: list[str] = Field(default_factory=list)  # type: ignore[arg-type]
     assistant_output: str | None = None
-
-class LogRunApiResponse(BaseModel):
-
-    success: int
-
 
 
 # Generated from: create_model
@@ -2405,12 +1899,6 @@ class CreateModelApiRequest(BaseModel):
     param_6: list[str]
     param_7: str
     param_8: UUID
-
-class CreateModelApiResponse(BaseModel):
-
-    id: str
-    actor_name: str
-
 
 
 # Generated from: get_model_detail
@@ -2460,37 +1948,6 @@ class GetModelDetailApiRequest(BaseModel):
 
     model_id: UUID
 
-class GetModelDetailApiResponse(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    value: str
-    provider: str
-    provider_id: str
-    provider_name: str
-    image_model: bool
-    valid_provider_ids: list[str]
-    provider_mapping: dict[str, Any]
-    base_url: str
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    department_ids: list[str]
-    key_mapping: dict[str, Any]
-    valid_key_ids: list[str]
-    default_key_id: str
-    temperature_lower: float
-    temperature_upper: float
-    temperature_values: dict[str, Any]
-    pricing: dict[str, Any]
-    modalities: dict[str, Any]
-    reasoning_levels: dict[str, Any]
-    voices: dict[str, Any]
-    qualities: dict[str, Any]
-    units: dict[str, Any]
-    actor_name: str
-
-
 
 # Generated from: get_model_new
 
@@ -2522,22 +1979,6 @@ class GetModelNewApiRequest(BaseModel):
 
     pass
 
-class GetModelNewApiResponse(BaseModel):
-
-    valid_provider_ids: list[str]
-    provider_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    model_mapping: dict[str, Any]
-    valid_model_ids: dict[str, Any]
-    key_mapping: dict[str, Any]
-    valid_key_ids: list[str]
-    units: dict[str, Any]
-    user_role: str
-    primary_department_id: str
-    actor_name: str
-
-
 
 # Generated from: list_models
 
@@ -2567,21 +2008,6 @@ class ListModelsSqlRow(BaseModel):
 class ListModelsApiRequest(BaseModel):
 
     pass
-
-class ListModelsApiResponse(BaseModel):
-
-    model_id: str
-    name: str
-    description: str
-    active: bool
-    image_model: bool
-    updated_at: str
-    provider: str
-    base_url: str
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
 
 
 # Generated from: update_model
@@ -2629,13 +2055,6 @@ class UpdateModelApiRequest(BaseModel):
     param_8: str
     param_9: UUID
 
-class UpdateModelApiResponse(BaseModel):
-
-    model_id: str
-    model_name: str
-    actor_name: str
-
-
 
 # Generated from: insert_objective
 
@@ -2661,11 +2080,6 @@ class InsertObjectiveApiRequest(BaseModel):
     objective: str
     idx: int
     scenario_id: UUID
-
-class InsertObjectiveApiResponse(BaseModel):
-
-    objective_id: str
-
 
 
 # Generated from: create_parameter
@@ -2717,12 +2131,6 @@ class CreateParameterApiRequest(BaseModel):
     parameter_level_department_ids: list[str]
     field_connections_json: dict[str, Any]
 
-class CreateParameterApiResponse(BaseModel):
-
-    parameter_id: str
-    actor_name: str
-
-
 
 # Generated from: delete_parameter
 
@@ -2747,13 +2155,6 @@ class DeleteParameterApiRequest(BaseModel):
 
     parameterId: UUID
 
-class DeleteParameterApiResponse(BaseModel):
-
-    name: str
-    usage_count: int
-    actor_name: str
-
-
 
 # Generated from: duplicate_parameter
 
@@ -2777,13 +2178,6 @@ class DuplicateParameterSqlRow(BaseModel):
 class DuplicateParameterApiRequest(BaseModel):
 
     original_parameterId: UUID
-
-class DuplicateParameterApiResponse(BaseModel):
-
-    parameter_id: str
-    original_name: str
-    actor_name: str
-
 
 
 # Generated from: get_parameter_detail
@@ -2830,33 +2224,6 @@ class GetParameterDetailApiRequest(BaseModel):
     param_1: UUID
     param_2: str
 
-class GetParameterDetailApiResponse(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    simulation_parameter: bool
-    document_parameter: bool
-    persona_parameter: bool
-    scenario_parameter: bool
-    video_parameter: bool
-    department_ids: list[str] | None = None
-    persona_ids: list[str]
-    document_ids: list[str]
-    can_edit: bool
-    actor_name: str
-    parameter_items_json: dict[str, Any]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    field_mapping: dict[str, Any]
-    valid_field_ids: list[str]
-    field_connections_json: dict[str, Any]
-    persona_mapping: dict[str, Any]
-    valid_persona_ids: list[str]
-    document_mapping: dict[str, Any]
-    valid_document_ids: list[str]
-
-
 
 # Generated from: get_parameter_new
 
@@ -2896,31 +2263,6 @@ class GetParameterNewSqlRow(BaseModel):
 class GetParameterNewApiRequest(BaseModel):
 
     pass
-
-class GetParameterNewApiResponse(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    simulation_parameter: bool
-    document_parameter: bool
-    persona_parameter: bool
-    scenario_parameter: bool
-    video_parameter: bool
-    department_ids: list[str] | None = None
-    parameter_items_json: dict[str, Any]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    primary_department_id: str
-    field_mapping: dict[str, Any]
-    valid_field_ids: list[str]
-    field_connections_json: dict[str, Any]
-    persona_mapping: dict[str, Any]
-    valid_persona_ids: list[str]
-    document_mapping: dict[str, Any]
-    valid_document_ids: list[str]
-    actor_name: str
-
 
 
 # Generated from: update_parameter
@@ -2975,12 +2317,6 @@ class UpdateParameterApiRequest(BaseModel):
     parameter_level_department_ids: list[str]
     field_connections_json: dict[str, Any]
 
-class UpdateParameterApiResponse(BaseModel):
-
-    parameter_id: str
-    actor_name: str
-
-
 
 # Generated from: create_persona
 
@@ -3025,12 +2361,6 @@ class CreatePersonaApiRequest(BaseModel):
     department_ids: list[str]
     example_ids: list[str]
 
-class CreatePersonaApiResponse(BaseModel):
-
-    persona_id: str
-    actor_name: str
-
-
 
 # Generated from: delete_persona
 
@@ -3055,14 +2385,6 @@ class DeletePersonaSqlRow(BaseModel):
 class DeletePersonaApiRequest(BaseModel):
 
     persona_id: UUID
-
-class DeletePersonaApiResponse(BaseModel):
-
-    usage_count: int
-    name: str
-    deleted: bool
-    actor_name: str
-
 
 
 # Generated from: get_persona_detail
@@ -3109,34 +2431,6 @@ class GetPersonaDetailApiRequest(BaseModel):
 
     persona_id: UUID
 
-class GetPersonaDetailApiResponse(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    color: str
-    icon: str
-    instructions: str
-    text_agent_id: str
-    voice_agent_id: str
-    department_ids: list[str] | None = None
-    dept_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    usage_count: int
-    user_role: str
-    actor_name: str
-    parameter_mapping: dict[str, Any]
-    linked_parameter_ids: list[str]
-    field_mapping: dict[str, Any]
-    valid_parameter_item_ids: list[str]
-    parameter_field_ids: list[str]
-    example_ids: list[str]
-    example_mapping: dict[str, Any]
-    examples_history: dict[str, Any]
-
-
 
 # Generated from: get_persona_new
 
@@ -3174,29 +2468,6 @@ class GetPersonaNewSqlRow(BaseModel):
 class GetPersonaNewApiRequest(BaseModel):
 
     pass
-
-class GetPersonaNewApiResponse(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    color: str
-    icon: str
-    instructions: str
-    department_ids: list[str] | None = None
-    dept_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    usage_count: int
-    user_role: str
-    primary_department_id: str
-    parameter_mapping: dict[str, Any]
-    valid_parameter_ids: list[str]
-    field_mapping: dict[str, Any]
-    valid_parameter_item_ids: list[str]
-    actor_name: str
-
 
 
 # Generated from: update_persona
@@ -3245,12 +2516,6 @@ class UpdatePersonaApiRequest(BaseModel):
     department_ids: list[str]
     example_ids: list[str]
 
-class UpdatePersonaApiResponse(BaseModel):
-
-    persona_id: str
-    actor_name: str
-
-
 
 # Generated from: get_group_detail
 
@@ -3272,11 +2537,6 @@ class GetGroupDetailSqlRow(BaseModel):
 class GetGroupDetailApiRequest(BaseModel):
 
     group_id: UUID
-
-class GetGroupDetailApiResponse(BaseModel):
-
-    result: dict[str, Any]
-
 
 
 # Generated from: get_pricing_analytics
@@ -3316,11 +2576,6 @@ class GetPricingAnalyticsApiRequest(BaseModel):
     param_6: list[UUID]
     param_7: list[str]
 
-class GetPricingAnalyticsApiResponse(BaseModel):
-
-    result: dict[str, Any]
-
-
 
 # Generated from: insert_problem_statement
 
@@ -3349,11 +2604,6 @@ class InsertProblemStatementApiRequest(BaseModel):
     problem_statement_name: str
     scenario_id: UUID
     active: bool
-
-class InsertProblemStatementApiResponse(BaseModel):
-
-    problem_statement_id: str
-
 
 
 # Generated from: get_profile_context
@@ -3444,71 +2694,6 @@ class GetProfileContextApiRequest(BaseModel):
     param_3: str
     param_4: str
 
-class GetProfileContextApiResponse(BaseModel):
-
-    is_authorized: bool
-    actual_id: UUID
-    actual_first_name: str
-    actual_last_name: str
-    actual_emails: list[str]
-    actual_primary_email: str
-    actual_role: str
-    actual_active: bool
-    actual_req_per_day: int
-    actual_last_login: str
-    actual_last_active: str
-    actual_created_at: str
-    actual_updated_at: str
-    actual_primary_department_id: UUID
-    id: UUID
-    first_name: str
-    last_name: str
-    emails: list[str]
-    primary_email: str
-    role: str
-    active: bool
-    req_per_day: int
-    last_login: str
-    last_active: str
-    created_at: str
-    updated_at: str
-    primary_department_id: UUID
-    departments: dict[str, Any]
-    cohorts: dict[str, Any]
-    simulations: dict[str, Any]
-    earliest_attempt_date: str
-    scoped_roles: Any
-    settings_id: str
-    settings_created_at: str
-    settings_active: bool
-    settings_name: str
-    settings_description: str
-    settings_primary_color: str
-    settings_accent: str
-    settings_background: str
-    settings_surface: str
-    settings_success: str
-    settings_warning: str
-    settings_error: str
-    settings_sidebar_background: str
-    settings_sidebar_primary: str
-    settings_chart1: str
-    settings_chart2: str
-    settings_chart3: str
-    settings_chart4: str
-    settings_chart5: str
-    settings_guest_login_enabled: bool
-    settings_success_threshold: int
-    settings_warning_threshold: int
-    settings_danger_threshold: int
-    settings_auth_ids: list[str]
-    settings_auth_mapping: dict[str, Any]
-    settings_provider_ids: list[str]
-    settings_provider_mapping: dict[str, Any]
-    settings_default_guest_profile_id: str
-    settings_default_account_profile_id: str
-
-
 
 # Generated from: update_profile
 
@@ -3566,24 +2751,6 @@ class UpdateProfileApiRequest(BaseModel):
     last_active: str
     current_profile_id: UUID
 
-class UpdateProfileApiResponse(BaseModel):
-
-    id: UUID
-    first_name: str
-    last_name: str
-    emails: list[str]
-    primary_email: str
-    role: str
-    active: bool
-    req_per_day: int
-    last_login: str
-    last_active: str
-    created_at: str
-    updated_at: str
-    primary_department_id: UUID
-    actor_name: str
-
-
 
 # Generated from: update_profile_to_active
 
@@ -3606,11 +2773,6 @@ class UpdateProfileToActiveApiRequest(BaseModel):
 
     last_active: str
 
-class UpdateProfileToActiveApiResponse(BaseModel):
-
-    profile_id: str
-
-
 
 # Generated from: update_profile_to_inactive
 
@@ -3632,11 +2794,6 @@ class UpdateProfileToInactiveSqlRow(BaseModel):
 class UpdateProfileToInactiveApiRequest(BaseModel):
 
     last_active: str
-
-class UpdateProfileToInactiveApiResponse(BaseModel):
-
-    profile_id: str
-
 
 
 # Generated from: create_provider
@@ -3673,12 +2830,6 @@ class CreateProviderApiRequest(BaseModel):
     active: bool
     base_url: str
 
-class CreateProviderApiResponse(BaseModel):
-
-    provider_id: str
-    actor_name: str
-
-
 
 # Generated from: get_provider_detail
 
@@ -3713,22 +2864,6 @@ class GetProviderDetailApiRequest(BaseModel):
     providerId: UUID
     profileId: UUID
 
-class GetProviderDetailApiResponse(BaseModel):
-
-    provider_id: str
-    name: str
-    description: str
-    value: str
-    active: bool
-    created_at: str
-    updated_at: str
-    base_url: str
-    user_role: str
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
-
 
 # Generated from: get_provider_new
 
@@ -3759,22 +2894,6 @@ class GetProviderNewSqlRow(BaseModel):
 class GetProviderNewApiRequest(BaseModel):
 
     profileId: UUID
-
-class GetProviderNewApiResponse(BaseModel):
-
-    provider_id: str
-    name: str
-    description: str
-    value: str
-    active: bool
-    created_at: str
-    updated_at: str
-    base_url: str
-    user_role: str
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
 
 
 # Generated from: update_provider
@@ -3813,12 +2932,6 @@ class UpdateProviderApiRequest(BaseModel):
     value: str
     active: bool
     base_url: str
-
-class UpdateProviderApiResponse(BaseModel):
-
-    provider_id: str
-    actor_name: str
-
 
 
 # Generated from: create_rubric
@@ -3864,12 +2977,6 @@ class CreateRubricApiRequest(BaseModel):
     standard_groups: dict[str, Any]
     rubric_agent_id: str
 
-class CreateRubricApiResponse(BaseModel):
-
-    rubric_id: str
-    actor_name: str
-
-
 
 # Generated from: delete_rubric
 
@@ -3896,15 +3003,6 @@ class DeleteRubricApiRequest(BaseModel):
 
     rubricId: UUID
 
-class DeleteRubricApiResponse(BaseModel):
-
-    rubric_id: str
-    name: str
-    usage_count: int
-    deleted: bool
-    actor_name: str
-
-
 
 # Generated from: duplicate_rubric
 
@@ -3928,13 +3026,6 @@ class DuplicateRubricSqlRow(BaseModel):
 class DuplicateRubricApiRequest(BaseModel):
 
     originalRubricId: UUID
-
-class DuplicateRubricApiResponse(BaseModel):
-
-    rubric_id: str
-    original_name: str
-    actor_name: str
-
 
 
 # Generated from: get_rubric_detail
@@ -3972,25 +3063,6 @@ class GetRubricDetailApiRequest(BaseModel):
 
     rubric_id: UUID
 
-class GetRubricDetailApiResponse(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    points: int
-    passpoints: int
-    rubric_agent_id: str
-    department_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    actor_name: str
-    standard_groups_complete: dict[str, Any]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    can_edit: bool
-
-
 
 # Generated from: get_rubric_new
 
@@ -4023,24 +3095,6 @@ class GetRubricNewSqlRow(BaseModel):
 class GetRubricNewApiRequest(BaseModel):
 
     pass
-
-class GetRubricNewApiResponse(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    points: int
-    passpoints: int
-    department_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    actor_name: str
-    standard_groups_complete: dict[str, Any]
-    primary_department_id: str
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-
 
 
 # Generated from: update_rubric
@@ -4089,13 +3143,6 @@ class UpdateRubricApiRequest(BaseModel):
     department_ids: list[str]
     standard_groups: dict[str, Any]
     rubric_agent_id: str
-
-class UpdateRubricApiResponse(BaseModel):
-
-    rubric_id: str
-    rubric_name: str
-    actor_name: str
-
 
 
 # Generated from: create_scenario
@@ -4193,12 +3240,6 @@ class CreateScenarioApiRequest(BaseModel):
     param_25: list[str]
     param_26: UUID
 
-class CreateScenarioApiResponse(BaseModel):
-
-    scenario_id: str
-    actor_name: str
-
-
 
 # Generated from: delete_scenario
 
@@ -4224,15 +3265,6 @@ class DeleteScenarioSqlRow(BaseModel):
 class DeleteScenarioApiRequest(BaseModel):
 
     scenarioId: UUID
-
-class DeleteScenarioApiResponse(BaseModel):
-
-    scenario_id: str
-    name: str
-    usage_count: int
-    deleted: bool
-    actor_name: str
-
 
 
 # Generated from: get_randomization_data
@@ -4263,18 +3295,6 @@ class GetRandomizationDataApiRequest(BaseModel):
 
     department_ids: list[UUID]
     param_2: UUID
-
-class GetRandomizationDataApiResponse(BaseModel):
-
-    personas: dict[str, Any]
-    documents: dict[str, Any]
-    parameters: dict[str, Any]
-    parameter_items: dict[str, Any]
-    document_parameter_items: dict[str, Any]
-    persona_ids: list[str]
-    document_ids: list[str]
-    parameter_item_ids: list[str]
-
 
 
 # Generated from: get_scenario_detail
@@ -4366,61 +3386,6 @@ class GetScenarioDetailApiRequest(BaseModel):
     template_document_ids: list[UUID]
     use_video: bool
 
-class GetScenarioDetailApiResponse(BaseModel):
-
-    id: UUID
-    name: str
-    description: str
-    problem_statement: str
-    problem_statement_id: str | None = None
-    active: bool
-    generated: bool
-    department_ids: list[str] | None = None
-    parent_scenario_id: str
-    hints_enabled: bool
-    objectives_enabled: bool
-    image_input_enabled: bool
-    persona_ids: list[str]
-    document_ids: list[str]
-    objective_ids: list[str]
-    simulation_ids: list[str]
-    parameters_json: dict[str, Any]
-    valid_persona_ids: list[str]
-    valid_document_ids: list[str]
-    valid_department_ids: list[UUID]
-    active_usage_count: int
-    user_role: str
-    actor_name: str
-    objective_mapping: dict[str, Any]
-    persona_mapping: dict[str, Any]
-    document_mapping: dict[str, Any]
-    simulation_mapping: dict[str, Any]
-    parameter_mapping: dict[str, Any]
-    field_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    document_details: dict[str, Any]
-    problem_statement_mapping: dict[str, Any]
-    objectives_history: dict[str, Any]
-    scenario_images: dict[str, Any]
-    scenario_videos: dict[str, Any]
-    question_ids: list[str]
-    questions: dict[str, Any]
-    video_enabled: bool
-    questions_enabled: bool
-    problem_statement_enabled: bool
-    scenario_agent_id: str
-    image_agent_id: str
-    video_agent_id: str
-    parameter_ids: list[str]
-    persona_range_min: int
-    persona_range_max: int
-    document_range_min: int
-    document_range_max: int
-    parameter_range_min: int
-    parameter_range_max: int
-    field_ranges_json: dict[str, Any]
-
-
 
 # Generated from: get_scenario_new
 
@@ -4499,46 +3464,6 @@ class GetScenarioNewApiRequest(BaseModel):
     param_7: list[UUID]
     param_8: list[UUID]
     param_9: bool
-
-class GetScenarioNewApiResponse(BaseModel):
-
-    department_ids: list[str]
-    valid_persona_ids: list[str]
-    valid_document_ids: list[str]
-    department_mapping: dict[str, Any]
-    persona_mapping: dict[str, Any]
-    document_mapping: dict[str, Any]
-    parameter_mapping: dict[str, Any]
-    valid_parameter_ids: list[str]
-    field_mapping: dict[str, Any]
-    parameters_json: dict[str, Any]
-    document_details: dict[str, Any]
-    problem_statement_mapping: dict[str, Any]
-    objectives_history: dict[str, Any]
-    user_role: str
-    primary_department_id: str
-    scenario_agent_id: str
-    image_agent_id: str
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    selected_template_document_ids: list[str]
-    objective_mapping: dict[str, Any]
-    scenario_images: dict[str, Any]
-    scenario_videos: dict[str, Any]
-    question_ids: list[str]
-    questions: dict[str, Any]
-    video_agent_id: str
-    video_enabled: bool
-    questions_enabled: bool
-    persona_range_min: int
-    persona_range_max: int
-    document_range_min: int
-    document_range_max: int
-    parameter_range_min: int
-    parameter_range_max: int
-    field_ranges_json: dict[str, Any]
-    actor_name: str
-
 
 
 # Generated from: update_scenario
@@ -4628,13 +3553,6 @@ class UpdateScenarioApiRequest(BaseModel):
     param_22: list[str]
     param_23: UUID
 
-class UpdateScenarioApiResponse(BaseModel):
-
-    scenario_id: str
-    name: str
-    actor_name: str
-
-
 
 # Generated from: create_hints
 
@@ -4657,11 +3575,6 @@ class CreateHintsApiRequest(BaseModel):
 
     message_id: UUID
     hint_texts: list[str]
-
-class CreateHintsApiResponse(BaseModel):
-
-    hint_ids: dict[str, Any]
-
 
 
 # Generated from: create_simulation
@@ -4725,12 +3638,6 @@ class CreateSimulationApiRequest(BaseModel):
     simulation_text_agent_id: UUID
     simulation_voice_agent_id: str
 
-class CreateSimulationApiResponse(BaseModel):
-
-    simulation_id: str
-    actor_name: str
-
-
 
 # Generated from: create_user_message
 
@@ -4759,13 +3666,6 @@ class CreateUserMessageApiRequest(BaseModel):
     message_content: str
     run_id: UUID
 
-class CreateUserMessageApiResponse(BaseModel):
-
-    message_id: UUID
-    created_at: str
-    parent_id: UUID
-
-
 
 # Generated from: delete_simulation
 
@@ -4791,15 +3691,6 @@ class DeleteSimulationSqlRow(BaseModel):
 class DeleteSimulationApiRequest(BaseModel):
 
     simulationId: UUID
-
-class DeleteSimulationApiResponse(BaseModel):
-
-    simulation_id: str
-    title: str
-    usage_count: int
-    deleted: bool
-    actor_name: str
-
 
 
 # Generated from: generate_hints
@@ -4852,36 +3743,6 @@ class GenerateHintsApiRequest(BaseModel):
     chat_id: UUID
     department_id: UUID
 
-class GenerateHintsApiResponse(BaseModel):
-
-    message_id: str
-    message_created_at: str
-    chat_id: str
-    attempt_id_out: str
-    scenario_id: str
-    trace_id: str
-    chat_title: str
-    simulation_id: str
-    problem_statement: str
-    agent_id: str
-    agent_name: str
-    system_prompt: str
-    temperature: float
-    reasoning: str
-    model_id: str
-    model_name: str
-    provider_name: str
-    base_url: str
-    api_key: str
-    provider_id: str
-    profile_id: str
-    req_per_day: int
-    runs_today_count: int
-    earliest_run_created_at: str
-    documents: dict[str, Any]
-    run_id: str
-
-
 
 # Generated from: get_simulation_detail
 
@@ -4933,41 +3794,6 @@ class GetSimulationDetailSqlRow(BaseModel):
 class GetSimulationDetailApiRequest(BaseModel):
 
     simulation_id: UUID
-
-class GetSimulationDetailApiResponse(BaseModel):
-
-    title: str
-    description: str
-    department_ids: list[str] | None = None
-    time_limit: int
-    rubric_id: str
-    active: bool
-    default_simulation: bool
-    practice_simulation: bool
-    hint_agent_id: str
-    grade_text_agent_id: str
-    grade_voice_agent_id: str
-    simulation_text_agent_id: str
-    simulation_voice_agent_id: str
-    user_role: str
-    active_cohort_count: int
-    total_cohort_links: int
-    can_edit: bool
-    scenarios_list: dict[str, Any]
-    scenario_ids: list[str]
-    valid_scenario_ids: list[str]
-    valid_rubric_ids: list[str]
-    valid_department_ids: list[str]
-    scenario_mapping: dict[str, Any]
-    rubric_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    parameter_mapping: dict[str, Any]
-    field_mapping: dict[str, Any]
-    parameter_items_list: dict[str, Any]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    actor_name: str
-
 
 
 # Generated from: get_simulation_new
@@ -5022,44 +3848,6 @@ class GetSimulationNewApiRequest(BaseModel):
 
     param_1: UUID
 
-class GetSimulationNewApiResponse(BaseModel):
-
-    title: str
-    description: str
-    department_ids: list[str]
-    time_limit: int
-    rubric_id: str
-    active: bool
-    default_simulation: bool
-    practice_simulation: bool
-    hint_agent_id: str
-    grade_text_agent_id: str
-    grade_voice_agent_id: str
-    simulation_text_agent_id: str
-    simulation_voice_agent_id: str
-    user_role: str
-    active_cohort_count: int
-    total_cohort_links: int
-    can_edit: bool
-    scenarios_list: dict[str, Any]
-    scenario_ids: list[str]
-    valid_scenario_ids: list[str]
-    valid_video_ids: list[str]
-    valid_rubric_ids: list[str]
-    valid_department_ids: list[str]
-    scenario_mapping: dict[str, Any]
-    video_mapping: dict[str, Any]
-    rubric_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    parameter_mapping: dict[str, Any]
-    field_mapping: dict[str, Any]
-    parameter_items_list: dict[str, Any]
-    primary_department_id: str
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    actor_name: str
-
-
 
 # Generated from: link_run_to_group
 
@@ -5084,13 +3872,6 @@ class LinkRunToGroupApiRequest(BaseModel):
 
     group_id: UUID
     run_id: UUID
-
-class LinkRunToGroupApiResponse(BaseModel):
-
-    group_id: str
-    run_id: str
-    idx: int
-
 
 
 # Generated from: start_simulation_attempt
@@ -5132,21 +3913,6 @@ class StartSimulationAttemptApiRequest(BaseModel):
     infinite_mode: bool
     scenario_id_override: str
     trace_id: str
-
-class StartSimulationAttemptApiResponse(BaseModel):
-
-    attempt_id: str
-    chat_id: str
-    chat_title: str
-    scenario_id: str
-    scenario_name: str
-    problem_statement: str
-    needs_generation: bool
-    content_type: str
-    video_id: str
-    simulation_data: dict[str, Any]
-    scenario_metadata: dict[str, Any]
-
 
 
 # Generated from: update_simulation
@@ -5241,12 +4007,6 @@ class UpdateSimulationApiRequest(BaseModel):
     grade_voice_agent_id: UUID
     simulation_text_agent_id: UUID
     simulation_voice_agent_id: UUID
-
-class UpdateSimulationApiResponse(BaseModel):
-
-    simulation_id: str
-    actor_name: str
-
 
 
 

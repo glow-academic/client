@@ -1,11 +1,21 @@
 -- Duplicate agent with profile_id for auditing
--- @params
---   agent_id: uuid
---   profile_id: uuid
--- All parameters are cast exactly once in params CTE for reliable type introspection
+-- Converted to function
+
+-- Create function
+CREATE OR REPLACE FUNCTION api_duplicate_agent_v3(
+    agent_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    agent_id text,
+    agent_name text,
+    actor_name text
+)
+LANGUAGE sql
+AS $$
 WITH params AS (
-    SELECT $1::uuid AS agent_id,
-           $2::uuid AS profile_id
+    SELECT agent_id AS agent_id,
+           profile_id AS profile_id
 ),
 actor_profile AS (
     SELECT 
@@ -107,4 +117,4 @@ SELECT
 FROM new_agent na
 CROSS JOIN source_agent sa
 CROSS JOIN actor_profile ap
-
+$$;

@@ -65,6 +65,7 @@ async def get_agent_new(
         params = GetAgentNewSqlParams(**request.model_dump(), profile_id=profile_id)
         sql_params = params.to_tuple()
         
+        # Execute query with typed helper - automatically detects and calls function if present
         result = cast(
             GetAgentNewSqlRow,
             await execute_sql_typed(

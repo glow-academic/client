@@ -3,6 +3,7 @@
 Generates Pydantic models from SQL metadata for request/response types.
 """
 
+import re
 from typing import Any
 
 from scripts.sql_introspect import ColumnMetadata, SQLMetadata
@@ -24,6 +25,62 @@ def _to_pydantic_field_type(python_type: str, is_optional: bool = False) -> str:
     return python_type
 
 
+def _parse_sql_default_value(sql_default: str, field_type: str) -> str:
+    """Parse SQL default value expression and convert to Python expression.
+    
+    Args:
+        sql_default: SQL default expression (e.g., "NULL::uuid", "ARRAY[]::uuid[]")
+        field_type: Python field type (e.g., "str | None", "list[UUID]")
+    
+    Returns:
+        Python expression for default value (e.g., "None", "Field(default_factory=list)")
+    """
+    sql_default = sql_default.strip()
+    
+    # Handle NULL::type patterns
+    if sql_default.upper().startswith("NULL::"):
+        return "None"
+    
+    # Handle ARRAY[]::type[] patterns
+    if sql_default.upper().startswith("ARRAY[]::"):
+        if "list" in field_type:
+            return "Field(default_factory=list)"  # type: ignore[arg-type]
+        else:
+            return "None"
+    
+    # Handle empty string defaults
+    if sql_default == "{}":
+        if "list" in field_type:
+            return "Field(default_factory=list)"  # type: ignore[arg-type]
+        elif "dict" in field_type:
+            return "Field(default_factory=dict)"  # type: ignore[arg-type]
+        else:
+            return "None"
+    
+    # Handle None/null strings
+    if sql_default.lower() in ("none", "null"):
+        return "None"
+    
+    # For other literals, try to use as-is (but this might fail for complex expressions)
+    # In that case, fall back to None
+    try:
+        # Try to evaluate simple literals
+        if sql_default.startswith("'") and sql_default.endswith("'"):
+            # String literal
+            return sql_default
+        elif sql_default.replace(".", "").replace("-", "").isdigit():
+            # Numeric literal
+            return sql_default
+        elif sql_default.lower() in ("true", "false"):
+            # Boolean literal
+            return sql_default.capitalize()
+        else:
+            # Unknown expression - default to None for safety
+            return "None"
+    except Exception:
+        return "None"
+
+
 def _sanitize_field_name(name: str) -> str:
     """Sanitize field name for Python identifier.
 
@@ -33,6 +90,8 @@ def _sanitize_field_name(name: str) -> str:
     Returns:
         Valid Python identifier
     """
+    if not name:
+        return "field_unknown"
     # Remove $ prefix for parameters
     if name.startswith("$"):
         return f"param_{name[1:]}"
@@ -58,6 +117,162 @@ def _to_class_name(route_name: str, suffix: str) -> str:
     parts = route_name.split("_")
     pascal = "".join(word.capitalize() for word in parts)
     return f"{pascal}{suffix}"
+
+
+def _composite_type_to_class_name(composite_type: str) -> str:
+    """Convert PostgreSQL composite type name to Python class name.
+    
+    Examples:
+        types.q_list_agents_v3_agent -> QListAgentsV3Agent
+        types.q_get_agent_detail_v3_model -> QGetAgentDetailV3Model
+    
+    Args:
+        composite_type: Full composite type name (e.g., "types.q_list_agents_v3_agent")
+    
+    Returns:
+        Python class name (e.g., "QListAgentsV3Agent")
+    """
+    # Remove schema prefix if present
+    if "." in composite_type:
+        _, type_name = composite_type.split(".", 1)
+    else:
+        type_name = composite_type
+    
+    # Split by underscores and capitalize each part
+    parts = re.split(r"[_\W]+", type_name)
+    return "".join(p[:1].upper() + p[1:] for p in parts if p)
+
+
+async def generate_composite_model(
+    conn: Any, full_type_name: str, generated_types: dict[str, str]
+) -> tuple[str, str]:
+    """Generate Pydantic model for a PostgreSQL composite type.
+    
+    Args:
+        conn: Database connection (asyncpg.Connection)
+        full_type_name: Full type name (e.g., "types.q_list_agents_v3_agent")
+        generated_types: Dict mapping type names to class names (for recursion)
+    
+    Returns:
+        Tuple of (class_name, model_code)
+    """
+    from scripts.sql_introspect import fetch_composite_fields
+    
+    # Fetch composite type fields
+    fields = await fetch_composite_fields(conn, full_type_name)
+    
+    class_name = _composite_type_to_class_name(full_type_name)
+    generated_types[full_type_name] = class_name
+    
+    # Check what imports we need
+    needs_uuid = False
+    needs_datetime = False
+    
+    lines = [
+        '"""Composite type model generated from PostgreSQL.',
+        "",
+        f"Generated from: {full_type_name}",
+        '"""',
+        "",
+        "from typing import Any",
+    ]
+    
+    # Generate field types and check imports
+    field_defs = []
+    for field_name, pg_type, not_null in fields:
+        python_type = _pg_type_to_python_type(pg_type, generated_types)
+        
+        if "UUID" in python_type:
+            needs_uuid = True
+        if "datetime" in python_type:
+            needs_datetime = True
+        
+        if not not_null:
+            python_type = f"{python_type} | None"
+        
+        field_defs.append((field_name, python_type))
+    
+    if needs_uuid:
+        lines.append("from uuid import UUID")
+    if needs_datetime:
+        lines.append("from datetime import datetime")
+    
+    lines.append("")
+    lines.append("from pydantic import BaseModel")
+    lines.append("")
+    lines.append("")
+    lines.append(f"class {class_name}(BaseModel):")
+    lines.append('    """Composite type from PostgreSQL.')
+    lines.append("")
+    lines.append(f"    Generated from: {full_type_name}")
+    lines.append('    """')
+    lines.append("")
+    
+    if not field_defs:
+        lines.append("    pass")
+    else:
+        for field_name, field_type in field_defs:
+            lines.append(f"    {field_name}: {field_type}")
+    
+    return class_name, "\n".join(lines)
+
+
+def _pg_type_to_python_type(pg_type: str, generated_types: dict[str, str]) -> str:
+    """Convert PostgreSQL type string to Python type string.
+    
+    Handles arrays and composite types recursively.
+    
+    Args:
+        pg_type: PostgreSQL type (e.g., "uuid", "text[]", "types.q_list_agents_v3_agent[]")
+        generated_types: Dict mapping composite type names to class names
+    
+    Returns:
+        Python type string (e.g., "UUID", "list[str]", "list[QListAgentsV3Agent]")
+    """
+    # Check for array: type[]
+    array_match = re.match(r"^(.+)\[\]$", pg_type.strip())
+    if array_match:
+        base_type = array_match.group(1).strip()
+        base_python = _pg_type_to_python_type(base_type, generated_types)
+        return f"list[{base_python}]"
+    
+    # Check for composite type (schema.type format)
+    if "." in pg_type and pg_type not in ("timestamp with time zone",):
+        # Check if we've generated this type
+        if pg_type in generated_types:
+            return generated_types[pg_type]
+        # Return placeholder - will be resolved during generation
+        return f"Composite({pg_type})"
+    
+    # Map base PostgreSQL types
+    pg_type_lower = pg_type.lower()
+    type_map = {
+        "uuid": "UUID",
+        "text": "str",
+        "varchar": "str",
+        "char": "str",
+        "boolean": "bool",
+        "bool": "bool",
+        "timestamptz": "str",  # ISO string
+        "timestamp with time zone": "str",
+        "timestamp": "str",
+        "date": "str",
+        "time": "str",
+        "integer": "int",
+        "int4": "int",
+        "int8": "int",
+        "bigint": "int",
+        "smallint": "int",
+        "float4": "float",
+        "float8": "float",
+        "real": "float",
+        "double precision": "float",
+        "numeric": "float",
+        "json": "dict[str, Any]",
+        "jsonb": "dict[str, Any]",
+    }
+    
+    return type_map.get(pg_type_lower, "Any")
 
 
 def generate_request_model(
@@ -122,22 +337,13 @@ def generate_request_model(
             
             # Handle defaults
             if param.default_value is not None:
-                # Convert default value to Python expression
-                if param.default_value == "{}":
-                    # Empty list/dict default
-                    if "list" in field_type:
-                        default_expr = "Field(default_factory=list)"
-                    elif "dict" in field_type:
-                        default_expr = "Field(default_factory=dict)"
-                    else:
-                        default_expr = "None"
-                elif param.default_value == "None" or param.default_value.lower() == "null":
-                    default_expr = "None"
+                # Parse SQL default value to Python expression
+                default_expr = _parse_sql_default_value(param.default_value, field_type)
+                # Add type ignore comment for Field(default_factory=list) if needed
+                if "Field(default_factory=list)" in default_expr or "Field(default_factory=dict)" in default_expr:
+                    lines.append(f"    {field_name}: {field_type} = {default_expr}  # type: ignore[arg-type]")
                 else:
-                    # Try to parse as literal
-                    default_expr = param.default_value
-                
-                lines.append(f"    {field_name}: {field_type} = {default_expr}")
+                    lines.append(f"    {field_name}: {field_type} = {default_expr}")
             elif param.is_optional:
                 lines.append(f"    {field_name}: {field_type} = None")
             else:
@@ -647,22 +853,66 @@ def generate_nested_types(
     return "\n\n".join(all_class_code), generated_classes
 
 
-def generate_response_model(
-    metadata: SQLMetadata, route_name: str
-) -> str:
+async def generate_response_model(
+    metadata: SQLMetadata, route_name: str, conn: Any | None = None
+) -> tuple[str, dict[str, str]]:
     """Generate Pydantic response model from SQL metadata with nesting support.
 
     Uses nest to determine the nested structure, then generates
     types that match what routes actually use.
+    
+    Also handles composite types by generating models for them.
 
     Args:
         metadata: SQL metadata with return column information
         route_name: Route name for class naming (e.g., "create_agent")
+        conn: Database connection (optional, needed for composite type introspection)
 
     Returns:
         Python code string for Pydantic model
     """
     class_name = _to_class_name(route_name, "SqlRow")
+    
+    # Detect composite types in return columns
+    composite_types: set[str] = set()
+    generated_composite_models: dict[str, str] = {}  # type_name -> class_name
+    
+    if conn:
+        for col in metadata.returns:
+            # Check if column type is a composite type or composite array
+            python_type = col.python_type
+            
+            # Check for Composite(...) marker
+            composite_match = re.match(r"Composite\((.+)\)", python_type)
+            if composite_match:
+                type_name = composite_match.group(1)
+                composite_types.add(type_name)
+            
+            # Check for CompositeArray(...) marker
+            array_match = re.match(r"CompositeArray\((.+)\)", python_type)
+            if array_match:
+                # The group contains the full type name (e.g., "types.q_list_agents_v3_agent")
+                type_name = array_match.group(1)
+                composite_types.add(type_name)
+    
+    # Generate composite type models
+    composite_model_code = []
+    for comp_type in sorted(composite_types):
+        try:
+            if not conn:
+                raise ValueError(f"Database connection is None - cannot generate composite model for {comp_type}")
+            comp_class_name, comp_code = await generate_composite_model(
+                conn, comp_type, generated_composite_models
+            )
+            generated_composite_models[comp_type] = comp_class_name
+            composite_model_code.append(comp_code)
+        except Exception as e:
+            # Log the error for debugging
+            import sys
+            print(f"Warning: Failed to generate composite model for {comp_type}: {e}", file=sys.stderr)
+            # If we can't generate composite model, skip it
+            # The type will be marked as Any
+            pass
 
     # Detect dict prefixes from column naming convention
     dict_prefixes = detect_dict_prefixes_universal(metadata.returns)
@@ -680,14 +930,21 @@ def generate_response_model(
             "",
             "from pydantic import BaseModel",
             "",
-            "",
-            f"class {class_name}(BaseModel):",
-            '    """SQL query result row.',
-            "",
-            "    Columns returned by the SQL query.",
-            '    """',
-            "",
         ]
+        
+        # Add composite type models first
+        if composite_model_code:
+            lines.append("")
+            lines.append("\n\n".join(composite_model_code))
+            lines.append("")
+        
+        lines.append("")
+        lines.append(f"class {class_name}(BaseModel):")
+        lines.append('    """SQL query result row.')
+        lines.append("")
+        lines.append("    Columns returned by the SQL query.")
+        lines.append('    """')
+        lines.append("")
 
         # Add fields for each return column
         if not metadata.returns:
@@ -696,13 +953,33 @@ def generate_response_model(
         else:
             for col in metadata.returns:
                 field_name = _sanitize_field_name(col.name)
-                field_type = _to_pydantic_field_type(col.python_type, col.is_optional)
+                field_type = col.python_type
+                
+                # Resolve composite types
+                composite_match = re.match(r"Composite\((.+)\)", field_type)
+                if composite_match:
+                    type_name = composite_match.group(1)
+                    if type_name in generated_composite_models:
+                        field_type = generated_composite_models[type_name]
+                    else:
+                        field_type = "Any"  # Fallback if not generated
+                
+                # Resolve composite arrays
+                array_match = re.match(r"CompositeArray\((.+)\)", field_type)
+                if array_match:
+                    type_name = array_match.group(1)
+                    if type_name in generated_composite_models:
+                        field_type = f"list[{generated_composite_models[type_name]}]"
+                    else:
+                        field_type = "list[Any]"  # Fallback if not generated
+                
+                field_type = _to_pydantic_field_type(field_type, col.is_optional)
                 if col.is_optional:
                     lines.append(f"    {field_name}: {field_type} = None")
                 else:
                     lines.append(f"    {field_name}: {field_type}")
 
-        return "\n".join(lines)
+        return "\n".join(lines), generated_composite_models
 
     # Generate nested structure using nest
     from utils.sql_nest import nest
@@ -752,6 +1029,12 @@ def generate_response_model(
         "",
     ]
 
+    # Add composite type models first (before nested classes)
+    if composite_model_code:
+        lines.append("")
+        lines.append("\n\n".join(composite_model_code))
+        lines.append("")
+
     # Add nested class definitions if any
     if nested_classes_code:
         lines.append("")
@@ -779,6 +1062,39 @@ def generate_response_model(
                 sql_field_type = top_level_type_map[key]
                 if top_level_optional_map and key in top_level_optional_map:
                     is_field_optional = top_level_optional_map[key]
+                
+                # Resolve composite types
+                composite_match = re.match(r"Composite\((.+)\)", sql_field_type)
+                if composite_match:
+                    type_name = composite_match.group(1)
+                    if generated_composite_models and type_name in generated_composite_models:
+                        sql_field_type = generated_composite_models[type_name]
+                
+                # Resolve composite arrays
+                array_match = re.match(r"CompositeArray\((.+)\)", sql_field_type)
+                if array_match:
+                    type_name = array_match.group(1)
+                    if generated_composite_models and type_name in generated_composite_models:
+                        sql_field_type = f"list[{generated_composite_models[type_name]}]"
+                    else:
+                        sql_field_type = "list[Any]"  # Fallback if not generated
+                
+                # Resolve composite types
+                composite_match = re.match(r"Composite\((.+)\)", sql_field_type)
+                if composite_match:
+                    type_name = composite_match.group(1)
+                    if type_name in generated_composite_models:
+                        sql_field_type = generated_composite_models[type_name]
+                
+                # Resolve composite arrays
+                array_match = re.match(r"CompositeArray\((.+)\)", sql_field_type)
+                if array_match:
+                    type_name = array_match.group(1)  # e.g., "types.q_get_agent_detail_v3_department"
+                    if type_name in generated_composite_models:
+                        sql_field_type = f"list[{generated_composite_models[type_name]}]"
+                    else:
+                        # Fallback: use Any if composite model wasn't generated
+                        sql_field_type = "list[Any]"
             
             # Fall back to value inference
             if sql_field_type is None:
@@ -818,7 +1134,7 @@ def generate_response_model(
             else:
                 lines.append(f"    {sanitized_key}: {sql_field_type}")
 
-    return "\n".join(lines)
+    return "\n".join(lines), generated_composite_models
 
 
 def generate_api_request_model(
@@ -892,22 +1208,13 @@ def generate_api_request_model(
             
             # Handle defaults
             if param.default_value is not None:
-                # Convert default value to Python expression
-                if param.default_value == "{}":
-                    # Empty list/dict default
-                    if "list" in field_type:
-                        default_expr = "Field(default_factory=list)"
-                    elif "dict" in field_type:
-                        default_expr = "Field(default_factory=dict)"
-                    else:
-                        default_expr = "None"
-                elif param.default_value == "None" or param.default_value.lower() == "null":
-                    default_expr = "None"
+                # Parse SQL default value to Python expression
+                default_expr = _parse_sql_default_value(param.default_value, field_type)
+                # Add type ignore comment for Field(default_factory=list) if needed
+                if "Field(default_factory=list)" in default_expr or "Field(default_factory=dict)" in default_expr:
+                    lines.append(f"    {field_name}: {field_type} = {default_expr}  # type: ignore[arg-type]")
                 else:
-                    # Try to parse as literal
-                    default_expr = param.default_value
-                
-                lines.append(f"    {field_name}: {field_type} = {default_expr}")
+                    lines.append(f"    {field_name}: {field_type} = {default_expr}")
             elif param.is_optional:
                 lines.append(f"    {field_name}: {field_type} = None")
             else:
@@ -917,7 +1224,7 @@ def generate_api_request_model(
 
 
 def generate_api_response_model(
-    metadata: SQLMetadata, route_name: str
+    metadata: SQLMetadata, route_name: str, generated_composite_models: dict[str, str] | None = None
 ) -> str:
     """Generate Pydantic API response model from SQL metadata.
     
@@ -967,13 +1274,33 @@ def generate_api_response_model(
         else:
             for col in metadata.returns:
                 field_name = _sanitize_field_name(col.name)
-                field_type = _to_pydantic_field_type(col.python_type, col.is_optional)
+                field_type = col.python_type
+                
+                # Resolve composite types
+                composite_match = re.match(r"Composite\((.+)\)", field_type)
+                if composite_match:
+                    type_name = composite_match.group(1)
+                    if generated_composite_models and type_name in generated_composite_models:
+                        field_type = generated_composite_models[type_name]
+                    else:
+                        field_type = "Any"  # Fallback if not generated
+                
+                # Resolve composite arrays
+                array_match = re.match(r"CompositeArray\((.+)\)", field_type)
+                if array_match:
+                    type_name = array_match.group(1)
+                    if generated_composite_models and type_name in generated_composite_models:
+                        field_type = f"list[{generated_composite_models[type_name]}]"
+                    else:
+                        field_type = "list[Any]"  # Fallback if not generated
+                
+                field_type = _to_pydantic_field_type(field_type, col.is_optional)
                 if col.is_optional:
                     lines.append(f"    {field_name}: {field_type} = None")
                 else:
                     lines.append(f"    {field_name}: {field_type}")
 
-        return "\n".join(lines)
+        return "\n".join(lines), generated_composite_models
 
     # Generate nested structure using nest for API responses
     from utils.sql_nest import nest
@@ -1052,6 +1379,22 @@ def generate_api_response_model(
                 api_field_type = top_level_type_map[key]
                 if top_level_optional_map and key in top_level_optional_map:
                     is_field_optional = top_level_optional_map[key]
+                
+                # Resolve composite types
+                composite_match = re.match(r"Composite\((.+)\)", api_field_type)
+                if composite_match:
+                    type_name = composite_match.group(1)
+                    if generated_composite_models and type_name in generated_composite_models:
+                        api_field_type = generated_composite_models[type_name]
+                
+                # Resolve composite arrays
+                array_match = re.match(r"CompositeArray\((.+)\)", api_field_type)
+                if array_match:
+                    type_name = array_match.group(1)
+                    if generated_composite_models and type_name in generated_composite_models:
+                        api_field_type = f"list[{generated_composite_models[type_name]}]"
+                    else:
+                        api_field_type = "list[Any]"  # Fallback if not generated
             
             # Fall back to value inference
             if api_field_type is None:
@@ -1107,14 +1450,15 @@ def generate_api_response_model(
     return "\n".join(lines)
 
 
-def generate_types_file(
-    metadata: SQLMetadata, route_name: str
+async def generate_types_file(
+    metadata: SQLMetadata, route_name: str, conn: Any | None = None
 ) -> str:
     """Generate complete types file with SQL and API request/response models.
 
     Args:
         metadata: SQL metadata
         route_name: Route name (e.g., "create_agent")
+        conn: Database connection (optional, needed for composite type introspection)
 
     Returns:
         Complete Python file content with all four types:
@@ -1124,9 +1468,9 @@ def generate_types_file(
         - ApiResponse (API output, same as SqlRow for now)
     """
     sql_request_model = generate_request_model(metadata, route_name)
-    sql_response_model = generate_response_model(metadata, route_name)
+    sql_response_model, generated_composite_models = await generate_response_model(metadata, route_name, conn)
     api_request_model = generate_api_request_model(metadata, route_name)
-    api_response_model = generate_api_response_model(metadata, route_name)
+    api_response_model = generate_api_response_model(metadata, route_name, generated_composite_models)
 
     return f"{sql_request_model}\n\n\n{sql_response_model}\n\n\n{api_request_model}\n\n\n{api_response_model}\n"
 
