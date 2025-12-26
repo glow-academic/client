@@ -53,10 +53,7 @@ async def duplicate_persona(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            params = DuplicatePersonaSqlParams(
-                persona_id=request.personaId,
-                profile_id=profile_id,
-            )
+            params = DuplicatePersonaSqlParams(**request.model_dump(), profile_id=profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present
@@ -70,7 +67,7 @@ async def duplicate_persona(
             )
 
             if not result or not result.new_persona_id:
-                raise ValueError(f"Persona not found: {request.personaId}")
+                raise ValueError(f"Persona not found: {request.persona_id}")
 
             original_name = result.original_name or "Unknown"
 
@@ -79,7 +76,7 @@ async def duplicate_persona(
                 audit_set(
                     http_request,
                     actor={"name": result.actor_name, "id": profile_id},
-                    persona={"name": original_name, "id": request.personaId},
+                    persona={"name": original_name, "id": str(request.persona_id)},
                 )
 
             # Convert SQL result to API response

@@ -80,7 +80,7 @@ async def get_persona_detail(
         # Check if persona exists and has access using SQL result
         if not result.persona_exists:
             raise HTTPException(
-                status_code=404, detail=f"Persona {request.personaId} not found"
+                status_code=404, detail=f"Persona {request.persona_id} not found"
             )
         
         if not result.name:
@@ -95,7 +95,7 @@ async def get_persona_detail(
             audit_set(
                 http_request,
                 actor={"name": result.actor_name, "id": profile_id},
-                persona={"name": result.name, "id": request.personaId},
+                persona={"name": result.name, "id": str(request.persona_id)},
             )
 
         # Hardcoded metadata (keep in Python as per original)

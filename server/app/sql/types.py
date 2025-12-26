@@ -726,11 +726,11 @@ class GetAuthDetailAuthItemsItem(BaseModel):
 
 class GetAuthDetailSqlRow(BaseModel):
 
-    name: str
-    can_edit: bool
-    description: str
     active: bool
+    name: str
+    description: str
     actor_name: str
+    can_edit: bool
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 class GetAuthDetailApiRequest(BaseModel):
@@ -740,11 +740,11 @@ class GetAuthDetailApiRequest(BaseModel):
 
 class GetAuthDetailApiResponse(BaseModel):
 
-    name: str
-    can_edit: bool
-    description: str
     active: bool
+    name: str
+    description: str
     actor_name: str
+    can_edit: bool
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 
@@ -937,32 +937,24 @@ class DuplicateCohortApiResponse(BaseModel):
 
 class GetCohortDetailSqlParams(BaseModel):
 
-    pass
-
-class GetCohortDetailSqlRow(BaseModel):
-
-    pass
-
-class GetCohortDetailApiRequest(BaseModel):
-
-    pass
-
-class GetCohortDetailApiResponse(BaseModel):
-
-    pass
-
-
-
-# Generated from: get_cohort_new
-
-class GetCohortNewSqlParams(BaseModel):
-
+    cohort_id: UUID
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
+            self.cohort_id,
             self.profile_id,
         )
+
+class QGetCohortDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    simulation_ids: list[str] | None
+
+
+
 
 class QGetCohortDetailV3Simulation(BaseModel):
 
@@ -988,8 +980,58 @@ class QGetCohortDetailV3SimulationForPicker(BaseModel):
     time_limit: int | None
     department_ids: list[str] | None
 
+class GetCohortDetailSqlRow(BaseModel):
+
+    cohort_exists: bool | None = None
+    title: str | None = None
+    description: str | None = None
+    department_ids: list[str] | None = None
+    active: bool | None = None
+    updated_at: str | None = None
+    can_edit: bool | None = None
+    profile_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    valid_simulation_ids: list[str] | None = None
+    simulations: list[QGetCohortDetailV3Simulation] | None = None
+    simulations_for_picker: list[QGetCohortDetailV3SimulationForPicker] | None = None
+    departments: list[QGetCohortDetailV3Department] | None = None
+    actor_name: str | None = None
+
+class GetCohortDetailApiRequest(BaseModel):
+
+    cohort_id: UUID
+
+class GetCohortDetailApiResponse(BaseModel):
+
+    cohort_exists: bool | None = None
+    title: str | None = None
+    description: str | None = None
+    department_ids: list[str] | None = None
+    active: bool | None = None
+    updated_at: str | None = None
+    can_edit: bool | None = None
+    profile_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    valid_simulation_ids: list[str] | None = None
+    simulations: list[QGetCohortDetailV3Simulation] | None = None
+    simulations_for_picker: list[QGetCohortDetailV3SimulationForPicker] | None = None
+    departments: list[QGetCohortDetailV3Department] | None = None
+    actor_name: str | None = None
 
 
+
+# Generated from: get_cohort_new
+
+class GetCohortNewSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
 
 class QGetCohortNewV3Cohort(BaseModel):
 

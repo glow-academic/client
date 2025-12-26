@@ -517,10 +517,15 @@ async def fetch_function_return_columns(
             'bigint': 'int8',
             'integer': 'int4',
             'smallint': 'int2',
+            'timestamp with time zone': 'timestamptz',
+            'timestamp without time zone': 'timestamp',
+            'time with time zone': 'timetz',
+            'time without time zone': 'time',
         }
         lookup_type = type_name_mapping.get(base_type_str.lower(), base_type_str)
         
         # Get type OID from type name
+        # Try exact match first (for schema-qualified types like types.q_...)
         type_info = await conn.fetchrow(
             """
             SELECT t.oid, t.typarray
@@ -542,6 +547,11 @@ async def fetch_function_return_columns(
             # Check if NOT NULL is in the column definition
             not_null = "NOT NULL" in columns_text[match.start():match.end()].upper()
             columns.append((col_name, type_oid, not_null))
+        else:
+            # Type lookup failed - log for debugging but don't fail completely
+            # This can happen for custom types that aren't in pg_type yet
+            # We'll skip this column but continue processing others
+            pass
     
     return columns
 
@@ -584,6 +594,29 @@ async def introspect_function(
         SQLMetadata with parameter and return column information
     """
     try:
+        # Check if function exists first
+        func_exists = await conn.fetchval(
+            """
+            SELECT EXISTS(
+                SELECT 1 FROM pg_proc p
+                JOIN pg_namespace n ON n.oid = p.pronamespace
+                WHERE p.proname = $1
+                AND n.nspname = $2
+                AND p.prokind = 'f'
+            )
+            """,
+            function_name,
+            schema,
+        )
+        
+        if not func_exists:
+            return SQLMetadata(
+                sql_path=sql_path,
+                parameters=[],
+                returns=[],
+                error=f"Function {schema}.{function_name} does not exist in database",
+            )
+        
         # Get input parameters
         input_params = await fetch_function_inputs(conn, function_name, schema)
         

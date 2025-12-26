@@ -6,7 +6,8 @@ import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (DeleteSimulationApiRequest, DeleteSimulationApiResponse,
+from app.sql.types import (DeleteSimulationApiRequest,
+                           DeleteSimulationApiResponse,
                            DeleteSimulationSqlParams, DeleteSimulationSqlRow,
                            load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -52,10 +53,7 @@ async def delete_simulation(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = DeleteSimulationSqlParams(
-            simulation_id=request.simulation_id,
-            profile_id=profile_id,
-        )
+        params = DeleteSimulationSqlParams(**request.model_dump(), profile_id=profile_id)
         sql_params = params.to_tuple()
 
         # Execute query with typed helper

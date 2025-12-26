@@ -10194,9 +10194,46 @@ export interface components {
             agents?: components["schemas"]["QListAgentsV3Agent"][] | null;
         };
         /** GetCohortDetailApiRequest */
-        GetCohortDetailApiRequest: Record<string, never>;
+        GetCohortDetailApiRequest: {
+            /**
+             * Cohort Id
+             * Format: uuid
+             */
+            cohort_id: string;
+        };
         /** GetCohortDetailApiResponse */
-        GetCohortDetailApiResponse: Record<string, never>;
+        GetCohortDetailApiResponse: {
+            /** Cohort Exists */
+            cohort_exists?: boolean | null;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Active */
+            active?: boolean | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Valid Simulation Ids */
+            valid_simulation_ids?: string[] | null;
+            /** Simulations */
+            simulations?: components["schemas"]["QGetCohortDetailV3Simulation"][] | null;
+            /** Simulations For Picker */
+            simulations_for_picker?: components["schemas"]["QGetCohortDetailV3SimulationForPicker"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetCohortDetailV3Department"][] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** GetCohortNewApiRequest */
         GetCohortNewApiRequest: Record<string, never>;
         /** GetCohortNewApiResponse */
@@ -13093,6 +13130,17 @@ export interface components {
             available_voices: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** QGetCohortDetailV3Department */
+        QGetCohortDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Simulation Ids */
+            simulation_ids: string[] | null;
         };
         /** QGetCohortDetailV3Simulation */
         QGetCohortDetailV3Simulation: {

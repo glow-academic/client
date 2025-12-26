@@ -52,10 +52,7 @@ async def delete_persona(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            params = DeletePersonaSqlParams(
-                persona_id=request.personaId,
-                profile_id=profile_id,
-            )
+            params = DeletePersonaSqlParams(**request.model_dump(), profile_id=profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present
@@ -76,7 +73,7 @@ async def delete_persona(
                 raise ValueError("Cannot delete persona that is in use by scenarios")
 
             if not result.deleted:
-                raise ValueError(f"Persona not found: {request.personaId}")
+                raise ValueError(f"Persona not found: {request.persona_id}")
 
             persona_name = result.name or "Unknown"
 
@@ -85,7 +82,7 @@ async def delete_persona(
                 audit_set(
                     http_request,
                     actor={"name": result.actor_name, "id": profile_id},
-                    persona={"name": persona_name, "id": request.personaId},
+                    persona={"name": persona_name, "id": str(request.persona_id)},
                 )
 
         # Convert SQL result to API response

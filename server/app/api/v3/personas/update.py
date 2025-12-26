@@ -51,33 +51,8 @@ async def update_persona(
             )
 
         async with conn.transaction():
-            # Ensure department_ids is always an array (empty array if None)
-            dept_ids = request.department_ids if request.department_ids else []
-
-            # Ensure example_ids is always an array (empty array if None)
-            example_ids = request.example_ids if request.example_ids else []
-
-            # Convert description None to empty string
-            description = request.description if request.description is not None else ""
-
-            # Convert instructions None to empty string
-            instructions = (
-                request.instructions if request.instructions is not None else ""
-            )
-
             # Convert API request to SQL params (add profile_id from header)
-            params = UpdatePersonaSqlParams(
-                persona_id=request.personaId,
-                name=request.name,
-                description=description,
-                active=request.active,
-                color=request.color,
-                icon=request.icon,
-                instructions=instructions,
-                department_ids=dept_ids,
-                profile_id=profile_id,
-                example_ids=example_ids,
-            )
+            params = UpdatePersonaSqlParams(**request.model_dump(), profile_id=profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present
@@ -91,7 +66,7 @@ async def update_persona(
             )
 
             if not result or not result.persona_id:
-                raise ValueError(f"Persona not found: {request.personaId}")
+                raise ValueError(f"Persona not found: {request.persona_id}")
 
             # Set audit context with data from SQL query
             if result.actor_name:

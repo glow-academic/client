@@ -52,42 +52,8 @@ async def update_simulation(
             )
 
         async with transaction(conn):
-            # Convert None values to 0 for scenario_time_limit_seconds (SQL expects int[], not int[] | None)
-            scenario_time_limit_seconds = cast(
-                list[int],
-                [
-                    limit if limit is not None else 0
-                    for limit in request.scenario_time_limit_seconds
-                ],
-            )
-            
             # Convert API request to SQL params (add profile_id from header)
-            params = UpdateSimulationSqlParams(
-                simulation_id=request.simulation_id,
-                title=request.title,
-                description=request.description,
-                active=request.active,
-                practice_simulation=request.practice_simulation,
-                department_ids=request.department_ids,
-                scenario_ids=request.scenario_ids,
-                scenario_active_flags=request.scenario_active_flags,
-                video_ids=request.video_ids,
-                video_active_flags=request.video_active_flags,
-                scenario_hints_enabled=request.scenario_hints_enabled,
-                scenario_rubric_ids=request.scenario_rubric_ids,
-                scenario_time_limit_seconds=scenario_time_limit_seconds,
-                scenario_audio_enabled=request.scenario_audio_enabled,
-                scenario_text_enabled=request.scenario_text_enabled,
-                video_show_problem_statement=request.video_show_problem_statement,
-                video_show_objectives=request.video_show_objectives,
-                video_show_image=request.video_show_image,
-                hint_agent_id=request.hint_agent_id,
-                grade_text_agent_id=request.grade_text_agent_id,
-                grade_voice_agent_id=request.grade_voice_agent_id,
-                simulation_text_agent_id=request.simulation_text_agent_id,
-                simulation_voice_agent_id=request.simulation_voice_agent_id,
-                profile_id=profile_id,
-            )
+            params = UpdateSimulationSqlParams(**request.model_dump(), profile_id=profile_id)
             sql_params = params.to_tuple()
 
             # Execute query with typed helper

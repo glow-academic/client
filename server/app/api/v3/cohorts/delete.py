@@ -1,6 +1,5 @@
 """Cohort delete endpoint - v3 API."""
 
-import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -52,10 +51,7 @@ async def delete_cohort(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = DeleteCohortSqlParams(
-            cohort_id=request.cohort_id,
-            profile_id=uuid.UUID(profile_id),
-        )
+        params = DeleteCohortSqlParams(**request.model_dump(), profile_id=profile_id)
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper - automatically detects and calls function if present

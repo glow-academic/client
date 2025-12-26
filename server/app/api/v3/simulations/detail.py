@@ -9,8 +9,8 @@ from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (GetSimulationDetailApiRequest,
                            GetSimulationDetailApiResponse,
-                           GetSimulationDetailSqlParams, GetSimulationDetailSqlRow,
-                           load_sql_query)
+                           GetSimulationDetailSqlParams,
+                           GetSimulationDetailSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
@@ -66,11 +66,8 @@ async def get_simulation_detail(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert API request to SQL params
-        params = GetSimulationDetailSqlParams(
-            simulation_id=request_data.simulation_id,
-            profile_id=profile_id
-        )
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetSimulationDetailSqlParams(**request_data.model_dump(), profile_id=profile_id)
         sql_params = params.to_tuple()
 
         # Execute query with typed helper

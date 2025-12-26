@@ -48,6 +48,7 @@ CREATE OR REPLACE FUNCTION api_get_cohort_detail_v3(
     profile_id uuid
 )
 RETURNS TABLE (
+    cohort_exists boolean,
     title text,
     description text,
     department_ids text[],
@@ -70,6 +71,12 @@ WITH params AS (
     SELECT
         cohort_id AS cohort_id,
         profile_id AS profile_id
+),
+cohort_exists_check AS (
+    -- Check if cohort exists independently of access control
+    SELECT EXISTS(
+        SELECT 1 FROM cohorts WHERE id = (SELECT cohort_id FROM params)
+    )::boolean as cohort_exists
 ),
 user_profile AS (
     SELECT role FROM params x JOIN profiles p ON p.id = x.profile_id
@@ -288,6 +295,8 @@ user_profile_for_cohort AS (
     JOIN profiles p ON p.id = x.profile_id
 )
 SELECT 
+    -- Cohort existence check (always returned)
+    cec.cohort_exists::boolean as cohort_exists,
     cd.title,
     cd.description,
     cd.department_ids,
@@ -330,8 +339,9 @@ SELECT
     )
      FROM department_mapping_data dmd) as departments,
     upc.actor_name
-FROM cohort_data cd
+FROM cohort_exists_check cec
 CROSS JOIN user_profile_for_cohort upc
+LEFT JOIN cohort_data cd ON true
 $$;
 
 COMMIT;

@@ -566,10 +566,29 @@ async def generate_types_for_sql_file(
         metadata = await introspect_sql_file(sql_path, conn)
 
         if metadata.error:
-            # For test SQL files, treat introspection errors as skips (they're often mocks/seeds)
-            if sql_path.startswith("tests/sql/"):
-                return True, f"Skipping {sql_path} (introspection failed: {metadata.error})", None
-            return False, metadata.error, None
+            # If function doesn't exist and this is a function SQL file, try executing it again
+            # This handles cases where a function was dropped by a later SQL file during execution phase
+            if "does not exist in database" in metadata.error and _detect_function_in_sql(load_sql(sql_path)):
+                # Try executing the SQL file again to recreate the function
+                execute_success, execute_message = await execute_sql_file(sql_path, conn, server_root)
+                if execute_success:
+                    # Retry introspection
+                    metadata = await introspect_sql_file(sql_path, conn)
+                    if metadata.error:
+                        # Still failed after re-execution
+                        if sql_path.startswith("tests/sql/"):
+                            return True, f"Skipping {sql_path} (introspection failed: {metadata.error})", None
+                        return False, metadata.error, None
+                else:
+                    # Re-execution failed
+                    if sql_path.startswith("tests/sql/"):
+                        return True, f"Skipping {sql_path} (introspection failed: {metadata.error}, re-execution failed: {execute_message})", None
+                    return False, f"{metadata.error} (re-execution failed: {execute_message})", None
+            else:
+                # For test SQL files, treat introspection errors as skips (they're often mocks/seeds)
+                if sql_path.startswith("tests/sql/"):
+                    return True, f"Skipping {sql_path} (introspection failed: {metadata.error})", None
+                return False, metadata.error, None
 
         # Extract route name from SQL path
         route_name = _sql_path_to_route_name(sql_path)

@@ -1,7 +1,13 @@
 -- Create agent with prompt and department links in a single transaction
 -- Converted to function
+-- Uses safe drop/recreate pattern: drop function first, then recreate
 
--- Create function
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_create_agent_v3(text, text, uuid, boolean, agent_role, uuid, uuid, text, uuid[], uuid, uuid, uuid[]);
+
+-- 2) Recreate function
 CREATE OR REPLACE FUNCTION api_create_agent_v3(
     name text,
     description text,
@@ -180,3 +186,5 @@ SELECT
 FROM new_agent na
 CROSS JOIN actor_profile ap
 $$;
+
+COMMIT;

@@ -1,6 +1,5 @@
 """Cohort update endpoint - v3 API."""
 
-import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -51,21 +50,9 @@ async def update_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Handle None description (cohorts.description is NOT NULL, so use empty string)
-        description = request.description if request.description is not None else ""
-
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            params = UpdateCohortSqlParams(
-                cohort_id=request.cohort_id,
-                title=request.title,
-                description=description,
-                active=request.active,
-                department_ids=request.department_ids if request.department_ids else [],
-                profile_ids=request.profile_ids if request.profile_ids else [],
-                simulation_ids=request.simulation_ids if request.simulation_ids else [],
-                profile_id=uuid.UUID(profile_id),
-            )
+            params = UpdateCohortSqlParams(**request.model_dump(), profile_id=profile_id)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present

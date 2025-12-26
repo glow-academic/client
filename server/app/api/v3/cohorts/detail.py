@@ -1,6 +1,5 @@
 """Cohort detail endpoint - v3 API."""
 
-import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -66,10 +65,7 @@ async def get_cohort_detail(
             )
 
         # Convert API request to SQL params (add profile_id from header)
-        params = GetCohortDetailSqlParams(
-            cohort_id=request.cohort_id,
-            profile_id=uuid.UUID(profile_id),
-        )
+        params = GetCohortDetailSqlParams(**request.model_dump(), profile_id=profile_id)
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper - automatically detects and calls function if present
@@ -82,18 +78,19 @@ async def get_cohort_detail(
             ),
         )
 
-        if not result or not result.title:
-            # Check if cohort exists but user doesn't have department access
-            cohort_exists_check = await conn.fetchval(
-                "SELECT EXISTS(SELECT 1 FROM cohorts WHERE id = $1)",
-                request.cohort_id,
+        # Check if cohort exists and has access using SQL result
+        # SQL now returns cohort_exists field to distinguish 404 vs 403
+        if not result.cohort_exists:
+            raise HTTPException(
+                status_code=404, detail=f"Cohort {request.cohort_id} not found"
             )
-            if cohort_exists_check:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this cohort. It may be restricted to other departments.",
-                )
-            raise HTTPException(status_code=404, detail="Cohort not found")
+        
+        if not result.title:
+            # Cohort exists but user doesn't have access
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this cohort. It may be restricted to other departments.",
+            )
 
         # Set audit context with data from SQL query
         actor_name = result.actor_name
