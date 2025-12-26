@@ -227,12 +227,21 @@ export default function Simulation({
     return !simulationData.can_edit;
   }, [isEditMode, simulationData]);
 
-  // Extract department mapping
-  const departmentMapping = useMemo(
-    () => simulationData?.department_mapping || {},
-    [simulationData],
-  );
-  // Extract agent mapping (only available in detail endpoint, not new endpoint)
+  // Extract department mapping - create dict from array (composite types)
+  const departmentMapping = useMemo(() => {
+    const departments = simulationData?.departments || [];
+    return departments.reduce((acc, dept) => {
+      acc[String(dept.department_id)] = {
+        name: dept.name || "",
+        description: dept.description || "",
+        scenario_ids: dept.scenario_ids?.map(String) || null,
+        rubric_ids: dept.rubric_ids?.map(String) || null,
+        cohort_ids: dept.cohort_ids?.map(String) || null,
+      };
+      return acc;
+    }, {} as Record<string, { name: string; description: string; scenario_ids: string[] | null; rubric_ids: string[] | null; cohort_ids: string[] | null }>);
+  }, [simulationData?.departments]);
+  // Extract agent mapping - create dict from array (composite types)
   // Map to the expected type format: Record<string, { name: string; description: string; roles?: string[] }>
   // Always include selected agents even if they're not in the API response (for backward compatibility)
   const agentMapping = useMemo(() => {
@@ -241,20 +250,22 @@ export default function Simulation({
       { name: string; description: string; roles?: string[] }
     > = {};
 
-    // Add agents from API response
-    if (isEditMode && simulationDetail && "agent_mapping" in simulationDetail) {
-      const mapping = simulationDetail.agent_mapping || {};
-      Object.entries(mapping).forEach(([key, value]) => {
-        mapped[key] =
-          value.roles && value.roles.length > 0
-            ? {
-                name: value.name,
-                description: value.description,
-                roles: value.roles,
-              }
-            : { name: value.name, description: value.description };
-      });
-    }
+    // Add agents from API response (arrays now)
+    const agents = (isEditMode && simulationDetail && "agents" in simulationDetail
+      ? simulationDetail.agents
+      : simulationData?.agents) || [];
+    
+    agents.forEach((agent) => {
+      const key = String(agent.agent_id);
+      mapped[key] =
+        agent.roles && agent.roles.length > 0
+          ? {
+              name: agent.name || "",
+              description: agent.description || "",
+              roles: agent.roles.map(String),
+            }
+          : { name: agent.name || "", description: agent.description || "" };
+    });
 
     // Add selected agents that aren't in the mapping (for backward compatibility)
     // This ensures GenericPicker can display selected agents even if they're not in valid_agent_ids
@@ -310,12 +321,44 @@ export default function Simulation({
   }, [
     isEditMode,
     simulationDetail,
+    simulationData?.agents,
     formData?.simulation_text_agent_id,
     formData?.simulation_voice_agent_id,
     formData?.hint_agent_id,
     formData?.grade_text_agent_id,
     formData?.grade_voice_agent_id,
   ]);
+  
+  // Extract scenario mapping - create dict from scenarios_full array (composite types)
+  const scenarioMapping = useMemo(() => {
+    const scenariosFull = (isEditMode && simulationDetail && "scenarios_full" in simulationDetail
+      ? simulationDetail.scenarios_full
+      : simulationData?.scenarios_full) || [];
+    
+    return scenariosFull.reduce((acc, scenario) => {
+      acc[String(scenario.scenario_id)] = {
+        name: scenario.name || "",
+        description: scenario.description || "",
+        persona_ids: scenario.persona_ids?.map(String) || [],
+        persona_mapping: scenario.persona_mapping || [],
+        document_mapping: scenario.document_mapping || [],
+        parameter_item_mapping: scenario.parameter_item_mapping || [],
+        parameter_item_ids: scenario.parameter_item_ids?.map(String) || [],
+        document_ids: scenario.document_ids?.map(String) || [],
+      };
+      return acc;
+    }, {} as Record<string, {
+      name: string;
+      description: string;
+      persona_ids: string[];
+      persona_mapping: Array<{ persona_id: string | { toString(): string }; name?: string | null; description?: string | null; color?: string | null; icon?: string | null; image_model?: boolean | null }>;
+      document_mapping: Array<{ document_id: string | { toString(): string }; name?: string | null; description?: string | null }>;
+      parameter_item_mapping: Array<{ field_id: string | { toString(): string }; name?: string | null; description?: string | null; parameter_id?: string | { toString(): string } | null; parameter_name?: string | null }>;
+      parameter_item_ids: string[];
+      document_ids: string[];
+    }>);
+  }, [isEditMode, simulationDetail, simulationData?.scenarios_full]);
+  
   const validAgentIds = useMemo(
     () =>
       (simulationData as { valid_agent_ids?: string[] })?.valid_agent_ids || [],
@@ -523,7 +566,7 @@ export default function Simulation({
     orderedScenarioIdsFromUrl.forEach((scenarioId) => {
       if (!itemsMap.has(scenarioId) && !serverScenarioIds.has(scenarioId)) {
         // This scenario is in URL params but not in server data - it's NEW
-        const scenarioData = simulationData?.scenario_mapping?.[scenarioId];
+        const scenarioData = scenarioMapping[scenarioId];
         const maxPosition = Math.max(
           ...Array.from(itemsMap.values()).map((item) => item.position),
           0,
@@ -586,7 +629,7 @@ export default function Simulation({
     currentScenarioIds,
     searchParams,
     simulationData?.scenarios,
-    simulationData?.scenario_mapping,
+    scenarioMapping,
     contentSwitchStates,
     contentActiveStates,
     stagedContentItems,
@@ -656,26 +699,27 @@ export default function Simulation({
     departmentMapping,
   ]);
 
-  // Extract rubric mapping and always include selected rubrics (for backward compatibility)
+  // Extract rubric mapping - create dict from rubrics array (composite types)
+  // Always include selected rubrics (for backward compatibility)
   // This ensures GenericPicker can display selected rubrics even if they're not in valid_rubric_ids
-  // Check both simulationData and simulationDetail for rubric_mapping
   // MUST be defined after contentItems since it depends on it
   const rubricMapping = useMemo(() => {
-    const mapping =
-      isEditMode && simulationDetail && "rubric_mapping" in simulationDetail
-        ? simulationDetail.rubric_mapping || {}
-        : simulationData?.rubric_mapping || {};
+    const rubrics = (isEditMode && simulationDetail && "rubrics" in simulationDetail
+      ? simulationDetail.rubrics
+      : simulationData?.rubrics) || [];
+    
     const mapped: Record<
       string,
       { id: string; name: string; description?: string }
     > = {};
 
-    // Map rubric_mapping items to include id field
-    Object.entries(mapping).forEach(([id, item]) => {
+    // Map rubrics array to dict
+    rubrics.forEach((rubric) => {
+      const id = String(rubric.rubric_id);
       mapped[id] = {
         id,
-        name: item["name"],
-        description: item["description"],
+        name: rubric.name || "",
+        description: rubric.description || "",
       };
     });
 
@@ -698,7 +742,7 @@ export default function Simulation({
   }, [
     isEditMode,
     simulationDetail,
-    simulationData?.rubric_mapping,
+    simulationData?.rubrics,
     contentItems,
   ]);
 
@@ -1850,7 +1894,7 @@ export default function Simulation({
         0,
       );
       const newItems: ContentItem[] = newScenarioIds.map((scenarioId, idx) => {
-        const scenarioData = simulationData?.scenario_mapping?.[scenarioId];
+        const scenarioData = scenarioMapping[scenarioId];
         return {
           type: "scenario" as const,
           id: scenarioId,
@@ -1872,7 +1916,7 @@ export default function Simulation({
     [
       contentItems,
       stagedContentItems,
-      simulationData?.scenario_mapping,
+      scenarioMapping,
       updateUrlParams,
     ],
   );
@@ -1986,7 +2030,7 @@ export default function Simulation({
                   <Label htmlFor="department">Department</Label>
                   {formData?.departmentIds !== undefined ? (
                     <GenericPicker
-                      items={simulationData?.department_mapping || {}}
+                      items={departmentMapping}
                       itemIds={simulationData?.valid_department_ids || []}
                       selectedIds={formData.departmentIds || []}
                       onSelect={(ids) =>
@@ -2457,7 +2501,7 @@ export default function Simulation({
           </CardHeader>
           <CardContent className="space-y-3 px-6">
             <ScenarioCardGrid
-              scenarioMapping={simulationData?.scenario_mapping || {}}
+              scenarioMapping={scenarioMapping}
               validScenarioIds={validScenarioIds}
               selectedScenarioIds={
                 // Use searchParams as source of truth for ordering

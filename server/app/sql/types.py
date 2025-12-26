@@ -726,11 +726,11 @@ class GetAuthDetailAuthItemsItem(BaseModel):
 
 class GetAuthDetailSqlRow(BaseModel):
 
-    actor_name: str
-    active: bool
+    name: str
     can_edit: bool
     description: str
-    name: str
+    active: bool
+    actor_name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 class GetAuthDetailApiRequest(BaseModel):
@@ -740,11 +740,11 @@ class GetAuthDetailApiRequest(BaseModel):
 
 class GetAuthDetailApiResponse(BaseModel):
 
-    actor_name: str
-    active: bool
+    name: str
     can_edit: bool
     description: str
-    name: str
+    active: bool
+    actor_name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 
@@ -5471,14 +5471,32 @@ class QGetSimulationDetailV3Scenario(BaseModel):
 
 
 
-class QGetSimulationDetailV3ScenarioMapping(BaseModel):
+class QGetSimulationDetailV3Document(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetSimulationDetailV3Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+    image_model: bool | None
+
+class QGetSimulationDetailV3ScenarioFull(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
     description: str | None
     persona_ids: list[UUID] | None
-    persona_mapping: list[Composite(types.q_get_simulation_detail_v3_persona)] | None
-    document_mapping: list[Composite(types.q_get_simulation_detail_v3_document)] | None
+    persona_mapping: list[QGetSimulationDetailV3Persona] | None
+    document_mapping: list[QGetSimulationDetailV3Document] | None
     parameter_item_mapping: list[QGetSimulationDetailV3Field] | None
     parameter_item_ids: list[UUID] | None
     document_ids: list[UUID] | None
@@ -5512,7 +5530,7 @@ class GetSimulationDetailSqlRow(BaseModel):
     scenarios: list[QGetSimulationDetailV3Scenario] | None = None
     parameters: list[QGetSimulationDetailV3ParameterItem] | None = None
     parameter_items: list[QGetSimulationDetailV3ParameterItemDetail] | None = None
-    scenarios_full: list[QGetSimulationDetailV3ScenarioMapping] | None = None
+    scenarios_full: list[QGetSimulationDetailV3ScenarioFull] | None = None
     rubrics: list[QGetSimulationDetailV3Rubric] | None = None
     departments: list[QGetSimulationDetailV3Department] | None = None
     parameters_full: list[QGetSimulationDetailV3Parameter] | None = None
@@ -5553,7 +5571,7 @@ class GetSimulationDetailApiResponse(BaseModel):
     scenarios: list[QGetSimulationDetailV3Scenario] | None = None
     parameters: list[QGetSimulationDetailV3ParameterItem] | None = None
     parameter_items: list[QGetSimulationDetailV3ParameterItemDetail] | None = None
-    scenarios_full: list[QGetSimulationDetailV3ScenarioMapping] | None = None
+    scenarios_full: list[QGetSimulationDetailV3ScenarioFull] | None = None
     rubrics: list[QGetSimulationDetailV3Rubric] | None = None
     departments: list[QGetSimulationDetailV3Department] | None = None
     parameters_full: list[QGetSimulationDetailV3Parameter] | None = None
@@ -5669,14 +5687,32 @@ class QGetSimulationNewV3Scenario(BaseModel):
 
 
 
-class QGetSimulationNewV3ScenarioMapping(BaseModel):
+class QGetSimulationNewV3Document(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetSimulationNewV3Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+    image_model: bool | None
+
+class QGetSimulationNewV3ScenarioFull(BaseModel):
 
     scenario_id: UUID | None
     name: str | None
     description: str | None
     persona_ids: list[UUID] | None
-    persona_mapping: list[Composite(types.q_get_simulation_new_v3_persona)] | None
-    document_mapping: list[Composite(types.q_get_simulation_new_v3_document)] | None
+    persona_mapping: list[QGetSimulationNewV3Persona] | None
+    document_mapping: list[QGetSimulationNewV3Document] | None
     parameter_item_mapping: list[QGetSimulationNewV3Field] | None
     parameter_item_ids: list[UUID] | None
     document_ids: list[UUID] | None
@@ -5721,7 +5757,7 @@ class GetSimulationNewSqlRow(BaseModel):
     videos: list[QGetSimulationNewV3Video] | None = None
     parameters: list[QGetSimulationNewV3ParameterItem] | None = None
     parameter_items: list[QGetSimulationNewV3ParameterItemDetail] | None = None
-    scenarios_full: list[QGetSimulationNewV3ScenarioMapping] | None = None
+    scenarios_full: list[QGetSimulationNewV3ScenarioFull] | None = None
     rubrics: list[QGetSimulationNewV3Rubric] | None = None
     departments: list[QGetSimulationNewV3Department] | None = None
     parameters_full: list[QGetSimulationNewV3Parameter] | None = None
@@ -5764,7 +5800,7 @@ class GetSimulationNewApiResponse(BaseModel):
     videos: list[QGetSimulationNewV3Video] | None = None
     parameters: list[QGetSimulationNewV3ParameterItem] | None = None
     parameter_items: list[QGetSimulationNewV3ParameterItemDetail] | None = None
-    scenarios_full: list[QGetSimulationNewV3ScenarioMapping] | None = None
+    scenarios_full: list[QGetSimulationNewV3ScenarioFull] | None = None
     rubrics: list[QGetSimulationNewV3Rubric] | None = None
     departments: list[QGetSimulationNewV3Department] | None = None
     parameters_full: list[QGetSimulationNewV3Parameter] | None = None
@@ -5821,6 +5857,35 @@ class QListSimulationsV3Rubric(BaseModel):
 
 
 
+class QListSimulationsV3Document(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListSimulationsV3Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+    parameter_name: str | None
+
+
+
+
+class QListSimulationsV3Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+    image_model: bool | None
+
 class QListSimulationsV3Scenario(BaseModel):
 
     scenario_id: UUID | None
@@ -5828,9 +5893,9 @@ class QListSimulationsV3Scenario(BaseModel):
     description: str | None
     active: bool | None
     persona_ids: list[str] | None
-    persona_mapping: list[Composite(types.q_list_simulations_v3_persona)] | None
-    document_mapping: list[Composite(types.q_list_simulations_v3_document)] | None
-    parameter_item_mapping: list[Composite(types.q_list_simulations_v3_field)] | None
+    persona_mapping: list[QListSimulationsV3Persona] | None
+    document_mapping: list[QListSimulationsV3Document] | None
+    parameter_item_mapping: list[QListSimulationsV3Field] | None
     parameter_item_ids: list[str] | None
     document_ids: list[str] | None
 

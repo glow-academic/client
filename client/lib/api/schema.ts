@@ -6534,7 +6534,7 @@ export interface components {
          */
         AttemptFullResponse: {
             attempt: components["schemas"]["app__api__v3__attempts__full__AttemptItem"];
-            simulation: components["schemas"]["app__api__v3__attempts__full__SimulationItem"];
+            simulation: components["schemas"]["SimulationItem"];
             /** Attemptprofiles */
             attemptProfiles: components["schemas"]["AttemptProfileItem"][];
             /** Chats */
@@ -10399,6 +10399,185 @@ export interface components {
             /** Departments */
             departments?: components["schemas"]["QListPersonasV3Department"][] | null;
         };
+        /** GetSimulationDetailApiRequest */
+        GetSimulationDetailApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+        };
+        /** GetSimulationDetailApiResponse */
+        GetSimulationDetailApiResponse: {
+            /** Simulation Exists */
+            simulation_exists?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Valid Rubric Ids */
+            valid_rubric_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Valid Scenario Ids */
+            valid_scenario_ids?: string[] | null;
+            /** Active */
+            active?: boolean | null;
+            /** Practice Simulation */
+            practice_simulation?: boolean | null;
+            /** Hint Agent Id */
+            hint_agent_id?: string | null;
+            /** Grade Text Agent Id */
+            grade_text_agent_id?: string | null;
+            /** Grade Voice Agent Id */
+            grade_voice_agent_id?: string | null;
+            /** Simulation Text Agent Id */
+            simulation_text_agent_id?: string | null;
+            /** Simulation Voice Agent Id */
+            simulation_voice_agent_id?: string | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** In Use */
+            in_use?: boolean | null;
+            /** Cohort Count */
+            cohort_count?: number | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["QGetSimulationDetailV3Scenario"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetSimulationDetailV3ParameterItem"][] | null;
+            /** Parameter Items */
+            parameter_items?: components["schemas"]["QGetSimulationDetailV3ParameterItemDetail"][] | null;
+            /** Scenarios Full */
+            scenarios_full?: components["schemas"]["QGetSimulationDetailV3ScenarioFull"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetSimulationDetailV3Rubric"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetSimulationDetailV3Department"][] | null;
+            /** Parameters Full */
+            parameters_full?: components["schemas"]["QGetSimulationDetailV3Parameter"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetSimulationDetailV3Field"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetSimulationDetailV3Agent"][] | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+        };
+        /** GetSimulationNewApiRequest */
+        GetSimulationNewApiRequest: Record<string, never>;
+        /** GetSimulationNewApiResponse */
+        GetSimulationNewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Valid Rubric Ids */
+            valid_rubric_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Valid Scenario Ids */
+            valid_scenario_ids?: string[] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Valid Video Ids */
+            valid_video_ids?: string[] | null;
+            /** Active */
+            active?: boolean | null;
+            /** Practice Simulation */
+            practice_simulation?: boolean | null;
+            /** Hint Agent Id */
+            hint_agent_id?: string | null;
+            /** Grade Text Agent Id */
+            grade_text_agent_id?: string | null;
+            /** Grade Voice Agent Id */
+            grade_voice_agent_id?: string | null;
+            /** Simulation Text Agent Id */
+            simulation_text_agent_id?: string | null;
+            /** Simulation Voice Agent Id */
+            simulation_voice_agent_id?: string | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** In Use */
+            in_use?: boolean | null;
+            /** Cohort Count */
+            cohort_count?: number | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["QGetSimulationNewV3Scenario"][] | null;
+            /** Videos */
+            videos?: components["schemas"]["QGetSimulationNewV3Video"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetSimulationNewV3ParameterItem"][] | null;
+            /** Parameter Items */
+            parameter_items?: components["schemas"]["QGetSimulationNewV3ParameterItemDetail"][] | null;
+            /** Scenarios Full */
+            scenarios_full?: components["schemas"]["QGetSimulationNewV3ScenarioFull"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetSimulationNewV3Rubric"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetSimulationNewV3Department"][] | null;
+            /** Parameters Full */
+            parameters_full?: components["schemas"]["QGetSimulationNewV3Parameter"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetSimulationNewV3Field"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetSimulationNewV3Agent"][] | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+        };
+        /** GetSimulationsListApiRequest */
+        GetSimulationsListApiRequest: Record<string, never>;
+        /** GetSimulationsListApiResponse */
+        GetSimulationsListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Simulations */
+            simulations?: components["schemas"]["QListSimulationsV3Simulation"][] | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["QListSimulationsV3Scenario"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QListSimulationsV3Rubric"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QListSimulationsV3Department"][] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["QListSimulationsV3Cohort"][] | null;
+            /** Rubric Options */
+            rubric_options?: components["schemas"]["QListSimulationsV3Option"][] | null;
+            /** Cohort Options */
+            cohort_options?: components["schemas"]["QListSimulationsV3Option"][] | null;
+            /** Department Options */
+            department_options?: components["schemas"]["QListSimulationsV3Option"][] | null;
+        };
         /** GradeItem */
         GradeItem: {
             /** Id */
@@ -11732,7 +11911,7 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
             /** Parameter Items */
-            parameter_items: components["schemas"]["app__api__v3__parameters__detail__ParameterItemDetail"][];
+            parameter_items: components["schemas"]["ParameterItemDetail"][];
             /** Department Mapping */
             department_mapping: {
                 [key: string]: {
@@ -11774,6 +11953,48 @@ export interface components {
             /** Can Edit */
             can_edit: boolean;
         };
+        /** ParameterItem */
+        ParameterItem: {
+            /** Parameter Id */
+            parameter_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Document Ids */
+            document_ids: string[];
+            /** Num Items */
+            num_items: number;
+            /** Sample Items */
+            sample_items: components["schemas"]["ParameterSampleItem"][];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+        };
+        /** ParameterItemDetail */
+        ParameterItemDetail: {
+            /** Parameter Item Id */
+            parameter_item_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Default */
+            default: boolean;
+            /** Usage Count */
+            usage_count: number;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
         /** ParameterNewRequest */
         ParameterNewRequest: Record<string, never>;
         /** ParameterSampleItem */
@@ -11790,7 +12011,7 @@ export interface components {
         /** ParametersListResponse */
         ParametersListResponse: {
             /** Parameters */
-            parameters: components["schemas"]["app__api__v3__parameters__list__ParameterItem"][];
+            parameters: components["schemas"]["ParameterItem"][];
             /** Scenario Mapping */
             scenario_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__parameters__list__ScenarioMappingItem"];
@@ -13129,6 +13350,345 @@ export interface components {
             /** Video Parameter */
             video_parameter: boolean | null;
         };
+        /** QGetSimulationDetailV3Agent */
+        QGetSimulationDetailV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Roles */
+            roles: string[] | null;
+        };
+        /** QGetSimulationDetailV3Department */
+        QGetSimulationDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Rubric Ids */
+            rubric_ids: string[] | null;
+            /** Cohort Ids */
+            cohort_ids: string[] | null;
+        };
+        /** QGetSimulationDetailV3Document */
+        QGetSimulationDetailV3Document: {
+            /** Document Id */
+            document_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetSimulationDetailV3Field */
+        QGetSimulationDetailV3Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Parameter Name */
+            parameter_name: string | null;
+        };
+        /** QGetSimulationDetailV3Parameter */
+        QGetSimulationDetailV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Document Parameter */
+            document_parameter: boolean | null;
+            /** Persona Parameter */
+            persona_parameter: boolean | null;
+        };
+        /** QGetSimulationDetailV3ParameterItem */
+        QGetSimulationDetailV3ParameterItem: {
+            /** Id */
+            id: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetSimulationDetailV3ParameterItemDetail */
+        QGetSimulationDetailV3ParameterItemDetail: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+        };
+        /** QGetSimulationDetailV3Persona */
+        QGetSimulationDetailV3Persona: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Image Model */
+            image_model: boolean | null;
+        };
+        /** QGetSimulationDetailV3Rubric */
+        QGetSimulationDetailV3Rubric: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetSimulationDetailV3Scenario */
+        QGetSimulationDetailV3Scenario: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Title */
+            title: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Position */
+            position: number | null;
+            /** Parameter Item Ids */
+            parameter_item_ids: string[] | null;
+            /** Hints Enabled */
+            hints_enabled: boolean | null;
+            /** Copy Paste Allowed */
+            copy_paste_allowed: boolean | null;
+            /** Audio Enabled */
+            audio_enabled: boolean | null;
+            /** Text Enabled */
+            text_enabled: boolean | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Time Limit Seconds */
+            time_limit_seconds: number | null;
+            /** Usage Count */
+            usage_count: number | null;
+            /** Success Rate */
+            success_rate: number | null;
+            /** Last Used */
+            last_used: string | null;
+            /** Can Remove */
+            can_remove: boolean | null;
+            /** Has Active Video */
+            has_active_video: boolean | null;
+        };
+        /** QGetSimulationDetailV3ScenarioFull */
+        QGetSimulationDetailV3ScenarioFull: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Persona Ids */
+            persona_ids: string[] | null;
+            /** Persona Mapping */
+            persona_mapping: components["schemas"]["QGetSimulationDetailV3Persona"][] | null;
+            /** Document Mapping */
+            document_mapping: components["schemas"]["QGetSimulationDetailV3Document"][] | null;
+            /** Parameter Item Mapping */
+            parameter_item_mapping: components["schemas"]["QGetSimulationDetailV3Field"][] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids: string[] | null;
+            /** Document Ids */
+            document_ids: string[] | null;
+        };
+        /** QGetSimulationNewV3Agent */
+        QGetSimulationNewV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Roles */
+            roles: string[] | null;
+        };
+        /** QGetSimulationNewV3Department */
+        QGetSimulationNewV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Rubric Ids */
+            rubric_ids: string[] | null;
+            /** Cohort Ids */
+            cohort_ids: string[] | null;
+        };
+        /** QGetSimulationNewV3Document */
+        QGetSimulationNewV3Document: {
+            /** Document Id */
+            document_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetSimulationNewV3Field */
+        QGetSimulationNewV3Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Parameter Name */
+            parameter_name: string | null;
+        };
+        /** QGetSimulationNewV3Parameter */
+        QGetSimulationNewV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Document Parameter */
+            document_parameter: boolean | null;
+            /** Persona Parameter */
+            persona_parameter: boolean | null;
+        };
+        /** QGetSimulationNewV3ParameterItem */
+        QGetSimulationNewV3ParameterItem: {
+            /** Id */
+            id: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetSimulationNewV3ParameterItemDetail */
+        QGetSimulationNewV3ParameterItemDetail: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+        };
+        /** QGetSimulationNewV3Persona */
+        QGetSimulationNewV3Persona: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Image Model */
+            image_model: boolean | null;
+        };
+        /** QGetSimulationNewV3Rubric */
+        QGetSimulationNewV3Rubric: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetSimulationNewV3Scenario */
+        QGetSimulationNewV3Scenario: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Title */
+            title: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Position */
+            position: number | null;
+            /** Parameter Item Ids */
+            parameter_item_ids: string[] | null;
+            /** Hints Enabled */
+            hints_enabled: boolean | null;
+            /** Objectives Enabled */
+            objectives_enabled: boolean | null;
+            /** Image Input Enabled */
+            image_input_enabled: boolean | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Time Limit Seconds */
+            time_limit_seconds: number | null;
+            /** Usage Count */
+            usage_count: number | null;
+            /** Success Rate */
+            success_rate: number | null;
+            /** Last Used */
+            last_used: string | null;
+            /** Can Remove */
+            can_remove: boolean | null;
+            /** Has Active Video */
+            has_active_video: boolean | null;
+        };
+        /** QGetSimulationNewV3ScenarioFull */
+        QGetSimulationNewV3ScenarioFull: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Persona Ids */
+            persona_ids: string[] | null;
+            /** Persona Mapping */
+            persona_mapping: components["schemas"]["QGetSimulationNewV3Persona"][] | null;
+            /** Document Mapping */
+            document_mapping: components["schemas"]["QGetSimulationNewV3Document"][] | null;
+            /** Parameter Item Mapping */
+            parameter_item_mapping: components["schemas"]["QGetSimulationNewV3Field"][] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids: string[] | null;
+            /** Document Ids */
+            document_ids: string[] | null;
+        };
+        /** QGetSimulationNewV3Video */
+        QGetSimulationNewV3Video: {
+            /** Video Id */
+            video_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Length Seconds */
+            length_seconds: number | null;
+        };
         /** QListAgentsV3Agent */
         QListAgentsV3Agent: {
             /** Agent Id */
@@ -13324,6 +13884,133 @@ export interface components {
             document_ids: string[] | null;
             /** Parameter Item Ids */
             parameter_item_ids: string[] | null;
+        };
+        /** QListSimulationsV3Cohort */
+        QListSimulationsV3Cohort: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListSimulationsV3Department */
+        QListSimulationsV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListSimulationsV3Document */
+        QListSimulationsV3Document: {
+            /** Document Id */
+            document_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListSimulationsV3Field */
+        QListSimulationsV3Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Parameter Name */
+            parameter_name: string | null;
+        };
+        /** QListSimulationsV3Option */
+        QListSimulationsV3Option: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
+        /** QListSimulationsV3Persona */
+        QListSimulationsV3Persona: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Image Model */
+            image_model: boolean | null;
+        };
+        /** QListSimulationsV3Rubric */
+        QListSimulationsV3Rubric: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListSimulationsV3Scenario */
+        QListSimulationsV3Scenario: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Persona Ids */
+            persona_ids: string[] | null;
+            /** Persona Mapping */
+            persona_mapping: components["schemas"]["QListSimulationsV3Persona"][] | null;
+            /** Document Mapping */
+            document_mapping: components["schemas"]["QListSimulationsV3Document"][] | null;
+            /** Parameter Item Mapping */
+            parameter_item_mapping: components["schemas"]["QListSimulationsV3Field"][] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids: string[] | null;
+            /** Document Ids */
+            document_ids: string[] | null;
+        };
+        /** QListSimulationsV3Simulation */
+        QListSimulationsV3Simulation: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Practice Simulation */
+            practice_simulation: boolean | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Can Duplicate */
+            can_duplicate: boolean | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Num Cohorts */
+            num_cohorts: number | null;
+            /** Cohort Ids */
+            cohort_ids: string[] | null;
+            /** Updated At */
+            updated_at: string | null;
         };
         /**
          * QuestionItem
@@ -14901,14 +15588,6 @@ export interface components {
             practiceSimulation: boolean;
         };
         /**
-         * SimulationDetailRequest
-         * @description Request to get simulation details.
-         */
-        SimulationDetailRequest: {
-            /** Simulationid */
-            simulationId: string;
-        };
-        /**
          * SimulationEndedPayload
          * @description Response indicating simulation was ended successfully.
          */
@@ -15037,6 +15716,43 @@ export interface components {
             department_id: string;
             /** Sid */
             sid?: string | null;
+        };
+        /** SimulationItem */
+        SimulationItem: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Departmentid */
+            departmentId: string | null;
+            /** Active */
+            active: boolean;
+            /** Defaultsimulation */
+            defaultSimulation: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Hintsenabled */
+            hintsEnabled: boolean;
+            /** Objectivesenabled */
+            objectivesEnabled: boolean;
+            /** Inputguardrailactive */
+            inputGuardrailActive: boolean;
+            /** Outputguardrailactive */
+            outputGuardrailActive: boolean;
+            /** Imageinputactive */
+            imageInputActive: boolean;
+            /** Copypasteallowed */
+            copyPasteAllowed: boolean;
+            /** Timelimit */
+            timeLimit: number | null;
+            /** Rubricid */
+            rubricId: string | null;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
         };
         /**
          * SimulationJoinErrorPayload
@@ -15209,11 +15925,6 @@ export interface components {
             persona_id?: string | null;
         };
         /**
-         * SimulationNewRequest
-         * @description Request to get default simulation details.
-         */
-        SimulationNewRequest: Record<string, never>;
-        /**
          * SimulationParameterFactCategorical
          * @description Simulation parameter fact (categorical).
          */
@@ -15333,47 +16044,6 @@ export interface components {
         SimulationsData: {
             /** Items */
             items: components["schemas"]["SimulationContextItem"][];
-        };
-        /**
-         * SimulationsFilters
-         * @description Filters for simulations list.
-         */
-        SimulationsFilters: Record<string, never>;
-        /**
-         * SimulationsListResponse
-         * @description Response for simulations list endpoint.
-         */
-        SimulationsListResponse: {
-            /** Simulations */
-            simulations: components["schemas"]["app__api__v3__simulations__list__SimulationItem"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__list__ScenarioMappingItem"];
-            };
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: components["schemas"]["RubricMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__list__DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Rubric Options */
-            rubric_options: {
-                [key: string]: string;
-            }[];
-            /** Cohort Options */
-            cohort_options: {
-                [key: string]: string;
-            }[];
-            /** Department Options */
-            department_options: {
-                [key: string]: string;
-            }[];
         };
         /**
          * SkillPackage
@@ -17142,43 +17812,6 @@ export interface components {
             /** Objectives */
             objectives?: string[] | null;
         };
-        /** SimulationItem */
-        app__api__v3__attempts__full__SimulationItem: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Departmentid */
-            departmentId: string | null;
-            /** Active */
-            active: boolean;
-            /** Defaultsimulation */
-            defaultSimulation: boolean;
-            /** Practicesimulation */
-            practiceSimulation: boolean;
-            /** Hintsenabled */
-            hintsEnabled: boolean;
-            /** Objectivesenabled */
-            objectivesEnabled: boolean;
-            /** Inputguardrailactive */
-            inputGuardrailActive: boolean;
-            /** Outputguardrailactive */
-            outputGuardrailActive: boolean;
-            /** Imageinputactive */
-            imageInputActive: boolean;
-            /** Copypasteallowed */
-            copyPasteAllowed: boolean;
-            /** Timelimit */
-            timeLimit: number | null;
-            /** Rubricid */
-            rubricId: string | null;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-        };
         /** StandardGroupMappingItem */
         app__api__v3__attempts__full__StandardGroupMappingItem: {
             /** Name */
@@ -18442,21 +19075,6 @@ export interface components {
             /** Description */
             description: string;
         };
-        /** ParameterItemDetail */
-        app__api__v3__parameters__detail__ParameterItemDetail: {
-            /** Parameter Item Id */
-            parameter_item_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Default */
-            default: boolean;
-            /** Usage Count */
-            usage_count: number;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
         /**
          * DepartmentMappingItem
          * @description Department mapping item.
@@ -18476,33 +19094,6 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-        };
-        /** ParameterItem */
-        app__api__v3__parameters__list__ParameterItem: {
-            /** Parameter Id */
-            parameter_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Document Ids */
-            document_ids: string[];
-            /** Num Items */
-            num_items: number;
-            /** Sample Items */
-            sample_items: components["schemas"]["ParameterSampleItem"][];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
         };
         /**
          * PersonaMappingItem
@@ -19882,649 +20473,6 @@ export interface components {
             time_limit_seconds?: number | null;
         };
         /**
-         * AgentMappingItem
-         * @description Agent mapping item.
-         */
-        app__api__v3__simulations__detail__AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Roles */
-            roles?: string[] | null;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__simulations__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-        };
-        /**
-         * DocumentMappingItem
-         * @description Document mapping item.
-         */
-        app__api__v3__simulations__detail__DocumentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * FieldMappingItem
-         * @description Field mapping item with parameter context.
-         */
-        app__api__v3__simulations__detail__FieldMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Parameter Name */
-            parameter_name: string;
-        };
-        /**
-         * ParameterItem
-         * @description Parameter data for dropdown.
-         */
-        app__api__v3__simulations__detail__ParameterItem: {
-            /** Id */
-            id: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-        };
-        /**
-         * ParameterItemDetail
-         * @description Full parameter item details.
-         */
-        app__api__v3__simulations__detail__ParameterItemDetail: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string;
-        };
-        /**
-         * ParameterMappingItem
-         * @description Parameter mapping item.
-         */
-        app__api__v3__simulations__detail__ParameterMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Persona Parameter */
-            persona_parameter: boolean;
-        };
-        /**
-         * PersonaMappingItem
-         * @description Persona mapping item with custom color and icon fields.
-         */
-        app__api__v3__simulations__detail__PersonaMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Image Model */
-            image_model?: boolean | null;
-        };
-        /**
-         * ScenarioInSimulation
-         * @description Scenario with position in simulation.
-         */
-        app__api__v3__simulations__detail__ScenarioInSimulation: {
-            /** Scenario Id */
-            scenario_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Position */
-            position: number;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Hints Enabled */
-            hints_enabled: boolean;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean;
-            /** Audio Enabled */
-            audio_enabled: boolean;
-            /** Text Enabled */
-            text_enabled: boolean;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Time Limit Seconds */
-            time_limit_seconds: number | null;
-            /** Usage Count */
-            usage_count: number;
-            /** Success Rate */
-            success_rate: number;
-            /** Last Used */
-            last_used: string | null;
-            /** Can Remove */
-            can_remove: boolean;
-            /** Has Active Video */
-            has_active_video: boolean;
-        };
-        /**
-         * ScenarioMappingItem
-         * @description Scenario mapping item with extended fields for nested data.
-         */
-        app__api__v3__simulations__detail__ScenarioMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__detail__PersonaMappingItem"];
-            };
-            /** Document Mapping */
-            document_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__detail__DocumentMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__detail__FieldMappingItem"];
-            };
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Document Ids */
-            document_ids: string[];
-        };
-        /**
-         * SimulationDetailResponse
-         * @description Response for simulation detail endpoint.
-         */
-        app__api__v3__simulations__detail__SimulationDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Valid Rubric Ids */
-            valid_rubric_ids: string[];
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Valid Scenario Ids */
-            valid_scenario_ids: string[];
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Hint Agent Id */
-            hint_agent_id: string;
-            /** Grade Text Agent Id */
-            grade_text_agent_id: string;
-            /** Grade Voice Agent Id */
-            grade_voice_agent_id: string | null;
-            /** Simulation Text Agent Id */
-            simulation_text_agent_id: string | null;
-            /** Simulation Voice Agent Id */
-            simulation_voice_agent_id: string | null;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** In Use */
-            in_use: boolean;
-            /** Cohort Count */
-            cohort_count: number;
-            /** Scenarios */
-            scenarios: components["schemas"]["app__api__v3__simulations__detail__ScenarioInSimulation"][];
-            /** Parameters */
-            parameters: components["schemas"]["app__api__v3__simulations__detail__ParameterItem"][];
-            /** Parameter Items */
-            parameter_items: components["schemas"]["app__api__v3__simulations__detail__ParameterItemDetail"][];
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__detail__ParameterMappingItem"];
-            };
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__detail__ScenarioMappingItem"];
-            };
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: components["schemas"]["RubricMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__detail__DepartmentMappingItem"];
-            };
-            /** Field Mapping */
-            field_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__detail__FieldMappingItem"];
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__detail__AgentMappingItem"];
-            };
-            /** Valid Agent Ids */
-            valid_agent_ids: string[];
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__simulations__list__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * PersonaMappingItem
-         * @description Persona mapping item with custom color and icon fields.
-         */
-        app__api__v3__simulations__list__PersonaMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Image Model */
-            image_model?: boolean | null;
-        };
-        /**
-         * ScenarioMappingItem
-         * @description Scenario mapping item with extended fields for nested data.
-         */
-        app__api__v3__simulations__list__ScenarioMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Persona Ids
-             * @default []
-             */
-            persona_ids: string[];
-            /**
-             * Persona Mapping
-             * @default {}
-             */
-            persona_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__list__PersonaMappingItem"];
-            };
-            /**
-             * Document Mapping
-             * @default {}
-             */
-            document_mapping: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Mapping
-             * @default {}
-             */
-            parameter_item_mapping: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Ids
-             * @default []
-             */
-            parameter_item_ids: string[];
-            /**
-             * Document Ids
-             * @default []
-             */
-            document_ids: string[];
-        };
-        /**
-         * SimulationItem
-         * @description Simulation item in list response.
-         */
-        app__api__v3__simulations__list__SimulationItem: {
-            /** Simulation Id */
-            simulation_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Rubric Id */
-            rubric_id: string;
-            /** Num Cohorts */
-            num_cohorts: number;
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Updated At */
-            updated_at: string;
-        };
-        /**
-         * AgentMappingItem
-         * @description Agent mapping item with role information.
-         */
-        app__api__v3__simulations__new__AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Roles
-             * @default []
-             */
-            roles: string[];
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__simulations__new__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-        };
-        /**
-         * DocumentMappingItem
-         * @description Document mapping item.
-         */
-        app__api__v3__simulations__new__DocumentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * FieldMappingItem
-         * @description Field mapping item with parameter context.
-         */
-        app__api__v3__simulations__new__FieldMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Parameter Name */
-            parameter_name: string;
-        };
-        /**
-         * ParameterItem
-         * @description Parameter data for dropdown.
-         */
-        app__api__v3__simulations__new__ParameterItem: {
-            /** Id */
-            id: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-        };
-        /**
-         * ParameterItemDetail
-         * @description Full parameter item details.
-         */
-        app__api__v3__simulations__new__ParameterItemDetail: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string;
-        };
-        /**
-         * ParameterMappingItem
-         * @description Parameter mapping item.
-         */
-        app__api__v3__simulations__new__ParameterMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Persona Parameter */
-            persona_parameter: boolean;
-        };
-        /**
-         * PersonaMappingItem
-         * @description Persona mapping item with custom color and icon fields.
-         */
-        app__api__v3__simulations__new__PersonaMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Image Model */
-            image_model?: boolean | null;
-        };
-        /**
-         * ScenarioInSimulation
-         * @description Scenario with position in simulation.
-         */
-        app__api__v3__simulations__new__ScenarioInSimulation: {
-            /** Scenario Id */
-            scenario_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Position */
-            position: number;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Hints Enabled */
-            hints_enabled: boolean;
-            /** Objectives Enabled */
-            objectives_enabled: boolean;
-            /** Image Input Enabled */
-            image_input_enabled: boolean;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Time Limit Seconds */
-            time_limit_seconds: number | null;
-            /** Usage Count */
-            usage_count: number;
-            /** Success Rate */
-            success_rate: number;
-            /** Last Used */
-            last_used: string | null;
-            /** Can Remove */
-            can_remove: boolean;
-            /** Has Active Video */
-            has_active_video: boolean;
-        };
-        /**
-         * ScenarioMappingItem
-         * @description Scenario mapping item with extended fields for nested data.
-         */
-        app__api__v3__simulations__new__ScenarioMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__new__PersonaMappingItem"];
-            };
-            /** Document Mapping */
-            document_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__new__DocumentMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__new__FieldMappingItem"];
-            };
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Document Ids */
-            document_ids: string[];
-        };
-        /**
-         * SimulationDetailResponse
-         * @description Response for simulation detail endpoint.
-         */
-        app__api__v3__simulations__new__SimulationDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Valid Rubric Ids */
-            valid_rubric_ids: string[];
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Valid Scenario Ids */
-            valid_scenario_ids: string[];
-            /** Video Ids */
-            video_ids: string[];
-            /** Valid Video Ids */
-            valid_video_ids: string[];
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Hint Agent Id */
-            hint_agent_id: string | null;
-            /** Grade Text Agent Id */
-            grade_text_agent_id: string | null;
-            /** Grade Voice Agent Id */
-            grade_voice_agent_id: string | null;
-            /** Simulation Text Agent Id */
-            simulation_text_agent_id: string | null;
-            /** Simulation Voice Agent Id */
-            simulation_voice_agent_id: string | null;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** In Use */
-            in_use: boolean;
-            /** Cohort Count */
-            cohort_count: number;
-            /** Scenarios */
-            scenarios: components["schemas"]["app__api__v3__simulations__new__ScenarioInSimulation"][];
-            /** Videos */
-            videos: {
-                [key: string]: unknown;
-            }[];
-            /** Parameters */
-            parameters: components["schemas"]["app__api__v3__simulations__new__ParameterItem"][];
-            /** Parameter Items */
-            parameter_items: components["schemas"]["app__api__v3__simulations__new__ParameterItemDetail"][];
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__new__ParameterMappingItem"];
-            };
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__new__ScenarioMappingItem"];
-            };
-            /** Video Mapping */
-            video_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: components["schemas"]["RubricMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__new__DepartmentMappingItem"];
-            };
-            /** Field Mapping */
-            field_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__new__FieldMappingItem"];
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__simulations__new__AgentMappingItem"];
-            };
-            /** Valid Agent Ids */
-            valid_agent_ids: string[];
-        };
-        /**
          * ContentItemInRequest
          * @description Content item (scenario) in request format.
          */
@@ -21246,7 +21194,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SimulationsFilters"];
+                "application/json": components["schemas"]["GetSimulationsListApiRequest"];
             };
         };
         responses: {
@@ -21256,7 +21204,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SimulationsListResponse"];
+                    "application/json": components["schemas"]["GetSimulationsListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21282,7 +21230,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SimulationDetailRequest"];
+                "application/json": components["schemas"]["GetSimulationDetailApiRequest"];
             };
         };
         responses: {
@@ -21292,7 +21240,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__simulations__detail__SimulationDetailResponse"];
+                    "application/json": components["schemas"]["GetSimulationDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21318,7 +21266,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SimulationNewRequest"];
+                "application/json": components["schemas"]["GetSimulationNewApiRequest"];
             };
         };
         responses: {
@@ -21328,7 +21276,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__simulations__new__SimulationDetailResponse"];
+                    "application/json": components["schemas"]["GetSimulationNewApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -164,6 +164,35 @@ async def generate_composite_model(
     class_name = _composite_type_to_class_name(full_type_name)
     generated_types[full_type_name] = class_name
     
+    # First pass: detect nested composite types and generate them recursively
+    nested_composite_types: set[str] = set()
+    for field_name, pg_type, not_null in fields:
+        python_type = _pg_type_to_python_type(pg_type, generated_types)
+        # Check for Composite(...) markers indicating nested composite types
+        composite_match = re.match(r"Composite\((.+)\)", python_type)
+        if composite_match:
+            nested_type_name = composite_match.group(1)
+            nested_composite_types.add(nested_type_name)
+        # Also check for Composite(...) inside list[...]
+        array_match = re.match(r"list\[Composite\((.+)\)\]", python_type)
+        if array_match:
+            nested_type_name = array_match.group(1)
+            nested_composite_types.add(nested_type_name)
+    
+    # Generate nested composite types first (recursively)
+    nested_model_code = []
+    for nested_type in sorted(nested_composite_types):
+        if nested_type not in generated_types:
+            try:
+                nested_class_name, nested_code = await generate_composite_model(
+                    conn, nested_type, generated_types
+                )
+                nested_model_code.append(nested_code)
+            except Exception as e:
+                # Log but continue - will use Any as fallback
+                import sys
+                print(f"Warning: Failed to generate nested composite model for {nested_type}: {e}", file=sys.stderr)
+    
     # Check what imports we need
     needs_uuid = False
     needs_datetime = False
@@ -181,6 +210,24 @@ async def generate_composite_model(
     field_defs = []
     for field_name, pg_type, not_null in fields:
         python_type = _pg_type_to_python_type(pg_type, generated_types)
+        
+        # Resolve Composite(...) placeholders to actual class names
+        composite_match = re.match(r"Composite\((.+)\)", python_type)
+        if composite_match:
+            nested_type_name = composite_match.group(1)
+            if nested_type_name in generated_types:
+                python_type = generated_types[nested_type_name]
+            else:
+                python_type = "Any"  # Fallback if generation failed
+        
+        # Resolve Composite(...) inside list[...]
+        array_match = re.match(r"list\[Composite\((.+)\)\]", python_type)
+        if array_match:
+            nested_type_name = array_match.group(1)
+            if nested_type_name in generated_types:
+                python_type = f"list[{generated_types[nested_type_name]}]"
+            else:
+                python_type = "list[Any]"  # Fallback if generation failed
         
         if "UUID" in python_type:
             needs_uuid = True
@@ -200,6 +247,13 @@ async def generate_composite_model(
     lines.append("")
     lines.append("from pydantic import BaseModel")
     lines.append("")
+    
+    # Add nested composite type models first
+    if nested_model_code:
+        lines.append("")
+        lines.append("\n\n".join(nested_model_code))
+        lines.append("")
+    
     lines.append("")
     lines.append(f"class {class_name}(BaseModel):")
     lines.append('    """Composite type from PostgreSQL.')

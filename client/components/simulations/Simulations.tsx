@@ -90,15 +90,20 @@ export function Simulations({
   // Use server-provided data directly
   const simulationsData = serverListData;
 
-  // Extract data from response
+  // Extract data from response - arrays directly (composite types)
   const simulations = useMemo(
     () => simulationsData?.simulations || [],
     [simulationsData?.simulations],
   );
-  const scenarioMapping = useMemo(
-    () => simulationsData?.scenario_mapping || {},
-    [simulationsData?.scenario_mapping],
-  );
+  
+  // Create scenario mapping dict client-side for lookups (from scenarios array)
+  const scenarioMapping = useMemo(() => {
+    const scenarios = simulationsData?.scenarios || [];
+    return scenarios.reduce((acc, scenario) => {
+      acc[scenario.scenario_id] = scenario;
+      return acc;
+    }, {} as Record<string, typeof scenarios[0]>);
+  }, [simulationsData?.scenarios]);
 
   // Use server-provided facet options directly (no client-side computation)
   const rubricOptions = useMemo(
@@ -422,8 +427,8 @@ export function Simulations({
 
                 // Get first persona color
                 const firstPersonaId = scenario.persona_ids?.[0];
-                const persona = firstPersonaId
-                  ? scenario.persona_mapping?.[firstPersonaId]
+                const persona = firstPersonaId && scenario.persona_mapping
+                  ? scenario.persona_mapping.find(p => String(p.persona_id) === String(firstPersonaId))
                   : null;
                 const personaColor = persona?.color || "#9CA3AF"; // gray-400 fallback
 

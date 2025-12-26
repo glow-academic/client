@@ -6,11 +6,12 @@ BEGIN;
 -- 1) Drop function first (breaks dependency on types)
 DROP FUNCTION IF EXISTS api_get_simulation_new_v3(uuid);
 
--- 2) Drop types WITHOUT CASCADE (reuse types from detail if they exist, but drop/recreate for consistency)
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_scenario;
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_parameter_item;
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_parameter_item_detail;
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_scenario_mapping;
+-- 2) Drop types WITHOUT CASCADE (drop both old and new names for migration)
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_scenario CASCADE;
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_parameter_item CASCADE;
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_parameter_item_detail CASCADE;
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_scenario_mapping CASCADE;
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_scenario_full CASCADE;
 DROP TYPE IF EXISTS types.q_get_simulation_new_v3_persona;
 DROP TYPE IF EXISTS types.q_get_simulation_new_v3_document;
 DROP TYPE IF EXISTS types.q_get_simulation_new_v3_field;
@@ -77,7 +78,7 @@ CREATE TYPE types.q_get_simulation_new_v3_field AS (
     parameter_name text
 );
 
-CREATE TYPE types.q_get_simulation_new_v3_scenario_mapping AS (
+CREATE TYPE types.q_get_simulation_new_v3_scenario_full AS (
     scenario_id uuid,
     name text,
     description text,
@@ -157,7 +158,7 @@ RETURNS TABLE (
     videos types.q_get_simulation_new_v3_video[],
     parameters types.q_get_simulation_new_v3_parameter_item[],
     parameter_items types.q_get_simulation_new_v3_parameter_item_detail[],
-    scenarios_full types.q_get_simulation_new_v3_scenario_mapping[],
+    scenarios_full types.q_get_simulation_new_v3_scenario_full[],
     rubrics types.q_get_simulation_new_v3_rubric[],
     departments types.q_get_simulation_new_v3_department[],
     parameters_full types.q_get_simulation_new_v3_parameter[],
@@ -411,7 +412,7 @@ scenarios_full_data AS (
                  (SELECT sdd.document_ids FROM scenario_documents_data sdd WHERE sdd.scenario_id = vsl.id),
                  ARRAY[]::uuid[]
              )
-            )::types.q_get_simulation_new_v3_scenario_mapping
+            )::types.q_get_simulation_new_v3_scenario_full
             ORDER BY vsl.name
         ) as scenarios_full
     FROM valid_scenarios_list vsl
@@ -525,7 +526,7 @@ SELECT
     COALESCE(vd.videos, ARRAY[]::types.q_get_simulation_new_v3_video[]) as videos,
     COALESCE(pild.parameter_items, ARRAY[]::types.q_get_simulation_new_v3_parameter_item[]) as parameters,
     COALESCE(pild.parameter_item_details, ARRAY[]::types.q_get_simulation_new_v3_parameter_item_detail[]) as parameter_items,
-    COALESCE(sfd.scenarios_full, ARRAY[]::types.q_get_simulation_new_v3_scenario_mapping[]) as scenarios_full,
+    COALESCE(sfd.scenarios_full, ARRAY[]::types.q_get_simulation_new_v3_scenario_full[]) as scenarios_full,
     COALESCE(rd.rubrics, ARRAY[]::types.q_get_simulation_new_v3_rubric[]) as rubrics,
     COALESCE(dd.departments, ARRAY[]::types.q_get_simulation_new_v3_department[]) as departments,
     COALESCE(pfd.parameters, ARRAY[]::types.q_get_simulation_new_v3_parameter[]) as parameters_full,
