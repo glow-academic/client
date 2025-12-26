@@ -1,23 +1,60 @@
 -- Update persona with department links in a single transaction
--- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=instructions, $8=department_ids (nullable text array), $9=profile_id (uuid), $10=example_ids (nullable text array)
-WITH user_profile AS (
+-- Converted to function
+
+BEGIN;
+
+DROP FUNCTION IF EXISTS api_update_persona_v3(uuid, text, text, boolean, text, text, text, text[], uuid, text[]);
+
+CREATE OR REPLACE FUNCTION api_update_persona_v3(
+    persona_id uuid,
+    name text,
+    description text,
+    active boolean,
+    color text,
+    icon text,
+    instructions text,
+    department_ids text[],
+    profile_id uuid,
+    example_ids text[]
+)
+RETURNS TABLE (
+    persona_id uuid,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT
+        persona_id AS persona_id,
+        name AS name,
+        COALESCE(NULLIF(description, ''), '') AS description,
+        active AS active,
+        color AS color,
+        icon AS icon,
+        COALESCE(NULLIF(instructions, ''), '') AS instructions,
+        COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
+        profile_id AS profile_id,
+        COALESCE(example_ids, ARRAY[]::text[]) AS example_ids
+),
+user_profile AS (
     SELECT 
         p.role,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $9::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     -- Get persona's current active department links
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
     FROM persona_departments
-    WHERE persona_id = $1::uuid AND active = true
+    WHERE persona_id = (SELECT persona_id FROM params) AND active = true
 ),
 user_departments AS (
     -- Get user's departments
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
     FROM profile_departments
-    WHERE profile_id = $9::uuid AND active = true
+    WHERE profile_id = (SELECT profile_id FROM params) AND active = true
 ),
 validate_update_permissions AS (
     -- Validate department permissions for update operation
@@ -30,69 +67,61 @@ validate_update_permissions AS (
     CROSS JOIN object_current_departments ocd
     CROSS JOIN user_departments ud
 ),
+actor_profile AS (
+    SELECT 
+        x.profile_id,
+        up.actor_name
+    FROM params x
+    CROSS JOIN user_profile up
+),
 update_persona AS (
     UPDATE personas
     SET 
-        name = $2,
-        description = COALESCE($3, ''),
-        active = $4,
-        color = $5,
-        icon = $6,
-        instructions = COALESCE($7, ''),
+        name = x.name,
+        description = x.description,
+        active = x.active,
+        color = x.color,
+        icon = x.icon,
+        instructions = x.instructions,
         updated_at = NOW()
-    WHERE id = $1::uuid
-    RETURNING id::text as persona_id
+    FROM params x
+    WHERE id = x.persona_id
+    RETURNING id
 ),
 replace_departments AS (
     -- Delete all existing department links
-    DELETE FROM persona_departments WHERE persona_id = $1::uuid
+    DELETE FROM persona_departments WHERE persona_id = (SELECT persona_id FROM params)
 ),
 link_departments AS (
     -- Insert new department links if provided (array is never NULL, but may be empty)
     INSERT INTO persona_departments (persona_id, department_id, active, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        x.persona_id,
         dept_id::uuid,
         true,
         NOW(),
         NOW()
-    FROM UNNEST($8::text[]) as dept_id
-    WHERE COALESCE(array_length($8::text[], 1), 0) > 0
+    FROM params x
+    CROSS JOIN UNNEST(x.department_ids) as dept_id
+    WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
     ON CONFLICT (persona_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
-deactivate_parameters AS (
-    -- NOTE: parameter_personas table was dropped in migration 91
-    -- Parameters are now linked to personas via persona_parameter flag and persona_fields
-    -- This CTE is kept for compatibility but does nothing
-    SELECT 1 WHERE false
-),
-link_parameters AS (
-    -- NOTE: parameter_personas table was dropped in migration 91
-    -- Parameters are now linked to personas via persona_parameter flag and persona_fields
-    -- This CTE is kept for compatibility but does nothing
-    SELECT 1 WHERE false
-),
-backfill_persona_fields AS (
-    -- NOTE: parameter_personas table was dropped in migration 91
-    -- Parameters are now linked to personas via persona_parameter flag and persona_fields
-    -- This CTE is kept for compatibility but does nothing
-    SELECT 1 WHERE false
-),
 replace_examples AS (
     -- Delete all existing example links
     DELETE FROM persona_examples 
-    WHERE persona_id = $1::uuid
+    WHERE persona_id = (SELECT persona_id FROM params)
 ),
 examples_with_index AS (
     -- Prepare examples with their index
     SELECT 
         ex_text,
         ROW_NUMBER() OVER () - 1 as idx
-    FROM UNNEST($10::text[]) as ex_text
+    FROM params x
+    CROSS JOIN UNNEST(x.example_ids) as ex_text
     WHERE EXISTS (SELECT 1 FROM update_persona)
-      AND COALESCE(array_length($10::text[], 1), 0) > 0
+      AND COALESCE(array_length(x.example_ids, 1), 0) > 0
 ),
 existing_examples AS (
     -- Find existing examples by text
@@ -123,15 +152,19 @@ insert_examples AS (
     -- Link examples to persona via junction table
     INSERT INTO persona_examples (persona_id, example_id, idx, created_at)
     SELECT 
-        $1::uuid,
+        x.persona_id,
         ae.example_id,
         ewi.idx,
         NOW()
-    FROM examples_with_index ewi
+    FROM params x
+    CROSS JOIN examples_with_index ewi
     JOIN all_examples ae ON ae.example = ewi.ex_text
 )
 SELECT 
-    up.persona_id,
+    up.id as persona_id,
     ap.actor_name
 FROM update_persona up
-CROSS JOIN user_profile ap
+CROSS JOIN actor_profile ap
+$$;
+
+COMMIT;

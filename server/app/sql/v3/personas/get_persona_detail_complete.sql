@@ -1,19 +1,127 @@
 -- Get persona detail with agents, departments, and access control
--- Parameters: $1 = persona_id (uuid), $2 = profile_id (uuid)
+-- Converted to function with composite types
 
-WITH user_profile AS (
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_get_persona_detail_v3(uuid, uuid);
+
+-- 2) Drop types WITHOUT CASCADE
+DROP TYPE IF EXISTS types.q_get_persona_detail_v3_department;
+DROP TYPE IF EXISTS types.q_get_persona_detail_v3_agent;
+DROP TYPE IF EXISTS types.q_get_persona_detail_v3_parameter;
+DROP TYPE IF EXISTS types.q_get_persona_detail_v3_field;
+DROP TYPE IF EXISTS types.q_get_persona_detail_v3_example;
+DROP TYPE IF EXISTS types.q_get_persona_detail_v3_example_history_item;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_persona_detail_v3_department AS (
+    department_id uuid,
+    name text,
+    description text
+);
+
+CREATE TYPE types.q_get_persona_detail_v3_agent AS (
+    agent_id uuid,
+    name text,
+    description text,
+    roles text[]
+);
+
+CREATE TYPE types.q_get_persona_detail_v3_parameter AS (
+    parameter_id uuid,
+    name text,
+    description text,
+    numerical boolean,
+    document_parameter boolean,
+    persona_parameter boolean,
+    scenario_parameter boolean,
+    video_parameter boolean
+);
+
+CREATE TYPE types.q_get_persona_detail_v3_field AS (
+    field_id uuid,
+    name text,
+    description text,
+    parameter_id uuid,
+    parameter_name text
+);
+
+CREATE TYPE types.q_get_persona_detail_v3_example AS (
+    example_id uuid,
+    name text,
+    description text
+);
+
+CREATE TYPE types.q_get_persona_detail_v3_example_history_item AS (
+    example text,
+    department_ids text[]
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_persona_detail_v3(
+    persona_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    persona_exists boolean,
+    name text,
+    description text,
+    department_ids uuid[],
+    active boolean,
+    color text,
+    icon text,
+    instructions text,
+    in_use boolean,
+    scenario_count bigint,
+    can_edit boolean,
+    can_duplicate boolean,
+    can_delete boolean,
+    valid_department_ids uuid[],
+    valid_agent_ids uuid[],
+    valid_parameter_ids uuid[],
+    valid_parameter_item_ids uuid[],
+    linked_parameter_ids uuid[],
+    parameter_field_ids uuid[],
+    example_ids uuid[],
+    actor_name text,
+    departments types.q_get_persona_detail_v3_department[],
+    agents types.q_get_persona_detail_v3_agent[],
+    parameters types.q_get_persona_detail_v3_parameter[],
+    fields types.q_get_persona_detail_v3_field[],
+    examples types.q_get_persona_detail_v3_example[],
+    examples_history types.q_get_persona_detail_v3_example_history_item[]
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT persona_id AS persona_id,
+           profile_id AS profile_id
+),
+persona_exists_check AS (
+    SELECT EXISTS(
+        SELECT 1 FROM personas WHERE id = (SELECT persona_id FROM params)
+    )::boolean as persona_exists
+),
+user_profile AS (
     SELECT 
         p.role,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
+),
+user_departments AS (
+    SELECT department_id
+    FROM params x
+    JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 persona_departments_data AS (
     SELECT 
         pd.persona_id,
-        ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
+        ARRAY_AGG(pd.department_id ORDER BY pd.created_at) as department_ids
     FROM persona_departments pd
-    WHERE pd.persona_id = $1 AND pd.active = true
+    WHERE pd.persona_id = (SELECT persona_id FROM params) AND pd.active = true
     GROUP BY pd.persona_id
 ),
 persona_department_access_check AS (
@@ -25,18 +133,18 @@ persona_department_access_check AS (
                 SELECT 1 FROM persona_departments pd 
                 WHERE pd.persona_id = p.id 
                 AND pd.active = true 
-                AND pd.department_id IN (SELECT department_id FROM profile_departments pd2 WHERE pd2.profile_id = $2::uuid AND pd2.active = true)
+                AND pd.department_id IN (SELECT department_id FROM user_departments)
             ) THEN true
             WHEN NOT EXISTS (
                 SELECT 1 FROM persona_departments pd3 
                 WHERE pd3.persona_id = p.id 
                 AND pd3.active = true
-            ) THEN true  -- Cross-department resource
+            ) THEN true
             ELSE false
         END as has_access
-    FROM personas p
+    FROM params x
+    JOIN personas p ON p.id = x.persona_id
     CROSS JOIN user_profile up
-    WHERE p.id = $1
 ),
 persona_data AS (
     SELECT 
@@ -46,88 +154,118 @@ persona_data AS (
         p.color,
         p.icon,
         p.instructions,
-        NULL::text as text_agent_id,
-        NULL::text as voice_agent_id,
         COALESCE(pdd.department_ids, NULL) as department_ids
-    FROM personas p
+    FROM params x
+    JOIN personas p ON p.id = x.persona_id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
     INNER JOIN persona_department_access_check pdac ON pdac.persona_id = p.id AND pdac.has_access = true
-    WHERE p.id = $1
 ),
-valid_depts AS (
+department_mapping_data AS (
     SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                d.id::text,
-                jsonb_build_object(
-                    'name', d.title,
-                    'description', COALESCE(d.description, '')
-                )
-            ),
-            '{}'::jsonb
-        ) as dept_mapping,
-        array_agg(d.id::text ORDER BY d.title) as dept_ids
-    FROM departments d
+        d.id as department_id,
+        d.title as name,
+        COALESCE(d.description, '') as description
+    FROM params x
+    JOIN departments d ON d.active = true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = $2::uuid AND d.active = true
+    WHERE pd.profile_id = x.profile_id
 ),
-user_departments AS (
-    SELECT department_id
-    FROM profile_departments pd
-    WHERE pd.profile_id = $2::uuid AND pd.active = true
+valid_department_ids_data AS (
+    SELECT ARRAY_AGG(department_id ORDER BY name) as valid_department_ids
+    FROM department_mapping_data
 ),
-valid_agents AS (
-    -- Return empty mapping since personas no longer have agents
+agent_mapping_data AS (
     SELECT 
-        '{}'::jsonb as agent_mapping,
-        ARRAY[]::text[] as agent_ids
+        a.id as agent_id,
+        a.name,
+        COALESCE(a.description, '') as description,
+        ARRAY[a.role::text] as roles
+    FROM agents a
+    WHERE a.active = true
+    AND a.role IN ('simulation-text', 'simulation-voice')
+    AND (
+        EXISTS (
+            SELECT 1 FROM agent_departments ad 
+            WHERE ad.agent_id = a.id 
+            AND ad.active = true 
+            AND ad.department_id IN (SELECT department_id FROM user_departments)
+        )
+        OR NOT EXISTS (
+            SELECT 1 FROM agent_departments ad2 
+            WHERE ad2.agent_id = a.id 
+            AND ad2.active = true
+        )
+    )
+),
+valid_agent_ids_data AS (
+    SELECT ARRAY_AGG(agent_id) as valid_agent_ids
+    FROM agent_mapping_data
 ),
 usage_data AS (
     SELECT COUNT(*) as usage_count
-    FROM scenario_personas sp
-    WHERE sp.persona_id = $1 AND sp.active = true
-),
-profile_data AS (
-    SELECT 
-        up.role as user_role,
-        up.actor_name
-    FROM user_profile up
+    FROM params x
+    JOIN scenario_personas sp ON sp.persona_id = x.persona_id AND sp.active = true
 ),
 parameter_mapping_data AS (
-    -- Note: parameter_personas junction table removed - parameters no longer directly linked to personas
-    -- Return empty mapping since we can't determine which parameters are linked
     SELECT 
-        '{}'::jsonb as parameter_mapping,
-        ARRAY[]::text[] as parameter_ids
+        p.id as parameter_id,
+        p.name,
+        COALESCE(p.description, '') as description,
+        false as numerical,
+        COALESCE(p.document_parameter, false) as document_parameter,
+        COALESCE(p.persona_parameter, false) as persona_parameter,
+        COALESCE(p.scenario_parameter, false) as scenario_parameter,
+        COALESCE(p.video_parameter, false) as video_parameter
+    FROM parameters p
+    WHERE p.active = true AND p.persona_parameter = true
+),
+valid_parameter_ids_data AS (
+    SELECT ARRAY_AGG(parameter_id ORDER BY name) as valid_parameter_ids
+    FROM parameter_mapping_data
+),
+linked_parameter_ids_data AS (
+    SELECT ARRAY[]::uuid[] as linked_parameter_ids
 ),
 field_mapping_data AS (
-    -- Note: Since parameters are no longer linked to personas, return empty field mapping
-    -- Fields can still be linked to personas via persona_fields junction table
     SELECT 
-        '{}'::jsonb as field_mapping,
-        ARRAY[]::text[] as parameter_item_ids
+        f.id as field_id,
+        f.name,
+        COALESCE(f.description, '') as description,
+        pf.parameter_id,
+        p.name as parameter_name
+    FROM parameter_mapping_data pmd
+    JOIN parameter_fields pf ON pf.parameter_id = pmd.parameter_id AND pf.active = true
+    JOIN fields f ON f.id = pf.field_id AND f.active = true
+    JOIN parameters p ON p.id = pf.parameter_id
+    WHERE p.active = true
 ),
-persona_field_ids AS (
-    -- Get field IDs already assigned to this persona (if persona_fields table exists)
-    -- Note: persona_fields table may not exist, so we return empty array for now
-    -- When the table exists, this can be updated to query from it
-    SELECT ARRAY[]::text[] as field_ids
+valid_parameter_item_ids_data AS (
+    SELECT ARRAY_AGG(field_id ORDER BY name) as valid_parameter_item_ids
+    FROM field_mapping_data
+),
+parameter_field_ids_data AS (
+    SELECT ARRAY[]::uuid[] as parameter_field_ids
 ),
 persona_examples_data AS (
     SELECT 
-        COALESCE(ARRAY_AGG(e.id::text ORDER BY pe.idx), ARRAY[]::text[]) as example_ids,
-        COALESCE(jsonb_object_agg(
-            e.id::text,
-            jsonb_build_object('name', e.example, 'description', e.example)
-        ) FILTER (WHERE e.example IS NOT NULL), '{}'::jsonb) as example_mapping
-    FROM persona_examples pe
+        ARRAY_AGG(e.id ORDER BY pe.idx) as example_ids
+    FROM params x
+    JOIN persona_examples pe ON pe.persona_id = x.persona_id
     JOIN examples e ON e.id = pe.example_id
-    WHERE pe.persona_id = $1
+),
+example_mapping_data AS (
+    SELECT 
+        e.id as example_id,
+        e.example as name,
+        e.example as description
+    FROM params x
+    JOIN persona_examples pe ON pe.persona_id = x.persona_id
+    JOIN examples e ON e.id = pe.example_id
 ),
 accessible_personas AS (
-    -- Get personas accessible to the user (for examples history)
     SELECT DISTINCT p.id as persona_id
-    FROM personas p
+    FROM params x
+    JOIN personas p ON true
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
     CROSS JOIN user_profile up
     WHERE (
@@ -137,7 +275,6 @@ accessible_personas AS (
     )
 ),
 examples_with_departments AS (
-    -- Get examples with their department associations for history
     SELECT 
         e.example,
         COALESCE(
@@ -156,45 +293,113 @@ examples_with_departments AS (
 examples_history_data AS (
     SELECT COALESCE(
         (
-            SELECT jsonb_agg(
-                jsonb_build_object(
-                    'example', example,
-                    'department_ids', department_ids
-                )
-            )
-            FROM (
-                SELECT example, department_ids
-                FROM examples_with_departments
+            SELECT ARRAY_AGG(
+                (example, department_ids)::types.q_get_persona_detail_v3_example_history_item
                 ORDER BY example
-            ) sorted
+            )
+            FROM examples_with_departments
         ),
-        '[]'::jsonb
+        '{}'::types.q_get_persona_detail_v3_example_history_item[]
     ) as examples_history
+),
+permissions_data AS (
+    SELECT 
+        pd.department_ids,
+        ud.usage_count,
+        up.role as user_role,
+        CASE 
+            WHEN pd.department_ids IS NULL AND up.role != 'superadmin' THEN false
+            WHEN ud.usage_count > 0 THEN false
+            WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+            ELSE false
+        END as can_edit,
+        true as can_duplicate,
+        CASE 
+            WHEN pd.department_ids IS NULL AND up.role != 'superadmin' THEN false
+            WHEN ud.usage_count > 0 THEN false
+            WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+            ELSE false
+        END as can_delete
+    FROM persona_data pd
+    CROSS JOIN usage_data ud
+    CROSS JOIN user_profile up
 )
 SELECT 
-    p.*,
-    vd.dept_mapping,
-    vd.dept_ids as valid_department_ids,
-    COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
-    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
-    u.usage_count,
-    pr.user_role,
-    pr.actor_name,
-    COALESCE(pmd.parameter_mapping, '{}'::jsonb) as parameter_mapping,
-    COALESCE(pmd.parameter_ids, ARRAY[]::text[]) as linked_parameter_ids,
-    COALESCE(fmd.field_mapping, '{}'::jsonb) as field_mapping,
-    COALESCE(fmd.parameter_item_ids, ARRAY[]::text[]) as valid_parameter_item_ids,
-    COALESCE(pfi.field_ids, ARRAY[]::text[]) as parameter_field_ids,
-    COALESCE(ped.example_ids, ARRAY[]::text[]) as example_ids,
-    COALESCE(ped.example_mapping, '{}'::jsonb) as example_mapping,
-    COALESCE(ehd.examples_history, '[]'::jsonb) as examples_history
-FROM persona_data p
-CROSS JOIN valid_depts vd
-CROSS JOIN valid_agents va
-CROSS JOIN usage_data u
-CROSS JOIN profile_data pr
-CROSS JOIN parameter_mapping_data pmd
-CROSS JOIN field_mapping_data fmd
-CROSS JOIN persona_field_ids pfi
+    (SELECT persona_exists FROM persona_exists_check) as persona_exists,
+    pd.name,
+    pd.description,
+    pd.department_ids,
+    pd.active,
+    pd.color,
+    pd.icon,
+    pd.instructions,
+    CASE WHEN COALESCE(ud.usage_count, 0) > 0 THEN true ELSE false END as in_use,
+    COALESCE(ud.usage_count, 0) as scenario_count,
+    perm.can_edit,
+    perm.can_duplicate,
+    perm.can_delete,
+    COALESCE(vdid.valid_department_ids, ARRAY[]::uuid[]) as valid_department_ids,
+    COALESCE(vaid.valid_agent_ids, ARRAY[]::uuid[]) as valid_agent_ids,
+    COALESCE(vpid.valid_parameter_ids, ARRAY[]::uuid[]) as valid_parameter_ids,
+    COALESCE(vpiid.valid_parameter_item_ids, ARRAY[]::uuid[]) as valid_parameter_item_ids,
+    COALESCE(lpid.linked_parameter_ids, ARRAY[]::uuid[]) as linked_parameter_ids,
+    COALESCE(pfid.parameter_field_ids, ARRAY[]::uuid[]) as parameter_field_ids,
+    COALESCE(ped.example_ids, ARRAY[]::uuid[]) as example_ids,
+    up.actor_name::text as actor_name,
+    -- Aggregate departments separately
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dmd.department_id, dmd.name, dmd.description)::types.q_get_persona_detail_v3_department
+            ORDER BY dmd.name
+        ) FROM department_mapping_data dmd),
+        '{}'::types.q_get_persona_detail_v3_department[]
+    ) as departments,
+    -- Aggregate agents separately
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (amd.agent_id, amd.name, amd.description, amd.roles)::types.q_get_persona_detail_v3_agent
+            ORDER BY amd.name
+        ) FROM agent_mapping_data amd),
+        '{}'::types.q_get_persona_detail_v3_agent[]
+    ) as agents,
+    -- Aggregate parameters separately
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (pmd.parameter_id, pmd.name, pmd.description, pmd.numerical, 
+             pmd.document_parameter, pmd.persona_parameter, pmd.scenario_parameter, pmd.video_parameter)::types.q_get_persona_detail_v3_parameter
+            ORDER BY pmd.name
+        ) FROM parameter_mapping_data pmd),
+        '{}'::types.q_get_persona_detail_v3_parameter[]
+    ) as parameters,
+    -- Aggregate fields separately
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (fmd.field_id, fmd.name, fmd.description, fmd.parameter_id, fmd.parameter_name)::types.q_get_persona_detail_v3_field
+            ORDER BY fmd.name
+        ) FROM field_mapping_data fmd),
+        '{}'::types.q_get_persona_detail_v3_field[]
+    ) as fields,
+    -- Aggregate examples separately
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (emd.example_id, emd.name, emd.description)::types.q_get_persona_detail_v3_example
+            ORDER BY emd.name
+        ) FROM example_mapping_data emd),
+        '{}'::types.q_get_persona_detail_v3_example[]
+    ) as examples,
+    COALESCE((SELECT examples_history FROM examples_history_data), '{}'::types.q_get_persona_detail_v3_example_history_item[]) as examples_history
+FROM persona_data pd
+CROSS JOIN usage_data ud
+CROSS JOIN user_profile up
+CROSS JOIN permissions_data perm
+CROSS JOIN valid_department_ids_data vdid
+CROSS JOIN valid_agent_ids_data vaid
+CROSS JOIN valid_parameter_ids_data vpid
+CROSS JOIN valid_parameter_item_ids_data vpiid
+CROSS JOIN linked_parameter_ids_data lpid
+CROSS JOIN parameter_field_ids_data pfid
 CROSS JOIN persona_examples_data ped
 CROSS JOIN examples_history_data ehd
+$$;
+
+COMMIT;

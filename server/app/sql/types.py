@@ -726,10 +726,10 @@ class GetAuthDetailAuthItemsItem(BaseModel):
 
 class GetAuthDetailSqlRow(BaseModel):
 
-    active: bool
-    can_edit: bool
     description: str
+    can_edit: bool
     actor_name: str
+    active: bool
     name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
@@ -740,10 +740,10 @@ class GetAuthDetailApiRequest(BaseModel):
 
 class GetAuthDetailApiResponse(BaseModel):
 
-    active: bool
-    can_edit: bool
     description: str
+    can_edit: bool
     actor_name: str
+    active: bool
     name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
@@ -3252,8 +3252,8 @@ class CreatePersonaSqlParams(BaseModel):
 
 class CreatePersonaSqlRow(BaseModel):
 
-    persona_id: str
-    actor_name: str
+    persona_id: UUID | None = None
+    actor_name: str | None = None
 
 class CreatePersonaApiRequest(BaseModel):
 
@@ -3268,8 +3268,8 @@ class CreatePersonaApiRequest(BaseModel):
 
 class CreatePersonaApiResponse(BaseModel):
 
-    persona_id: str
-    actor_name: str
+    persona_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -3288,10 +3288,10 @@ class DeletePersonaSqlParams(BaseModel):
 
 class DeletePersonaSqlRow(BaseModel):
 
-    usage_count: int
-    name: str
-    deleted: bool
-    actor_name: str
+    usage_count: int | None = None
+    name: str | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
 
 class DeletePersonaApiRequest(BaseModel):
 
@@ -3299,10 +3299,41 @@ class DeletePersonaApiRequest(BaseModel):
 
 class DeletePersonaApiResponse(BaseModel):
 
-    usage_count: int
-    name: str
-    deleted: bool
-    actor_name: str
+    usage_count: int | None = None
+    name: str | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: duplicate_persona
+
+class DuplicatePersonaSqlParams(BaseModel):
+
+    persona_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.persona_id,
+            self.profile_id,
+        )
+
+class DuplicatePersonaSqlRow(BaseModel):
+
+    new_persona_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicatePersonaApiRequest(BaseModel):
+
+    persona_id: UUID
+
+class DuplicatePersonaApiResponse(BaseModel):
+
+    new_persona_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -3319,32 +3350,93 @@ class GetPersonaDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
+class QGetPersonaDetailV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    roles: list[str] | None
+
+
+
+
+class QGetPersonaDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetPersonaDetailV3Example(BaseModel):
+
+    example_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetPersonaDetailV3ExampleHistoryItem(BaseModel):
+
+    example: str | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetPersonaDetailV3Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+    parameter_name: str | None
+
+
+
+
+class QGetPersonaDetailV3Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    numerical: bool | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+    scenario_parameter: bool | None
+    video_parameter: bool | None
+
 class GetPersonaDetailSqlRow(BaseModel):
 
-    name: str
-    description: str
-    active: bool
-    color: str
-    icon: str
-    instructions: str
-    text_agent_id: str
-    voice_agent_id: str
-    department_ids: list[str] | None = None
-    dept_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    usage_count: int
-    user_role: str
-    actor_name: str
-    parameter_mapping: dict[str, Any]
-    linked_parameter_ids: list[str]
-    field_mapping: dict[str, Any]
-    valid_parameter_item_ids: list[str]
-    parameter_field_ids: list[str]
-    example_ids: list[str]
-    example_mapping: dict[str, Any]
-    examples_history: dict[str, Any]
+    persona_exists: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    active: bool | None = None
+    color: str | None = None
+    icon: str | None = None
+    instructions: str | None = None
+    in_use: bool | None = None
+    scenario_count: int | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_agent_ids: list[UUID] | None = None
+    valid_parameter_ids: list[UUID] | None = None
+    valid_parameter_item_ids: list[UUID] | None = None
+    linked_parameter_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    actor_name: str | None = None
+    departments: list[QGetPersonaDetailV3Department] | None = None
+    agents: list[QGetPersonaDetailV3Agent] | None = None
+    parameters: list[QGetPersonaDetailV3Parameter] | None = None
+    fields: list[QGetPersonaDetailV3Field] | None = None
+    examples: list[QGetPersonaDetailV3Example] | None = None
+    examples_history: list[QGetPersonaDetailV3ExampleHistoryItem] | None = None
 
 class GetPersonaDetailApiRequest(BaseModel):
 
@@ -3352,30 +3444,33 @@ class GetPersonaDetailApiRequest(BaseModel):
 
 class GetPersonaDetailApiResponse(BaseModel):
 
-    name: str
-    description: str
-    active: bool
-    color: str
-    icon: str
-    instructions: str
-    text_agent_id: str
-    voice_agent_id: str
-    department_ids: list[str] | None = None
-    dept_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    usage_count: int
-    user_role: str
-    actor_name: str
-    parameter_mapping: dict[str, Any]
-    linked_parameter_ids: list[str]
-    field_mapping: dict[str, Any]
-    valid_parameter_item_ids: list[str]
-    parameter_field_ids: list[str]
-    example_ids: list[str]
-    example_mapping: dict[str, Any]
-    examples_history: dict[str, Any]
+    persona_exists: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    active: bool | None = None
+    color: str | None = None
+    icon: str | None = None
+    instructions: str | None = None
+    in_use: bool | None = None
+    scenario_count: int | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_agent_ids: list[UUID] | None = None
+    valid_parameter_ids: list[UUID] | None = None
+    valid_parameter_item_ids: list[UUID] | None = None
+    linked_parameter_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    actor_name: str | None = None
+    departments: list[QGetPersonaDetailV3Department] | None = None
+    agents: list[QGetPersonaDetailV3Agent] | None = None
+    parameters: list[QGetPersonaDetailV3Parameter] | None = None
+    fields: list[QGetPersonaDetailV3Field] | None = None
+    examples: list[QGetPersonaDetailV3Example] | None = None
+    examples_history: list[QGetPersonaDetailV3ExampleHistoryItem] | None = None
 
 
 
@@ -3390,27 +3485,60 @@ class GetPersonaNewSqlParams(BaseModel):
             self.profile_id,
         )
 
+class QGetPersonaNewV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    roles: list[str] | None
+
+
+
+
+class QGetPersonaNewV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetPersonaNewV3Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+    parameter_name: str | None
+
+
+
+
+class QGetPersonaNewV3Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    numerical: bool | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+    scenario_parameter: bool | None
+    video_parameter: bool | None
+
 class GetPersonaNewSqlRow(BaseModel):
 
-    name: str
-    description: str
-    active: bool
-    color: str
-    icon: str
-    instructions: str
-    department_ids: list[str] | None = None
-    dept_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    usage_count: int
-    user_role: str
-    primary_department_id: str
-    parameter_mapping: dict[str, Any]
-    valid_parameter_ids: list[str]
-    field_mapping: dict[str, Any]
-    valid_parameter_item_ids: list[str]
-    actor_name: str
+    actor_name: str | None = None
+    user_role: str | None = None
+    primary_department_id: UUID | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_agent_ids: list[UUID] | None = None
+    valid_parameter_ids: list[UUID] | None = None
+    valid_parameter_item_ids: list[UUID] | None = None
+    departments: list[QGetPersonaNewV3Department] | None = None
+    agents: list[QGetPersonaNewV3Agent] | None = None
+    parameters: list[QGetPersonaNewV3Parameter] | None = None
+    fields: list[QGetPersonaNewV3Field] | None = None
 
 class GetPersonaNewApiRequest(BaseModel):
 
@@ -3418,25 +3546,106 @@ class GetPersonaNewApiRequest(BaseModel):
 
 class GetPersonaNewApiResponse(BaseModel):
 
-    name: str
-    description: str
-    active: bool
-    color: str
-    icon: str
-    instructions: str
-    department_ids: list[str] | None = None
-    dept_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    usage_count: int
-    user_role: str
-    primary_department_id: str
-    parameter_mapping: dict[str, Any]
-    valid_parameter_ids: list[str]
-    field_mapping: dict[str, Any]
-    valid_parameter_item_ids: list[str]
-    actor_name: str
+    actor_name: str | None = None
+    user_role: str | None = None
+    primary_department_id: UUID | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_agent_ids: list[UUID] | None = None
+    valid_parameter_ids: list[UUID] | None = None
+    valid_parameter_item_ids: list[UUID] | None = None
+    departments: list[QGetPersonaNewV3Department] | None = None
+    agents: list[QGetPersonaNewV3Agent] | None = None
+    parameters: list[QGetPersonaNewV3Parameter] | None = None
+    fields: list[QGetPersonaNewV3Field] | None = None
+
+
+
+# Generated from: get_personas_list
+
+class GetPersonasListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListPersonasV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    roles: list[str] | None
+
+
+
+
+class QListPersonasV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListPersonasV3Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+    department_ids: list[str] | None
+    scenario_ids: list[UUID] | None
+    agent_id: UUID | None
+    agent_name: str | None
+    model_id: UUID | None
+    model_name: str | None
+    reasoning: str | None
+    temperature: float | None
+    temperature_display: str | None
+    active: bool | None
+    is_inactive: bool | None
+    num_scenarios: int | None
+    can_edit: bool | None
+    can_duplicate: bool | None
+    can_delete: bool | None
+    updated_at: str | None
+
+
+
+
+class QListPersonasV3Scenario(BaseModel):
+
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    persona_ids: list[UUID] | None
+    document_ids: list[UUID] | None
+    parameter_item_ids: list[UUID] | None
+
+class GetPersonasListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    personas: list[QListPersonasV3Persona] | None = None
+    scenarios: list[QListPersonasV3Scenario] | None = None
+    agents: list[QListPersonasV3Agent] | None = None
+    departments: list[QListPersonasV3Department] | None = None
+
+class GetPersonasListApiRequest(BaseModel):
+
+    pass
+
+class GetPersonasListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    personas: list[QListPersonasV3Persona] | None = None
+    scenarios: list[QListPersonasV3Scenario] | None = None
+    agents: list[QListPersonasV3Agent] | None = None
+    departments: list[QListPersonasV3Department] | None = None
 
 
 
@@ -3444,7 +3653,7 @@ class GetPersonaNewApiResponse(BaseModel):
 
 class UpdatePersonaSqlParams(BaseModel):
 
-    personaId: UUID
+    persona_id: UUID
     name: str
     description: str
     active: bool
@@ -3457,7 +3666,7 @@ class UpdatePersonaSqlParams(BaseModel):
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.personaId,
+            self.persona_id,
             self.name,
             self.description,
             self.active,
@@ -3471,12 +3680,12 @@ class UpdatePersonaSqlParams(BaseModel):
 
 class UpdatePersonaSqlRow(BaseModel):
 
-    persona_id: str
-    actor_name: str
+    persona_id: UUID | None = None
+    actor_name: str | None = None
 
 class UpdatePersonaApiRequest(BaseModel):
 
-    personaId: UUID
+    persona_id: UUID
     name: str
     description: str
     active: bool
@@ -3488,8 +3697,8 @@ class UpdatePersonaApiRequest(BaseModel):
 
 class UpdatePersonaApiResponse(BaseModel):
 
-    persona_id: str
-    actor_name: str
+    persona_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -5898,6 +6107,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeletePersonaApiRequest",
         "DeletePersonaApiResponse",
     ),
+    "app/sql/v3/personas/duplicate_persona_complete.sql": (
+        "DuplicatePersonaSqlParams",
+        "DuplicatePersonaSqlRow",
+        "DuplicatePersonaApiRequest",
+        "DuplicatePersonaApiResponse",
+    ),
     "app/sql/v3/personas/get_persona_detail_complete.sql": (
         "GetPersonaDetailSqlParams",
         "GetPersonaDetailSqlRow",
@@ -5909,6 +6124,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaNewSqlRow",
         "GetPersonaNewApiRequest",
         "GetPersonaNewApiResponse",
+    ),
+    "app/sql/v3/personas/get_personas_list_complete.sql": (
+        "GetPersonasListSqlParams",
+        "GetPersonasListSqlRow",
+        "GetPersonasListApiRequest",
+        "GetPersonasListApiResponse",
     ),
     "app/sql/v3/personas/update_persona_complete.sql": (
         "UpdatePersonaSqlParams",
@@ -6513,12 +6734,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/personas/duplicate_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/personas/get_persona_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/personas/get_persona_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/personas/get_personas_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload

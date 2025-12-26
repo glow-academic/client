@@ -1,30 +1,20 @@
 """Persona delete endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db
+from app.sql.types import (DeletePersonaApiRequest, DeletePersonaApiResponse,
+                           DeletePersonaSqlParams, DeletePersonaSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DeletePersonaRequest(BaseModel):
-    """Request to delete persona."""
-
-    personaId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DeletePersonaResponse(BaseModel):
-    """Response from delete persona."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/personas/delete_persona_complete.sql"
 
 
 router = APIRouter()
@@ -32,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/delete",
-    response_model=DeletePersonaResponse,
+    response_model=DeletePersonaApiResponse,
     dependencies=[
         audit_activity(
             "persona.deleted", "{{ actor.name }} deleted persona '{{ persona.name }}'"
@@ -40,15 +30,15 @@ router = APIRouter()
     ],
 )
 async def delete_persona(
-    request: DeletePersonaRequest,
+    request: DeletePersonaApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DeletePersonaResponse:
+) -> DeletePersonaApiResponse:
     """Delete a persona."""
     tags = ["personas"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -60,43 +50,55 @@ async def delete_persona(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            # Delete persona with usage check and name fetch (single query)
-            sql_query = load_sql("app/sql/v3/personas/delete_persona_complete.sql")
-            sql_params = (request.personaId, profile_id)
-            result = await conn.fetchrow(sql_query, request.personaId, profile_id)
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = DeletePersonaSqlParams(
+                persona_id=request.personaId,
+                profile_id=profile_id,
+            )
+            sql_params = params.to_tuple()
+
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                DeletePersonaSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
             if not result:
                 raise ValueError("Failed to check persona usage")
 
-            usage_count = result.get("usage_count", 0)
+            usage_count = result.usage_count or 0
             if usage_count > 0:
                 raise ValueError("Cannot delete persona that is in use by scenarios")
 
-            if not result.get("deleted"):
+            if not result.deleted:
                 raise ValueError(f"Persona not found: {request.personaId}")
 
-            persona_name = result.get("name", "Unknown")
-            actor_name = result.get("actor_name")  # From SQL query
+            persona_name = result.name or "Unknown"
 
             # Set audit context with data from SQL query
-            if actor_name:
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
+                    actor={"name": result.actor_name, "id": profile_id},
                     persona={"name": persona_name, "id": request.personaId},
                 )
 
-        result_data = DeletePersonaResponse(
-            success=True,
-            message=f"Persona '{persona_name}' deleted successfully",
-        )
+        # Convert SQL result to API response
+        api_response = DeletePersonaApiResponse.model_validate({
+            "success": True,
+            "message": f"Persona '{persona_name}' deleted successfully",
+        })
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

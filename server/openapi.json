@@ -1998,7 +1998,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PersonasFilters"
+                "$ref": "#/components/schemas/GetPersonasListApiRequest"
               }
             }
           }
@@ -2009,7 +2009,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PersonasListResponse"
+                  "$ref": "#/components/schemas/GetPersonasListApiResponse"
                 }
               }
             }
@@ -2079,7 +2079,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PersonaDetailRequest"
+                "$ref": "#/components/schemas/GetPersonaDetailApiRequest"
               }
             }
           }
@@ -2090,7 +2090,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__personas__detail__PersonaDetailResponse"
+                  "$ref": "#/components/schemas/GetPersonaDetailApiResponse"
                 }
               }
             }
@@ -2160,7 +2160,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PersonaNewRequest"
+                "$ref": "#/components/schemas/GetPersonaNewApiRequest"
               }
             }
           }
@@ -2171,7 +2171,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__personas__new__PersonaDetailResponse"
+                  "$ref": "#/components/schemas/GetPersonaNewApiResponse"
                 }
               }
             }
@@ -2241,7 +2241,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreatePersonaRequest"
+                "$ref": "#/components/schemas/CreatePersonaApiRequest"
               }
             }
           }
@@ -2252,7 +2252,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreatePersonaResponse"
+                  "$ref": "#/components/schemas/CreatePersonaApiResponse"
                 }
               }
             }
@@ -2322,7 +2322,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdatePersonaRequest"
+                "$ref": "#/components/schemas/UpdatePersonaApiRequest"
               }
             }
           }
@@ -2333,7 +2333,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdatePersonaResponse"
+                  "$ref": "#/components/schemas/UpdatePersonaApiResponse"
                 }
               }
             }
@@ -2403,7 +2403,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DuplicatePersonaRequest"
+                "$ref": "#/components/schemas/DuplicatePersonaApiRequest"
               }
             }
           }
@@ -2414,7 +2414,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DuplicatePersonaResponse"
+                  "$ref": "#/components/schemas/DuplicatePersonaApiResponse"
                 }
               }
             }
@@ -2484,7 +2484,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeletePersonaRequest"
+                "$ref": "#/components/schemas/DeletePersonaApiRequest"
               }
             }
           }
@@ -2495,7 +2495,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeletePersonaResponse"
+                  "$ref": "#/components/schemas/DeletePersonaApiResponse"
                 }
               }
             }
@@ -23389,7 +23389,7 @@
           },
           "personas": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__attempts__full__PersonaItem"
+              "$ref": "#/components/schemas/PersonaItem"
             },
             "type": "array",
             "title": "Personas",
@@ -25133,36 +25133,15 @@
         "title": "CreateParameterResponse",
         "description": "Response from create parameter."
       },
-      "CreatePersonaRequest": {
+      "CreatePersonaApiRequest": {
         "properties": {
           "name": {
             "type": "string",
             "title": "Name"
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
           },
           "active": {
             "type": "boolean",
@@ -25180,32 +25159,18 @@
             "type": "string",
             "title": "Instructions"
           },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
           },
           "example_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Example Ids"
           }
         },
@@ -25213,40 +25178,43 @@
         "required": [
           "name",
           "description",
-          "department_ids",
           "active",
           "color",
           "icon",
           "instructions",
-          "parameter_ids",
+          "department_ids",
           "example_ids"
         ],
-        "title": "CreatePersonaRequest",
-        "description": "Request to create a persona."
+        "title": "CreatePersonaApiRequest"
       },
-      "CreatePersonaResponse": {
+      "CreatePersonaApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
           },
-          "personaId": {
-            "type": "string",
-            "title": "Personaid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "personaId",
-          "message"
-        ],
-        "title": "CreatePersonaResponse",
-        "description": "Response from create persona."
+        "title": "CreatePersonaApiResponse"
       },
       "CreatePracticeScenarioErrorPayload": {
         "properties": {
@@ -26833,6 +26801,30 @@
         "title": "DataPoint",
         "description": "Individual data point."
       },
+      "DebugInfoItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "content"
+        ],
+        "title": "DebugInfoItem",
+        "description": "Debug information item."
+      },
       "DecryptKeyRequest": {
         "properties": {
           "keyId": {
@@ -27300,38 +27292,69 @@
         "title": "DeleteParameterResponse",
         "description": "Response from delete parameter."
       },
-      "DeletePersonaRequest": {
+      "DeletePersonaApiRequest": {
         "properties": {
-          "personaId": {
+          "persona_id": {
             "type": "string",
-            "title": "Personaid"
+            "format": "uuid",
+            "title": "Persona Id"
           }
         },
         "type": "object",
         "required": [
-          "personaId"
+          "persona_id"
         ],
-        "title": "DeletePersonaRequest",
-        "description": "Request to delete persona."
+        "title": "DeletePersonaApiRequest"
       },
-      "DeletePersonaResponse": {
+      "DeletePersonaApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Count"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeletePersonaResponse",
-        "description": "Response from delete persona."
+        "title": "DeletePersonaApiResponse"
       },
       "DeleteProfileRequest": {
         "properties": {
@@ -28619,43 +28642,59 @@
         "title": "DuplicateParameterResponse",
         "description": "Response from duplicate parameter."
       },
-      "DuplicatePersonaRequest": {
+      "DuplicatePersonaApiRequest": {
         "properties": {
-          "personaId": {
+          "persona_id": {
             "type": "string",
-            "title": "Personaid"
+            "format": "uuid",
+            "title": "Persona Id"
           }
         },
         "type": "object",
         "required": [
-          "personaId"
+          "persona_id"
         ],
-        "title": "DuplicatePersonaRequest",
-        "description": "Request to duplicate persona."
+        "title": "DuplicatePersonaApiRequest"
       },
-      "DuplicatePersonaResponse": {
+      "DuplicatePersonaApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "new_persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Persona Id"
           },
-          "personaId": {
-            "type": "string",
-            "title": "Personaid"
+          "original_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Name"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "personaId",
-          "message"
-        ],
-        "title": "DuplicatePersonaResponse",
-        "description": "Response from duplicate persona."
+        "title": "DuplicatePersonaApiResponse"
       },
       "DuplicateRubricRequest": {
         "properties": {
@@ -30045,53 +30084,6 @@
         ],
         "title": "EvalsListResponse",
         "description": "Response for evals list endpoint."
-      },
-      "ExampleMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ExampleMappingItem",
-        "description": "Example mapping item."
-      },
-      "ExampleWithDepartments": {
-        "properties": {
-          "example": {
-            "type": "string",
-            "title": "Example"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "example"
-        ],
-        "title": "ExampleWithDepartments",
-        "description": "Example with department associations for history."
       },
       "ExportRequest": {
         "properties": {
@@ -32199,6 +32191,612 @@
         },
         "type": "object",
         "title": "GetCohortsListApiResponse"
+      },
+      "GetPersonaDetailApiRequest": {
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Persona Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_id"
+        ],
+        "title": "GetPersonaDetailApiRequest"
+      },
+      "GetPersonaDetailApiResponse": {
+        "properties": {
+          "persona_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Exists"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "in_use": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Use"
+          },
+          "scenario_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Count"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "valid_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Agent Ids"
+          },
+          "valid_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Ids"
+          },
+          "valid_parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Item Ids"
+          },
+          "linked_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Parameter Ids"
+          },
+          "parameter_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Field Ids"
+          },
+          "example_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Ids"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaDetailV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaDetailV3Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaDetailV3Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaDetailV3Field"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "examples": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaDetailV3Example"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Examples"
+          },
+          "examples_history": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaDetailV3ExampleHistoryItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Examples History"
+          }
+        },
+        "type": "object",
+        "title": "GetPersonaDetailApiResponse"
+      },
+      "GetPersonaNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetPersonaNewApiRequest"
+      },
+      "GetPersonaNewApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Role"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "valid_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Agent Ids"
+          },
+          "valid_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Ids"
+          },
+          "valid_parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Item Ids"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaNewV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaNewV3Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaNewV3Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaNewV3Field"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          }
+        },
+        "type": "object",
+        "title": "GetPersonaNewApiResponse"
+      },
+      "GetPersonasListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetPersonasListApiRequest"
+      },
+      "GetPersonasListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListPersonasV3Persona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          },
+          "scenarios": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListPersonasV3Scenario"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarios"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListPersonasV3Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListPersonasV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          }
+        },
+        "type": "object",
+        "title": "GetPersonasListApiResponse"
       },
       "GradeItem": {
         "properties": {
@@ -36096,25 +36694,45 @@
         ],
         "title": "ParametersListResponse"
       },
-      "PersonaDetailRequest": {
+      "PersonaItem": {
         "properties": {
-          "personaId": {
+          "id": {
             "type": "string",
-            "title": "Personaid"
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
           }
         },
         "type": "object",
         "required": [
-          "personaId"
+          "id",
+          "name"
         ],
-        "title": "PersonaDetailRequest",
-        "description": "Request to get persona details."
-      },
-      "PersonaNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "PersonaNewRequest",
-        "description": "Request to get default persona details."
+        "title": "PersonaItem"
       },
       "PersonaPerformanceData": {
         "properties": {
@@ -36301,86 +36919,6 @@
         ],
         "title": "PersonaTrendData",
         "description": "Persona trend data point."
-      },
-      "PersonasFilters": {
-        "properties": {},
-        "type": "object",
-        "title": "PersonasFilters",
-        "description": "Filters for personas list request."
-      },
-      "PersonasListResponse": {
-        "properties": {
-          "personas": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__personas__list__PersonaItem"
-            },
-            "type": "array",
-            "title": "Personas"
-          },
-          "scenario_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__list__ScenarioMappingItem"
-            },
-            "type": "object",
-            "title": "Scenario Mapping"
-          },
-          "agent_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__list__AgentMappingItem"
-            },
-            "type": "object",
-            "title": "Agent Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__list__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "scenario_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Scenario Options"
-          },
-          "agent_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Agent Options"
-          },
-          "department_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Department Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "personas",
-          "scenario_mapping",
-          "agent_mapping",
-          "department_mapping",
-          "scenario_options",
-          "agent_options",
-          "department_options"
-        ],
-        "title": "PersonasListResponse",
-        "description": "Response for personas list endpoint."
       },
       "PracticeFilters": {
         "properties": {
@@ -40103,6 +40641,646 @@
         ],
         "title": "QGetCohortSearchV3Department"
       },
+      "QGetPersonaDetailV3Agent": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "name",
+          "description",
+          "roles"
+        ],
+        "title": "QGetPersonaDetailV3Agent"
+      },
+      "QGetPersonaDetailV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetPersonaDetailV3Department"
+      },
+      "QGetPersonaDetailV3Example": {
+        "properties": {
+          "example_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "example_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetPersonaDetailV3Example"
+      },
+      "QGetPersonaDetailV3ExampleHistoryItem": {
+        "properties": {
+          "example": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "example",
+          "department_ids"
+        ],
+        "title": "QGetPersonaDetailV3ExampleHistoryItem"
+      },
+      "QGetPersonaDetailV3Field": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "QGetPersonaDetailV3Field"
+      },
+      "QGetPersonaDetailV3Parameter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "numerical": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Parameter"
+          },
+          "video_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Parameter"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter",
+          "scenario_parameter",
+          "video_parameter"
+        ],
+        "title": "QGetPersonaDetailV3Parameter"
+      },
+      "QGetPersonaNewV3Agent": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "name",
+          "description",
+          "roles"
+        ],
+        "title": "QGetPersonaNewV3Agent"
+      },
+      "QGetPersonaNewV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetPersonaNewV3Department"
+      },
+      "QGetPersonaNewV3Field": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "parameter_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "name",
+          "description",
+          "parameter_id",
+          "parameter_name"
+        ],
+        "title": "QGetPersonaNewV3Field"
+      },
+      "QGetPersonaNewV3Parameter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "numerical": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numerical"
+          },
+          "document_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Parameter"
+          },
+          "video_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Parameter"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "name",
+          "description",
+          "numerical",
+          "document_parameter",
+          "persona_parameter",
+          "scenario_parameter",
+          "video_parameter"
+        ],
+        "title": "QGetPersonaNewV3Parameter"
+      },
       "QListAgentsV3Agent": {
         "properties": {
           "agent_id": {
@@ -40743,6 +41921,486 @@
           "scenario_ids"
         ],
         "title": "QListCohortsV3Simulation"
+      },
+      "QListPersonasV3Agent": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "name",
+          "description",
+          "roles"
+        ],
+        "title": "QListPersonasV3Agent"
+      },
+      "QListPersonasV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QListPersonasV3Department"
+      },
+      "QListPersonasV3Persona": {
+        "properties": {
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "agent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Name"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "temperature_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Display"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "is_inactive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Inactive"
+          },
+          "num_scenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Scenarios"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_id",
+          "name",
+          "description",
+          "color",
+          "icon",
+          "department_ids",
+          "scenario_ids",
+          "agent_id",
+          "agent_name",
+          "model_id",
+          "model_name",
+          "reasoning",
+          "temperature",
+          "temperature_display",
+          "active",
+          "is_inactive",
+          "num_scenarios",
+          "can_edit",
+          "can_duplicate",
+          "can_delete",
+          "updated_at"
+        ],
+        "title": "QListPersonasV3Persona"
+      },
+      "QListPersonasV3Scenario": {
+        "properties": {
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "name",
+          "description",
+          "active",
+          "persona_ids",
+          "document_ids",
+          "parameter_item_ids"
+        ],
+        "title": "QListPersonasV3Scenario"
       },
       "QuestionItem-Input": {
         "properties": {
@@ -42906,7 +44564,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/app__api__v3__pricing__runs__DebugInfoItem"
+                  "$ref": "#/components/schemas/DebugInfoItem"
                 },
                 "type": "array"
               },
@@ -49332,40 +50990,20 @@
         "title": "UpdateParameterResponse",
         "description": "Response from update parameter."
       },
-      "UpdatePersonaRequest": {
+      "UpdatePersonaApiRequest": {
         "properties": {
-          "personaId": {
+          "persona_id": {
             "type": "string",
-            "title": "Personaid"
+            "format": "uuid",
+            "title": "Persona Id"
           },
           "name": {
             "type": "string",
             "title": "Name"
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
           },
           "active": {
             "type": "boolean",
@@ -49383,69 +51021,63 @@
             "type": "string",
             "title": "Instructions"
           },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
           },
           "example_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Example Ids"
           }
         },
         "type": "object",
         "required": [
-          "personaId",
+          "persona_id",
           "name",
           "description",
-          "department_ids",
           "active",
           "color",
           "icon",
           "instructions",
-          "parameter_ids",
+          "department_ids",
           "example_ids"
         ],
-        "title": "UpdatePersonaRequest",
-        "description": "Request to update persona."
+        "title": "UpdatePersonaApiRequest"
       },
-      "UpdatePersonaResponse": {
+      "UpdatePersonaApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdatePersonaResponse",
-        "description": "Response from update persona."
+        "title": "UpdatePersonaApiResponse"
       },
       "UpdateProfileRequest": {
         "properties": {
@@ -51279,46 +52911,6 @@
           "completed"
         ],
         "title": "MessageItem"
-      },
-      "app__api__v3__attempts__full__PersonaItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
-        "title": "PersonaItem"
       },
       "app__api__v3__attempts__full__ScenarioItem": {
         "properties": {
@@ -55441,1020 +57033,6 @@
         "title": "ScenarioMappingItem",
         "description": "Scenario mapping item with extended fields for nested data."
       },
-      "app__api__v3__personas__detail__AgentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "roles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Roles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "roles"
-        ],
-        "title": "AgentMappingItem",
-        "description": "Agent mapping item with role information."
-      },
-      "app__api__v3__personas__detail__DebugInfoItem": {
-        "properties": {
-          "timestamp": {
-            "type": "string",
-            "title": "Timestamp"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "timestamp",
-          "message"
-        ],
-        "title": "DebugInfoItem",
-        "description": "Debug info item."
-      },
-      "app__api__v3__personas__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__personas__detail__FieldMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "parameter_id": {
-            "type": "string",
-            "title": "Parameter Id"
-          },
-          "parameter_name": {
-            "type": "string",
-            "title": "Parameter Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "parameter_id",
-          "parameter_name"
-        ],
-        "title": "FieldMappingItem",
-        "description": "Field mapping item with parameter context."
-      },
-      "app__api__v3__personas__detail__ParameterMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "numerical": {
-            "type": "boolean",
-            "title": "Numerical"
-          },
-          "document_parameter": {
-            "type": "boolean",
-            "title": "Document Parameter"
-          },
-          "persona_parameter": {
-            "type": "boolean",
-            "title": "Persona Parameter"
-          },
-          "scenario_parameter": {
-            "type": "boolean",
-            "title": "Scenario Parameter",
-            "default": false
-          },
-          "video_parameter": {
-            "type": "boolean",
-            "title": "Video Parameter",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "numerical",
-          "document_parameter",
-          "persona_parameter"
-        ],
-        "title": "ParameterMappingItem",
-        "description": "Parameter mapping item."
-      },
-      "app__api__v3__personas__detail__PersonaDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "instructions": {
-            "type": "string",
-            "title": "Instructions"
-          },
-          "in_use": {
-            "type": "boolean",
-            "title": "In Use"
-          },
-          "scenario_count": {
-            "type": "integer",
-            "title": "Scenario Count"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "preset_colors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Preset Colors"
-          },
-          "suggested_icons": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Suggested Icons"
-          },
-          "valid_icons": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Icons"
-          },
-          "valid_agent_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Agent Ids"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "agent_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__detail__AgentMappingItem"
-            },
-            "type": "object",
-            "title": "Agent Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__detail__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "parameter_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__detail__ParameterMappingItem"
-            },
-            "type": "object",
-            "title": "Parameter Mapping"
-          },
-          "field_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__detail__FieldMappingItem"
-            },
-            "type": "object",
-            "title": "Field Mapping"
-          },
-          "example_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ExampleMappingItem"
-            },
-            "type": "object",
-            "title": "Example Mapping"
-          },
-          "linked_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Linked Parameter Ids"
-          },
-          "parameter_field_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Field Ids"
-          },
-          "valid_parameter_item_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Parameter Item Ids"
-          },
-          "example_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Example Ids"
-          },
-          "examples_history": {
-            "items": {
-              "$ref": "#/components/schemas/ExampleWithDepartments"
-            },
-            "type": "array",
-            "title": "Examples History"
-          },
-          "debug_info": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__personas__detail__DebugInfoItem"
-            },
-            "type": "array",
-            "title": "Debug Info"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "department_ids",
-          "active",
-          "color",
-          "icon",
-          "instructions",
-          "in_use",
-          "scenario_count",
-          "can_edit",
-          "can_duplicate",
-          "can_delete",
-          "preset_colors",
-          "suggested_icons",
-          "valid_icons",
-          "valid_agent_ids",
-          "valid_department_ids",
-          "agent_mapping",
-          "department_mapping",
-          "parameter_mapping",
-          "field_mapping",
-          "example_mapping",
-          "linked_parameter_ids",
-          "parameter_field_ids",
-          "valid_parameter_item_ids",
-          "example_ids",
-          "examples_history",
-          "debug_info"
-        ],
-        "title": "PersonaDetailResponse",
-        "description": "Detailed persona response with all fields and metadata."
-      },
-      "app__api__v3__personas__list__AgentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "roles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Roles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "roles"
-        ],
-        "title": "AgentMappingItem",
-        "description": "Agent mapping item with role information."
-      },
-      "app__api__v3__personas__list__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__personas__list__PersonaItem": {
-        "properties": {
-          "persona_id": {
-            "type": "string",
-            "title": "Persona Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "agent_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Name"
-          },
-          "model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Id"
-          },
-          "model_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Name"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
-          },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
-          "temperature_display": {
-            "type": "string",
-            "title": "Temperature Display"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "is_inactive": {
-            "type": "boolean",
-            "title": "Is Inactive"
-          },
-          "num_scenarios": {
-            "type": "integer",
-            "title": "Num Scenarios"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "persona_id",
-          "name",
-          "description",
-          "color",
-          "icon",
-          "department_ids",
-          "scenario_ids",
-          "agent_id",
-          "agent_name",
-          "model_id",
-          "model_name",
-          "reasoning",
-          "temperature",
-          "temperature_display",
-          "active",
-          "is_inactive",
-          "num_scenarios",
-          "can_edit",
-          "can_duplicate",
-          "can_delete",
-          "updated_at"
-        ],
-        "title": "PersonaItem",
-        "description": "Individual persona item in the response."
-      },
-      "app__api__v3__personas__list__PersonaMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "image_model": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Model"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "color",
-          "icon"
-        ],
-        "title": "PersonaMappingItem",
-        "description": "Persona mapping item with custom color and icon fields."
-      },
-      "app__api__v3__personas__list__ScenarioMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Persona Ids",
-            "default": []
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__list__PersonaMappingItem"
-            },
-            "type": "object",
-            "title": "Persona Mapping",
-            "default": {}
-          },
-          "document_mapping": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Document Mapping",
-            "default": {}
-          },
-          "parameter_item_mapping": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Parameter Item Mapping",
-            "default": {}
-          },
-          "parameter_item_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Item Ids",
-            "default": []
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ScenarioMappingItem",
-        "description": "Scenario mapping item with extended fields for nested data."
-      },
-      "app__api__v3__personas__new__AgentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "roles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Roles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "roles"
-        ],
-        "title": "AgentMappingItem",
-        "description": "Agent mapping item with role information."
-      },
-      "app__api__v3__personas__new__DebugInfoItem": {
-        "properties": {
-          "timestamp": {
-            "type": "string",
-            "title": "Timestamp"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "timestamp",
-          "message"
-        ],
-        "title": "DebugInfoItem",
-        "description": "Debug info item."
-      },
-      "app__api__v3__personas__new__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__personas__new__FieldMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "parameter_id": {
-            "type": "string",
-            "title": "Parameter Id"
-          },
-          "parameter_name": {
-            "type": "string",
-            "title": "Parameter Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "parameter_id",
-          "parameter_name"
-        ],
-        "title": "FieldMappingItem",
-        "description": "Field mapping item with parameter context."
-      },
-      "app__api__v3__personas__new__ParameterMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "numerical": {
-            "type": "boolean",
-            "title": "Numerical"
-          },
-          "document_parameter": {
-            "type": "boolean",
-            "title": "Document Parameter"
-          },
-          "persona_parameter": {
-            "type": "boolean",
-            "title": "Persona Parameter"
-          },
-          "scenario_parameter": {
-            "type": "boolean",
-            "title": "Scenario Parameter",
-            "default": false
-          },
-          "video_parameter": {
-            "type": "boolean",
-            "title": "Video Parameter",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "numerical",
-          "document_parameter",
-          "persona_parameter"
-        ],
-        "title": "ParameterMappingItem",
-        "description": "Parameter mapping item."
-      },
-      "app__api__v3__personas__new__PersonaDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "instructions": {
-            "type": "string",
-            "title": "Instructions"
-          },
-          "text_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Text Agent Id"
-          },
-          "voice_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voice Agent Id"
-          },
-          "in_use": {
-            "type": "boolean",
-            "title": "In Use"
-          },
-          "scenario_count": {
-            "type": "integer",
-            "title": "Scenario Count"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "preset_colors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Preset Colors"
-          },
-          "suggested_icons": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Suggested Icons"
-          },
-          "valid_icons": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Icons"
-          },
-          "valid_agent_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Agent Ids"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "agent_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__new__AgentMappingItem"
-            },
-            "type": "object",
-            "title": "Agent Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__new__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "parameter_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__new__ParameterMappingItem"
-            },
-            "type": "object",
-            "title": "Parameter Mapping"
-          },
-          "field_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__new__FieldMappingItem"
-            },
-            "type": "object",
-            "title": "Field Mapping"
-          },
-          "valid_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Parameter Ids"
-          },
-          "valid_parameter_item_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Parameter Item Ids"
-          },
-          "debug_info": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__personas__new__DebugInfoItem"
-            },
-            "type": "array",
-            "title": "Debug Info"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "department_ids",
-          "active",
-          "color",
-          "icon",
-          "instructions",
-          "text_agent_id",
-          "voice_agent_id",
-          "in_use",
-          "scenario_count",
-          "can_edit",
-          "can_duplicate",
-          "can_delete",
-          "preset_colors",
-          "suggested_icons",
-          "valid_icons",
-          "valid_agent_ids",
-          "valid_department_ids",
-          "agent_mapping",
-          "department_mapping",
-          "parameter_mapping",
-          "field_mapping",
-          "valid_parameter_ids",
-          "valid_parameter_item_ids",
-          "debug_info"
-        ],
-        "title": "PersonaDetailResponse",
-        "description": "Detailed persona response with all fields and metadata."
-      },
       "app__api__v3__practice__history__AttemptHistoryRow": {
         "properties": {
           "attemptId": {
@@ -57080,30 +57658,6 @@
         "title": "StandardGroupMappingItem",
         "description": "Standard group mapping item with rubric context."
       },
-      "app__api__v3__pricing__analytics__DebugInfoItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "created_at",
-          "content"
-        ],
-        "title": "DebugInfoItem",
-        "description": "Debug information item."
-      },
       "app__api__v3__pricing__analytics__ModelRunItem": {
         "properties": {
           "model_run_id": {
@@ -57170,7 +57724,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/app__api__v3__pricing__analytics__DebugInfoItem"
+                  "$ref": "#/components/schemas/DebugInfoItem"
                 },
                 "type": "array"
               },
@@ -57254,30 +57808,6 @@
         ],
         "title": "MessageItem",
         "description": "Message item schema."
-      },
-      "app__api__v3__pricing__runs__DebugInfoItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "created_at",
-          "content"
-        ],
-        "title": "DebugInfoItem",
-        "description": "Debug information item."
       },
       "app__api__v3__profile__context__DepartmentItem": {
         "properties": {

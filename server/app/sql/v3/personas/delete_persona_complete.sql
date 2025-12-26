@@ -1,24 +1,45 @@
 -- Delete persona with usage check and name fetch - returns usage_count, name, and deleted (boolean)
--- Parameters: $1 = persona_id (uuid), $2 = profile_id (uuid)
--- Returns: usage_count (int), name (text), deleted (boolean)
+-- Converted to function
 
-WITH user_profile AS (
+BEGIN;
+
+DROP FUNCTION IF EXISTS api_delete_persona_v3(uuid, uuid);
+
+CREATE OR REPLACE FUNCTION api_delete_persona_v3(
+    persona_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    usage_count bigint,
+    name text,
+    deleted boolean,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT persona_id AS persona_id,
+           profile_id AS profile_id
+),
+user_profile AS (
     SELECT 
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 usage_check AS (
-    SELECT COUNT(*)::integer as usage_count
-    FROM scenario_personas
-    WHERE persona_id = $1 AND active = true
+    SELECT COUNT(*)::bigint as usage_count
+    FROM params x
+    JOIN scenario_personas sp ON sp.persona_id = x.persona_id AND sp.active = true
 ),
 persona_info AS (
-    SELECT name FROM personas WHERE id = $1
+    SELECT name FROM params x
+    JOIN personas p ON p.id = x.persona_id
 ),
 delete_result AS (
     DELETE FROM personas 
-    WHERE id = $1 
+    WHERE id = (SELECT persona_id FROM params)
       AND (SELECT usage_count FROM usage_check) = 0
       AND EXISTS(SELECT 1 FROM persona_info)
     RETURNING id
@@ -28,4 +49,6 @@ SELECT
     (SELECT name FROM persona_info) as name,
     CASE WHEN EXISTS(SELECT 1 FROM delete_result) THEN true ELSE false END as deleted,
     (SELECT actor_name FROM user_profile) as actor_name
+$$;
 
+COMMIT;

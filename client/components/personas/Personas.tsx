@@ -115,37 +115,39 @@ export default function Personas({
   // Extract data from response
   const personas = personasData?.personas || [];
 
-  // Use server-provided facet options directly (no client-side computation)
-  const scenarioOptions = useMemo(
-    () =>
-      (personasData?.scenario_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [personasData?.scenario_options],
-  );
-  const agentOptions = useMemo(
-    () =>
-      (personasData?.agent_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [personasData?.agent_options],
-  );
-  const departmentOptions = useMemo(
-    () =>
-      (personasData?.department_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [personasData?.department_options],
-  );
+  // Derive options from full arrays (like cohorts pattern)
+  const scenarioOptions = useMemo(() => {
+    const scenarios = personasData?.scenarios || [];
+    const scenariosArray = Array.isArray(scenarios) ? scenarios : Object.values(scenarios);
+    return scenariosArray
+      .map((item) => ({
+        value: String(item.scenario_id || ""),
+        label: item.name || "",
+      }))
+      .filter((opt) => opt.value && opt.label);
+  }, [personasData?.scenarios]);
+
+  const agentOptions = useMemo(() => {
+    const agents = personasData?.agents || [];
+    const agentsArray = Array.isArray(agents) ? agents : Object.values(agents);
+    return agentsArray
+      .map((item) => ({
+        value: String(item.agent_id || ""),
+        label: item.name || "",
+      }))
+      .filter((opt) => opt.value && opt.label);
+  }, [personasData?.agents]);
+
+  const departmentOptions = useMemo(() => {
+    const departments = personasData?.departments || [];
+    const departmentsArray = Array.isArray(departments) ? departments : Object.values(departments);
+    return departmentsArray
+      .map((item) => ({
+        value: String(item.department_id || ""),
+        label: item.name || "",
+      }))
+      .filter((opt) => opt.value && opt.label);
+  }, [personasData?.departments]);
 
   // Define table columns
   const columns: ColumnDef<(typeof personas)[number]>[] = useMemo(() => {

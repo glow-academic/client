@@ -157,7 +157,7 @@ async def generate_composite_model(
         Tuple of (class_name, model_code)
     """
     from scripts.sql_introspect import fetch_composite_fields
-    
+
     # Fetch composite type fields
     fields = await fetch_composite_fields(conn, full_type_name)
     

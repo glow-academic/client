@@ -1,54 +1,94 @@
 -- Create persona with department links in a single transaction
--- Parameters: $1=name, $2=description, $3=active, $4=color, $5=icon, $6=instructions, $7=department_ids (nullable text array), $8=profile_id (uuid), $9=example_ids (nullable text array)
-WITH user_profile AS (
+-- Converted to function
+
+BEGIN;
+
+DROP FUNCTION IF EXISTS api_create_persona_v3(text, text, boolean, text, text, text, text[], uuid, text[]);
+
+CREATE OR REPLACE FUNCTION api_create_persona_v3(
+    name text,
+    description text,
+    active boolean,
+    color text,
+    icon text,
+    instructions text,
+    department_ids text[],
+    profile_id uuid,
+    example_ids text[]
+)
+RETURNS TABLE (
+    persona_id uuid,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT
+        name AS name,
+        COALESCE(NULLIF(description, ''), '') AS description,
+        active AS active,
+        color AS color,
+        icon AS icon,
+        COALESCE(NULLIF(instructions, ''), '') AS instructions,
+        COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
+        profile_id AS profile_id,
+        COALESCE(example_ids, ARRAY[]::text[]) AS example_ids
+),
+user_profile AS (
     SELECT 
         p.role,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $8::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 validate_create_permissions AS (
     -- Validate department permissions for create operation
     SELECT validate_department_create_permissions(
         up.role::text,
-        $7::text[]
+        x.department_ids
     ) as validation_passed
-    FROM user_profile up
+    FROM params x
+    CROSS JOIN user_profile up
 ),
 actor_profile AS (
     SELECT 
-        $8::uuid as profile_id,
+        x.profile_id,
         up.actor_name
-    FROM user_profile up
+    FROM params x
+    CROSS JOIN user_profile up
 ),
 new_persona AS (
     INSERT INTO personas (name, description, active, color, icon, instructions, created_at, updated_at)
-    VALUES ($1, COALESCE($2, ''), $3, $4, $5, COALESCE($6, ''), NOW(), NOW())
-    RETURNING id::text as persona_id
+    SELECT x.name, x.description, x.active, x.color, x.icon, x.instructions, NOW(), NOW()
+    FROM params x
+    RETURNING id
 ),
 link_departments AS (
     -- Link departments if provided (array is never NULL, but may be empty)
     INSERT INTO persona_departments (persona_id, department_id, active, created_at, updated_at)
     SELECT 
-        np.persona_id::uuid,
+        np.id,
         dept_id::uuid,
         true,
         NOW(),
         NOW()
     FROM new_persona np
-    CROSS JOIN UNNEST($7::text[]) as dept_id
-    WHERE COALESCE(array_length($7::text[], 1), 0) > 0
+    CROSS JOIN params x
+    CROSS JOIN UNNEST(x.department_ids) as dept_id
+    WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
     ON CONFLICT (persona_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
-    ),
+),
 examples_with_index AS (
     -- Prepare examples with their index (skip composite IDs - filtered in Python)
     SELECT 
         ex_text,
         ROW_NUMBER() OVER () - 1 as idx
-    FROM UNNEST($9::text[]) as ex_text
-    WHERE COALESCE(array_length($9::text[], 1), 0) > 0
+    FROM params x
+    CROSS JOIN UNNEST(x.example_ids) as ex_text
+    WHERE COALESCE(array_length(x.example_ids, 1), 0) > 0
 ),
 existing_examples AS (
     -- Find existing examples by text
@@ -79,7 +119,7 @@ link_examples AS (
     -- Link examples to persona via junction table
     INSERT INTO persona_examples (persona_id, example_id, idx, created_at)
     SELECT 
-        np.persona_id::uuid,
+        np.id,
         ae.example_id,
         ewi.idx,
         NOW()
@@ -88,7 +128,10 @@ link_examples AS (
     JOIN all_examples ae ON ae.example = ewi.ex_text
 )
 SELECT 
-    np.persona_id,
+    np.id as persona_id,
     ap.actor_name
 FROM new_persona np
 CROSS JOIN actor_profile ap
+$$;
+
+COMMIT;

@@ -1,147 +1,40 @@
 """Persona new endpoint - v3 API following DHH principles."""
 
-import json
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (GetPersonaNewApiRequest, GetPersonaNewApiResponse,
+                           GetPersonaNewSqlParams, GetPersonaNewSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline mapping types (DHH style - no shared types)
-class DepartmentMappingItem(BaseModel):
-    """Department mapping item."""
-
-    name: str
-    description: str
-
-
-class FieldMappingItem(BaseModel):
-    """Field mapping item with parameter context."""
-
-    name: str
-    description: str
-    parameter_id: str
-    parameter_name: str
-
-
-class ParameterMappingItem(BaseModel):
-    """Parameter mapping item."""
-
-    name: str
-    description: str
-    numerical: bool
-    document_parameter: bool
-    persona_parameter: bool
-    scenario_parameter: bool = False
-    video_parameter: bool = False
-
-
-class AgentMappingItem(BaseModel):
-    """Agent mapping item with role information."""
-
-    name: str
-    description: str
-    roles: list[str]
-
-
-# Type aliases for Dict mappings
-DepartmentMapping = dict[str, DepartmentMappingItem]
-FieldMapping = dict[str, FieldMappingItem]
-ParameterMapping = dict[str, ParameterMappingItem]
-AgentMapping = dict[str, AgentMappingItem]
-
-
-# Inline request/response schemas
-class PersonaNewRequest(BaseModel):
-    """Request to get default persona details."""
-
-    pass
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DebugInfoItem(BaseModel):
-    """Debug info item."""
-
-    timestamp: str
-    message: str
-
-
-class PersonaDetailResponse(BaseModel):
-    """Detailed persona response with all fields and metadata."""
-
-    # Basic persona fields
-    name: str
-    description: str | None
-    department_ids: list[str] | None
-    active: bool
-    color: str
-    icon: str
-    instructions: str
-    text_agent_id: str | None
-    voice_agent_id: str | None
-
-    # Usage and permissions
-    in_use: bool
-    scenario_count: int
-    can_edit: bool
-    can_duplicate: bool
-    can_delete: bool
-
-    # Metadata/Options
-    preset_colors: list[str]
-    suggested_icons: list[str]
-    valid_icons: list[str]
-    valid_agent_ids: list[str]
-    valid_department_ids: list[str]
-
-    # Mappings
-    agent_mapping: AgentMapping
-    department_mapping: DepartmentMapping
-    parameter_mapping: ParameterMapping
-    field_mapping: FieldMapping
-
-    # Parameter fields
-    valid_parameter_ids: list[str]
-    valid_parameter_item_ids: list[str]
-
-    # Debug info
-    debug_info: list[DebugInfoItem]
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/personas/get_persona_new_complete.sql"
 
 
 router = APIRouter()
 
 
-def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
-    """Parse JSONB data with type safety."""
-    if isinstance(data, str):
-        try:
-            return json.loads(data)  # type: ignore
-        except json.JSONDecodeError:
-            return {}
-    return data or {}
-
-
 @router.post(
     "/new",
-    response_model=PersonaDetailResponse,
+    response_model=GetPersonaNewApiResponse,
     dependencies=[
         audit_activity("persona.new", "{{ actor.name }} opened new persona form")
     ],
 )
 async def get_persona_new(
-    request: PersonaNewRequest,
+    request: GetPersonaNewApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> PersonaDetailResponse:
+) -> GetPersonaNewApiResponse:
     """Get default persona structure for creation mode."""
     tags = ["personas"]  # From router tags
 
@@ -154,9 +47,9 @@ async def get_persona_new(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return PersonaDetailResponse.model_validate(cached["data"])
+        return GetPersonaNewApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -168,122 +61,46 @@ async def get_persona_new(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Load SQL query
-        sql_query = load_sql("app/sql/v3/personas/get_persona_new_complete.sql")
-        sql_params = (profile_id,)
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetPersonaNewSqlParams(profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        # Execute query
-        result = await conn.fetchrow(sql_query, profile_id)
-
-        if not result:
-            raise HTTPException(
-                status_code=404, detail="Failed to fetch default persona data"
-            )
+        # Execute SQL with typed helper
+        result = cast(
+            GetPersonaNewSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
 
         # Set audit context
-        actor_name = result.get("actor_name")
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        valid_department_ids = result.get("valid_department_ids", [])
-        valid_agent_ids = result.get("valid_agent_ids", [])
-
-        # Get user role and primary department for default behavior
-        user_role = str(result.get("user_role", "")).lower()
-        is_superadmin = user_role == "superadmin"
-        primary_department_id = result.get("primary_department_id")
-
-        # Set default department_ids based on role
-        # Superadmin: None (empty = all departments = default object)
-        # Non-superadmin: [primaryDepartmentId] if available
-        if is_superadmin:
-            default_department_ids = None
-        else:
-            default_department_ids = (
-                [primary_department_id] if primary_department_id else []
-            )
-
-        is_default = default_department_ids is None or len(default_department_ids) == 0
-
-        # For default personas, only superadmin can edit
-        can_edit_default = not (is_default and not is_superadmin)
-
-        if not valid_department_ids:
+        if not result.valid_department_ids:
             raise HTTPException(
                 status_code=400, detail="No accessible departments found for user"
             )
 
-        # Parse department_mapping
-        department_mapping_data = parse_jsonb(result.get("dept_mapping"))
-        department_mapping: DepartmentMapping = {}
-        if isinstance(department_mapping_data, dict):
-            for dept_id, ddata in department_mapping_data.items():
-                if isinstance(ddata, dict):
-                    department_mapping[dept_id] = DepartmentMappingItem(
-                        name=ddata.get("name", ""),
-                        description=ddata.get("description", ""),
-                    )
+        # Get user role and primary department for default behavior
+        user_role = str(result.user_role or "").lower()
+        is_superadmin = user_role == "superadmin"
+        primary_department_id = result.primary_department_id
 
-        # Parse agent mapping
-        agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
-        agent_mapping: AgentMapping = {}
-        if isinstance(agent_mapping_data, dict):
-            for agent_id, adata in agent_mapping_data.items():
-                if isinstance(adata, dict):
-                    roles = adata.get("roles", [])
-                    if isinstance(roles, list):
-                        roles = [str(r) for r in roles]
-                    else:
-                        roles = []
-                    agent_mapping[agent_id] = AgentMappingItem(
-                        name=adata.get("name", ""),
-                        description=adata.get("description", ""),
-                        roles=roles,
-                    )
-
-        # Parse parameter mapping
-        parameter_mapping_data = parse_jsonb(result.get("parameter_mapping"))
-        parameter_mapping: ParameterMapping = {}
-        if isinstance(parameter_mapping_data, dict):
-            for param_id, pdata in parameter_mapping_data.items():
-                if isinstance(pdata, dict):
-                    parameter_mapping[param_id] = ParameterMappingItem(
-                        name=pdata.get("name", ""),
-                        description=pdata.get("description", ""),
-                        numerical=pdata.get("numerical", False),
-                        document_parameter=pdata.get("document_parameter", False),
-                        persona_parameter=pdata.get("persona_parameter", False),
-                        scenario_parameter=pdata.get("scenario_parameter", False),
-                        video_parameter=pdata.get("video_parameter", False),
-                    )
-
-        # Parse parameter item mapping
-        field_mapping_data = parse_jsonb(result.get("field_mapping"))
-        field_mapping: FieldMapping = {}
-        if isinstance(field_mapping_data, dict):
-            for item_id, idata in field_mapping_data.items():
-                if isinstance(idata, dict):
-                    field_mapping[item_id] = FieldMappingItem(
-                        name=idata.get("name", ""),
-                        description=idata.get("description", ""),
-                        parameter_id=idata.get("parameter_id", ""),
-                        parameter_name=idata.get("parameter_name", ""),
-                    )
-
-        # Parse parameter arrays
-        valid_parameter_ids = result.get("valid_parameter_ids", [])
-        if valid_parameter_ids:
-            valid_parameter_ids = [str(p) for p in valid_parameter_ids]
+        # Set default department_ids based on role
+        if is_superadmin:
+            default_department_ids = None
         else:
-            valid_parameter_ids = []
+            default_department_ids = (
+                [str(primary_department_id)] if primary_department_id else []
+            )
 
-        valid_parameter_item_ids = result.get("valid_parameter_item_ids", [])
-        if valid_parameter_item_ids:
-            valid_parameter_item_ids = [str(i) for i in valid_parameter_item_ids]
-        else:
-            valid_parameter_item_ids = []
+        is_default = default_department_ids is None or len(default_department_ids) == 0
+        can_edit_default = not (is_default and not is_superadmin)
 
-        # Hardcoded metadata
+        # Hardcoded metadata (keep in Python as per original)
         preset_colors = [
             "#EF4444",
             "#F97316",
@@ -328,59 +145,44 @@ async def get_persona_new(
 
         # Get default text agent ID (first valid agent with simulation-text role)
         default_text_agent_id = None
-        for agent_id in valid_agent_ids:
-            agent = agent_mapping.get(agent_id)
-            if agent and "simulation-text" in agent.roles:
-                default_text_agent_id = agent_id
-                break
+        if result.agents:
+            for agent in result.agents:
+                if agent.roles and "simulation-text" in agent.roles:
+                    default_text_agent_id = str(agent.agent_id)
+                    break
 
         if not default_text_agent_id:
             raise HTTPException(
                 status_code=400, detail="No valid simulation-text agents found"
             )
 
-        # Debug info (empty for now)
-        debug_info: list[DebugInfoItem] = []
+        # Convert SQL result to API response with defaults
+        response_data = GetPersonaNewApiResponse.model_validate({
+            **result.model_dump(),
+            "name": "",
+            "description": "",
+            "department_ids": default_department_ids,
+            "active": True,
+            "color": preset_colors[0] if preset_colors else "#3B82F6",
+            "icon": suggested_icons[0] if suggested_icons else "Sparkles",
+            "instructions": "",
+            "text_agent_id": default_text_agent_id,
+            "voice_agent_id": None,
+            "in_use": False,
+            "scenario_count": 0,
+            "can_edit": can_edit_default,
+            "can_duplicate": False,
+            "can_delete": False,
+            "preset_colors": preset_colors,
+            "suggested_icons": suggested_icons,
+            "valid_icons": valid_icons,
+            "debug_info": [],
+        })
 
-        response_data = PersonaDetailResponse(
-            # Basic fields (empty defaults for creation)
-            name="",
-            description="",
-            department_ids=default_department_ids,  # Use department_ids from default persona
-            active=True,
-            color=preset_colors[0] if preset_colors else "#3B82F6",
-            icon=suggested_icons[0] if suggested_icons else "Sparkles",
-            instructions="",  # Always blank for new persona
-            text_agent_id=default_text_agent_id,
-            voice_agent_id=None,
-            # Usage and permissions
-            in_use=False,
-            scenario_count=0,
-            can_edit=can_edit_default,
-            can_duplicate=False,
-            can_delete=False,
-            # Metadata
-            preset_colors=preset_colors,
-            suggested_icons=suggested_icons,
-            valid_icons=valid_icons,
-            valid_agent_ids=valid_agent_ids,
-            valid_department_ids=valid_department_ids,
-            # Mappings
-            agent_mapping=agent_mapping,
-            department_mapping=department_mapping,
-            parameter_mapping=parameter_mapping,
-            field_mapping=field_mapping,
-            # Parameter fields
-            valid_parameter_ids=valid_parameter_ids,
-            valid_parameter_item_ids=valid_parameter_item_ids,
-            # Debug info
-            debug_info=debug_info,
-        )
-
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": response_data.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )

@@ -7042,7 +7042,7 @@ export interface components {
              * Personas
              * @default []
              */
-            personas: components["schemas"]["app__api__v3__attempts__full__PersonaItem"][];
+            personas: components["schemas"]["PersonaItem"][];
             /** Contenttype */
             contentType?: string | null;
             video?: components["schemas"]["VideoItem"] | null;
@@ -7688,17 +7688,12 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * CreatePersonaRequest
-         * @description Request to create a persona.
-         */
-        CreatePersonaRequest: {
+        /** CreatePersonaApiRequest */
+        CreatePersonaApiRequest: {
             /** Name */
             name: string;
             /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
+            description: string;
             /** Active */
             active: boolean;
             /** Color */
@@ -7707,22 +7702,17 @@ export interface components {
             icon: string;
             /** Instructions */
             instructions: string;
-            /** Parameter Ids */
-            parameter_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[];
             /** Example Ids */
-            example_ids: string[] | null;
+            example_ids: string[];
         };
-        /**
-         * CreatePersonaResponse
-         * @description Response from create persona.
-         */
-        CreatePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Personaid */
-            personaId: string;
-            /** Message */
-            message: string;
+        /** CreatePersonaApiResponse */
+        CreatePersonaApiResponse: {
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * CreatePracticeScenarioErrorPayload
@@ -8267,6 +8257,18 @@ export interface components {
             count?: number | null;
         };
         /**
+         * DebugInfoItem
+         * @description Debug information item.
+         */
+        DebugInfoItem: {
+            /** Id */
+            id: string;
+            /** Created At */
+            created_at: string;
+            /** Content */
+            content: string;
+        };
+        /**
          * DecryptKeyRequest
          * @description Request to decrypt key.
          */
@@ -8480,23 +8482,24 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DeletePersonaRequest
-         * @description Request to delete persona.
-         */
-        DeletePersonaRequest: {
-            /** Personaid */
-            personaId: string;
+        /** DeletePersonaApiRequest */
+        DeletePersonaApiRequest: {
+            /**
+             * Persona Id
+             * Format: uuid
+             */
+            persona_id: string;
         };
-        /**
-         * DeletePersonaResponse
-         * @description Response from delete persona.
-         */
-        DeletePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** DeletePersonaApiResponse */
+        DeletePersonaApiResponse: {
+            /** Usage Count */
+            usage_count?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Deleted */
+            deleted?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * DeleteProfileRequest
@@ -9037,25 +9040,22 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DuplicatePersonaRequest
-         * @description Request to duplicate persona.
-         */
-        DuplicatePersonaRequest: {
-            /** Personaid */
-            personaId: string;
+        /** DuplicatePersonaApiRequest */
+        DuplicatePersonaApiRequest: {
+            /**
+             * Persona Id
+             * Format: uuid
+             */
+            persona_id: string;
         };
-        /**
-         * DuplicatePersonaResponse
-         * @description Response from duplicate persona.
-         */
-        DuplicatePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Personaid */
-            personaId: string;
-            /** Message */
-            message: string;
+        /** DuplicatePersonaApiResponse */
+        DuplicatePersonaApiResponse: {
+            /** New Persona Id */
+            new_persona_id?: string | null;
+            /** Original Name */
+            original_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * DuplicateRubricRequest
@@ -9688,26 +9688,6 @@ export interface components {
             }[];
         };
         /**
-         * ExampleMappingItem
-         * @description Example mapping item.
-         */
-        ExampleMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * ExampleWithDepartments
-         * @description Example with department associations for history.
-         */
-        ExampleWithDepartments: {
-            /** Example */
-            example: string;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /**
          * ExportRequest
          * @description Request to export reports data.
          */
@@ -10311,6 +10291,113 @@ export interface components {
             } | null;
             /** Departments */
             departments?: components["schemas"]["QListCohortsV3Department"][] | null;
+        };
+        /** GetPersonaDetailApiRequest */
+        GetPersonaDetailApiRequest: {
+            /**
+             * Persona Id
+             * Format: uuid
+             */
+            persona_id: string;
+        };
+        /** GetPersonaDetailApiResponse */
+        GetPersonaDetailApiResponse: {
+            /** Persona Exists */
+            persona_exists?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Active */
+            active?: boolean | null;
+            /** Color */
+            color?: string | null;
+            /** Icon */
+            icon?: string | null;
+            /** Instructions */
+            instructions?: string | null;
+            /** In Use */
+            in_use?: boolean | null;
+            /** Scenario Count */
+            scenario_count?: number | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Valid Parameter Ids */
+            valid_parameter_ids?: string[] | null;
+            /** Valid Parameter Item Ids */
+            valid_parameter_item_ids?: string[] | null;
+            /** Linked Parameter Ids */
+            linked_parameter_ids?: string[] | null;
+            /** Parameter Field Ids */
+            parameter_field_ids?: string[] | null;
+            /** Example Ids */
+            example_ids?: string[] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetPersonaDetailV3Department"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetPersonaDetailV3Agent"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetPersonaDetailV3Parameter"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetPersonaDetailV3Field"][] | null;
+            /** Examples */
+            examples?: components["schemas"]["QGetPersonaDetailV3Example"][] | null;
+            /** Examples History */
+            examples_history?: components["schemas"]["QGetPersonaDetailV3ExampleHistoryItem"][] | null;
+        };
+        /** GetPersonaNewApiRequest */
+        GetPersonaNewApiRequest: Record<string, never>;
+        /** GetPersonaNewApiResponse */
+        GetPersonaNewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Valid Parameter Ids */
+            valid_parameter_ids?: string[] | null;
+            /** Valid Parameter Item Ids */
+            valid_parameter_item_ids?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetPersonaNewV3Department"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetPersonaNewV3Agent"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetPersonaNewV3Parameter"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetPersonaNewV3Field"][] | null;
+        };
+        /** GetPersonasListApiRequest */
+        GetPersonasListApiRequest: Record<string, never>;
+        /** GetPersonasListApiResponse */
+        GetPersonasListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Personas */
+            personas?: components["schemas"]["QListPersonasV3Persona"][] | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["QListPersonasV3Scenario"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QListPersonasV3Agent"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QListPersonasV3Department"][] | null;
         };
         /** GradeItem */
         GradeItem: {
@@ -11725,19 +11812,17 @@ export interface components {
                 [key: string]: string;
             }[];
         };
-        /**
-         * PersonaDetailRequest
-         * @description Request to get persona details.
-         */
-        PersonaDetailRequest: {
-            /** Personaid */
-            personaId: string;
+        /** PersonaItem */
+        PersonaItem: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Icon */
+            icon?: string | null;
+            /** Color */
+            color?: string | null;
         };
-        /**
-         * PersonaNewRequest
-         * @description Request to get default persona details.
-         */
-        PersonaNewRequest: Record<string, never>;
         /**
          * PersonaPerformanceData
          * @description Persona performance data.
@@ -11811,43 +11896,6 @@ export interface components {
             timestamp: number;
             /** Simulationid */
             simulationId?: string | null;
-        };
-        /**
-         * PersonasFilters
-         * @description Filters for personas list request.
-         */
-        PersonasFilters: Record<string, never>;
-        /**
-         * PersonasListResponse
-         * @description Response for personas list endpoint.
-         */
-        PersonasListResponse: {
-            /** Personas */
-            personas: components["schemas"]["app__api__v3__personas__list__PersonaItem"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__list__ScenarioMappingItem"];
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__list__AgentMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__list__DepartmentMappingItem"];
-            };
-            /** Scenario Options */
-            scenario_options: {
-                [key: string]: string;
-            }[];
-            /** Agent Options */
-            agent_options: {
-                [key: string]: string;
-            }[];
-            /** Department Options */
-            department_options: {
-                [key: string]: string;
-            }[];
         };
         /**
          * PracticeFilters
@@ -12961,6 +13009,126 @@ export interface components {
             /** Description */
             description: string | null;
         };
+        /** QGetPersonaDetailV3Agent */
+        QGetPersonaDetailV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Roles */
+            roles: string[] | null;
+        };
+        /** QGetPersonaDetailV3Department */
+        QGetPersonaDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetPersonaDetailV3Example */
+        QGetPersonaDetailV3Example: {
+            /** Example Id */
+            example_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetPersonaDetailV3ExampleHistoryItem */
+        QGetPersonaDetailV3ExampleHistoryItem: {
+            /** Example */
+            example: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetPersonaDetailV3Field */
+        QGetPersonaDetailV3Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Parameter Name */
+            parameter_name: string | null;
+        };
+        /** QGetPersonaDetailV3Parameter */
+        QGetPersonaDetailV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Numerical */
+            numerical: boolean | null;
+            /** Document Parameter */
+            document_parameter: boolean | null;
+            /** Persona Parameter */
+            persona_parameter: boolean | null;
+            /** Scenario Parameter */
+            scenario_parameter: boolean | null;
+            /** Video Parameter */
+            video_parameter: boolean | null;
+        };
+        /** QGetPersonaNewV3Agent */
+        QGetPersonaNewV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Roles */
+            roles: string[] | null;
+        };
+        /** QGetPersonaNewV3Department */
+        QGetPersonaNewV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetPersonaNewV3Field */
+        QGetPersonaNewV3Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Parameter Name */
+            parameter_name: string | null;
+        };
+        /** QGetPersonaNewV3Parameter */
+        QGetPersonaNewV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Numerical */
+            numerical: boolean | null;
+            /** Document Parameter */
+            document_parameter: boolean | null;
+            /** Persona Parameter */
+            persona_parameter: boolean | null;
+            /** Scenario Parameter */
+            scenario_parameter: boolean | null;
+            /** Video Parameter */
+            video_parameter: boolean | null;
+        };
         /** QListAgentsV3Agent */
         QListAgentsV3Agent: {
             /** Agent Id */
@@ -13074,6 +13242,88 @@ export interface components {
             department_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
+        };
+        /** QListPersonasV3Agent */
+        QListPersonasV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Roles */
+            roles: string[] | null;
+        };
+        /** QListPersonasV3Department */
+        QListPersonasV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListPersonasV3Persona */
+        QListPersonasV3Persona: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Agent Name */
+            agent_name: string | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Model Name */
+            model_name: string | null;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Temperature */
+            temperature: number | null;
+            /** Temperature Display */
+            temperature_display: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Is Inactive */
+            is_inactive: boolean | null;
+            /** Num Scenarios */
+            num_scenarios: number | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Duplicate */
+            can_duplicate: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Updated At */
+            updated_at: string | null;
+        };
+        /** QListPersonasV3Scenario */
+        QListPersonasV3Scenario: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Persona Ids */
+            persona_ids: string[] | null;
+            /** Document Ids */
+            document_ids: string[] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids: string[] | null;
         };
         /**
          * QuestionItem
@@ -13819,7 +14069,7 @@ export interface components {
             /** Persona Id */
             persona_id?: string | null;
             /** Debug Info */
-            debug_info?: components["schemas"]["app__api__v3__pricing__runs__DebugInfoItem"][] | null;
+            debug_info?: components["schemas"]["DebugInfoItem"][] | null;
         };
         /**
          * RunWithMessages
@@ -16167,19 +16417,17 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * UpdatePersonaRequest
-         * @description Request to update persona.
-         */
-        UpdatePersonaRequest: {
-            /** Personaid */
-            personaId: string;
+        /** UpdatePersonaApiRequest */
+        UpdatePersonaApiRequest: {
+            /**
+             * Persona Id
+             * Format: uuid
+             */
+            persona_id: string;
             /** Name */
             name: string;
             /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
+            description: string;
             /** Active */
             active: boolean;
             /** Color */
@@ -16188,20 +16436,17 @@ export interface components {
             icon: string;
             /** Instructions */
             instructions: string;
-            /** Parameter Ids */
-            parameter_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[];
             /** Example Ids */
-            example_ids: string[] | null;
+            example_ids: string[];
         };
-        /**
-         * UpdatePersonaResponse
-         * @description Response from update persona.
-         */
-        UpdatePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** UpdatePersonaApiResponse */
+        UpdatePersonaApiResponse: {
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * UpdateProfileRequest
@@ -16836,17 +17081,6 @@ export interface components {
             personaId?: string | null;
             /** Feedbacks */
             feedbacks?: components["schemas"]["MessageFeedbackItem"][] | null;
-        };
-        /** PersonaItem */
-        app__api__v3__attempts__full__PersonaItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Icon */
-            icon?: string | null;
-            /** Color */
-            color?: string | null;
         };
         /** ScenarioItem */
         app__api__v3__attempts__full__ScenarioItem: {
@@ -18333,420 +18567,6 @@ export interface components {
             document_ids?: string[];
         };
         /**
-         * AgentMappingItem
-         * @description Agent mapping item with role information.
-         */
-        app__api__v3__personas__detail__AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Roles */
-            roles: string[];
-        };
-        /**
-         * DebugInfoItem
-         * @description Debug info item.
-         */
-        app__api__v3__personas__detail__DebugInfoItem: {
-            /** Timestamp */
-            timestamp: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__personas__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * FieldMappingItem
-         * @description Field mapping item with parameter context.
-         */
-        app__api__v3__personas__detail__FieldMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Parameter Name */
-            parameter_name: string;
-        };
-        /**
-         * ParameterMappingItem
-         * @description Parameter mapping item.
-         */
-        app__api__v3__personas__detail__ParameterMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Persona Parameter */
-            persona_parameter: boolean;
-            /**
-             * Scenario Parameter
-             * @default false
-             */
-            scenario_parameter: boolean;
-            /**
-             * Video Parameter
-             * @default false
-             */
-            video_parameter: boolean;
-        };
-        /**
-         * PersonaDetailResponse
-         * @description Detailed persona response with all fields and metadata.
-         */
-        app__api__v3__personas__detail__PersonaDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Instructions */
-            instructions: string;
-            /** In Use */
-            in_use: boolean;
-            /** Scenario Count */
-            scenario_count: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Preset Colors */
-            preset_colors: string[];
-            /** Suggested Icons */
-            suggested_icons: string[];
-            /** Valid Icons */
-            valid_icons: string[];
-            /** Valid Agent Ids */
-            valid_agent_ids: string[];
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__detail__AgentMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__detail__DepartmentMappingItem"];
-            };
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__detail__ParameterMappingItem"];
-            };
-            /** Field Mapping */
-            field_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__detail__FieldMappingItem"];
-            };
-            /** Example Mapping */
-            example_mapping: {
-                [key: string]: components["schemas"]["ExampleMappingItem"];
-            };
-            /** Linked Parameter Ids */
-            linked_parameter_ids: string[];
-            /** Parameter Field Ids */
-            parameter_field_ids: string[];
-            /** Valid Parameter Item Ids */
-            valid_parameter_item_ids: string[];
-            /** Example Ids */
-            example_ids: string[];
-            /** Examples History */
-            examples_history: components["schemas"]["ExampleWithDepartments"][];
-            /** Debug Info */
-            debug_info: components["schemas"]["app__api__v3__personas__detail__DebugInfoItem"][];
-        };
-        /**
-         * AgentMappingItem
-         * @description Agent mapping item with role information.
-         */
-        app__api__v3__personas__list__AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Roles */
-            roles: string[];
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__personas__list__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * PersonaItem
-         * @description Individual persona item in the response.
-         */
-        app__api__v3__personas__list__PersonaItem: {
-            /** Persona Id */
-            persona_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Agent Id */
-            agent_id: string | null;
-            /** Agent Name */
-            agent_name: string | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Model Name */
-            model_name: string | null;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** Temperature Display */
-            temperature_display: string;
-            /** Active */
-            active: boolean;
-            /** Is Inactive */
-            is_inactive: boolean;
-            /** Num Scenarios */
-            num_scenarios: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Updated At */
-            updated_at: string;
-        };
-        /**
-         * PersonaMappingItem
-         * @description Persona mapping item with custom color and icon fields.
-         */
-        app__api__v3__personas__list__PersonaMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Image Model */
-            image_model?: boolean | null;
-        };
-        /**
-         * ScenarioMappingItem
-         * @description Scenario mapping item with extended fields for nested data.
-         */
-        app__api__v3__personas__list__ScenarioMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Persona Ids
-             * @default []
-             */
-            persona_ids: string[];
-            /**
-             * Persona Mapping
-             * @default {}
-             */
-            persona_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__list__PersonaMappingItem"];
-            };
-            /**
-             * Document Mapping
-             * @default {}
-             */
-            document_mapping: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Mapping
-             * @default {}
-             */
-            parameter_item_mapping: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Ids
-             * @default []
-             */
-            parameter_item_ids: string[];
-            /**
-             * Document Ids
-             * @default []
-             */
-            document_ids: string[];
-        };
-        /**
-         * AgentMappingItem
-         * @description Agent mapping item with role information.
-         */
-        app__api__v3__personas__new__AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Roles */
-            roles: string[];
-        };
-        /**
-         * DebugInfoItem
-         * @description Debug info item.
-         */
-        app__api__v3__personas__new__DebugInfoItem: {
-            /** Timestamp */
-            timestamp: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__personas__new__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * FieldMappingItem
-         * @description Field mapping item with parameter context.
-         */
-        app__api__v3__personas__new__FieldMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Parameter Name */
-            parameter_name: string;
-        };
-        /**
-         * ParameterMappingItem
-         * @description Parameter mapping item.
-         */
-        app__api__v3__personas__new__ParameterMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Persona Parameter */
-            persona_parameter: boolean;
-            /**
-             * Scenario Parameter
-             * @default false
-             */
-            scenario_parameter: boolean;
-            /**
-             * Video Parameter
-             * @default false
-             */
-            video_parameter: boolean;
-        };
-        /**
-         * PersonaDetailResponse
-         * @description Detailed persona response with all fields and metadata.
-         */
-        app__api__v3__personas__new__PersonaDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Instructions */
-            instructions: string;
-            /** Text Agent Id */
-            text_agent_id: string | null;
-            /** Voice Agent Id */
-            voice_agent_id: string | null;
-            /** In Use */
-            in_use: boolean;
-            /** Scenario Count */
-            scenario_count: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Preset Colors */
-            preset_colors: string[];
-            /** Suggested Icons */
-            suggested_icons: string[];
-            /** Valid Icons */
-            valid_icons: string[];
-            /** Valid Agent Ids */
-            valid_agent_ids: string[];
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__new__AgentMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__new__DepartmentMappingItem"];
-            };
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__new__ParameterMappingItem"];
-            };
-            /** Field Mapping */
-            field_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__new__FieldMappingItem"];
-            };
-            /** Valid Parameter Ids */
-            valid_parameter_ids: string[];
-            /** Valid Parameter Item Ids */
-            valid_parameter_item_ids: string[];
-            /** Debug Info */
-            debug_info: components["schemas"]["app__api__v3__personas__new__DebugInfoItem"][];
-        };
-        /**
          * AttemptHistoryRow
          * @description Attempt history row - shared across dashboard, home, reports, and practice history endpoints.
          */
@@ -18983,18 +18803,6 @@ export interface components {
             passPoints: number;
         };
         /**
-         * DebugInfoItem
-         * @description Debug information item.
-         */
-        app__api__v3__pricing__analytics__DebugInfoItem: {
-            /** Id */
-            id: string;
-            /** Created At */
-            created_at: string;
-            /** Content */
-            content: string;
-        };
-        /**
          * ModelRunItem
          * @description Model run item with aggregated metrics.
          */
@@ -19016,7 +18824,7 @@ export interface components {
             /** Persona Id */
             persona_id?: string | null;
             /** Debug Info */
-            debug_info?: components["schemas"]["app__api__v3__pricing__analytics__DebugInfoItem"][] | null;
+            debug_info?: components["schemas"]["DebugInfoItem"][] | null;
         };
         /**
          * MessageItem
@@ -19039,18 +18847,6 @@ export interface components {
             runIdx?: number | null;
             /** Depth */
             depth?: number | null;
-        };
-        /**
-         * DebugInfoItem
-         * @description Debug information item.
-         */
-        app__api__v3__pricing__runs__DebugInfoItem: {
-            /** Id */
-            id: string;
-            /** Created At */
-            created_at: string;
-            /** Content */
-            content: string;
         };
         /**
          * DepartmentItem
@@ -21702,7 +21498,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PersonasFilters"];
+                "application/json": components["schemas"]["GetPersonasListApiRequest"];
             };
         };
         responses: {
@@ -21712,7 +21508,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PersonasListResponse"];
+                    "application/json": components["schemas"]["GetPersonasListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21738,7 +21534,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PersonaDetailRequest"];
+                "application/json": components["schemas"]["GetPersonaDetailApiRequest"];
             };
         };
         responses: {
@@ -21748,7 +21544,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__personas__detail__PersonaDetailResponse"];
+                    "application/json": components["schemas"]["GetPersonaDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21774,7 +21570,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PersonaNewRequest"];
+                "application/json": components["schemas"]["GetPersonaNewApiRequest"];
             };
         };
         responses: {
@@ -21784,7 +21580,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__personas__new__PersonaDetailResponse"];
+                    "application/json": components["schemas"]["GetPersonaNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21810,7 +21606,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreatePersonaRequest"];
+                "application/json": components["schemas"]["CreatePersonaApiRequest"];
             };
         };
         responses: {
@@ -21820,7 +21616,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreatePersonaResponse"];
+                    "application/json": components["schemas"]["CreatePersonaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21846,7 +21642,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdatePersonaRequest"];
+                "application/json": components["schemas"]["UpdatePersonaApiRequest"];
             };
         };
         responses: {
@@ -21856,7 +21652,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdatePersonaResponse"];
+                    "application/json": components["schemas"]["UpdatePersonaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21882,7 +21678,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DuplicatePersonaRequest"];
+                "application/json": components["schemas"]["DuplicatePersonaApiRequest"];
             };
         };
         responses: {
@@ -21892,7 +21688,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DuplicatePersonaResponse"];
+                    "application/json": components["schemas"]["DuplicatePersonaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21918,7 +21714,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeletePersonaRequest"];
+                "application/json": components["schemas"]["DeletePersonaApiRequest"];
             };
         };
         responses: {
@@ -21928,7 +21724,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeletePersonaResponse"];
+                    "application/json": components["schemas"]["DeletePersonaApiResponse"];
                 };
             };
             /** @description Validation Error */

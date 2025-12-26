@@ -1,31 +1,20 @@
 """Persona duplicate endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db
+from app.sql.types import (DuplicatePersonaApiRequest, DuplicatePersonaApiResponse,
+                           DuplicatePersonaSqlParams, DuplicatePersonaSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DuplicatePersonaRequest(BaseModel):
-    """Request to duplicate persona."""
-
-    personaId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DuplicatePersonaResponse(BaseModel):
-    """Response from duplicate persona."""
-
-    success: bool
-    personaId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/personas/duplicate_persona_complete.sql"
 
 
 router = APIRouter()
@@ -33,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/duplicate",
-    response_model=DuplicatePersonaResponse,
+    response_model=DuplicatePersonaApiResponse,
     dependencies=[
         audit_activity(
             "persona.duplicated",
@@ -42,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def duplicate_persona(
-    request: DuplicatePersonaRequest,
+    request: DuplicatePersonaApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DuplicatePersonaResponse:
+) -> DuplicatePersonaApiResponse:
     """Duplicate a persona."""
     tags = ["personas"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -62,38 +51,49 @@ async def duplicate_persona(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            # Duplicate persona (fetch and duplicate in single query)
-            sql_query = load_sql("app/sql/v3/personas/duplicate_persona_complete_v2.sql")
-            sql_params = (request.personaId, profile_id)
-            result = await conn.fetchrow(sql_query, request.personaId, profile_id)
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = DuplicatePersonaSqlParams(
+                persona_id=request.personaId,
+                profile_id=profile_id,
+            )
+            sql_params = params.to_tuple()
 
-            if not result or not result.get("new_persona_id"):
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                DuplicatePersonaSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result or not result.new_persona_id:
                 raise ValueError(f"Persona not found: {request.personaId}")
 
-            persona_id = result["new_persona_id"]
-            original_name = result.get("original_name", "Unknown")
-            actor_name = result.get("actor_name")  # From SQL query
+            original_name = result.original_name or "Unknown"
 
             # Set audit context with data from SQL query
-            if actor_name:
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
+                    actor={"name": result.actor_name, "id": profile_id},
                     persona={"name": original_name, "id": request.personaId},
                 )
 
-            result_data = DuplicatePersonaResponse(
-                success=True,
-                personaId=persona_id,
-                message=f"Persona '{original_name}' duplicated successfully",
-            )
+            # Convert SQL result to API response
+            api_response = DuplicatePersonaApiResponse.model_validate({
+                "success": True,
+                "personaId": str(result.new_persona_id),
+                "message": f"Persona '{original_name}' duplicated successfully",
+            })
 
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-            return result_data
+            return api_response
     except HTTPException:
         raise
     except ValueError as e:
