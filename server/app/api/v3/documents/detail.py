@@ -1,134 +1,23 @@
 """Document detail endpoint - v3 API."""
 
-import json
 import os
-import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import UPLOAD_FOLDER, get_db
+from app.sql.types import (GetDocumentDetailApiRequest, GetDocumentDetailApiResponse,
+                           GetDocumentDetailSqlParams, GetDocumentDetailSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline mapping types (DHH style - no shared types)
-class DepartmentMappingItem(BaseModel):
-    """Department mapping item."""
-
-    name: str
-    description: str
-    parameter_ids: list[str] | None = None
-
-
-class FieldMappingItem(BaseModel):
-    """Field mapping item with parameter context."""
-
-    name: str
-    description: str
-    parameter_id: str
-    parameter_name: str
-
-
-class ParameterMappingItem(BaseModel):
-    """Parameter mapping item."""
-
-    name: str
-    description: str
-    numerical: bool
-    document_parameter: bool
-    persona_parameter: bool
-    scenario_parameter: bool = False
-    video_parameter: bool = False
-
-
-class AgentMappingItem(BaseModel):
-    """Agent mapping item with role information."""
-
-    name: str
-    description: str
-    roles: list[str]
-
-
-# Type aliases for Dict mappings
-ParameterMapping = dict[str, ParameterMappingItem]
-AgentMapping = dict[str, AgentMappingItem]
-
-
-def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
-    """Parse JSONB data with type safety."""
-    if isinstance(data, str):
-        try:
-            parsed: Any = json.loads(data)
-            if isinstance(parsed, dict):
-                return parsed
-            if isinstance(parsed, list):
-                return parsed
-            return {}
-        except json.JSONDecodeError:
-            return {}
-    if isinstance(data, dict):
-        return data
-    if isinstance(data, list):
-        return data
-    return None
-
-
-class TemplateInfo(BaseModel):
-    """Template version information."""
-
-    template_args: dict[str, Any]
-    active: bool
-    created_at: str
-    updated_at: str
-
-
-class DocumentDetailRequest(BaseModel):
-    """Request to get document details."""
-
-    documentId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DocumentDetailResponse(BaseModel):
-    """Detailed document response."""
-
-    document_id: str
-    name: str
-    description: str
-    active: bool
-    type: str
-    upload_id: str | None
-    updated_at: str
-    extension: str | None
-    scenario_ids: list[str]
-    can_edit: bool
-    can_delete: bool
-    document_type_options: list[str]
-    department_ids: list[str] | None
-    valid_department_ids: list[str]
-    department_mapping: dict[str, DepartmentMappingItem]
-    field_ids: list[str]
-    valid_field_ids: list[str]
-    field_mapping: dict[str, FieldMappingItem]
-    parameter_mapping: ParameterMapping
-    linked_parameter_ids: list[str]
-    classify_agent_id: str
-    document_agent_id: str
-    agent_mapping: AgentMapping
-    valid_agent_ids: list[str]
-    template: bool
-    template_id: str | None
-    template_schema: dict[str, Any] | None
-    template_args: dict[str, Any] | None
-    template_upload_id: str | None
-    template_html: str | None
-    template_mapping: dict[str, TemplateInfo]
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/documents/get_document_detail_complete.sql"
 
 
 router = APIRouter()
@@ -136,7 +25,7 @@ router = APIRouter()
 
 @router.post(
     "/detail",
-    response_model=DocumentDetailResponse,
+    response_model=GetDocumentDetailApiResponse,
     dependencies=[
         audit_activity(
             "document.viewed", "{{ actor.name }} viewed document '{{ document.name }}'"
@@ -144,299 +33,114 @@ router = APIRouter()
     ],
 )
 async def get_document_detail(
-    request_body: DocumentDetailRequest,
-    request: Request,
+    request: GetDocumentDetailApiRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DocumentDetailResponse:
+) -> GetDocumentDetailApiResponse:
     """Get document detail information."""
     tags = ["documents"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = request_body.model_dump()
-    cache_key_val = cache_key(request.url.path, body_dict)
+    body_dict = request.model_dump(mode="json")
+    cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return DocumentDetailResponse.model_validate(cached["data"])
+        return GetDocumentDetailApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
-        profile_id = request.state.profile_id
+        profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/documents/get_document_detail_complete.sql")
-        sql_params = (
-            uuid.UUID(request_body.documentId),
-            uuid.UUID(profile_id),
-        )
-        row = await conn.fetchrow(
-            sql_query,
-            uuid.UUID(request_body.documentId),
-            uuid.UUID(profile_id),
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetDocumentDetailSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
+
+        # Execute SQL with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetDocumentDetailSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        if not row:
-            raise HTTPException(status_code=404, detail="Document not found")
-
-        # Set audit context with data from SQL query
-        actor_name = row.get("actor_name")
-        document_name = row.get("name")
-        if actor_name:
-            audit_set(
-                request,
-                actor={"name": actor_name, "id": profile_id},
-                document={"name": document_name, "id": request_body.documentId},
+        # Check if document exists and has access using SQL result
+        # SQL now returns document_exists field to distinguish 404 vs 403
+        if not result.document_exists:
+            raise HTTPException(
+                status_code=404, detail=f"Document {request.document_id} not found"
+            )
+        
+        if not result.name:
+            # Document exists but user doesn't have access
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this document. It may be restricted to other departments.",
             )
 
-        # Parse mappings
-        department_mapping: dict[str, DepartmentMappingItem] = {}
-        if row.get("department_mapping"):
-            dept_data = row["department_mapping"]
-            if isinstance(dept_data, str):
-                dept_data = json.loads(dept_data)
-            if isinstance(dept_data, dict):
-                for did, ddata in dept_data.items():
-                    if isinstance(ddata, dict):
-                        param_ids = ddata.get("parameter_ids")
-                        if isinstance(param_ids, str):
-                            param_ids = json.loads(param_ids)
-                        department_mapping[did] = DepartmentMappingItem(
-                            name=ddata.get("name", ""),
-                            description=ddata.get("description", ""),
-                            parameter_ids=param_ids
-                            if isinstance(param_ids, list)
-                            else None,
-                        )
+        # Set audit context with data from SQL query
+        actor_name = result.actor_name
+        document_name = result.name
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                document={"name": document_name, "id": str(request.document_id)},
+            )
 
-        field_mapping: dict[str, FieldMappingItem] = {}
-        if row.get("field_mapping"):
-            field_data = row["field_mapping"]
-            if isinstance(field_data, str):
-                field_data = json.loads(field_data)
-            if isinstance(field_data, dict):
-                for pid, pdata in field_data.items():
-                    if isinstance(pdata, dict):
-                        field_mapping[pid] = FieldMappingItem(
-                            name=pdata.get("name", ""),
-                            description=pdata.get("description", ""),
-                            parameter_id=pdata.get("parameter_id", ""),
-                            parameter_name=pdata.get("parameter_name", ""),
-                        )
-
-        # Convert arrays
-        valid_department_ids = [
-            str(did) for did in (row.get("valid_department_ids") or [])
-        ]
-        valid_field_ids = [str(pid) for pid in (row.get("valid_field_ids") or [])]
-        dept_ids = None
-        if row.get("department_ids"):
-            dept_ids = [str(d) for d in row["department_ids"]]
-
-        # Parse field_ids from document_fields
-        field_ids: list[str] = []
-        if row.get("field_ids"):
-            field_ids = [str(pid) for pid in row["field_ids"]]
-
-        # Parse parameter mapping
-        parameter_mapping: ParameterMapping = {}
-        if row.get("parameter_mapping"):
-            param_mapping_data = row.get("parameter_mapping")
-            if isinstance(param_mapping_data, str):
-                param_mapping_data = json.loads(param_mapping_data)
-            if isinstance(param_mapping_data, dict):
-                for param_id, pdata in param_mapping_data.items():
-                    if isinstance(pdata, dict):
-                        parameter_mapping[param_id] = ParameterMappingItem(
-                            name=pdata.get("name", ""),
-                            description=pdata.get("description", ""),
-                            numerical=pdata.get("numerical", False),
-                            document_parameter=pdata.get("document_parameter", False),
-                            persona_parameter=pdata.get("persona_parameter", False),
-                            scenario_parameter=pdata.get("scenario_parameter", False),
-                            video_parameter=pdata.get("video_parameter", False),
-                        )
-
-        # Parse linked_parameter_ids
-        linked_parameter_ids: list[str] = []
-        if row.get("linked_parameter_ids"):
-            linked_parameter_ids = [str(pid) for pid in row["linked_parameter_ids"]]
-
-        # Parse agent mapping
-        agent_mapping: AgentMapping = {}
-        if row.get("agent_mapping"):
-            agent_data = row["agent_mapping"]
-            if isinstance(agent_data, str):
-                agent_data = json.loads(agent_data)
-            if isinstance(agent_data, dict):
-                for aid, adata in agent_data.items():
-                    if isinstance(adata, dict):
-                        agent_mapping[aid] = AgentMappingItem(
-                            name=adata.get("name", ""),
-                            description=adata.get("description", ""),
-                            roles=adata.get("roles", []),
-                        )
-
-        valid_agent_ids = [str(aid) for aid in (row.get("valid_agent_ids") or [])]
-
-        # Document type options (from v2 - typically ["homework", "exam", "lab", "project"])
-        document_type_options = ["homework", "exam", "lab", "project"]
-
-        # Parse template fields
-        template = row.get("template", False)
-        template_id = row.get("template_id")
-        template_upload_id = row.get("template_upload_id")
-
-        # Parse template_mapping (all template versions)
-        template_mapping: dict[str, TemplateInfo] = {}
-        template_mapping_data = parse_jsonb(row.get("template_mapping"))
-        if isinstance(template_mapping_data, dict):
-            for tid, tdata in template_mapping_data.items():
-                if isinstance(tdata, dict):
-                    template_args_data = tdata.get("template_args")
-                    if isinstance(template_args_data, str):
-                        template_args_data = json.loads(template_args_data)
-                    elif not isinstance(template_args_data, dict):
-                        template_args_data = {}
-                    template_mapping[tid] = TemplateInfo(
-                        template_args=template_args_data,
-                        active=tdata.get("active", False),
-                        created_at=tdata.get("created_at", ""),
-                        updated_at=tdata.get("updated_at", ""),
-                    )
-
-        # Parse template_args JSONB from active template (this contains the schema, not the args values)
-        template_args_raw = row.get("template_args")
-        template_schema: dict[str, Any] | None = None
-        template_args: dict[str, Any] | None = None
+        # Read template HTML if template upload exists (keep this in Python for now)
         template_html: str | None = None
-
-        if template_args_raw:
-            if isinstance(template_args_raw, str):
-                template_schema = json.loads(template_args_raw)
-            elif isinstance(template_args_raw, dict):
-                template_schema = template_args_raw
-            # For now, template_args (values) is empty - will be populated when user fills form
-            template_args = {}
-
-        # Read template HTML if template upload exists
-        if template and template_upload_id:
+        if result.template and result.template_upload_id:
             try:
-                # Try to get from template_file_path first, then fallback to regular upload
-                template_file_path = row.get("template_file_path")
-                if template_file_path:
-                    full_path = os.path.join(UPLOAD_FOLDER, template_file_path)
+                if result.template_file_path:
+                    full_path = os.path.join(UPLOAD_FOLDER, result.template_file_path)
                     if os.path.exists(full_path):
                         with open(full_path, encoding="utf-8") as f:
                             template_html = f.read()
-                else:
-                    sql_get_upload = load_sql("app/sql/v3/uploads/get_upload_file_info.sql")
-                    upload_row = await conn.fetchrow(sql_get_upload, template_upload_id)
-                    if upload_row and upload_row.get("file_path"):
-                        file_path = upload_row["file_path"]
-                        full_path = os.path.join(UPLOAD_FOLDER, file_path)
-                        if os.path.exists(full_path):
-                            with open(full_path, encoding="utf-8") as f:
-                                template_html = f.read()
             except Exception:
                 # If reading fails, template_html will remain None
                 pass
 
-        # Parse scenario_ids
-        scenario_ids: list[str] = []
-        if row.get("scenario_ids"):
-            scenario_ids = [str(sid) for sid in row["scenario_ids"]]
+        # Convert SQL result to API response
+        # Update template_html from file system
+        response_dict = result.model_dump()
+        if template_html is not None:
+            response_dict["template_html"] = template_html
+        api_response = GetDocumentDetailApiResponse.model_validate(response_dict)
 
-        # Get updated_at
-        updated_at = row.get("updated_at")
-        if updated_at:
-            if isinstance(updated_at, str):
-                updated_at_str = updated_at
-            else:
-                updated_at_str = (
-                    updated_at.isoformat()
-                    if hasattr(updated_at, "isoformat")
-                    else str(updated_at)
-                )
-        else:
-            updated_at_str = ""
-
-        # Get extension
-        extension = row.get("extension")
-
-        # Get can_edit and can_delete
-        can_edit = row.get("can_edit", False)
-        can_delete = row.get("can_delete", False)
-
-        # Get document_id
-        document_id = str(row.get("document_id", request_body.documentId))
-
-        # Type field was removed from documents table - derive from extension or use empty string
-        doc_type = extension if extension else ""
-
-        response_data = DocumentDetailResponse(
-            document_id=document_id,
-            name=row.get("name", ""),
-            description=row.get("description", ""),
-            active=row.get("active", False),
-            type=doc_type,
-            upload_id=row.get("upload_id"),
-            updated_at=updated_at_str,
-            extension=extension,
-            scenario_ids=scenario_ids,
-            can_edit=can_edit,
-            can_delete=can_delete,
-            document_type_options=document_type_options,
-            department_ids=dept_ids,
-            valid_department_ids=valid_department_ids,
-            department_mapping=department_mapping,
-            field_ids=field_ids,
-            valid_field_ids=valid_field_ids,
-            field_mapping=field_mapping,
-            parameter_mapping=parameter_mapping,
-            linked_parameter_ids=linked_parameter_ids,
-            classify_agent_id=row.get("classify_agent_id", ""),
-            document_agent_id=row.get("document_agent_id", ""),
-            agent_mapping=agent_mapping,
-            valid_agent_ids=valid_agent_ids,
-            template=template,
-            template_id=template_id,
-            template_schema=template_schema,
-            template_args=template_args,
-            template_upload_id=template_upload_id,
-            template_html=template_html,
-            template_mapping=template_mapping,
-        )
-
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=request.url.path,
+            route_path=http_request.url.path,
             operation="get_document_detail",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=request,
+            request=http_request,
         )

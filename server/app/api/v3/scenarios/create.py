@@ -1,56 +1,25 @@
 """Scenario create endpoint - v3 API following DHH principles."""
 
 import json
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    CreateScenarioApiRequest,
+    CreateScenarioApiResponse,
+    CreateScenarioSqlParams,
+    CreateScenarioSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class CreateScenarioRequest(BaseModel):
-    """Request to create a scenario."""
-
-    name: str
-    description: str | None = None
-    problem_statement: str
-    problem_statement_name: str | None = None  # Optional, defaults to scenario name
-    problem_statement_versions: list[str] | None = None
-    department_ids: list[str] | None
-    active: bool
-    persona_ids: list[str] | None
-    document_ids: list[str]
-    template_document_ids: list[str] | None = None
-    objective_ids: list[str]
-    upload_ids: list[str] | None = None
-    image_names: list[str] | None = None
-    parameters: dict[str, list[str]]
-    objectives_enabled: bool = True
-    images_enabled: bool = False
-    video_enabled: bool = False
-    questions_enabled: bool = False
-    problem_statement_enabled: bool = True
-    video_agent_id: str | None = None
-    video_ids: list[str] | None = None
-    active_video_id: str | None = None
-    question_ids: list[str] | None = None
-    question_timestamps: dict[str, dict[str, list[int]]] | None = None
-    video_length: int | None = None  # Optional: Video length in seconds (4, 8, or 12)
-    # profileId removed - comes from X-Profile-Id header
-
-
-class CreateScenarioResponse(BaseModel):
-    """Response from create operation."""
-
-    success: bool
-    scenarioId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/scenarios/create_scenario_complete.sql"
 
 
 router = APIRouter()
@@ -58,7 +27,7 @@ router = APIRouter()
 
 @router.post(
     "/create",
-    response_model=CreateScenarioResponse,
+    response_model=CreateScenarioApiResponse,
     dependencies=[
         audit_activity(
             "scenario.created",
@@ -67,15 +36,15 @@ router = APIRouter()
     ],
 )
 async def create_scenario(
-    request: CreateScenarioRequest,
+    request: CreateScenarioApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateScenarioResponse:
+) -> CreateScenarioApiResponse:
     """Create a new scenario."""
     tags = ["scenarios"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -115,34 +84,24 @@ async def create_scenario(
                 versions_list.append(request.problem_statement.strip())
             problem_statement_versions = versions_list if versions_list else None
 
-        # Ensure arrays are not None (use empty arrays)
-        department_ids = request.department_ids or []
-        persona_ids = request.persona_ids or []
-        document_ids = request.document_ids or []
-        template_document_ids = request.template_document_ids or []
-        objective_ids = filtered_objective_ids or []
-        upload_ids = request.upload_ids or []
-        image_names = request.image_names or []
-        parameter_item_ids = parameter_item_ids or []
-        parameter_ids = parameter_ids or []
-
         # Server-side validation: enforce fixed limits (server is source of truth)
+        # Note: SQL handles None-to-empty conversions, so we can pass None values
         # Personas: 1-3 (must have at least 1)
-        persona_count = len(persona_ids)
+        persona_count = len(request.persona_ids or [])
         if persona_count < 1 or persona_count > 3:
             raise ValueError(
                 f"Personas must be between 1 and 3. Received {persona_count}."
             )
 
         # Documents: 0-3
-        document_count = len(document_ids)
+        document_count = len(request.document_ids or [])
         if document_count > 3:
             raise ValueError(
                 f"Documents must be between 0 and 3. Received {document_count}."
             )
 
         # Parameters: 0-3
-        parameter_count = len(parameter_ids)
+        parameter_count = len(parameter_ids or [])
         if parameter_count > 3:
             raise ValueError(
                 f"Parameters must be between 0 and 3. Received {parameter_count}."
@@ -158,37 +117,28 @@ async def create_scenario(
                 )
 
         # Objectives: 0-3
-        objective_count = len(objective_ids)
+        objective_count = len(filtered_objective_ids or [])
         if objective_count > 3:
             raise ValueError(
                 f"Objectives must be between 0 and 3. Received {objective_count}."
             )
 
         # Validate upload_ids and image_names match in length
-        if len(upload_ids) != len(image_names):
+        if len(request.upload_ids or []) != len(request.image_names or []):
             raise ValueError("upload_ids and image_names must have the same length")
 
         # Prepare upload images JSON (array of objects with upload_id and name)
-        upload_images_json = (
-            json.dumps(
-                [
-                    {"upload_id": upload_id, "name": name}
-                    for upload_id, name in zip(upload_ids, image_names)
-                ]
-            )
-            if upload_ids and image_names
-            else "[]"
-        )
+        # Pass as dict/list so asyncpg can convert to jsonb automatically
+        upload_images_json = None
+        if request.upload_ids and request.image_names:
+            upload_images_json = [
+                {"upload_id": upload_id, "name": name}
+                for upload_id, name in zip(request.upload_ids, request.image_names)
+            ]
 
-        # Prepare video/question data
-        video_ids = request.video_ids or []
-        active_video_id = request.active_video_id
-        question_ids = request.question_ids or []
-        question_timestamps_json = (
-            json.dumps(request.question_timestamps)
-            if request.question_timestamps
-            else None
-        )
+        # Prepare question timestamps JSON
+        # Pass as dict so asyncpg can convert to jsonb automatically
+        question_timestamps_json = request.question_timestamps
 
         # Validate video_agent_id is provided if video_enabled
         if request.video_enabled and not request.video_agent_id:
@@ -202,43 +152,54 @@ async def create_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Create scenario with all relationships in a single SQL file
-        sql_query = load_sql("app/sql/v3/scenarios/create_scenario_complete.sql")
-        sql_params = (
-            request.name,
-            request.description,  # description
-            request.active,
-            request.objectives_enabled,
-            request.images_enabled,
-            request.video_enabled,
-            request.questions_enabled,
-            request.problem_statement_enabled,
-            request.video_agent_id,  # video_agent_id (required if video_enabled)
-            request.problem_statement,
-            request.problem_statement_name,  # Optional problem statement name
-            problem_statement_versions,
-            department_ids if department_ids else None,
-            persona_ids if persona_ids else None,
-            document_ids,
-            template_document_ids if template_document_ids else None,
-            objective_ids,
-            parameter_item_ids,
-            upload_images_json,
-            video_ids if video_ids else None,
-            active_video_id,
-            question_ids if question_ids else None,
-            question_timestamps_json,
-            None,  # run_id (for linking AI-generated problem_statements and objectives to runs)
-            parameter_ids if parameter_ids else None,
-            profile_id,
-        )
-        result = await conn.fetchrow(sql_query, *sql_params)
+        # Convert API request to SQL params (add profile_id from header)
+        # Construct dict with preprocessed values for SQL params
+        # SQL handles None-to-empty conversions via COALESCE in params CTE
+        request_dict = {
+            "name": request.name,
+            "description": request.description,
+            "active": request.active,
+            "objectives_enabled": request.objectives_enabled,
+            "images_enabled": request.images_enabled,
+            "video_enabled": request.video_enabled,
+            "questions_enabled": request.questions_enabled,
+            "problem_statement_enabled": request.problem_statement_enabled,
+            "video_agent_id": request.video_agent_id,
+            "problem_statement": request.problem_statement,
+            "problem_statement_name": request.problem_statement_name,
+            "problem_statement_versions": problem_statement_versions,
+            "department_ids": request.department_ids,
+            "persona_ids": request.persona_ids,
+            "document_ids": request.document_ids,
+            "template_document_ids": request.template_document_ids,
+            "objective_ids": filtered_objective_ids,
+            "parameter_item_ids": parameter_item_ids,
+            "upload_images_json": upload_images_json,
+            "video_ids": request.video_ids,
+            "active_video_id": request.active_video_id,
+            "question_ids": request.question_ids,
+            "question_timestamps": question_timestamps_json,
+            "run_id": None,
+            "parameter_ids": parameter_ids,
+        }
+        params = CreateScenarioSqlParams(**request_dict, profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        if not result:
+        # Execute SQL with typed helper (single row result)
+        result = cast(
+            CreateScenarioSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
+
+        if not result.scenario_id:
             raise ValueError("Failed to create scenario")
 
-        scenario_id = result["scenario_id"]
-        actor_name = result.get("actor_name")
+        scenario_id = str(result.scenario_id)
+        actor_name = result.actor_name
 
         # Set audit context with data from SQL query
         if actor_name:
@@ -248,7 +209,7 @@ async def create_scenario(
                 scenario={"name": request.name, "id": scenario_id},
             )
 
-        result_data = CreateScenarioResponse(
+        result_data = CreateScenarioApiResponse(
             success=True,
             scenarioId=scenario_id,
             message=f"Scenario '{request.name}' created successfully",

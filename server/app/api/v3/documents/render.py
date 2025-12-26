@@ -2,8 +2,7 @@
 
 import json
 import os
-import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.api.v3.settings.active import (SettingsActiveRequest,
@@ -12,39 +11,25 @@ from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.infra.v3.templates.jinja_renderer import render_template
 from app.main import UPLOAD_FOLDER, get_db
+from app.sql.types import (RenderTemplateApiRequest, RenderTemplateApiResponse,
+                           RenderTemplateSqlParams, RenderTemplateSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
+logger = get_logger(__name__)
 
-class RenderTemplateRequest(BaseModel):
-    """Request to render document template."""
-
-    documentId: str
-    templateArgs: dict[str, Any]
-    # profileId removed - comes from X-Profile-Id header
-    departmentIds: list[str] | None = (
-        None  # Optional department IDs for department-specific theme
-    )
-
-
-class RenderTemplateResponse(BaseModel):
-    """Response from template rendering."""
-
-    success: bool
-    message: str
-    rendered_html: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/documents/render_template_complete.sql"
 
 
 router = APIRouter()
 
-logger = get_logger(__name__)
-
 
 @router.post(
     "/render",
-    response_model=RenderTemplateResponse,
+    response_model=RenderTemplateApiResponse,
     dependencies=[
         audit_activity(
             "document.rendered",
@@ -53,51 +38,56 @@ logger = get_logger(__name__)
     ],
 )
 async def render_document_template(
-    request: RenderTemplateRequest,
+    request: RenderTemplateApiRequest,
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> RenderTemplateResponse:
+) -> RenderTemplateApiResponse:
     """Render Jinja2 template with template args and theme injection."""
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
-        profile_id_str = http_request.state.profile_id
-        if not profile_id_str:
+        profile_id = http_request.state.profile_id
+        if not profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert string ID to UUID
-        document_id = uuid.UUID(request.documentId)
-        profile_id = uuid.UUID(profile_id_str)
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double star pattern: **request.model_dump()
+        params = RenderTemplateSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        # Get template upload info and template args
-        # SQL uses INNER JOIN so it only returns rows if document exists and has active template
-        sql_query = load_sql("app/sql/v3/documents/render_template_complete.sql")
-        sql_params = (str(document_id), str(profile_id))
-        template_row = await conn.fetchrow(sql_query, str(document_id), str(profile_id))
+        # Execute SQL with typed helper - automatically detects and calls function if present
+        result = cast(
+            RenderTemplateSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
 
-        if not template_row:
+        if not result or not result.document_name:
             raise HTTPException(
                 status_code=404,
-                detail=f"Document {request.documentId} not found or has no active template",
+                detail=f"Document {request.document_id} not found or has no active template",
             )
 
-        document_name = template_row.get("document_name", "Unknown")
-        actor_name = template_row.get("actor_name")
+        document_name = result.document_name
+        actor_name = result.actor_name
 
         # Set audit context
         if actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": profile_id_str},
-                document={"name": document_name, "id": request.documentId},
+                actor={"name": actor_name, "id": profile_id},
+                document={"name": document_name, "id": str(request.document_id)},
             )
 
-        file_path = template_row.get("file_path")
+        file_path = result.file_path
         if not file_path:
             raise HTTPException(
                 status_code=404,
@@ -123,8 +113,9 @@ async def render_document_template(
         )
         theme_tokens = settings_response.tokens
 
-        # Get template schema (dtu.args contains the schema with placeholder/description metadata)
-        template_schema_raw = template_row.get("template_args") or {}
+        # Get template schema (template_args contains the schema with placeholder/description metadata)
+        # template_args is already parsed by execute_sql_typed (JSONB → dict)
+        template_schema_raw = result.template_args or {}
         if isinstance(template_schema_raw, str):
             template_schema_raw = json.loads(template_schema_raw)
 
@@ -475,11 +466,14 @@ async def render_document_template(
             theme_tokens=theme_tokens,
         )
 
-        return RenderTemplateResponse(
+        # Convert to API response
+        api_response = RenderTemplateApiResponse(
             success=True,
             message="Template rendered successfully",
             rendered_html=rendered_html,
         )
+
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

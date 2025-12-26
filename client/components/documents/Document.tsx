@@ -229,29 +229,79 @@ export default function Document({
     [],
   );
 
-  // Extract mappings from data
-  const departmentMapping = useMemo(
+  // Extract arrays from data (composite types) and create lookup maps for performance
+  const departmentsArray = useMemo(
     () =>
       (isEditMode
-        ? documentDetail?.department_mapping
-        : documentDetailDefault?.department_mapping) || {},
+        ? documentDetail?.departments
+        : documentDetailDefault?.departments) || [],
     [isEditMode, documentDetail, documentDetailDefault],
   );
-  const fieldMapping = useMemo(
+  const fieldsArray = useMemo(
     () =>
       (isEditMode
-        ? documentDetail?.field_mapping
-        : documentDetailDefault?.field_mapping) || {},
+        ? documentDetail?.fields
+        : documentDetailDefault?.fields) || [],
     [isEditMode, documentDetail, documentDetailDefault],
   );
-  const agentMapping = useMemo(
-    () => (isEditMode ? documentDetail?.agent_mapping : {}) || {},
+  const agentsArray = useMemo(
+    () => (isEditMode ? documentDetail?.agents : []) || [],
     [isEditMode, documentDetail],
   );
-  const parameterMapping = useMemo(
-    () => (isEditMode ? {} : documentDetailDefault?.parameter_mapping) || {},
+  const parametersArray = useMemo(
+    () => (isEditMode ? [] : documentDetailDefault?.parameters) || [],
     [isEditMode, documentDetailDefault],
   );
+
+  // Create lookup maps from arrays (replacing old mappings)
+  const departmentMapping = useMemo(() => {
+    const map: Record<string, { name: string }> = {};
+    departmentsArray.forEach((d) => {
+      if (d.department_id) {
+        map[d.department_id] = { name: d.name || "" };
+      }
+    });
+    return map;
+  }, [departmentsArray]);
+
+  const fieldMapping = useMemo(() => {
+    const map: Record<string, { name: string; parameter_id?: string }> = {};
+    fieldsArray.forEach((f) => {
+      if (f.field_id) {
+        map[f.field_id] = {
+          name: f.name || "",
+          parameter_id: f.parameter_id,
+        };
+      }
+    });
+    return map;
+  }, [fieldsArray]);
+
+  const agentMapping = useMemo(() => {
+    const map: Record<string, { name: string }> = {};
+    agentsArray.forEach((a) => {
+      if (a.agent_id) {
+        map[a.agent_id] = { name: a.name || "" };
+      }
+    });
+    return map;
+  }, [agentsArray]);
+
+  const parameterMapping = useMemo(() => {
+    const map: Record<
+      string,
+      { name: string; document_parameter?: boolean }
+    > = {};
+    parametersArray.forEach((p) => {
+      if (p.parameter_id) {
+        map[p.parameter_id] = {
+          name: p.name || "",
+          document_parameter: p.document_parameter,
+        };
+      }
+    });
+    return map;
+  }, [parametersArray]);
 
   const validDepartmentIds = useMemo(() => {
     if (isEditMode) {
@@ -1725,7 +1775,7 @@ export default function Document({
             <Label>Required Parameters</Label>
             {formData?.parameterItemIds !== undefined ? (
               <ParameterSelector
-                parameterMapping={documentDetail.parameter_mapping || {}}
+                parameterMapping={parameterMapping}
                 fieldMapping={fieldMapping}
                 validParameterItemIds={documentDetail.valid_field_ids || []}
                 selectedParameterItemIds={formData.parameterItemIds}

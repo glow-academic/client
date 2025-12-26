@@ -1,31 +1,24 @@
 """Scenario duplicate endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db
+from app.sql.types import (
+    DuplicateScenarioApiRequest,
+    DuplicateScenarioApiResponse,
+    DuplicateScenarioSqlParams,
+    DuplicateScenarioSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DuplicateScenarioRequest(BaseModel):
-    """Request to duplicate a scenario."""
-
-    scenarioId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DuplicateScenarioResponse(BaseModel):
-    """Response from duplicate operation."""
-
-    success: bool
-    scenarioId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/scenarios/duplicate_scenario_complete.sql"
 
 
 router = APIRouter()
@@ -33,7 +26,7 @@ router = APIRouter()
 
 @router.post(
     "/duplicate",
-    response_model=DuplicateScenarioResponse,
+    response_model=DuplicateScenarioApiResponse,
     dependencies=[
         audit_activity(
             "scenario.duplicated",
@@ -42,15 +35,15 @@ router = APIRouter()
     ],
 )
 async def duplicate_scenario(
-    request: DuplicateScenarioRequest,
+    request: DuplicateScenarioApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DuplicateScenarioResponse:
+) -> DuplicateScenarioApiResponse:
     """Duplicate a scenario."""
     tags = ["scenarios"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -62,40 +55,46 @@ async def duplicate_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            # Use single comprehensive SQL file (DHH style)
-            sql_query = load_sql("app/sql/v3/scenarios/duplicate_scenario.sql")
-            sql_params = (request.scenarioId, profile_id)
-            new_scenario_row = await conn.fetchrow(
-                sql_query, request.scenarioId, profile_id
+        # Convert API request to SQL params (add profile_id from header)
+        params = DuplicateScenarioSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
+
+        # Execute SQL with typed helper (single row result)
+        result = cast(
+            DuplicateScenarioSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
+
+        if not result.scenario_id:
+            raise ValueError(f"Scenario not found: {request.scenarioId}")
+
+        new_scenario_id = str(result.scenario_id)
+        scenario_name = result.scenario_name or "Unknown"
+        actor_name = result.actor_name
+
+        # Set audit context with data from SQL query
+        if actor_name:
+            audit_set(
+                http_request,
+                actor={"name": actor_name, "id": profile_id},
+                scenario={"name": scenario_name, "id": new_scenario_id},
             )
 
-            if not new_scenario_row:
-                raise ValueError(f"Scenario not found: {request.scenarioId}")
+        result_data = DuplicateScenarioApiResponse(
+            success=True,
+            scenarioId=new_scenario_id,
+            message=f"Scenario '{scenario_name}' duplicated successfully",
+        )
 
-            new_scenario_id = new_scenario_row["scenario_id"]
-            scenario_name = new_scenario_row.get("scenario_name", "Unknown")
-            actor_name = new_scenario_row.get("actor_name")
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    scenario={"name": scenario_name, "id": new_scenario_id},
-                )
-
-            result_data = DuplicateScenarioResponse(
-                success=True,
-                scenarioId=new_scenario_id,
-                message=f"Scenario '{scenario_name}' duplicated successfully",
-            )
-
-            # Invalidate cache after mutation
-            await invalidate_tags(tags)
-            response.headers["X-Invalidate-Tags"] = ",".join(tags)
-
-            return result_data
+        return result_data
     except HTTPException:
         raise
     except ValueError as e:

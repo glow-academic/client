@@ -1,24 +1,254 @@
+-- Get scenario new endpoint data
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_get_scenario_new_v3(uuid, boolean, boolean, uuid[], uuid[], uuid[], uuid[], uuid[], boolean);
+
+-- 2) Drop types WITHOUT CASCADE
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_department;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_persona;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_document;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_parameter;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_field;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_agent;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_objective;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_problem_statement;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_scenario_image;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_scenario_video;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_question;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_question_option;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_objective_with_departments;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_document_detail;
+DROP TYPE IF EXISTS types.q_get_scenario_new_v3_parameter_detail;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_scenario_new_v3_department AS (
+    department_id uuid,
+    name text,
+    description text,
+    persona_ids uuid[],
+    document_ids uuid[],
+    parameter_ids uuid[],
+    field_ids uuid[]
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_persona AS (
+    persona_id uuid,
+    name text,
+    description text,
+    color text,
+    icon text,
+    image_model boolean,
+    parameter_ids uuid[],
+    field_ids uuid[],
+    example text
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_document AS (
+    document_id uuid,
+    name text,
+    description text,
+    file_path text,
+    mime_type text,
+    parameter_ids uuid[],
+    field_ids uuid[],
+    parent_document_id uuid
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_parameter AS (
+    parameter_id uuid,
+    name text,
+    description text,
+    document_parameter boolean,
+    persona_parameter boolean,
+    scenario_parameter boolean,
+    video_parameter boolean,
+    numerical boolean
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_field AS (
+    field_id uuid,
+    name text,
+    description text,
+    parameter_id uuid,
+    parameter_name text,
+    conditional_parameter_ids uuid[]
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_agent AS (
+    agent_id uuid,
+    name text,
+    description text,
+    roles text[]
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_objective AS (
+    objective_id uuid,
+    name text,
+    description text
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_problem_statement AS (
+    problem_statement_id uuid,
+    name text,
+    problem_statement text,
+    created_at timestamptz,
+    updated_at timestamptz
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_scenario_image AS (
+    upload_id uuid,
+    name text,
+    file_path text,
+    mime_type text,
+    active boolean,
+    created_at timestamptz,
+    updated_at timestamptz
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_scenario_video AS (
+    id uuid,
+    name text,
+    length_seconds integer,
+    completed boolean,
+    active boolean,
+    image_enabled boolean,
+    file_path text,
+    mime_type text,
+    upload_id uuid
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_question_option AS (
+    id uuid,
+    option_text text,
+    type text,
+    is_correct boolean
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_question AS (
+    id uuid,
+    question_text text,
+    allow_multiple boolean,
+    active boolean,
+    options types.q_get_scenario_new_v3_question_option[],
+    times integer[]
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_objective_with_departments AS (
+    objective text,
+    department_ids uuid[]
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_document_detail AS (
+    document_id uuid,
+    name text,
+    updated_at timestamptz,
+    extension text,
+    scenario_ids uuid[],
+    can_edit boolean,
+    can_delete boolean,
+    active boolean,
+    department_ids uuid[],
+    file_path text,
+    mime_type text,
+    upload_id uuid,
+    field_ids uuid[],
+    is_template boolean,
+    parent_document_id uuid
+);
+
+CREATE TYPE types.q_get_scenario_new_v3_parameter_detail AS (
+    param_id uuid,
+    selected_items uuid[],
+    valid_items uuid[]
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_scenario_new_v3(
+    profile_id uuid,
+    use_image boolean DEFAULT NULL,
+    use_objectives boolean DEFAULT NULL,
+    document_ids uuid[] DEFAULT NULL,
+    problem_statement_ids uuid[] DEFAULT NULL,
+    template_document_ids uuid[] DEFAULT NULL,
+    objective_ids uuid[] DEFAULT NULL,
+    image_ids uuid[] DEFAULT NULL,
+    use_video boolean DEFAULT NULL
+)
+RETURNS TABLE (
+    actor_name text,
+    user_role text,
+    department_ids text[],
+    valid_persona_ids text[],
+    valid_document_ids text[],
+    primary_department_id text,
+    scenario_agent_id text,
+    image_agent_id text,
+    video_agent_id text,
+    valid_agent_ids text[],
+    selected_template_document_ids text[],
+    video_enabled boolean,
+    questions_enabled boolean,
+    persona_range_min integer,
+    persona_range_max integer,
+    document_range_min integer,
+    document_range_max integer,
+    parameter_range_min integer,
+    parameter_range_max integer,
+    question_ids text[],
+    departments types.q_get_scenario_new_v3_department[],
+    personas types.q_get_scenario_new_v3_persona[],
+    documents types.q_get_scenario_new_v3_document[],
+    parameters types.q_get_scenario_new_v3_parameter[],
+    fields types.q_get_scenario_new_v3_field[],
+    agents types.q_get_scenario_new_v3_agent[],
+    objectives types.q_get_scenario_new_v3_objective[],
+    problem_statements types.q_get_scenario_new_v3_problem_statement[],
+    scenario_images types.q_get_scenario_new_v3_scenario_image[],
+    scenario_videos types.q_get_scenario_new_v3_scenario_video[],
+    questions types.q_get_scenario_new_v3_question[],
+    objectives_history types.q_get_scenario_new_v3_objective_with_departments[],
+    document_details types.q_get_scenario_new_v3_document_detail[],
+    parameters_detail types.q_get_scenario_new_v3_parameter_detail[]
+)
+LANGUAGE sql
+STABLE
+AS $$
 WITH params AS (
-    -- Explicitly cast all parameters for asyncpg type inference
-    -- Parameters: $1=profileId (uuid), $2=useImage (boolean, unused), $3=useObjectives (boolean, unused),
-    --             $4=documentIds (uuid[]), $5=problemStatementIds (uuid[]), $6=templateDocumentIds (uuid[]),
-    --             $7=objectiveIds (uuid[]), $8=imageIds (uuid[]), $9=useVideo (boolean, for video parameter filtering)
     SELECT 
-        $1::uuid as profile_id,
-        $2::boolean as use_image,
-        $3::boolean as use_objectives,
-        $4::uuid[] as document_ids,
-        $5::uuid[] as problem_statement_ids,
-        $6::uuid[] as template_document_ids,
-        $7::uuid[] as objective_ids,
-        $8::uuid[] as image_ids,
-        $9::boolean as use_video
+        profile_id AS profile_id,
+        COALESCE(use_image, false) AS use_image,
+        COALESCE(use_objectives, false) AS use_objectives,
+        COALESCE(document_ids, ARRAY[]::uuid[]) AS document_ids,
+        COALESCE(problem_statement_ids, ARRAY[]::uuid[]) AS problem_statement_ids,
+        COALESCE(template_document_ids, ARRAY[]::uuid[]) AS template_document_ids,
+        COALESCE(objective_ids, ARRAY[]::uuid[]) AS objective_ids,
+        COALESCE(image_ids, ARRAY[]::uuid[]) AS image_ids,
+        COALESCE(use_video, false) AS use_video
+),
+params_single AS (
+    SELECT * FROM params LIMIT 1
+),
+extracted_params AS (
+    SELECT 
+        ps.document_ids::uuid[] as document_ids,
+        ps.problem_statement_ids::uuid[] as problem_statement_ids,
+        ps.template_document_ids::uuid[] as template_document_ids,
+        ps.objective_ids::uuid[] as objective_ids,
+        ps.image_ids::uuid[] as image_ids,
+        ps.use_video::boolean as use_video,
+        ps.profile_id::uuid as profile_id
+    FROM params_single ps
 ),
 user_profile AS (
     SELECT 
         first_name || ' ' || last_name as actor_name,
         role as user_role
-    FROM profiles WHERE id = $1
+    FROM profiles WHERE id = (SELECT profile_id FROM extracted_params)
 ),
 user_departments AS (
     SELECT DISTINCT d.id
@@ -30,7 +260,7 @@ user_departments AS (
 department_persona_ids AS (
     SELECT 
         d.id as department_id,
-        COALESCE(ARRAY_AGG(p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as persona_ids
+        COALESCE(ARRAY_AGG(p.id ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::uuid[]) as persona_ids
     FROM departments d
     INNER JOIN user_departments ud ON d.id = ud.id
     LEFT JOIN personas p ON p.active = true
@@ -44,7 +274,7 @@ department_persona_ids AS (
 department_document_ids AS (
     SELECT 
         d.id as department_id,
-        COALESCE(ARRAY_AGG(doc.id::text ORDER BY doc.id) FILTER (WHERE doc.id IS NOT NULL), ARRAY[]::text[]) as document_ids
+        COALESCE(ARRAY_AGG(doc.id ORDER BY doc.id) FILTER (WHERE doc.id IS NOT NULL), ARRAY[]::uuid[]) as document_ids
     FROM departments d
     INNER JOIN user_departments ud ON d.id = ud.id
     LEFT JOIN documents doc ON doc.active = true
@@ -55,7 +285,7 @@ department_document_ids AS (
 department_parameter_ids AS (
     SELECT 
         d.id as department_id,
-        COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
+        COALESCE(ARRAY_AGG(DISTINCT p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::uuid[]) as parameter_ids
     FROM departments d
     INNER JOIN user_departments ud ON d.id = ud.id
     LEFT JOIN parameters p ON p.active = true
@@ -66,10 +296,10 @@ department_parameter_ids AS (
                                                  WHERE pf2.parameter_id = p.id AND pf2.active = true AND fd2.active = true))
     GROUP BY d.id
 ),
-department_parameter_item_ids AS (
+department_field_ids AS (
     SELECT 
         d.id as department_id,
-        COALESCE(ARRAY_AGG(f.id::text ORDER BY f.id) FILTER (WHERE f.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
+        COALESCE(ARRAY_AGG(f.id ORDER BY f.id) FILTER (WHERE f.id IS NOT NULL), ARRAY[]::uuid[]) as field_ids
     FROM departments d
     INNER JOIN user_departments ud ON d.id = ud.id
     LEFT JOIN fields f ON true
@@ -80,27 +310,21 @@ department_parameter_item_ids AS (
     )
     GROUP BY d.id
 ),
-department_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            d.id::text,
-            jsonb_build_object(
-                'name', d.title,
-                'description', COALESCE(d.description, ''),
-                'persona_ids', CASE WHEN dpi.persona_ids IS NOT NULL AND array_length(dpi.persona_ids, 1) > 0 THEN to_jsonb(dpi.persona_ids) ELSE NULL END,
-                'document_ids', CASE WHEN ddi.document_ids IS NOT NULL AND array_length(ddi.document_ids, 1) > 0 THEN to_jsonb(ddi.document_ids) ELSE NULL END,
-                'parameter_ids', CASE WHEN dparami.parameter_ids IS NOT NULL AND array_length(dparami.parameter_ids, 1) > 0 THEN to_jsonb(dparami.parameter_ids) ELSE NULL END,
-                'parameter_item_ids', CASE WHEN dparamitems.parameter_item_ids IS NOT NULL AND array_length(dparamitems.parameter_item_ids, 1) > 0 THEN to_jsonb(dparamitems.parameter_item_ids) ELSE NULL END
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping
+all_departments_array AS (
+    SELECT 
+        d.id as department_id,
+        d.title as name,
+        COALESCE(d.description, '') as description,
+        COALESCE(dpi.persona_ids, ARRAY[]::uuid[]) as persona_ids,
+        COALESCE(ddi.document_ids, ARRAY[]::uuid[]) as document_ids,
+        COALESCE(dparami.parameter_ids, ARRAY[]::uuid[]) as parameter_ids,
+        COALESCE(dfi.field_ids, ARRAY[]::uuid[]) as field_ids
     FROM departments d
     INNER JOIN user_departments ud ON d.id = ud.id
     LEFT JOIN department_persona_ids dpi ON dpi.department_id = d.id
     LEFT JOIN department_document_ids ddi ON ddi.department_id = d.id
     LEFT JOIN department_parameter_ids dparami ON dparami.department_id = d.id
-    LEFT JOIN department_parameter_item_ids dparamitems ON dparamitems.department_id = d.id
+    LEFT JOIN department_field_ids dfi ON dfi.department_id = d.id
 ),
 persona_data AS (
     SELECT 
@@ -109,7 +333,7 @@ persona_data AS (
         COALESCE(p.description, '') as description,
         p.color,
         p.icon,
-        false as image_model  -- No longer checking via persona agents
+        false as image_model
     FROM personas p
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
     WHERE p.active = true
@@ -121,8 +345,7 @@ persona_data AS (
         )
         AND (
             CASE 
-                WHEN (SELECT use_video FROM params LIMIT 1) = true THEN
-                    -- Include video_parameter OR general parameters
+                WHEN (SELECT use_video FROM extracted_params) = true THEN
                     EXISTS (
                         SELECT 1 
                         FROM persona_fields pf
@@ -157,7 +380,6 @@ persona_data AS (
                         AND param.scenario_parameter = false
                     )
                 ELSE
-                    -- Include scenario_parameter OR general parameters
                     EXISTS (
                         SELECT 1 
                         FROM persona_fields pf
@@ -195,8 +417,6 @@ persona_data AS (
         )
     ORDER BY p.name
 ),
--- Persona parameter relationships: via fields (persona_fields → parameter_fields) and persona_parameter flag
--- Note: parameter_personas junction table removed - use persona_parameter boolean flag instead
 persona_parameter_relationships AS (
     SELECT DISTINCT
         p.id as persona_id,
@@ -206,7 +426,6 @@ persona_parameter_relationships AS (
     WHERE param.active = true
     AND param.persona_parameter = true
     AND (
-        -- Indirect relationship via persona_fields → parameter_fields
         EXISTS (
             SELECT 1 FROM persona_fields pf
             JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
@@ -215,26 +434,17 @@ persona_parameter_relationships AS (
             AND pf.active = true
             AND pfield.active = true
         )
-        -- If parameter has persona_parameter flag, it's valid for all personas (no junction table restrictions)
     )
 ),
-persona_parameter_mapping AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            ppr.persona_id::text,
-            COALESCE(
-                (SELECT jsonb_agg(ppr2.parameter_id::text ORDER BY ppr2.parameter_id)
-                 FROM persona_parameter_relationships ppr2
-                 WHERE ppr2.persona_id = ppr.persona_id),
-                '[]'::jsonb
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping
-    FROM persona_parameter_relationships ppr
+persona_fields_data AS (
+    SELECT 
+        pf.persona_id,
+        ARRAY_AGG(pf.field_id ORDER BY pf.field_id) as field_ids
+    FROM persona_fields pf
+    WHERE pf.active = true
+    GROUP BY pf.persona_id
 ),
 persona_examples_data AS (
-    -- Get top example per persona (ordered by idx, take first)
     SELECT DISTINCT ON (pe.persona_id)
         pe.persona_id,
         e.example
@@ -243,38 +453,26 @@ persona_examples_data AS (
     WHERE pe.persona_id IN (SELECT id FROM persona_data)
     ORDER BY pe.persona_id, pe.idx
 ),
-persona_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            p.id::text,
-            jsonb_build_object(
-                'name', p.name,
-                'description', p.description,
-                'color', p.color,
-                'icon', p.icon,
-                'image_model', COALESCE(p.image_model, false),
-                'parameter_ids', COALESCE(
-                    (SELECT jsonb_agg(ppr.parameter_id::text ORDER BY ppr.parameter_id)
-                     FROM persona_parameter_relationships ppr
-                     WHERE ppr.persona_id = p.id),
-                    '[]'::jsonb
-                ),
-                'field_ids', COALESCE(
-                    (SELECT jsonb_agg(pf.field_id::text ORDER BY pf.field_id)
-                     FROM persona_fields pf
-                     WHERE pf.persona_id = p.id AND pf.active = true),
-                    '[]'::jsonb
-                ),
-                'example', CASE WHEN ped.example IS NOT NULL THEN ped.example ELSE NULL END
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping
+all_personas_array AS (
+    SELECT 
+        p.id as persona_id,
+        p.name,
+        p.description,
+        p.color,
+        p.icon,
+        p.image_model,
+        COALESCE((
+            SELECT ARRAY_AGG(ppr.parameter_id ORDER BY ppr.parameter_id)
+            FROM persona_parameter_relationships ppr
+            WHERE ppr.persona_id = p.id
+        ), ARRAY[]::uuid[]) as parameter_ids,
+        COALESCE(pfd.field_ids, ARRAY[]::uuid[]) as field_ids,
+        ped.example
     FROM persona_data p
+    LEFT JOIN persona_fields_data pfd ON pfd.persona_id = p.id
     LEFT JOIN persona_examples_data ped ON ped.persona_id = p.id
 ),
 document_data AS (
-    -- Department-filtered documents
     SELECT 
         d.id,
         d.name,
@@ -290,9 +488,7 @@ document_data AS (
         )
         AND (
             CASE 
-                WHEN (SELECT use_video FROM params LIMIT 1) = true THEN
-                    -- Include ONLY video_parameter relationships (direct or conditional)
-                    -- Do NOT include general parameters for documents
+                WHEN (SELECT use_video FROM extracted_params) = true THEN
                     EXISTS (
                         SELECT 1 
                         FROM document_fields df
@@ -315,7 +511,6 @@ document_data AS (
                         AND cp.video_parameter = true
                     )
                 ELSE
-                    -- Include scenario_parameter OR general parameters
                     EXISTS (
                         SELECT 1 
                         FROM document_fields df
@@ -352,21 +547,18 @@ document_data AS (
             END
         )
     UNION
-    -- Include provided documentIds even if they don't match department filters
     SELECT DISTINCT
         d.id,
         d.name,
         ''::text as description
     FROM documents d
     WHERE d.active = true
-    AND $4::uuid[] IS NOT NULL
-    AND array_length($4::uuid[], 1) > 0
-    AND d.id = ANY($4::uuid[])
+    AND (SELECT document_ids FROM extracted_params) IS NOT NULL
+    AND array_length((SELECT document_ids FROM extracted_params), 1) > 0
+            AND d.id IN (SELECT unnest((SELECT document_ids FROM extracted_params LIMIT 1)::uuid[]))
     AND (
         CASE 
             WHEN (SELECT use_video FROM params LIMIT 1) = true THEN
-                -- Include ONLY video_parameter relationships (direct or conditional)
-                -- Do NOT include general parameters for documents
                 EXISTS (
                     SELECT 1 
                     FROM document_fields df
@@ -389,7 +581,6 @@ document_data AS (
                     AND cp.video_parameter = true
                 )
             ELSE
-                -- Include scenario_parameter OR general parameters
                 EXISTS (
                     SELECT 1 
                     FROM document_fields df
@@ -426,21 +617,18 @@ document_data AS (
         END
     )
     UNION
-    -- Include provided templateDocumentIds even if they don't match department filters
     SELECT DISTINCT
         d.id,
         d.name,
         ''::text as description
     FROM documents d
     WHERE d.active = true
-    AND $6::uuid[] IS NOT NULL
-    AND array_length($6::uuid[], 1) > 0
-    AND d.id = ANY($6::uuid[])
+    AND (SELECT template_document_ids FROM extracted_params) IS NOT NULL
+    AND array_length((SELECT template_document_ids FROM extracted_params), 1) > 0
+    AND d.id IN (SELECT unnest((SELECT template_document_ids FROM extracted_params LIMIT 1)::uuid[]))
     AND (
         CASE 
             WHEN (SELECT use_video FROM params LIMIT 1) = true THEN
-                -- Include ONLY video_parameter relationships (direct or conditional)
-                -- Do NOT include general parameters for documents
                 EXISTS (
                     SELECT 1 
                     FROM document_fields df
@@ -463,7 +651,6 @@ document_data AS (
                     AND cp.video_parameter = true
                 )
             ELSE
-                -- Include scenario_parameter OR general parameters
                 EXISTS (
                     SELECT 1 
                     FROM document_fields df
@@ -501,8 +688,6 @@ document_data AS (
     )
     ORDER BY name
 ),
--- Document parameter relationships: via fields (document_fields → parameter_fields) and document_parameter flag
--- Note: parameter_documents junction table removed - use document_parameter boolean flag instead
 document_parameter_relationships AS (
     SELECT DISTINCT
         d.id as document_id,
@@ -512,7 +697,6 @@ document_parameter_relationships AS (
     WHERE param.active = true
     AND param.document_parameter = true
     AND (
-        -- Indirect relationship via document_fields → parameter_fields
         EXISTS (
             SELECT 1 FROM document_fields df
             JOIN parameter_fields pfield ON pfield.field_id = df.field_id
@@ -521,43 +705,48 @@ document_parameter_relationships AS (
             AND df.active = true
             AND pfield.active = true
         )
-        -- If parameter has document_parameter flag, it's valid for all documents (no junction table restrictions)
     )
 ),
-document_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            d.id::text,
-            jsonb_build_object(
-                'name', d.name,
-                'description', d.description,
-                'parameter_ids', COALESCE(
-                    (SELECT jsonb_agg(dpr.parameter_id::text ORDER BY dpr.parameter_id)
-                     FROM document_parameter_relationships dpr
-                     WHERE dpr.document_id = d.id),
-                    '[]'::jsonb
-                ),
-                'field_ids', COALESCE(
-                    (SELECT jsonb_agg(df.field_id::text ORDER BY df.field_id)
-                     FROM document_fields df
-                     WHERE df.document_id = d.id AND df.active = true),
-                    '[]'::jsonb
-                ),
-                'parent_document_id', (
-                    SELECT dt.parent_id::text
-                    FROM document_tree dt
-                    WHERE dt.child_id = d.id AND dt.active = true
-                    LIMIT 1
-                )
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping
+document_fields_data AS (
+    SELECT 
+        df.document_id,
+        ARRAY_AGG(df.field_id ORDER BY df.field_id) as field_ids
+    FROM document_fields df
+    WHERE df.active = true
+    GROUP BY df.document_id
+),
+document_tree_data AS (
+    SELECT DISTINCT ON (dt.child_id)
+        dt.child_id as document_id,
+        dt.parent_id
+    FROM document_tree dt
+    WHERE dt.active = true
+    ORDER BY dt.child_id, dt.created_at DESC
+),
+all_documents_array AS (
+    SELECT 
+        d.id as document_id,
+        d.name,
+        d.description,
+        COALESCE(u.file_path, template_u.file_path) as file_path,
+        COALESCE(u.mime_type, template_u.mime_type) as mime_type,
+        COALESCE((
+            SELECT ARRAY_AGG(dpr.parameter_id ORDER BY dpr.parameter_id)
+            FROM document_parameter_relationships dpr
+            WHERE dpr.document_id = d.id
+        ), ARRAY[]::uuid[]) as parameter_ids,
+        COALESCE(dfd.field_ids, ARRAY[]::uuid[]) as field_ids,
+        dtd.parent_id as parent_document_id
     FROM document_data d
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
+    LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+    LEFT JOIN templates t ON t.id = dt.template_id
+    LEFT JOIN uploads template_u ON template_u.id = t.upload_id
+    LEFT JOIN document_fields_data dfd ON dfd.document_id = d.id
+    LEFT JOIN document_tree_data dtd ON dtd.document_id = d.id
 ),
 available_scenario_parameters AS (
-    -- Get all parameters with scenario_parameter = true that have fields accessible to the user
-    -- Filter by scenario_parameter flag instead of checking scenario_parameters junction table
     SELECT DISTINCT
         p.id,
         p.name,
@@ -571,7 +760,6 @@ available_scenario_parameters AS (
     WHERE p.active = true
     AND p.scenario_parameter = true
     AND (
-        -- Parameters referenced by accessible fields (for document/persona parameters)
         EXISTS (
             SELECT 1 FROM parameter_fields pf
             JOIN fields f ON f.id = pf.field_id
@@ -600,29 +788,22 @@ parameter_data AS (
     WHERE p.active = true
     GROUP BY p.id, p.name, p.description, p.document_parameter, p.persona_parameter
     HAVING 
-        COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(SELECT id FROM user_departments)) > 0
+        COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                       JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id 
                       WHERE pf2.parameter_id = p.id AND pf2.active = true)
     ORDER BY p.name
 ),
-parameter_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            p.id::text,
-            jsonb_build_object(
-                'name', p.name,
-                'description', p.description,
-                'document_parameter', p.document_parameter,
-                'persona_parameter', p.persona_parameter,
-                'scenario_parameter', p.scenario_parameter,
-                'video_parameter', p.video_parameter,
-                'numerical', false
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping,
-    array_agg(p.id::text ORDER BY p.name) as parameter_ids
+all_parameters_array AS (
+    SELECT 
+        p.id as parameter_id,
+        p.name,
+        p.description,
+        p.document_parameter,
+        p.persona_parameter,
+        p.scenario_parameter,
+        p.video_parameter,
+        p.numerical
     FROM available_scenario_parameters p
 ),
 parameter_item_data AS (
@@ -643,135 +824,127 @@ parameter_item_data AS (
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
     ORDER BY p.name, f.name
 ),
--- Conditional parameter relationships (field → conditional_parameter)
 field_conditional_parameters_data AS (
     SELECT 
         fcp.field_id,
-        ARRAY_AGG(fcp.conditional_parameter_id::text ORDER BY fcp.conditional_parameter_id) as conditional_parameter_ids
+        ARRAY_AGG(fcp.conditional_parameter_id ORDER BY fcp.conditional_parameter_id) as conditional_parameter_ids
     FROM field_conditional_parameters fcp
     WHERE fcp.active = true
     GROUP BY fcp.field_id
 ),
-field_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            pi.id::text,
-            jsonb_build_object(
-                'name', pi.name,
-                'description', pi.description,
-                'parameter_id', pi.parameter_id::text,
-                'parameter_name', pi.parameter_name,
-                'conditional_parameter_ids', COALESCE(
-                    (SELECT to_jsonb(fcpd.conditional_parameter_ids)
-                     FROM field_conditional_parameters_data fcpd
-                     WHERE fcpd.field_id::text = pi.id::text),
-                    '[]'::jsonb
-                )
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping
+all_fields_array AS (
+    SELECT 
+        pi.id as field_id,
+        pi.name,
+        pi.description,
+        pi.parameter_id,
+        pi.parameter_name,
+        COALESCE(fcpd.conditional_parameter_ids, ARRAY[]::uuid[]) as conditional_parameter_ids
     FROM parameter_item_data pi
+    LEFT JOIN field_conditional_parameters_data fcpd ON fcpd.field_id = pi.id
 ),
--- Conditional parameters mapping (for easy lookup)
-conditional_parameters_mapping AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            fcpd.field_id::text,
-            to_jsonb(fcpd.conditional_parameter_ids)
-        ),
-        '{}'::jsonb
-    ) as mapping
-    FROM field_conditional_parameters_data fcpd
-),
-parameters_structure AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            pd.id::text,
-            jsonb_build_object(
-                'parameter_item_ids', '[]'::jsonb,
-                'valid_parameter_item_ids', COALESCE((
-                    SELECT jsonb_agg(f.id::text ORDER BY f.id)
-                    FROM fields f
-                    JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
-                    WHERE pf.parameter_id = pd.id AND f.active = true
-                ), '[]'::jsonb)
-            )
-        ),
-        '{}'::jsonb
-    ) as parameters_json
+all_parameters_detail_array AS (
+    SELECT 
+        pd.id as param_id,
+        ARRAY[]::uuid[] as selected_items,
+        COALESCE((
+            SELECT ARRAY_AGG(f.id ORDER BY f.id)
+            FROM fields f
+            JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
+            WHERE pf.parameter_id = pd.id AND f.active = true
+        ), ARRAY[]::uuid[]) as valid_items
     FROM parameter_data pd
 ),
-document_details_data AS (
+primary_department_id AS (
+    SELECT department_id::text
+    FROM profile_departments
+    WHERE profile_id = (SELECT profile_id FROM extracted_params) AND is_primary = TRUE
+    LIMIT 1
+),
+first_user_department AS (
+    SELECT ud.id
+    FROM user_departments ud
+    ORDER BY ud.id
+    LIMIT 1
+),
+resolved_department_for_agents AS (
     SELECT COALESCE(
-        (
-            SELECT jsonb_agg(
-                jsonb_build_object(
-                    'document_id', d.id::text,
-                    'name', d.name,
-                    'updatedAt', d.updated_at::text,
-                    'extension', CASE 
-                        WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$')
-                        WHEN template_u.file_path IS NOT NULL THEN SUBSTRING(template_u.file_path FROM '\\.([^\\.]+)$')
-                        ELSE NULL 
-                    END,
-                    'scenario_ids', '[]'::jsonb,
-                    'can_edit', true,
-                    'can_delete', true,
-                    'active', d.active,
-                    'file_path', COALESCE(u.file_path, template_u.file_path),
-                    'mime_type', COALESCE(u.mime_type, template_u.mime_type),
-                    'upload_id', COALESCE(u.id::text, template_u.id::text),
-                    'parameter_item_ids', COALESCE((
-                        SELECT jsonb_agg(df.field_id::text)
-                        FROM document_fields df
-                        WHERE df.document_id = d.id AND df.active = true
-                    ), '[]'::jsonb),
-                    'is_template', CASE 
-                        WHEN d.template = true THEN true
-                        WHEN EXISTS(
-                            SELECT 1 FROM document_templates dt2 
-                            WHERE dt2.document_id = d.id AND dt2.active = true
-                        ) THEN true
-                        ELSE false
-                    END,
-                    'parent_document_id', (
-                        SELECT dtree.parent_id::text
-                        FROM document_tree dtree
-                        WHERE dtree.child_id = d.id AND dtree.active = true
-                        LIMIT 1
-                    )
-                ) ORDER BY d.name
-            )
-            FROM documents d
-            LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
-            LEFT JOIN uploads u ON u.id = du.upload_id
-            LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-            LEFT JOIN templates t ON t.id = dt.template_id
-            LEFT JOIN uploads template_u ON template_u.id = t.upload_id
-            WHERE (
-                d.id IN (SELECT id FROM document_data)
-                OR (
-                    $4::uuid[] IS NOT NULL
-                    AND array_length($4::uuid[], 1) > 0
-                    AND d.id = ANY($4::uuid[])
-                )
-                OR (
-                    -- Include child documents when their parent is requested
-                    $4::uuid[] IS NOT NULL
-                    AND array_length($4::uuid[], 1) > 0
-                    AND EXISTS (
-                        SELECT 1 FROM document_tree dtree
-                        WHERE dtree.child_id = d.id
-                        AND dtree.parent_id = ANY($4::uuid[])
-                        AND dtree.active = true
-                    )
-                )
-            )
-            AND d.active = true
-        ),
-        '[]'::jsonb
-    ) as document_details
+        (SELECT pd.department_id FROM profile_departments pd WHERE pd.profile_id = (SELECT profile_id FROM extracted_params) AND pd.is_primary = TRUE LIMIT 1),
+        (SELECT id FROM first_user_department)
+    ) as department_id
+),
+expected_agent_role AS (
+    SELECT 'scenario'::agent_role as role
+),
+default_scenario_agent AS (
+    SELECT a.id::text as agent_id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN resolved_department_for_agents rdfa
+    CROSS JOIN expected_agent_role ear
+    WHERE a.role = ear.role
+    AND a.active = true
+    AND (
+        ad.department_id = rdfa.department_id
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
+    ORDER BY 
+        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
+    LIMIT 1
+),
+default_image_agent AS (
+    SELECT a.id::text as agent_id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN resolved_department_for_agents rdfa
+    WHERE a.role = 'image'
+    AND a.active = true
+    AND (
+        ad.department_id = rdfa.department_id
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
+    ORDER BY 
+        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
+    LIMIT 1
+),
+default_video_agent AS (
+    SELECT a.id::text as agent_id
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN resolved_department_for_agents rdfa
+    WHERE a.role = 'video'
+    AND a.active = true
+    AND (
+        ad.department_id = rdfa.department_id
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
+    ORDER BY 
+        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
+    LIMIT 1
+),
+agent_filtered AS (
+    SELECT a.id, a.name, a.description, a.role
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN expected_agent_role ear
+    WHERE a.active = true 
+    AND (
+        a.role = ear.role
+        OR a.role = 'image'
+        OR a.role = 'video'
+    )
+    GROUP BY a.id, a.name, a.description, a.role, ear.role
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+all_agents_array AS (
+    SELECT 
+        af.id as agent_id,
+        af.name,
+        COALESCE(af.description, '') as description,
+        ARRAY[af.role::text] as roles
+    FROM agent_filtered af
 ),
 accessible_scenarios_default AS (
     SELECT DISTINCT s.id as scenario_id
@@ -786,355 +959,263 @@ accessible_scenarios_default AS (
 objectives_with_departments_default AS (
     SELECT
         o.objective,
-        COALESCE(
-            (
-                SELECT ARRAY_AGG(DISTINCT dept_id ORDER BY dept_id)
-                FROM (
-                    SELECT DISTINCT sd.department_id::text as dept_id
-                    FROM scenario_objectives so2
-                    JOIN objectives o2 ON o2.id = so2.objective_id
-                    JOIN accessible_scenarios_default acs2 ON acs2.scenario_id = so2.scenario_id
-                    LEFT JOIN scenario_departments sd ON sd.scenario_id = so2.scenario_id AND sd.active = true
-                    WHERE o2.objective = o.objective
-                        AND o2.objective IS NOT NULL 
-                        AND o2.objective != ''
-                        AND sd.department_id IS NOT NULL
-                ) dept_list
-            ),
-            ARRAY[]::text[]
-        ) as department_ids
+        COALESCE((
+            SELECT ARRAY_AGG(DISTINCT dept_id ORDER BY dept_id)
+            FROM (
+                SELECT DISTINCT sd.department_id as dept_id
+                FROM scenario_objectives so2
+                JOIN objectives o2 ON o2.id = so2.objective_id
+                JOIN accessible_scenarios_default acs2 ON acs2.scenario_id = so2.scenario_id
+                LEFT JOIN scenario_departments sd ON sd.scenario_id = so2.scenario_id AND sd.active = true
+                WHERE o2.objective = o.objective
+                    AND o2.objective IS NOT NULL 
+                    AND o2.objective != ''
+                    AND sd.department_id IS NOT NULL
+            ) dept_list
+        ), ARRAY[]::uuid[]) as department_ids
     FROM scenario_objectives so
     JOIN objectives o ON o.id = so.objective_id
     JOIN accessible_scenarios_default acs ON acs.scenario_id = so.scenario_id
     WHERE o.objective IS NOT NULL AND o.objective != ''
     GROUP BY o.objective
 ),
-objectives_history_data_default AS (
-    SELECT COALESCE(
-        (
-            SELECT jsonb_agg(
-                jsonb_build_object(
-                    'objective', objective,
-                    'department_ids', department_ids
-                )
-            )
-            FROM (
-                SELECT objective, department_ids
-                FROM objectives_with_departments_default
-                ORDER BY objective
-            ) sorted
-        ),
-        '[]'::jsonb
-    ) as objectives_history
-),
-problem_statement_mapping_data_default AS (
-    SELECT COALESCE(
-        (
-            SELECT jsonb_object_agg(
-                ps.id::text,
-                jsonb_build_object(
-                    'name', ps.name,
-                    'problem_statement', ps.problem_statement,
-                    'created_at', ps.created_at::text,
-                    'updated_at', ps.updated_at::text,
-                    'is_from_scenario', false  -- Always false for new scenario
-                )
-            )
-            FROM problem_statements ps
-            LEFT JOIN problem_statement_departments psd_dept ON psd_dept.problem_statement_id = ps.id AND psd_dept.active = true
-            WHERE (
-                psd_dept.department_id IN (SELECT id FROM user_departments)
-                OR NOT EXISTS (SELECT 1 FROM problem_statement_departments psd2 WHERE psd2.problem_statement_id = ps.id AND psd2.active = true)
-            )
-            AND (
-                -- If problemStatementIds provided, filter by them; otherwise return all valid problem statements
-                ($5::uuid[] IS NULL OR array_length($5::uuid[], 1) = 0)
-                OR ps.id = ANY($5::uuid[])
-            )
-        ),
-        '{}'::jsonb
-    ) as problem_statement_mapping
-),
-primary_department_id AS (
-    SELECT department_id::text
-    FROM profile_departments
-    WHERE profile_id = $1 AND is_primary = TRUE
-    LIMIT 1
-),
-first_user_department AS (
-    SELECT ud.id
-    FROM user_departments ud
-    ORDER BY ud.id
-    LIMIT 1
-),
-resolved_department_for_agents AS (
-    -- Use primary department if available, otherwise first accessible department
-    SELECT COALESCE(
-        (SELECT pd.department_id FROM profile_departments pd WHERE pd.profile_id = $1 AND pd.is_primary = TRUE LIMIT 1),
-        (SELECT id FROM first_user_department)
-    ) as department_id
-),
--- Check if any provided documentIds are templates
-has_template_documents AS (
+all_objectives_array AS (
     SELECT 
+        o.id as objective_id,
+        o.objective as name,
+        o.objective as description
+    FROM objectives o
+    LEFT JOIN objective_departments od_dept ON od_dept.objective_id = o.id AND od_dept.active = true
+    WHERE (
+        ((SELECT objective_ids FROM extracted_params LIMIT 1) IS NOT NULL AND array_length((SELECT objective_ids FROM extracted_params LIMIT 1), 1) > 0 AND o.id = ANY((SELECT objective_ids FROM extracted_params LIMIT 1)::uuid[]))
+        OR ((SELECT objective_ids FROM extracted_params) IS NULL OR array_length((SELECT objective_ids FROM extracted_params), 1) = 0)
+    )
+    AND (
+        od_dept.department_id IN (SELECT id FROM user_departments)
+        OR NOT EXISTS (SELECT 1 FROM objective_departments od2 WHERE od2.objective_id = o.id AND od2.active = true)
+    )
+),
+all_problem_statements_array AS (
+    SELECT 
+        ps.id as problem_statement_id,
+        ps.name,
+        ps.problem_statement,
+        ps.created_at,
+        ps.updated_at
+    FROM problem_statements ps
+    LEFT JOIN problem_statement_departments psd_dept ON psd_dept.problem_statement_id = ps.id AND psd_dept.active = true
+    WHERE (
+        psd_dept.department_id IN (SELECT id FROM user_departments)
+        OR NOT EXISTS (SELECT 1 FROM problem_statement_departments psd2 WHERE psd2.problem_statement_id = ps.id AND psd2.active = true)
+    )
+    AND (
+        ((SELECT problem_statement_ids FROM extracted_params) IS NULL OR array_length((SELECT problem_statement_ids FROM extracted_params), 1) = 0)
+        OR ps.id IN (SELECT unnest((SELECT problem_statement_ids FROM extracted_params LIMIT 1)::uuid[]))
+    )
+),
+all_scenario_images_array AS (
+    SELECT 
+        COALESCE(iu.upload_id, i.id) as upload_id,
+        i.name,
+        u.file_path,
+        u.mime_type,
+        i.active,
+        i.created_at,
+        i.updated_at
+    FROM images i
+    LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
+    LEFT JOIN uploads u ON u.id = iu.upload_id
+    LEFT JOIN image_departments id_dept ON id_dept.image_id = i.id AND id_dept.active = true
+    WHERE i.active = true
+    AND (
+        id_dept.department_id IN (SELECT id FROM user_departments)
+        OR NOT EXISTS (SELECT 1 FROM image_departments id2 WHERE id2.image_id = i.id AND id2.active = true)
+    )
+    ORDER BY i.created_at DESC
+),
+all_scenario_videos_array AS (
+    SELECT 
+        v.id,
+        v.name,
+        v.length_seconds,
+        v.completed,
+        v.active,
+        v.image_enabled,
+        u.file_path,
+        u.mime_type,
+        u.id as upload_id
+    FROM videos v
+    LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
+    LEFT JOIN uploads u ON u.id = vu.upload_id
+    LEFT JOIN video_departments vd_dept ON vd_dept.video_id = v.id AND vd_dept.active = true
+    WHERE v.active = true
+    AND (
+        vd_dept.department_id IN (SELECT id FROM user_departments)
+        OR NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = v.id AND vd2.active = true)
+    )
+    ORDER BY v.created_at DESC
+),
+all_document_details_array AS (
+    SELECT 
+        d.id as document_id,
+        d.name,
+        d.updated_at,
         CASE 
-            WHEN $4::uuid[] IS NOT NULL AND array_length($4::uuid[], 1) > 0 THEN
-                EXISTS (
-                    SELECT 1 
-                    FROM documents d
-                    WHERE d.id = ANY($4::uuid[])
-                    AND (
-                        d.template = true
-                        OR EXISTS (
-                            SELECT 1 
-                            FROM document_templates dt 
-                            WHERE dt.document_id = d.id 
-                            AND dt.active = true
-                        )
-                    )
-                )
+            WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$')
+            WHEN template_u.file_path IS NOT NULL THEN SUBSTRING(template_u.file_path FROM '\\.([^\\.]+)$')
+            ELSE NULL 
+        END as extension,
+        ARRAY[]::uuid[] as scenario_ids,
+        true as can_edit,
+        true as can_delete,
+        d.active,
+        COALESCE((
+            SELECT ARRAY_AGG(DISTINCT dd.department_id)
+            FROM document_departments dd
+            WHERE dd.document_id = d.id AND dd.active = true
+        ), ARRAY[]::uuid[]) as department_ids,
+        COALESCE(u.file_path, template_u.file_path) as file_path,
+        COALESCE(u.mime_type, template_u.mime_type) as mime_type,
+        COALESCE(u.id, template_u.id) as upload_id,
+        COALESCE((
+            SELECT ARRAY_AGG(df.field_id)
+            FROM document_fields df
+            WHERE df.document_id = d.id AND df.active = true
+        ), ARRAY[]::uuid[]) as field_ids,
+        CASE 
+            WHEN d.template = true THEN true
+            WHEN EXISTS(
+                SELECT 1 FROM document_templates dt2 
+                WHERE dt2.document_id = d.id AND dt2.active = true
+            ) THEN true
             ELSE false
-        END as has_templates
-),
--- Determine expected agent role - always 'scenario' (variant roles removed)
-expected_agent_role AS (
-    SELECT 'scenario'::agent_role as role
-),
-default_scenario_agent AS (
-    -- Get best scenario agent for the resolved department based on expected role
-    -- Only match the expected role (no fallback to base scenario - base scenario only when expected role IS 'scenario')
-    SELECT a.id::text as agent_id
-    FROM agents a
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    CROSS JOIN resolved_department_for_agents rdfa
-    CROSS JOIN expected_agent_role ear
-    WHERE a.role = ear.role  -- Only match the expected role
-    AND a.active = true
-    AND (
-        -- Include if agent is linked to the resolved department
-        ad.department_id = rdfa.department_id
-        -- OR agent has no department links (cross-department)
-        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+        END as is_template,
+        dtd.parent_id as parent_document_id
+    FROM documents d
+    LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
+    LEFT JOIN uploads u ON u.id = du.upload_id
+    LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
+    LEFT JOIN templates t ON t.id = dt.template_id
+    LEFT JOIN uploads template_u ON template_u.id = t.upload_id
+    LEFT JOIN document_tree_data dtd ON dtd.document_id = d.id
+    WHERE (
+        d.id IN (SELECT id FROM document_data)
+        OR (
+            (SELECT document_ids FROM params_single) IS NOT NULL
+            AND array_length((SELECT document_ids FROM params_single), 1) > 0
+            AND d.id IN (SELECT unnest((SELECT document_ids FROM params_single)::uuid[]))
+        )
+        OR (
+            (SELECT document_ids FROM params_single) IS NOT NULL
+            AND array_length((SELECT document_ids FROM params_single), 1) > 0
+            AND EXISTS (
+                SELECT 1 FROM document_tree dtree
+                WHERE dtree.child_id = d.id
+                AND dtree.parent_id IN (SELECT unnest((SELECT document_ids FROM params_single)::uuid[]))
+                AND dtree.active = true
+            )
+        )
     )
-    ORDER BY 
-        -- Prioritize department-specific agents over cross-department agents
-        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
-    LIMIT 1
-),
-default_image_agent AS (
-    -- Get best image agent for the resolved department
-    SELECT a.id::text as agent_id
-    FROM agents a
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    CROSS JOIN resolved_department_for_agents rdfa
-    WHERE a.role = 'image'
-    AND a.active = true
-    AND (
-        -- Include if agent is linked to the resolved department
-        ad.department_id = rdfa.department_id
-        -- OR agent has no department links (cross-department)
-        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
-    )
-    ORDER BY 
-        -- Prioritize department-specific agents over cross-department agents
-        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
-    LIMIT 1
-),
-default_video_agent AS (
-    -- Get best video agent for the resolved department
-    SELECT a.id::text as agent_id
-    FROM agents a
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    CROSS JOIN resolved_department_for_agents rdfa
-    WHERE a.role = 'video'
-    AND a.active = true
-    AND (
-        -- Include if agent is linked to the resolved department
-        ad.department_id = rdfa.department_id
-        -- OR agent has no department links (cross-department)
-        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
-    )
-    ORDER BY 
-        -- Prioritize department-specific agents over cross-department agents
-        CASE WHEN ad.department_id = rdfa.department_id THEN 0 ELSE 1 END
-    LIMIT 1
-),
-agent_filtered AS (
-    -- Filter agents by department access and expected role
-    -- Include agents matching expected role AND always include image agents
-    SELECT a.id, a.name, a.description, a.role
-    FROM agents a
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    CROSS JOIN expected_agent_role ear
-    WHERE a.active = true 
-    AND (
-        -- Match expected role only (no fallback to base scenario)
-        a.role = ear.role
-        -- OR always include image agents (for image agent picker)
-        OR a.role = 'image'
-        -- OR always include video agents (for video agent picker)
-        OR a.role = 'video'
-    )
-    GROUP BY a.id, a.name, a.description, a.role, ear.role
-    HAVING 
-        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
-),
-valid_agents AS (
-    -- Aggregate all filtered agents into a single row
-    SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                af.id::text,
-                jsonb_build_object(
-                    'name', af.name,
-                    'description', COALESCE(af.description, ''),
-                    'roles', ARRAY[af.role::text]
-                )
-            ),
-            '{}'::jsonb
-        ) as agent_mapping,
-        COALESCE(array_agg(af.id::text ORDER BY af.name), ARRAY[]::text[]) as agent_ids
-    FROM agent_filtered af
+    AND d.active = true
+    ORDER BY d.name
 )
 SELECT 
+    up.actor_name::text as actor_name,
+    up.user_role::text as user_role,
     COALESCE(
-        (SELECT array_agg(id::text ORDER BY id) FROM user_departments),
+        (SELECT ARRAY_AGG(id::text ORDER BY id) FROM user_departments),
         ARRAY[]::text[]
     ) as department_ids,
     COALESCE(
-        (SELECT array_agg(id::text) FROM persona_data),
+        (SELECT ARRAY_AGG(id::text) FROM persona_data),
         ARRAY[]::text[]
     ) as valid_persona_ids,
     COALESCE(
-        (SELECT array_agg(id::text) FROM document_data),
+        (SELECT ARRAY_AGG(id::text) FROM document_data),
         ARRAY[]::text[]
     ) as valid_document_ids,
-    (SELECT mapping FROM department_mapping_data) as department_mapping,
-    (SELECT mapping FROM persona_mapping_data) as persona_mapping,
-    (SELECT mapping FROM document_mapping_data) as document_mapping,
-    (SELECT mapping FROM parameter_mapping_data) as parameter_mapping,
-    (SELECT parameter_ids FROM parameter_mapping_data) as valid_parameter_ids,
-    (SELECT mapping FROM field_mapping_data) as field_mapping,
-    (SELECT parameters_json FROM parameters_structure) as parameters_json,
-    (SELECT document_details FROM document_details_data) as document_details,
-    (SELECT problem_statement_mapping FROM problem_statement_mapping_data_default) as problem_statement_mapping,
-    (SELECT objectives_history FROM objectives_history_data_default) as objectives_history,
-    (SELECT user_role FROM user_profile) as user_role,
     (SELECT department_id FROM primary_department_id) as primary_department_id,
     COALESCE((SELECT agent_id FROM default_scenario_agent), '') as scenario_agent_id,
     COALESCE((SELECT agent_id FROM default_image_agent), '') as image_agent_id,
-    COALESCE((SELECT agent_mapping FROM valid_agents), '{}'::jsonb) as agent_mapping,
-    COALESCE((SELECT agent_ids FROM valid_agents), ARRAY[]::text[]) as valid_agent_ids,
-    -- Selected template document IDs (filtered to valid ones)
+    COALESCE((SELECT agent_id FROM default_video_agent), '') as video_agent_id,
+    COALESCE((SELECT ARRAY_AGG(agent_id::text ORDER BY name) FROM all_agents_array), ARRAY[]::text[]) as valid_agent_ids,
     COALESCE(
-        (SELECT array_agg(d.id::text)
+        (SELECT ARRAY_AGG(d.id::text)
          FROM documents d
          WHERE d.active = true
-         AND $6::uuid[] IS NOT NULL
-         AND array_length($6::uuid[], 1) > 0
-         AND d.id = ANY($6::uuid[])
+         AND (SELECT template_document_ids FROM extracted_params) IS NOT NULL
+         AND array_length((SELECT template_document_ids FROM extracted_params), 1) > 0
+         AND d.id IN (SELECT unnest((SELECT template_document_ids FROM extracted_params LIMIT 1)::uuid[]))
          AND d.id IN (SELECT id FROM document_data)),
         ARRAY[]::text[]
     ) as selected_template_document_ids,
-    -- Objective mapping from provided objective IDs (filtered by department)
-    -- Note: For new scenario, we return all matching objectives, not just provided ones
-    COALESCE(
-        (SELECT jsonb_object_agg(
-            o.id::text,
-            jsonb_build_object(
-                'name', o.objective, 
-                'description', o.objective,
-                'is_from_scenario', false  -- Always false for new scenario
-            )
-        )
-        FROM objectives o
-        LEFT JOIN objective_departments od_dept ON od_dept.objective_id = o.id AND od_dept.active = true
-        WHERE (
-            ($7::uuid[] IS NOT NULL AND array_length($7::uuid[], 1) > 0 AND o.id = ANY($7::uuid[]))
-            OR ($7::uuid[] IS NULL OR array_length($7::uuid[], 1) = 0)
-        )
-        AND (
-            od_dept.department_id IN (SELECT id FROM user_departments)
-            OR NOT EXISTS (SELECT 1 FROM objective_departments od2 WHERE od2.objective_id = o.id AND od2.active = true)
-        )),
-        '{}'::jsonb
-    ) as objective_mapping,
-    -- Scenario images (list of ALL available images for selection, filtered by department)
-    -- Items from current scenario (if any) are sorted first
-    COALESCE(
-        (SELECT jsonb_agg(
-            jsonb_build_object(
-                'id', COALESCE(iu.upload_id::text, i.id::text),
-                'name', i.name,
-                'upload_id', COALESCE(iu.upload_id::text, i.id::text),
-                'file_path', u.file_path,
-                'mime_type', u.mime_type,
-                'active', i.active,
-                'created_at', i.created_at::text,
-                'updated_at', i.updated_at::text,
-                'is_from_scenario', false  -- Always false for new scenario
-            )
-            ORDER BY i.created_at DESC
-        )
-        FROM images i
-        LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
-        LEFT JOIN uploads u ON u.id = iu.upload_id
-        LEFT JOIN image_departments id_dept ON id_dept.image_id = i.id AND id_dept.active = true
-        WHERE i.active = true
-        AND (
-            id_dept.department_id IN (SELECT id FROM user_departments)
-            OR NOT EXISTS (SELECT 1 FROM image_departments id2 WHERE id2.image_id = i.id AND id2.active = true)
-        )),
-        '[]'::jsonb
-    ) as scenario_images,
-    -- Scenario videos (list of ALL available videos for selection, filtered by department)
-    -- Items from current scenario (if any) are sorted first
-    COALESCE(
-        (SELECT jsonb_agg(
-            jsonb_build_object(
-                'id', v.id::text,
-                'name', v.name,
-                'length_seconds', v.length_seconds,
-                'completed', v.completed,
-                'active', v.active,
-                'image_enabled', v.image_enabled,
-                'file_path', u.file_path,
-                'mime_type', u.mime_type,
-                'upload_id', u.id::text,
-                'is_from_scenario', false  -- Always false for new scenario
-            )
-            ORDER BY v.created_at DESC
-        )
-        FROM videos v
-        LEFT JOIN video_uploads vu ON vu.video_id = v.id AND vu.active = true
-        LEFT JOIN uploads u ON u.id = vu.upload_id
-        LEFT JOIN video_departments vd_dept ON vd_dept.video_id = v.id AND vd_dept.active = true
-        WHERE v.active = true
-        AND (
-            vd_dept.department_id IN (SELECT id FROM user_departments)
-            OR NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = v.id AND vd2.active = true)
-        )),
-        '[]'::jsonb
-    ) as scenario_videos,
-    -- Scenario questions (empty for new scenario)
-    ARRAY[]::text[] as question_ids,
-    '[]'::jsonb as questions,
-    -- Video agent ID (default)
-    COALESCE((SELECT agent_id FROM default_video_agent), '') as video_agent_id,
-    -- Video enabled flag (default false)
     false as video_enabled,
-    -- Questions enabled flag (default false)
     false as questions_enabled,
-    -- Randomization ranges (defaults for new scenarios)
     1 as persona_range_min,
     3 as persona_range_max,
     0 as document_range_min,
     3 as document_range_max,
     0 as parameter_range_min,
     3 as parameter_range_max,
-    '{}'::jsonb as field_ranges_json,
-    (SELECT actor_name FROM user_profile LIMIT 1) as actor_name
-FROM params
-WHERE ($2::boolean IS NOT NULL OR TRUE) AND ($3::boolean IS NOT NULL OR TRUE) AND ($9::boolean IS NOT NULL OR TRUE)
+    ARRAY[]::text[] as question_ids,
+    -- Arrays of composite types (aggregated from subqueries)
+    COALESCE(
+        (SELECT ARRAY_AGG((ada.department_id, ada.name, ada.description, ada.persona_ids, ada.document_ids, ada.parameter_ids, ada.field_ids)::types.q_get_scenario_new_v3_department ORDER BY ada.name) FROM all_departments_array ada),
+        '{}'::types.q_get_scenario_new_v3_department[]
+    ) as departments,
+    COALESCE(
+        (SELECT ARRAY_AGG((apa.persona_id, apa.name, apa.description, apa.color, apa.icon, apa.image_model, apa.parameter_ids, apa.field_ids, apa.example)::types.q_get_scenario_new_v3_persona ORDER BY apa.name) FROM all_personas_array apa),
+        '{}'::types.q_get_scenario_new_v3_persona[]
+    ) as personas,
+    COALESCE(
+        (SELECT ARRAY_AGG((ada2.document_id, ada2.name, ada2.description, ada2.file_path, ada2.mime_type, ada2.parameter_ids, ada2.field_ids, ada2.parent_document_id)::types.q_get_scenario_new_v3_document ORDER BY ada2.name) FROM all_documents_array ada2),
+        '{}'::types.q_get_scenario_new_v3_document[]
+    ) as documents,
+    COALESCE(
+        (SELECT ARRAY_AGG((aparam.parameter_id, aparam.name, aparam.description, aparam.document_parameter, aparam.persona_parameter, aparam.scenario_parameter, aparam.video_parameter, aparam.numerical)::types.q_get_scenario_new_v3_parameter ORDER BY aparam.name) FROM all_parameters_array aparam),
+        '{}'::types.q_get_scenario_new_v3_parameter[]
+    ) as parameters,
+    COALESCE(
+        (SELECT ARRAY_AGG((afa.field_id, afa.name, afa.description, afa.parameter_id, afa.parameter_name, afa.conditional_parameter_ids)::types.q_get_scenario_new_v3_field ORDER BY afa.parameter_name, afa.name) FROM all_fields_array afa),
+        '{}'::types.q_get_scenario_new_v3_field[]
+    ) as fields,
+    COALESCE(
+        (SELECT ARRAY_AGG((aag.agent_id, aag.name, aag.description, aag.roles)::types.q_get_scenario_new_v3_agent ORDER BY aag.name) FROM all_agents_array aag),
+        '{}'::types.q_get_scenario_new_v3_agent[]
+    ) as agents,
+    COALESCE(
+        (SELECT ARRAY_AGG((aoa.objective_id, aoa.name, aoa.description)::types.q_get_scenario_new_v3_objective ORDER BY aoa.name) FROM all_objectives_array aoa),
+        '{}'::types.q_get_scenario_new_v3_objective[]
+    ) as objectives,
+    COALESCE(
+        (SELECT ARRAY_AGG((aps.problem_statement_id, aps.name, aps.problem_statement, aps.created_at, aps.updated_at)::types.q_get_scenario_new_v3_problem_statement ORDER BY aps.name) FROM all_problem_statements_array aps),
+        '{}'::types.q_get_scenario_new_v3_problem_statement[]
+    ) as problem_statements,
+    COALESCE(
+        (SELECT ARRAY_AGG((asi.upload_id, asi.name, asi.file_path, asi.mime_type, asi.active, asi.created_at, asi.updated_at)::types.q_get_scenario_new_v3_scenario_image ORDER BY asi.created_at DESC) FROM all_scenario_images_array asi),
+        '{}'::types.q_get_scenario_new_v3_scenario_image[]
+    ) as scenario_images,
+    COALESCE(
+        (SELECT ARRAY_AGG((asv.id, asv.name, asv.length_seconds, asv.completed, asv.active, asv.image_enabled, asv.file_path, asv.mime_type, asv.upload_id)::types.q_get_scenario_new_v3_scenario_video ORDER BY asv.id) FROM all_scenario_videos_array asv),
+        '{}'::types.q_get_scenario_new_v3_scenario_video[]
+    ) as scenario_videos,
+    COALESCE(
+        ARRAY[]::types.q_get_scenario_new_v3_question[],
+        '{}'::types.q_get_scenario_new_v3_question[]
+    ) as questions,
+    COALESCE(
+        (SELECT ARRAY_AGG((owd.objective, owd.department_ids)::types.q_get_scenario_new_v3_objective_with_departments ORDER BY owd.objective) FROM objectives_with_departments_default owd),
+        '{}'::types.q_get_scenario_new_v3_objective_with_departments[]
+    ) as objectives_history,
+    COALESCE(
+        (SELECT ARRAY_AGG((add.document_id, add.name, add.updated_at, add.extension, add.scenario_ids, add.can_edit, add.can_delete, add.active, add.department_ids, add.file_path, add.mime_type, add.upload_id, add.field_ids, add.is_template, add.parent_document_id)::types.q_get_scenario_new_v3_document_detail ORDER BY add.name) FROM all_document_details_array add),
+        '{}'::types.q_get_scenario_new_v3_document_detail[]
+    ) as document_details,
+    COALESCE(
+        (SELECT ARRAY_AGG((apd.param_id, apd.selected_items, apd.valid_items)::types.q_get_scenario_new_v3_parameter_detail ORDER BY apd.param_id) FROM all_parameters_detail_array apd),
+        '{}'::types.q_get_scenario_new_v3_parameter_detail[]
+    ) as parameters_detail
+FROM user_profile up
+$$;
 
+COMMIT;

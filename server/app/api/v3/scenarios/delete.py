@@ -1,30 +1,24 @@
 """Scenario delete endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    DeleteScenarioApiRequest,
+    DeleteScenarioApiResponse,
+    DeleteScenarioSqlParams,
+    DeleteScenarioSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DeleteScenarioRequest(BaseModel):
-    """Request to delete a scenario."""
-
-    scenarioId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DeleteScenarioResponse(BaseModel):
-    """Response from delete operation."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/scenarios/delete_scenario_complete.sql"
 
 
 router = APIRouter()
@@ -32,7 +26,7 @@ router = APIRouter()
 
 @router.post(
     "/delete",
-    response_model=DeleteScenarioResponse,
+    response_model=DeleteScenarioApiResponse,
     dependencies=[
         audit_activity(
             "scenario.deleted",
@@ -41,15 +35,15 @@ router = APIRouter()
     ],
 )
 async def delete_scenario(
-    request: DeleteScenarioRequest,
+    request: DeleteScenarioApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DeleteScenarioResponse:
+) -> DeleteScenarioApiResponse:
     """Delete a scenario."""
     tags = ["scenarios"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -61,28 +55,37 @@ async def delete_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Delete scenario with existence and usage checks in a single SQL file
-        sql_query = load_sql("app/sql/v3/scenarios/delete_scenario_complete.sql")
-        sql_params = (request.scenarioId, profile_id)
-        result = await conn.fetchrow(sql_query, request.scenarioId, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = DeleteScenarioSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        if not result:
-            # Scenario doesn't exist
+        # Execute SQL with typed helper (single row result)
+        result = cast(
+            DeleteScenarioSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
+
+        # Check if scenario exists using SQL result
+        if not result.scenario_exists:
             raise HTTPException(
                 status_code=404, detail=f"Scenario not found: {request.scenarioId}"
             )
 
         # Check if scenario was deleted or is in use
-        if not result["deleted"]:
+        if not result.deleted:
             # Scenario exists but is in use
-            usage_count = result["usage_count"]
+            usage_count = result.usage_count
             raise HTTPException(
                 status_code=400,
                 detail=f"Cannot delete scenario that is in use by {usage_count} simulation(s)",
             )
 
-        scenario_name = result["name"]
-        actor_name = result.get("actor_name")
+        scenario_name = result.name
+        actor_name = result.actor_name
 
         # Set audit context with data from SQL query
         if actor_name:
@@ -92,7 +95,7 @@ async def delete_scenario(
                 scenario={"name": scenario_name, "id": request.scenarioId},
             )
 
-        result_data = DeleteScenarioResponse(
+        result_data = DeleteScenarioApiResponse(
             success=True,
             message=f"Scenario '{scenario_name}' deleted successfully",
         )

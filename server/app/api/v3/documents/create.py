@@ -1,47 +1,28 @@
 """Document create endpoint - v3 API following DHH principles."""
 
-import json
-import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (CreateDocumentApiRequest, CreateDocumentApiResponse,
+                           CreateDocumentSqlParams, CreateDocumentSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/documents/create_document_complete.sql"
+
 
 router = APIRouter()
 
 
-# Inline request/response schemas
-class CreateDocumentRequest(BaseModel):
-    """Request to create document."""
-
-    name: str
-    description: str | None = None
-    uploadId: str | None = None  # Regular document upload
-    departmentIds: list[str] | None = None
-    parameterItemIds: list[str] | None = None
-    parameterIds: list[str] | None = None
-    # profileId removed - comes from X-Profile-Id header
-    templateUploadId: str | None = None  # Template HTML upload
-    templateArgs: dict[str, Any] | None = None  # Template schema JSON
-
-
-class CreateDocumentResponse(BaseModel):
-    """Response from create document."""
-
-    success: bool
-    message: str
-    documentId: str | None = None
-
-
 @router.post(
     "/create",
-    response_model=CreateDocumentResponse,
+    response_model=CreateDocumentApiResponse,
     dependencies=[
         audit_activity(
             "document.created",
@@ -50,94 +31,64 @@ class CreateDocumentResponse(BaseModel):
     ],
 )
 async def create_document(
-    request_body: CreateDocumentRequest,
-    request: Request,
+    request: CreateDocumentApiRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateDocumentResponse:
+) -> CreateDocumentApiResponse:
     """Create a new document."""
     tags = ["documents"]
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
-        profile_id = request.state.profile_id
+        profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        document_id = uuid.uuid4()
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double star pattern: **request.model_dump()
+        params = CreateDocumentSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        dept_uuids = (
-            [uuid.UUID(d) for d in request_body.departmentIds]
-            if request_body.departmentIds
-            else []
+        # Execute SQL with typed helper - automatically detects and calls function if present
+        result = cast(
+            CreateDocumentSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
-        param_item_uuids = (
-            [uuid.UUID(p) for p in request_body.parameterItemIds]
-            if request_body.parameterItemIds
-            else []
-        )
-        param_ids = (
-            [str(uuid.UUID(p)) for p in request_body.parameterIds]
-            if request_body.parameterIds
-            else []
-        )
-
-        # Prepare template args (schema) as JSONB
-        template_args_jsonb = None
-        if request_body.templateArgs:
-            template_args_jsonb = json.dumps(request_body.templateArgs)
-
-        sql_query = load_sql("app/sql/v3/documents/insert_document_complete.sql")
-        sql_params = (
-            document_id,
-            request_body.name,
-            request_body.description or "",
-            uuid.UUID(request_body.uploadId) if request_body.uploadId else None,
-            dept_uuids,
-            param_item_uuids,
-            uuid.UUID(request_body.templateUploadId)
-            if request_body.templateUploadId
-            else None,
-            template_args_jsonb,
-            profile_id,
-        )
-
-        result = await conn.fetchrow(sql_query, *sql_params)
 
         # Set audit context with data from SQL query
-        if result:
-            actor_name = result.get("actor_name")
-            if actor_name:
-                audit_set(
-                    request,
-                    actor={"name": actor_name, "id": profile_id},
-                    document={"name": request_body.name, "id": str(document_id)},
-                )
+        if result.actor_name:
+            audit_set(
+                http_request,
+                actor={"name": result.actor_name, "id": profile_id},
+                document={"name": request.name, "id": str(result.document_id)},
+            )
 
-        result_data = CreateDocumentResponse(
-            success=True,
-            message="Document created successfully",
-            documentId=str(document_id),
-        )
+        # Convert SQL result to API response
+        api_response = CreateDocumentApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=request.url.path,
+            route_path=http_request.url.path,
             operation="create_document",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=request,
+            request=http_request,
         )

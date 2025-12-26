@@ -1,40 +1,20 @@
 """Document update endpoint - v3 API."""
 
-import json
-import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db
+from app.sql.types import (UpdateDocumentApiRequest, UpdateDocumentApiResponse,
+                           UpdateDocumentSqlParams, UpdateDocumentSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class UpdateDocumentRequest(BaseModel):
-    """Request for updating a document."""
-
-    documentId: str
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    template: bool | None = None  # Enable/disable template mode
-    department_id: str | None = None
-    field_ids: list[str] = []
-    classify_agent_id: str | None = None
-    document_agent_id: str | None = None
-    templateUploadId: str | None = None  # Template HTML upload
-    templateArgs: dict[str, Any] | None = None  # Template schema JSON
-
-
-class UpdateDocumentResponse(BaseModel):
-    """Response for updating a document."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/documents/update_document_complete.sql"
 
 
 router = APIRouter()
@@ -42,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/update",
-    response_model=UpdateDocumentResponse,
+    response_model=UpdateDocumentApiResponse,
     dependencies=[
         audit_activity(
             "document.updated",
@@ -51,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def update_document(
-    request: UpdateDocumentRequest,
+    request: UpdateDocumentApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateDocumentResponse:
+) -> UpdateDocumentApiResponse:
     """Update a document."""
     tags = ["documents"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -71,62 +51,37 @@ async def update_document(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            # Prepare template args (schema) as JSONB
-            template_args_jsonb = None
-            if request.templateArgs is not None:
-                template_args_jsonb = json.dumps(request.templateArgs)
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double star pattern: **request.model_dump()
+        params = UpdateDocumentSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-            # Update document with department links and parameter items in a single transaction
-            sql_query = load_sql("app/sql/v3/documents/update_document_complete.sql")
-            # Ensure field_ids is always an array (empty if None)
-            field_ids_list = request.field_ids or []
-            sql_params = (
-                uuid.UUID(request.documentId),
-                request.name,
-                request.description,
-                request.active,
-                request.template,
-                uuid.UUID(request.department_id) if request.department_id else None,
-                field_ids_list,
-                uuid.UUID(request.classify_agent_id)
-                if request.classify_agent_id
-                else None,
-                uuid.UUID(request.document_agent_id)
-                if request.document_agent_id
-                else None,
-                uuid.UUID(request.templateUploadId)
-                if request.templateUploadId
-                else None,
-                template_args_jsonb,
-                uuid.UUID(profile_id),
-            )
-            result_row = await conn.fetchrow(sql_query, *sql_params)
-
-            if result_row:
-                document_name = result_row.get(
-                    "document_name", request.name or "Unknown"
-                )
-                actor_name = result_row.get("actor_name")
-
-                # Set audit context with data from SQL query
-                if actor_name:
-                    audit_set(
-                        http_request,
-                        actor={"name": actor_name, "id": profile_id},
-                        document={"name": document_name, "id": request.documentId},
-                    )
-
-        result = UpdateDocumentResponse(
-            success=True,
-            message="Document updated successfully",
+        # Execute SQL with typed helper - automatically detects and calls function if present
+        result = cast(
+            UpdateDocumentSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
+
+        # Set audit context with data from SQL query
+        if result.actor_name:
+            audit_set(
+                http_request,
+                actor={"name": result.actor_name, "id": profile_id},
+                document={"name": result.document_name or "Unknown", "id": str(result.document_id)},
+            )
+
+        # Convert SQL result to API response
+        api_response = UpdateDocumentApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

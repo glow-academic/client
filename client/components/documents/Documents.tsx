@@ -98,43 +98,68 @@ export default function Documents({
   // Use server-provided data directly
   const documentsData = serverListData;
 
-  // Extract data from V3 response
+  // Extract data from V3 response - arrays directly (composite types)
   const documents = useMemo(
     () => documentsData?.documents || [],
     [documentsData],
   );
-  const scenarioMapping = useMemo(
-    () => documentsData?.scenario_mapping || {},
+  const scenarios = useMemo(
+    () => documentsData?.scenarios || [],
     [documentsData],
   );
-  const fieldMapping = useMemo(
-    () => documentsData?.field_mapping || {},
+  const fields = useMemo(
+    () => documentsData?.fields || [],
     [documentsData],
   );
-  const departmentMapping = useMemo(
-    () => documentsData?.department_mapping || {},
+  const departments = useMemo(
+    () => documentsData?.departments || [],
     [documentsData],
   );
 
-  // Use server-provided filter options directly (no client-side computation)
+  // Create lookup maps from arrays for performance (replacing old mappings)
+  const scenarioMapping = useMemo(() => {
+    const map: Record<string, { name: string }> = {};
+    scenarios.forEach((s) => {
+      if (s.scenario_id) {
+        map[s.scenario_id] = { name: s.name || "" };
+      }
+    });
+    return map;
+  }, [scenarios]);
+
+  const fieldMapping = useMemo(() => {
+    const map: Record<string, { name: string }> = {};
+    fields.forEach((f) => {
+      if (f.field_id) {
+        map[f.field_id] = { name: f.name || "" };
+      }
+    });
+    return map;
+  }, [fields]);
+
+  const departmentMapping = useMemo(() => {
+    const map: Record<string, { name: string }> = {};
+    departments.forEach((d) => {
+      if (d.department_id) {
+        map[d.department_id] = { name: d.name || "" };
+      }
+    });
+    return map;
+  }, [departments]);
+
+  // Use server-provided filter options directly (already composite type arrays)
   const scenarioOptions = useMemo(
     () =>
-      (documentsData?.scenario_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
+      (documentsData?.scenario_options || []).filter(
+        (opt) => opt.value && opt.label,
+      ),
     [documentsData?.scenario_options],
   );
   const departmentOptions = useMemo(
     () =>
-      (documentsData?.department_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
+      (documentsData?.department_options || []).filter(
+        (opt) => opt.value && opt.label,
+      ),
     [documentsData?.department_options],
   );
 

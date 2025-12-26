@@ -1,16 +1,127 @@
-WITH document_data AS (
+-- Get document detail with mappings and template info
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_get_document_detail_v3(uuid, uuid);
+
+-- 2) Drop types WITHOUT CASCADE
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DROP TYPE IF EXISTS types.q_get_document_detail_v3_department;
+DROP TYPE IF EXISTS types.q_get_document_detail_v3_field;
+DROP TYPE IF EXISTS types.q_get_document_detail_v3_parameter;
+DROP TYPE IF EXISTS types.q_get_document_detail_v3_agent;
+DROP TYPE IF EXISTS types.q_get_document_detail_v3_template;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_document_detail_v3_department AS (
+    department_id uuid,
+    name text,
+    description text,
+    parameter_ids text[]
+);
+
+CREATE TYPE types.q_get_document_detail_v3_field AS (
+    field_id uuid,
+    name text,
+    description text,
+    parameter_id uuid,
+    parameter_name text
+);
+
+CREATE TYPE types.q_get_document_detail_v3_parameter AS (
+    parameter_id uuid,
+    name text,
+    description text,
+    document_parameter boolean,
+    persona_parameter boolean,
+    scenario_parameter boolean,
+    video_parameter boolean
+);
+
+CREATE TYPE types.q_get_document_detail_v3_agent AS (
+    agent_id uuid,
+    name text,
+    description text,
+    roles text[]
+);
+
+CREATE TYPE types.q_get_document_detail_v3_template AS (
+    template_id uuid,
+    template_args jsonb,
+    active boolean,
+    created_at timestamptz,
+    updated_at timestamptz
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_document_detail_v3(
+    document_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    document_exists boolean,
+    document_id uuid,
+    name text,
+    description text,
+    active boolean,
+    type text,
+    upload_id uuid,
+    updated_at timestamptz,
+    extension text,
+    scenario_ids uuid[],
+    can_edit boolean,
+    can_delete boolean,
+    document_type_options text[],
+    department_ids text[],
+    valid_department_ids text[],
+    departments types.q_get_document_detail_v3_department[],
+    field_ids uuid[],
+    valid_field_ids text[],
+    fields types.q_get_document_detail_v3_field[],
+    linked_parameter_ids text[],
+    parameters types.q_get_document_detail_v3_parameter[],
+    classify_agent_id uuid,
+    document_agent_id uuid,
+    agents types.q_get_document_detail_v3_agent[],
+    valid_agent_ids text[],
+    template boolean,
+    template_id uuid,
+    template_args jsonb,  -- Schema definition (exception: JSONB for dynamic template schema structures)
+    template_upload_id uuid,
+    template_file_path text,
+    template_html text,
+    templates types.q_get_document_detail_v3_template[],
+    actor_name text
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT document_id AS document_id,
+           profile_id AS profile_id
+),
+document_exists_check AS (
+    -- Check if document exists independently of access control
+    SELECT EXISTS(
+        SELECT 1 FROM documents WHERE id = (SELECT document_id FROM params)
+    )::boolean as document_exists
+),
+document_data AS (
     SELECT 
-        d.id::text as document_id,
+        d.id as document_id,
         d.name,
         d.description,
         d.active,
         d.updated_at,
-        d.classify_agent_id::text,
-        d.document_agent_id::text,
+        d.classify_agent_id,
+        d.document_agent_id,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
-        (SELECT ARRAY_AGG(df.field_id::text) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
-        (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
-        (SELECT t.upload_id::text FROM document_templates dt JOIN templates t ON t.id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_upload_id,
+        (SELECT ARRAY_AGG(df.field_id) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
+        (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
+        (SELECT t.upload_id FROM document_templates dt JOIN templates t ON t.id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_upload_id,
         (SELECT t.args FROM document_templates dt JOIN templates t ON t.id = dt.template_id WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_args,
         (SELECT u.file_path FROM document_uploads du 
          JOIN uploads u ON u.id = du.upload_id 
@@ -20,67 +131,51 @@ WITH document_data AS (
          JOIN uploads u ON u.id = t.upload_id 
          WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_file_path,
         d.template,
-        (SELECT ARRAY_AGG(DISTINCT st.parent_id::text) FROM scenario_documents sd
+        (SELECT ARRAY_AGG(DISTINCT st.parent_id) FROM scenario_documents sd
          JOIN scenario_tree st ON st.child_id = sd.scenario_id AND st.parent_id = st.child_id
          WHERE sd.document_id = d.id AND sd.active = true) as scenario_ids,
         (SELECT COUNT(*) FROM scenario_documents sd WHERE sd.document_id = d.id AND sd.active = true) as active_scenario_count,
         (SELECT COUNT(*) FROM scenario_documents sd WHERE sd.document_id = d.id) as total_scenario_links
-    FROM documents d
-    WHERE d.id = $1
+    FROM params x
+    JOIN documents d ON d.id = x.document_id
 ),
 document_active_template AS (
     SELECT 
         dt.document_id,
-        t.id::text as template_id,
+        t.id as template_id,
         t.args as template_args,
         dt.created_at as template_created_at,
         dt.updated_at as template_updated_at
-    FROM document_templates dt
+    FROM params x
+    JOIN document_templates dt ON dt.document_id = x.document_id AND dt.active = true
     JOIN templates t ON t.id = dt.template_id
-    WHERE dt.document_id = $1 AND dt.active = true
     ORDER BY dt.created_at DESC
     LIMIT 1
 ),
 document_all_templates AS (
     SELECT 
         dt.document_id,
-        t.id::text as template_id,
+        t.id as template_id,
         t.args as template_args,
         dt.active as template_active,
         dt.created_at as template_created_at,
         dt.updated_at as template_updated_at
-    FROM document_templates dt
+    FROM params x
+    JOIN document_templates dt ON dt.document_id = x.document_id
     JOIN templates t ON t.id = dt.template_id
-    WHERE dt.document_id = $1
-),
-template_mapping_data AS (
-    SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                dt.template_id,
-                jsonb_build_object(
-                    'template_args', dt.template_args,
-                    'active', dt.template_active,
-                    'created_at', dt.template_created_at::text,
-                    'updated_at', dt.template_updated_at::text
-                )
-            ),
-            '{}'::jsonb
-        ) as template_mapping
-    FROM document_all_templates dt
 ),
 user_profile AS (
     SELECT 
         role,
         COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
-    FROM profiles p
-    WHERE p.id = $2
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 user_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
-    FROM departments d
-    JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = $2 AND d.active = true
+    FROM params x
+    JOIN departments d ON d.active = true
+    JOIN profile_departments pd ON d.id = pd.department_id AND pd.profile_id = x.profile_id AND pd.active = true
 ),
 department_parameter_ids AS (
     SELECT 
@@ -95,20 +190,12 @@ department_parameter_ids AS (
                                                      WHERE pf2.parameter_id = p.id AND pf2.active = true AND fd2.active = true))
     GROUP BY ud.id
 ),
-valid_depts AS (
+department_data AS (
     SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                ud.id::text,
-                jsonb_build_object(
-                    'name', ud.name,
-                    'description', COALESCE(ud.description, ''),
-                    'parameter_ids', CASE WHEN dparami.parameter_ids IS NOT NULL AND array_length(dparami.parameter_ids, 1) > 0 THEN to_jsonb(dparami.parameter_ids) ELSE NULL END
-                )
-            ),
-            '{}'::jsonb
-        ) as dept_mapping,
-        array_agg(ud.id::text ORDER BY ud.name) as dept_ids
+        ud.id as department_id,
+        ud.name,
+        COALESCE(ud.description, '') as description,
+        COALESCE(dparami.parameter_ids, ARRAY[]::text[]) as parameter_ids
     FROM user_departments ud
     LEFT JOIN department_parameter_ids dparami ON dparami.department_id = ud.id
 ),
@@ -124,39 +211,24 @@ linked_parameters AS (
         false as video_parameter
     WHERE false
 ),
-parameter_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            lp.parameter_id::text,
-            jsonb_build_object(
-                'name', lp.parameter_name,
-                'description', lp.parameter_description,
-                'document_parameter', true,
-                'persona_parameter', lp.persona_parameter,
-                'scenario_parameter', lp.scenario_parameter,
-                'video_parameter', lp.video_parameter
-            )
-        ),
-        '{}'::jsonb
-    ) as parameter_mapping,
-    array_agg(lp.parameter_id::text ORDER BY lp.parameter_name) as parameter_ids
+parameter_data AS (
+    SELECT 
+        lp.parameter_id,
+        lp.parameter_name as name,
+        lp.parameter_description as description,
+        true as document_parameter,
+        lp.persona_parameter,
+        lp.scenario_parameter,
+        lp.video_parameter
     FROM linked_parameters lp
 ),
-valid_param_items AS (
+field_data AS (
     SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                f.id::text,
-                jsonb_build_object(
-                    'name', f.name,
-                    'description', COALESCE(f.description, ''),
-                    'parameter_id', pf.parameter_id::text,
-                    'parameter_name', p.name
-                )
-            ),
-            '{}'::jsonb
-        ) as param_item_mapping,
-        array_agg(f.id::text ORDER BY f.name) as field_ids
+        f.id as field_id,
+        f.name,
+        COALESCE(f.description, '') as description,
+        pf.parameter_id,
+        p.name as parameter_name
     FROM linked_parameters lp
     JOIN parameter_fields pf ON pf.parameter_id = lp.parameter_id AND pf.active = true
     JOIN fields f ON f.id = pf.field_id AND f.active = true
@@ -176,37 +248,28 @@ valid_param_items AS (
               AND fd.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
           )
           -- Include fields already assigned to this document even if they don't pass department filter
-          OR f.id::text = ANY(COALESCE(dd.field_ids, ARRAY[]::text[]))
+          OR f.id::text = ANY(COALESCE((SELECT ARRAY_AGG(field_id::text) FROM document_fields df WHERE df.document_id = dd.document_id AND df.active = true), ARRAY[]::text[]))
       )
 ),
 user_departments_for_agents AS (
     SELECT department_id
-    FROM profile_departments
-    WHERE profile_id = $2 AND active = true
+    FROM params x
+    JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
-valid_agents AS (
+agent_data AS (
     -- Get agents with roles 'classify' or 'document'
     -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
     -- Also include agents assigned to this document (classify_agent_id or document_agent_id) even if they don't pass department filter
     SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                a.id::text,
-                jsonb_build_object(
-                    'name', a.name,
-                    'description', COALESCE(a.description, ''),
-                    'roles', ARRAY[a.role::text]
-                )
-            ),
-            '{}'::jsonb
-        ) as agent_mapping,
-        array_agg(a.id::text ORDER BY a.name) as agent_ids
-    FROM agents a
+        a.id as agent_id,
+        a.name,
+        COALESCE(a.description, '') as description,
+        ARRAY[a.role::text] as roles
+    FROM params x
+    JOIN agents a ON a.active = true AND a.role IN ('classify', 'document')
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN document_data dd
-    WHERE a.active = true 
-    AND a.role IN ('classify', 'document')
-    AND (
+    WHERE (
         -- Department access: has matching department link OR has no department links at all (cross-dept)
         EXISTS (
             SELECT 1 FROM agent_departments ad2 
@@ -220,43 +283,135 @@ valid_agents AS (
             AND ad3.active = true
         )
         -- Include agents assigned to this document even if they don't pass department filter
-        OR a.id::text = dd.classify_agent_id
-        OR a.id::text = dd.document_agent_id
+        OR a.id = dd.classify_agent_id
+        OR a.id = dd.document_agent_id
     )
+),
+valid_field_ids_data AS (
+    SELECT 
+        dd.document_id,
+        COALESCE(
+            ARRAY_AGG(DISTINCT f.id::text ORDER BY f.id::text) FILTER (WHERE f.id IS NOT NULL),
+            ARRAY[]::text[]
+        ) as valid_field_ids
+    FROM document_data dd
+    LEFT JOIN parameter_fields pf ON pf.parameter_id IN (SELECT id FROM parameters WHERE active = true) AND pf.active = true
+    LEFT JOIN fields f ON f.id = pf.field_id AND f.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
+    WHERE (
+        -- If document has no departments, include only cross-department fields
+        (dd.department_ids IS NULL OR array_length(dd.department_ids, 1) = 0)
+        AND NOT EXISTS (
+            SELECT 1 FROM field_departments fd2 
+            WHERE fd2.field_id = f.id 
+            AND fd2.active = true
+        )
+    ) OR (
+        -- If document has departments, include fields from those departments OR cross-department fields
+        dd.department_ids IS NOT NULL 
+        AND array_length(dd.department_ids, 1) > 0
+        AND (
+            fd.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
+            OR NOT EXISTS (
+                SELECT 1 FROM field_departments fd2 
+                WHERE fd2.field_id = f.id 
+                AND fd2.active = true
+            )
+        )
+    )
+    GROUP BY dd.document_id
 )
 SELECT 
-    doc.*,
-    vd.dept_mapping as department_mapping,
-    vd.dept_ids as valid_department_ids,
-    COALESCE(pmd.parameter_mapping, '{}'::jsonb) as parameter_mapping,
-    COALESCE(pmd.parameter_ids, ARRAY[]::text[]) as linked_parameter_ids,
-    vpi.param_item_mapping as field_mapping,
-    vpi.field_ids as valid_field_ids,
-    COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
-    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
-    COALESCE(dat.template_id, NULL) as template_id,
-    COALESCE(tmd.template_mapping, '{}'::jsonb) as template_mapping,
+    -- Existence check (always returned)
+    dec.document_exists::boolean as document_exists,
+    -- Document fields
+    dd.document_id::uuid as document_id,
+    dd.name::text as name,
+    COALESCE(dd.description, '')::text as description,
+    dd.active::boolean as active,
     CASE 
-        WHEN doc.file_path IS NOT NULL THEN SUBSTRING(doc.file_path FROM '\\.([^\\.]+)$')
+        WHEN dd.file_path IS NOT NULL THEN SUBSTRING(dd.file_path FROM '\\.([^\\.]+)$')
+        ELSE ''
+    END::text as type,
+    dd.upload_id::uuid as upload_id,
+    dd.updated_at::timestamptz as updated_at,
+    CASE 
+        WHEN dd.file_path IS NOT NULL THEN SUBSTRING(dd.file_path FROM '\\.([^\\.]+)$')
         ELSE NULL
-    END as extension,
+    END::text as extension,
+    COALESCE(dd.scenario_ids, ARRAY[]::uuid[])::uuid[] as scenario_ids,
     CASE 
-        WHEN doc.active_scenario_count > 0 THEN false
+        WHEN dd.active_scenario_count > 0 THEN false
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
-    END as can_edit,
+    END::boolean as can_edit,
     CASE 
-        WHEN doc.total_scenario_links > 0 THEN false
+        WHEN dd.total_scenario_links > 0 THEN false
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
-    END as can_delete,
-    up.actor_name
-FROM document_data doc
+    END::boolean as can_delete,
+    ARRAY['homework', 'exam', 'lab', 'project']::text[] as document_type_options,
+    COALESCE(dd.department_ids, ARRAY[]::text[])::text[] as department_ids,
+    COALESCE((SELECT ARRAY_AGG(dd2.department_id::text ORDER BY dd2.department_id::text) FROM department_data dd2), ARRAY[]::text[])::text[] as valid_department_ids,
+    -- Aggregate departments separately
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dd2.department_id, dd2.name, dd2.description, dd2.parameter_ids)::types.q_get_document_detail_v3_department
+            ORDER BY dd2.name
+        ) FROM department_data dd2),
+        '{}'::types.q_get_document_detail_v3_department[]
+    ) as departments,
+    COALESCE(dd.field_ids, ARRAY[]::uuid[])::uuid[] as field_ids,
+    COALESCE(vfid.valid_field_ids, ARRAY[]::text[])::text[] as valid_field_ids,
+    -- Aggregate fields separately
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (fd.field_id, fd.name, fd.description, fd.parameter_id, fd.parameter_name)::types.q_get_document_detail_v3_field
+            ORDER BY fd.name
+        ) FROM field_data fd),
+        '{}'::types.q_get_document_detail_v3_field[]
+    ) as fields,
+    COALESCE((SELECT ARRAY_AGG(pd.parameter_id::text ORDER BY pd.name) FROM parameter_data pd), ARRAY[]::text[])::text[] as linked_parameter_ids,
+    -- Aggregate parameters separately
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (pd.parameter_id, pd.name, pd.description, pd.document_parameter, pd.persona_parameter, pd.scenario_parameter, pd.video_parameter)::types.q_get_document_detail_v3_parameter
+            ORDER BY pd.name
+        ) FROM parameter_data pd),
+        '{}'::types.q_get_document_detail_v3_parameter[]
+    ) as parameters,
+    dd.classify_agent_id::uuid as classify_agent_id,
+    dd.document_agent_id::uuid as document_agent_id,
+    -- Aggregate agents separately
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (ad.agent_id, ad.name, ad.description, ad.roles)::types.q_get_document_detail_v3_agent
+            ORDER BY ad.name
+        ) FROM agent_data ad),
+        '{}'::types.q_get_document_detail_v3_agent[]
+    ) as agents,
+    COALESCE((SELECT ARRAY_AGG(ad2.agent_id::text ORDER BY ad2.name) FROM agent_data ad2), ARRAY[]::text[])::text[] as valid_agent_ids,
+    dd.template::boolean as template,
+    dat.template_id::uuid as template_id,
+    COALESCE(dat.template_args, '{}'::jsonb)::jsonb as template_args,  -- Schema definition (exception: JSONB for dynamic template schema structures)
+    dd.template_upload_id::uuid as template_upload_id,
+    dd.template_file_path::text as template_file_path,
+    NULL::text as template_html,  -- Will be populated in Python from file system
+    -- Aggregate templates separately
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dat2.template_id, dat2.template_args, dat2.template_active, dat2.template_created_at, dat2.template_updated_at)::types.q_get_document_detail_v3_template
+            ORDER BY dat2.template_created_at DESC
+        ) FROM document_all_templates dat2),
+        '{}'::types.q_get_document_detail_v3_template[]
+    ) as templates,
+    up.actor_name::text as actor_name
+FROM document_exists_check dec
 CROSS JOIN user_profile up
-CROSS JOIN valid_depts vd
-CROSS JOIN parameter_mapping_data pmd
-CROSS JOIN valid_param_items vpi
-CROSS JOIN valid_agents va
-LEFT JOIN document_active_template dat ON dat.document_id = doc.document_id::uuid
-CROSS JOIN template_mapping_data tmd
+LEFT JOIN document_data dd ON dec.document_exists = true
+LEFT JOIN document_active_template dat ON dat.document_id = dd.document_id AND dec.document_exists = true
+LEFT JOIN valid_field_ids_data vfid ON vfid.document_id = dd.document_id AND dec.document_exists = true
+LIMIT 1
+$$;
 
+COMMIT;

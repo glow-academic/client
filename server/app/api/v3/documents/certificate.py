@@ -5,26 +5,22 @@ import json
 import os
 import subprocess
 import tempfile
-import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.main import get_db
+from app.sql.types import (GetCertificateDataApiRequest, GetCertificateDataSqlParams,
+                           GetCertificateDataSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
-from pydantic import BaseModel
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-
-# Inline request/response schemas
-class GenerateCertificateRequest(BaseModel):
-    """Request to generate certificate."""
-
-    # profileId removed - comes from X-Profile-Id header
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/documents/get_certificate_data_complete.sql"
 
 
 router = APIRouter()
@@ -40,7 +36,7 @@ router = APIRouter()
     ],
 )
 async def generate_certificate(
-    request: GenerateCertificateRequest,
+    request: GetCertificateDataApiRequest,
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Response:
@@ -54,18 +50,27 @@ async def generate_certificate(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Load SQL query and fetch certificate data from database
-        sql_query = load_sql("app/sql/v3/documents/get_certificate_data.sql")
-        result = await conn.fetchrow(sql_query, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetCertificateDataSqlParams(**request.model_dump(), profile_id=profile_id)
 
-        if not result:
+        # Execute SQL with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetCertificateDataSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
+
+        if not result or not result.profile_name:
             raise HTTPException(
                 status_code=404, detail="Profile not found or no cohort data available"
             )
 
         # Parse JSON response
-        profile_name = result["profile_name"]
-        actor_name = result.get("actor_name")
+        profile_name = result.profile_name
+        actor_name = result.actor_name
 
         # Set audit context
         if actor_name:
@@ -74,12 +79,8 @@ async def generate_certificate(
                 actor={"name": actor_name, "id": profile_id},
                 document={"name": "Certificate", "id": ""},
             )
-        # asyncpg returns JSON as string, need to parse it
-        cohort_data_raw = result["cohort_data"]
-        if isinstance(cohort_data_raw, str):
-            cohort_data = json.loads(cohort_data_raw)
-        else:
-            cohort_data = cohort_data_raw
+        # cohorts is already parsed by execute_sql_typed as list[QGetCertificateDataV3Cohort]
+        cohorts = result.cohorts or []
 
         # Try to generate PDF using reportlab
         try:
@@ -171,10 +172,8 @@ async def generate_certificate(
             story.append(Spacer(1, 30))
 
             # Calculate overall status
-            total_cohorts = len(cohort_data)
-            passed_cohorts = sum(
-                1 for cohort in cohort_data if cohort.get("passed", False)
-            )
+            total_cohorts = len(cohorts)
+            passed_cohorts = sum(1 for cohort in cohorts if cohort.passed)
             all_passed = passed_cohorts == total_cohorts and total_cohorts > 0
 
             # Add status
@@ -197,7 +196,7 @@ async def generate_certificate(
             story.append(Spacer(1, 20))
 
             # Add cohort details
-            if cohort_data:
+            if cohorts:
                 story.append(Paragraph("Cohort Progress", header_style))
 
                 # Helper function to truncate text for table cells
@@ -210,17 +209,17 @@ async def generate_certificate(
                 # Create table data
                 table_data = [["Cohort", "Simulation", "Score", "Status"]]
 
-                for cohort in cohort_data:
-                    cohort_name = cohort.get("name", "Unknown Cohort")
-                    simulations = cohort.get("simulations", [])
+                for cohort in cohorts:
+                    cohort_name = cohort.name or "Unknown Cohort"
+                    simulations = cohort.simulations or []
 
                     # Truncate cohort name to prevent overlap (max 20 chars for 1.8 inch column)
                     truncated_cohort_name = truncate_text(cohort_name)
 
                     for sim in simulations:
-                        sim_name = sim.get("name", "Unknown Simulation")
-                        score = sim.get("score", 0)
-                        passed = sim.get("passed", False)
+                        sim_name = sim.name or "Unknown Simulation"
+                        score = sim.score or 0
+                        passed = sim.passed or False
 
                         # Ensure score is whole number (round to nearest integer)
                         score_int = int(round(float(score))) if score > 0 else 0
@@ -419,10 +418,8 @@ async def generate_certificate(
             text_content.append(f"Name: {profile_name}")
             text_content.append("")
 
-            total_cohorts = len(cohort_data)
-            passed_cohorts = sum(
-                1 for cohort in cohort_data if cohort.get("passed", False)
-            )
+            total_cohorts = len(cohorts)
+            passed_cohorts = sum(1 for cohort in cohorts if cohort.passed)
             all_passed = passed_cohorts == total_cohorts and total_cohorts > 0
 
             text_content.append(f"Status: {'COMPLETE' if all_passed else 'INCOMPLETE'}")
@@ -434,15 +431,15 @@ async def generate_certificate(
             text_content.append("Cohort Progress:")
             text_content.append("-" * 20)
 
-            for cohort in cohort_data:
-                cohort_name = cohort.get("name", "Unknown Cohort")
-                simulations = cohort.get("simulations", [])
+            for cohort in cohorts:
+                cohort_name = cohort.name or "Unknown Cohort"
+                simulations = cohort.simulations or []
 
                 text_content.append(f"\n{cohort_name}:")
                 for sim in simulations:
-                    sim_name = sim.get("name", "Unknown Simulation")
-                    score = sim.get("score", 0)
-                    passed = sim.get("passed", False)
+                    sim_name = sim.name or "Unknown Simulation"
+                    score = sim.score or 0
+                    passed = sim.passed or False
 
                     # Ensure score is whole number (round to nearest integer)
                     score_int = int(round(float(score))) if score > 0 else 0

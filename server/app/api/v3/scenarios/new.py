@@ -1,19 +1,28 @@
 """Scenario new endpoint - v3 API following DHH principles."""
 
-import json
+import uuid
 from collections.abc import Sequence
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    GetScenarioNewApiRequest,
+    GetScenarioNewApiResponse,
+    GetScenarioNewSqlParams,
+    GetScenarioNewSqlRow,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/scenarios/get_scenario_new_complete.sql"
 
 
 # Inline mapping types (DHH style - no shared types)
@@ -353,14 +362,6 @@ class ScenarioDetailResponse(BaseModel):
 router = APIRouter()
 
 
-def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
-    """Parse JSONB data with type safety."""
-    if isinstance(data, str):
-        try:
-            return json.loads(data)  # type: ignore
-        except json.JSONDecodeError:
-            return {}
-    return data or {}
 
 
 def filter_valid_persona_ids(
@@ -1043,17 +1044,12 @@ async def get_scenario_new(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Load SQL query
-        sql_query = load_sql("app/sql/v3/scenarios/get_scenario_new_complete.sql")
-
         # Convert documentIds to UUID array if provided
         document_ids_uuid = None
         if request_data.documentIds:
-            import uuid as uuid_lib
-
             try:
                 document_ids_uuid = [
-                    uuid_lib.UUID(did) for did in request_data.documentIds
+                    uuid.UUID(did) for did in request_data.documentIds
                 ]
             except (ValueError, TypeError):
                 document_ids_uuid = None
@@ -1061,11 +1057,9 @@ async def get_scenario_new(
         # Convert templateDocumentIds to UUID array if provided
         template_document_ids_uuid = None
         if request_data.templateDocumentIds:
-            import uuid as uuid_lib
-
             try:
                 template_document_ids_uuid = [
-                    uuid_lib.UUID(did) for did in request_data.templateDocumentIds
+                    uuid.UUID(did) for did in request_data.templateDocumentIds
                 ]
             except (ValueError, TypeError):
                 template_document_ids_uuid = None
@@ -1073,11 +1067,9 @@ async def get_scenario_new(
         # Convert problemStatementIds to UUID array if provided
         problem_statement_ids_uuid = None
         if request_data.problemStatementIds:
-            import uuid as uuid_lib
-
             try:
                 problem_statement_ids_uuid = [
-                    uuid_lib.UUID(psid) for psid in request_data.problemStatementIds
+                    uuid.UUID(psid) for psid in request_data.problemStatementIds
                 ]
             except (ValueError, TypeError):
                 problem_statement_ids_uuid = None
@@ -1085,11 +1077,9 @@ async def get_scenario_new(
         # Convert objectiveIds to UUID array if provided
         objective_ids_uuid = None
         if request_data.objectiveIds:
-            import uuid as uuid_lib
-
             try:
                 objective_ids_uuid = [
-                    uuid_lib.UUID(oid) for oid in request_data.objectiveIds
+                    uuid.UUID(oid) for oid in request_data.objectiveIds
                 ]
             except (ValueError, TypeError):
                 objective_ids_uuid = None
@@ -1097,10 +1087,8 @@ async def get_scenario_new(
         # Convert imageIds to UUID array if provided
         image_ids_uuid = None
         if request_data.imageIds:
-            import uuid as uuid_lib
-
             try:
-                image_ids_uuid = [uuid_lib.UUID(iid) for iid in request_data.imageIds]
+                image_ids_uuid = [uuid.UUID(iid) for iid in request_data.imageIds]
             except (ValueError, TypeError):
                 image_ids_uuid = None
 
@@ -1112,42 +1100,43 @@ async def get_scenario_new(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # SQL query uses parameters $1, $4, $5, $6, $7, $8 (skips $2 and $3)
-        # Note: useImage and use_objectives are not used in SQL, but we must provide
-        # typed values for $2 and $3 so PostgreSQL can determine parameter types
+        # Derive useObjectives from objectivesMax for backward compatibility with SQL
         use_objectives = (
             request_data.objectivesMax is not None and request_data.objectivesMax > 0
         )
-        sql_params = (
-            profile_id,  # $1
-            request_data.useImage
-            if request_data.useImage is not None
-            else False,  # $2: boolean (unused)
-            use_objectives,  # $3: boolean (unused)
-            document_ids_uuid,  # $4
-            problem_statement_ids_uuid,  # $5
-            template_document_ids_uuid,  # $6
-            objective_ids_uuid,  # $7
-            image_ids_uuid,  # $8
-            request_data.useVideo
-            if request_data.useVideo is not None
-            else False,  # $9: boolean (for video parameter filtering)
+
+        # Convert API request to SQL params
+        params = GetScenarioNewSqlParams(
+            profile_id=uuid.UUID(profile_id),
+            use_image=request_data.useImage if request_data.useImage is not None else False,
+            use_objectives=use_objectives,
+            document_ids=document_ids_uuid,
+            problem_statement_ids=problem_statement_ids_uuid,
+            template_document_ids=template_document_ids_uuid,
+            objective_ids=objective_ids_uuid,
+            image_ids=image_ids_uuid,
+            use_video=request_data.useVideo if request_data.useVideo is not None else False,
+        )
+        sql_params = params.to_tuple()
+
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetScenarioNewSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        # Execute query
-        result = await conn.fetchrow(sql_query, *sql_params)
-
-        if not result:
-            raise ValueError("Failed to fetch default scenario data")
-
         # Get actor name from SQL query
-        actor_name = result.get("actor_name")
+        actor_name = result.actor_name
 
         # Set audit context
         if actor_name:
             audit_set(request, actor={"name": actor_name, "id": profile_id})
 
-        dept_ids = result["department_ids"] or []
+        dept_ids = [str(did) for did in (result.department_ids or []) if did]
 
         if not dept_ids:
             raise ValueError("No accessible departments found for user")
@@ -1156,207 +1145,141 @@ async def get_scenario_new(
         default_dept_id = dept_ids[0]
 
         # Extract data from consolidated query result
-        valid_persona_ids = result["valid_persona_ids"] or []
-        valid_document_ids = result["valid_document_ids"] or []
+        valid_persona_ids = [str(pid) for pid in (result.valid_persona_ids or []) if pid]
+        valid_document_ids = [str(did) for did in (result.valid_document_ids or []) if did]
 
-        # Parse JSONB mappings (may be string or dict)
-        persona_mapping_data = parse_jsonb(result.get("persona_mapping"))
-        objective_mapping_data = parse_jsonb(result.get("objective_mapping"))
-        scenario_images_data = parse_jsonb(result.get("scenario_images"))
+        # Convert arrays to mappings for filtering functions
+        def to_str_list(value: list[Any] | None) -> list[str] | None:
+            if value is None:
+                return None
+            return [str(v) for v in value if v is not None]
+
+        # Convert personas array to mapping
         persona_mapping: PersonaMapping = {}
-        if isinstance(persona_mapping_data, dict):
-            for pid, pdata in persona_mapping_data.items():
-                if isinstance(pdata, dict):
-                    parameter_ids = pdata.get("parameter_ids")
-                    field_ids = pdata.get("field_ids")
-                    persona_mapping[pid] = PersonaMappingItem(
-                        name=pdata.get("name", ""),
-                        description=pdata.get("description", ""),
-                        color=pdata.get("color", ""),
-                        icon=pdata.get("icon", ""),
-                        image_model=pdata.get("image_model", False),
-                        parameter_ids=[str(p) for p in parameter_ids]
-                        if isinstance(parameter_ids, list)
-                        else None,
-                        field_ids=[str(f) for f in field_ids]
-                        if isinstance(field_ids, list)
-                        else None,
-                        example=pdata.get("example"),  # Optional
-                    )
+        for persona in (result.personas or []):
+            if persona.persona_id:
+                persona_mapping[str(persona.persona_id)] = PersonaMappingItem(
+                    name=persona.name or "",
+                    description=persona.description or "",
+                    color=persona.color or "",
+                    icon=persona.icon or "",
+                    image_model=persona.image_model or False,
+                    parameter_ids=to_str_list(persona.parameter_ids),
+                    field_ids=to_str_list(persona.field_ids),
+                    example=persona.example,
+                )
 
-        document_mapping_data = parse_jsonb(result.get("document_mapping"))
+        # Convert documents array to mapping
         document_mapping: DocumentMapping = {}
-        if isinstance(document_mapping_data, dict):
-            for did, ddata in document_mapping_data.items():
-                if isinstance(ddata, dict):
-                    parameter_ids = ddata.get("parameter_ids")
-                    field_ids = ddata.get("field_ids")
-                    parent_document_id = ddata.get("parent_document_id")
-                    document_mapping[did] = DocumentMappingItem(
-                        name=ddata.get("name", ""),
-                        description=ddata.get("description", ""),
-                        parameter_ids=[str(p) for p in parameter_ids]
-                        if isinstance(parameter_ids, list)
-                        else None,
-                        field_ids=[str(f) for f in field_ids]
-                        if isinstance(field_ids, list)
-                        else None,
-                        parent_document_id=str(parent_document_id)
-                        if parent_document_id
-                        else None,
-                    )
+        for doc in (result.documents or []):
+            if doc.document_id:
+                document_mapping[str(doc.document_id)] = DocumentMappingItem(
+                    name=doc.name or "",
+                    description=doc.description or "",
+                    filePath=doc.file_path,
+                    mimeType=doc.mime_type,
+                    parameter_ids=to_str_list(doc.parameter_ids),
+                    field_ids=to_str_list(doc.field_ids),
+                    parent_document_id=str(doc.parent_document_id) if doc.parent_document_id else None,
+                )
 
-        parameter_mapping_data = parse_jsonb(result.get("parameter_mapping"))
+        # Convert parameters array to mapping
         parameter_mapping: ParameterMapping = {}
-        if isinstance(parameter_mapping_data, dict):
-            for param_id, pdata in parameter_mapping_data.items():
-                if isinstance(pdata, dict):
-                    parameter_mapping[param_id] = ParameterMappingItem(
-                        name=pdata.get("name", ""),
-                        description=pdata.get("description", ""),
-                        numerical=pdata.get("numerical", False),
-                        document_parameter=pdata.get("document_parameter", False),
-                        persona_parameter=pdata.get("persona_parameter", False),
-                        scenario_parameter=pdata.get("scenario_parameter", False),
-                        video_parameter=pdata.get("video_parameter", False),
-                    )
+        for param in (result.parameters or []):
+            if param.parameter_id:
+                parameter_mapping[str(param.parameter_id)] = ParameterMappingItem(
+                    name=param.name or "",
+                    description=param.description or "",
+                    numerical=param.numerical or False,
+                    document_parameter=param.document_parameter or False,
+                    persona_parameter=param.persona_parameter or False,
+                    scenario_parameter=param.scenario_parameter or False,
+                    video_parameter=param.video_parameter or False,
+                )
 
-        field_mapping_data = parse_jsonb(result.get("field_mapping"))
+        # Convert fields array to mapping
         field_mapping: FieldMapping = {}
-        if isinstance(field_mapping_data, dict):
-            for piid, pidata in field_mapping_data.items():
-                if isinstance(pidata, dict):
-                    conditional_parameter_ids = pidata.get("conditional_parameter_ids")
-                    field_mapping[piid] = FieldMappingItem(
-                        name=pidata.get("name", ""),
-                        description=pidata.get("description", ""),
-                        parameter_id=pidata.get("parameter_id", ""),
-                        parameter_name=pidata.get("parameter_name", ""),
-                        conditional_parameter_ids=[
-                            str(cp) for cp in conditional_parameter_ids
-                        ]
-                        if isinstance(conditional_parameter_ids, list)
-                        else None,
-                    )
+        for field in (result.fields or []):
+            if field.field_id:
+                field_mapping[str(field.field_id)] = FieldMappingItem(
+                    name=field.name or "",
+                    description=field.description or "",
+                    parameter_id=str(field.parameter_id) if field.parameter_id else "",
+                    parameter_name=field.parameter_name or "",
+                    conditional_parameter_ids=to_str_list(field.conditional_parameter_ids),
+                )
 
-        department_mapping_data = parse_jsonb(result.get("department_mapping"))
+        # Convert departments array to mapping
         department_mapping: DepartmentMapping = {}
-        if isinstance(department_mapping_data, dict):
-            for did, ddata in department_mapping_data.items():
-                if isinstance(ddata, dict):
+        for dept in (result.departments or []):
+            if dept.department_id:
+                department_mapping[str(dept.department_id)] = DepartmentMappingItem(
+                    name=dept.name or "",
+                    description=dept.description or "",
+                    persona_ids=to_str_list(dept.persona_ids),
+                    document_ids=to_str_list(dept.document_ids),
+                    parameter_ids=to_str_list(dept.parameter_ids),
+                    parameter_item_ids=to_str_list(dept.field_ids),  # field_ids in composite type
+                )
 
-                    def to_str_list(value: Sequence[Any] | None) -> list[str] | None:
-                        if value is None:
-                            return None
-                        if isinstance(value, list):
-                            return [str(v) for v in value if v is not None]
-                        return None
-
-                    department_mapping[did] = DepartmentMappingItem(
-                        name=ddata.get("name", ""),
-                        description=ddata.get("description", ""),
-                        persona_ids=to_str_list(ddata.get("persona_ids")),
-                        document_ids=to_str_list(ddata.get("document_ids")),
-                        parameter_ids=to_str_list(ddata.get("parameter_ids")),
-                        parameter_item_ids=to_str_list(
-                            ddata.get("parameter_item_ids")
-                        ),  # Database column name (keeping as-is)
-                    )
-
-        # Parse JSONB problem statement mapping (empty for default)
+        # Convert problem statements array to mapping
         problem_statement_mapping: dict[str, ProblemStatementInfo] = {}
-        ps_mapping_data = parse_jsonb(result.get("problem_statement_mapping"))
-        if isinstance(ps_mapping_data, dict):
-            for psid, psdata in ps_mapping_data.items():
-                if isinstance(psdata, dict):
-                    problem_statement_mapping[psid] = ProblemStatementInfo(
-                        name=psdata.get("name", ""),
-                        problem_statement=psdata.get("problem_statement", ""),
-                        created_at=psdata.get("created_at", ""),
-                        updated_at=psdata.get("updated_at", ""),
-                    )
+        for ps in (result.problem_statements or []):
+            if ps.problem_statement_id:
+                problem_statement_mapping[str(ps.problem_statement_id)] = ProblemStatementInfo(
+                    name=ps.name or "",
+                    problem_statement=ps.problem_statement or "",
+                    created_at=str(ps.created_at) if ps.created_at else "",
+                    updated_at=str(ps.updated_at) if ps.updated_at else "",
+                )
 
-        # Parse objectives_history JSONB array (now with department_ids)
+        # Convert objectives_history array
         objectives_history: list[ObjectiveWithDepartments] = []
-        obj_history_data = parse_jsonb(result.get("objectives_history"))
-        if isinstance(obj_history_data, list):
-            for obj_data in obj_history_data:
-                if isinstance(obj_data, dict):
-                    objectives_history.append(
-                        ObjectiveWithDepartments(
-                            objective=obj_data.get("objective", ""),
-                            department_ids=obj_data.get("department_ids", []) or [],
-                        )
-                    )
-                elif isinstance(obj_data, str):
-                    # Fallback for backward compatibility
-                    objectives_history.append(
-                        ObjectiveWithDepartments(
-                            objective=obj_data,
-                            department_ids=[],
-                        )
-                    )
+        for obj in (result.objectives_history or []):
+            objectives_history.append(
+                ObjectiveWithDepartments(
+                    objective=obj.objective or "",
+                    department_ids=[str(did) for did in (obj.department_ids or []) if did],
+                )
+            )
 
-        # Parse JSONB parameters into ParameterDetail dict
+        # Convert parameters_detail array to ParameterDetail dict
         parameters_dict: dict[str, ParameterDetail] = {}
-        params_data = parse_jsonb(result.get("parameters_json"))
-        if isinstance(params_data, dict):
-            for param_id, param_detail in params_data.items():
-                if isinstance(param_detail, dict):
-                    field_ids = param_detail.get(
-                        "parameter_item_ids", []
-                    )  # Database column name (keeping as-is)
-                    valid_field_ids = param_detail.get(
-                        "valid_parameter_item_ids",
-                        [],  # Database column name (keeping as-is)
-                    )
+        for param_detail in (result.parameters_detail or []):
+            if param_detail.param_id:
+                parameters_dict[str(param_detail.param_id)] = ParameterDetail(
+                    field_ids=[str(fid) for fid in (param_detail.selected_items or []) if fid],
+                    valid_field_ids=[str(fid) for fid in (param_detail.valid_items or []) if fid],
+                )
 
-                    if not isinstance(field_ids, list):
-                        field_ids = []
-                    if not isinstance(valid_field_ids, list):
-                        valid_field_ids = []
-
-                    parameters_dict[param_id] = ParameterDetail(
-                        field_ids=field_ids,  # Renamed from parameter_item_ids
-                        valid_field_ids=valid_field_ids,  # Renamed from valid_parameter_item_ids
-                    )
-
-        # Parse document_details from JSONB (empty array for create mode)
+        # Convert document_details array
         document_details: list[DocumentDetailItem] = []
-        doc_details_data = parse_jsonb(result.get("document_details"))
-        if isinstance(doc_details_data, list):
-            for doc in doc_details_data:
-                if isinstance(doc, dict):
-                    document_details.append(
-                        DocumentDetailItem(
-                            document_id=doc.get("document_id", ""),
-                            name=doc.get("name", ""),
-                            updatedAt=doc.get("updatedAt", ""),
-                            extension=doc.get("extension") or "",
-                            scenario_ids=doc.get("scenario_ids", []),
-                            can_edit=doc.get("can_edit", True),
-                            can_delete=doc.get("can_delete", True),
-                            active=doc.get("active", True),
-                            department_ids=[
-                                str(d) for d in doc.get("department_ids", [])
-                            ]
-                            if doc.get("department_ids")
-                            else None,
-                            file_path=doc.get("file_path") or None,
-                            mime_type=doc.get("mime_type") or None,
-                            upload_id=doc.get("upload_id") or None,
-                            field_ids=doc.get(
-                                "parameter_item_ids", []
-                            ),  # Database column name (keeping as-is), renamed to field_ids in model
-                            is_template=doc.get("is_template", False),
-                            parent_document_id=doc.get("parent_document_id") or None,
-                        )
+        for doc in (result.document_details or []):
+            if doc.document_id:
+                document_details.append(
+                    DocumentDetailItem(
+                        document_id=str(doc.document_id),
+                        name=doc.name or "",
+                        updatedAt=str(doc.updated_at) if doc.updated_at else "",
+                        extension=doc.extension or "",
+                        scenario_ids=[str(sid) for sid in (doc.scenario_ids or []) if sid],
+                        can_edit=doc.can_edit or True,
+                        can_delete=doc.can_delete or True,
+                        active=doc.active or True,
+                        department_ids=[str(did) for did in (doc.department_ids or []) if did] if doc.department_ids else None,
+                        file_path=doc.file_path,
+                        mime_type=doc.mime_type,
+                        upload_id=str(doc.upload_id) if doc.upload_id else None,
+                        field_ids=[str(fid) for fid in (doc.field_ids or []) if fid],
+                        is_template=doc.is_template or False,
+                        parent_document_id=str(doc.parent_document_id) if doc.parent_document_id else None,
                     )
+                )
 
         # Get user role and primary department for default behavior
-        user_role = str(result.get("user_role", "")).lower()
+        user_role = str(result.user_role or "").lower()
         is_superadmin = user_role == "superadmin"
-        primary_department_id = result.get("primary_department_id")
+        primary_department_id = result.primary_department_id
 
         # Set default department_ids based on role
         # Superadmin: None (empty = all departments = default object)
@@ -1365,7 +1288,7 @@ async def get_scenario_new(
             default_department_ids = None
         else:
             default_department_ids = (
-                [primary_department_id] if primary_department_id else []
+                [str(primary_department_id)] if primary_department_id else []
             )
 
         is_default = default_department_ids is None or len(default_department_ids) == 0
@@ -1388,36 +1311,26 @@ async def get_scenario_new(
             ]
             valid_parameter_ids = selected_params + other_params
 
-        # Parse agent_mapping
+        # Convert agents array to mapping
         agent_mapping: AgentMapping = {}
-        agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
-        if isinstance(agent_mapping_data, dict):
-            for agent_id, adata in agent_mapping_data.items():
-                if isinstance(adata, dict):
-                    roles = adata.get("roles", [])
-                    if isinstance(roles, str):
-                        try:
-                            roles = json.loads(roles)
-                        except json.JSONDecodeError:
-                            roles = []
-                    if not isinstance(roles, list):
-                        roles = []
-                    agent_mapping[agent_id] = AgentMappingItem(
-                        name=adata.get("name", ""),
-                        description=adata.get("description", ""),
-                        roles=[str(r) for r in roles],
-                    )
+        for agent in (result.agents or []):
+            if agent.agent_id:
+                agent_mapping[str(agent.agent_id)] = AgentMappingItem(
+                    name=agent.name or "",
+                    description=agent.description or "",
+                    roles=[str(r) for r in (agent.roles or [])],
+                )
 
-        valid_agent_ids = [str(aid) for aid in (result.get("valid_agent_ids") or [])]
+        valid_agent_ids = [str(aid) for aid in (result.valid_agent_ids or []) if aid]
 
         # Extract agent IDs
-        scenario_agent_id = str(result.get("scenario_agent_id", "")) or ""
-        image_agent_id = str(result.get("image_agent_id", "")) or ""
-        video_agent_id = str(result.get("video_agent_id", "")) or ""
+        scenario_agent_id = str(result.scenario_agent_id) if result.scenario_agent_id else ""
+        image_agent_id = str(result.image_agent_id) if result.image_agent_id else ""
+        video_agent_id = str(result.video_agent_id) if result.video_agent_id else ""
 
         # Extract video and questions flags
-        video_enabled = bool(result.get("video_enabled", False))
-        questions_enabled = bool(result.get("questions_enabled", False))
+        video_enabled = bool(result.video_enabled or False)
+        questions_enabled = bool(result.questions_enabled or False)
 
         # Apply filtering based on request parameters
         filtered_valid_persona_ids = valid_persona_ids
@@ -1517,8 +1430,8 @@ async def get_scenario_new(
 
         # Read ranges from database (defaults for new scenarios)
         # Personas: defaults (1-3)
-        allowed_persona_min = result.get("persona_range_min", 1)
-        allowed_persona_max = result.get("persona_range_max", 3)
+        allowed_persona_min = result.persona_range_min or 1
+        allowed_persona_max = result.persona_range_max or 3
         persona_min = (
             request_data.personaMin
             if request_data.personaMin is not None
@@ -1536,8 +1449,8 @@ async def get_scenario_new(
         persona_min = min(persona_min, persona_max)
 
         # Documents: defaults (0-3)
-        allowed_document_min = result.get("document_range_min", 0)
-        allowed_document_max = result.get("document_range_max", 3)
+        allowed_document_min = result.document_range_min or 0
+        allowed_document_max = result.document_range_max or 3
         document_min = (
             request_data.documentMin
             if request_data.documentMin is not None
@@ -1559,8 +1472,8 @@ async def get_scenario_new(
         document_min = min(document_min, document_max)
 
         # Parameters: defaults (0-3)
-        allowed_parameter_min = result.get("parameter_range_min", 0)
-        allowed_parameter_max = result.get("parameter_range_max", 3)
+        allowed_parameter_min = result.parameter_range_min or 0
+        allowed_parameter_max = result.parameter_range_max or 3
         parameter_selection_min = (
             request_data.parameterSelectionMin
             if request_data.parameterSelectionMin is not None
@@ -1588,30 +1501,18 @@ async def get_scenario_new(
 
         # Per-parameter field ranges
         # Read from database (defaults for new scenarios) or use defaults
-        field_ranges_from_db = parse_jsonb(result.get("field_ranges_json"))
+        # Field ranges are computed from parameters_detail (empty for new scenarios)
         field_ranges_dict: dict[str, dict[str, int]] = {}
         allowed_field_ranges: dict[str, RangeMinMax] = {}
 
         # Use valid_parameter_ids to ensure we include all valid parameters
         for param_id in valid_parameter_ids:
-            # Get range from request, database, or use defaults
+            # Get range from request or use defaults (no database values for new scenarios)
             if request_data.fieldRanges and param_id in request_data.fieldRanges:
                 # Use request value
                 param_range = request_data.fieldRanges[param_id]
                 param_min = param_range.get("min", 1)
                 param_max = param_range.get("max", 1)
-            elif (
-                isinstance(field_ranges_from_db, dict)
-                and param_id in field_ranges_from_db
-            ):
-                # Use database value
-                db_range = field_ranges_from_db[param_id]
-                if isinstance(db_range, dict):
-                    param_min = db_range.get("min", 1)
-                    param_max = db_range.get("max", 1)
-                else:
-                    param_min = 1
-                    param_max = 1
             else:
                 # Use defaults
                 param_min = 1
@@ -1627,21 +1528,8 @@ async def get_scenario_new(
                 "max": param_max,
             }
 
-            # Allowed range for this parameter (from database or default)
-            if (
-                isinstance(field_ranges_from_db, dict)
-                and param_id in field_ranges_from_db
-            ):
-                db_range = field_ranges_from_db[param_id]
-                if isinstance(db_range, dict):
-                    allowed_field_ranges[param_id] = RangeMinMax(
-                        min=max(1, min(db_range.get("min", 1), 3)),
-                        max=max(1, min(db_range.get("max", 3), 3)),
-                    )
-                else:
-                    allowed_field_ranges[param_id] = RangeMinMax(min=1, max=3)
-            else:
-                allowed_field_ranges[param_id] = RangeMinMax(min=1, max=3)
+            # Allowed range for this parameter (default for new scenarios)
+            allowed_field_ranges[param_id] = RangeMinMax(min=1, max=3)
 
         # Allowed ranges from database (defaults for new scenarios)
         allowed_ranges = AllowedRanges(
@@ -2103,74 +1991,65 @@ async def get_scenario_new(
             else (selected_field_ids if selected_field_ids else [])
         )
 
-        # Get objective_mapping from SQL result (already parsed)
-        # Ensure it's a dict, not a list
-        if isinstance(objective_mapping_data, dict):
-            objective_mapping_from_sql: dict[str, Any] = objective_mapping_data
-        else:
-            objective_mapping_from_sql = {}
+        # Convert objectives array to mapping
+        objective_mapping_from_sql: dict[str, Any] = {}
+        for obj in (result.objectives or []):
+            if obj.objective_id:
+                objective_mapping_from_sql[str(obj.objective_id)] = {
+                    "name": obj.name or "",
+                    "description": obj.description or "",
+                }
 
-        # Parse scenario_images from SQL result
+        # Convert scenario_images array
         scenario_images: list[dict[str, Any]] = []
-        if isinstance(scenario_images_data, list):
-            scenario_images = [
-                {
-                    "id": img.get("id", ""),
-                    "name": img.get("name", ""),
-                    "upload_id": img.get("upload_id", ""),
-                    "file_path": img.get("file_path", ""),
-                    "mime_type": img.get("mime_type", ""),
-                    "active": img.get("active", True),
-                    "created_at": img.get("created_at", ""),
-                    "updated_at": img.get("updated_at", ""),
-                }
-                for img in scenario_images_data
-                if isinstance(img, dict)
-            ]
+        for img in (result.scenario_images or []):
+            scenario_images.append({
+                "id": str(img.upload_id) if img.upload_id else "",
+                "name": img.name or "",
+                "upload_id": str(img.upload_id) if img.upload_id else "",
+                "file_path": img.file_path or "",
+                "mime_type": img.mime_type or "",
+                "active": img.active or True,
+            })
 
-        # Parse scenario_videos from SQL result
-        scenario_videos_data = parse_jsonb(result.get("scenario_videos"))
+        # Convert scenario_videos array
         scenario_videos: list[dict[str, Any]] = []
-        if isinstance(scenario_videos_data, list):
-            scenario_videos = [
-                {
-                    "id": vid.get("id", ""),
-                    "name": vid.get("name", ""),
-                    "length_seconds": vid.get("length_seconds", 0),
-                    "completed": vid.get("completed", False),
-                    "active": vid.get("active", True),
-                    "image_enabled": vid.get("image_enabled", False),
-                    "file_path": vid.get("file_path"),
-                    "mime_type": vid.get("mime_type"),
-                    "upload_id": vid.get("upload_id"),
-                }
-                for vid in scenario_videos_data
-                if isinstance(vid, dict)
-            ]
+        for vid in (result.scenario_videos or []):
+            scenario_videos.append({
+                "id": str(vid.id) if vid.id else "",
+                "name": vid.name or "",
+                "length_seconds": vid.length_seconds or 0,
+                "completed": vid.completed or False,
+                "active": vid.active or True,
+                "image_enabled": vid.image_enabled or False,
+                "file_path": vid.file_path,
+                "mime_type": vid.mime_type,
+                "upload_id": str(vid.upload_id) if vid.upload_id else None,
+            })
 
-        # Parse question_ids and questions from SQL result
-        question_ids_data = result.get("question_ids") or []
-        question_ids: list[str] = (
-            [str(qid) for qid in question_ids_data]
-            if isinstance(question_ids_data, list)
-            else []
-        )
+        # Convert question_ids and questions from SQL result
+        question_ids: list[str] = [str(qid) for qid in (result.question_ids or []) if qid]
 
-        questions_data = parse_jsonb(result.get("questions"))
         questions: list[dict[str, Any]] = []
-        if isinstance(questions_data, list):
-            questions = [
-                {
-                    "id": q.get("id", ""),
-                    "question_text": q.get("question_text", ""),
-                    "allow_multiple": q.get("allow_multiple", False),
-                    "active": q.get("active", True),
-                    "options": q.get("options", []),
-                    "times": q.get("times", []),
-                }
-                for q in questions_data
-                if isinstance(q, dict)
-            ]
+        for q in (result.questions or []):
+            # Convert question options array
+            options: list[dict[str, Any]] = []
+            for opt in (q.options or []):
+                options.append({
+                    "id": str(opt.id) if opt.id else "",
+                    "option_text": opt.option_text or "",
+                    "type": opt.type or "",
+                    "is_correct": opt.is_correct or False,
+                })
+            
+            questions.append({
+                "id": str(q.id) if q.id else "",
+                "question_text": q.question_text or "",
+                "allow_multiple": q.allow_multiple or False,
+                "active": q.active or True,
+                "options": options,
+                "times": [int(t) for t in (q.times or []) if t is not None],
+            })
 
         response_data = ScenarioDetailResponse(
             # Basic fields (empty defaults)
@@ -2240,8 +2119,7 @@ async def get_scenario_new(
             # Selected IDs from request (filtered to valid ones)
             selected_persona_ids=selected_persona_ids,
             selected_document_ids=selected_document_ids,
-            selected_template_document_ids=result.get("selected_template_document_ids")
-            or [],
+            selected_template_document_ids=[str(did) for did in (result.selected_template_document_ids or []) if did],
             selected_parameter_ids=selected_parameter_ids,
             selected_field_ids=final_field_ids,  # Renamed from selected_parameter_item_ids (apply randomized values)
             # Search terms from request
@@ -2261,7 +2139,7 @@ async def get_scenario_new(
         # Cache response
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": response_data.model_dump(mode="json")},
             ttl=60,
             tags=tags,
         )

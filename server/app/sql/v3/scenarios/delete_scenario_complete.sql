@@ -1,13 +1,46 @@
--- Delete scenario with existence and usage checks in a single transaction
--- Parameters: $1=scenarioId, $2=profile_id (uuid, required)
--- Returns: scenario_id, name, usage_count, deleted (boolean), actor_name
--- profile_id is always a UUID (required in request body)
-WITH actor_profile AS (
+-- Delete scenario with existence and usage checks
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_delete_scenario_v3(uuid, uuid);
+
+-- 2) Drop types WITHOUT CASCADE
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+-- No composite types needed for this simple endpoint
+
+-- 3) Recreate function
+CREATE OR REPLACE FUNCTION api_delete_scenario_v3(
+    scenario_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    scenario_exists boolean,
+    scenario_id uuid,
+    name text,
+    usage_count bigint,
+    deleted boolean,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT scenario_id AS scenario_id, profile_id AS profile_id
+),
+actor_profile AS (
     SELECT 
-        $2::uuid as resolved_profile_id,
+        p.id as resolved_profile_id,
         COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
+),
+scenario_exists_check AS (
+    SELECT EXISTS(
+        SELECT 1 FROM scenarios WHERE id = (SELECT scenario_id FROM params)
+    )::boolean as scenario_exists
 ),
 scenario_info AS (
     -- Check if scenario exists and get name
@@ -16,7 +49,7 @@ scenario_info AS (
         s.name,
         (SELECT COUNT(*) FROM simulation_scenarios WHERE scenario_id = s.id AND active = true) as usage_count
     FROM scenarios s
-    WHERE s.id = $1::uuid
+    WHERE s.id = (SELECT scenario_id FROM params)
 ),
 delete_scenario AS (
     -- Delete scenario only if it exists and is not in use
@@ -24,16 +57,20 @@ delete_scenario AS (
     WHERE id IN (
         SELECT id FROM scenario_info WHERE usage_count = 0
     )
-    RETURNING id::text as scenario_id, name
+    RETURNING id, name
 )
 -- Return scenario info (even if not deleted, so caller can determine error)
 SELECT 
-    si.id::text as scenario_id,
-    si.name,
-    si.usage_count,
-    CASE WHEN ds.scenario_id IS NOT NULL THEN true ELSE false END as deleted,
-    ap.actor_name
-FROM scenario_info si
-LEFT JOIN delete_scenario ds ON ds.scenario_id = si.id::text
+    sec.scenario_exists::boolean as scenario_exists,
+    si.id as scenario_id,
+    si.name::text as name,
+    si.usage_count::bigint as usage_count,
+    CASE WHEN ds.id IS NOT NULL THEN true ELSE false END as deleted,
+    ap.actor_name::text as actor_name
+FROM scenario_exists_check sec
+LEFT JOIN scenario_info si ON sec.scenario_exists = true
+LEFT JOIN delete_scenario ds ON ds.id = si.id
 CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;
