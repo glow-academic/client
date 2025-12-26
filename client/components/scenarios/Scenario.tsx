@@ -561,10 +561,6 @@ export default function Scenario({
 
   // Track if form data has been initialized from scenarioData to prevent resetting user changes
   const formDataInitializedRef = useRef<boolean>(false);
-  // Track last processed randomized_selections to prevent re-processing
-  const lastProcessedRandomizedRef = useRef<string | null>(null);
-  // Track if we're currently applying randomized selections to skip URL updates
-  const isApplyingRandomizedRef = useRef<boolean>(false);
 
   // Event handler for form input changes (defined early for use in useEffect)
   const handleInputChange = useCallback(
@@ -1858,45 +1854,29 @@ export default function Scenario({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentObjectiveIds, scenarioData?.objective_mapping, searchParams]);
 
-  // Handle randomized selections from server response
+  // Handle randomized selections from WebSocket event
   useEffect(() => {
-    // Only process if randomize param is present (prevents processing stale randomized_selections)
-    const randomizeParam = searchParams.get("randomize");
-    if (scenarioData?.randomized_selections && randomizeParam) {
-      const randomized = scenarioData.randomized_selections;
-      // Create a hash of the randomized selections to detect if we've already processed this
-      const randomizedHash = JSON.stringify({
-        personaIds: randomized.personaIds,
-        documentIds: randomized.documentIds,
-        parameterIds: randomized.parameterIds,
-        fieldIds: randomized.fieldIds,
-      });
+    if (!socket || !isConnected) return;
 
-      // Skip if we're currently applying randomized selections (prevents double-processing)
-      if (isApplyingRandomizedRef.current) {
-        // Still clear randomizing section to prevent infinite loading
+    const handleRandomizeComplete = (data: {
+      success: boolean;
+      randomized_selections: {
+        personaIds?: string[] | null;
+        documentIds?: string[] | null;
+        parameterIds?: string[] | null;
+        fieldIds?: string[] | null;
+      };
+      message?: string;
+    }) => {
+      if (!data.success) {
+        toast.error(data.message || "Failed to randomize selections");
         setRandomizingSection(null);
         return;
       }
 
-      // If we've already processed this exact randomized selection, just clear the param and reset hash
-      // (This handles the case where same result comes back - we still need to clear param for next randomization)
-      if (lastProcessedRandomizedRef.current === randomizedHash) {
-        // Reset hash so next randomization (even if same result) can be processed
-        lastProcessedRandomizedRef.current = null;
-        // Clear randomizing section to prevent infinite loading
-        setRandomizingSection(null);
-        setQ({ randomize: null });
-        return;
-      }
-
-      // Mark that we're applying randomized selections (prevents second useEffect from running)
-      isApplyingRandomizedRef.current = true;
-      lastProcessedRandomizedRef.current = randomizedHash;
+      const randomized = data.randomized_selections;
 
       // Update state with randomized selections using transition for smooth UI updates
-      // This ensures the old UI stays visible while new selections are being applied,
-      // especially important for personas which sort selected ones first
       startTransition(() => {
         if (randomized.personaIds) {
           updatePersonaIds(randomized.personaIds);
@@ -1914,54 +1894,27 @@ export default function Scenario({
       // Compute merged fieldIds if needed (for single parameter randomization)
       let finalFieldIds: string[] | undefined;
       if (randomized.fieldIds && randomized.fieldIds.length > 0) {
-        const randomizeParam = searchParams.get("randomize");
-        if (randomizeParam && randomizeParam.startsWith("parameter_")) {
+        // Check which section was being randomized
+        if (randomizingSection && randomizingSection.startsWith("parameter_")) {
           // Single parameter randomization: keep fields for other parameters, add randomized ones
-          const paramId = randomizeParam.replace("parameter_", "");
-          // Compute merged fields before state update
-          // Note: Using currentFieldIds and fieldMapping from closure - they're stable references
-
+          const paramId = randomizingSection.replace("parameter_", "");
           const otherParamFields = currentFieldIds.filter(
             (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
           );
           finalFieldIds = [...otherParamFields, ...randomized.fieldIds];
-          // Wrap field updates in transition too for smooth transitions
-          startTransition(() => {
-            updateFieldIds(finalFieldIds!);
-          });
         } else {
           // Full randomization (randomize=all): replace all fields
           finalFieldIds = randomized.fieldIds;
+        }
+        // Wrap field updates in transition too for smooth transitions
           startTransition(() => {
             updateFieldIds(finalFieldIds!);
           });
-        }
       }
 
-      // Update URL params with randomized selections AND clear randomize param
-      // This ensures URL reflects the randomized state (URL is source of truth)
+      // Update URL params with randomized selections
       requestAnimationFrame(() => {
-        const urlUpdates: Record<string, string | string[] | null> = {
-          randomize: null, // Clear randomize param
-        };
-
-        // Add randomized IDs to URL params so URL reflects current state
-        if (randomized.personaIds && randomized.personaIds.length > 0) {
-          urlUpdates["personaIds"] = randomized.personaIds;
-        }
-        if (randomized.documentIds && randomized.documentIds.length > 0) {
-          urlUpdates["documentIds"] = randomized.documentIds;
-        }
-        if (randomized.parameterIds && randomized.parameterIds.length > 0) {
-          urlUpdates["parameterIds"] = randomized.parameterIds;
-        }
-        if (finalFieldIds && finalFieldIds.length > 0) {
-          // Use the computed finalFieldIds (already merged if needed)
-          urlUpdates["fieldIds"] = finalFieldIds;
-        }
-
         setQ({
-          randomize: null,
           personaIds:
             randomized.personaIds && randomized.personaIds.length > 0
               ? randomized.personaIds
@@ -1977,138 +1930,36 @@ export default function Scenario({
           fieldIds:
             finalFieldIds && finalFieldIds.length > 0 ? finalFieldIds : null,
         });
-        // Reset the flag after clearing params (use another frame to ensure URL update completes)
-        requestAnimationFrame(() => {
-          isApplyingRandomizedRef.current = false;
-          // Ensure randomizing section is cleared even if transition didn't run
-          setRandomizingSection(null);
-        });
       });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+      if (data.message) {
+        toast.success(data.message);
+      }
+    };
+
+    const handleRandomizeError = (data: { success: boolean; message: string }) => {
+      toast.error(data.message || "Failed to randomize selections");
+          setRandomizingSection(null);
+    };
+
+    socket.on("scenario_randomize_complete", handleRandomizeComplete);
+    socket.on("scenario_randomize_error", handleRandomizeError);
+
+    return () => {
+      socket.off("scenario_randomize_complete", handleRandomizeComplete);
+      socket.off("scenario_randomize_error", handleRandomizeError);
+    };
   }, [
-    scenarioData?.randomized_selections,
-    searchParams,
-    setQ,
-    handleInputChange,
+    socket,
+    isConnected,
     randomizingSection,
     currentFieldIds,
     fieldMapping,
-    // updatePersonaIds, updateDocumentIds, updateFieldIds intentionally omitted
-  ]);
-
-  // Also handle randomized flag as fallback (DHH-style: server tells client when to clear param)
-  // This ensures the param is cleared even if randomized_selections processing fails or gets stuck
-  // Also updates URL with randomized IDs from main fields (persona_ids, document_ids, etc.)
-  useEffect(() => {
-    const randomizeParam = searchParams.get("randomize");
-    if (scenarioData?.randomized === true && randomizeParam) {
-      // Server has applied randomization to main fields - update URL with randomized IDs
-      // Use a small delay to ensure randomized_selections useEffect has a chance to run first
-      const timeoutId = setTimeout(() => {
-        // Only process if param is still present (randomized_selections might have already handled it)
-        if (searchParams.get("randomize")) {
-          // Read randomized values from main fields and update URL params
-          // This ensures URL reflects the randomized state even if randomized_selections didn't process
-          // Use transition for smooth state updates
-          startTransition(() => {
-            if (
-              scenarioData.persona_ids &&
-              scenarioData.persona_ids.length > 0
-            ) {
-              updatePersonaIds(scenarioData.persona_ids);
-            }
-            if (
-              scenarioData.document_ids &&
-              scenarioData.document_ids.length > 0
-            ) {
-              updateDocumentIds(scenarioData.document_ids);
-            }
-            if (
-              scenarioData.scenario_parameter_ids &&
-              scenarioData.scenario_parameter_ids.length > 0
-            ) {
-              handleInputChange(
-                "parameterIds",
-                scenarioData.scenario_parameter_ids
-              );
-            }
-            // For fields, we need to extract from parameters dict or use selected_field_ids
-            const serverData = scenarioData as ScenarioNewOut | undefined;
-            if (
-              serverData?.selected_field_ids &&
-              serverData.selected_field_ids.length > 0
-            ) {
-              updateFieldIds(serverData.selected_field_ids);
-            }
-          });
-
-          const fallbackUrlUpdates: Record<string, string | string[] | null> = {
-            randomize: null, // Clear randomize param
-          };
-
-          // Update URL params to reflect randomized state
-          if (scenarioData.persona_ids && scenarioData.persona_ids.length > 0) {
-            fallbackUrlUpdates["personaIds"] = scenarioData.persona_ids;
-          }
-          if (
-            scenarioData.document_ids &&
-            scenarioData.document_ids.length > 0
-          ) {
-            fallbackUrlUpdates["documentIds"] = scenarioData.document_ids;
-          }
-          if (
-            scenarioData.scenario_parameter_ids &&
-            scenarioData.scenario_parameter_ids.length > 0
-          ) {
-            fallbackUrlUpdates["parameterIds"] =
-              scenarioData.scenario_parameter_ids;
-          }
-          // For fields, we need to extract from parameters dict or use selected_field_ids
-          const fallbackServerData = scenarioData as ScenarioNewOut | undefined;
-          if (
-            fallbackServerData?.selected_field_ids &&
-            fallbackServerData.selected_field_ids.length > 0
-          ) {
-            fallbackUrlUpdates["fieldIds"] =
-              fallbackServerData.selected_field_ids;
-          }
-
-          // Reset flags to allow next randomization to be processed
-          lastProcessedRandomizedRef.current = null;
-          isApplyingRandomizedRef.current = false;
-          // Clear randomizing section state
-          setRandomizingSection(null);
-          // Update URL with arrays directly (nuqs handles array serialization)
-          setQ({
-            personaIds: Array.isArray(fallbackUrlUpdates["personaIds"])
-              ? fallbackUrlUpdates["personaIds"]
-              : null,
-            documentIds: Array.isArray(fallbackUrlUpdates["documentIds"])
-              ? fallbackUrlUpdates["documentIds"]
-              : null,
-            parameterIds: Array.isArray(fallbackUrlUpdates["parameterIds"])
-              ? fallbackUrlUpdates["parameterIds"]
-              : null,
-            fieldIds: Array.isArray(fallbackUrlUpdates["fieldIds"])
-              ? fallbackUrlUpdates["fieldIds"]
-              : null,
-          });
-        }
-      }, 200);
-
-      return () => clearTimeout(timeoutId);
-    }
-    return undefined;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    scenarioData?.randomized,
-    scenarioData,
-    searchParams,
-    setQ,
-    startTransition,
+    updatePersonaIds,
+    updateDocumentIds,
+    updateFieldIds,
     handleInputChange,
-    // updatePersonaIds, updateDocumentIds, updateFieldIds intentionally omitted
+    setQ,
   ]);
 
   // Debounce timeout ref for URL updates
@@ -2131,11 +1982,6 @@ export default function Scenario({
   // Follows analytics pattern: Form state → URL → router.refresh() → Server re-fetch → Filtered data
   // Server already parses URL params and returns filtered data, so no need for URL → Form sync
   useEffect(() => {
-    // Skip URL updates if we're currently applying randomized selections
-    // This prevents infinite loops when randomized selections trigger state updates
-    if (isApplyingRandomizedRef.current) {
-      return;
-    }
 
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
@@ -3023,26 +2869,40 @@ export default function Scenario({
     return [...baseSteps, ...parameterSteps, contentStep];
   }, [generalParameterMapping, getStepStatus]);
 
-  // Parameter actions - Server-side randomization per parameter
+  // Parameter actions - WebSocket randomization per parameter
   const handleRandomizeParameterClient = (paramId: string) => {
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected. Please refresh the page.");
+      return;
+    }
+
     // Set loading state for this specific parameter section
     setRandomizingSection(`parameter_${paramId}`);
-    // Keep fields for other parameters in URL to avoid flash
-    // Keep existing fields in local state too - randomized ones will merge via randomized_selections useEffect
-    const filteredFieldIds = currentFieldIds.filter(
-      (itemId) => fieldMapping[itemId]?.parameter_id !== paramId
-    );
-    // Update URL: keep fields for other parameters, add randomize param
-    // Server will randomize fields for this parameter and return them
-    // The randomized_selections useEffect will merge randomized fields with existing ones
-    setQ({
-      fieldIds: filteredFieldIds.length > 0 ? filteredFieldIds : null,
+
+    // Emit WebSocket event with all current filter/search/range params
+    socket.emit("scenario_randomize", {
+      scenarioId: isEditMode ? scenarioId : null,
       randomize: `parameter_${paramId}`,
+      departmentIds: q.departmentIds ?? null,
+      personaIds: q.personaIds ?? null,
+      documentIds: q.documentIds ?? null,
+      templateDocumentIds: q.templateDocumentIds ?? null,
+      parameterIds: q.parameterIds ?? null,
+      fieldIds: q.fieldIds ?? null,
+      personaSearch: q.personaSearch ?? null,
+      documentSearch: q.documentSearch ?? null,
+      parameterSearch: q.parameterSearch ?? null,
+      personaMin: q.personaMin ?? null,
+      personaMax: q.personaMax ?? null,
+      documentMin: q.documentMin ?? null,
+      documentMax: q.documentMax ?? null,
+      parameterSelectionMin: q.parameterSelectionMin ?? null,
+      parameterSelectionMax: q.parameterSelectionMax ?? null,
+      fieldRanges: fieldMinMax,
+      useImage: q.useImage ?? null,
+      useVideo: q.useVideo ?? null,
+      profileId: effectiveProfile?.id ?? "",
     });
-    // Don't clear local state - keep existing fields until server returns randomized ones
-    // The randomized_selections useEffect will merge and update state
-    // Trigger page refresh to get randomized results from server
-    router.refresh();
   };
 
   const handleResetParameter = (paramId: string) => {
@@ -3108,16 +2968,40 @@ export default function Scenario({
     }
   };
 
-  // Persona actions - Server-side randomization
+  // Persona actions - WebSocket randomization
   const handleRandomizePersonaClient = () => {
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected. Please refresh the page.");
+      return;
+    }
+
     // Set loading state for persona section
     setRandomizingSection("persona");
-    // Keep existing personaIds in URL to avoid flash of empty state
-    // Server will randomize and return new values, which will update URL via randomized_selections useEffect
-    setQ({ randomize: "persona" });
-    // Don't clear local state - keep existing values until server returns randomized ones
-    // Trigger page refresh to get randomized results from server
-    router.refresh();
+
+    // Emit WebSocket event with all current filter/search/range params
+    socket.emit("scenario_randomize", {
+      scenarioId: isEditMode ? scenarioId : null,
+      randomize: "persona",
+      departmentIds: q.departmentIds ?? null,
+      personaIds: q.personaIds ?? null,
+      documentIds: q.documentIds ?? null,
+      templateDocumentIds: q.templateDocumentIds ?? null,
+      parameterIds: q.parameterIds ?? null,
+      fieldIds: q.fieldIds ?? null,
+      personaSearch: q.personaSearch ?? null,
+      documentSearch: q.documentSearch ?? null,
+      parameterSearch: q.parameterSearch ?? null,
+      personaMin: q.personaMin ?? null,
+      personaMax: q.personaMax ?? null,
+      documentMin: q.documentMin ?? null,
+      documentMax: q.documentMax ?? null,
+      parameterSelectionMin: q.parameterSelectionMin ?? null,
+      parameterSelectionMax: q.parameterSelectionMax ?? null,
+      fieldRanges: fieldMinMax,
+      useImage: q.useImage ?? null,
+      useVideo: q.useVideo ?? null,
+      profileId: effectiveProfile?.id ?? "",
+    });
   };
 
   const handleResetPersona = () => {
@@ -3157,16 +3041,40 @@ export default function Scenario({
     }
   };
 
-  // Documents actions - Server-side randomization
+  // Documents actions - WebSocket randomization
   const handleRandomizeDocumentsClient = () => {
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected. Please refresh the page.");
+      return;
+    }
+
     // Set loading state for document section
     setRandomizingSection("document");
-    // Keep existing documentIds in URL to avoid flash of empty state
-    // Server will randomize and return new values, which will update URL via randomized_selections useEffect
-    setQ({ randomize: "document" });
-    // Don't clear local state - keep existing values until server returns randomized ones
-    // Trigger page refresh to get randomized results from server
-    router.refresh();
+
+    // Emit WebSocket event with all current filter/search/range params
+    socket.emit("scenario_randomize", {
+      scenarioId: isEditMode ? scenarioId : null,
+      randomize: "document",
+      departmentIds: q.departmentIds ?? null,
+      personaIds: q.personaIds ?? null,
+      documentIds: q.documentIds ?? null,
+      templateDocumentIds: q.templateDocumentIds ?? null,
+      parameterIds: q.parameterIds ?? null,
+      fieldIds: q.fieldIds ?? null,
+      personaSearch: q.personaSearch ?? null,
+      documentSearch: q.documentSearch ?? null,
+      parameterSearch: q.parameterSearch ?? null,
+      personaMin: q.personaMin ?? null,
+      personaMax: q.personaMax ?? null,
+      documentMin: q.documentMin ?? null,
+      documentMax: q.documentMax ?? null,
+      parameterSelectionMin: q.parameterSelectionMin ?? null,
+      parameterSelectionMax: q.parameterSelectionMax ?? null,
+      fieldRanges: fieldMinMax,
+      useImage: q.useImage ?? null,
+      useVideo: q.useVideo ?? null,
+      profileId: effectiveProfile?.id ?? "",
+    });
   };
 
   const handleResetDocuments = () => {
@@ -3219,14 +3127,40 @@ export default function Scenario({
     // Note: URL params are automatically updated via useEffect that watches currentDocumentIds and templateDocumentIds
   };
 
-  // Parameters actions - Server-side randomization
+  // Parameters actions - WebSocket randomization
   const handleRandomizeParametersClient = () => {
-    // Keep existing parameterIds in URL to avoid flash of empty state
-    // Server will randomize and return new values, which will update URL via randomized_selections useEffect
-    setQ({ randomize: "parameters" });
-    // Don't clear local state - keep existing values until server returns randomized ones
-    // Trigger page refresh to get randomized results from server
-    router.refresh();
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected. Please refresh the page.");
+      return;
+    }
+
+    // Set loading state for parameters section
+    setRandomizingSection("parameters");
+
+    // Emit WebSocket event with all current filter/search/range params
+    socket.emit("scenario_randomize", {
+      scenarioId: isEditMode ? scenarioId : null,
+      randomize: "parameters",
+      departmentIds: q.departmentIds ?? null,
+      personaIds: q.personaIds ?? null,
+      documentIds: q.documentIds ?? null,
+      templateDocumentIds: q.templateDocumentIds ?? null,
+      parameterIds: q.parameterIds ?? null,
+      fieldIds: q.fieldIds ?? null,
+      personaSearch: q.personaSearch ?? null,
+      documentSearch: q.documentSearch ?? null,
+      parameterSearch: q.parameterSearch ?? null,
+      personaMin: q.personaMin ?? null,
+      personaMax: q.personaMax ?? null,
+      documentMin: q.documentMin ?? null,
+      documentMax: q.documentMax ?? null,
+      parameterSelectionMin: q.parameterSelectionMin ?? null,
+      parameterSelectionMax: q.parameterSelectionMax ?? null,
+      fieldRanges: fieldMinMax,
+      useImage: q.useImage ?? null,
+      useVideo: q.useVideo ?? null,
+      profileId: effectiveProfile?.id ?? "",
+    });
   };
 
   const handleResetParameters = () => {
@@ -3306,20 +3240,44 @@ export default function Scenario({
 
   // Helper functions removed - filtering now handled by server
 
-  // Randomize all: personas, documents, and all parameters (server-side via URL params)
+  // Randomize all: personas, documents, and all parameters (WebSocket)
   const handleRandomizeAll = () => {
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected. Please refresh the page.");
+      return;
+    }
+
     try {
       // Set loading state for all sections
       setRandomizingSection("all");
-      // Keep existing IDs in URL to avoid flash of empty state
-      // Server will randomize and return new values, which will update URL via randomized_selections useEffect
-      // Server randomizes from the full filtered set regardless of existing selections
-      setQ({ randomize: "all" });
 
-      // Trigger page refresh to get randomized results from server
-      router.refresh();
+      // Emit WebSocket event with all current filter/search/range params
+      socket.emit("scenario_randomize", {
+        scenarioId: isEditMode ? scenarioId : null,
+        randomize: "all",
+        departmentIds: q.departmentIds ?? null,
+        personaIds: q.personaIds ?? null,
+        documentIds: q.documentIds ?? null,
+        templateDocumentIds: q.templateDocumentIds ?? null,
+        parameterIds: q.parameterIds ?? null,
+        fieldIds: q.fieldIds ?? null,
+        personaSearch: q.personaSearch ?? null,
+        documentSearch: q.documentSearch ?? null,
+        parameterSearch: q.parameterSearch ?? null,
+        personaMin: q.personaMin ?? null,
+        personaMax: q.personaMax ?? null,
+        documentMin: q.documentMin ?? null,
+        documentMax: q.documentMax ?? null,
+        parameterSelectionMin: q.parameterSelectionMin ?? null,
+        parameterSelectionMax: q.parameterSelectionMax ?? null,
+        fieldRanges: fieldMinMax,
+        useImage: q.useImage ?? null,
+        useVideo: q.useVideo ?? null,
+        profileId: effectiveProfile?.id ?? "",
+      });
     } catch {
       toast.error("Failed to randomize all selections");
+      setRandomizingSection(null);
     }
   };
 

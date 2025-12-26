@@ -107,7 +107,6 @@ export default async function NewScenarioPage({
       parameterSelectionMin: q.parameterSelectionMin ?? null,
       parameterSelectionMax: q.parameterSelectionMax ?? null,
       fieldRanges: fieldRanges ?? null,
-      randomize: q.randomize ?? null,
       useImage: q.useImage ?? null,
       useVideo: q.useVideo ?? null,
       imageIds: csvToArray(q.imageIds) ?? null,

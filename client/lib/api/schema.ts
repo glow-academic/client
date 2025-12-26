@@ -4094,6 +4094,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/client/scenarios/randomize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scenario Randomize Api
+         * @description Client-to-server event: Randomize scenario selections.
+         */
+        post: operations["scenario_randomize_api_socket_v3_client_scenarios_randomize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v3/client/scenarios/tools/document": {
         parameters: {
             query?: never;
@@ -14543,6 +14563,58 @@ export interface components {
             createdAt: string;
         };
         /**
+         * RandomizeScenarioPayload
+         * @description Request to randomize scenario selections.
+         */
+        RandomizeScenarioPayload: {
+            /** Scenarioid */
+            scenarioId?: string | null;
+            /** Randomize */
+            randomize: string;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Personaids */
+            personaIds?: string[] | null;
+            /** Documentids */
+            documentIds?: string[] | null;
+            /** Templatedocumentids */
+            templateDocumentIds?: string[] | null;
+            /** Parameterids */
+            parameterIds?: string[] | null;
+            /** Fieldids */
+            fieldIds?: string[] | null;
+            /** Personasearch */
+            personaSearch?: string | null;
+            /** Documentsearch */
+            documentSearch?: string | null;
+            /** Parametersearch */
+            parameterSearch?: string | null;
+            /** Personamin */
+            personaMin?: number | null;
+            /** Personamax */
+            personaMax?: number | null;
+            /** Documentmin */
+            documentMin?: number | null;
+            /** Documentmax */
+            documentMax?: number | null;
+            /** Parameterselectionmin */
+            parameterSelectionMin?: number | null;
+            /** Parameterselectionmax */
+            parameterSelectionMax?: number | null;
+            /** Fieldranges */
+            fieldRanges?: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            } | null;
+            /** Useimage */
+            useImage?: boolean | null;
+            /** Usevideo */
+            useVideo?: boolean | null;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
          * RandomizedSelections
          * @description Randomized selections returned from server.
          */
@@ -15328,8 +15400,6 @@ export interface components {
                     [key: string]: number;
                 };
             } | null;
-            /** Randomize */
-            randomize?: string | null;
             /** Useimage */
             useImage?: boolean | null;
             /** Usevideo */
@@ -15553,8 +15623,6 @@ export interface components {
                     [key: string]: number;
                 };
             } | null;
-            /** Randomize */
-            randomize?: string | null;
             /** Useimage */
             useImage?: boolean | null;
             /** Usevideo */
@@ -27811,6 +27879,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RegenerateScenarioPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scenario_randomize_api_socket_v3_client_scenarios_randomize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RandomizeScenarioPayload"];
             };
         };
         responses: {

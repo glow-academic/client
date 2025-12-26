@@ -14,7 +14,6 @@ import {
   csvToArray,
   extractFieldShowSelectedByParam,
   extractParameterItemRanges,
-  extractRandomizeParameterItems,
   loadScenarioSearchParams,
 } from "../../searchParams";
 
@@ -80,10 +79,6 @@ const getScenario = async (
     parameterSelectionMin?: number;
     parameterSelectionMax?: number;
     parameterItemRanges?: Record<string, { min: number; max: number }>;
-    randomizePersonas?: string;
-    randomizeDocuments?: string;
-    randomizeParameters?: string;
-    randomizeParameterItems?: Record<string, string>;
     useImage?: boolean;
     useVideo?: boolean;
     imageIds?: string[];
@@ -172,8 +167,6 @@ export default async function EditScenarioPage({
   const fieldShowSelectedByParam =
     extractFieldShowSelectedByParam(searchParamsObj);
   const parameterItemRanges = extractParameterItemRanges(searchParamsObj);
-  const randomizeParameterItems =
-    extractRandomizeParameterItems(searchParamsObj);
 
   // Fetch scenario detail (always fresh - source of truth) with filter params
   try {
@@ -199,10 +192,6 @@ export default async function EditScenarioPage({
       parameterSelectionMin?: number;
       parameterSelectionMax?: number;
       parameterItemRanges?: Record<string, { min: number; max: number }>;
-      randomizePersonas?: string;
-      randomizeDocuments?: string;
-      randomizeParameters?: string;
-      randomizeParameterItems?: Record<string, string>;
       useImage?: boolean;
       useVideo?: boolean;
       imageIds?: string[];
@@ -261,14 +250,6 @@ export default async function EditScenarioPage({
       filterParams.parameterSelectionMax = q.parameterSelectionMax;
     if (parameterItemRanges)
       filterParams.parameterItemRanges = parameterItemRanges;
-    if (q.randomizePersonas)
-      filterParams.randomizePersonas = q.randomizePersonas;
-    if (q.randomizeDocuments)
-      filterParams.randomizeDocuments = q.randomizeDocuments;
-    if (q.randomizeParameters)
-      filterParams.randomizeParameters = q.randomizeParameters;
-    if (randomizeParameterItems)
-      filterParams.randomizeParameterItems = randomizeParameterItems;
     if (q.useImage !== undefined && q.useImage !== null)
       filterParams.useImage = q.useImage;
     if (q.useVideo !== undefined && q.useVideo !== null)

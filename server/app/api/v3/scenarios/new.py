@@ -189,8 +189,6 @@ class ScenarioNewRequest(BaseModel):
     fieldRanges: dict[str, dict[str, int]] | None = (
         None  # Renamed from parameterItemRanges
     )
-    # Randomization parameter (single param: "all", "persona", "document", "parameters", or "parameter_{field_id}")
-    randomize: str | None = None
     # Agent filtering parameters
     useImage: bool | None = None
     useVideo: bool | None = None
@@ -1022,11 +1020,8 @@ async def get_scenario_new(
     """Get default scenario structure for creation mode."""
     tags = ["scenarios"]  # From router tags
 
-    # Check for cache bypass header (for hard refresh or randomization)
+    # Check for cache bypass header (for hard refresh)
     bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
-    # Also bypass cache when randomize param is present (each randomization should be unique)
-    if request_data.randomize:
-        bypass_cache = True
 
     # Generate cache key from path and parsed body
     body_dict = request_data.model_dump()
@@ -1344,15 +1339,12 @@ async def get_scenario_new(
         allowed_ranges: AllowedRanges | None = None
         randomized_selections: RandomizedSelections | None = None
 
-        # Always compute filtered_valid_general_field_ids if randomize is present
-        # (needed for randomization even when no filter params are provided)
         needs_filtering = (
             request_data.departmentIds is not None
             or request_data.personaIds is not None
             or request_data.documentIds is not None
             or request_data.parameterIds is not None
             or request_data.fieldIds is not None  # Renamed from parameterItemIds
-            or request_data.randomize is not None
         )
 
         # Only apply filtering if filter parameters are provided or randomize is present
@@ -1402,26 +1394,6 @@ async def get_scenario_new(
                 selected_persona_ids=request_data.personaIds,
                 selected_doc_ids=request_data.documentIds,
                 selected_field_ids=request_data.fieldIds,  # Renamed from parameterItemIds
-                persona_mapping=persona_mapping,
-                document_mapping=document_mapping,
-                field_mapping=field_mapping,  # Renamed from parameter_item_mapping
-                document_details=document_details,
-            )
-        elif request_data.randomize:
-            # When randomize is present but no filter params, still need filtered_valid_general_field_ids
-            # Initialize with base values (no filtering applied)
-            mapping_ids = list(
-                field_mapping.keys()
-            )  # Renamed from parameter_item_mapping
-            filtered_valid_field_ids = (
-                mapping_ids  # Renamed from filtered_valid_parameter_item_ids
-            )
-            filtered_valid_general_field_ids = filter_valid_general_field_ids(  # Renamed from filter_valid_general_parameter_item_ids
-                valid_field_ids=filtered_valid_field_ids,  # Renamed from valid_parameter_item_ids
-                selected_param_ids=None,
-                selected_persona_ids=None,
-                selected_doc_ids=None,
-                selected_field_ids=None,  # Renamed from selected_param_item_ids
                 persona_mapping=persona_mapping,
                 document_mapping=document_mapping,
                 field_mapping=field_mapping,  # Renamed from parameter_item_mapping
@@ -1494,11 +1466,6 @@ async def get_scenario_new(
         # Ensure min doesn't exceed max
         parameter_selection_min = min(parameter_selection_min, parameter_selection_max)
 
-        # For randomization, we still need to cap based on available items
-        max_valid_personas = len(filtered_valid_persona_ids)
-        max_valid_documents = len(filtered_valid_document_ids)
-        max_valid_parameters = len(valid_parameter_ids)
-
         # Per-parameter field ranges
         # Read from database (defaults for new scenarios) or use defaults
         # Field ranges are computed from parameters_detail (empty for new scenarios)
@@ -1541,214 +1508,9 @@ async def get_scenario_new(
             fields=allowed_field_ranges,
         )
 
-        # Handle randomization if requested
-        import random
-
-        randomized_persona_ids: list[str] | None = None
-        randomized_document_ids: list[str] | None = None
-        randomized_parameter_ids: list[str] | None = None
-        randomized_field_ids: list[str] | None = (
-            None  # Renamed from randomized_parameter_item_ids
-        )
-
-        if request_data.randomize:
-            randomize_value = request_data.randomize.strip().lower()
-
-            # Parse randomize value and apply randomization accordingly
-            if randomize_value == "all":
-                # Randomize personas
-                try:
-                    min_val = persona_min
-                    max_val = persona_max
-                    capped_max = min(max_val, max_valid_personas)
-                    count = min(
-                        capped_max,
-                        max(min_val, random.randint(min_val, capped_max)),
-                    )
-                    shuffled = filtered_valid_persona_ids.copy()
-                    random.shuffle(shuffled)
-                    randomized_persona_ids = shuffled[:count]
-                except (ValueError, IndexError):
-                    pass
-
-                # Randomize documents
-                try:
-                    min_val = document_min
-                    max_val = document_max
-                    capped_max = min(max_val, max_valid_documents)
-                    count = min(
-                        capped_max,
-                        max(min_val, random.randint(min_val, capped_max)),
-                    )
-                    shuffled = filtered_valid_document_ids.copy()
-                    random.shuffle(shuffled)
-                    randomized_document_ids = shuffled[:count]
-                except (ValueError, IndexError):
-                    pass
-
-                # Randomize parameters
-                try:
-                    min_val = parameter_selection_min
-                    max_val = parameter_selection_max
-                    capped_max = min(max_val, max_valid_parameters)
-                    count = min(
-                        capped_max,
-                        max(min_val, random.randint(min_val, capped_max)),
-                    )
-                    shuffled = valid_parameter_ids.copy()
-                    random.shuffle(shuffled)
-                    randomized_parameter_ids = shuffled[:count]
-                except (ValueError, IndexError):
-                    pass
-
-                # Randomize all fields
-                # When randomizing "all", randomize fields for ALL valid parameters (not just randomized/selected ones)
-                if (
-                    filtered_valid_general_field_ids
-                ):  # Renamed from filtered_valid_general_parameter_item_ids
-                    randomized_items: list[str] = []
-                    # When randomizing "all", always randomize fields for ALL valid parameters
-                    # (not just the randomized parameters subset)
-                    # For other randomize types, use randomized/selected parameters
-                    if randomize_value == "all":
-                        # Always use all valid parameters when randomizing "all"
-                        params_to_randomize = valid_parameter_ids
-                    elif randomized_parameter_ids:
-                        params_to_randomize = randomized_parameter_ids
-                    elif request_data.parameterIds:
-                        params_to_randomize = request_data.parameterIds
-                    else:
-                        # No parameters selected - use all valid parameters as fallback
-                        params_to_randomize = valid_parameter_ids
-                    for param_id in params_to_randomize:
-                        if (
-                            param_id in field_ranges_dict
-                        ):  # Renamed from parameter_items_ranges
-                            param_range = field_ranges_dict[param_id]
-                            try:
-                                min_val = param_range["min"]
-                                max_val = param_range["max"]
-                                valid_items_for_param = [
-                                    item_id
-                                    for item_id in filtered_valid_general_field_ids  # Renamed from filtered_valid_general_parameter_item_ids
-                                    if item_id
-                                    in field_mapping  # Renamed from parameter_item_mapping
-                                    and field_mapping[item_id].parameter_id == param_id
-                                ]
-                                if valid_items_for_param:
-                                    # Cap based on available items for randomization
-                                    max_valid_items = len(valid_items_for_param)
-                                    capped_max = min(max_val, max_valid_items)
-                                    count = min(
-                                        capped_max,
-                                        max(
-                                            min_val, random.randint(min_val, capped_max)
-                                        ),
-                                    )
-                                    shuffled = valid_items_for_param.copy()
-                                    random.shuffle(shuffled)
-                                    randomized_items.extend(shuffled[:count])
-                            except (ValueError, IndexError):
-                                pass
-                    if randomized_items:
-                        randomized_field_ids = randomized_items  # Renamed from randomized_parameter_item_ids
-
-            elif randomize_value == "persona":
-                # Randomize personas only
-                try:
-                    min_val = persona_min
-                    max_val = persona_max
-                    capped_max = min(max_val, max_valid_personas)
-                    count = min(
-                        capped_max,
-                        max(min_val, random.randint(min_val, capped_max)),
-                    )
-                    shuffled = filtered_valid_persona_ids.copy()
-                    random.shuffle(shuffled)
-                    randomized_persona_ids = shuffled[:count]
-                except (ValueError, IndexError):
-                    pass
-
-            elif randomize_value == "document":
-                # Randomize documents only
-                try:
-                    min_val = document_min
-                    max_val = document_max
-                    capped_max = min(max_val, max_valid_documents)
-                    count = min(
-                        capped_max,
-                        max(min_val, random.randint(min_val, capped_max)),
-                    )
-                    shuffled = filtered_valid_document_ids.copy()
-                    random.shuffle(shuffled)
-                    randomized_document_ids = shuffled[:count]
-                except (ValueError, IndexError):
-                    pass
-
-            elif randomize_value == "parameters":
-                # Randomize parameters only
-                try:
-                    min_val = parameter_selection_min
-                    max_val = parameter_selection_max
-                    capped_max = min(max_val, max_valid_parameters)
-                    count = min(
-                        capped_max,
-                        max(min_val, random.randint(min_val, capped_max)),
-                    )
-                    shuffled = valid_parameter_ids.copy()
-                    random.shuffle(shuffled)
-                    randomized_parameter_ids = shuffled[:count]
-                except (ValueError, IndexError):
-                    pass
-
-            elif randomize_value.startswith("parameter_"):
-                # Randomize fields for specific parameter (format: "parameter_{field_id}")
-                param_id = randomize_value.replace("parameter_", "")
-                if (
-                    filtered_valid_general_field_ids and param_id in field_ranges_dict
-                ):  # Renamed from filtered_valid_general_parameter_item_ids and parameter_items_ranges
-                    param_range = field_ranges_dict[param_id]
-                    try:
-                        min_val = param_range["min"]
-                        max_val = param_range["max"]
-                        valid_items_for_param = [
-                            item_id
-                            for item_id in filtered_valid_general_field_ids  # Renamed from filtered_valid_general_parameter_item_ids
-                            if item_id
-                            in field_mapping  # Renamed from parameter_item_mapping
-                            and field_mapping[item_id].parameter_id == param_id
-                        ]
-                        if valid_items_for_param:
-                            # Cap based on available items for randomization
-                            max_valid_items = len(valid_items_for_param)
-                            capped_max = min(max_val, max_valid_items)
-                            count = min(
-                                capped_max,
-                                max(min_val, random.randint(min_val, capped_max)),
-                            )
-                            shuffled = valid_items_for_param.copy()
-                            random.shuffle(shuffled)
-                            randomized_field_ids = shuffled[
-                                :count
-                            ]  # Renamed from randomized_parameter_item_ids
-                    except (ValueError, IndexError):
-                        pass
-
-        # Determine if randomization occurred
-        randomization_occurred = (
-            randomized_persona_ids is not None
-            or randomized_document_ids is not None
-            or randomized_parameter_ids is not None
-            or randomized_field_ids is not None
-        )
-
-        if randomization_occurred:
-            randomized_selections = RandomizedSelections(
-                personaIds=randomized_persona_ids,
-                documentIds=randomized_document_ids,
-                parameterIds=randomized_parameter_ids,
-                fieldIds=randomized_field_ids,  # Renamed from parameterItemIds
-            )
+        # No randomization - set to None/False for backward compatibility
+        randomized_selections: RandomizedSelections | None = None
+        randomization_occurred = False
 
         # Save filtered_valid_document_ids before search filter for selected_document_ids intersection
         # Search term should only affect valid_document_ids for display, not selected_document_ids
@@ -1963,33 +1725,15 @@ async def get_scenario_new(
                         if item_id in filtered_valid_field_ids
                     ]
 
-        # Apply randomized values to main fields (DHH-style: server applies directly)
-        # Use randomized values if available, otherwise use selected values from request
-        # NOTE: This must come AFTER selected_* variables are computed
-        final_persona_ids = (
-            randomized_persona_ids
-            if randomized_persona_ids is not None
-            else (selected_persona_ids if selected_persona_ids else [])
-        )
-        final_document_ids = (
-            randomized_document_ids
-            if randomized_document_ids is not None
-            else (selected_document_ids if selected_document_ids else [])
-        )
+        # Use selected values from request (no randomization in REST endpoint)
+        final_persona_ids = selected_persona_ids if selected_persona_ids else []
+        final_document_ids = selected_document_ids if selected_document_ids else []
         final_parameter_ids = (
-            randomized_parameter_ids
-            if randomized_parameter_ids is not None
-            else (
-                selected_parameter_ids
-                if selected_parameter_ids
-                else scenario_parameter_ids
-            )
+            selected_parameter_ids
+            if selected_parameter_ids
+            else scenario_parameter_ids
         )
-        final_field_ids = (
-            randomized_field_ids
-            if randomized_field_ids is not None
-            else (selected_field_ids if selected_field_ids else [])
-        )
+        final_field_ids = selected_field_ids if selected_field_ids else []
 
         # Convert objectives array to mapping
         objective_mapping_from_sql: dict[str, Any] = {}
@@ -2121,7 +1865,7 @@ async def get_scenario_new(
             selected_document_ids=selected_document_ids,
             selected_template_document_ids=[str(did) for did in (result.selected_template_document_ids or []) if did],
             selected_parameter_ids=selected_parameter_ids,
-            selected_field_ids=final_field_ids,  # Renamed from selected_parameter_item_ids (apply randomized values)
+            selected_field_ids=final_field_ids,  # Renamed from selected_parameter_item_ids
             # Search terms from request
             persona_search=request_data.personaSearch,
             document_search=request_data.documentSearch,
