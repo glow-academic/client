@@ -261,15 +261,6 @@ class AllowedRanges(BaseModel):
     ]  # Renamed from parameter_items - {paramId: {"min": 1, "max": 2}}
 
 
-class RandomizedSelections(BaseModel):
-    """Randomized selections returned from server."""
-
-    personaIds: list[str] | None = None
-    documentIds: list[str] | None = None
-    parameterIds: list[str] | None = None
-    fieldIds: list[str] | None = None  # Renamed from parameterItemIds
-
-
 class ScenarioDetailResponse(BaseModel):
     """Response for scenario detail."""
 
@@ -329,10 +320,6 @@ class ScenarioDetailResponse(BaseModel):
     allowed_ranges: AllowedRanges | None = None
     # Objective count range (default: min=0, max=3)
     objective_count_range: RangeMinMax
-    # Randomized selections (if randomization params provided)
-    randomized_selections: RandomizedSelections | None = None
-    # Flag indicating if randomization was applied (client should clear randomize param when true)
-    randomized: bool = False
     # Selected IDs from request (filtered to valid ones) - server-driven approach
     selected_persona_ids: list[str] | None = None
     selected_document_ids: list[str] | None = None
@@ -1337,7 +1324,6 @@ async def get_scenario_new(
             None  # Renamed from filtered_valid_general_parameter_item_ids
         )
         allowed_ranges: AllowedRanges | None = None
-        randomized_selections: RandomizedSelections | None = None
 
         needs_filtering = (
             request_data.departmentIds is not None
@@ -1347,7 +1333,7 @@ async def get_scenario_new(
             or request_data.fieldIds is not None  # Renamed from parameterItemIds
         )
 
-        # Only apply filtering if filter parameters are provided or randomize is present
+        # Only apply filtering if filter parameters are provided
         if needs_filtering:
             # Filter valid persona IDs
             filtered_valid_persona_ids = filter_valid_persona_ids(
@@ -1507,10 +1493,6 @@ async def get_scenario_new(
             ),
             fields=allowed_field_ranges,
         )
-
-        # No randomization - set to None/False for backward compatibility
-        randomized_selections: RandomizedSelections | None = None
-        randomization_occurred = False
 
         # Save filtered_valid_document_ids before search filter for selected_document_ids intersection
         # Search term should only affect valid_document_ids for display, not selected_document_ids
@@ -1673,7 +1655,6 @@ async def get_scenario_new(
                         filtered_valid_general_field_ids.append(selected_field_id)
 
         # Filter selected IDs from request to only include valid ones (server-driven approach)
-        # Note: These are used as fallback if no randomization occurred
         selected_persona_ids: list[str] | None = None
         selected_document_ids: list[str] | None = None
         selected_parameter_ids: list[str] | None = None
@@ -1809,7 +1790,7 @@ async def get_scenario_new(
             # Department
             department_ids=default_department_ids,
             valid_department_ids=dept_ids,
-            # IDs (apply randomized values directly to main fields)
+            # Selected IDs from request (filtered to valid ones)
             persona_ids=final_persona_ids,
             valid_persona_ids=filtered_valid_persona_ids,
             document_ids=final_document_ids,
@@ -1819,8 +1800,6 @@ async def get_scenario_new(
             allowed_ranges=allowed_ranges,
             # Objectives: 0-3 (default: 1) - fixed range
             objective_count_range=RangeMinMax(min=0, max=3),
-            randomized_selections=randomized_selections,
-            randomized=randomization_occurred,
             # Objectives (empty defaults)
             objective_ids=[],
             valid_objectives=[],

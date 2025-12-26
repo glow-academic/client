@@ -51073,69 +51073,6 @@
         "title": "RandomizeScenarioPayload",
         "description": "Request to randomize scenario selections."
       },
-      "RandomizedSelections": {
-        "properties": {
-          "personaIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaids"
-          },
-          "documentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentids"
-          },
-          "parameterIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterids"
-          },
-          "fieldIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldids"
-          }
-        },
-        "type": "object",
-        "title": "RandomizedSelections",
-        "description": "Randomized selections returned from server."
-      },
       "RangeMinMax": {
         "properties": {
           "min": {
@@ -66688,21 +66625,6 @@
           },
           "objective_count_range": {
             "$ref": "#/components/schemas/RangeMinMax"
-          },
-          "randomized_selections": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RandomizedSelections"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "randomized": {
-            "type": "boolean",
-            "title": "Randomized",
-            "default": false
           }
         },
         "type": "object",
@@ -67670,21 +67592,6 @@
           },
           "objective_count_range": {
             "$ref": "#/components/schemas/RangeMinMax"
-          },
-          "randomized_selections": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RandomizedSelections"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "randomized": {
-            "type": "boolean",
-            "title": "Randomized",
-            "default": false
           },
           "selected_persona_ids": {
             "anyOf": [

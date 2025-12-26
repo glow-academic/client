@@ -14615,20 +14615,6 @@ export interface components {
             profileId: string;
         };
         /**
-         * RandomizedSelections
-         * @description Randomized selections returned from server.
-         */
-        RandomizedSelections: {
-            /** Personaids */
-            personaIds?: string[] | null;
-            /** Documentids */
-            documentIds?: string[] | null;
-            /** Parameterids */
-            parameterIds?: string[] | null;
-            /** Fieldids */
-            fieldIds?: string[] | null;
-        };
-        /**
          * RangeMinMax
          * @description Min/max range values.
          */
@@ -20130,12 +20116,6 @@ export interface components {
             valid_general_field_ids?: string[] | null;
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
             objective_count_range: components["schemas"]["RangeMinMax"];
-            randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
-            /**
-             * Randomized
-             * @default false
-             */
-            randomized: boolean;
         };
         /**
          * SimulationMappingItem
@@ -20452,12 +20432,6 @@ export interface components {
             valid_general_field_ids?: string[] | null;
             allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
             objective_count_range: components["schemas"]["RangeMinMax"];
-            randomized_selections?: components["schemas"]["RandomizedSelections"] | null;
-            /**
-             * Randomized
-             * @default false
-             */
-            randomized: boolean;
             /** Selected Persona Ids */
             selected_persona_ids?: string[] | null;
             /** Selected Document Ids */

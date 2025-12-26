@@ -9,13 +9,10 @@ import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    GetScenarioDetailApiRequest,
-    GetScenarioDetailApiResponse,
-    GetScenarioDetailSqlParams,
-    GetScenarioDetailSqlRow,
-    load_sql_query,
-)
+from app.sql.types import (GetScenarioDetailApiRequest,
+                           GetScenarioDetailApiResponse,
+                           GetScenarioDetailSqlParams, GetScenarioDetailSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
@@ -283,15 +280,6 @@ class AllowedRanges(BaseModel):
     ]  # Renamed from parameter_items - {paramId: {"min": 1, "max": 2}}
 
 
-class RandomizedSelections(BaseModel):
-    """Randomized selections returned from server."""
-
-    personaIds: list[str] | None = None
-    documentIds: list[str] | None = None
-    parameterIds: list[str] | None = None
-    fieldIds: list[str] | None = None  # Renamed from parameterItemIds
-
-
 class ScenarioDetailResponse(BaseModel):
     """Detailed scenario response with all fields and metadata."""
 
@@ -372,10 +360,6 @@ class ScenarioDetailResponse(BaseModel):
     allowed_ranges: AllowedRanges | None = None
     # Objective count range (default: min=0, max=3)
     objective_count_range: RangeMinMax
-    # Randomized selections (if randomization params provided)
-    randomized_selections: RandomizedSelections | None = None
-    # Flag indicating if randomization was applied (client should clear randomize param when true)
-    randomized: bool = False
 
 
 router = APIRouter()
@@ -1325,7 +1309,6 @@ async def get_scenario_detail(
             None  # Renamed from filtered_valid_general_parameter_item_ids
         )
         allowed_ranges: AllowedRanges | None = None
-        randomized_selections: RandomizedSelections | None = None
 
         needs_filtering = (
             request_data.departmentIds is not None
@@ -1335,7 +1318,7 @@ async def get_scenario_detail(
             or request_data.fieldIds is not None
         )
 
-        # Only apply filtering if filter parameters are provided or randomize is present
+        # Only apply filtering if filter parameters are provided
         if needs_filtering:
             # Filter valid persona IDs
             filtered_valid_persona_ids = filter_valid_persona_ids(
@@ -1505,10 +1488,6 @@ async def get_scenario_detail(
             ),
             fields=allowed_field_ranges,
         )
-
-        # No randomization - set to None/False for backward compatibility
-        randomized_selections: RandomizedSelections | None = None
-        randomization_occurred = False
 
         # Set audit context with data from SQL query
         if result.actor_name:
@@ -1713,8 +1692,6 @@ async def get_scenario_detail(
             allowed_ranges=allowed_ranges,
             # Objectives: 0-3 (default: 1) - fixed range
             objective_count_range=RangeMinMax(min=1, max=3),
-            randomized_selections=randomized_selections,
-            randomized=randomization_occurred,
             scenario_images=scenario_images,
             objective_ids=objective_ids,
             valid_objectives=[],

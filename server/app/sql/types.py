@@ -726,10 +726,10 @@ class GetAuthDetailAuthItemsItem(BaseModel):
 
 class GetAuthDetailSqlRow(BaseModel):
 
-    can_edit: bool
-    description: str
     actor_name: str
+    can_edit: bool
     name: str
+    description: str
     active: bool
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
@@ -740,10 +740,10 @@ class GetAuthDetailApiRequest(BaseModel):
 
 class GetAuthDetailApiResponse(BaseModel):
 
-    can_edit: bool
-    description: str
     actor_name: str
+    can_edit: bool
     name: str
+    description: str
     active: bool
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
