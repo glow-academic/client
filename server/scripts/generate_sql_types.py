@@ -516,10 +516,28 @@ def _detect_function_in_sql(sql_text: str) -> bool:
     return bool(re.search(pattern, sql_text, re.IGNORECASE | re.MULTILINE))
 
 
+def _detect_transaction_block(sql_text: str) -> bool:
+    """Detect if SQL file contains BEGIN/COMMIT transaction blocks.
+    
+    Args:
+        sql_text: SQL file content
+        
+    Returns:
+        True if SQL contains BEGIN; and COMMIT; blocks
+    """
+    # Check for BEGIN; and COMMIT; patterns (case insensitive)
+    has_begin = bool(re.search(r'^\s*BEGIN\s*;', sql_text, re.IGNORECASE | re.MULTILINE))
+    has_commit = bool(re.search(r'^\s*COMMIT\s*;', sql_text, re.IGNORECASE | re.MULTILINE))
+    return has_begin and has_commit
+
+
 async def execute_sql_file(
     sql_path: str, conn: asyncpg.Connection, server_root: Path
 ) -> tuple[bool, str]:
     """Execute SQL file on database (for functions/types).
+    
+    Uses savepoints for SQL files with BEGIN/COMMIT blocks to prevent
+    transaction corruption when one file fails.
     
     Args:
         sql_path: SQL file path relative to server root
@@ -537,12 +555,83 @@ async def execute_sql_file(
         if not _detect_function_in_sql(sql_text):
             return True, f"Skipping {sql_path} (no function definition)"
         
-        # Execute SQL file (may contain BEGIN/COMMIT blocks)
-        await conn.execute(sql_text)
-        return True, f"Executed {sql_path}"
+        # Check if SQL contains transaction blocks (BEGIN/COMMIT)
+        has_transaction_block = _detect_transaction_block(sql_text)
+        
+        if has_transaction_block:
+            # For SQL files with BEGIN/COMMIT, we need to wrap execution in a transaction
+            # and use savepoints for isolation. However, PostgreSQL doesn't support nested
+            # transactions, so we strip BEGIN/COMMIT and wrap in our own transaction.
+            import hashlib
+            savepoint_name = f"sp_{hashlib.md5(sql_path.encode()).hexdigest()[:16]}"
+            
+            # Strip BEGIN; and COMMIT; from SQL text
+            # Remove BEGIN; at the start (with optional whitespace)
+            sql_without_transaction = re.sub(r'^\s*BEGIN\s*;\s*', '', sql_text, flags=re.IGNORECASE | re.MULTILINE)
+            # Remove COMMIT; at the end (with optional whitespace)
+            sql_without_transaction = re.sub(r'\s*COMMIT\s*;\s*$', '', sql_without_transaction, flags=re.IGNORECASE | re.MULTILINE)
+            
+            try:
+                # Start transaction and create savepoint
+                await conn.execute("BEGIN")
+                await conn.execute(f"SAVEPOINT {savepoint_name}")
+                
+                # Execute SQL file (without BEGIN/COMMIT, now wrapped in our transaction)
+                await conn.execute(sql_without_transaction)
+                
+                # Release savepoint and commit on success
+                await conn.execute(f"RELEASE SAVEPOINT {savepoint_name}")
+                await conn.execute("COMMIT")
+                return True, f"Executed {sql_path}"
+                
+            except Exception as e:
+                # Rollback to savepoint on error to restore connection state
+                try:
+                    await conn.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
+                    await conn.execute("COMMIT")  # Commit the outer transaction (savepoint rollback succeeded)
+                except Exception as rollback_error:
+                    # If rollback fails, rollback entire transaction
+                    try:
+                        await conn.execute("ROLLBACK")
+                    except Exception:
+                        pass  # Connection may be corrupted, caller will handle
+                    return False, f"Error executing {sql_path}: {str(e)} (rollback also failed: {str(rollback_error)})"
+                return False, f"Error executing {sql_path}: {str(e)}"
+        else:
+            # No transaction block, execute normally
+            await conn.execute(sql_text)
+            return True, f"Executed {sql_path}"
         
     except Exception as e:
         return False, f"Error executing {sql_path}: {str(e)}"
+
+
+async def _recover_from_transaction_abort(conn: asyncpg.Connection) -> bool:
+    """Recover from transaction abort by rolling back.
+    
+    Args:
+        conn: Database connection
+        
+    Returns:
+        True if recovery was attempted, False if connection is clean
+    """
+    try:
+        # Try to execute a simple query to check transaction state
+        await conn.execute("SELECT 1")
+        return False  # Connection is clean
+    except Exception as e:
+        error_msg = str(e)
+        if "current transaction is aborted" in error_msg.lower():
+            # Transaction is aborted, rollback to clean state
+            try:
+                await conn.execute("ROLLBACK")
+                return True  # Recovery attempted
+            except Exception as rollback_error:
+                # Rollback failed, connection is corrupted
+                # This shouldn't happen with savepoints, but handle it anyway
+                return False
+        # Some other error, not a transaction abort
+        return False
 
 
 async def generate_types_for_sql_file(
@@ -667,12 +756,19 @@ async def main() -> int:
         # This ensures functions and types exist in the database before introspection
         print("\n📝 Executing SQL files with functions/types...")
         execution_errors: list[tuple[str, str]] = []
+        failed_files: set[str] = set()  # Track files that failed during execution
         
         for sql_file in sorted(sql_files):
             sql_path = str(sql_file.relative_to(server_root))
             execute_success, execute_message = await execute_sql_file(sql_path, conn, server_root)
             
             if not execute_success:
+                # Recover from transaction abort if needed
+                await _recover_from_transaction_abort(conn)
+                
+                # Track failed files
+                failed_files.add(sql_path)
+                
                 # For test SQL files, treat execution errors as skips
                 if sql_path.startswith("tests/sql/"):
                     print(f"⏭️  {execute_message}")
@@ -681,6 +777,9 @@ async def main() -> int:
                     print(f"❌ {execute_message}")
             elif "Executed" in execute_message:
                 print(f"✅ {execute_message}")
+        
+        # Ensure connection is in clean state before introspection
+        await _recover_from_transaction_abort(conn)
         
         if execution_errors:
             print(f"\n⚠️  {len(execution_errors)} SQL files failed to execute:")
@@ -694,6 +793,15 @@ async def main() -> int:
         for sql_file in sorted(sql_files):
             # Get relative path from server root
             sql_path = str(sql_file.relative_to(server_root))
+            
+            # Skip files that failed during execution phase
+            if sql_path in failed_files:
+                skipped.append(sql_path)
+                print(f"⏭️  Skipping {sql_path} (failed during execution phase)")
+                continue
+
+            # Recover from transaction abort if needed before each introspection
+            await _recover_from_transaction_abort(conn)
 
             success, message, type_definition = await generate_types_for_sql_file(
                 sql_path, conn, server_root, skip_execution=True
@@ -710,6 +818,9 @@ async def main() -> int:
                     skipped.append(sql_path)
                     print(f"⏭️  {message}")
             else:
+                # Recover from transaction abort after error
+                await _recover_from_transaction_abort(conn)
+                
                 # Store as tuple for better grouping
                 errors.append((sql_path, message))
                 print(f"❌ {sql_path}: {message}")

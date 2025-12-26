@@ -1,30 +1,20 @@
 """Parameter delete endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (DeleteParameterApiRequest, DeleteParameterApiResponse,
+                           DeleteParameterSqlParams, DeleteParameterSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DeleteParameterRequest(BaseModel):
-    """Request to delete parameter."""
-
-    parameterId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DeleteParameterResponse(BaseModel):
-    """Response from delete parameter."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/parameters/delete_parameter_complete.sql"
 
 
 router = APIRouter()
@@ -32,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/delete",
-    response_model=DeleteParameterResponse,
+    response_model=DeleteParameterApiResponse,
     dependencies=[
         audit_activity(
             "parameter.deleted",
@@ -41,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def delete_parameter(
-    request: DeleteParameterRequest,
+    request: DeleteParameterApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DeleteParameterResponse:
+) -> DeleteParameterApiResponse:
     """Delete a parameter if items not in use."""
     tags = ["parameters", "agents"]  # Parameters used in scenario generation
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -62,43 +52,53 @@ async def delete_parameter(
             )
 
         async with transaction(conn):
-            # Delete parameter with usage check in single SQL (DHH style)
-            sql_query = load_sql("app/sql/v3/parameters/delete_parameter_complete.sql")
-            sql_params = (request.parameterId, profile_id)
-            result = await conn.fetchrow(sql_query, request.parameterId, profile_id)
+            # Convert API request to SQL params (add profile_id from header)
+            params = DeleteParameterSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            if not result:
-                raise ValueError(f"Parameter not found: {request.parameterId}")
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                DeleteParameterSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
-            usage_count = result.get("usage_count", 0)
+            # Check if parameter exists using SQL result
+            if not result.parameter_exists:
+                raise HTTPException(
+                    status_code=404, detail=f"Parameter {request.parameter_id} not found"
+                )
+
+            if not result.name:
+                raise HTTPException(
+                    status_code=404, detail=f"Parameter {request.parameter_id} not found"
+                )
+
+            usage_count = result.usage_count or 0
             if usage_count > 0:
                 raise ValueError(
                     "Cannot delete parameter: Some items are in use by scenarios"
                 )
 
-            parameter_name = result.get("name")
-            actor_name = result.get("actor_name")
-            if not parameter_name:
-                raise ValueError(f"Parameter not found: {request.parameterId}")
-
             # Set audit context with data from SQL query
-            if actor_name:
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    parameter={"name": parameter_name, "id": request.parameterId},
+                    actor={"name": result.actor_name, "id": profile_id},
+                    parameter={"name": result.name, "id": str(request.parameter_id)},
                 )
 
-            result_data = DeleteParameterResponse(
-                success=True,
-                message=f"Parameter '{parameter_name}' deleted successfully",
-            )
+        # Convert SQL result to API response
+        api_response = DeleteParameterApiResponse.model_validate(result.model_dump())
 
-            # Invalidate cache after mutation
-            await invalidate_tags(tags)
-            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-            return result_data
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

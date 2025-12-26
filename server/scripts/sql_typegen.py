@@ -329,19 +329,65 @@ def _pg_type_to_python_type(pg_type: str, generated_types: dict[str, str]) -> st
     return type_map.get(pg_type_lower, "Any")
 
 
-def generate_request_model(
-    metadata: SQLMetadata, route_name: str
-) -> str:
+async def generate_request_model(
+    metadata: SQLMetadata, route_name: str, conn: Any | None = None
+) -> tuple[str, dict[str, str]]:
     """Generate Pydantic request model from SQL metadata.
+
+    Also handles composite types by generating models for them.
 
     Args:
         metadata: SQL metadata with parameter information
         route_name: Route name for class naming (e.g., "create_agent")
+        conn: Database connection (optional, needed for composite type introspection)
 
     Returns:
-        Python code string for Pydantic model
+        Tuple of (Python code string for Pydantic model, generated_composite_models dict)
     """
+    
     class_name = _to_class_name(route_name, "SqlParams")
+    
+    # Detect composite types in parameters
+    composite_types: set[str] = set()
+    generated_composite_models: dict[str, str] = {}  # type_name -> class_name
+    
+    if conn:
+        for param in metadata.parameters:
+            # Check if parameter type is a composite type or composite array
+            python_type = param.python_type
+            
+            
+            # Check for Composite(...) marker
+            composite_match = re.match(r"Composite\((.+)\)", python_type)
+            if composite_match:
+                type_name = composite_match.group(1)
+                composite_types.add(type_name)
+            
+            # Check for CompositeArray(...) marker
+            array_match = re.match(r"CompositeArray\((.+)\)", python_type)
+            if array_match:
+                # The group contains the full type name (e.g., "types.i_create_parameter_v3_field_connection")
+                type_name = array_match.group(1)
+                composite_types.add(type_name)
+    
+    # Generate composite type models
+    composite_model_code = []
+    for comp_type in sorted(composite_types):
+        try:
+            if not conn:
+                raise ValueError(f"Database connection is None - cannot generate composite model for {comp_type}")
+            comp_class_name, comp_code = await generate_composite_model(
+                conn, comp_type, generated_composite_models
+            )
+            generated_composite_models[comp_type] = comp_class_name
+            composite_model_code.append(comp_code)
+        except Exception as e:
+            # Log the error for debugging
+            import sys
+            print(f"Warning: Failed to generate composite model for {comp_type}: {e}", file=sys.stderr)
+            # If we can't generate composite model, skip it
+            # The type will be marked as Any
+            pass
 
     # Check if we need UUID import
     needs_uuid = any(
@@ -372,6 +418,13 @@ def generate_request_model(
         lines.append("from pydantic import Field")
     
     lines.append("")
+    
+    # Add composite type models first
+    if composite_model_code:
+        lines.append("")
+        lines.append("\n\n".join(composite_model_code))
+        lines.append("")
+    
     lines.append("")
     lines.append(f"class {class_name}(BaseModel):")
     lines.append('    """SQL parameters for query execution.')
@@ -387,7 +440,29 @@ def generate_request_model(
     else:
         for param in metadata.parameters:
             field_name = _sanitize_field_name(param.name)
-            field_type = _to_pydantic_field_type(param.python_type, param.is_optional)
+            field_type = param.python_type
+            
+            
+            # Resolve composite types
+            composite_match = re.match(r"Composite\((.+)\)", field_type)
+            if composite_match:
+                type_name = composite_match.group(1)
+                if type_name in generated_composite_models:
+                    field_type = generated_composite_models[type_name]
+                else:
+                    field_type = "Any"  # Fallback if not generated
+            
+            # Resolve composite arrays
+            array_match = re.match(r"CompositeArray\((.+)\)", field_type)
+            if array_match:
+                type_name = array_match.group(1)
+                if type_name in generated_composite_models:
+                    field_type = f"list[{generated_composite_models[type_name]}]"
+                else:
+                    field_type = "list[Any]"  # Fallback if not generated
+            
+            
+            field_type = _to_pydantic_field_type(field_type, param.is_optional)
             
             # Handle defaults
             if param.default_value is not None:
@@ -407,13 +482,58 @@ def generate_request_model(
         lines.append("")
         lines.append("    def to_tuple(self) -> tuple[Any, ...]:")
         lines.append('        """Convert model to tuple in parameter order ($1, $2, ...)."""')
+        
+        # Track composite array parameters that need conversion
+        composite_array_conversions = {}
+        if conn:
+            from scripts.sql_introspect import fetch_composite_fields
+            
+            for param in metadata.parameters:
+                field_name = _sanitize_field_name(param.name)
+                python_type = param.python_type
+                
+                # Check if this parameter is a composite array
+                array_match = re.match(r"CompositeArray\((.+)\)", python_type)
+                if array_match:
+                    type_name = array_match.group(1)
+                    if type_name in generated_composite_models:
+                        # Fetch composite type fields to know the tuple structure
+                        try:
+                            fields = await fetch_composite_fields(conn, type_name)
+                            field_names = [f[0] for f in fields]  # Get field names in order
+                            # Store conversion info
+                            composite_array_conversions[field_name] = field_names
+                        except Exception as e:
+                            # If we can't fetch fields, skip conversion (will use as-is)
+                            import sys
+                            print(f"Warning: Failed to fetch composite fields for {type_name}: {e}", file=sys.stderr)
+        
+        # Add conversion code before return if needed
+        if composite_array_conversions:
+            for field_name, field_names in composite_array_conversions.items():
+                field_accessors = ', '.join([f'conn.{fn}' for fn in field_names])
+                lines.append(f"        # Convert {field_name} composite array to tuples for asyncpg")
+                lines.append(f"        {field_name}_tuples = [")
+                lines.append(f"            ({field_accessors})")
+                lines.append(f"            for conn in self.{field_name}")
+                lines.append(f"        ]")
+        
         lines.append("        return (")
         for param in metadata.parameters:
             field_name = _sanitize_field_name(param.name)
-            lines.append(f"            self.{field_name},")
+            python_type = param.python_type
+            
+            # Check if this is a composite array that needs conversion
+            array_match = re.match(r"CompositeArray\((.+)\)", python_type)
+            if array_match and field_name in composite_array_conversions:
+                # Use the converted tuple list
+                lines.append(f"            {field_name}_tuples,")
+            else:
+                # Regular parameter or composite array without conversion - use as-is
+                lines.append(f"            self.{field_name},")
         lines.append("        )")
 
-    return "\n".join(lines)
+    return "\n".join(lines), generated_composite_models
 
 
 def detect_dict_prefixes_universal(columns: list[ColumnMetadata]) -> dict[str, str]:
@@ -1192,7 +1312,7 @@ async def generate_response_model(
 
 
 def generate_api_request_model(
-    metadata: SQLMetadata, route_name: str
+    metadata: SQLMetadata, route_name: str, generated_composite_models: dict[str, str] | None = None
 ) -> str:
     """Generate Pydantic API request model from SQL metadata.
     
@@ -1203,6 +1323,7 @@ def generate_api_request_model(
     Args:
         metadata: SQL metadata with parameter information
         route_name: Route name for class naming (e.g., "create_agent")
+        generated_composite_models: Dict mapping composite type names to class names
 
     Returns:
         Python code string for Pydantic model
@@ -1258,7 +1379,27 @@ def generate_api_request_model(
     else:
         for param in api_params:
             field_name = _sanitize_field_name(param.name)
-            field_type = _to_pydantic_field_type(param.python_type, param.is_optional)
+            field_type = param.python_type
+            
+            # Resolve composite types
+            composite_match = re.match(r"Composite\((.+)\)", field_type)
+            if composite_match:
+                type_name = composite_match.group(1)
+                if generated_composite_models and type_name in generated_composite_models:
+                    field_type = generated_composite_models[type_name]
+                else:
+                    field_type = "Any"  # Fallback if not generated
+            
+            # Resolve composite arrays
+            array_match = re.match(r"CompositeArray\((.+)\)", field_type)
+            if array_match:
+                type_name = array_match.group(1)
+                if generated_composite_models and type_name in generated_composite_models:
+                    field_type = f"list[{generated_composite_models[type_name]}]"
+                else:
+                    field_type = "list[Any]"  # Fallback if not generated
+            
+            field_type = _to_pydantic_field_type(field_type, param.is_optional)
             
             # Handle defaults
             if param.default_value is not None:
@@ -1521,10 +1662,14 @@ async def generate_types_file(
         - ApiRequest (API input without profile_id)
         - ApiResponse (API output, same as SqlRow for now)
     """
-    sql_request_model = generate_request_model(metadata, route_name)
-    sql_response_model, generated_composite_models = await generate_response_model(metadata, route_name, conn)
-    api_request_model = generate_api_request_model(metadata, route_name)
-    api_response_model = generate_api_response_model(metadata, route_name, generated_composite_models)
+    sql_request_model, request_composite_models = await generate_request_model(metadata, route_name, conn)
+    sql_response_model, response_composite_models = await generate_response_model(metadata, route_name, conn)
+    
+    # Merge composite models from both request and response
+    all_composite_models = {**request_composite_models, **response_composite_models}
+    
+    api_request_model = generate_api_request_model(metadata, route_name, all_composite_models)
+    api_response_model = generate_api_response_model(metadata, route_name, all_composite_models)
 
     return f"{sql_request_model}\n\n\n{sql_response_model}\n\n\n{api_request_model}\n\n\n{api_response_model}\n"
 

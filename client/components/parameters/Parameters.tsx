@@ -117,12 +117,12 @@ export default function Parameters({
     [parametersData?.scenario_options],
   );
   const departmentOptions = useMemo(() => {
-    const mapping = parametersData?.department_mapping || {};
-    return Object.entries(mapping).map(([id, obj]) => ({
-      value: id,
-      label: obj["name"] as string,
+    const departments = parametersData?.departments || [];
+    return departments.map((dept) => ({
+      value: dept.department_id,
+      label: dept.name,
     }));
-  }, [parametersData?.department_mapping]);
+  }, [parametersData?.departments]);
   const documentOptions = useMemo(
     () =>
       (parametersData?.document_options || [])

@@ -1,36 +1,20 @@
 """Field update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db
+from app.sql.types import (UpdateFieldApiRequest, UpdateFieldApiResponse,
+                           UpdateFieldSqlParams, UpdateFieldSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class UpdateFieldRequest(BaseModel):
-    """Request to update field."""
-
-    fieldId: str
-    name: str
-    description: str
-    active: bool = True
-    department_ids: list[str] | None  # None = cross-department (superadmin only)
-    conditional_parameter_ids: list[str] | None = (
-        None  # Parameters to show when this field is selected
-    )
-    # profileId removed - comes from X-Profile-Id header
-
-
-class UpdateFieldResponse(BaseModel):
-    """Response from update field."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/fields/update_field_complete.sql"
 
 
 router = APIRouter()
@@ -38,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/update",
-    response_model=UpdateFieldResponse,
+    response_model=UpdateFieldApiResponse,
     dependencies=[
         audit_activity(
             "field.updated", "{{ actor.name }} updated field '{{ field.name }}'"
@@ -46,15 +30,15 @@ router = APIRouter()
     ],
 )
 async def update_field(
-    request: UpdateFieldRequest,
+    request: UpdateFieldApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateFieldResponse:
+) -> UpdateFieldApiResponse:
     """Update an existing field."""
     tags = ["fields"]
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -66,48 +50,49 @@ async def update_field(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            # Check if field exists
-            check_sql = "SELECT name FROM fields WHERE id = $1"
-            existing = await conn.fetchrow(check_sql, request.fieldId)
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            # Use double star pattern: **request.model_dump()
+            params = UpdateFieldSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            if not existing:
-                raise ValueError(f"Field not found: {request.fieldId}")
-
-            sql_query = load_sql("app/sql/v3/fields/update_field_complete.sql")
-            sql_params = (
-                request.fieldId,
-                request.name,
-                request.description,
-                request.active,
-                request.department_ids,
-                request.conditional_parameter_ids,
-                profile_id,
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                UpdateFieldSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
-            result = await conn.fetchrow(sql_query, *sql_params)
+
+            if not result:
+                raise HTTPException(status_code=404, detail="Field not found")
+
+            # Check if field exists using SQL result
+            if not result.field_exists:
+                raise HTTPException(
+                    status_code=404, detail=f"Field not found: {request.field_id}"
+                )
 
             # Set audit context with data from SQL query
-            if result:
-                actor_name = result.get("actor_name")
-                if actor_name:
-                    audit_set(
-                        http_request,
-                        actor={"name": actor_name, "id": profile_id},
-                        field={"name": request.name, "id": request.fieldId},
-                    )
+            if result.actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": profile_id},
+                    field={"name": request.name, "id": str(request.field_id)},
+                )
+
+        # Convert SQL result to API response (no manual conversion needed)
+        api_response = UpdateFieldApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return UpdateFieldResponse(
-            success=True,
-            message=f"Field '{request.name}' updated successfully",
-        )
+        return api_response
     except HTTPException:
         raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

@@ -1,30 +1,20 @@
 """Field duplicate endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db
+from app.sql.types import (DuplicateFieldApiRequest, DuplicateFieldApiResponse,
+                           DuplicateFieldSqlParams, DuplicateFieldSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class DuplicateFieldRequest(BaseModel):
-    """Request to duplicate field."""
-
-    fieldId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DuplicateFieldResponse(BaseModel):
-    """Response from duplicate field."""
-
-    success: bool
-    fieldId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/fields/duplicate_field_complete.sql"
 
 
 router = APIRouter()
@@ -32,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/duplicate",
-    response_model=DuplicateFieldResponse,
+    response_model=DuplicateFieldApiResponse,
     dependencies=[
         audit_activity(
             "field.duplicated",
@@ -41,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def duplicate_field(
-    request: DuplicateFieldRequest,
+    request: DuplicateFieldApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DuplicateFieldResponse:
+) -> DuplicateFieldApiResponse:
     """Duplicate a field with all parameter and department associations."""
     tags = ["fields"]
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -61,46 +51,53 @@ async def duplicate_field(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            sql_query = load_sql("app/sql/v3/fields/duplicate_field_complete.sql")
-            sql_params = (request.fieldId, profile_id)
-            new_field = await conn.fetchrow(sql_query, request.fieldId, profile_id)
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = DuplicateFieldSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            if not new_field:
-                raise ValueError(f"Field not found: {request.fieldId}")
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                DuplicateFieldSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
-            new_field_id = new_field["field_id"]
-            actor_name = new_field.get("actor_name")
-            field_name = new_field.get("field_name")
+            if not result:
+                raise HTTPException(status_code=404, detail="Field not found")
 
-            # Set audit context with data from SQL query
-            if actor_name and field_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    field={"name": field_name, "id": new_field_id},
+            # Check if field exists using SQL result
+            if not result.field_exists:
+                raise HTTPException(
+                    status_code=404, detail=f"Field not found: {request.field_id}"
                 )
 
-            # Get original field name for message
-            original_field = await conn.fetchrow(
-                "SELECT name FROM fields WHERE id = $1", request.fieldId
-            )
+            if not result.field_id or not result.field_name:
+                raise HTTPException(
+                    status_code=500, detail="Failed to duplicate field"
+                )
 
-            result_data = DuplicateFieldResponse(
-                success=True,
-                fieldId=new_field_id,
-                message=f"Field '{original_field['name']}' duplicated successfully",
-            )
+            # Set audit context with data from SQL query
+            if result.actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": profile_id},
+                    field={"name": result.field_name, "id": str(result.field_id)},
+                )
 
-            # Invalidate cache after mutation
-            await invalidate_tags(tags)
-            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        # Convert SQL result to API response (no manual conversion needed)
+        api_response = DuplicateFieldApiResponse.model_validate(result.model_dump())
 
-            return result_data
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+        return api_response
     except HTTPException:
         raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

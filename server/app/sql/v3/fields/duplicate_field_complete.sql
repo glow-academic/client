@@ -1,30 +1,56 @@
-WITH resolve_profile_id AS (
-    SELECT $2::uuid as resolved_profile_id
+-- Duplicate field with all parameter and department associations
+-- Converted to function
+
+BEGIN;
+
+DROP FUNCTION IF EXISTS api_duplicate_field_v3(uuid, uuid);
+
+CREATE OR REPLACE FUNCTION api_duplicate_field_v3(
+    field_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    field_exists boolean,
+    field_id uuid,
+    field_name text,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT
+        field_id AS field_id,
+        profile_id AS profile_id
+),
+field_exists_check AS (
+    -- Check if field exists independently of access control
+    SELECT EXISTS(
+        SELECT 1 FROM fields WHERE id = (SELECT field_id FROM params)
+    )::boolean as field_exists
 ),
 user_profile AS (
     SELECT p.first_name || ' ' || p.last_name as actor_name
-    FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 original_field AS (
     SELECT 
         f.id,
         f.name,
         f.description
-    FROM fields f
-    WHERE f.id = $1::uuid
+    FROM params x
+    JOIN fields f ON f.id = x.field_id
 ),
 original_parameters AS (
     SELECT fp.parameter_id
-    FROM parameter_fields fp
-    WHERE fp.field_id = (SELECT id FROM original_field)
-    AND fp.active = true
+    FROM params x
+    JOIN parameter_fields fp ON fp.field_id = x.field_id AND fp.active = true
 ),
 original_departments AS (
     SELECT fd.department_id
-    FROM field_departments fd
-    WHERE fd.field_id = (SELECT id FROM original_field)
-    AND fd.active = true
+    FROM params x
+    JOIN field_departments fd ON fd.field_id = x.field_id AND fd.active = true
 ),
 new_field AS (
     INSERT INTO fields (
@@ -32,16 +58,16 @@ new_field AS (
         description
     )
     SELECT 
-        of.name || ' (Copy)',
-        of.description
-    FROM original_field of
-    RETURNING id::text as field_id, name as field_name
+        orig.name || ' (Copy)',
+        orig.description
+    FROM original_field orig
+    RETURNING id as field_id, name as field_name
 ),
 link_parameters AS (
     -- Link new field to same parameters as original
     INSERT INTO parameter_fields (field_id, parameter_id, active, created_at, updated_at)
     SELECT 
-        nf.field_id::uuid,
+        nf.field_id,
         op.parameter_id,
         true,
         NOW(),
@@ -56,7 +82,7 @@ link_departments AS (
     -- Link new field to same departments as original
     INSERT INTO field_departments (field_id, department_id, active, created_at, updated_at)
     SELECT 
-        nf.field_id::uuid,
+        nf.field_id,
         od.department_id,
         true,
         NOW(),
@@ -68,9 +94,13 @@ link_departments AS (
         updated_at = NOW()
 )
 SELECT 
+    fec.field_exists::boolean as field_exists,
     nf.field_id,
     nf.field_name,
     up.actor_name
-FROM new_field nf
+FROM field_exists_check fec
 CROSS JOIN user_profile up
+LEFT JOIN new_field nf ON fec.field_exists = true
+$$;
 
+COMMIT;

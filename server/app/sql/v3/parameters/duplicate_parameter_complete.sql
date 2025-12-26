@@ -1,11 +1,36 @@
 -- Duplicate parameter with items and department links in a single transaction
--- Parameters: $1=original_parameterId, $2=profile_id (uuid)
-WITH actor_profile AS (
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then recreate
+
+BEGIN;
+
+-- 1) Drop function first
+DROP FUNCTION IF EXISTS api_duplicate_parameter_v3(uuid, uuid);
+
+-- 2) Recreate function
+CREATE OR REPLACE FUNCTION api_duplicate_parameter_v3(
+    parameter_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    parameter_id uuid,
+    original_name text,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
     SELECT 
-        $2::uuid as profile_id,
+        parameter_id AS parameter_id,
+        profile_id AS profile_id
+),
+actor_profile AS (
+    SELECT 
+        (SELECT profile_id FROM params) as profile_id,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 original_parameter AS (
     SELECT 
@@ -16,8 +41,8 @@ original_parameter AS (
         COALESCE(persona_parameter, false) as persona_parameter,
         COALESCE(scenario_parameter, false) as scenario_parameter,
         COALESCE(video_parameter, false) as video_parameter
-    FROM parameters
-    WHERE id = $1::uuid
+    FROM params x
+    JOIN parameters ON parameters.id = x.parameter_id
 ),
 new_parameter AS (
     INSERT INTO parameters (
@@ -40,16 +65,16 @@ new_parameter AS (
         op.scenario_parameter,
         op.video_parameter
     FROM original_parameter op
-    RETURNING id::text as parameter_id
+    RETURNING id as parameter_id
 ),
 original_fields AS (
     SELECT 
         f.id as original_field_id,
         f.name,
         f.description
-    FROM parameter_fields fp
+    FROM params x
+    JOIN parameter_fields fp ON fp.parameter_id = x.parameter_id AND fp.active = true
     JOIN fields f ON f.id = fp.field_id
-    WHERE fp.parameter_id = $1::uuid AND fp.active = true
 ),
 original_field_departments AS (
     SELECT 
@@ -69,7 +94,7 @@ new_fields AS (
         of.name,
         of.description
     FROM original_fields of
-    RETURNING id::text as field_id, name as field_name
+    RETURNING id as field_id, name as field_name
 ),
 new_fields_with_order AS (
     -- Add row numbers to new fields for matching
@@ -100,8 +125,8 @@ link_fields_to_parameter AS (
     -- Link new fields to new parameter via parameter_fields junction
     INSERT INTO parameter_fields (field_id, parameter_id, active, created_at, updated_at)
     SELECT 
-        fwd.field_id::uuid,
-        np.parameter_id::uuid,
+        fwd.field_id,
+        np.parameter_id,
         true,
         NOW(),
         NOW()
@@ -115,7 +140,7 @@ link_departments AS (
     -- Link departments to fields if they existed on original (only if dept_ids exist)
     INSERT INTO field_departments (field_id, department_id, active, created_at, updated_at)
     SELECT 
-        fwd.field_id::uuid,
+        fwd.field_id,
         dept_id::uuid,
         true,
         NOW(),
@@ -129,9 +154,11 @@ link_departments AS (
 )
 SELECT 
     np.parameter_id,
-    op.name as original_name,
-    ap.actor_name
+    op.name::text as original_name,
+    ap.actor_name::text as actor_name
 FROM new_parameter np
 CROSS JOIN original_parameter op
 CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;

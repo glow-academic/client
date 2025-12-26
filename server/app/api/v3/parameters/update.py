@@ -1,48 +1,20 @@
 """Parameter update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (UpdateParameterApiRequest, UpdateParameterApiResponse,
+                           UpdateParameterSqlParams, UpdateParameterSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class FieldConnectionCreate(BaseModel):
-    """Field connection creation schema."""
-
-    field_id: str
-    default: bool = False  # Exactly one field connection per parameter must be default
-    active: bool = True
-
-
-class UpdateParameterRequest(BaseModel):
-    """Request to update parameter with field connections."""
-
-    parameterId: str
-    name: str
-    description: str
-    active: bool
-    simulation_parameter: bool
-    document_parameter: bool
-    persona_parameter: bool
-    scenario_parameter: bool
-    video_parameter: bool
-    department_ids: list[str] | None  # None = cross-department (superadmin only)
-    field_connections: list[FieldConnectionCreate]
-    # profileId removed - comes from X-Profile-Id header
-
-
-class UpdateParameterResponse(BaseModel):
-    """Response from update parameter."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/parameters/update_parameter_complete.sql"
 
 
 router = APIRouter()
@@ -50,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/update",
-    response_model=UpdateParameterResponse,
+    response_model=UpdateParameterApiResponse,
     dependencies=[
         audit_activity(
             "parameter.updated",
@@ -59,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def update_parameter(
-    request: UpdateParameterRequest,
+    request: UpdateParameterApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateParameterResponse:
+) -> UpdateParameterApiResponse:
     """Update an existing parameter (replace all items)."""
     tags = ["parameters", "agents"]  # Parameters used in scenario generation
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -80,68 +52,50 @@ async def update_parameter(
             )
 
         async with transaction(conn):
-            # Check if parameter exists
-            check_sql = "SELECT name FROM parameters WHERE id = $1"
-            existing = await conn.fetchrow(check_sql, request.parameterId)
+            # Convert API request to SQL params (add profile_id from header)
+            # Field connections are now passed as array directly (no JSONB conversion needed)
+            params = UpdateParameterSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            if not existing:
-                raise ValueError(f"Parameter not found: {request.parameterId}")
-
-            # Prepare field connections as JSONB array
-            import json
-
-            field_connections_data = []
-            for conn in request.field_connections:
-                conn_dict = {
-                    "field_id": conn.field_id,
-                    "default": conn.default,
-                    "active": conn.active,
-                }
-                field_connections_data.append(conn_dict)
-
-            field_connections_json = json.dumps(field_connections_data)
-
-            # Update parameter with field connections and department links in single SQL (DHH style)
-            sql_query = load_sql("app/sql/v3/parameters/update_parameter_complete.sql")
-            sql_params = (
-                request.parameterId,
-                request.name,
-                request.description,
-                request.active,
-                request.simulation_parameter,
-                request.document_parameter,
-                request.persona_parameter,
-                request.scenario_parameter,
-                request.video_parameter,
-                request.department_ids,  # Parameter-level department_ids
-                field_connections_json,  # JSONB array of field connections
-                profile_id,
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                UpdateParameterSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
-            result = await conn.fetchrow(sql_query, *sql_params)
 
-            if not result:
+            # Check if parameter exists using SQL result
+            if not result.parameter_exists:
+                raise HTTPException(
+                    status_code=404, detail=f"Parameter {request.parameter_id} not found"
+                )
+
+            if not result.parameter_id:
                 raise ValueError("Failed to update parameter")
 
             # Set audit context with data from SQL query
-            actor_name = result.get("actor_name")
-            if actor_name:
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    parameter={"name": request.name, "id": request.parameterId},
+                    actor={"name": result.actor_name, "id": profile_id},
+                    parameter={"name": request.name, "id": str(request.parameter_id)},
                 )
+
+        # Convert SQL result to API response
+        api_response = UpdateParameterApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return UpdateParameterResponse(
-            success=True, message=f"Parameter '{request.name}' updated successfully"
-        )
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

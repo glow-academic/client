@@ -126,13 +126,16 @@ export default function Field({
     fieldDetailDefault?.valid_department_ids,
   ]);
 
+  // Convert departments array to mapping for UI components
   const departmentMapping = useMemo(() => {
-    return (
-      fieldDetail?.department_mapping ||
-      fieldDetailDefault?.department_mapping ||
-      {}
-    );
-  }, [fieldDetail?.department_mapping, fieldDetailDefault?.department_mapping]);
+    const departments = fieldDetail?.departments || fieldDetailDefault?.departments || [];
+    return Object.fromEntries(
+      departments.map((dept) => [
+        dept.department_id,
+        { name: dept.name, description: dept.description || undefined }
+      ])
+    ) as Record<string, { name: string; description?: string }>;
+  }, [fieldDetail?.departments, fieldDetailDefault?.departments]);
 
   const validParameterIds = useMemo(() => {
     return (
@@ -145,19 +148,16 @@ export default function Field({
     fieldDetailDefault?.valid_parameter_ids,
   ]);
 
+  // Convert parameters array to mapping for UI components
   const parameterMapping = useMemo(() => {
-    const mapping = fieldDetail?.parameter_mapping ||
-      fieldDetailDefault?.parameter_mapping ||
-      {};
+    const parameters = fieldDetail?.parameters || fieldDetailDefault?.parameters || [];
     return Object.fromEntries(
-      Object.entries(mapping).map(([key, value]) => [
-        key,
-        typeof value === 'object' && value !== null && 'name' in value
-          ? { name: String(value['name']), description: value['description'] ? String(value['description']) : undefined }
-          : { name: String(value || key), description: undefined }
+      parameters.map((param) => [
+        param.parameter_id,
+        { name: param.name, description: param.description || undefined }
       ])
     ) as Record<string, { name: string; description?: string }>;
-  }, [fieldDetail?.parameter_mapping, fieldDetailDefault?.parameter_mapping]);
+  }, [fieldDetail?.parameters, fieldDetailDefault?.parameters]);
 
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {

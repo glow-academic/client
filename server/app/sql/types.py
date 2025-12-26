@@ -727,10 +727,10 @@ class GetAuthDetailAuthItemsItem(BaseModel):
 class GetAuthDetailSqlRow(BaseModel):
 
     active: bool
-    name: str
-    description: str
     actor_name: str
     can_edit: bool
+    description: str
+    name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 class GetAuthDetailApiRequest(BaseModel):
@@ -741,10 +741,10 @@ class GetAuthDetailApiRequest(BaseModel):
 class GetAuthDetailApiResponse(BaseModel):
 
     active: bool
-    name: str
-    description: str
     actor_name: str
     can_edit: bool
+    description: str
+    name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 
@@ -2084,8 +2084,8 @@ class CreateFieldSqlParams(BaseModel):
 
 class CreateFieldSqlRow(BaseModel):
 
-    field_id: str
-    actor_name: str
+    field_id: UUID | None = None
+    actor_name: str | None = None
 
 class CreateFieldApiRequest(BaseModel):
 
@@ -2097,8 +2097,8 @@ class CreateFieldApiRequest(BaseModel):
 
 class CreateFieldApiResponse(BaseModel):
 
-    field_id: str
-    actor_name: str
+    field_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -2106,29 +2106,30 @@ class CreateFieldApiResponse(BaseModel):
 
 class DeleteFieldSqlParams(BaseModel):
 
-    param_1: UUID
-    param_2: UUID
+    field_id: UUID
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.param_1,
-            self.param_2,
+            self.field_id,
+            self.profile_id,
         )
 
 class DeleteFieldSqlRow(BaseModel):
 
-    name: str
-    actor_name: str
+    field_exists: bool | None = None
+    name: str | None = None
+    actor_name: str | None = None
 
 class DeleteFieldApiRequest(BaseModel):
 
-    param_1: UUID
-    param_2: UUID
+    field_id: UUID
 
 class DeleteFieldApiResponse(BaseModel):
 
-    name: str
-    actor_name: str
+    field_exists: bool | None = None
+    name: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -2136,31 +2137,32 @@ class DeleteFieldApiResponse(BaseModel):
 
 class DuplicateFieldSqlParams(BaseModel):
 
-    param_1: UUID
-    param_2: UUID
+    field_id: UUID
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.param_1,
-            self.param_2,
+            self.field_id,
+            self.profile_id,
         )
 
 class DuplicateFieldSqlRow(BaseModel):
 
-    field_id: str
-    field_name: str
-    actor_name: str
+    field_exists: bool | None = None
+    field_id: UUID | None = None
+    field_name: str | None = None
+    actor_name: str | None = None
 
 class DuplicateFieldApiRequest(BaseModel):
 
-    param_1: UUID
-    param_2: UUID
+    field_id: UUID
 
 class DuplicateFieldApiResponse(BaseModel):
 
-    field_id: str
-    field_name: str
-    actor_name: str
+    field_exists: bool | None = None
+    field_id: UUID | None = None
+    field_name: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -2168,51 +2170,67 @@ class DuplicateFieldApiResponse(BaseModel):
 
 class GetFieldDetailSqlParams(BaseModel):
 
-    param_1: UUID
-    param_2: UUID
+    field_id: UUID
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.param_1,
-            self.param_2,
+            self.field_id,
+            self.profile_id,
         )
+
+class QGetFieldDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetFieldDetailV3Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
 
 class GetFieldDetailSqlRow(BaseModel):
 
-    field_id: UUID
-    name: str
-    description: str
-    active: bool
+    field_exists: bool | None = None
+    field_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
     department_ids: list[str] | None = None
-    parameter_ids: list[str]
-    conditional_parameter_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    parameter_mapping: dict[str, Any]
-    valid_parameter_ids: list[str]
-    can_edit: bool
-    actor_name: str
+    parameter_ids: list[str] | None = None
+    conditional_parameter_ids: list[str] | None = None
+    departments: list[QGetFieldDetailV3Department] | None = None
+    valid_department_ids: list[str] | None = None
+    parameters: list[QGetFieldDetailV3Parameter] | None = None
+    valid_parameter_ids: list[str] | None = None
+    can_edit: bool | None = None
+    actor_name: str | None = None
 
 class GetFieldDetailApiRequest(BaseModel):
 
-    param_1: UUID
-    param_2: UUID
+    field_id: UUID
 
 class GetFieldDetailApiResponse(BaseModel):
 
-    field_id: UUID
-    name: str
-    description: str
-    active: bool
+    field_exists: bool | None = None
+    field_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
     department_ids: list[str] | None = None
-    parameter_ids: list[str]
-    conditional_parameter_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    parameter_mapping: dict[str, Any]
-    valid_parameter_ids: list[str]
-    can_edit: bool
-    actor_name: str
+    parameter_ids: list[str] | None = None
+    conditional_parameter_ids: list[str] | None = None
+    departments: list[QGetFieldDetailV3Department] | None = None
+    valid_department_ids: list[str] | None = None
+    parameters: list[QGetFieldDetailV3Parameter] | None = None
+    valid_parameter_ids: list[str] | None = None
+    can_edit: bool | None = None
+    actor_name: str | None = None
 
 
 
@@ -2220,36 +2238,127 @@ class GetFieldDetailApiResponse(BaseModel):
 
 class GetFieldNewSqlParams(BaseModel):
 
-    param_1: UUID
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.param_1,
+            self.profile_id,
         )
+
+class QGetFieldNewV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetFieldNewV3Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
 
 class GetFieldNewSqlRow(BaseModel):
 
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    parameter_mapping: dict[str, Any]
-    valid_parameter_ids: list[str]
-    user_role: str
-    primary_department_id: str
-    actor_name: str
+    valid_department_ids: list[str] | None = None
+    departments: list[QGetFieldNewV3Department] | None = None
+    valid_parameter_ids: list[str] | None = None
+    parameters: list[QGetFieldNewV3Parameter] | None = None
+    user_role: str | None = None
+    primary_department_id: UUID | None = None
+    actor_name: str | None = None
 
 class GetFieldNewApiRequest(BaseModel):
 
-    param_1: UUID
+    pass
 
 class GetFieldNewApiResponse(BaseModel):
 
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    parameter_mapping: dict[str, Any]
-    valid_parameter_ids: list[str]
-    user_role: str
-    primary_department_id: str
-    actor_name: str
+    valid_department_ids: list[str] | None = None
+    departments: list[QGetFieldNewV3Department] | None = None
+    valid_parameter_ids: list[str] | None = None
+    parameters: list[QGetFieldNewV3Parameter] | None = None
+    user_role: str | None = None
+    primary_department_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_fields_list
+
+class GetFieldsListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListFieldsV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListFieldsV3Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    created_at: str | None
+    updated_at: str | None
+    department_ids: list[str] | None
+    parameter_ids: list[str] | None
+    conditional_parameter_ids: list[str] | None
+    can_edit: bool | None
+    can_delete: bool | None
+    can_duplicate: bool | None
+
+
+
+
+class QListFieldsV3Option(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QListFieldsV3Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetFieldsListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    fields: list[QListFieldsV3Field] | None = None
+    parameters: list[QListFieldsV3Parameter] | None = None
+    departments: list[QListFieldsV3Department] | None = None
+    parameter_options: list[QListFieldsV3Option] | None = None
+    department_options: list[QListFieldsV3Option] | None = None
+
+class GetFieldsListApiRequest(BaseModel):
+
+    pass
+
+class GetFieldsListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    fields: list[QListFieldsV3Field] | None = None
+    parameters: list[QListFieldsV3Parameter] | None = None
+    departments: list[QListFieldsV3Department] | None = None
+    parameter_options: list[QListFieldsV3Option] | None = None
+    department_options: list[QListFieldsV3Option] | None = None
 
 
 
@@ -2257,46 +2366,47 @@ class GetFieldNewApiResponse(BaseModel):
 
 class UpdateFieldSqlParams(BaseModel):
 
-    param_1: UUID
-    param_2: str
-    param_3: str
-    param_4: bool
-    param_5: list[str]
-    param_6: list[str]
-    param_7: UUID
+    field_id: UUID
+    name: str
+    description: str
+    active: bool
+    department_ids: list[str]
+    conditional_parameter_ids: list[str]
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.param_1,
-            self.param_2,
-            self.param_3,
-            self.param_4,
-            self.param_5,
-            self.param_6,
-            self.param_7,
+            self.field_id,
+            self.name,
+            self.description,
+            self.active,
+            self.department_ids,
+            self.conditional_parameter_ids,
+            self.profile_id,
         )
 
 class UpdateFieldSqlRow(BaseModel):
 
-    field_id: str
-    field_name: str
-    actor_name: str
+    field_exists: bool | None = None
+    field_id: UUID | None = None
+    field_name: str | None = None
+    actor_name: str | None = None
 
 class UpdateFieldApiRequest(BaseModel):
 
-    param_1: UUID
-    param_2: str
-    param_3: str
-    param_4: bool
-    param_5: list[str]
-    param_6: list[str]
-    param_7: UUID
+    field_id: UUID
+    name: str
+    description: str
+    active: bool
+    department_ids: list[str]
+    conditional_parameter_ids: list[str]
 
 class UpdateFieldApiResponse(BaseModel):
 
-    field_id: str
-    field_name: str
-    actor_name: str
+    field_exists: bool | None = None
+    field_id: UUID | None = None
+    field_name: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -2953,6 +3063,12 @@ class InsertObjectiveApiResponse(BaseModel):
 
 # Generated from: create_parameter
 
+class ICreateParameterV3FieldConnection(BaseModel):
+
+    field_id: UUID | None
+    default: bool | None
+    active: bool | None
+
 class CreateParameterSqlParams(BaseModel):
 
     name: str
@@ -2963,11 +3079,16 @@ class CreateParameterSqlParams(BaseModel):
     persona_parameter: bool
     scenario_parameter: bool
     video_parameter: bool
-    parameter_level_department_ids: list[str]
-    field_connections_json: dict[str, Any]
+    department_ids: list[str]
+    field_connections: list[ICreateParameterV3FieldConnection]
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert field_connections composite array to tuples for asyncpg
+        field_connections_tuples = [
+            (conn.field_id, conn.default, conn.active)
+            for conn in self.field_connections
+        ]
         return (
             self.name,
             self.description,
@@ -2977,15 +3098,15 @@ class CreateParameterSqlParams(BaseModel):
             self.persona_parameter,
             self.scenario_parameter,
             self.video_parameter,
-            self.parameter_level_department_ids,
-            self.field_connections_json,
+            self.department_ids,
+            field_connections_tuples,
             self.profile_id,
         )
 
 class CreateParameterSqlRow(BaseModel):
 
-    parameter_id: str
-    actor_name: str
+    parameter_id: UUID | None = None
+    actor_name: str | None = None
 
 class CreateParameterApiRequest(BaseModel):
 
@@ -2997,13 +3118,13 @@ class CreateParameterApiRequest(BaseModel):
     persona_parameter: bool
     scenario_parameter: bool
     video_parameter: bool
-    parameter_level_department_ids: list[str]
-    field_connections_json: dict[str, Any]
+    department_ids: list[str]
+    field_connections: list[ICreateParameterV3FieldConnection]
 
 class CreateParameterApiResponse(BaseModel):
 
-    parameter_id: str
-    actor_name: str
+    parameter_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -3011,30 +3132,32 @@ class CreateParameterApiResponse(BaseModel):
 
 class DeleteParameterSqlParams(BaseModel):
 
-    parameterId: UUID
+    parameter_id: UUID
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.parameterId,
+            self.parameter_id,
             self.profile_id,
         )
 
 class DeleteParameterSqlRow(BaseModel):
 
-    name: str
-    usage_count: int
-    actor_name: str
+    parameter_exists: bool | None = None
+    usage_count: int | None = None
+    name: str | None = None
+    actor_name: str | None = None
 
 class DeleteParameterApiRequest(BaseModel):
 
-    parameterId: UUID
+    parameter_id: UUID
 
 class DeleteParameterApiResponse(BaseModel):
 
-    name: str
-    usage_count: int
-    actor_name: str
+    parameter_exists: bool | None = None
+    usage_count: int | None = None
+    name: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -3042,30 +3165,30 @@ class DeleteParameterApiResponse(BaseModel):
 
 class DuplicateParameterSqlParams(BaseModel):
 
-    original_parameterId: UUID
+    parameter_id: UUID
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.original_parameterId,
+            self.parameter_id,
             self.profile_id,
         )
 
 class DuplicateParameterSqlRow(BaseModel):
 
-    parameter_id: str
-    original_name: str
-    actor_name: str
+    parameter_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
 
 class DuplicateParameterApiRequest(BaseModel):
 
-    original_parameterId: UUID
+    parameter_id: UUID
 
 class DuplicateParameterApiResponse(BaseModel):
 
-    parameter_id: str
-    original_name: str
-    actor_name: str
+    parameter_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -3073,71 +3196,128 @@ class DuplicateParameterApiResponse(BaseModel):
 
 class GetParameterDetailSqlParams(BaseModel):
 
-    param_1: UUID
-    param_2: str
+    parameter_id: UUID
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.param_1,
-            self.param_2,
+            self.parameter_id,
+            self.profile_id,
         )
+
+class QGetParameterDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetParameterDetailV3Document(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetParameterDetailV3Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    usage_count: int | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetParameterDetailV3FieldConnection(BaseModel):
+
+    field_id: UUID | None
+    default: bool | None
+    active: bool | None
+
+
+
+
+class QGetParameterDetailV3Item(BaseModel):
+
+    parameter_item_id: UUID | None
+    name: str | None
+    description: str | None
+    default: bool | None
+    usage_count: int | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetParameterDetailV3Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
 
 class GetParameterDetailSqlRow(BaseModel):
 
-    name: str
-    description: str
-    active: bool
-    simulation_parameter: bool
-    document_parameter: bool
-    persona_parameter: bool
-    scenario_parameter: bool
-    video_parameter: bool
+    parameter_exists: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    simulation_parameter: bool | None = None
+    document_parameter: bool | None = None
+    persona_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
     department_ids: list[str] | None = None
-    persona_ids: list[str]
-    document_ids: list[str]
-    can_edit: bool
-    actor_name: str
-    parameter_items_json: dict[str, Any]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    field_mapping: dict[str, Any]
-    valid_field_ids: list[str]
-    field_connections_json: dict[str, Any]
-    persona_mapping: dict[str, Any]
-    valid_persona_ids: list[str]
-    document_mapping: dict[str, Any]
-    valid_document_ids: list[str]
+    persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    parameter_items: list[QGetParameterDetailV3Item] | None = None
+    departments: list[QGetParameterDetailV3Department] | None = None
+    valid_department_ids: list[str] | None = None
+    fields: list[QGetParameterDetailV3Field] | None = None
+    valid_field_ids: list[str] | None = None
+    field_connections: list[QGetParameterDetailV3FieldConnection] | None = None
+    personas: list[QGetParameterDetailV3Persona] | None = None
+    valid_persona_ids: list[str] | None = None
+    documents: list[QGetParameterDetailV3Document] | None = None
+    valid_document_ids: list[str] | None = None
+    can_edit: bool | None = None
+    actor_name: str | None = None
 
 class GetParameterDetailApiRequest(BaseModel):
 
-    param_1: UUID
-    param_2: str
+    parameter_id: UUID
 
 class GetParameterDetailApiResponse(BaseModel):
 
-    name: str
-    description: str
-    active: bool
-    simulation_parameter: bool
-    document_parameter: bool
-    persona_parameter: bool
-    scenario_parameter: bool
-    video_parameter: bool
+    parameter_exists: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    simulation_parameter: bool | None = None
+    document_parameter: bool | None = None
+    persona_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
     department_ids: list[str] | None = None
-    persona_ids: list[str]
-    document_ids: list[str]
-    can_edit: bool
-    actor_name: str
-    parameter_items_json: dict[str, Any]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    field_mapping: dict[str, Any]
-    valid_field_ids: list[str]
-    field_connections_json: dict[str, Any]
-    persona_mapping: dict[str, Any]
-    valid_persona_ids: list[str]
-    document_mapping: dict[str, Any]
-    valid_document_ids: list[str]
+    persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    parameter_items: list[QGetParameterDetailV3Item] | None = None
+    departments: list[QGetParameterDetailV3Department] | None = None
+    valid_department_ids: list[str] | None = None
+    fields: list[QGetParameterDetailV3Field] | None = None
+    valid_field_ids: list[str] | None = None
+    field_connections: list[QGetParameterDetailV3FieldConnection] | None = None
+    personas: list[QGetParameterDetailV3Persona] | None = None
+    valid_persona_ids: list[str] | None = None
+    documents: list[QGetParameterDetailV3Document] | None = None
+    valid_document_ids: list[str] | None = None
+    can_edit: bool | None = None
+    actor_name: str | None = None
 
 
 
@@ -3145,36 +3325,96 @@ class GetParameterDetailApiResponse(BaseModel):
 
 class GetParameterNewSqlParams(BaseModel):
 
-    profile_id: str
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
         )
 
+class QGetParameterNewV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetParameterNewV3Document(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetParameterNewV3Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    usage_count: int | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetParameterNewV3FieldConnection(BaseModel):
+
+    field_id: UUID | None
+    default: bool | None
+    active: bool | None
+
+
+
+
+class QGetParameterNewV3Item(BaseModel):
+
+    parameter_item_id: UUID | None
+    name: str | None
+    description: str | None
+    default: bool | None
+    usage_count: int | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetParameterNewV3Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+
 class GetParameterNewSqlRow(BaseModel):
 
-    name: str
-    description: str
-    active: bool
-    simulation_parameter: bool
-    document_parameter: bool
-    persona_parameter: bool
-    scenario_parameter: bool
-    video_parameter: bool
+    actor_name: str | None = None
+    user_role: str | None = None
+    primary_department_id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    simulation_parameter: bool | None = None
+    document_parameter: bool | None = None
+    persona_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
     department_ids: list[str] | None = None
-    parameter_items_json: dict[str, Any]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    primary_department_id: str
-    field_mapping: dict[str, Any]
-    valid_field_ids: list[str]
-    field_connections_json: dict[str, Any]
-    persona_mapping: dict[str, Any]
-    valid_persona_ids: list[str]
-    document_mapping: dict[str, Any]
-    valid_document_ids: list[str]
-    actor_name: str
+    parameter_items: list[QGetParameterNewV3Item] | None = None
+    departments: list[QGetParameterNewV3Department] | None = None
+    valid_department_ids: list[str] | None = None
+    fields: list[QGetParameterNewV3Field] | None = None
+    valid_field_ids: list[str] | None = None
+    field_connections: list[QGetParameterNewV3FieldConnection] | None = None
+    persona_ids: list[str] | None = None
+    personas: list[QGetParameterNewV3Persona] | None = None
+    valid_persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    documents: list[QGetParameterNewV3Document] | None = None
+    valid_document_ids: list[str] | None = None
+    can_edit: bool | None = None
 
 class GetParameterNewApiRequest(BaseModel):
 
@@ -3182,35 +3422,148 @@ class GetParameterNewApiRequest(BaseModel):
 
 class GetParameterNewApiResponse(BaseModel):
 
-    name: str
-    description: str
-    active: bool
-    simulation_parameter: bool
-    document_parameter: bool
-    persona_parameter: bool
-    scenario_parameter: bool
-    video_parameter: bool
+    actor_name: str | None = None
+    user_role: str | None = None
+    primary_department_id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    simulation_parameter: bool | None = None
+    document_parameter: bool | None = None
+    persona_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
     department_ids: list[str] | None = None
-    parameter_items_json: dict[str, Any]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    primary_department_id: str
-    field_mapping: dict[str, Any]
-    valid_field_ids: list[str]
-    field_connections_json: dict[str, Any]
-    persona_mapping: dict[str, Any]
-    valid_persona_ids: list[str]
-    document_mapping: dict[str, Any]
-    valid_document_ids: list[str]
-    actor_name: str
+    parameter_items: list[QGetParameterNewV3Item] | None = None
+    departments: list[QGetParameterNewV3Department] | None = None
+    valid_department_ids: list[str] | None = None
+    fields: list[QGetParameterNewV3Field] | None = None
+    valid_field_ids: list[str] | None = None
+    field_connections: list[QGetParameterNewV3FieldConnection] | None = None
+    persona_ids: list[str] | None = None
+    personas: list[QGetParameterNewV3Persona] | None = None
+    valid_persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    documents: list[QGetParameterNewV3Document] | None = None
+    valid_document_ids: list[str] | None = None
+    can_edit: bool | None = None
+
+
+
+# Generated from: get_parameters_list
+
+class GetParametersListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListParametersV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListParametersV3Document(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListParametersV3DocumentOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QListParametersV3SampleItem(BaseModel):
+
+    parameter_item_id: UUID | None
+    name: str | None
+    description: str | None
+
+class QListParametersV3Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    updated_at: str | None
+    department_ids: list[str] | None
+    scenario_ids: list[str] | None
+    document_ids: list[str] | None
+    num_items: int | None
+    sample_items: list[QListParametersV3SampleItem] | None
+    can_edit: bool | None
+    can_delete: bool | None
+    can_duplicate: bool | None
+
+
+
+
+class QListParametersV3Scenario(BaseModel):
+
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+
+
+
+
+class QListParametersV3ScenarioOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+class GetParametersListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    parameters: list[QListParametersV3Parameter] | None = None
+    scenarios: list[QListParametersV3Scenario] | None = None
+    departments: list[QListParametersV3Department] | None = None
+    documents: list[QListParametersV3Document] | None = None
+    scenario_options: list[QListParametersV3ScenarioOption] | None = None
+    document_options: list[QListParametersV3DocumentOption] | None = None
+
+class GetParametersListApiRequest(BaseModel):
+
+    pass
+
+class GetParametersListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    parameters: list[QListParametersV3Parameter] | None = None
+    scenarios: list[QListParametersV3Scenario] | None = None
+    departments: list[QListParametersV3Department] | None = None
+    documents: list[QListParametersV3Document] | None = None
+    scenario_options: list[QListParametersV3ScenarioOption] | None = None
+    document_options: list[QListParametersV3DocumentOption] | None = None
 
 
 
 # Generated from: update_parameter
 
+class IUpdateParameterV3FieldConnection(BaseModel):
+
+    field_id: UUID | None
+    default: bool | None
+    active: bool | None
+
 class UpdateParameterSqlParams(BaseModel):
 
-    parameterId: UUID
+    parameter_id: UUID
     name: str
     description: str
     active: bool
@@ -3219,13 +3572,18 @@ class UpdateParameterSqlParams(BaseModel):
     persona_parameter: bool
     scenario_parameter: bool
     video_parameter: bool
-    parameter_level_department_ids: list[str]
-    field_connections_json: dict[str, Any]
+    department_ids: list[str]
+    field_connections: list[IUpdateParameterV3FieldConnection]
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert field_connections composite array to tuples for asyncpg
+        field_connections_tuples = [
+            (conn.field_id, conn.default, conn.active)
+            for conn in self.field_connections
+        ]
         return (
-            self.parameterId,
+            self.parameter_id,
             self.name,
             self.description,
             self.active,
@@ -3234,19 +3592,20 @@ class UpdateParameterSqlParams(BaseModel):
             self.persona_parameter,
             self.scenario_parameter,
             self.video_parameter,
-            self.parameter_level_department_ids,
-            self.field_connections_json,
+            self.department_ids,
+            field_connections_tuples,
             self.profile_id,
         )
 
 class UpdateParameterSqlRow(BaseModel):
 
-    parameter_id: str
-    actor_name: str
+    parameter_exists: bool | None = None
+    parameter_id: UUID | None = None
+    actor_name: str | None = None
 
 class UpdateParameterApiRequest(BaseModel):
 
-    parameterId: UUID
+    parameter_id: UUID
     name: str
     description: str
     active: bool
@@ -3255,13 +3614,14 @@ class UpdateParameterApiRequest(BaseModel):
     persona_parameter: bool
     scenario_parameter: bool
     video_parameter: bool
-    parameter_level_department_ids: list[str]
-    field_connections_json: dict[str, Any]
+    department_ids: list[str]
+    field_connections: list[IUpdateParameterV3FieldConnection]
 
 class UpdateParameterApiResponse(BaseModel):
 
-    parameter_id: str
-    actor_name: str
+    parameter_exists: bool | None = None
+    parameter_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -6443,6 +6803,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFieldNewApiRequest",
         "GetFieldNewApiResponse",
     ),
+    "app/sql/v3/fields/get_fields_list_complete.sql": (
+        "GetFieldsListSqlParams",
+        "GetFieldsListSqlRow",
+        "GetFieldsListApiRequest",
+        "GetFieldsListApiResponse",
+    ),
     "app/sql/v3/fields/update_field_complete.sql": (
         "UpdateFieldSqlParams",
         "UpdateFieldSqlRow",
@@ -6562,6 +6928,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParameterNewSqlRow",
         "GetParameterNewApiRequest",
         "GetParameterNewApiResponse",
+    ),
+    "app/sql/v3/parameters/get_parameters_list_complete.sql": (
+        "GetParametersListSqlParams",
+        "GetParametersListSqlRow",
+        "GetParametersListApiRequest",
+        "GetParametersListApiResponse",
     ),
     "app/sql/v3/parameters/update_parameter_complete.sql": (
         "UpdateParameterSqlParams",
@@ -7105,6 +7477,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/fields/get_fields_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/fields/update_field_complete.sql"]
     ) -> SqlString: ...
 
@@ -7201,6 +7578,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/parameters/get_parameter_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/parameters/get_parameters_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload

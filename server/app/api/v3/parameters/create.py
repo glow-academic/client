@@ -1,48 +1,21 @@
 """Parameter create endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (CreateParameterApiRequest,
+                           CreateParameterApiResponse,
+                           CreateParameterSqlParams, CreateParameterSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class FieldConnectionCreate(BaseModel):
-    """Field connection creation schema."""
-
-    field_id: str
-    default: bool = False  # Exactly one field connection per parameter must be default
-    active: bool = True
-
-
-class CreateParameterRequest(BaseModel):
-    """Request to create parameter with field connections."""
-
-    name: str
-    description: str
-    active: bool
-    simulation_parameter: bool = False
-    document_parameter: bool = False
-    persona_parameter: bool = False
-    scenario_parameter: bool = False
-    video_parameter: bool = False
-    department_ids: list[str] | None  # None = cross-department (superadmin only)
-    field_connections: list[FieldConnectionCreate]
-    # profileId removed - comes from X-Profile-Id header
-
-
-class CreateParameterResponse(BaseModel):
-    """Response from create parameter."""
-
-    success: bool
-    parameterId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/parameters/create_parameter_complete.sql"
 
 
 router = APIRouter()
@@ -50,7 +23,7 @@ router = APIRouter()
 
 @router.post(
     "/create",
-    response_model=CreateParameterResponse,
+    response_model=CreateParameterApiResponse,
     dependencies=[
         audit_activity(
             "parameter.created",
@@ -59,15 +32,15 @@ router = APIRouter()
     ],
 )
 async def create_parameter(
-    request: CreateParameterRequest,
+    request: CreateParameterApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateParameterResponse:
+) -> CreateParameterApiResponse:
     """Create a new parameter with nested items."""
     tags = ["parameters", "agents"]  # Parameters used in scenario generation
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -80,60 +53,40 @@ async def create_parameter(
             )
 
         async with transaction(conn):
-            # Prepare field connections as JSONB array
-            import json
+            # Convert API request to SQL params (add profile_id from header)
+            # Field connections are now passed as array directly (no JSONB conversion needed)
+            params = CreateParameterSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            field_connections_data = []
-            for conn in request.field_connections:
-                conn_dict = {
-                    "field_id": conn.field_id,
-                    "default": conn.default,
-                    "active": conn.active,
-                }
-                field_connections_data.append(conn_dict)
-
-            field_connections_json = json.dumps(field_connections_data)
-
-            # Create parameter with field connections and department links in single SQL (DHH style)
-            sql_query = load_sql("app/sql/v3/parameters/create_parameter_complete.sql")
-            sql_params = (
-                request.name,
-                request.description,
-                request.active,
-                request.simulation_parameter,
-                request.document_parameter,
-                request.persona_parameter,
-                request.scenario_parameter,
-                request.video_parameter,
-                request.department_ids,  # Parameter-level department_ids
-                field_connections_json,  # JSONB array of field connections
-                profile_id,
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                CreateParameterSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
-            parameter_result = await conn.fetchrow(sql_query, *sql_params)
 
-            if not parameter_result:
+            if not result.parameter_id:
                 raise ValueError("Failed to create parameter")
 
-            parameter_id = parameter_result["parameter_id"]
-            actor_name = parameter_result.get("actor_name")
-
             # Set audit context with data from SQL query
-            if actor_name:
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    parameter={"name": request.name, "id": parameter_id},
+                    actor={"name": result.actor_name, "id": profile_id},
+                    parameter={"name": request.name, "id": str(result.parameter_id)},
                 )
+
+        # Convert SQL result to API response
+        api_response = CreateParameterApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return CreateParameterResponse(
-            success=True,
-            parameterId=parameter_id,
-            message=f"Parameter '{request.name}' created successfully",
-        )
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

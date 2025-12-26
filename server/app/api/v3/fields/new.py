@@ -1,43 +1,23 @@
 """Field new endpoint for create page."""
 
-import json
-from typing import Annotated, Any
+import uuid
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (GetFieldNewApiRequest, GetFieldNewApiResponse,
+                           GetFieldNewSqlParams, GetFieldNewSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class FieldNewRequest(BaseModel):
-    """Request to get default field detail for creation mode."""
-
-    # profileId removed - comes from X-Profile-Id header
-
-
-class ParameterMappingItem(BaseModel):
-    name: str
-    description: str
-
-
-class DepartmentMappingItem(BaseModel):
-    name: str
-    description: str
-
-
-class FieldNewResponse(BaseModel):
-    valid_department_ids: list[str]
-    department_mapping: dict[str, DepartmentMappingItem]
-    valid_parameter_ids: list[str]
-    parameter_mapping: dict[str, ParameterMappingItem]
-    user_role: str
-    primary_department_id: str | None
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/fields/get_field_new_complete.sql"
 
 
 router = APIRouter()
@@ -45,30 +25,30 @@ router = APIRouter()
 
 @router.post(
     "/new",
-    response_model=FieldNewResponse,
+    response_model=GetFieldNewApiResponse,
     dependencies=[
         audit_activity("field.new", "{{ actor.name }} opened new field form")
     ],
 )
 async def get_field_new(
-    request: FieldNewRequest,
+    request: GetFieldNewApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> FieldNewResponse:
+) -> GetFieldNewApiResponse:
     """Get default field detail for creation mode."""
     tags = ["fields"]
 
-    body_dict = request.model_dump()
+    body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return FieldNewResponse.model_validate(cached["data"])
+        return GetFieldNewApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -80,9 +60,20 @@ async def get_field_new(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/fields/get_field_new_complete.sql")
-        sql_params = (profile_id,)
-        result = await conn.fetchrow(sql_query, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double star pattern: **request.model_dump()
+        params = GetFieldNewSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
+
+        # Execute SQL with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetFieldNewSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
 
         if not result:
             raise HTTPException(
@@ -90,69 +81,24 @@ async def get_field_new(
             )
 
         # Set audit context
-        actor_name = result.get("actor_name")
+        actor_name = result.actor_name
         if actor_name:
             audit_set(http_request, actor={"name": actor_name, "id": profile_id})
 
-        # Parse valid_department_ids
-        valid_department_ids: list[str] = []
-        valid_dept_ids_raw = result.get("valid_department_ids")
-        if valid_dept_ids_raw and isinstance(valid_dept_ids_raw, (list, tuple)):
-            valid_department_ids = [str(did) for did in valid_dept_ids_raw if did]
-
-        # Parse department_mapping
-        department_mapping: dict[str, DepartmentMappingItem] = {}
-        dept_mapping_data = result.get("department_mapping")
-        if isinstance(dept_mapping_data, str):
-            dept_mapping_data = json.loads(dept_mapping_data)
-        if dept_mapping_data and isinstance(dept_mapping_data, dict):
-            for dept_id, ddata in dept_mapping_data.items():
-                if isinstance(ddata, dict):
-                    department_mapping[dept_id] = DepartmentMappingItem(
-                        name=ddata.get("name", ""),
-                        description=ddata.get("description", ""),
-                    )
-
-        # Parse valid_parameter_ids
-        valid_parameter_ids: list[str] = []
-        valid_param_ids_raw = result.get("valid_parameter_ids")
-        if valid_param_ids_raw and isinstance(valid_param_ids_raw, (list, tuple)):
-            valid_parameter_ids = [str(pid) for pid in valid_param_ids_raw if pid]
-
-        # Parse parameter_mapping
-        parameter_mapping: dict[str, ParameterMappingItem] = {}
-        param_mapping_data = result.get("parameter_mapping")
-        if isinstance(param_mapping_data, str):
-            param_mapping_data = json.loads(param_mapping_data)
-        if param_mapping_data and isinstance(param_mapping_data, dict):
-            for param_id, pdata in param_mapping_data.items():
-                if isinstance(pdata, dict):
-                    parameter_mapping[param_id] = ParameterMappingItem(
-                        name=pdata.get("name", ""),
-                        description=pdata.get("description", ""),
-                    )
-
-        response_data = FieldNewResponse(
-            valid_department_ids=valid_department_ids,
-            department_mapping=department_mapping,
-            valid_parameter_ids=valid_parameter_ids,
-            parameter_mapping=parameter_mapping,
-            user_role=str(result.get("user_role", "")),
-            primary_department_id=str(result.get("primary_department_id"))
-            if result.get("primary_department_id")
-            else None,
-        )
+        # Convert SQL result to API response
+        # Return arrays directly from SQL result (no mapping construction)
+        api_response = GetFieldNewApiResponse.model_validate(result.model_dump())
 
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

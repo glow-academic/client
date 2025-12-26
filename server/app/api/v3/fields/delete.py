@@ -1,29 +1,20 @@
 """Field delete endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db
+from app.sql.types import (DeleteFieldApiRequest, DeleteFieldApiResponse,
+                           DeleteFieldSqlParams, DeleteFieldSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class DeleteFieldRequest(BaseModel):
-    """Request to delete field."""
-
-    fieldId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DeleteFieldResponse(BaseModel):
-    """Response from delete field."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/fields/delete_field_complete.sql"
 
 
 router = APIRouter()
@@ -31,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/delete",
-    response_model=DeleteFieldResponse,
+    response_model=DeleteFieldApiResponse,
     dependencies=[
         audit_activity(
             "field.deleted", "{{ actor.name }} deleted field '{{ field.name }}'"
@@ -39,15 +30,15 @@ router = APIRouter()
     ],
 )
 async def delete_field(
-    request: DeleteFieldRequest,
+    request: DeleteFieldApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DeleteFieldResponse:
+) -> DeleteFieldApiResponse:
     """Delete a field."""
     tags = ["fields"]
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -59,41 +50,53 @@ async def delete_field(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            sql_query = load_sql("app/sql/v3/fields/delete_field_complete.sql")
-            sql_params = (request.fieldId, profile_id)
-            result = await conn.fetchrow(sql_query, request.fieldId, profile_id)
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            params = DeleteFieldSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            if not result:
-                raise ValueError(f"Field not found: {request.fieldId}")
-
-            field_name = result.get("name")
-            actor_name = result.get("actor_name")
-            if not field_name:
-                raise ValueError(f"Field not found: {request.fieldId}")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    field={"name": field_name, "id": request.fieldId},
-                )
-
-            result_data = DeleteFieldResponse(
-                success=True,
-                message=f"Field '{field_name}' deleted successfully",
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                DeleteFieldSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
 
-            # Invalidate cache after mutation
-            await invalidate_tags(tags)
-            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+            if not result:
+                raise HTTPException(status_code=404, detail="Field not found")
 
-            return result_data
+            # Check if field exists using SQL result
+            if not result.field_exists:
+                raise HTTPException(
+                    status_code=404, detail=f"Field not found: {request.field_id}"
+                )
+
+            if not result.name:
+                raise HTTPException(
+                    status_code=404, detail=f"Field not found: {request.field_id}"
+                )
+
+            # Set audit context with data from SQL query
+            if result.actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": profile_id},
+                    field={"name": result.name, "id": str(request.field_id)},
+                )
+
+        # Convert SQL result to API response (no manual conversion needed)
+        api_response = DeleteFieldApiResponse.model_validate(result.model_dump())
+
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+        return api_response
     except HTTPException:
         raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

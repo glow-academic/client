@@ -319,7 +319,7 @@ async def fetch_composite_fields(
 
 
 async def fetch_function_inputs(
-    conn: asyncpg.Connection, function_name: str, schema: str = "public"
+    conn: asyncpg.Connection, function_name: str, schema: str = "public", function_oid: int | None = None
 ) -> list[tuple[str, int, bool, str | None]]:
     """Fetch function input parameters from pg_proc.
     
@@ -327,52 +327,103 @@ async def fetch_function_inputs(
         conn: Database connection
         function_name: Function name (e.g., 'api_list_agents_v3')
         schema: Schema name (default: 'public')
+        function_oid: Optional function OID to disambiguate overloads
     
     Returns:
         List of (param_name, type_oid, has_default, default_expr) tuples
     """
     # Get function signature text to parse defaults
-    func_sig = await conn.fetchrow(
-        """
-        SELECT pg_get_function_arguments(p.oid) as arguments
-        FROM pg_proc p
-        JOIN pg_namespace n ON n.oid = p.pronamespace
-        WHERE n.nspname = $1
-          AND p.proname = $2
-          AND p.prokind = 'f';
-        """,
-        schema,
-        function_name,
-    )
+    # Note: pg_get_function_arguments can fail for some function signatures,
+    # so we wrap it in a try/except and continue without defaults if it fails
+    func_sig = None
+    if function_oid:
+        # When filtering by OID, query directly by OID
+        try:
+            func_sig = await conn.fetchrow(
+                """
+                SELECT pg_get_function_arguments($1) as arguments
+                FROM pg_proc p
+                WHERE p.oid = $1 AND p.prokind = 'f';
+                """,
+                function_oid,
+            )
+        except Exception:
+            # pg_get_function_arguments can fail for complex signatures
+            # We'll continue without default value parsing
+            pass
+    else:
+        # When not filtering by OID, use schema and name
+        try:
+            func_sig = await conn.fetchrow(
+                """
+                SELECT pg_get_function_arguments(p.oid) as arguments
+                FROM pg_proc p
+                JOIN pg_namespace n ON n.oid = p.pronamespace
+                WHERE n.nspname = $1
+                  AND p.proname = $2
+                  AND p.prokind = 'f';
+                """,
+                schema,
+                function_name,
+            )
+        except Exception:
+            # pg_get_function_arguments can fail for complex signatures
+            # We'll continue without default value parsing
+            pass
     
     # Get basic parameter info
     # Note: proargtypes only includes input parameters, but proargnames may include output parameters
     # proargtypes is typically 0-indexed [0:N], proargnames is typically 1-indexed [1:M]
     # generate_subscripts returns indices starting from the array's lower bound
-    rows = await conn.fetch(
-        """
-        SELECT
-          ord,
-          CASE 
-            WHEN p.proargnames IS NOT NULL 
-                 AND (ord + array_lower(p.proargnames, 1) - array_lower(p.proargtypes, 1)) 
-                     BETWEEN array_lower(p.proargnames, 1) AND array_upper(p.proargnames, 1)
-                 AND ord BETWEEN array_lower(p.proargtypes, 1) AND array_upper(p.proargtypes, 1)
-            THEN (p.proargnames)[ord + array_lower(p.proargnames, 1) - array_lower(p.proargtypes, 1)]
-            ELSE format('arg_%s', ord - array_lower(p.proargtypes, 1) + 1)
-          END as arg_name,
-          (p.proargtypes)[ord] as arg_type_oid
-        FROM pg_proc p
-        JOIN pg_namespace n ON n.oid = p.pronamespace
-        CROSS JOIN generate_subscripts(p.proargtypes, 1) as ord
-        WHERE n.nspname = $1
-          AND p.proname = $2
-          AND p.prokind = 'f'
-        ORDER BY ord;
-        """,
-        schema,
-        function_name,
-    )
+    if function_oid:
+        # When filtering by OID, query directly by OID
+        rows = await conn.fetch(
+            """
+            SELECT
+              ord,
+              CASE 
+                WHEN p.proargnames IS NOT NULL 
+                     AND (ord + array_lower(p.proargnames, 1) - array_lower(p.proargtypes, 1)) 
+                         BETWEEN array_lower(p.proargnames, 1) AND array_upper(p.proargnames, 1)
+                     AND ord BETWEEN array_lower(p.proargtypes, 1) AND array_upper(p.proargtypes, 1)
+                THEN (p.proargnames)[ord + array_lower(p.proargnames, 1) - array_lower(p.proargtypes, 1)]
+                ELSE format('arg_%s', ord - array_lower(p.proargtypes, 1) + 1)
+              END as arg_name,
+              (p.proargtypes)[ord] as arg_type_oid
+            FROM pg_proc p
+            CROSS JOIN generate_subscripts(p.proargtypes, 1) as ord
+            WHERE p.oid = $1
+              AND p.prokind = 'f'
+            ORDER BY ord;
+            """,
+            function_oid,
+        )
+    else:
+        # When not filtering by OID, use schema and name
+        rows = await conn.fetch(
+            """
+            SELECT
+              ord,
+              CASE 
+                WHEN p.proargnames IS NOT NULL 
+                     AND (ord + array_lower(p.proargnames, 1) - array_lower(p.proargtypes, 1)) 
+                         BETWEEN array_lower(p.proargnames, 1) AND array_upper(p.proargnames, 1)
+                     AND ord BETWEEN array_lower(p.proargtypes, 1) AND array_upper(p.proargtypes, 1)
+                THEN (p.proargnames)[ord + array_lower(p.proargnames, 1) - array_lower(p.proargtypes, 1)]
+                ELSE format('arg_%s', ord - array_lower(p.proargtypes, 1) + 1)
+              END as arg_name,
+              (p.proargtypes)[ord] as arg_type_oid
+            FROM pg_proc p
+            JOIN pg_namespace n ON n.oid = p.pronamespace
+            CROSS JOIN generate_subscripts(p.proargtypes, 1) as ord
+            WHERE n.nspname = $1
+              AND p.proname = $2
+              AND p.prokind = 'f'
+            ORDER BY ord;
+            """,
+            schema,
+            function_name,
+        )
     
     # Parse defaults from function signature if available
     defaults_map: dict[int, tuple[bool, str | None]] = {}
@@ -579,6 +630,77 @@ def _is_function_sql(sql_text: str) -> tuple[bool, str | None, str | None]:
     return False, None, None
 
 
+async def _find_function_oid_by_signature(
+    conn: asyncpg.Connection, function_name: str, schema: str, sql_text: str
+) -> int | None:
+    """Find function OID by matching SQL signature to database function signatures.
+    
+    Extracts the function signature from SQL file and matches it to the correct overload.
+    
+    Args:
+        conn: Database connection
+        function_name: Function name
+        schema: Schema name
+        sql_text: SQL file content
+    
+    Returns:
+        Function OID if found, None otherwise
+    """
+    import re
+
+    # Extract function signature from SQL: FUNCTION name(param1 type1, param2 type2, ...)
+    # Pattern matches the parameter list between parentheses
+    pattern = rf'CREATE\s+OR\s+REPLACE\s+FUNCTION\s+(?:{re.escape(schema)}\.)?{re.escape(function_name)}\s*\((.*?)\)'
+    match = re.search(pattern, sql_text, re.IGNORECASE | re.DOTALL)
+    
+    if not match:
+        return None
+    
+    # Get all overloads
+    overloads = await conn.fetch(
+        """
+        SELECT p.oid, pg_get_function_identity_arguments(p.oid) as sig
+        FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = $1
+          AND p.proname = $2
+          AND p.prokind = 'f';
+        """,
+        schema,
+        function_name,
+    )
+    
+    if len(overloads) <= 1:
+        # No overloads or single function - return first OID
+        if overloads:
+            oid_val = overloads[0]["oid"]
+            return int(oid_val) if oid_val is not None else None
+        return None
+    
+    # Normalize SQL signature: remove whitespace, convert to lowercase
+    sql_params = match.group(1).strip()
+    sql_params_normalized = re.sub(r'\s+', ' ', sql_params).lower()
+    
+    # Try to match against database signatures
+    for overload in overloads:
+        db_sig_normalized = re.sub(r'\s+', ' ', overload["sig"]).lower()
+        # Compare normalized signatures
+        if sql_params_normalized == db_sig_normalized:
+            oid_val = overload["oid"]
+            return int(oid_val) if oid_val is not None else None
+    
+    # If no exact match, return the most recent OID (highest OID typically means newest)
+    # This is a fallback - exact matching is preferred
+    oids: list[int] = []
+    for overload in overloads:
+        oid_val = overload["oid"]
+        if oid_val is not None:
+            oids.append(int(oid_val))
+    if oids:
+        return max(oids)
+    return None
+
+
 async def introspect_function(
     sql_path: str, conn: asyncpg.Connection, function_name: str, schema: str = "public"
 ) -> SQLMetadata:
@@ -609,6 +731,21 @@ async def introspect_function(
             schema,
         )
         
+        # Check for multiple overloads
+        overloads = await conn.fetch(
+            """
+            SELECT p.oid, pg_get_function_identity_arguments(p.oid) as sig
+            FROM pg_proc p
+            JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname = $1
+              AND p.proname = $2
+              AND p.prokind = 'f';
+            """,
+            schema,
+            function_name,
+        )
+        
+        
         if not func_exists:
             return SQLMetadata(
                 sql_path=sql_path,
@@ -617,22 +754,106 @@ async def introspect_function(
                 error=f"Function {schema}.{function_name} does not exist in database",
             )
         
-        # Get input parameters
-        input_params = await fetch_function_inputs(conn, function_name, schema)
+        # If multiple overloads exist, find the correct one by matching SQL signature
+        function_oid = None
+        if len(overloads) > 1:
+            sql_text = load_sql(sql_path)
+            function_oid = await _find_function_oid_by_signature(conn, function_name, schema, sql_text)
+        
+        # Get input parameters (filtered by OID if multiple overloads)
+        input_params = await fetch_function_inputs(conn, function_name, schema, function_oid)
         
         param_types: list[ColumnMetadata] = []
         for param_name, type_oid, has_default, default_expr in input_params:
-            python_type, is_array = await _oid_to_python_type(type_oid, conn)
             
-            # Check if it's a composite type (need to handle differently)
+            # Get full type information including typelem and typcategory for reliable array detection
             type_info = await conn.fetchrow(
-                "SELECT typtype FROM pg_type WHERE oid = $1",
+                """
+                SELECT 
+                  t.typtype,
+                  t.typarray,
+                  t.typelem,
+                  t.typcategory,
+                  (n.nspname || '.' || t.typname) as full_name
+                FROM pg_type t
+                JOIN pg_namespace n ON n.oid = t.typnamespace
+                WHERE t.oid = $1
+                """,
                 type_oid,
             )
-            if type_info and type_info["typtype"] == "c":
-                # Composite type - we'll handle this in type generation
-                # For now, mark as composite
-                python_type = f"Composite({type_oid})"
+            
+            
+            if type_info:
+                typtype = type_info["typtype"]
+                full_name = type_info["full_name"]
+                typelem = type_info["typelem"]
+                typcategory = type_info["typcategory"]
+                
+                # Definitive array check using typcategory
+                # PostgreSQL sets typcategory='A' for all array types
+                if typcategory == "A" or typcategory == b"A":
+                    # This is an array type - get the element type
+                    elem_oid = int(typelem) if typelem else 0
+                    
+                    
+                    if elem_oid:
+                        elem_info = await conn.fetchrow(
+                            """
+                            SELECT
+                              t.typtype,
+                              t.typbasetype,
+                              (n.nspname || '.' || t.typname) AS full_name
+                            FROM pg_type t
+                            JOIN pg_namespace n ON n.oid = t.typnamespace
+                            WHERE t.oid = $1
+                            """,
+                            elem_oid,
+                        )
+                        
+                        
+                        if elem_info and (elem_info["typtype"] == "c" or elem_info["typtype"] == b"c"):
+                            # Composite array - element type is composite
+                            python_type = f"CompositeArray({elem_info['full_name']})"
+                            is_array = True
+                        elif elem_info and (elem_info["typtype"] == "d" or elem_info["typtype"] == b"d"):
+                            # Domain type - unwrap to base type
+                            base_oid = elem_info["typbasetype"]
+                            if base_oid:
+                                base_info = await conn.fetchrow(
+                                    """
+                                    SELECT
+                                      t.typtype,
+                                      (n.nspname || '.' || t.typname) AS full_name
+                                    FROM pg_type t
+                                    JOIN pg_namespace n ON n.oid = t.typnamespace
+                                    WHERE t.oid = $1
+                                    """,
+                                    base_oid,
+                                )
+                                if base_info and (base_info["typtype"] == "c" or base_info["typtype"] == b"c"):
+                                    python_type = f"CompositeArray({base_info['full_name']})"
+                                    is_array = True
+                                else:
+                                    python_type, is_array = await _oid_to_python_type(type_oid, conn)
+                            else:
+                                python_type, is_array = await _oid_to_python_type(type_oid, conn)
+                        else:
+                            # Normal array (text[], uuid[], etc.)
+                            python_type, is_array = await _oid_to_python_type(type_oid, conn)
+                    else:
+                        # Array type but no element type (shouldn't happen, but fallback)
+                        python_type, is_array = await _oid_to_python_type(type_oid, conn)
+                elif typtype == "c" or typtype == b"c":
+                    # Composite type (not array)
+                    python_type = f"Composite({full_name})"
+                    is_array = False
+                else:
+                    # Regular type, not composite
+                    python_type, is_array = await _oid_to_python_type(type_oid, conn)
+            else:
+                # Fallback to standard type resolution
+                python_type, is_array = await _oid_to_python_type(type_oid, conn)
+            
             
             param_types.append(
                 ColumnMetadata(
@@ -770,11 +991,14 @@ async def introspect_function(
                 # Can't call function - that's okay, we'll handle it in type generation
                 pass
         
-        return SQLMetadata(
+        result = SQLMetadata(
             sql_path=sql_path,
             parameters=param_types,
             returns=return_types,
         )
+        
+        
+        return result
     
     except Exception as e:
         return SQLMetadata(
@@ -911,7 +1135,8 @@ async def introspect_sql_file(
         if is_function and function_name:
             # Introspect as function (use 'public' as default schema if None)
             schema_name = schema or "public"
-            return await introspect_function(sql_path, conn, function_name, schema_name)
+            result = await introspect_function(sql_path, conn, function_name, schema_name)
+            return result
 
         # Use a unique name to avoid conflicts
         stmt_name = f"introspect_{abs(hash(sql_path)) % 1000000}"

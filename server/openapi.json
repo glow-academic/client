@@ -10027,7 +10027,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ParametersFilters"
+                "$ref": "#/components/schemas/GetParametersListApiRequest"
               }
             }
           }
@@ -10038,7 +10038,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ParametersListResponse"
+                  "$ref": "#/components/schemas/GetParametersListApiResponse"
                 }
               }
             }
@@ -10108,7 +10108,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ParameterDetailRequest"
+                "$ref": "#/components/schemas/GetParameterDetailApiRequest"
               }
             }
           }
@@ -10119,7 +10119,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ParameterDetailResponse"
+                  "$ref": "#/components/schemas/GetParameterDetailApiResponse"
                 }
               }
             }
@@ -10189,7 +10189,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ParameterNewRequest"
+                "$ref": "#/components/schemas/GetParameterNewApiRequest"
               }
             }
           }
@@ -10200,7 +10200,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ParameterDetailResponse"
+                  "$ref": "#/components/schemas/GetParameterNewApiResponse"
                 }
               }
             }
@@ -10270,7 +10270,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateParameterRequest"
+                "$ref": "#/components/schemas/CreateParameterApiRequest"
               }
             }
           }
@@ -10281,7 +10281,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateParameterResponse"
+                  "$ref": "#/components/schemas/CreateParameterApiResponse"
                 }
               }
             }
@@ -10351,7 +10351,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateParameterRequest"
+                "$ref": "#/components/schemas/UpdateParameterApiRequest"
               }
             }
           }
@@ -10362,7 +10362,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateParameterResponse"
+                  "$ref": "#/components/schemas/UpdateParameterApiResponse"
                 }
               }
             }
@@ -10432,7 +10432,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DuplicateParameterRequest"
+                "$ref": "#/components/schemas/DuplicateParameterApiRequest"
               }
             }
           }
@@ -10443,7 +10443,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DuplicateParameterResponse"
+                  "$ref": "#/components/schemas/DuplicateParameterApiResponse"
                 }
               }
             }
@@ -10513,7 +10513,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteParameterRequest"
+                "$ref": "#/components/schemas/DeleteParameterApiRequest"
               }
             }
           }
@@ -10524,7 +10524,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteParameterResponse"
+                  "$ref": "#/components/schemas/DeleteParameterApiResponse"
                 }
               }
             }
@@ -10594,7 +10594,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FieldsListRequest"
+                "$ref": "#/components/schemas/GetFieldsListApiRequest"
               }
             }
           }
@@ -10605,7 +10605,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FieldsListResponse"
+                  "$ref": "#/components/schemas/GetFieldsListApiResponse"
                 }
               }
             }
@@ -10675,7 +10675,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FieldDetailRequest"
+                "$ref": "#/components/schemas/GetFieldDetailApiRequest"
               }
             }
           }
@@ -10686,7 +10686,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FieldDetailResponse"
+                  "$ref": "#/components/schemas/GetFieldDetailApiResponse"
                 }
               }
             }
@@ -10756,7 +10756,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FieldNewRequest"
+                "$ref": "#/components/schemas/GetFieldNewApiRequest"
               }
             }
           }
@@ -10767,7 +10767,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FieldNewResponse"
+                  "$ref": "#/components/schemas/GetFieldNewApiResponse"
                 }
               }
             }
@@ -10837,7 +10837,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateFieldRequest"
+                "$ref": "#/components/schemas/CreateFieldApiRequest"
               }
             }
           }
@@ -10848,7 +10848,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateFieldResponse"
+                  "$ref": "#/components/schemas/CreateFieldApiResponse"
                 }
               }
             }
@@ -10918,7 +10918,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateFieldRequest"
+                "$ref": "#/components/schemas/UpdateFieldApiRequest"
               }
             }
           }
@@ -10929,7 +10929,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateFieldResponse"
+                  "$ref": "#/components/schemas/UpdateFieldApiResponse"
                 }
               }
             }
@@ -10999,7 +10999,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DuplicateFieldRequest"
+                "$ref": "#/components/schemas/DuplicateFieldApiRequest"
               }
             }
           }
@@ -11010,7 +11010,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DuplicateFieldResponse"
+                  "$ref": "#/components/schemas/DuplicateFieldApiResponse"
                 }
               }
             }
@@ -11080,7 +11080,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteFieldRequest"
+                "$ref": "#/components/schemas/DeleteFieldApiRequest"
               }
             }
           }
@@ -11091,7 +11091,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteFieldResponse"
+                  "$ref": "#/components/schemas/DeleteFieldApiResponse"
                 }
               }
             }
@@ -24632,7 +24632,7 @@
         ],
         "title": "CreateFeedbackResponse"
       },
-      "CreateFieldRequest": {
+      "CreateFieldApiRequest": {
         "properties": {
           "name": {
             "type": "string",
@@ -24644,35 +24644,20 @@
           },
           "active": {
             "type": "boolean",
-            "title": "Active",
-            "default": true
+            "title": "Active"
           },
           "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Department Ids"
           },
           "conditional_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Conditional Parameter Ids"
           }
         },
@@ -24680,34 +24665,40 @@
         "required": [
           "name",
           "description",
-          "department_ids"
+          "active",
+          "department_ids",
+          "conditional_parameter_ids"
         ],
-        "title": "CreateFieldRequest",
-        "description": "Request to create field."
+        "title": "CreateFieldApiRequest"
       },
-      "CreateFieldResponse": {
+      "CreateFieldApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
           },
-          "fieldId": {
-            "type": "string",
-            "title": "Fieldid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "fieldId",
-          "message"
-        ],
-        "title": "CreateFieldResponse",
-        "description": "Response from create field."
+        "title": "CreateFieldApiResponse"
       },
       "CreateKeyRequest": {
         "properties": {
@@ -25037,7 +25028,7 @@
         "title": "CreateOrUpdateProfileResponse",
         "description": "Response from create or update profile."
       },
-      "CreateParameterRequest": {
+      "CreateParameterApiRequest": {
         "properties": {
           "name": {
             "type": "string",
@@ -25053,46 +25044,34 @@
           },
           "simulation_parameter": {
             "type": "boolean",
-            "title": "Simulation Parameter",
-            "default": false
+            "title": "Simulation Parameter"
           },
           "document_parameter": {
             "type": "boolean",
-            "title": "Document Parameter",
-            "default": false
+            "title": "Document Parameter"
           },
           "persona_parameter": {
             "type": "boolean",
-            "title": "Persona Parameter",
-            "default": false
+            "title": "Persona Parameter"
           },
           "scenario_parameter": {
             "type": "boolean",
-            "title": "Scenario Parameter",
-            "default": false
+            "title": "Scenario Parameter"
           },
           "video_parameter": {
             "type": "boolean",
-            "title": "Video Parameter",
-            "default": false
+            "title": "Video Parameter"
           },
           "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Department Ids"
           },
           "field_connections": {
             "items": {
-              "$ref": "#/components/schemas/FieldConnectionCreate"
+              "$ref": "#/components/schemas/ICreateParameterV3FieldConnection"
             },
             "type": "array",
             "title": "Field Connections"
@@ -25103,35 +25082,44 @@
           "name",
           "description",
           "active",
+          "simulation_parameter",
+          "document_parameter",
+          "persona_parameter",
+          "scenario_parameter",
+          "video_parameter",
           "department_ids",
           "field_connections"
         ],
-        "title": "CreateParameterRequest",
-        "description": "Request to create parameter with field connections."
+        "title": "CreateParameterApiRequest"
       },
-      "CreateParameterResponse": {
+      "CreateParameterApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
           },
-          "parameterId": {
-            "type": "string",
-            "title": "Parameterid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "parameterId",
-          "message"
-        ],
-        "title": "CreateParameterResponse",
-        "description": "Response from create parameter."
+        "title": "CreateParameterApiResponse"
       },
       "CreatePersonaApiRequest": {
         "properties": {
@@ -27162,38 +27150,58 @@
         "title": "DeleteEvalResponse",
         "description": "Response from delete eval."
       },
-      "DeleteFieldRequest": {
+      "DeleteFieldApiRequest": {
         "properties": {
-          "fieldId": {
+          "field_id": {
             "type": "string",
-            "title": "Fieldid"
+            "format": "uuid",
+            "title": "Field Id"
           }
         },
         "type": "object",
         "required": [
-          "fieldId"
+          "field_id"
         ],
-        "title": "DeleteFieldRequest",
-        "description": "Request to delete field."
+        "title": "DeleteFieldApiRequest"
       },
-      "DeleteFieldResponse": {
+      "DeleteFieldApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "field_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Exists"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteFieldResponse",
-        "description": "Response from delete field."
+        "title": "DeleteFieldApiResponse"
       },
       "DeleteKeyRequest": {
         "properties": {
@@ -27261,38 +27269,69 @@
         "title": "DeleteModelResponse",
         "description": "Response from delete model."
       },
-      "DeleteParameterRequest": {
+      "DeleteParameterApiRequest": {
         "properties": {
-          "parameterId": {
+          "parameter_id": {
             "type": "string",
-            "title": "Parameterid"
+            "format": "uuid",
+            "title": "Parameter Id"
           }
         },
         "type": "object",
         "required": [
-          "parameterId"
+          "parameter_id"
         ],
-        "title": "DeleteParameterRequest",
-        "description": "Request to delete parameter."
+        "title": "DeleteParameterApiRequest"
       },
-      "DeleteParameterResponse": {
+      "DeleteParameterApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "parameter_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Exists"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Count"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteParameterResponse",
-        "description": "Response from delete parameter."
+        "title": "DeleteParameterApiResponse"
       },
       "DeletePersonaApiRequest": {
         "properties": {
@@ -28561,43 +28600,70 @@
         "title": "DuplicateDepartmentResponse",
         "description": "Response for duplicating a department."
       },
-      "DuplicateFieldRequest": {
+      "DuplicateFieldApiRequest": {
         "properties": {
-          "fieldId": {
+          "field_id": {
             "type": "string",
-            "title": "Fieldid"
+            "format": "uuid",
+            "title": "Field Id"
           }
         },
         "type": "object",
         "required": [
-          "fieldId"
+          "field_id"
         ],
-        "title": "DuplicateFieldRequest",
-        "description": "Request to duplicate field."
+        "title": "DuplicateFieldApiRequest"
       },
-      "DuplicateFieldResponse": {
+      "DuplicateFieldApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "field_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Exists"
           },
-          "fieldId": {
-            "type": "string",
-            "title": "Fieldid"
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "field_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "fieldId",
-          "message"
-        ],
-        "title": "DuplicateFieldResponse",
-        "description": "Response from duplicate field."
+        "title": "DuplicateFieldApiResponse"
       },
       "DuplicateModelRequest": {
         "properties": {
@@ -28637,43 +28703,59 @@
         "title": "DuplicateModelResponse",
         "description": "Response from duplicate model."
       },
-      "DuplicateParameterRequest": {
+      "DuplicateParameterApiRequest": {
         "properties": {
-          "parameterId": {
+          "parameter_id": {
             "type": "string",
-            "title": "Parameterid"
+            "format": "uuid",
+            "title": "Parameter Id"
           }
         },
         "type": "object",
         "required": [
-          "parameterId"
+          "parameter_id"
         ],
-        "title": "DuplicateParameterRequest",
-        "description": "Request to duplicate parameter."
+        "title": "DuplicateParameterApiRequest"
       },
-      "DuplicateParameterResponse": {
+      "DuplicateParameterApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
           },
-          "parameterId": {
-            "type": "string",
-            "title": "Parameterid"
+          "original_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Name"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "parameterId",
-          "message"
-        ],
-        "title": "DuplicateParameterResponse",
-        "description": "Response from duplicate parameter."
+        "title": "DuplicateParameterApiResponse"
       },
       "DuplicatePersonaApiRequest": {
         "properties": {
@@ -30418,362 +30500,6 @@
         "title": "FeedbackToolPayload",
         "description": "Request to create feedback for a standard group."
       },
-      "FieldConnection": {
-        "properties": {
-          "field_id": {
-            "type": "string",
-            "title": "Field Id"
-          },
-          "default": {
-            "type": "boolean",
-            "title": "Default"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "field_id",
-          "default",
-          "active"
-        ],
-        "title": "FieldConnection"
-      },
-      "FieldConnectionCreate": {
-        "properties": {
-          "field_id": {
-            "type": "string",
-            "title": "Field Id"
-          },
-          "default": {
-            "type": "boolean",
-            "title": "Default",
-            "default": false
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          }
-        },
-        "type": "object",
-        "required": [
-          "field_id"
-        ],
-        "title": "FieldConnectionCreate",
-        "description": "Field connection creation schema."
-      },
-      "FieldDetailRequest": {
-        "properties": {
-          "fieldId": {
-            "type": "string",
-            "title": "Fieldid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "fieldId"
-        ],
-        "title": "FieldDetailRequest"
-      },
-      "FieldDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Ids"
-          },
-          "conditional_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Conditional Parameter Ids"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "parameter_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Parameter Mapping"
-          },
-          "valid_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Parameter Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "active",
-          "department_ids",
-          "parameter_ids",
-          "conditional_parameter_ids",
-          "department_mapping",
-          "valid_department_ids",
-          "parameter_mapping",
-          "valid_parameter_ids",
-          "can_edit"
-        ],
-        "title": "FieldDetailResponse"
-      },
-      "FieldItem": {
-        "properties": {
-          "field_id": {
-            "type": "string",
-            "title": "Field Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Ids"
-          },
-          "conditional_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Conditional Parameter Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          }
-        },
-        "type": "object",
-        "required": [
-          "field_id",
-          "name",
-          "description",
-          "active",
-          "parameter_ids",
-          "conditional_parameter_ids",
-          "can_edit",
-          "can_delete",
-          "can_duplicate"
-        ],
-        "title": "FieldItem",
-        "description": "Field item for list view."
-      },
-      "FieldNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "FieldNewRequest",
-        "description": "Request to get default field detail for creation mode."
-      },
-      "FieldNewResponse": {
-        "properties": {
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__fields__new__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "valid_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Parameter Ids"
-          },
-          "parameter_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__fields__new__ParameterMappingItem"
-            },
-            "type": "object",
-            "title": "Parameter Mapping"
-          },
-          "user_role": {
-            "type": "string",
-            "title": "User Role"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "valid_department_ids",
-          "department_mapping",
-          "valid_parameter_ids",
-          "parameter_mapping",
-          "user_role",
-          "primary_department_id"
-        ],
-        "title": "FieldNewResponse"
-      },
-      "FieldsListRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "FieldsListRequest",
-        "description": "Request for fields list."
-      },
-      "FieldsListResponse": {
-        "properties": {
-          "fields": {
-            "items": {
-              "$ref": "#/components/schemas/FieldItem"
-            },
-            "type": "array",
-            "title": "Fields"
-          },
-          "parameter_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Parameter Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__fields__list__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "parameter_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Parameter Options"
-          },
-          "department_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Department Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "fields",
-          "parameter_mapping",
-          "department_mapping",
-          "parameter_options",
-          "department_options"
-        ],
-        "title": "FieldsListResponse",
-        "description": "Response for fields list."
-      },
       "FilterOption": {
         "properties": {
           "value": {
@@ -32439,6 +32165,1149 @@
         },
         "type": "object",
         "title": "GetCohortsListApiResponse"
+      },
+      "GetFieldDetailApiRequest": {
+        "properties": {
+          "field_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Field Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id"
+        ],
+        "title": "GetFieldDetailApiRequest"
+      },
+      "GetFieldDetailApiResponse": {
+        "properties": {
+          "field_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Exists"
+          },
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "conditional_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Ids"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetFieldDetailV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetFieldDetailV3Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "valid_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetFieldDetailApiResponse"
+      },
+      "GetFieldNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetFieldNewApiRequest"
+      },
+      "GetFieldNewApiResponse": {
+        "properties": {
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetFieldNewV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "valid_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Ids"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetFieldNewV3Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Role"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetFieldNewApiResponse"
+      },
+      "GetFieldsListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetFieldsListApiRequest"
+      },
+      "GetFieldsListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListFieldsV3Field"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListFieldsV3Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListFieldsV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "parameter_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListFieldsV3Option"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Options"
+          },
+          "department_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListFieldsV3Option"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Options"
+          }
+        },
+        "type": "object",
+        "title": "GetFieldsListApiResponse"
+      },
+      "GetParameterDetailApiRequest": {
+        "properties": {
+          "parameter_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Parameter Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id"
+        ],
+        "title": "GetParameterDetailApiRequest"
+      },
+      "GetParameterDetailApiResponse": {
+        "properties": {
+          "parameter_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Exists"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "simulation_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Parameter"
+          },
+          "document_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Parameter"
+          },
+          "video_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Parameter"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "parameter_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterDetailV3Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Items"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterDetailV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterDetailV3Field"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "valid_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Field Ids"
+          },
+          "field_connections": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterDetailV3FieldConnection"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Connections"
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterDetailV3Persona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          },
+          "valid_persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Persona Ids"
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterDetailV3Document"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documents"
+          },
+          "valid_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Document Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetParameterDetailApiResponse"
+      },
+      "GetParameterNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetParameterNewApiRequest"
+      },
+      "GetParameterNewApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Role"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "simulation_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Parameter"
+          },
+          "document_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Parameter"
+          },
+          "scenario_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Parameter"
+          },
+          "video_parameter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Parameter"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "parameter_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterNewV3Item"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Items"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterNewV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterNewV3Field"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "valid_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Field Ids"
+          },
+          "field_connections": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterNewV3FieldConnection"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Connections"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterNewV3Persona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          },
+          "valid_persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetParameterNewV3Document"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documents"
+          },
+          "valid_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Document Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          }
+        },
+        "type": "object",
+        "title": "GetParameterNewApiResponse"
+      },
+      "GetParametersListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetParametersListApiRequest"
+      },
+      "GetParametersListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListParametersV3Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "scenarios": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListParametersV3Scenario"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarios"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListParametersV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListParametersV3Document"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documents"
+          },
+          "scenario_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListParametersV3ScenarioOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Options"
+          },
+          "document_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListParametersV3DocumentOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Options"
+          }
+        },
+        "type": "object",
+        "title": "GetParametersListApiResponse"
       },
       "GetPersonaDetailApiRequest": {
         "properties": {
@@ -35278,6 +36147,96 @@
         "title": "HomeSimulationItem",
         "description": "Home simulation item."
       },
+      "ICreateParameterV3FieldConnection": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "default",
+          "active"
+        ],
+        "title": "ICreateParameterV3FieldConnection"
+      },
+      "IUpdateParameterV3FieldConnection": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "default",
+          "active"
+        ],
+        "title": "IUpdateParameterV3FieldConnection"
+      },
       "ImageGenerationCompletePayload": {
         "properties": {
           "image_id": {
@@ -37727,417 +38686,6 @@
         ],
         "title": "ParameterDetail",
         "description": "Parameter detail structure."
-      },
-      "ParameterDetailRequest": {
-        "properties": {
-          "parameterId": {
-            "type": "string",
-            "title": "Parameterid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "parameterId"
-        ],
-        "title": "ParameterDetailRequest"
-      },
-      "ParameterDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "simulation_parameter": {
-            "type": "boolean",
-            "title": "Simulation Parameter"
-          },
-          "document_parameter": {
-            "type": "boolean",
-            "title": "Document Parameter"
-          },
-          "persona_parameter": {
-            "type": "boolean",
-            "title": "Persona Parameter"
-          },
-          "scenario_parameter": {
-            "type": "boolean",
-            "title": "Scenario Parameter"
-          },
-          "video_parameter": {
-            "type": "boolean",
-            "title": "Video Parameter"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "parameter_items": {
-            "items": {
-              "$ref": "#/components/schemas/ParameterItemDetail"
-            },
-            "type": "array",
-            "title": "Parameter Items"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "field_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Field Mapping"
-          },
-          "valid_field_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Field Ids"
-          },
-          "field_connections": {
-            "items": {
-              "$ref": "#/components/schemas/FieldConnection"
-            },
-            "type": "array",
-            "title": "Field Connections"
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Persona Ids"
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Persona Mapping"
-          },
-          "valid_persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Persona Ids"
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids"
-          },
-          "document_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Document Mapping"
-          },
-          "valid_document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Document Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "active",
-          "simulation_parameter",
-          "document_parameter",
-          "persona_parameter",
-          "scenario_parameter",
-          "video_parameter",
-          "department_ids",
-          "parameter_items",
-          "department_mapping",
-          "valid_department_ids",
-          "field_mapping",
-          "valid_field_ids",
-          "field_connections",
-          "persona_ids",
-          "persona_mapping",
-          "valid_persona_ids",
-          "document_ids",
-          "document_mapping",
-          "valid_document_ids",
-          "can_edit"
-        ],
-        "title": "ParameterDetailResponse"
-      },
-      "ParameterItem": {
-        "properties": {
-          "parameter_id": {
-            "type": "string",
-            "title": "Parameter Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids"
-          },
-          "num_items": {
-            "type": "integer",
-            "title": "Num Items"
-          },
-          "sample_items": {
-            "items": {
-              "$ref": "#/components/schemas/ParameterSampleItem"
-            },
-            "type": "array",
-            "title": "Sample Items"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          }
-        },
-        "type": "object",
-        "required": [
-          "parameter_id",
-          "name",
-          "description",
-          "active",
-          "department_ids",
-          "scenario_ids",
-          "document_ids",
-          "num_items",
-          "sample_items",
-          "can_edit",
-          "can_delete",
-          "can_duplicate"
-        ],
-        "title": "ParameterItem"
-      },
-      "ParameterItemDetail": {
-        "properties": {
-          "parameter_item_id": {
-            "type": "string",
-            "title": "Parameter Item Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "default": {
-            "type": "boolean",
-            "title": "Default"
-          },
-          "usage_count": {
-            "type": "integer",
-            "title": "Usage Count"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "parameter_item_id",
-          "name",
-          "description",
-          "default",
-          "usage_count",
-          "department_ids"
-        ],
-        "title": "ParameterItemDetail"
-      },
-      "ParameterNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "ParameterNewRequest"
-      },
-      "ParameterSampleItem": {
-        "properties": {
-          "parameter_item_id": {
-            "type": "string",
-            "title": "Parameter Item Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "parameter_item_id",
-          "name",
-          "description"
-        ],
-        "title": "ParameterSampleItem"
-      },
-      "ParametersFilters": {
-        "properties": {},
-        "type": "object",
-        "title": "ParametersFilters"
-      },
-      "ParametersListResponse": {
-        "properties": {
-          "parameters": {
-            "items": {
-              "$ref": "#/components/schemas/ParameterItem"
-            },
-            "type": "array",
-            "title": "Parameters"
-          },
-          "scenario_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__parameters__list__ScenarioMappingItem"
-            },
-            "type": "object",
-            "title": "Scenario Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__parameters__list__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "document_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__parameters__list__DocumentMappingItem"
-            },
-            "type": "object",
-            "title": "Document Mapping"
-          },
-          "scenario_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Scenario Options"
-          },
-          "document_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Document Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "parameters",
-          "scenario_mapping",
-          "department_mapping",
-          "document_mapping",
-          "scenario_options",
-          "document_options"
-        ],
-        "title": "ParametersListResponse"
       },
       "PersonaItem": {
         "properties": {
@@ -42146,6 +42694,858 @@
         ],
         "title": "QGetCohortSearchV3Department"
       },
+      "QGetFieldDetailV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetFieldDetailV3Department"
+      },
+      "QGetFieldDetailV3Parameter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetFieldDetailV3Parameter"
+      },
+      "QGetFieldNewV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetFieldNewV3Department"
+      },
+      "QGetFieldNewV3Parameter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetFieldNewV3Parameter"
+      },
+      "QGetParameterDetailV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetParameterDetailV3Department"
+      },
+      "QGetParameterDetailV3Document": {
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetParameterDetailV3Document"
+      },
+      "QGetParameterDetailV3Field": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Count"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "name",
+          "description",
+          "usage_count",
+          "department_ids"
+        ],
+        "title": "QGetParameterDetailV3Field"
+      },
+      "QGetParameterDetailV3FieldConnection": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "default",
+          "active"
+        ],
+        "title": "QGetParameterDetailV3FieldConnection"
+      },
+      "QGetParameterDetailV3Item": {
+        "properties": {
+          "parameter_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Count"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_item_id",
+          "name",
+          "description",
+          "default",
+          "usage_count",
+          "department_ids"
+        ],
+        "title": "QGetParameterDetailV3Item"
+      },
+      "QGetParameterDetailV3Persona": {
+        "properties": {
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetParameterDetailV3Persona"
+      },
+      "QGetParameterNewV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetParameterNewV3Department"
+      },
+      "QGetParameterNewV3Document": {
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetParameterNewV3Document"
+      },
+      "QGetParameterNewV3Field": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Count"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "name",
+          "description",
+          "usage_count",
+          "department_ids"
+        ],
+        "title": "QGetParameterNewV3Field"
+      },
+      "QGetParameterNewV3FieldConnection": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "default",
+          "active"
+        ],
+        "title": "QGetParameterNewV3FieldConnection"
+      },
+      "QGetParameterNewV3Item": {
+        "properties": {
+          "parameter_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Count"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_item_id",
+          "name",
+          "description",
+          "default",
+          "usage_count",
+          "department_ids"
+        ],
+        "title": "QGetParameterNewV3Item"
+      },
+      "QGetParameterNewV3Persona": {
+        "properties": {
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetParameterNewV3Persona"
+      },
       "QGetPersonaDetailV3Agent": {
         "properties": {
           "agent_id": {
@@ -45341,6 +46741,723 @@
           "scenario_ids"
         ],
         "title": "QListCohortsV3Simulation"
+      },
+      "QListFieldsV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QListFieldsV3Department"
+      },
+      "QListFieldsV3Field": {
+        "properties": {
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "conditional_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameter Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_id",
+          "name",
+          "description",
+          "active",
+          "created_at",
+          "updated_at",
+          "department_ids",
+          "parameter_ids",
+          "conditional_parameter_ids",
+          "can_edit",
+          "can_delete",
+          "can_duplicate"
+        ],
+        "title": "QListFieldsV3Field"
+      },
+      "QListFieldsV3Option": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "QListFieldsV3Option"
+      },
+      "QListFieldsV3Parameter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "name",
+          "description"
+        ],
+        "title": "QListFieldsV3Parameter"
+      },
+      "QListParametersV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QListParametersV3Department"
+      },
+      "QListParametersV3Document": {
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "name",
+          "description"
+        ],
+        "title": "QListParametersV3Document"
+      },
+      "QListParametersV3DocumentOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "QListParametersV3DocumentOption"
+      },
+      "QListParametersV3Parameter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "num_items": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Items"
+          },
+          "sample_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListParametersV3SampleItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Items"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "name",
+          "description",
+          "active",
+          "updated_at",
+          "department_ids",
+          "scenario_ids",
+          "document_ids",
+          "num_items",
+          "sample_items",
+          "can_edit",
+          "can_delete",
+          "can_duplicate"
+        ],
+        "title": "QListParametersV3Parameter"
+      },
+      "QListParametersV3SampleItem": {
+        "properties": {
+          "parameter_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_item_id",
+          "name",
+          "description"
+        ],
+        "title": "QListParametersV3SampleItem"
+      },
+      "QListParametersV3Scenario": {
+        "properties": {
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "name",
+          "description",
+          "active"
+        ],
+        "title": "QListParametersV3Scenario"
+      },
+      "QListParametersV3ScenarioOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "QListParametersV3ScenarioOption"
       },
       "QListPersonasV3Agent": {
         "properties": {
@@ -54689,11 +56806,12 @@
         "title": "UpdateEvalResponse",
         "description": "Response from update eval."
       },
-      "UpdateFieldRequest": {
+      "UpdateFieldApiRequest": {
         "properties": {
-          "fieldId": {
+          "field_id": {
             "type": "string",
-            "title": "Fieldid"
+            "format": "uuid",
+            "title": "Field Id"
           },
           "name": {
             "type": "string",
@@ -54705,66 +56823,84 @@
           },
           "active": {
             "type": "boolean",
-            "title": "Active",
-            "default": true
+            "title": "Active"
           },
           "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Department Ids"
           },
           "conditional_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Conditional Parameter Ids"
           }
         },
         "type": "object",
         "required": [
-          "fieldId",
+          "field_id",
           "name",
           "description",
-          "department_ids"
+          "active",
+          "department_ids",
+          "conditional_parameter_ids"
         ],
-        "title": "UpdateFieldRequest",
-        "description": "Request to update field."
+        "title": "UpdateFieldApiRequest"
       },
-      "UpdateFieldResponse": {
+      "UpdateFieldApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "field_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Exists"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "field_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Id"
+          },
+          "field_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateFieldResponse",
-        "description": "Response from update field."
+        "title": "UpdateFieldApiResponse"
       },
       "UpdateKeyRequest": {
         "properties": {
@@ -55011,11 +57147,12 @@
         "title": "UpdateModelResponse",
         "description": "Response from update model."
       },
-      "UpdateParameterRequest": {
+      "UpdateParameterApiRequest": {
         "properties": {
-          "parameterId": {
+          "parameter_id": {
             "type": "string",
-            "title": "Parameterid"
+            "format": "uuid",
+            "title": "Parameter Id"
           },
           "name": {
             "type": "string",
@@ -55050,22 +57187,15 @@
             "title": "Video Parameter"
           },
           "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
             "title": "Department Ids"
           },
           "field_connections": {
             "items": {
-              "$ref": "#/components/schemas/FieldConnectionCreate"
+              "$ref": "#/components/schemas/IUpdateParameterV3FieldConnection"
             },
             "type": "array",
             "title": "Field Connections"
@@ -55073,7 +57203,7 @@
         },
         "type": "object",
         "required": [
-          "parameterId",
+          "parameter_id",
           "name",
           "description",
           "active",
@@ -55085,27 +57215,47 @@
           "department_ids",
           "field_connections"
         ],
-        "title": "UpdateParameterRequest",
-        "description": "Request to update parameter with field connections."
+        "title": "UpdateParameterApiRequest"
       },
-      "UpdateParameterResponse": {
+      "UpdateParameterApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "parameter_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Exists"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateParameterResponse",
-        "description": "Response from update parameter."
+        "title": "UpdateParameterApiResponse"
       },
       "UpdatePersonaApiRequest": {
         "properties": {
@@ -59946,61 +62096,6 @@
         "title": "ModelRunItem",
         "description": "Model run item for selection."
       },
-      "app__api__v3__fields__list__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__fields__new__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem"
-      },
-      "app__api__v3__fields__new__ParameterMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ParameterMappingItem"
-      },
       "app__api__v3__home__history__AttemptHistoryRow": {
         "properties": {
           "attemptId": {
@@ -60775,147 +62870,6 @@
           "description"
         ],
         "title": "ModelMappingItem"
-      },
-      "app__api__v3__parameters__list__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__parameters__list__DocumentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DocumentMappingItem",
-        "description": "Document mapping item."
-      },
-      "app__api__v3__parameters__list__PersonaMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "image_model": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Model"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "color",
-          "icon"
-        ],
-        "title": "PersonaMappingItem",
-        "description": "Persona mapping item with custom color and icon fields."
-      },
-      "app__api__v3__parameters__list__ScenarioMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Persona Ids",
-            "default": []
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__parameters__list__PersonaMappingItem"
-            },
-            "type": "object",
-            "title": "Persona Mapping",
-            "default": {}
-          },
-          "document_mapping": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Document Mapping",
-            "default": {}
-          },
-          "parameter_item_mapping": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Parameter Item Mapping",
-            "default": {}
-          },
-          "parameter_item_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Item Ids",
-            "default": []
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ScenarioMappingItem",
-        "description": "Scenario mapping item with extended fields for nested data."
       },
       "app__api__v3__practice__history__AttemptHistoryRow": {
         "properties": {

@@ -299,9 +299,28 @@ export default function Fields({
     router.push("/management/fields/new");
   };
 
+  // Convert arrays to mappings for UI display
+  const parameterMapping = useMemo(() => {
+    const parameters = fieldsData?.parameters || [];
+    return Object.fromEntries(
+      parameters.map((param) => [
+        param.parameter_id,
+        { name: param.name, description: param.description || undefined }
+      ])
+    ) as Record<string, { name: string; description?: string }>;
+  }, [fieldsData?.parameters]);
+
+  const departmentMapping = useMemo(() => {
+    const departments = fieldsData?.departments || [];
+    return Object.fromEntries(
+      departments.map((dept) => [
+        dept.department_id,
+        { name: dept.name, description: dept.description || undefined }
+      ])
+    ) as Record<string, { name: string; description?: string }>;
+  }, [fieldsData?.departments]);
+
   const renderFieldCard = (field: (typeof fields)[number]) => {
-    const parameterMapping = fieldsData?.parameter_mapping || {};
-    const departmentMapping = fieldsData?.department_mapping || {};
 
     return (
       <Card

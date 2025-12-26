@@ -7483,36 +7483,25 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * CreateFieldRequest
-         * @description Request to create field.
-         */
-        CreateFieldRequest: {
+        /** CreateFieldApiRequest */
+        CreateFieldApiRequest: {
             /** Name */
             name: string;
             /** Description */
             description: string;
-            /**
-             * Active
-             * @default true
-             */
+            /** Active */
             active: boolean;
             /** Department Ids */
-            department_ids: string[] | null;
+            department_ids: string[];
             /** Conditional Parameter Ids */
-            conditional_parameter_ids?: string[] | null;
+            conditional_parameter_ids: string[];
         };
-        /**
-         * CreateFieldResponse
-         * @description Response from create field.
-         */
-        CreateFieldResponse: {
-            /** Success */
-            success: boolean;
-            /** Fieldid */
-            fieldId: string;
-            /** Message */
-            message: string;
+        /** CreateFieldApiResponse */
+        CreateFieldApiResponse: {
+            /** Field Id */
+            field_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * CreateKeyRequest
@@ -7635,58 +7624,35 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * CreateParameterRequest
-         * @description Request to create parameter with field connections.
-         */
-        CreateParameterRequest: {
+        /** CreateParameterApiRequest */
+        CreateParameterApiRequest: {
             /** Name */
             name: string;
             /** Description */
             description: string;
             /** Active */
             active: boolean;
-            /**
-             * Simulation Parameter
-             * @default false
-             */
+            /** Simulation Parameter */
             simulation_parameter: boolean;
-            /**
-             * Document Parameter
-             * @default false
-             */
+            /** Document Parameter */
             document_parameter: boolean;
-            /**
-             * Persona Parameter
-             * @default false
-             */
+            /** Persona Parameter */
             persona_parameter: boolean;
-            /**
-             * Scenario Parameter
-             * @default false
-             */
+            /** Scenario Parameter */
             scenario_parameter: boolean;
-            /**
-             * Video Parameter
-             * @default false
-             */
+            /** Video Parameter */
             video_parameter: boolean;
             /** Department Ids */
-            department_ids: string[] | null;
+            department_ids: string[];
             /** Field Connections */
-            field_connections: components["schemas"]["FieldConnectionCreate"][];
+            field_connections: components["schemas"]["ICreateParameterV3FieldConnection"][];
         };
-        /**
-         * CreateParameterResponse
-         * @description Response from create parameter.
-         */
-        CreateParameterResponse: {
-            /** Success */
-            success: boolean;
-            /** Parameterid */
-            parameterId: string;
-            /** Message */
-            message: string;
+        /** CreateParameterApiResponse */
+        CreateParameterApiResponse: {
+            /** Parameter Id */
+            parameter_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** CreatePersonaApiRequest */
         CreatePersonaApiRequest: {
@@ -8411,23 +8377,22 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DeleteFieldRequest
-         * @description Request to delete field.
-         */
-        DeleteFieldRequest: {
-            /** Fieldid */
-            fieldId: string;
+        /** DeleteFieldApiRequest */
+        DeleteFieldApiRequest: {
+            /**
+             * Field Id
+             * Format: uuid
+             */
+            field_id: string;
         };
-        /**
-         * DeleteFieldResponse
-         * @description Response from delete field.
-         */
-        DeleteFieldResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** DeleteFieldApiResponse */
+        DeleteFieldApiResponse: {
+            /** Field Exists */
+            field_exists?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * DeleteKeyRequest
@@ -8465,23 +8430,24 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DeleteParameterRequest
-         * @description Request to delete parameter.
-         */
-        DeleteParameterRequest: {
-            /** Parameterid */
-            parameterId: string;
+        /** DeleteParameterApiRequest */
+        DeleteParameterApiRequest: {
+            /**
+             * Parameter Id
+             * Format: uuid
+             */
+            parameter_id: string;
         };
-        /**
-         * DeleteParameterResponse
-         * @description Response from delete parameter.
-         */
-        DeleteParameterResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** DeleteParameterApiResponse */
+        DeleteParameterApiResponse: {
+            /** Parameter Exists */
+            parameter_exists?: boolean | null;
+            /** Usage Count */
+            usage_count?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** DeletePersonaApiRequest */
         DeletePersonaApiRequest: {
@@ -8982,25 +8948,24 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DuplicateFieldRequest
-         * @description Request to duplicate field.
-         */
-        DuplicateFieldRequest: {
-            /** Fieldid */
-            fieldId: string;
+        /** DuplicateFieldApiRequest */
+        DuplicateFieldApiRequest: {
+            /**
+             * Field Id
+             * Format: uuid
+             */
+            field_id: string;
         };
-        /**
-         * DuplicateFieldResponse
-         * @description Response from duplicate field.
-         */
-        DuplicateFieldResponse: {
-            /** Success */
-            success: boolean;
-            /** Fieldid */
-            fieldId: string;
-            /** Message */
-            message: string;
+        /** DuplicateFieldApiResponse */
+        DuplicateFieldApiResponse: {
+            /** Field Exists */
+            field_exists?: boolean | null;
+            /** Field Id */
+            field_id?: string | null;
+            /** Field Name */
+            field_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * DuplicateModelRequest
@@ -9022,25 +8987,22 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DuplicateParameterRequest
-         * @description Request to duplicate parameter.
-         */
-        DuplicateParameterRequest: {
-            /** Parameterid */
-            parameterId: string;
+        /** DuplicateParameterApiRequest */
+        DuplicateParameterApiRequest: {
+            /**
+             * Parameter Id
+             * Format: uuid
+             */
+            parameter_id: string;
         };
-        /**
-         * DuplicateParameterResponse
-         * @description Response from duplicate parameter.
-         */
-        DuplicateParameterResponse: {
-            /** Success */
-            success: boolean;
-            /** Parameterid */
-            parameterId: string;
-            /** Message */
-            message: string;
+        /** DuplicateParameterApiResponse */
+        DuplicateParameterApiResponse: {
+            /** Parameter Id */
+            parameter_id?: string | null;
+            /** Original Name */
+            original_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** DuplicatePersonaApiRequest */
         DuplicatePersonaApiRequest: {
@@ -9795,152 +9757,6 @@ export interface components {
             /** Sid */
             sid?: string | null;
         };
-        /** FieldConnection */
-        FieldConnection: {
-            /** Field Id */
-            field_id: string;
-            /** Default */
-            default: boolean;
-            /** Active */
-            active: boolean;
-        };
-        /**
-         * FieldConnectionCreate
-         * @description Field connection creation schema.
-         */
-        FieldConnectionCreate: {
-            /** Field Id */
-            field_id: string;
-            /**
-             * Default
-             * @default false
-             */
-            default: boolean;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /** FieldDetailRequest */
-        FieldDetailRequest: {
-            /** Fieldid */
-            fieldId: string;
-        };
-        /** FieldDetailResponse */
-        FieldDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Parameter Ids */
-            parameter_ids: string[];
-            /** Conditional Parameter Ids */
-            conditional_parameter_ids: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Valid Parameter Ids */
-            valid_parameter_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-        };
-        /**
-         * FieldItem
-         * @description Field item for list view.
-         */
-        FieldItem: {
-            /** Field Id */
-            field_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids: string[];
-            /** Conditional Parameter Ids */
-            conditional_parameter_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-        };
-        /**
-         * FieldNewRequest
-         * @description Request to get default field detail for creation mode.
-         */
-        FieldNewRequest: Record<string, never>;
-        /** FieldNewResponse */
-        FieldNewResponse: {
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__fields__new__DepartmentMappingItem"];
-            };
-            /** Valid Parameter Ids */
-            valid_parameter_ids: string[];
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__fields__new__ParameterMappingItem"];
-            };
-            /** User Role */
-            user_role: string;
-            /** Primary Department Id */
-            primary_department_id: string | null;
-        };
-        /**
-         * FieldsListRequest
-         * @description Request for fields list.
-         */
-        FieldsListRequest: Record<string, never>;
-        /**
-         * FieldsListResponse
-         * @description Response for fields list.
-         */
-        FieldsListResponse: {
-            /** Fields */
-            fields: components["schemas"]["FieldItem"][];
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__fields__list__DepartmentMappingItem"];
-            };
-            /** Parameter Options */
-            parameter_options: {
-                [key: string]: string;
-            }[];
-            /** Department Options */
-            department_options: {
-                [key: string]: string;
-            }[];
-        };
         /**
          * FilterOption
          * @description Filter option with count.
@@ -10327,6 +10143,214 @@ export interface components {
             } | null;
             /** Departments */
             departments?: components["schemas"]["QListCohortsV3Department"][] | null;
+        };
+        /** GetFieldDetailApiRequest */
+        GetFieldDetailApiRequest: {
+            /**
+             * Field Id
+             * Format: uuid
+             */
+            field_id: string;
+        };
+        /** GetFieldDetailApiResponse */
+        GetFieldDetailApiResponse: {
+            /** Field Exists */
+            field_exists?: boolean | null;
+            /** Field Id */
+            field_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetFieldDetailV3Department"][] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetFieldDetailV3Parameter"][] | null;
+            /** Valid Parameter Ids */
+            valid_parameter_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetFieldNewApiRequest */
+        GetFieldNewApiRequest: Record<string, never>;
+        /** GetFieldNewApiResponse */
+        GetFieldNewApiResponse: {
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetFieldNewV3Department"][] | null;
+            /** Valid Parameter Ids */
+            valid_parameter_ids?: string[] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetFieldNewV3Parameter"][] | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetFieldsListApiRequest */
+        GetFieldsListApiRequest: Record<string, never>;
+        /** GetFieldsListApiResponse */
+        GetFieldsListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Fields */
+            fields?: components["schemas"]["QListFieldsV3Field"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QListFieldsV3Parameter"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QListFieldsV3Department"][] | null;
+            /** Parameter Options */
+            parameter_options?: components["schemas"]["QListFieldsV3Option"][] | null;
+            /** Department Options */
+            department_options?: components["schemas"]["QListFieldsV3Option"][] | null;
+        };
+        /** GetParameterDetailApiRequest */
+        GetParameterDetailApiRequest: {
+            /**
+             * Parameter Id
+             * Format: uuid
+             */
+            parameter_id: string;
+        };
+        /** GetParameterDetailApiResponse */
+        GetParameterDetailApiResponse: {
+            /** Parameter Exists */
+            parameter_exists?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Simulation Parameter */
+            simulation_parameter?: boolean | null;
+            /** Document Parameter */
+            document_parameter?: boolean | null;
+            /** Persona Parameter */
+            persona_parameter?: boolean | null;
+            /** Scenario Parameter */
+            scenario_parameter?: boolean | null;
+            /** Video Parameter */
+            video_parameter?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Parameter Items */
+            parameter_items?: components["schemas"]["QGetParameterDetailV3Item"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetParameterDetailV3Department"][] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetParameterDetailV3Field"][] | null;
+            /** Valid Field Ids */
+            valid_field_ids?: string[] | null;
+            /** Field Connections */
+            field_connections?: components["schemas"]["QGetParameterDetailV3FieldConnection"][] | null;
+            /** Personas */
+            personas?: components["schemas"]["QGetParameterDetailV3Persona"][] | null;
+            /** Valid Persona Ids */
+            valid_persona_ids?: string[] | null;
+            /** Documents */
+            documents?: components["schemas"]["QGetParameterDetailV3Document"][] | null;
+            /** Valid Document Ids */
+            valid_document_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetParameterNewApiRequest */
+        GetParameterNewApiRequest: Record<string, never>;
+        /** GetParameterNewApiResponse */
+        GetParameterNewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Simulation Parameter */
+            simulation_parameter?: boolean | null;
+            /** Document Parameter */
+            document_parameter?: boolean | null;
+            /** Persona Parameter */
+            persona_parameter?: boolean | null;
+            /** Scenario Parameter */
+            scenario_parameter?: boolean | null;
+            /** Video Parameter */
+            video_parameter?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Parameter Items */
+            parameter_items?: components["schemas"]["QGetParameterNewV3Item"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetParameterNewV3Department"][] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetParameterNewV3Field"][] | null;
+            /** Valid Field Ids */
+            valid_field_ids?: string[] | null;
+            /** Field Connections */
+            field_connections?: components["schemas"]["QGetParameterNewV3FieldConnection"][] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Personas */
+            personas?: components["schemas"]["QGetParameterNewV3Persona"][] | null;
+            /** Valid Persona Ids */
+            valid_persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Documents */
+            documents?: components["schemas"]["QGetParameterNewV3Document"][] | null;
+            /** Valid Document Ids */
+            valid_document_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+        };
+        /** GetParametersListApiRequest */
+        GetParametersListApiRequest: Record<string, never>;
+        /** GetParametersListApiResponse */
+        GetParametersListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QListParametersV3Parameter"][] | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["QListParametersV3Scenario"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QListParametersV3Department"][] | null;
+            /** Documents */
+            documents?: components["schemas"]["QListParametersV3Document"][] | null;
+            /** Scenario Options */
+            scenario_options?: components["schemas"]["QListParametersV3ScenarioOption"][] | null;
+            /** Document Options */
+            document_options?: components["schemas"]["QListParametersV3DocumentOption"][] | null;
         };
         /** GetPersonaDetailApiRequest */
         GetPersonaDetailApiRequest: {
@@ -10995,6 +11019,24 @@ export interface components {
             cohortName?: string | null;
             /** Cohortnames */
             cohortNames?: string | null;
+        };
+        /** ICreateParameterV3FieldConnection */
+        ICreateParameterV3FieldConnection: {
+            /** Field Id */
+            field_id: string | null;
+            /** Default */
+            default: boolean | null;
+            /** Active */
+            active: boolean | null;
+        };
+        /** IUpdateParameterV3FieldConnection */
+        IUpdateParameterV3FieldConnection: {
+            /** Field Id */
+            field_id: string | null;
+            /** Default */
+            default: boolean | null;
+            /** Active */
+            active: boolean | null;
         };
         /**
          * ImageGenerationCompletePayload
@@ -11920,154 +11962,6 @@ export interface components {
             field_ids: string[];
             /** Valid Field Ids */
             valid_field_ids: string[];
-        };
-        /** ParameterDetailRequest */
-        ParameterDetailRequest: {
-            /** Parameterid */
-            parameterId: string;
-        };
-        /** ParameterDetailResponse */
-        ParameterDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Simulation Parameter */
-            simulation_parameter: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Persona Parameter */
-            persona_parameter: boolean;
-            /** Scenario Parameter */
-            scenario_parameter: boolean;
-            /** Video Parameter */
-            video_parameter: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Parameter Items */
-            parameter_items: components["schemas"]["ParameterItemDetail"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Field Mapping */
-            field_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Valid Field Ids */
-            valid_field_ids: string[];
-            /** Field Connections */
-            field_connections: components["schemas"]["FieldConnection"][];
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Valid Persona Ids */
-            valid_persona_ids: string[];
-            /** Document Ids */
-            document_ids: string[];
-            /** Document Mapping */
-            document_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Valid Document Ids */
-            valid_document_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-        };
-        /** ParameterItem */
-        ParameterItem: {
-            /** Parameter Id */
-            parameter_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Document Ids */
-            document_ids: string[];
-            /** Num Items */
-            num_items: number;
-            /** Sample Items */
-            sample_items: components["schemas"]["ParameterSampleItem"][];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-        };
-        /** ParameterItemDetail */
-        ParameterItemDetail: {
-            /** Parameter Item Id */
-            parameter_item_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Default */
-            default: boolean;
-            /** Usage Count */
-            usage_count: number;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** ParameterNewRequest */
-        ParameterNewRequest: Record<string, never>;
-        /** ParameterSampleItem */
-        ParameterSampleItem: {
-            /** Parameter Item Id */
-            parameter_item_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /** ParametersFilters */
-        ParametersFilters: Record<string, never>;
-        /** ParametersListResponse */
-        ParametersListResponse: {
-            /** Parameters */
-            parameters: components["schemas"]["ParameterItem"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__parameters__list__ScenarioMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__parameters__list__DepartmentMappingItem"];
-            };
-            /** Document Mapping */
-            document_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__parameters__list__DocumentMappingItem"];
-            };
-            /** Scenario Options */
-            scenario_options: {
-                [key: string]: string;
-            }[];
-            /** Document Options */
-            document_options: {
-                [key: string]: string;
-            }[];
         };
         /** PersonaItem */
         PersonaItem: {
@@ -13277,6 +13171,170 @@ export interface components {
             /** Description */
             description: string | null;
         };
+        /** QGetFieldDetailV3Department */
+        QGetFieldDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetFieldDetailV3Parameter */
+        QGetFieldDetailV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetFieldNewV3Department */
+        QGetFieldNewV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetFieldNewV3Parameter */
+        QGetFieldNewV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetParameterDetailV3Department */
+        QGetParameterDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetParameterDetailV3Document */
+        QGetParameterDetailV3Document: {
+            /** Document Id */
+            document_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetParameterDetailV3Field */
+        QGetParameterDetailV3Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Usage Count */
+            usage_count: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetParameterDetailV3FieldConnection */
+        QGetParameterDetailV3FieldConnection: {
+            /** Field Id */
+            field_id: string | null;
+            /** Default */
+            default: boolean | null;
+            /** Active */
+            active: boolean | null;
+        };
+        /** QGetParameterDetailV3Item */
+        QGetParameterDetailV3Item: {
+            /** Parameter Item Id */
+            parameter_item_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Default */
+            default: boolean | null;
+            /** Usage Count */
+            usage_count: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetParameterDetailV3Persona */
+        QGetParameterDetailV3Persona: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetParameterNewV3Department */
+        QGetParameterNewV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetParameterNewV3Document */
+        QGetParameterNewV3Document: {
+            /** Document Id */
+            document_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetParameterNewV3Field */
+        QGetParameterNewV3Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Usage Count */
+            usage_count: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetParameterNewV3FieldConnection */
+        QGetParameterNewV3FieldConnection: {
+            /** Field Id */
+            field_id: string | null;
+            /** Default */
+            default: boolean | null;
+            /** Active */
+            active: boolean | null;
+        };
+        /** QGetParameterNewV3Item */
+        QGetParameterNewV3Item: {
+            /** Parameter Item Id */
+            parameter_item_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Default */
+            default: boolean | null;
+            /** Usage Count */
+            usage_count: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetParameterNewV3Persona */
+        QGetParameterNewV3Persona: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
         /** QGetPersonaDetailV3Agent */
         QGetPersonaDetailV3Agent: {
             /** Agent Id */
@@ -13849,6 +13907,139 @@ export interface components {
             department_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[] | null;
+        };
+        /** QListFieldsV3Department */
+        QListFieldsV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListFieldsV3Field */
+        QListFieldsV3Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Can Duplicate */
+            can_duplicate: boolean | null;
+        };
+        /** QListFieldsV3Option */
+        QListFieldsV3Option: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
+        /** QListFieldsV3Parameter */
+        QListFieldsV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListParametersV3Department */
+        QListParametersV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListParametersV3Document */
+        QListParametersV3Document: {
+            /** Document Id */
+            document_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListParametersV3DocumentOption */
+        QListParametersV3DocumentOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
+        /** QListParametersV3Parameter */
+        QListParametersV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Document Ids */
+            document_ids: string[] | null;
+            /** Num Items */
+            num_items: number | null;
+            /** Sample Items */
+            sample_items: components["schemas"]["QListParametersV3SampleItem"][] | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Can Duplicate */
+            can_duplicate: boolean | null;
+        };
+        /** QListParametersV3SampleItem */
+        QListParametersV3SampleItem: {
+            /** Parameter Item Id */
+            parameter_item_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListParametersV3Scenario */
+        QListParametersV3Scenario: {
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+        };
+        /** QListParametersV3ScenarioOption */
+        QListParametersV3ScenarioOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
         };
         /** QListPersonasV3Agent */
         QListPersonasV3Agent: {
@@ -16972,36 +17163,34 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * UpdateFieldRequest
-         * @description Request to update field.
-         */
-        UpdateFieldRequest: {
-            /** Fieldid */
-            fieldId: string;
+        /** UpdateFieldApiRequest */
+        UpdateFieldApiRequest: {
+            /**
+             * Field Id
+             * Format: uuid
+             */
+            field_id: string;
             /** Name */
             name: string;
             /** Description */
             description: string;
-            /**
-             * Active
-             * @default true
-             */
+            /** Active */
             active: boolean;
             /** Department Ids */
-            department_ids: string[] | null;
+            department_ids: string[];
             /** Conditional Parameter Ids */
-            conditional_parameter_ids?: string[] | null;
+            conditional_parameter_ids: string[];
         };
-        /**
-         * UpdateFieldResponse
-         * @description Response from update field.
-         */
-        UpdateFieldResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** UpdateFieldApiResponse */
+        UpdateFieldApiResponse: {
+            /** Field Exists */
+            field_exists?: boolean | null;
+            /** Field Id */
+            field_id?: string | null;
+            /** Field Name */
+            field_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * UpdateKeyRequest
@@ -17083,13 +17272,13 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * UpdateParameterRequest
-         * @description Request to update parameter with field connections.
-         */
-        UpdateParameterRequest: {
-            /** Parameterid */
-            parameterId: string;
+        /** UpdateParameterApiRequest */
+        UpdateParameterApiRequest: {
+            /**
+             * Parameter Id
+             * Format: uuid
+             */
+            parameter_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -17107,19 +17296,18 @@ export interface components {
             /** Video Parameter */
             video_parameter: boolean;
             /** Department Ids */
-            department_ids: string[] | null;
+            department_ids: string[];
             /** Field Connections */
-            field_connections: components["schemas"]["FieldConnectionCreate"][];
+            field_connections: components["schemas"]["IUpdateParameterV3FieldConnection"][];
         };
-        /**
-         * UpdateParameterResponse
-         * @description Response from update parameter.
-         */
-        UpdateParameterResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** UpdateParameterApiResponse */
+        UpdateParameterApiResponse: {
+            /** Parameter Exists */
+            parameter_exists?: boolean | null;
+            /** Parameter Id */
+            parameter_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** UpdatePersonaApiRequest */
         UpdatePersonaApiRequest: {
@@ -18828,30 +19016,6 @@ export interface components {
             actor_type: string | null;
         };
         /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__fields__list__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /** DepartmentMappingItem */
-        app__api__v3__fields__new__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /** ParameterMappingItem */
-        app__api__v3__fields__new__ParameterMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
          * AttemptHistoryRow
          * @description Attempt history row - shared across dashboard, home, reports, and practice history endpoints.
          */
@@ -19131,88 +19295,6 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__parameters__list__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DocumentMappingItem
-         * @description Document mapping item.
-         */
-        app__api__v3__parameters__list__DocumentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * PersonaMappingItem
-         * @description Persona mapping item with custom color and icon fields.
-         */
-        app__api__v3__parameters__list__PersonaMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Image Model */
-            image_model?: boolean | null;
-        };
-        /**
-         * ScenarioMappingItem
-         * @description Scenario mapping item with extended fields for nested data.
-         */
-        app__api__v3__parameters__list__ScenarioMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Persona Ids
-             * @default []
-             */
-            persona_ids?: string[];
-            /**
-             * Persona Mapping
-             * @default {}
-             */
-            persona_mapping?: {
-                [key: string]: components["schemas"]["app__api__v3__parameters__list__PersonaMappingItem"];
-            };
-            /**
-             * Document Mapping
-             * @default {}
-             */
-            document_mapping?: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Mapping
-             * @default {}
-             */
-            parameter_item_mapping?: {
-                [key: string]: unknown;
-            };
-            /**
-             * Parameter Item Ids
-             * @default []
-             */
-            parameter_item_ids?: string[];
-            /**
-             * Document Ids
-             * @default []
-             */
-            document_ids?: string[];
         };
         /**
          * AttemptHistoryRow
@@ -25015,7 +25097,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ParametersFilters"];
+                "application/json": components["schemas"]["GetParametersListApiRequest"];
             };
         };
         responses: {
@@ -25025,7 +25107,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ParametersListResponse"];
+                    "application/json": components["schemas"]["GetParametersListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25051,7 +25133,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ParameterDetailRequest"];
+                "application/json": components["schemas"]["GetParameterDetailApiRequest"];
             };
         };
         responses: {
@@ -25061,7 +25143,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ParameterDetailResponse"];
+                    "application/json": components["schemas"]["GetParameterDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25087,7 +25169,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ParameterNewRequest"];
+                "application/json": components["schemas"]["GetParameterNewApiRequest"];
             };
         };
         responses: {
@@ -25097,7 +25179,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ParameterDetailResponse"];
+                    "application/json": components["schemas"]["GetParameterNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25123,7 +25205,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateParameterRequest"];
+                "application/json": components["schemas"]["CreateParameterApiRequest"];
             };
         };
         responses: {
@@ -25133,7 +25215,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateParameterResponse"];
+                    "application/json": components["schemas"]["CreateParameterApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25159,7 +25241,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateParameterRequest"];
+                "application/json": components["schemas"]["UpdateParameterApiRequest"];
             };
         };
         responses: {
@@ -25169,7 +25251,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateParameterResponse"];
+                    "application/json": components["schemas"]["UpdateParameterApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25195,7 +25277,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DuplicateParameterRequest"];
+                "application/json": components["schemas"]["DuplicateParameterApiRequest"];
             };
         };
         responses: {
@@ -25205,7 +25287,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DuplicateParameterResponse"];
+                    "application/json": components["schemas"]["DuplicateParameterApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25231,7 +25313,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteParameterRequest"];
+                "application/json": components["schemas"]["DeleteParameterApiRequest"];
             };
         };
         responses: {
@@ -25241,7 +25323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteParameterResponse"];
+                    "application/json": components["schemas"]["DeleteParameterApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25267,7 +25349,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["FieldsListRequest"];
+                "application/json": components["schemas"]["GetFieldsListApiRequest"];
             };
         };
         responses: {
@@ -25277,7 +25359,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FieldsListResponse"];
+                    "application/json": components["schemas"]["GetFieldsListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25303,7 +25385,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["FieldDetailRequest"];
+                "application/json": components["schemas"]["GetFieldDetailApiRequest"];
             };
         };
         responses: {
@@ -25313,7 +25395,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FieldDetailResponse"];
+                    "application/json": components["schemas"]["GetFieldDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25339,7 +25421,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["FieldNewRequest"];
+                "application/json": components["schemas"]["GetFieldNewApiRequest"];
             };
         };
         responses: {
@@ -25349,7 +25431,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FieldNewResponse"];
+                    "application/json": components["schemas"]["GetFieldNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25375,7 +25457,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateFieldRequest"];
+                "application/json": components["schemas"]["CreateFieldApiRequest"];
             };
         };
         responses: {
@@ -25385,7 +25467,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateFieldResponse"];
+                    "application/json": components["schemas"]["CreateFieldApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25411,7 +25493,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateFieldRequest"];
+                "application/json": components["schemas"]["UpdateFieldApiRequest"];
             };
         };
         responses: {
@@ -25421,7 +25503,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateFieldResponse"];
+                    "application/json": components["schemas"]["UpdateFieldApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25447,7 +25529,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DuplicateFieldRequest"];
+                "application/json": components["schemas"]["DuplicateFieldApiRequest"];
             };
         };
         responses: {
@@ -25457,7 +25539,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DuplicateFieldResponse"];
+                    "application/json": components["schemas"]["DuplicateFieldApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25483,7 +25565,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteFieldRequest"];
+                "application/json": components["schemas"]["DeleteFieldApiRequest"];
             };
         };
         responses: {
@@ -25493,7 +25575,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteFieldResponse"];
+                    "application/json": components["schemas"]["DeleteFieldApiResponse"];
                 };
             };
             /** @description Validation Error */

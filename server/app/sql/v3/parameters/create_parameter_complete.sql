@@ -1,27 +1,75 @@
 -- Create parameter with field connections and department links in a single transaction
--- Parameters: $1=name, $2=description, $3=active, $4=simulation_parameter, $5=document_parameter, $6=persona_parameter, $7=scenario_parameter, $8=video_parameter, $9=parameter_level_department_ids (text array, nullable), $10=field_connections_json (jsonb array), $11=profile_id (uuid, required)
--- field_connections_json format: [{"field_id": "uuid", "default": true/false, "active": true/false}, ...]
--- Exactly one field connection must have default=true
--- Returns: parameter_id, actor_name
--- profile_id is always a UUID (required in request body)
-WITH user_profile AS (
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_create_parameter_v3(text, text, boolean, boolean, boolean, boolean, boolean, boolean, text[], types.i_create_parameter_v3_field_connection[], uuid);
+
+-- 2) Drop types WITHOUT CASCADE
+DROP TYPE IF EXISTS types.i_create_parameter_v3_field_connection;
+
+-- 3) Recreate types
+CREATE TYPE types.i_create_parameter_v3_field_connection AS (
+    field_id uuid,
+    "default" boolean,
+    active boolean
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_create_parameter_v3(
+    name text,
+    description text,
+    active boolean,
+    simulation_parameter boolean,
+    document_parameter boolean,
+    persona_parameter boolean,
+    scenario_parameter boolean,
+    video_parameter boolean,
+    department_ids text[],
+    field_connections types.i_create_parameter_v3_field_connection[],
+    profile_id uuid
+)
+RETURNS TABLE (
+    parameter_id uuid,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT 
+        name AS name,
+        description AS description,
+        active AS active,
+        simulation_parameter AS simulation_parameter,
+        document_parameter AS document_parameter,
+        persona_parameter AS persona_parameter,
+        scenario_parameter AS scenario_parameter,
+        video_parameter AS video_parameter,
+        COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
+        COALESCE(field_connections, ARRAY[]::types.i_create_parameter_v3_field_connection[]) AS field_connections,
+        profile_id AS profile_id
+),
+user_profile AS (
     SELECT 
         p.role,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $11::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 validate_create_permissions AS (
     -- Validate department permissions for create operation (parameter-level departments)
     SELECT validate_department_create_permissions(
         up.role::text,
-        $9::text[]
+        (SELECT department_ids FROM params)
     ) as validation_passed
     FROM user_profile up
 ),
 actor_profile AS (
     SELECT 
-        $11::uuid as resolved_profile_id,
+        (SELECT profile_id FROM params) as resolved_profile_id,
         up.actor_name
     FROM user_profile up
 ),
@@ -36,19 +84,21 @@ new_parameter AS (
         scenario_parameter,
         video_parameter
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    RETURNING id::text as parameter_id
+    SELECT name, description, active, simulation_parameter, document_parameter, persona_parameter, scenario_parameter, video_parameter
+    FROM params
+    RETURNING id as parameter_id
 ),
 field_connections_expanded AS (
-    -- Expand JSONB field_connections array
+    -- Expand composite type array field_connections
     SELECT 
-        (conn->>'field_id')::uuid as field_id,
-        COALESCE((conn->>'default')::boolean, false) as conn_default,
-        COALESCE((conn->>'active')::boolean, true) as conn_active,
-        ordinality as conn_order
-    FROM jsonb_array_elements(COALESCE($10::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(conn, ordinality)
-    WHERE COALESCE(jsonb_array_length(COALESCE($10::jsonb, '[]'::jsonb)), 0) > 0
-    AND (conn->>'field_id')::uuid IS NOT NULL
+        (x.field_connections[i]).field_id,
+        COALESCE((x.field_connections[i])."default", false) as conn_default,
+        COALESCE((x.field_connections[i]).active, true) as conn_active,
+        i as conn_order
+    FROM params x
+    CROSS JOIN generate_subscripts(x.field_connections, 1) AS i
+    WHERE array_length(x.field_connections, 1) > 0
+    AND (x.field_connections[i]).field_id IS NOT NULL
 ),
 ensure_one_default AS (
     -- Ensure exactly one default: if none specified, set first one; if multiple, keep first
@@ -80,7 +130,7 @@ link_fields_to_parameter AS (
     -- Link existing fields to parameter via parameter_fields junction with default and active flags
     INSERT INTO parameter_fields (parameter_id, field_id, "default", active, created_at, updated_at)
     SELECT 
-        np.parameter_id::uuid,
+        np.parameter_id,
         fcf.field_id,
         fcf.conn_default,
         fcf.conn_active,
@@ -94,30 +144,28 @@ link_fields_to_parameter AS (
         "default" = EXCLUDED."default",
         updated_at = NOW()
 ),
-link_departments AS (
-    -- NOTE: Field-level departments are not supported in this route
-    -- This CTE is kept for compatibility but does nothing
-    SELECT 1 WHERE false
-),
 link_parameter_departments AS (
     -- Link departments to parameter if provided at parameter level
     INSERT INTO parameter_departments (parameter_id, department_id, active, created_at, updated_at)
     SELECT 
-        np.parameter_id::uuid,
+        np.parameter_id,
         dept_id::uuid,
         true,
         NOW(),
         NOW()
     FROM new_parameter np
-    CROSS JOIN UNNEST($9::text[]) as dept_id
-    WHERE $9::text[] IS NOT NULL AND array_length($9::text[], 1) > 0
+    CROSS JOIN params x
+    CROSS JOIN UNNEST(x.department_ids) as dept_id
+    WHERE array_length(x.department_ids, 1) > 0
     ON CONFLICT (parameter_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )
 SELECT 
     np.parameter_id,
-    ap.actor_name
+    ap.actor_name::text as actor_name
 FROM new_parameter np
 CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;

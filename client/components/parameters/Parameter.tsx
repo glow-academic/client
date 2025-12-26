@@ -216,10 +216,9 @@ export default function Parameter({
     clearEntityMetadata,
   ]);
 
-  // Extract mappings from v3 response
-  const departmentMapping = useMemo(
-    () =>
-      (parameterData?.department_mapping || {}) as Record<string, MappingItem>,
+  // Extract arrays from v3 response (composite types - no more mappings)
+  const departments = useMemo(
+    () => parameterData?.departments || [],
     [parameterData]
   );
 
@@ -228,9 +227,34 @@ export default function Parameter({
     [parameterData]
   );
 
+  const fields = useMemo(
+    () => parameterData?.fields || [],
+    [parameterData]
+  );
+
+  const validFieldIds = useMemo(
+    () => parameterData?.valid_field_ids || [],
+    [parameterData]
+  );
+
+  // Create lookup maps for backward compatibility with existing code
+  const departmentMapping = useMemo(
+    () => {
+      const mapping: Record<string, MappingItem> = {};
+      departments.forEach((dept) => {
+        mapping[dept.department_id] = {
+          name: dept.name,
+          description: dept.description,
+        };
+      });
+      return mapping;
+    },
+    [departments]
+  );
+
   const fieldMapping = useMemo(
-    () =>
-      (parameterData?.field_mapping || {}) as Record<
+    () => {
+      const mapping: Record<
         string,
         {
           name: string;
@@ -238,13 +262,18 @@ export default function Parameter({
           usage_count?: number;
           department_ids?: string[] | null;
         }
-      >,
-    [parameterData]
-  );
-
-  const validFieldIds = useMemo(
-    () => parameterData?.valid_field_ids || [],
-    [parameterData]
+      > = {};
+      fields.forEach((field) => {
+        mapping[field.field_id] = {
+          name: field.name,
+          description: field.description,
+          usage_count: field.usage_count,
+          department_ids: field.department_ids,
+        };
+      });
+      return mapping;
+    },
+    [fields]
   );
 
   // Initialize form data from v3 response
@@ -886,7 +915,7 @@ export default function Parameter({
         )}
 
         {/* Step 3: Fields Selection */}
-        {parameterData?.field_mapping && (
+        {fields.length > 0 && (
           <Card
             className={cn(
               "transition-all",

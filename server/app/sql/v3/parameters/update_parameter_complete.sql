@@ -1,25 +1,84 @@
 -- Update parameter with field connections and department links in a single transaction
--- Parameters: $1=parameterId, $2=name, $3=description, $4=active, $5=simulation_parameter, $6=document_parameter, $7=persona_parameter, $8=scenario_parameter, $9=video_parameter, $10=parameter_level_department_ids (text array, nullable), $11=field_connections_json (jsonb array), $12=profile_id (uuid)
--- field_connections_json format: [{"field_id": "uuid", "default": true/false, "active": true/false}, ...]
--- Exactly one field connection must have default=true
-WITH user_profile AS (
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_update_parameter_v3(uuid, text, text, boolean, boolean, boolean, boolean, boolean, boolean, text[], types.i_update_parameter_v3_field_connection[], uuid);
+
+-- 2) Drop types WITHOUT CASCADE
+DROP TYPE IF EXISTS types.i_update_parameter_v3_field_connection;
+
+-- 3) Recreate types
+CREATE TYPE types.i_update_parameter_v3_field_connection AS (
+    field_id uuid,
+    "default" boolean,
+    active boolean
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_update_parameter_v3(
+    parameter_id uuid,
+    name text,
+    description text,
+    active boolean,
+    simulation_parameter boolean,
+    document_parameter boolean,
+    persona_parameter boolean,
+    scenario_parameter boolean,
+    video_parameter boolean,
+    department_ids text[],
+    field_connections types.i_update_parameter_v3_field_connection[],
+    profile_id uuid
+)
+RETURNS TABLE (
+    parameter_exists boolean,
+    parameter_id uuid,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT 
+        parameter_id AS parameter_id,
+        name AS name,
+        description AS description,
+        active AS active,
+        simulation_parameter AS simulation_parameter,
+        document_parameter AS document_parameter,
+        persona_parameter AS persona_parameter,
+        scenario_parameter AS scenario_parameter,
+        video_parameter AS video_parameter,
+        COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
+        COALESCE(field_connections, ARRAY[]::types.i_update_parameter_v3_field_connection[]) AS field_connections,
+        profile_id AS profile_id
+),
+parameter_exists_check AS (
+    -- Check if parameter exists independently of access control
+    SELECT EXISTS(
+        SELECT 1 FROM parameters WHERE id = (SELECT parameter_id FROM params)
+    )::boolean as parameter_exists
+),
+user_profile AS (
     SELECT 
         p.role,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $12::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     -- Get parameter's current active department links
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-    FROM parameter_departments
-    WHERE parameter_id = $1::uuid AND active = true
+    FROM params x
+    JOIN parameter_departments ON parameter_departments.parameter_id = x.parameter_id AND parameter_departments.active = true
 ),
 user_departments AS (
     -- Get user's departments
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
-    FROM profile_departments
-    WHERE profile_id = $12::uuid AND active = true
+    FROM params x
+    JOIN profile_departments ON profile_departments.profile_id = x.profile_id AND profile_departments.active = true
 ),
 validate_update_permissions AS (
     -- Validate department permissions for update operation
@@ -34,40 +93,41 @@ validate_update_permissions AS (
 ),
 actor_profile AS (
     SELECT 
-        $12::uuid as profile_id,
+        (SELECT profile_id FROM params) as profile_id,
         up.actor_name
     FROM user_profile up
 ),
 update_parameter AS (
     UPDATE parameters SET
-        name = $2,
-        description = $3,
-        active = $4,
-        simulation_parameter = $5,
-        document_parameter = $6,
-        persona_parameter = $7,
-        scenario_parameter = $8,
-        video_parameter = $9,
+        name = (SELECT name FROM params),
+        description = (SELECT description FROM params),
+        active = (SELECT active FROM params),
+        simulation_parameter = (SELECT simulation_parameter FROM params),
+        document_parameter = (SELECT document_parameter FROM params),
+        persona_parameter = (SELECT persona_parameter FROM params),
+        scenario_parameter = (SELECT scenario_parameter FROM params),
+        video_parameter = (SELECT video_parameter FROM params),
         updated_at = NOW()
-    WHERE id = $1::uuid
-    RETURNING id::text as parameter_id
+    WHERE id = (SELECT parameter_id FROM params)
+    RETURNING id as parameter_id
 ),
 delete_existing_field_links AS (
     -- Soft delete all existing parameter_fields links (set active = false)
     UPDATE parameter_fields 
     SET active = false, updated_at = NOW()
-    WHERE parameter_id = $1::uuid
+    WHERE parameter_id = (SELECT parameter_id FROM params)
 ),
 field_connections_expanded AS (
-    -- Expand JSONB field_connections array
+    -- Expand composite type array field_connections
     SELECT 
-        (conn->>'field_id')::uuid as field_id,
-        COALESCE((conn->>'default')::boolean, false) as conn_default,
-        COALESCE((conn->>'active')::boolean, true) as conn_active,
-        ordinality as conn_order
-    FROM jsonb_array_elements(COALESCE($11::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(conn, ordinality)
-    WHERE COALESCE(jsonb_array_length(COALESCE($11::jsonb, '[]'::jsonb)), 0) > 0
-    AND (conn->>'field_id')::uuid IS NOT NULL
+        (x.field_connections[i]).field_id,
+        COALESCE((x.field_connections[i])."default", false) as conn_default,
+        COALESCE((x.field_connections[i]).active, true) as conn_active,
+        i as conn_order
+    FROM params x
+    CROSS JOIN generate_subscripts(x.field_connections, 1) AS i
+    WHERE array_length(x.field_connections, 1) > 0
+    AND (x.field_connections[i]).field_id IS NOT NULL
 ),
 ensure_one_default AS (
     -- Ensure exactly one default: if none specified, set first one; if multiple, keep first
@@ -99,7 +159,7 @@ link_fields_to_parameter AS (
     -- Link existing fields to parameter via parameter_fields junction with default and active flags
     INSERT INTO parameter_fields (parameter_id, field_id, "default", active, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        (SELECT parameter_id FROM params),
         fcf.field_id,
         fcf.conn_default,
         fcf.conn_active,
@@ -115,26 +175,31 @@ link_fields_to_parameter AS (
 delete_existing_parameter_departments AS (
     -- Delete all existing parameter_departments links
     DELETE FROM parameter_departments 
-    WHERE parameter_id = $1::uuid
+    WHERE parameter_id = (SELECT parameter_id FROM params)
 ),
 link_parameter_departments AS (
     -- Link departments to parameter if provided at parameter level
     INSERT INTO parameter_departments (parameter_id, department_id, active, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        (SELECT parameter_id FROM params),
         dept_id::uuid,
         true,
         NOW(),
         NOW()
-    FROM UNNEST($10::text[]) as dept_id
-    WHERE $10::text[] IS NOT NULL AND array_length($10::text[], 1) > 0
+    FROM params x
+    CROSS JOIN UNNEST(x.department_ids) as dept_id
+    WHERE array_length(x.department_ids, 1) > 0
     ON CONFLICT (parameter_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
-    )
+)
 SELECT 
-    up.parameter_id,
-    ap.actor_name
-FROM update_parameter up
+    (SELECT parameter_exists FROM parameter_exists_check)::boolean as parameter_exists,
+    COALESCE(up.parameter_id, (SELECT parameter_id FROM params))::uuid as parameter_id,
+    ap.actor_name::text as actor_name
+FROM parameter_exists_check pec
 CROSS JOIN actor_profile ap
+LEFT JOIN update_parameter up ON pec.parameter_exists = true
+$$;
 
+COMMIT;

@@ -1,65 +1,23 @@
 """Parameter detail endpoint."""
 
-import json
-import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (GetParameterDetailApiRequest,
+                           GetParameterDetailApiResponse,
+                           GetParameterDetailSqlParams,
+                           GetParameterDetailSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class ParameterDetailRequest(BaseModel):
-    parameterId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class ParameterItemDetail(BaseModel):
-    parameter_item_id: str
-    name: str
-    description: str
-    default: bool
-    usage_count: int
-    department_ids: list[str] | None
-
-
-class FieldConnection(BaseModel):
-    field_id: str
-    default: bool
-    active: bool
-
-
-class ParameterDetailResponse(BaseModel):
-    name: str
-    description: str
-    active: bool
-    simulation_parameter: bool
-    document_parameter: bool
-    persona_parameter: bool
-    scenario_parameter: bool
-    video_parameter: bool
-    department_ids: list[str] | None
-    parameter_items: list[ParameterItemDetail]  # For backward compatibility
-    department_mapping: dict[str, dict[str, Any]]
-    valid_department_ids: list[str]
-    field_mapping: dict[str, dict[str, Any]]
-    valid_field_ids: list[str]
-    field_connections: list[FieldConnection]
-    persona_ids: list[str]  # Linked persona IDs
-    persona_mapping: dict[str, dict[str, Any]]
-    valid_persona_ids: list[str]
-    document_ids: list[str]  # Linked document IDs
-    document_mapping: dict[str, dict[str, Any]]
-    valid_document_ids: list[str]
-    can_edit: bool
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/parameters/get_parameter_detail_complete.sql"
 
 
 router = APIRouter()
@@ -67,7 +25,7 @@ router = APIRouter()
 
 @router.post(
     "/detail",
-    response_model=ParameterDetailResponse,
+    response_model=GetParameterDetailApiResponse,
     dependencies=[
         audit_activity(
             "parameter.detail",
@@ -76,16 +34,16 @@ router = APIRouter()
     ],
 )
 async def get_parameter_detail(
-    request: ParameterDetailRequest,
+    request: GetParameterDetailApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> ParameterDetailResponse:
+) -> GetParameterDetailApiResponse:
     """Get detailed parameter information with nested items."""
     tags = ["parameters"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = request.model_dump()
+    body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
@@ -93,15 +51,9 @@ async def get_parameter_detail(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        # Ensure can_edit is present in cached data (for backward compatibility)
-        cached_data = cached["data"]
-        if "can_edit" not in cached_data:
-            cached_data["can_edit"] = (
-                False  # Default to False, will be overridden by SQL query
-            )
-        return ParameterDetailResponse.model_validate(cached_data)
+        return GetParameterDetailApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -113,189 +65,58 @@ async def get_parameter_detail(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/parameters/get_parameter_detail_complete.sql")
-        sql_params = (uuid.UUID(request.parameterId), profile_id)
-        result = await conn.fetchrow(
-            sql_query, uuid.UUID(request.parameterId), profile_id
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetParameterDetailSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
+
+        # Execute SQL with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetParameterDetailSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        # Get actor name from result
-        actor_name = result.get("actor_name") if result else None
+        # Check if parameter exists and has access using SQL result
+        # SQL now returns parameter_exists field to distinguish 404 vs 403
+        if not result.parameter_exists:
+            raise HTTPException(
+                status_code=404, detail=f"Parameter {request.parameter_id} not found"
+            )
+        
+        if not result.name:
+            # Parameter exists but user doesn't have access
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this parameter. It may be restricted to other departments.",
+            )
 
-        # Set audit context
-        if actor_name and result:
+        # Set audit context with data from SQL query
+        actor_name = result.actor_name
+        parameter_name = result.name
+        if actor_name:
             audit_set(
                 http_request,
                 actor={"name": actor_name, "id": profile_id},
-                parameter={"name": result.get("name", ""), "id": request.parameterId},
+                parameter={"name": parameter_name, "id": str(request.parameter_id)},
             )
 
-        if not result:
-            # Check if parameter exists but user doesn't have department access
-            parameter_exists_check = await conn.fetchval(
-                "SELECT EXISTS(SELECT 1 FROM parameters WHERE id = $1)",
-                uuid.UUID(request.parameterId),
-            )
-            if parameter_exists_check:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this parameter. It may be restricted to other departments.",
-                )
-            raise HTTPException(
-                status_code=404, detail=f"Parameter not found: {request.parameterId}"
-            )
+        # Convert SQL result to API response (no manual conversion needed - SQL returns arrays)
+        api_response = GetParameterDetailApiResponse.model_validate(result.model_dump())
 
-        # Parse parameter_items from JSONB
-        parameter_items: list[ParameterItemDetail] = []
-        items_data = result.get("parameter_items_json")
-        if isinstance(items_data, str):
-            items_data = json.loads(items_data)
-        if items_data and isinstance(items_data, list):
-            for item_data in items_data:
-                if isinstance(item_data, dict):
-                    dept_ids = None
-                    if item_data.get("department_ids"):
-                        dept_ids = [str(d) for d in item_data["department_ids"]]
-                    parameter_items.append(
-                        ParameterItemDetail(
-                            parameter_item_id=item_data.get("parameter_item_id", ""),
-                            name=item_data.get("name", ""),
-                            description=item_data.get("description", ""),
-                            default=item_data.get("default", False),
-                            usage_count=item_data.get("usage_count", 0),
-                            department_ids=dept_ids,
-                        )
-                    )
-
-        # Parse department_mapping from JSONB
-        department_mapping: dict[str, dict[str, Any]] = {}
-        dept_mapping_data = result.get("department_mapping")
-        if isinstance(dept_mapping_data, str):
-            dept_mapping_data = json.loads(dept_mapping_data)
-        if dept_mapping_data and isinstance(dept_mapping_data, dict):
-            department_mapping = dept_mapping_data
-
-        # Parse valid_department_ids from array
-        valid_department_ids: list[str] = []
-        valid_dept_ids_raw = result.get("valid_department_ids")
-        if valid_dept_ids_raw and isinstance(valid_dept_ids_raw, (list, tuple)):
-            valid_department_ids = [str(did) for did in valid_dept_ids_raw if did]
-
-        # Parse department_ids from array
-        department_ids = None
-        dept_ids_raw = result.get("department_ids")
-        if dept_ids_raw and isinstance(dept_ids_raw, (list, tuple)):
-            department_ids = [str(did) for did in dept_ids_raw if did]
-
-        # Parse field_mapping from JSONB
-        field_mapping: dict[str, dict[str, Any]] = {}
-        field_mapping_data = result.get("field_mapping")
-        if isinstance(field_mapping_data, str):
-            field_mapping_data = json.loads(field_mapping_data)
-        if field_mapping_data and isinstance(field_mapping_data, dict):
-            field_mapping = field_mapping_data
-
-        # Parse valid_field_ids from array
-        valid_field_ids: list[str] = []
-        valid_field_ids_raw = result.get("valid_field_ids")
-        if valid_field_ids_raw and isinstance(valid_field_ids_raw, (list, tuple)):
-            valid_field_ids = [str(fid) for fid in valid_field_ids_raw if fid]
-
-        # Parse field_connections from JSONB
-        field_connections: list[FieldConnection] = []
-        field_connections_data = result.get("field_connections_json")
-        if isinstance(field_connections_data, str):
-            field_connections_data = json.loads(field_connections_data)
-        if field_connections_data and isinstance(field_connections_data, list):
-            for conn_data in field_connections_data:
-                if isinstance(conn_data, dict):
-                    field_connections.append(
-                        FieldConnection(
-                            field_id=str(conn_data.get("field_id", "")),
-                            default=conn_data.get("default", False),
-                            active=conn_data.get("active", True),
-                        )
-                    )
-
-        # Parse persona_mapping from JSONB
-        persona_mapping: dict[str, dict[str, Any]] = {}
-        persona_mapping_data = result.get("persona_mapping")
-        if isinstance(persona_mapping_data, str):
-            persona_mapping_data = json.loads(persona_mapping_data)
-        if persona_mapping_data and isinstance(persona_mapping_data, dict):
-            persona_mapping = persona_mapping_data
-
-        # Parse valid_persona_ids from array
-        valid_persona_ids: list[str] = []
-        valid_persona_ids_raw = result.get("valid_persona_ids")
-        if valid_persona_ids_raw and isinstance(valid_persona_ids_raw, (list, tuple)):
-            valid_persona_ids = [str(pid) for pid in valid_persona_ids_raw if pid]
-
-        # Parse document_mapping from JSONB
-        document_mapping: dict[str, dict[str, Any]] = {}
-        document_mapping_data = result.get("document_mapping")
-        if isinstance(document_mapping_data, str):
-            document_mapping_data = json.loads(document_mapping_data)
-        if document_mapping_data and isinstance(document_mapping_data, dict):
-            document_mapping = document_mapping_data
-
-        # Parse valid_document_ids from array
-        valid_document_ids: list[str] = []
-        valid_document_ids_raw = result.get("valid_document_ids")
-        if valid_document_ids_raw and isinstance(valid_document_ids_raw, (list, tuple)):
-            valid_document_ids = [str(did) for did in valid_document_ids_raw if did]
-
-        # Parse persona_ids from array (linked personas)
-        persona_ids: list[str] = []
-        persona_ids_raw = result.get("persona_ids")
-        if persona_ids_raw and isinstance(persona_ids_raw, (list, tuple)):
-            persona_ids = [str(pid) for pid in persona_ids_raw if pid]
-
-        # Parse document_ids from array (linked documents)
-        document_ids: list[str] = []
-        document_ids_raw = result.get("document_ids")
-        if document_ids_raw and isinstance(document_ids_raw, (list, tuple)):
-            document_ids = [str(did) for did in document_ids_raw if did]
-
-        # Get can_edit from SQL (handles default objects and role checks)
-        can_edit = result.get("can_edit", False)
-
-        response_data = ParameterDetailResponse(
-            name=result["name"],
-            description=result["description"],
-            active=result["active"],
-            simulation_parameter=result.get("simulation_parameter", False),
-            document_parameter=result.get("document_parameter", False),
-            persona_parameter=result.get("persona_parameter", False),
-            scenario_parameter=result.get("scenario_parameter", False),
-            video_parameter=result.get("video_parameter", False),
-            department_ids=department_ids,
-            parameter_items=parameter_items,
-            department_mapping=department_mapping,
-            valid_department_ids=valid_department_ids,
-            field_mapping=field_mapping,
-            valid_field_ids=valid_field_ids,
-            field_connections=field_connections,
-            persona_ids=persona_ids,
-            persona_mapping=persona_mapping,
-            valid_persona_ids=valid_persona_ids,
-            document_ids=document_ids,
-            document_mapping=document_mapping,
-            valid_document_ids=valid_document_ids,
-            can_edit=can_edit,
-        )
-
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

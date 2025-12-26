@@ -1,24 +1,110 @@
 -- Get default parameter detail for creation
--- Parameters: $1 = profile_id (uuid)
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
-WITH resolve_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
-            ELSE $1::uuid
-        END as resolved_profile_id
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_get_parameter_new_v3(uuid);
+
+-- 2) Drop types WITHOUT CASCADE
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DROP TYPE IF EXISTS types.q_get_parameter_new_v3_department;
+DROP TYPE IF EXISTS types.q_get_parameter_new_v3_field;
+DROP TYPE IF EXISTS types.q_get_parameter_new_v3_item;
+DROP TYPE IF EXISTS types.q_get_parameter_new_v3_field_connection;
+DROP TYPE IF EXISTS types.q_get_parameter_new_v3_persona;
+DROP TYPE IF EXISTS types.q_get_parameter_new_v3_document;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_parameter_new_v3_department AS (
+    department_id uuid,  -- ✅ Native uuid type
+    name text,
+    description text
+);
+
+CREATE TYPE types.q_get_parameter_new_v3_field AS (
+    field_id uuid,  -- ✅ Native uuid type
+    name text,
+    description text,
+    usage_count bigint,
+    department_ids text[]  -- ✅ text[] for arrays
+);
+
+CREATE TYPE types.q_get_parameter_new_v3_item AS (
+    parameter_item_id uuid,  -- ✅ Native uuid type
+    name text,
+    description text,
+    "default" boolean,
+    usage_count bigint,
+    department_ids text[]  -- ✅ text[] for arrays
+);
+
+CREATE TYPE types.q_get_parameter_new_v3_field_connection AS (
+    field_id uuid,  -- ✅ Native uuid type
+    "default" boolean,
+    active boolean
+);
+
+CREATE TYPE types.q_get_parameter_new_v3_persona AS (
+    persona_id uuid,  -- ✅ Native uuid type
+    name text,
+    description text
+);
+
+CREATE TYPE types.q_get_parameter_new_v3_document AS (
+    document_id uuid,  -- ✅ Native uuid type
+    name text,
+    description text
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_parameter_new_v3(profile_id uuid)
+RETURNS TABLE (
+    actor_name text,
+    user_role text,
+    primary_department_id text,
+    name text,
+    description text,
+    active boolean,
+    simulation_parameter boolean,
+    document_parameter boolean,
+    persona_parameter boolean,
+    scenario_parameter boolean,
+    video_parameter boolean,
+    department_ids text[],
+    parameter_items types.q_get_parameter_new_v3_item[],
+    departments types.q_get_parameter_new_v3_department[],
+    valid_department_ids text[],
+    fields types.q_get_parameter_new_v3_field[],
+    valid_field_ids text[],
+    field_connections types.q_get_parameter_new_v3_field_connection[],
+    persona_ids text[],
+    personas types.q_get_parameter_new_v3_persona[],
+    valid_persona_ids text[],
+    document_ids text[],
+    documents types.q_get_parameter_new_v3_document[],
+    valid_document_ids text[],
+    can_edit boolean
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT profile_id AS profile_id
 ),
 actor_profile AS (
     SELECT 
-        $1::uuid as profile_id,
+        p.id as profile_id,
+        p.role,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $1::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 user_departments AS (
     SELECT DISTINCT pd.department_id
-    FROM resolve_profile_id rpi
-    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    FROM params x
+    JOIN profile_departments pd ON pd.profile_id = x.profile_id
     WHERE pd.active = true
 ),
 field_departments_for_filter AS (
@@ -60,7 +146,7 @@ parameter_departments_aggregated AS (
         JOIN default_parameter dp ON pd.parameter_id = dp.id
         WHERE pd.active = true
         UNION
-        -- Field-level departments ()
+        -- Field-level departments
         SELECT fd.department_id as dept_id
         FROM parameter_fields fp
         JOIN default_parameter dp ON fp.parameter_id = dp.id
@@ -68,11 +154,26 @@ parameter_departments_aggregated AS (
         WHERE fp.active = true
     ) combined_depts
 ),
+parameter_data AS (
+    SELECT 
+        p.name,
+        p.description,
+        p.active,
+        p.simulation_parameter,
+        p.document_parameter,
+        p.persona_parameter,
+        p.scenario_parameter,
+        p.video_parameter,
+        COALESCE(pda.department_ids, NULL) as department_ids
+    FROM parameters p
+    JOIN default_parameter dp ON p.id = dp.id
+    LEFT JOIN parameter_departments_aggregated pda ON true
+),
 -- All available fields (not just connected ones)
 all_fields_data AS (
     SELECT 
         f.id as field_id,
-        ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) as department_ids
+        COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), ARRAY[]::text[]) as department_ids
     FROM fields f
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE f.active = true
@@ -84,33 +185,56 @@ all_fields_with_usage AS (
         f.name,
         f.description,
         COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
-        COALESCE(afd.department_ids, NULL) as department_ids
+        COALESCE(afd.department_ids, ARRAY[]::text[]) as department_ids
     FROM fields f
     LEFT JOIN all_fields_data afd ON afd.field_id = f.id
     LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
     WHERE f.active = true
     GROUP BY f.id, f.name, f.description, afd.department_ids
 ),
--- Field mapping (all available fields)
-field_mapping_json AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            id::text,
-            jsonb_build_object(
-                'name', name,
-                'description', description,
-                'usage_count', usage_count,
-                'department_ids', department_ids
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping,
-    array_agg(id::text ORDER BY name) as ids
-    FROM all_fields_with_usage
+-- Parameter items from default parameter (fields connected to default parameter)
+field_departments_data AS (
+    SELECT 
+        f.id as parameter_item_id,
+        COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), ARRAY[]::text[]) as department_ids
+    FROM fields f
+    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
+    JOIN default_parameter dp ON fp.parameter_id = dp.id
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
+    GROUP BY f.id
 ),
--- Field connections JSON (empty for new parameter)
-field_connections_json AS (
-    SELECT '[]'::jsonb as connections
+parameter_items_with_usage AS (
+    SELECT 
+        f.id,
+        f.name,
+        f.description,
+        COALESCE(fp."default", false) as "default",
+        COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
+        COALESCE(fdd.department_ids, ARRAY[]::text[]) as department_ids
+    FROM fields f
+    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
+    JOIN default_parameter dp ON fp.parameter_id = dp.id
+    LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
+    LEFT JOIN field_departments_data fdd ON fdd.parameter_item_id = f.id
+    GROUP BY f.id, f.name, f.description, fp."default", fdd.department_ids
+),
+-- Valid departments (user's departments)
+valid_depts AS (
+    SELECT 
+        d.id as department_id,
+        d.title as name,
+        COALESCE(d.description, '') as description
+    FROM params x
+    JOIN profile_departments pd ON pd.profile_id = x.profile_id
+    JOIN departments d ON d.id = pd.department_id
+    WHERE d.active = true
+),
+primary_department_id AS (
+    SELECT department_id::text
+    FROM params x
+    JOIN profile_departments pd ON pd.profile_id = x.profile_id
+    WHERE pd.is_primary = TRUE
+    LIMIT 1
 ),
 -- Personas filtered by user's available departments
 filtered_personas AS (
@@ -129,20 +253,6 @@ filtered_personas AS (
         )
     )
 ),
-available_personas_mapping AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            per.id::text,
-            jsonb_build_object(
-                'name', per.name,
-                'description', per.description
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping,
-    array_agg(per.id::text ORDER BY per.name) as ids
-    FROM filtered_personas per
-),
 -- Documents filtered by user's available departments
 filtered_documents AS (
     SELECT DISTINCT d.id, d.name, COALESCE(d.description, '') as description
@@ -159,122 +269,100 @@ filtered_documents AS (
             WHERE dd2.document_id = d.id AND dd2.active = true
         )
     )
-),
-available_documents_mapping AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            d.id::text,
-            jsonb_build_object(
-                'name', d.name,
-                'description', d.description
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping,
-    array_agg(d.id::text ORDER BY d.name) as ids
-    FROM filtered_documents d
-),
-parameter_data AS (
-    SELECT 
-        p.name,
-        p.description,
-        p.active,
-        p.simulation_parameter,
-        p.document_parameter,
-        p.persona_parameter,
-        p.scenario_parameter,
-        p.video_parameter,
-        COALESCE(pda.department_ids, NULL) as department_ids
-    FROM parameters p
-    JOIN default_parameter dp ON p.id = dp.id
-    LEFT JOIN parameter_departments_aggregated pda ON true
-),
-field_departments_data AS (
-    SELECT 
-        f.id as parameter_item_id,
-        ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) as department_ids
-    FROM fields f
-    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-    JOIN default_parameter dp ON fp.parameter_id = dp.id
-    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    GROUP BY f.id
-),
-parameter_items_with_usage AS (
-    SELECT 
-        f.id,
-        f.name,
-        f.description,
-        COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
-        COALESCE(fdd.department_ids, NULL) as department_ids
-    FROM fields f
-    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-    JOIN default_parameter dp ON fp.parameter_id = dp.id
-    LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
-    LEFT JOIN field_departments_data fdd ON fdd.parameter_item_id = f.id
-    GROUP BY f.id, f.name, f.description, fdd.department_ids
-),
-items_json AS (
-    SELECT COALESCE(
-        jsonb_agg(
-            jsonb_build_object(
-                'parameter_item_id', id::text,
-                'name', name,
-                'description', description,
-                'usage_count', usage_count,
-                'department_ids', department_ids
-            )
-            ORDER BY name
-        ),
-        '[]'::jsonb
-    ) as items
-    FROM parameter_items_with_usage
-),
-valid_depts AS (
-    SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                d.id::text,
-                jsonb_build_object(
-                    'name', d.title,
-                    'description', COALESCE(d.description, '')
-                )
-            ),
-            '{}'::jsonb
-        ) as dept_mapping,
-        array_agg(d.id::text ORDER BY d.title) as dept_ids
-    FROM departments d
-    JOIN resolve_profile_id rpi ON true
-    JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
-),
-primary_department_id AS (
-    SELECT department_id::text
-    FROM resolve_profile_id rpi
-    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
-    WHERE pd.is_primary = TRUE
-    LIMIT 1
 )
 SELECT 
-    p.*,
-    ij.items as parameter_items_json,
-    vd.dept_mapping as department_mapping,
-    vd.dept_ids as valid_department_ids,
-    pdi.department_id as primary_department_id,
-    fmj.mapping as field_mapping,
-    fmj.ids as valid_field_ids,
-    fcj.connections as field_connections_json,
-    apm.mapping as persona_mapping,
-    apm.ids as valid_persona_ids,
-    adm.mapping as document_mapping,
-    adm.ids as valid_document_ids,
-    ap.actor_name
-FROM parameter_data p
-CROSS JOIN items_json ij
-CROSS JOIN valid_depts vd
+    ap.actor_name::text as actor_name,
+    ap.role::text as user_role,
+    COALESCE(pdi.department_id, NULL)::text as primary_department_id,
+    pd.name::text as name,
+    pd.description::text as description,
+    pd.active::boolean as active,
+    pd.simulation_parameter::boolean as simulation_parameter,
+    pd.document_parameter::boolean as document_parameter,
+    pd.persona_parameter::boolean as persona_parameter,
+    pd.scenario_parameter::boolean as scenario_parameter,
+    pd.video_parameter::boolean as video_parameter,
+    pd.department_ids as department_ids,
+    -- Parameter items (from default parameter)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (piwu.id, piwu.name, piwu.description, piwu."default", piwu.usage_count, piwu.department_ids)::types.q_get_parameter_new_v3_item
+            ORDER BY piwu.name
+        ) FROM parameter_items_with_usage piwu),
+        '{}'::types.q_get_parameter_new_v3_item[]
+    ) as parameter_items,
+    -- Departments (user's valid departments)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (vd.department_id, vd.name, vd.description)::types.q_get_parameter_new_v3_department
+            ORDER BY vd.name
+        ) FROM valid_depts vd),
+        '{}'::types.q_get_parameter_new_v3_department[]
+    ) as departments,
+    -- Valid department IDs
+    COALESCE(
+        (SELECT ARRAY_AGG(vd.department_id::text ORDER BY vd.department_id)
+         FROM valid_depts vd),
+        ARRAY[]::text[]
+    ) as valid_department_ids,
+    -- Fields (all available fields)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (afwu.id, afwu.name, afwu.description, afwu.usage_count, afwu.department_ids)::types.q_get_parameter_new_v3_field
+            ORDER BY afwu.name
+        ) FROM all_fields_with_usage afwu),
+        '{}'::types.q_get_parameter_new_v3_field[]
+    ) as fields,
+    -- Valid field IDs
+    COALESCE(
+        (SELECT ARRAY_AGG(afwu.id::text ORDER BY afwu.id)
+         FROM all_fields_with_usage afwu),
+        ARRAY[]::text[]
+    ) as valid_field_ids,
+    -- Field connections (empty for new parameter)
+    '{}'::types.q_get_parameter_new_v3_field_connection[] as field_connections,
+    -- Persona IDs (empty for new)
+    ARRAY[]::text[] as persona_ids,
+    -- Personas (filtered by user's departments)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (fp.id, fp.name, fp.description)::types.q_get_parameter_new_v3_persona
+            ORDER BY fp.name
+        ) FROM filtered_personas fp),
+        '{}'::types.q_get_parameter_new_v3_persona[]
+    ) as personas,
+    -- Valid persona IDs
+    COALESCE(
+        (SELECT ARRAY_AGG(fp.id::text ORDER BY fp.id)
+         FROM filtered_personas fp),
+        ARRAY[]::text[]
+    ) as valid_persona_ids,
+    -- Document IDs (empty for new)
+    ARRAY[]::text[] as document_ids,
+    -- Documents (filtered by user's departments)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (fd.id, fd.name, fd.description)::types.q_get_parameter_new_v3_document
+            ORDER BY fd.name
+        ) FROM filtered_documents fd),
+        '{}'::types.q_get_parameter_new_v3_document[]
+    ) as documents,
+    -- Valid document IDs
+    COALESCE(
+        (SELECT ARRAY_AGG(fd.id::text ORDER BY fd.id)
+         FROM filtered_documents fd),
+        ARRAY[]::text[]
+    ) as valid_document_ids,
+    -- Can edit (based on role and default parameter logic)
+    CASE 
+        WHEN (pd.department_ids IS NULL OR array_length(pd.department_ids, 1) = 0) AND ap.role != 'superadmin' THEN false::boolean
+        WHEN ap.role = 'superadmin' THEN true::boolean
+        WHEN ap.role IN ('admin', 'instructional') THEN true::boolean
+        ELSE false::boolean
+    END as can_edit
+FROM actor_profile ap
+CROSS JOIN parameter_data pd
 LEFT JOIN primary_department_id pdi ON true
-CROSS JOIN field_mapping_json fmj
-CROSS JOIN field_connections_json fcj
-CROSS JOIN available_personas_mapping apm
-CROSS JOIN available_documents_mapping adm
-CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;
