@@ -1674,7 +1674,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateSimulationRequest"
+                "$ref": "#/components/schemas/CreateSimulationApiRequest"
               }
             }
           }
@@ -1685,7 +1685,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateSimulationResponse"
+                  "$ref": "#/components/schemas/CreateSimulationApiResponse"
                 }
               }
             }
@@ -1755,7 +1755,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateSimulationRequest"
+                "$ref": "#/components/schemas/UpdateSimulationApiRequest"
               }
             }
           }
@@ -1766,7 +1766,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateSimulationResponse"
+                  "$ref": "#/components/schemas/UpdateSimulationApiResponse"
                 }
               }
             }
@@ -1836,7 +1836,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DuplicateSimulationRequest"
+                "$ref": "#/components/schemas/DuplicateSimulationApiRequest"
               }
             }
           }
@@ -1847,7 +1847,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DuplicateSimulationResponse"
+                  "$ref": "#/components/schemas/DuplicateSimulationApiResponse"
                 }
               }
             }
@@ -1917,7 +1917,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteSimulationRequest"
+                "$ref": "#/components/schemas/DeleteSimulationApiRequest"
               }
             }
           }
@@ -1928,7 +1928,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteSimulationResponse"
+                  "$ref": "#/components/schemas/DeleteSimulationApiResponse"
                 }
               }
             }
@@ -25848,7 +25848,7 @@
         "title": "CreateScenarioResponse",
         "description": "Response from create operation."
       },
-      "CreateSimulationRequest": {
+      "CreateSimulationApiRequest": {
         "properties": {
           "title": {
             "type": "string",
@@ -25858,20 +25858,6 @@
             "type": "string",
             "title": "Description"
           },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
           "active": {
             "type": "boolean",
             "title": "Active"
@@ -25880,11 +25866,110 @@
             "type": "boolean",
             "title": "Practice Simulation"
           },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_active_flags": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Active Flags"
+          },
+          "scenario_hints_enabled": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Hints Enabled"
+          },
+          "scenario_rubric_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Rubric Ids"
+          },
+          "scenario_time_limit_seconds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Scenario Time Limit Seconds"
+          },
+          "scenario_audio_enabled": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Audio Enabled"
+          },
+          "scenario_text_enabled": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Text Enabled"
+          },
           "simulation_text_agent_id": {
             "type": "string",
+            "format": "uuid",
             "title": "Simulation Text Agent Id"
           },
           "simulation_voice_agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Voice Agent Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "active",
+          "practice_simulation",
+          "department_ids",
+          "scenario_ids",
+          "scenario_active_flags",
+          "scenario_hints_enabled",
+          "scenario_rubric_ids",
+          "scenario_time_limit_seconds",
+          "scenario_audio_enabled",
+          "scenario_text_enabled",
+          "simulation_text_agent_id",
+          "simulation_voice_agent_id"
+        ],
+        "title": "CreateSimulationApiRequest"
+      },
+      "CreateSimulationApiResponse": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "actor_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -25893,94 +25978,11 @@
                 "type": "null"
               }
             ],
-            "title": "Simulation Voice Agent Id"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "rubric_id": {
-            "type": "string",
-            "title": "Rubric Id",
-            "default": ""
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioInRequest"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "content_items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v3__simulations__create__ContentItemInRequest"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content Items"
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "title",
-          "description",
-          "department_ids",
-          "active",
-          "practice_simulation",
-          "simulation_text_agent_id"
-        ],
-        "title": "CreateSimulationRequest",
-        "description": "Request to create a simulation."
-      },
-      "CreateSimulationResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "simulationId": {
-            "type": "string",
-            "title": "Simulationid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "simulationId",
-          "message"
-        ],
-        "title": "CreateSimulationResponse",
-        "description": "Response from create simulation."
+        "title": "CreateSimulationApiResponse"
       },
       "CreateStaffDataRequest": {
         "properties": {
@@ -27488,38 +27490,69 @@
         "title": "DeleteScenarioResponse",
         "description": "Response from delete operation."
       },
-      "DeleteSimulationRequest": {
+      "DeleteSimulationApiRequest": {
         "properties": {
-          "simulationId": {
+          "simulation_id": {
             "type": "string",
-            "title": "Simulationid"
+            "format": "uuid",
+            "title": "Simulation Id"
           }
         },
         "type": "object",
         "required": [
-          "simulationId"
+          "simulation_id"
         ],
-        "title": "DeleteSimulationRequest",
-        "description": "Request to delete simulation."
+        "title": "DeleteSimulationApiRequest"
       },
-      "DeleteSimulationResponse": {
+      "DeleteSimulationApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Count"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteSimulationResponse",
-        "description": "Response from delete simulation."
+        "title": "DeleteSimulationApiResponse"
       },
       "DepartmentDetailRequest": {
         "properties": {
@@ -28772,43 +28805,59 @@
         "title": "DuplicateScenarioResponse",
         "description": "Response from duplicate operation."
       },
-      "DuplicateSimulationRequest": {
+      "DuplicateSimulationApiRequest": {
         "properties": {
-          "simulationId": {
+          "simulation_id": {
             "type": "string",
-            "title": "Simulationid"
+            "format": "uuid",
+            "title": "Simulation Id"
           }
         },
         "type": "object",
         "required": [
-          "simulationId"
+          "simulation_id"
         ],
-        "title": "DuplicateSimulationRequest",
-        "description": "Request to duplicate simulation."
+        "title": "DuplicateSimulationApiRequest"
       },
-      "DuplicateSimulationResponse": {
+      "DuplicateSimulationApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
           },
-          "simulationId": {
-            "type": "string",
-            "title": "Simulationid"
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "simulationId",
-          "message"
-        ],
-        "title": "DuplicateSimulationResponse",
-        "description": "Response from duplicate simulation."
+        "title": "DuplicateSimulationApiResponse"
       },
       "DynamicRubric": {
         "properties": {
@@ -49165,25 +49214,6 @@
         "title": "ScenarioGenerationProgressPayload",
         "description": "Response indicating progress in scenario generation."
       },
-      "ScenarioInRequest": {
-        "properties": {
-          "scenario_id": {
-            "type": "string",
-            "title": "Scenario Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          }
-        },
-        "type": "object",
-        "required": [
-          "scenario_id"
-        ],
-        "title": "ScenarioInRequest",
-        "description": "Scenario in request format."
-      },
       "ScenarioNewRequest": {
         "properties": {
           "departmentIds": {
@@ -55811,11 +55841,12 @@
         "title": "UpdateSettingsResponse",
         "description": "Response from update settings."
       },
-      "UpdateSimulationRequest": {
+      "UpdateSimulationApiRequest": {
         "properties": {
-          "simulationId": {
+          "simulation_id": {
             "type": "string",
-            "title": "Simulationid"
+            "format": "uuid",
+            "title": "Simulation Id"
           },
           "title": {
             "type": "string",
@@ -55825,20 +55856,6 @@
             "type": "string",
             "title": "Description"
           },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
           "active": {
             "type": "boolean",
             "title": "Active"
@@ -55847,51 +55864,158 @@
             "type": "boolean",
             "title": "Practice Simulation"
           },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_active_flags": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Active Flags"
+          },
+          "video_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Video Ids"
+          },
+          "video_active_flags": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Video Active Flags"
+          },
+          "scenario_hints_enabled": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Hints Enabled"
+          },
+          "scenario_rubric_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Rubric Ids"
+          },
+          "scenario_time_limit_seconds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Scenario Time Limit Seconds"
+          },
+          "scenario_audio_enabled": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Audio Enabled"
+          },
+          "scenario_text_enabled": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Text Enabled"
+          },
+          "video_show_problem_statement": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Video Show Problem Statement"
+          },
+          "video_show_objectives": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Video Show Objectives"
+          },
+          "video_show_image": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Video Show Image"
+          },
           "hint_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Hint Agent Id"
           },
           "grade_text_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Grade Text Agent Id"
           },
           "grade_voice_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Grade Voice Agent Id"
           },
           "simulation_text_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Simulation Text Agent Id"
           },
           "simulation_voice_agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Voice Agent Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "title",
+          "description",
+          "active",
+          "practice_simulation",
+          "department_ids",
+          "scenario_ids",
+          "scenario_active_flags",
+          "video_ids",
+          "video_active_flags",
+          "scenario_hints_enabled",
+          "scenario_rubric_ids",
+          "scenario_time_limit_seconds",
+          "scenario_audio_enabled",
+          "scenario_text_enabled",
+          "video_show_problem_statement",
+          "video_show_objectives",
+          "video_show_image",
+          "hint_agent_id",
+          "grade_text_agent_id",
+          "grade_voice_agent_id",
+          "simulation_text_agent_id",
+          "simulation_voice_agent_id"
+        ],
+        "title": "UpdateSimulationApiRequest"
+      },
+      "UpdateSimulationApiResponse": {
+        "properties": {
+          "actor_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -55900,89 +56024,11 @@
                 "type": "null"
               }
             ],
-            "title": "Simulation Voice Agent Id"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "rubric_id": {
-            "type": "string",
-            "title": "Rubric Id",
-            "default": ""
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ScenarioInRequest"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "content_items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v3__simulations__update__ContentItemInRequest"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content Items"
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "simulationId",
-          "title",
-          "description",
-          "department_ids",
-          "active",
-          "practice_simulation"
-        ],
-        "title": "UpdateSimulationRequest",
-        "description": "Request to update simulation."
-      },
-      "UpdateSimulationResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateSimulationResponse",
-        "description": "Response from update simulation."
+        "title": "UpdateSimulationApiResponse"
       },
       "ValidationError": {
         "properties": {
@@ -64412,175 +64458,6 @@
         ],
         "title": "ScenarioDetailResponse",
         "description": "Response for scenario detail."
-      },
-      "app__api__v3__simulations__create__ContentItemInRequest": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          },
-          "hints_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hints Enabled"
-          },
-          "audio_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Enabled"
-          },
-          "text_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Text Enabled"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "time_limit_seconds": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit Seconds"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "id"
-        ],
-        "title": "ContentItemInRequest",
-        "description": "Content item (scenario) in request format."
-      },
-      "app__api__v3__simulations__update__ContentItemInRequest": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          },
-          "hints_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hints Enabled"
-          },
-          "copy_paste_allowed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Copy Paste Allowed"
-          },
-          "audio_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Enabled"
-          },
-          "text_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Text Enabled"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "time_limit_seconds": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit Seconds"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "id"
-        ],
-        "title": "ContentItemInRequest",
-        "description": "Content item (scenario) in request format."
       },
       "app__api__v3__staff__data__DepartmentMappingItem": {
         "properties": {

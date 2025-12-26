@@ -7953,48 +7953,49 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * CreateSimulationRequest
-         * @description Request to create a simulation.
-         */
-        CreateSimulationRequest: {
+        /** CreateSimulationApiRequest */
+        CreateSimulationApiRequest: {
             /** Title */
             title: string;
             /** Description */
             description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
             /** Active */
             active: boolean;
             /** Practice Simulation */
             practice_simulation: boolean;
-            /** Simulation Text Agent Id */
-            simulation_text_agent_id: string;
-            /** Simulation Voice Agent Id */
-            simulation_voice_agent_id?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /**
-             * Rubric Id
-             * @default
-             */
-            rubric_id: string;
+            /** Department Ids */
+            department_ids: string[];
             /** Scenario Ids */
-            scenario_ids?: string[] | components["schemas"]["ScenarioInRequest"][] | null;
-            /** Content Items */
-            content_items?: components["schemas"]["app__api__v3__simulations__create__ContentItemInRequest"][] | null;
+            scenario_ids: string[];
+            /** Scenario Active Flags */
+            scenario_active_flags: boolean[];
+            /** Scenario Hints Enabled */
+            scenario_hints_enabled: boolean[];
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids: string[];
+            /** Scenario Time Limit Seconds */
+            scenario_time_limit_seconds: number[];
+            /** Scenario Audio Enabled */
+            scenario_audio_enabled: boolean[];
+            /** Scenario Text Enabled */
+            scenario_text_enabled: boolean[];
+            /**
+             * Simulation Text Agent Id
+             * Format: uuid
+             */
+            simulation_text_agent_id: string;
+            /**
+             * Simulation Voice Agent Id
+             * Format: uuid
+             */
+            simulation_voice_agent_id: string;
         };
-        /**
-         * CreateSimulationResponse
-         * @description Response from create simulation.
-         */
-        CreateSimulationResponse: {
-            /** Success */
-            success: boolean;
-            /** Simulationid */
-            simulationId: string;
-            /** Message */
-            message: string;
+        /** CreateSimulationApiResponse */
+        CreateSimulationApiResponse: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * CreateStaffDataRequest
@@ -8573,23 +8574,24 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DeleteSimulationRequest
-         * @description Request to delete simulation.
-         */
-        DeleteSimulationRequest: {
-            /** Simulationid */
-            simulationId: string;
+        /** DeleteSimulationApiRequest */
+        DeleteSimulationApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
         };
-        /**
-         * DeleteSimulationResponse
-         * @description Response from delete simulation.
-         */
-        DeleteSimulationResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** DeleteSimulationApiResponse */
+        DeleteSimulationApiResponse: {
+            /** Deleted */
+            deleted?: boolean | null;
+            /** Usage Count */
+            usage_count?: number | null;
+            /** Title */
+            title?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * DepartmentDetailRequest
@@ -9097,25 +9099,22 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DuplicateSimulationRequest
-         * @description Request to duplicate simulation.
-         */
-        DuplicateSimulationRequest: {
-            /** Simulationid */
-            simulationId: string;
+        /** DuplicateSimulationApiRequest */
+        DuplicateSimulationApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
         };
-        /**
-         * DuplicateSimulationResponse
-         * @description Response from duplicate simulation.
-         */
-        DuplicateSimulationResponse: {
-            /** Success */
-            success: boolean;
-            /** Simulationid */
-            simulationId: string;
-            /** Message */
-            message: string;
+        /** DuplicateSimulationApiResponse */
+        DuplicateSimulationApiResponse: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** DynamicRubric */
         DynamicRubric: {
@@ -14969,19 +14968,6 @@ export interface components {
             trace_id?: string | null;
         };
         /**
-         * ScenarioInRequest
-         * @description Scenario in request format.
-         */
-        ScenarioInRequest: {
-            /** Scenario Id */
-            scenario_id: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /**
          * ScenarioNewRequest
          * @description Request to get default scenario details.
          */
@@ -17413,54 +17399,77 @@ export interface components {
             /** Settings Id */
             settings_id: string;
         };
-        /**
-         * UpdateSimulationRequest
-         * @description Request to update simulation.
-         */
-        UpdateSimulationRequest: {
-            /** Simulationid */
-            simulationId: string;
+        /** UpdateSimulationApiRequest */
+        UpdateSimulationApiRequest: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
             /** Title */
             title: string;
             /** Description */
             description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
             /** Active */
             active: boolean;
             /** Practice Simulation */
             practice_simulation: boolean;
-            /** Hint Agent Id */
-            hint_agent_id?: string | null;
-            /** Grade Text Agent Id */
-            grade_text_agent_id?: string | null;
-            /** Grade Voice Agent Id */
-            grade_voice_agent_id?: string | null;
-            /** Simulation Text Agent Id */
-            simulation_text_agent_id?: string | null;
-            /** Simulation Voice Agent Id */
-            simulation_voice_agent_id?: string | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /**
-             * Rubric Id
-             * @default
-             */
-            rubric_id: string;
+            /** Department Ids */
+            department_ids: string[];
             /** Scenario Ids */
-            scenario_ids?: string[] | components["schemas"]["ScenarioInRequest"][] | null;
-            /** Content Items */
-            content_items?: components["schemas"]["app__api__v3__simulations__update__ContentItemInRequest"][] | null;
+            scenario_ids: string[];
+            /** Scenario Active Flags */
+            scenario_active_flags: boolean[];
+            /** Video Ids */
+            video_ids: string[];
+            /** Video Active Flags */
+            video_active_flags: boolean[];
+            /** Scenario Hints Enabled */
+            scenario_hints_enabled: boolean[];
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids: string[];
+            /** Scenario Time Limit Seconds */
+            scenario_time_limit_seconds: number[];
+            /** Scenario Audio Enabled */
+            scenario_audio_enabled: boolean[];
+            /** Scenario Text Enabled */
+            scenario_text_enabled: boolean[];
+            /** Video Show Problem Statement */
+            video_show_problem_statement: boolean[];
+            /** Video Show Objectives */
+            video_show_objectives: boolean[];
+            /** Video Show Image */
+            video_show_image: boolean[];
+            /**
+             * Hint Agent Id
+             * Format: uuid
+             */
+            hint_agent_id: string;
+            /**
+             * Grade Text Agent Id
+             * Format: uuid
+             */
+            grade_text_agent_id: string;
+            /**
+             * Grade Voice Agent Id
+             * Format: uuid
+             */
+            grade_voice_agent_id: string;
+            /**
+             * Simulation Text Agent Id
+             * Format: uuid
+             */
+            simulation_text_agent_id: string;
+            /**
+             * Simulation Voice Agent Id
+             * Format: uuid
+             */
+            simulation_voice_agent_id: string;
         };
-        /**
-         * UpdateSimulationResponse
-         * @description Response from update simulation.
-         */
-        UpdateSimulationResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** UpdateSimulationApiResponse */
+        UpdateSimulationApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -20448,58 +20457,6 @@ export interface components {
             } | null;
         };
         /**
-         * ContentItemInRequest
-         * @description Content item (scenario) in request format.
-         */
-        app__api__v3__simulations__create__ContentItemInRequest: {
-            /** Type */
-            type: string;
-            /** Id */
-            id: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /** Hints Enabled */
-            hints_enabled?: boolean | null;
-            /** Audio Enabled */
-            audio_enabled?: boolean | null;
-            /** Text Enabled */
-            text_enabled?: boolean | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Time Limit Seconds */
-            time_limit_seconds?: number | null;
-        };
-        /**
-         * ContentItemInRequest
-         * @description Content item (scenario) in request format.
-         */
-        app__api__v3__simulations__update__ContentItemInRequest: {
-            /** Type */
-            type: string;
-            /** Id */
-            id: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /** Hints Enabled */
-            hints_enabled?: boolean | null;
-            /** Copy Paste Allowed */
-            copy_paste_allowed?: boolean | null;
-            /** Audio Enabled */
-            audio_enabled?: boolean | null;
-            /** Text Enabled */
-            text_enabled?: boolean | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Time Limit Seconds */
-            time_limit_seconds?: number | null;
-        };
-        /**
          * DepartmentMappingItem
          * @description Department mapping item.
          */
@@ -21302,7 +21259,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateSimulationRequest"];
+                "application/json": components["schemas"]["CreateSimulationApiRequest"];
             };
         };
         responses: {
@@ -21312,7 +21269,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateSimulationResponse"];
+                    "application/json": components["schemas"]["CreateSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21338,7 +21295,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateSimulationRequest"];
+                "application/json": components["schemas"]["UpdateSimulationApiRequest"];
             };
         };
         responses: {
@@ -21348,7 +21305,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateSimulationResponse"];
+                    "application/json": components["schemas"]["UpdateSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21374,7 +21331,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DuplicateSimulationRequest"];
+                "application/json": components["schemas"]["DuplicateSimulationApiRequest"];
             };
         };
         responses: {
@@ -21384,7 +21341,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DuplicateSimulationResponse"];
+                    "application/json": components["schemas"]["DuplicateSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21410,7 +21367,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteSimulationRequest"];
+                "application/json": components["schemas"]["DeleteSimulationApiRequest"];
             };
         };
         responses: {
@@ -21420,7 +21377,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteSimulationResponse"];
+                    "application/json": components["schemas"]["DeleteSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */

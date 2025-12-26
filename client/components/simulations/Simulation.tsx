@@ -1307,83 +1307,95 @@ export default function Simulation({
 
       // Convert unified content items to API format
       // Separate scenarios and videos while preserving order
-      interface ContentItemPayload {
-        type: "scenario";
-        id: string;
-        active: boolean;
-        hints_enabled?: boolean;
-        copy_paste_allowed?: boolean;
-        audio_enabled?: boolean;
-        text_enabled?: boolean;
-        rubric_id?: string | null;
-        time_limit_seconds?: number | null;
-      }
+      // Extract flat arrays from content items (scenarios only)
+      const scenarioItems = contentItems.filter(
+        (item): item is ContentItem & { type: "scenario" } =>
+          item.type === "scenario",
+      );
 
-      const contentItemsPayload: ContentItemPayload[] = contentItems
-        .filter(
-          (item): item is ContentItem & { type: "scenario" } =>
-            item.type === "scenario",
-        )
-        .map((item) => {
-          const key = `${item.type}:${item.id}`;
-          const switchState = contentSwitchStates[key];
-          const baseItem: ContentItemPayload = {
-            type: item.type,
-            id: item.id,
-            active: contentActiveStates[key] ?? item.active,
-          };
+      const scenario_ids: string[] = [];
+      const scenario_active_flags: boolean[] = [];
+      const scenario_hints_enabled: boolean[] = [];
+      const scenario_audio_enabled: boolean[] = [];
+      const scenario_text_enabled: boolean[] = [];
+      const scenario_rubric_ids: string[] = [];
+      const scenario_time_limit_seconds: number[] = [];
 
-          baseItem.hints_enabled =
-            switchState?.hints_enabled ?? item.hints_enabled ?? false;
-          baseItem.copy_paste_allowed =
-            switchState?.copy_paste_allowed ?? item.copy_paste_allowed ?? false;
-          baseItem.audio_enabled =
-            switchState?.audio_enabled ?? item.audio_enabled ?? false;
-          baseItem.text_enabled =
-            switchState?.text_enabled ?? item.text_enabled ?? true;
-          baseItem.rubric_id = switchState?.rubric_id ?? item.rubric_id ?? null;
-          baseItem.time_limit_seconds =
-            switchState?.time_limit_seconds ?? item.time_limit_seconds ?? null;
+      scenarioItems.forEach((item) => {
+        const key = `${item.type}:${item.id}`;
+        const switchState = contentSwitchStates[key];
+        const active = contentActiveStates[key] ?? item.active;
 
-          return baseItem;
-        });
+        scenario_ids.push(item.id);
+        scenario_active_flags.push(active);
+        scenario_hints_enabled.push(
+          switchState?.hints_enabled ?? item.hints_enabled ?? false,
+        );
+        scenario_audio_enabled.push(
+          switchState?.audio_enabled ?? item.audio_enabled ?? false,
+        );
+        scenario_text_enabled.push(
+          switchState?.text_enabled ?? item.text_enabled ?? true,
+        );
+        // Convert null/undefined to empty string for UUID, or use "00000000-0000-0000-0000-000000000000"
+        const rubricId =
+          switchState?.rubric_id ?? item.rubric_id ?? null;
+        scenario_rubric_ids.push(rubricId || "00000000-0000-0000-0000-000000000000");
+        // Convert null/undefined to 0 for time limit
+        const timeLimit =
+          switchState?.time_limit_seconds ?? item.time_limit_seconds ?? null;
+        scenario_time_limit_seconds.push(timeLimit ?? 0);
+      });
 
       if (targetSimulationId) {
-        // UPDATE mode - unified content items
+        // UPDATE mode - flat arrays
         const updatePayload = {
-          simulationId: targetSimulationId,
+          simulation_id: targetSimulationId,
           title: formData?.title || "",
           description: formData?.description ?? "",
           department_ids: finalDepartmentIds,
           active: formData?.active ?? true,
           practice_simulation: formData?.practiceSimulation || false,
-          hint_agent_id: formData?.hint_agent_id || null,
-          grade_text_agent_id: formData?.grade_text_agent_id || null,
-          grade_voice_agent_id: formData?.grade_voice_agent_id || null,
-          simulation_text_agent_id: formData?.simulation_text_agent_id || null,
+          scenario_ids,
+          scenario_active_flags,
+          video_ids: [] as string[], // Empty for now
+          video_active_flags: [] as boolean[], // Empty for now
+          scenario_hints_enabled,
+          scenario_rubric_ids,
+          scenario_time_limit_seconds,
+          scenario_audio_enabled,
+          scenario_text_enabled,
+          video_show_problem_statement: [] as boolean[], // Empty for now
+          video_show_objectives: [] as boolean[], // Empty for now
+          video_show_image: [] as boolean[], // Empty for now
+          hint_agent_id: formData?.hint_agent_id || "00000000-0000-0000-0000-000000000000",
+          grade_text_agent_id: formData?.grade_text_agent_id || "00000000-0000-0000-0000-000000000000",
+          grade_voice_agent_id: formData?.grade_voice_agent_id || "00000000-0000-0000-0000-000000000000",
+          simulation_text_agent_id: formData?.simulation_text_agent_id || "00000000-0000-0000-0000-000000000000",
           simulation_voice_agent_id:
-            formData?.simulation_voice_agent_id || null,
-          rubric_id: "", // Deprecated: kept for backward compatibility
-          time_limit: null, // Deprecated: kept for backward compatibility
-          content_items: contentItemsPayload,
+            formData?.simulation_voice_agent_id || "00000000-0000-0000-0000-000000000000",
         };
 
         await handleUpdateSimulation(updatePayload);
         toast.success("Simulation updated successfully!");
       } else {
-        // CREATE mode - unified content items
+        // CREATE mode - flat arrays
         const createPayload = {
           title: formData?.title || "",
           description: formData?.description ?? "",
           department_ids: finalDepartmentIds,
           active: formData?.active || true,
           practice_simulation: formData?.practiceSimulation || false,
-          simulation_text_agent_id: formData?.simulation_text_agent_id || "",
+          scenario_ids,
+          scenario_active_flags,
+          scenario_hints_enabled,
+          scenario_rubric_ids,
+          scenario_time_limit_seconds,
+          scenario_audio_enabled,
+          scenario_text_enabled,
+          simulation_text_agent_id: formData?.simulation_text_agent_id || "00000000-0000-0000-0000-000000000000",
           simulation_voice_agent_id:
-            formData?.simulation_voice_agent_id || null,
-          rubric_id: "", // Deprecated: kept for backward compatibility
-          time_limit: null, // Deprecated: kept for backward compatibility
-          content_items: contentItemsPayload,
+            formData?.simulation_voice_agent_id || "00000000-0000-0000-0000-000000000000",
         };
 
         await handleCreateSimulation(createPayload);

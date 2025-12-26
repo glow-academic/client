@@ -1,16 +1,15 @@
 """Simulation duplicate endpoint - v3 API following DHH principles."""
 
 from typing import Annotated, Any, cast
-from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (DuplicateSimulationSqlParams, DuplicateSimulationSqlRow,
+from app.sql.types import (DuplicateSimulationApiRequest, DuplicateSimulationApiResponse,
+                           DuplicateSimulationSqlParams, DuplicateSimulationSqlRow,
                            load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
 
@@ -18,27 +17,12 @@ from utils.sql_helper import execute_sql_typed
 SQL_PATH = "app/sql/v3/simulations/duplicate_simulation_complete.sql"
 
 
-# Inline request/response schemas
-class DuplicateSimulationRequest(BaseModel):
-    """Request to duplicate simulation."""
-
-    simulationId: str
-
-
-class DuplicateSimulationResponse(BaseModel):
-    """Response from duplicate simulation."""
-
-    success: bool
-    simulationId: str
-    message: str
-
-
 router = APIRouter()
 
 
 @router.post(
     "/duplicate",
-    response_model=DuplicateSimulationResponse,
+    response_model=DuplicateSimulationApiResponse,
     dependencies=[
         audit_activity(
             "simulation.duplicated",
@@ -47,11 +31,11 @@ router = APIRouter()
     ],
 )
 async def duplicate_simulation(
-    request: DuplicateSimulationRequest,
+    request: DuplicateSimulationApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DuplicateSimulationResponse:
+) -> DuplicateSimulationApiResponse:
     """Duplicate a simulation."""
     tags = ["simulations"]  # From router tags
 
@@ -67,10 +51,10 @@ async def duplicate_simulation(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert to SQL params
+        # Convert API request to SQL params (add profile_id from header)
         params = DuplicateSimulationSqlParams(
-            simulation_id=UUID(request.simulationId),
-            profile_id=UUID(profile_id),
+            simulation_id=request.simulation_id,
+            profile_id=profile_id,
         )
         sql_params = params.to_tuple()
 
@@ -86,10 +70,9 @@ async def duplicate_simulation(
 
         if not result or not result.simulation_id:
             raise HTTPException(
-                status_code=404, detail=f"Simulation {request.simulationId} not found"
+                status_code=404, detail=f"Simulation {request.simulation_id} not found"
             )
 
-        new_simulation_id = str(result.simulation_id)
         simulation_name = result.simulation_name or "Unknown"
         actor_name = result.actor_name
 
@@ -98,20 +81,17 @@ async def duplicate_simulation(
             audit_set(
                 http_request,
                 actor={"name": actor_name, "id": profile_id},
-                simulation={"name": simulation_name, "id": new_simulation_id},
+                simulation={"name": simulation_name, "id": str(request.simulation_id)},
             )
 
-        result_data = DuplicateSimulationResponse(
-            success=True,
-            simulationId=new_simulation_id,
-            message=f"Simulation '{simulation_name}' duplicated successfully",
-        )
+        # Convert SQL result to API response
+        api_response = DuplicateSimulationApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:
