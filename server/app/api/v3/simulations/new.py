@@ -1,6 +1,5 @@
 """Simulation new endpoint - v3 API following DHH principles."""
 
-import json
 from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
@@ -8,15 +7,21 @@ import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (GetSimulationNewApiRequest, GetSimulationNewApiResponse,
+                           GetSimulationNewSqlParams, GetSimulationNewSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level
+SQL_PATH = "app/sql/v3/simulations/get_simulation_new_complete.sql"
 
 
-# Inline mapping types (DHH style - no shared types)
+# Legacy response models for backward compatibility (will be removed after frontend update)
 class DepartmentMappingItem(BaseModel):
     """Department mapping item."""
 
@@ -41,7 +46,6 @@ class ParameterMappingItem(BaseModel):
 
     name: str
     description: str
-    numerical: bool
     document_parameter: bool
     persona_parameter: bool
 
@@ -76,9 +80,9 @@ class ScenarioMappingItem(BaseModel):
     name: str
     description: str
     persona_ids: list[str]
-    persona_mapping: "PersonaMapping"
-    document_mapping: "DocumentMapping"
-    parameter_item_mapping: "FieldMapping"
+    persona_mapping: dict[str, PersonaMappingItem]
+    document_mapping: dict[str, DocumentMappingItem]
+    parameter_item_mapping: dict[str, FieldMappingItem]
     parameter_item_ids: list[str]
     document_ids: list[str]
 
@@ -91,18 +95,6 @@ class AgentMappingItem(BaseModel):
     roles: list[str] = []
 
 
-# Type aliases for Dict mappings
-DepartmentMapping = dict[str, DepartmentMappingItem]
-FieldMapping = dict[str, FieldMappingItem]
-ParameterMapping = dict[str, ParameterMappingItem]
-RubricMapping = dict[str, RubricMappingItem]
-PersonaMapping = dict[str, PersonaMappingItem]
-DocumentMapping = dict[str, DocumentMappingItem]
-ScenarioMapping = dict[str, ScenarioMappingItem]
-AgentMapping = dict[str, AgentMappingItem]
-
-
-# Inline schemas
 class ScenarioInSimulation(BaseModel):
     """Scenario with position in simulation."""
 
@@ -110,24 +102,18 @@ class ScenarioInSimulation(BaseModel):
     title: str
     description: str
     active: bool
-    position: int  # From simulation_scenarios junction table
-    parameter_item_ids: list[str]  # For displaying badges
-
-    # Switch fields from simulation_scenarios junction table
+    position: int
+    parameter_item_ids: list[str]
     hints_enabled: bool
     objectives_enabled: bool
     image_input_enabled: bool
     rubric_id: str | None
-    time_limit_seconds: int | None  # Per-scenario time limit in seconds
-
-    # Statistics fields
-    usage_count: int  # Number of all chats (regardless of completion)
-    success_rate: int  # Percentage (0-100) of completed chats that passed
-    last_used: str | None  # ISO timestamp or None
-    can_remove: bool  # True if usage_count == 0
-
-    # Video detection
-    has_active_video: bool  # True if scenario has an active video attached
+    time_limit_seconds: int | None
+    usage_count: int
+    success_rate: int
+    last_used: str | None
+    can_remove: bool
+    has_active_video: bool
 
 
 class ParameterItem(BaseModel):
@@ -148,17 +134,26 @@ class ParameterItemDetail(BaseModel):
     parameter_id: str
 
 
-# Inline request/response schemas
+# Type aliases for Dict mappings
+DepartmentMapping = dict[str, DepartmentMappingItem]
+FieldMapping = dict[str, FieldMappingItem]
+ParameterMapping = dict[str, ParameterMappingItem]
+RubricMapping = dict[str, RubricMappingItem]
+PersonaMapping = dict[str, PersonaMappingItem]
+DocumentMapping = dict[str, DocumentMappingItem]
+ScenarioMapping = dict[str, ScenarioMappingItem]
+AgentMapping = dict[str, AgentMappingItem]
+
+
 class SimulationNewRequest(BaseModel):
     """Request to get default simulation details."""
 
-    # profileId removed - comes from X-Profile-Id header
+    pass
 
 
 class SimulationDetailResponse(BaseModel):
     """Response for simulation detail endpoint."""
 
-    # Basic fields
     name: str
     description: str
     department_ids: list[str] | None
@@ -170,66 +165,33 @@ class SimulationDetailResponse(BaseModel):
     valid_scenario_ids: list[str]
     video_ids: list[str]
     valid_video_ids: list[str]
-
-    # Boolean parameters
     active: bool
     practice_simulation: bool
-
-    # Agent IDs
     hint_agent_id: str | None
     grade_text_agent_id: str | None
     grade_voice_agent_id: str | None
     simulation_text_agent_id: str | None
     simulation_voice_agent_id: str | None
-
-    # Permission flags
     can_edit: bool
     can_duplicate: bool
     can_delete: bool
-
-    # Usage status
     in_use: bool
     cohort_count: int
-
-    # Full scenario objects
     scenarios: list[ScenarioInSimulation]
-    videos: list[dict[str, Any]]  # Videos list (empty for default)
-
-    # Parameter data
+    videos: list[dict[str, Any]]
     parameters: list[ParameterItem]
     parameter_items: list[ParameterItemDetail]
     parameter_mapping: ParameterMapping
-
-    # Top-level mappings
     scenario_mapping: dict[str, ScenarioMappingItem]
-    video_mapping: dict[str, dict[str, Any]]  # Video mapping
+    video_mapping: dict[str, dict[str, Any]]
     rubric_mapping: dict[str, RubricMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
     field_mapping: dict[str, FieldMappingItem]
-    agent_mapping: dict[str, AgentMappingItem]  # Agent mapping
-    valid_agent_ids: list[str]  # Valid agent IDs for pickers
+    agent_mapping: dict[str, AgentMappingItem]
+    valid_agent_ids: list[str]
 
 
 router = APIRouter()
-
-
-def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
-    """Parse JSONB data with type safety."""
-    if isinstance(data, str):
-        try:
-            parsed: Any = json.loads(data)  # type: ignore[assignment, no-any-return]
-            if isinstance(parsed, dict):
-                return cast(dict[str, Any], parsed)  # type: ignore[return-value]  # mypy doesn't narrow Any properly
-            if isinstance(parsed, list):
-                return cast(list[Any], parsed)  # type: ignore[redundant-cast]  # mypy doesn't narrow Any properly
-            return {}
-        except json.JSONDecodeError:
-            return {}
-    if isinstance(data, dict):
-        return cast(dict[str, Any], data)
-    if isinstance(data, list):
-        return data
-    return None
 
 
 @router.post(
@@ -246,7 +208,7 @@ async def get_simulation_new(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SimulationDetailResponse:
     """Get default simulation details based on profile."""
-    tags = ["simulations"]  # From router tags
+    tags = ["simulations"]
 
     # Generate cache key from path and parsed body
     body_dict = request_data.model_dump()
@@ -259,11 +221,11 @@ async def get_simulation_new(
         response.headers["X-Cache-Hit"] = "1"
         return SimulationDetailResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get profile_id from header (set by router-level dependency)
+        # Get profile_id from header
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -271,315 +233,241 @@ async def get_simulation_new(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Load SQL string
-        sql_query = load_sql("app/sql/v3/simulations/get_simulation_new_complete.sql")
-        sql_params = (profile_id,)
+        # Convert API request to SQL params
+        params = GetSimulationNewSqlParams(**request_data.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        # Execute query
-        result = await conn.fetchrow(sql_query, profile_id)
-
-        if not result:
-            raise ValueError("Failed to fetch default simulation data")
-
-        # Get actor name from SQL query
-        actor_name = result.get("actor_name")
+        # Execute query with typed helper
+        result = cast(
+            GetSimulationNewSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
 
         # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        # Extract user role and cohort counts for permissions
-        user_role = result.get("user_role", "trainee")
-        active_cohort_count = result.get("active_cohort_count", 0)
-        total_cohort_links = result.get("total_cohort_links", 0)
-        practice_simulation = result.get("practice_simulation", False)
-
-        # Use can_edit from SQL (handles default objects and role checks)
-        can_edit = result.get("can_edit", False)
-        is_admin = user_role in ("admin", "instructional", "superadmin")
-        can_duplicate = is_admin
-        # Can't delete if can't edit (stricter than can_edit)
-        # Also can't delete if practice OR has any cohort links OR not admin
-        can_delete = (
-            can_edit
-            and is_admin
-            and not practice_simulation
-            and total_cohort_links == 0
-        )
-
-        # Parse scenarios list from JSONB
+        # Convert scenarios array to list (empty for new)
         scenarios_list: list[ScenarioInSimulation] = []
-        scenarios_list_data = result.get("scenarios_list")
-        if isinstance(scenarios_list_data, str):
-            scenarios_list_data = json.loads(scenarios_list_data)
-        if scenarios_list_data and isinstance(scenarios_list_data, list):
-            for s_data in scenarios_list_data:
-                if isinstance(s_data, dict):
-                    scenarios_list.append(
-                        ScenarioInSimulation(
-                            scenario_id=s_data.get("scenario_id", ""),
-                            title=s_data.get("title", ""),
-                            description=s_data.get("description", ""),
-                            active=s_data.get("active", True),
-                            position=s_data.get("position", 0),
-                            parameter_item_ids=s_data.get("parameter_item_ids", []),
-                            hints_enabled=s_data.get("hints_enabled", False),
-                            objectives_enabled=s_data.get("objectives_enabled", True),
-                            image_input_enabled=s_data.get(
-                                "image_input_enabled", False
-                            ),
-                            rubric_id=s_data.get("rubric_id"),
-                            time_limit_seconds=s_data.get("time_limit_seconds"),
-                            usage_count=s_data.get("usage_count", 0),
-                            success_rate=s_data.get("success_rate", 0),
-                            last_used=s_data.get("last_used"),
-                            can_remove=s_data.get("can_remove", True),
-                            has_active_video=s_data.get("has_active_video", False),
-                        )
+        if result.scenarios:
+            for scenario in result.scenarios:
+                scenarios_list.append(
+                    ScenarioInSimulation(
+                        scenario_id=str(scenario.scenario_id) if scenario.scenario_id else "",
+                        title=scenario.title or "",
+                        description=scenario.description or "",
+                        active=scenario.active or True,
+                        position=scenario.position or 0,
+                        parameter_item_ids=[str(pid) for pid in (scenario.parameter_item_ids or [])],
+                        hints_enabled=scenario.hints_enabled or False,
+                        objectives_enabled=scenario.objectives_enabled or True,
+                        image_input_enabled=scenario.image_input_enabled or False,
+                        rubric_id=str(scenario.rubric_id) if scenario.rubric_id else None,
+                        time_limit_seconds=scenario.time_limit_seconds,
+                        usage_count=scenario.usage_count or 0,
+                        success_rate=scenario.success_rate or 0,
+                        last_used=scenario.last_used,
+                        can_remove=scenario.can_remove or True,
+                        has_active_video=scenario.has_active_video or False,
                     )
+                )
 
-        # Get IDs
-        scenario_ids = result.get("scenario_ids", [])
-        video_ids = result.get("video_ids", [])
-        valid_scenario_ids = result.get("valid_scenario_ids", [])
-        valid_video_ids = result.get("valid_video_ids", [])
-        valid_rubric_ids = result.get("valid_rubric_ids", [])
-        valid_department_ids = result.get("valid_department_ids", [])
+        # Convert videos array to list
+        videos_list: list[dict[str, Any]] = []
+        if result.videos:
+            for video in result.videos:
+                videos_list.append({
+                    "video_id": str(video.video_id) if video.video_id else "",
+                    "name": video.name or "",
+                    "description": video.description or "",
+                    "length_seconds": video.length_seconds,
+                })
 
-        # Parse rubric mapping
-        rubric_mapping: RubricMapping = {}
-        rubric_mapping_data = parse_jsonb(result.get("rubric_mapping"))
-        if isinstance(rubric_mapping_data, dict):
-            for rid, rdata in rubric_mapping_data.items():
-                if isinstance(rdata, dict):
-                    rubric_mapping[rid] = RubricMappingItem(
-                        name=rdata.get("name", ""),
-                        description=rdata.get("description", ""),
-                    )
-
-        # Parse video mapping
-        video_mapping: dict[str, dict[str, Any]] = {}
-        video_mapping_data = parse_jsonb(result.get("video_mapping"))
-        if isinstance(video_mapping_data, dict):
-            video_mapping = video_mapping_data
-
-        # Parse scenario mapping (same logic as detail.py)
+        # Convert scenario_mapping array to dict
         scenario_mapping: ScenarioMapping = {}
-        scenario_mapping_data = parse_jsonb(result.get("scenario_mapping"))
-        if isinstance(scenario_mapping_data, dict):
-            for sid, sdata in scenario_mapping_data.items():
-                if isinstance(sdata, dict):
-                    # Parse nested mappings
-                    persona_mapping = {}
-                    if sdata.get("persona_mapping") and isinstance(
-                        sdata["persona_mapping"], dict
-                    ):
-                        for pid, pdata in sdata["persona_mapping"].items():
-                            if isinstance(pdata, dict):
-                                persona_mapping[pid] = PersonaMappingItem(
-                                    name=pdata.get("name", ""),
-                                    description=pdata.get("description", ""),
-                                    color=pdata.get("color", ""),
-                                    icon=pdata.get("icon", ""),
-                                    image_model=pdata.get("image_model", False),
-                                )
-
-                    document_mapping = {}
-                    if sdata.get("document_mapping") and isinstance(
-                        sdata["document_mapping"], dict
-                    ):
-                        for did, ddata in sdata["document_mapping"].items():
-                            if isinstance(ddata, dict):
-                                document_mapping[did] = DocumentMappingItem(
-                                    name=ddata.get("name", ""),
-                                    description=ddata.get("description", ""),
-                                )
-
-                    scenario_field_mapping = {}
-                    if sdata.get("field_mapping") and isinstance(
-                        sdata["field_mapping"], dict
-                    ):
-                        for piid, pidata in sdata["field_mapping"].items():
-                            if isinstance(pidata, dict):
-                                scenario_field_mapping[piid] = FieldMappingItem(
-                                    name=pidata.get("name", ""),
-                                    description=pidata.get("description", ""),
-                                    parameter_id=pidata.get("parameter_id", ""),
-                                    parameter_name=pidata.get("parameter_name", ""),
-                                )
-
-                    persona_ids = []
-                    if sdata.get("persona_ids"):
-                        persona_ids = (
-                            sdata["persona_ids"]
-                            if isinstance(sdata["persona_ids"], list)
-                            else [sdata["persona_ids"]]
+        if result.scenarios_full:
+            for scenario_full in result.scenarios_full:
+                persona_mapping: PersonaMapping = {}
+                if scenario_full.persona_mapping:
+                    for persona in scenario_full.persona_mapping:
+                        persona_mapping[str(persona.persona_id)] = PersonaMappingItem(
+                            name=persona.name or "",
+                            description=persona.description or "",
+                            color=persona.color or "",
+                            icon=persona.icon or "",
+                            image_model=persona.image_model or False,
                         )
-                    elif sdata.get("persona_id"):
-                        persona_ids = [str(sdata["persona_id"])]
 
-                    scenario_mapping[sid] = ScenarioMappingItem(
-                        name=sdata.get("name", ""),
-                        description=sdata.get("description", ""),
-                        persona_ids=persona_ids,
-                        persona_mapping=persona_mapping,
-                        document_mapping=document_mapping,
-                        parameter_item_mapping=scenario_field_mapping,
-                        parameter_item_ids=sdata.get("parameter_item_ids", []),
-                        document_ids=sdata.get("document_ids", []),
-                    )
+                document_mapping: DocumentMapping = {}
+                if scenario_full.document_mapping:
+                    for doc in scenario_full.document_mapping:
+                        document_mapping[str(doc.document_id)] = DocumentMappingItem(
+                            name=doc.name or "",
+                            description=doc.description or "",
+                        )
 
-        # Parse department mapping
+                field_mapping: FieldMapping = {}
+                if scenario_full.parameter_item_mapping:
+                    for field in scenario_full.parameter_item_mapping:
+                        field_mapping[str(field.field_id)] = FieldMappingItem(
+                            name=field.name or "",
+                            description=field.description or "",
+                            parameter_id=str(field.parameter_id) if field.parameter_id else "",
+                            parameter_name=field.parameter_name or "",
+                        )
+
+                scenario_mapping[str(scenario_full.scenario_id)] = ScenarioMappingItem(
+                    name=scenario_full.name or "",
+                    description=scenario_full.description or "",
+                    persona_ids=[str(pid) for pid in (scenario_full.persona_ids or [])],
+                    persona_mapping=persona_mapping,
+                    document_mapping=document_mapping,
+                    parameter_item_mapping=field_mapping,
+                    parameter_item_ids=[str(pid) for pid in (scenario_full.parameter_item_ids or [])],
+                    document_ids=[str(did) for did in (scenario_full.document_ids or [])],
+                )
+
+        # Convert video_mapping array to dict
+        video_mapping: dict[str, dict[str, Any]] = {}
+        if result.videos:
+            for video in result.videos:
+                video_mapping[str(video.video_id)] = {
+                    "name": video.name or "",
+                    "description": video.description or "",
+                    "length_seconds": video.length_seconds,
+                }
+
+        # Convert rubric_mapping array to dict
+        rubric_mapping: RubricMapping = {}
+        if result.rubrics:
+            for rubric in result.rubrics:
+                rubric_mapping[str(rubric.rubric_id)] = RubricMappingItem(
+                    name=rubric.name or "",
+                    description=rubric.description or "",
+                )
+
+        # Convert department_mapping array to dict
         department_mapping: DepartmentMapping = {}
-        department_mapping_data = parse_jsonb(result.get("department_mapping"))
-        if isinstance(department_mapping_data, dict):
-            for did, ddata in department_mapping_data.items():
-                if isinstance(ddata, dict):
-
-                    def to_str_list(value: Sequence[Any] | None) -> list[str] | None:
-                        if value is None:
-                            return None
-                        if isinstance(value, list):
-                            return [str(v) for v in value if v]
+        if result.departments:
+            for dept in result.departments:
+                def to_str_list(value: Sequence[Any] | None) -> list[str] | None:
+                    if value is None:
                         return None
+                    if isinstance(value, list):
+                        return [str(v) for v in value if v]
+                    return None
 
-                    department_mapping[did] = DepartmentMappingItem(
-                        name=ddata.get("name", ""),
-                        description=ddata.get("description", ""),
-                        scenario_ids=to_str_list(ddata.get("scenario_ids")),
-                        rubric_ids=to_str_list(ddata.get("rubric_ids")),
-                        cohort_ids=to_str_list(ddata.get("cohort_ids")),
-                    )
+                department_mapping[str(dept.department_id)] = DepartmentMappingItem(
+                    name=dept.name or "",
+                    description=dept.description or "",
+                    scenario_ids=to_str_list(dept.scenario_ids),
+                    rubric_ids=to_str_list(dept.rubric_ids),
+                    cohort_ids=to_str_list(dept.cohort_ids),
+                )
 
-        # Parse parameter mapping
+        # Convert parameter_mapping array to dict
         parameter_mapping: ParameterMapping = {}
-        parameter_mapping_data = parse_jsonb(result.get("parameter_mapping"))
-        if isinstance(parameter_mapping_data, dict):
-            for pid, pdata in parameter_mapping_data.items():
-                if isinstance(pdata, dict):
-                    parameter_mapping[pid] = ParameterMappingItem(
-                        name=pdata.get("name", ""),
-                        description=pdata.get("description", ""),
-                        numerical=pdata.get("numerical", False),
-                        document_parameter=pdata.get("document_parameter", False),
-                        persona_parameter=pdata.get("persona_parameter", False),
-                    )
+        if result.parameters_full:
+            for param in result.parameters_full:
+                parameter_mapping[str(param.parameter_id)] = ParameterMappingItem(
+                    name=param.name or "",
+                    description=param.description or "",
+                    document_parameter=param.document_parameter or False,
+                    persona_parameter=param.persona_parameter or False,
+                )
 
-        # Parse parameter_item mapping
+        # Convert field_mapping array to dict
         field_mapping_dict: FieldMapping = {}
-        field_mapping_data = parse_jsonb(result.get("field_mapping"))
-        if isinstance(field_mapping_data, dict):
-            for piid, pidata in field_mapping_data.items():
-                if isinstance(pidata, dict):
-                    field_mapping_dict[piid] = FieldMappingItem(
-                        name=pidata.get("name", ""),
-                        description=pidata.get("description", ""),
-                        parameter_id=pidata.get("parameter_id", ""),
-                        parameter_name=pidata.get("parameter_name", ""),
-                    )
+        if result.fields:
+            for field in result.fields:
+                field_mapping_dict[str(field.field_id)] = FieldMappingItem(
+                    name=field.name or "",
+                    description=field.description or "",
+                    parameter_id=str(field.parameter_id) if field.parameter_id else "",
+                    parameter_name=field.parameter_name or "",
+                )
 
-        # Parse parameter items list
+        # Convert parameter_items arrays to lists
         parameters_list: list[ParameterItem] = []
         parameter_items_list: list[ParameterItemDetail] = []
-        parameter_items_list_data = parse_jsonb(result.get("parameter_items_list"))
-        if isinstance(parameter_items_list_data, list):
-            for pi_data in parameter_items_list_data:
-                if isinstance(pi_data, dict):
-                    parameter_items_list.append(
-                        ParameterItemDetail(
-                            id=pi_data.get("id", ""),
-                            name=pi_data.get("name", ""),
-                            description=pi_data.get("description"),
-                            parameter_id=pi_data.get("parameter_id", ""),
-                        )
+        if result.parameter_items:
+            for pi in result.parameter_items:
+                parameter_items_list.append(
+                    ParameterItemDetail(
+                        id=str(pi.id) if pi.id else "",
+                        name=pi.name or "",
+                        description=pi.description,
+                        parameter_id=str(pi.parameter_id) if pi.parameter_id else "",
                     )
-                    parameters_list.append(
-                        ParameterItem(
-                            id=pi_data.get("id", ""),
-                            parameter_id=pi_data.get("parameter_id", ""),
-                            name=pi_data.get("name", ""),
-                            description=pi_data.get("description"),
-                        )
+                )
+        if result.parameters:
+            for pi in result.parameters:
+                parameters_list.append(
+                    ParameterItem(
+                        id=str(pi.id) if pi.id else "",
+                        parameter_id=str(pi.parameter_id) if pi.parameter_id else "",
+                        name=pi.name or "",
+                        description=pi.description,
                     )
+                )
 
-        # Parse agent_mapping
+        # Convert agent_mapping array to dict
         agent_mapping: AgentMapping = {}
-        agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
-        if isinstance(agent_mapping_data, dict):
-            for agent_id, adata in agent_mapping_data.items():
-                if isinstance(adata, dict):
-                    roles = adata.get("roles", [])
-                    if isinstance(roles, str):
-                        try:
-                            roles = json.loads(roles)
-                        except json.JSONDecodeError:
-                            roles = []
-                    if not isinstance(roles, list):
-                        roles = []
-                    agent_mapping[agent_id] = AgentMappingItem(
-                        name=adata.get("name", ""),
-                        description=adata.get("description", ""),
-                        roles=[str(r) for r in roles],
-                    )
+        if result.agents:
+            for agent in result.agents:
+                agent_mapping[str(agent.agent_id)] = AgentMappingItem(
+                    name=agent.name or "",
+                    description=agent.description or "",
+                    roles=[str(r) for r in (agent.roles or [])] if agent.roles else [],
+                )
 
-        valid_agent_ids_raw = result.get("valid_agent_ids") or []
-        valid_agent_ids = (
-            [str(aid) for aid in valid_agent_ids_raw]
-            if isinstance(valid_agent_ids_raw, list)
-            else []
-        )
-
-        # Get user role and primary department for default behavior
-        user_role_from_result = result.get("user_role", "trainee")
-        is_superadmin = user_role_from_result == "superadmin"
-        primary_department_id = result.get("primary_department_id")
+        # Get IDs
+        scenario_ids = [str(sid) for sid in (result.scenario_ids or [])]
+        video_ids = [str(vid) for vid in (result.video_ids or [])]
+        valid_scenario_ids = [str(sid) for sid in (result.valid_scenario_ids or [])]
+        valid_video_ids = [str(vid) for vid in (result.valid_video_ids or [])]
+        valid_rubric_ids = [str(rid) for rid in (result.valid_rubric_ids or [])]
+        valid_department_ids = [str(did) for did in (result.valid_department_ids or [])]
+        valid_agent_ids = [str(aid) for aid in (result.valid_agent_ids or [])]
 
         # Set default department_ids based on role
-        # Superadmin: None (empty = all departments = default object)
-        # Non-superadmin: [primaryDepartmentId] if available
-        if is_superadmin:
-            department_ids = None
+        is_superadmin = False  # Will be determined from result if needed
+        primary_department_id = result.primary_department_id
+        if primary_department_id:
+            department_ids = [str(primary_department_id)]
         else:
-            department_ids = [primary_department_id] if primary_department_id else []
+            department_ids = None
 
         response_data = SimulationDetailResponse(
-            name=result.get("title", ""),
-            description=result.get("description", ""),
+            name=result.name or "",
+            description=result.description or "",
             department_ids=department_ids,
             valid_department_ids=valid_department_ids,
-            time_limit=result.get("time_limit"),
-            rubric_id=str(result.get("rubric_id", ""))
-            if result.get("rubric_id")
-            else "",
+            time_limit=result.time_limit,
+            rubric_id=str(result.rubric_id) if result.rubric_id else "",
             valid_rubric_ids=valid_rubric_ids,
             scenario_ids=scenario_ids,
             valid_scenario_ids=valid_scenario_ids,
             video_ids=video_ids,
             valid_video_ids=valid_video_ids,
-            active=result.get("active", False),
-            practice_simulation=result.get("practice_simulation", False),
-            hint_agent_id=str(result.get("hint_agent_id"))
-            if result.get("hint_agent_id")
-            else None,
-            grade_text_agent_id=str(result.get("grade_text_agent_id"))
-            if result.get("grade_text_agent_id")
-            else None,
-            grade_voice_agent_id=str(result.get("grade_voice_agent_id"))
-            if result.get("grade_voice_agent_id")
-            else None,
-            simulation_text_agent_id=str(result.get("simulation_text_agent_id"))
-            if result.get("simulation_text_agent_id")
-            else None,
-            simulation_voice_agent_id=str(result.get("simulation_voice_agent_id"))
-            if result.get("simulation_voice_agent_id")
-            else None,
-            can_edit=can_edit,
-            can_duplicate=can_duplicate,
-            can_delete=can_delete,
-            in_use=total_cohort_links > 0,  # In use if has any cohort links
-            cohort_count=total_cohort_links,  # Return total for display
+            active=result.active or False,
+            practice_simulation=result.practice_simulation or False,
+            hint_agent_id=str(result.hint_agent_id) if result.hint_agent_id else None,
+            grade_text_agent_id=str(result.grade_text_agent_id) if result.grade_text_agent_id else None,
+            grade_voice_agent_id=str(result.grade_voice_agent_id) if result.grade_voice_agent_id else None,
+            simulation_text_agent_id=str(result.simulation_text_agent_id) if result.simulation_text_agent_id else None,
+            simulation_voice_agent_id=str(result.simulation_voice_agent_id) if result.simulation_voice_agent_id else None,
+            can_edit=result.can_edit or False,
+            can_duplicate=result.can_duplicate or False,
+            can_delete=result.can_delete or False,
+            in_use=result.in_use or False,
+            cohort_count=result.cohort_count or 0,
             scenarios=scenarios_list,
-            videos=[],  # Default simulation has no videos
+            videos=videos_list,
             parameters=parameters_list,
             parameter_items=parameter_items_list,
             parameter_mapping=parameter_mapping,
@@ -592,10 +480,10 @@ async def get_simulation_new(
             valid_agent_ids=valid_agent_ids,
         )
 
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": response_data.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )

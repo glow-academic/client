@@ -1,15 +1,21 @@
 """Simulation update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (UpdateSimulationSqlParams, UpdateSimulationSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level
+SQL_PATH = "app/sql/v3/simulations/update_simulation_complete.sql"
 
 
 # Inline request/response schemas
@@ -28,7 +34,7 @@ class ContentItemInRequest(BaseModel):
     active: bool = True
     # Switch fields (scenarios only)
     hints_enabled: bool | None = None
-    copy_paste_allowed: bool | None = None  # Scenarios only
+    copy_paste_allowed: bool | None = None  # Scenarios only (not used in SQL)
     audio_enabled: bool | None = None  # Scenarios only
     text_enabled: bool | None = None  # Scenarios only
     rubric_id: str | None = None
@@ -88,7 +94,7 @@ async def update_simulation(
     """Update an existing simulation."""
     tags = ["simulations"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -97,7 +103,6 @@ async def update_simulation(
             scenario_ids: list[str] = []
             scenario_active_flags: list[bool] = []
             scenario_hints_enabled: list[bool] = []
-            scenario_copy_paste_allowed: list[bool] = []
             scenario_audio_enabled: list[bool] = []
             scenario_text_enabled: list[bool] = []
             scenario_rubric_ids: list[str] = []
@@ -114,11 +119,7 @@ async def update_simulation(
                             if item.hints_enabled is not None
                             else False
                         )
-                        scenario_copy_paste_allowed.append(
-                            item.copy_paste_allowed
-                            if item.copy_paste_allowed is not None
-                            else False
-                        )
+                        # copy_paste_allowed is not used in SQL function
                         scenario_audio_enabled.append(
                             item.audio_enabled
                             if item.audio_enabled is not None
@@ -151,9 +152,6 @@ async def update_simulation(
             scenario_hints_array = (
                 scenario_hints_enabled if scenario_hints_enabled else []
             )
-            scenario_copy_paste_allowed_array = (
-                scenario_copy_paste_allowed if scenario_copy_paste_allowed else []
-            )
             scenario_audio_enabled_array = (
                 scenario_audio_enabled if scenario_audio_enabled else []
             )
@@ -174,41 +172,49 @@ async def update_simulation(
                     detail="Profile ID is required. Please sign in again.",
                 )
 
-            # Update simulation with departments and scenarios in single SQL (DHH style)
-            # Note: rubric_id and time_limit are now per-scenario, not simulation-level
-            sql_query = load_sql("app/sql/v3/simulations/update_simulation_complete.sql")
-            sql_params = (
-                request.simulationId,
-                request.title,
-                request.description,
-                request.active,
-                request.practice_simulation,
-                dept_ids,  # Always pass array (empty array if no departments)
-                scenario_ids_array,
-                scenario_flags_array,
-                [],  # video_ids (empty for now)
-                [],  # video_active_flags (empty for now)
-                scenario_hints_array,
-                scenario_rubric_ids_array,
-                scenario_time_limit_seconds_array,
-                scenario_audio_enabled_array,
-                scenario_text_enabled_array,
-                [],  # video_show_problem_statement (empty for now)
-                [],  # video_show_objectives (empty for now)
-                [],  # video_show_image (empty for now)
-                request.hint_agent_id,  # $22
-                request.grade_text_agent_id,  # $23
-                request.grade_voice_agent_id,  # $24
-                request.simulation_text_agent_id or "",  # $25
-                request.simulation_voice_agent_id or "",  # $26
-                profile_id,  # $27
+            # Convert to SQL params
+            params = UpdateSimulationSqlParams(
+                simulation_id=UUID(request.simulationId),
+                title=request.title,
+                description=request.description,
+                active=request.active,
+                practice_simulation=request.practice_simulation,
+                department_ids=[UUID(did) for did in dept_ids],
+                scenario_ids=[UUID(sid) for sid in scenario_ids_array],
+                scenario_active_flags=scenario_flags_array,
+                video_ids=[],  # Empty for now
+                video_active_flags=[],  # Empty for now
+                scenario_hints_enabled=scenario_hints_array,
+                scenario_rubric_ids=[UUID(rid) if rid else UUID("00000000-0000-0000-0000-000000000000") for rid in scenario_rubric_ids_array],
+                scenario_time_limit_seconds=scenario_time_limit_seconds_array,
+                scenario_audio_enabled=scenario_audio_enabled_array,
+                scenario_text_enabled=scenario_text_enabled_array,
+                video_show_problem_statement=[],  # Empty for now
+                video_show_objectives=[],  # Empty for now
+                video_show_image=[],  # Empty for now
+                hint_agent_id=UUID(request.hint_agent_id) if request.hint_agent_id else UUID("00000000-0000-0000-0000-000000000000"),
+                grade_text_agent_id=UUID(request.grade_text_agent_id) if request.grade_text_agent_id else UUID("00000000-0000-0000-0000-000000000000"),
+                grade_voice_agent_id=UUID(request.grade_voice_agent_id) if request.grade_voice_agent_id else UUID("00000000-0000-0000-0000-000000000000"),
+                simulation_text_agent_id=UUID(request.simulation_text_agent_id) if request.simulation_text_agent_id else UUID("00000000-0000-0000-0000-000000000000"),
+                simulation_voice_agent_id=UUID(request.simulation_voice_agent_id) if request.simulation_voice_agent_id else UUID("00000000-0000-0000-0000-000000000000"),
+                profile_id=UUID(profile_id),
             )
-            result = await conn.fetchrow(sql_query, *sql_params)
+            sql_params = params.to_tuple()
+
+            # Execute query with typed helper
+            result = cast(
+                UpdateSimulationSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
             if not result:
                 raise ValueError(f"Simulation not found: {request.simulationId}")
 
-            actor_name = result.get("actor_name")
+            actor_name = result.actor_name
 
             # Set audit context with data from SQL query
             if actor_name:

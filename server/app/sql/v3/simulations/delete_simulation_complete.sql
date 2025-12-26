@@ -1,40 +1,58 @@
 -- Delete simulation with existence and usage checks in a single transaction
--- Parameters: $1=simulationId, $2=profile_id (uuid)
--- Returns: simulation_id, title, usage_count, deleted, actor_name (or no rows if simulation doesn't exist)
--- If usage_count > 0, simulation is not deleted (caller should raise 400 error)
--- If no rows returned, simulation doesn't exist (caller should raise 404 error)
-WITH actor_profile AS (
+-- Converted to function
+
+BEGIN;
+
+-- 1) Drop function first
+DROP FUNCTION IF EXISTS api_delete_simulation_v3(uuid, uuid);
+
+-- 2) Recreate function
+CREATE OR REPLACE FUNCTION api_delete_simulation_v3(
+    simulation_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    deleted boolean,
+    usage_count bigint,
+    title text,
+    actor_name text
+)
+LANGUAGE sql
+AS $$
+WITH params AS (
+    SELECT simulation_id AS simulation_id,
+           profile_id AS profile_id
+),
+actor_profile AS (
     SELECT 
-        $2::uuid as profile_id,
+        x.profile_id,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 simulation_info AS (
-    -- Check if simulation exists and get usage count
     SELECT 
         s.id,
         s.title,
-        (SELECT COUNT(*) FROM cohort_simulations WHERE simulation_id = s.id) as usage_count
-    FROM simulations s
-    WHERE s.id = $1::uuid
+        (SELECT COUNT(*) FROM cohort_simulations WHERE cohort_simulations.simulation_id = s.id) as usage_count
+    FROM params x
+    JOIN simulations s ON s.id = x.simulation_id
 ),
 delete_simulation AS (
-    -- Delete simulation only if it exists and is not in use
     DELETE FROM simulations
     WHERE id IN (
         SELECT id FROM simulation_info WHERE usage_count = 0
     )
-    RETURNING id::text as simulation_id
+    RETURNING id
 )
--- Return simulation info and usage count (even if not deleted, so caller can determine error)
 SELECT 
-    si.id::text as simulation_id,
-    si.title,
+    CASE WHEN ds.id IS NOT NULL THEN true ELSE false END as deleted,
     si.usage_count,
-    CASE WHEN ds.simulation_id IS NOT NULL THEN true ELSE false END as deleted,
-    ap.actor_name
+    si.title::text as title,
+    ap.actor_name::text as actor_name
 FROM simulation_info si
-LEFT JOIN delete_simulation ds ON ds.simulation_id = si.id::text
+LEFT JOIN delete_simulation ds ON ds.id = si.id
 CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;

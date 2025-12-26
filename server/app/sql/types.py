@@ -726,10 +726,10 @@ class GetAuthDetailAuthItemsItem(BaseModel):
 
 class GetAuthDetailSqlRow(BaseModel):
 
-    description: str
-    can_edit: bool
     actor_name: str
     active: bool
+    can_edit: bool
+    description: str
     name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
@@ -740,10 +740,10 @@ class GetAuthDetailApiRequest(BaseModel):
 
 class GetAuthDetailApiResponse(BaseModel):
 
-    description: str
-    can_edit: bool
     actor_name: str
     active: bool
+    can_edit: bool
+    description: str
     name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
@@ -5122,16 +5122,16 @@ class CreateSimulationSqlParams(BaseModel):
     description: str
     active: bool
     practice_simulation: bool
-    department_ids: list[str]
-    scenario_ids: list[str]
+    department_ids: list[UUID]
+    scenario_ids: list[UUID]
     scenario_active_flags: list[bool]
     scenario_hints_enabled: list[bool]
-    scenario_rubric_ids: list[str]
+    scenario_rubric_ids: list[UUID]
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
     simulation_text_agent_id: UUID
-    simulation_voice_agent_id: str
+    simulation_voice_agent_id: UUID
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -5155,8 +5155,8 @@ class CreateSimulationSqlParams(BaseModel):
 
 class CreateSimulationSqlRow(BaseModel):
 
-    simulation_id: str
-    actor_name: str
+    simulation_id: UUID | None = None
+    actor_name: str | None = None
 
 class CreateSimulationApiRequest(BaseModel):
 
@@ -5164,21 +5164,21 @@ class CreateSimulationApiRequest(BaseModel):
     description: str
     active: bool
     practice_simulation: bool
-    department_ids: list[str]
-    scenario_ids: list[str]
+    department_ids: list[UUID]
+    scenario_ids: list[UUID]
     scenario_active_flags: list[bool]
     scenario_hints_enabled: list[bool]
-    scenario_rubric_ids: list[str]
+    scenario_rubric_ids: list[UUID]
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
     simulation_text_agent_id: UUID
-    simulation_voice_agent_id: str
+    simulation_voice_agent_id: UUID
 
 class CreateSimulationApiResponse(BaseModel):
 
-    simulation_id: str
-    actor_name: str
+    simulation_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -5221,34 +5221,63 @@ class CreateUserMessageApiResponse(BaseModel):
 
 class DeleteSimulationSqlParams(BaseModel):
 
-    simulationId: UUID
+    simulation_id: UUID
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulationId,
+            self.simulation_id,
             self.profile_id,
         )
 
 class DeleteSimulationSqlRow(BaseModel):
 
-    simulation_id: str
-    title: str
-    usage_count: int
-    deleted: bool
-    actor_name: str
+    deleted: bool | None = None
+    usage_count: int | None = None
+    title: str | None = None
+    actor_name: str | None = None
 
 class DeleteSimulationApiRequest(BaseModel):
 
-    simulationId: UUID
+    simulation_id: UUID
 
 class DeleteSimulationApiResponse(BaseModel):
 
-    simulation_id: str
-    title: str
-    usage_count: int
-    deleted: bool
-    actor_name: str
+    deleted: bool | None = None
+    usage_count: int | None = None
+    title: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: duplicate_simulation
+
+class DuplicateSimulationSqlParams(BaseModel):
+
+    simulation_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.simulation_id,
+            self.profile_id,
+        )
+
+class DuplicateSimulationSqlRow(BaseModel):
+
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicateSimulationApiRequest(BaseModel):
+
+    simulation_id: UUID
+
+class DuplicateSimulationApiResponse(BaseModel):
+
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -5338,7 +5367,7 @@ class GenerateHintsApiResponse(BaseModel):
 class GetSimulationDetailSqlParams(BaseModel):
 
     simulation_id: UUID
-    profile_id: str
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -5346,39 +5375,150 @@ class GetSimulationDetailSqlParams(BaseModel):
             self.profile_id,
         )
 
+class QGetSimulationDetailV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    roles: list[str] | None
+
+
+
+
+class QGetSimulationDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    scenario_ids: list[UUID] | None
+    rubric_ids: list[UUID] | None
+    cohort_ids: list[UUID] | None
+
+
+
+
+class QGetSimulationDetailV3Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+    parameter_name: str | None
+
+
+
+
+class QGetSimulationDetailV3Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+
+
+
+
+class QGetSimulationDetailV3ParameterItem(BaseModel):
+
+    id: UUID | None
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetSimulationDetailV3ParameterItemDetail(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+
+
+
+
+class QGetSimulationDetailV3Rubric(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetSimulationDetailV3Scenario(BaseModel):
+
+    scenario_id: UUID | None
+    title: str | None
+    description: str | None
+    active: bool | None
+    position: int | None
+    parameter_item_ids: list[UUID] | None
+    hints_enabled: bool | None
+    copy_paste_allowed: bool | None
+    audio_enabled: bool | None
+    text_enabled: bool | None
+    rubric_id: UUID | None
+    time_limit_seconds: int | None
+    usage_count: int | None
+    success_rate: int | None
+    last_used: str | None
+    can_remove: bool | None
+    has_active_video: bool | None
+
+
+
+
+class QGetSimulationDetailV3ScenarioMapping(BaseModel):
+
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+    persona_ids: list[UUID] | None
+    persona_mapping: list[Composite(types.q_get_simulation_detail_v3_persona)] | None
+    document_mapping: list[Composite(types.q_get_simulation_detail_v3_document)] | None
+    parameter_item_mapping: list[QGetSimulationDetailV3Field] | None
+    parameter_item_ids: list[UUID] | None
+    document_ids: list[UUID] | None
+
 class GetSimulationDetailSqlRow(BaseModel):
 
-    title: str
-    description: str
-    department_ids: list[str] | None = None
-    time_limit: int
-    rubric_id: str
-    active: bool
-    default_simulation: bool
-    practice_simulation: bool
-    hint_agent_id: str
-    grade_text_agent_id: str
-    grade_voice_agent_id: str
-    simulation_text_agent_id: str
-    simulation_voice_agent_id: str
-    user_role: str
-    active_cohort_count: int
-    total_cohort_links: int
-    can_edit: bool
-    scenarios_list: dict[str, Any]
-    scenario_ids: list[str]
-    valid_scenario_ids: list[str]
-    valid_rubric_ids: list[str]
-    valid_department_ids: list[str]
-    scenario_mapping: dict[str, Any]
-    rubric_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    parameter_mapping: dict[str, Any]
-    field_mapping: dict[str, Any]
-    parameter_items_list: dict[str, Any]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    actor_name: str
+    simulation_exists: bool | None = None
+    actor_name: str | None = None
+    simulation_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    valid_department_ids: list[UUID] | None = None
+    time_limit: int | None = None
+    rubric_id: UUID | None = None
+    valid_rubric_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    valid_scenario_ids: list[UUID] | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+    hint_agent_id: UUID | None = None
+    grade_text_agent_id: UUID | None = None
+    grade_voice_agent_id: UUID | None = None
+    simulation_text_agent_id: UUID | None = None
+    simulation_voice_agent_id: UUID | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    cohort_count: int | None = None
+    scenarios: list[QGetSimulationDetailV3Scenario] | None = None
+    parameters: list[QGetSimulationDetailV3ParameterItem] | None = None
+    parameter_items: list[QGetSimulationDetailV3ParameterItemDetail] | None = None
+    scenarios_full: list[QGetSimulationDetailV3ScenarioMapping] | None = None
+    rubrics: list[QGetSimulationDetailV3Rubric] | None = None
+    departments: list[QGetSimulationDetailV3Department] | None = None
+    parameters_full: list[QGetSimulationDetailV3Parameter] | None = None
+    fields: list[QGetSimulationDetailV3Field] | None = None
+    agents: list[QGetSimulationDetailV3Agent] | None = None
+    valid_agent_ids: list[UUID] | None = None
 
 class GetSimulationDetailApiRequest(BaseModel):
 
@@ -5386,37 +5526,40 @@ class GetSimulationDetailApiRequest(BaseModel):
 
 class GetSimulationDetailApiResponse(BaseModel):
 
-    title: str
-    description: str
-    department_ids: list[str] | None = None
-    time_limit: int
-    rubric_id: str
-    active: bool
-    default_simulation: bool
-    practice_simulation: bool
-    hint_agent_id: str
-    grade_text_agent_id: str
-    grade_voice_agent_id: str
-    simulation_text_agent_id: str
-    simulation_voice_agent_id: str
-    user_role: str
-    active_cohort_count: int
-    total_cohort_links: int
-    can_edit: bool
-    scenarios_list: dict[str, Any]
-    scenario_ids: list[str]
-    valid_scenario_ids: list[str]
-    valid_rubric_ids: list[str]
-    valid_department_ids: list[str]
-    scenario_mapping: dict[str, Any]
-    rubric_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    parameter_mapping: dict[str, Any]
-    field_mapping: dict[str, Any]
-    parameter_items_list: dict[str, Any]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    actor_name: str
+    simulation_exists: bool | None = None
+    actor_name: str | None = None
+    simulation_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    valid_department_ids: list[UUID] | None = None
+    time_limit: int | None = None
+    rubric_id: UUID | None = None
+    valid_rubric_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    valid_scenario_ids: list[UUID] | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+    hint_agent_id: UUID | None = None
+    grade_text_agent_id: UUID | None = None
+    grade_voice_agent_id: UUID | None = None
+    simulation_text_agent_id: UUID | None = None
+    simulation_voice_agent_id: UUID | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    cohort_count: int | None = None
+    scenarios: list[QGetSimulationDetailV3Scenario] | None = None
+    parameters: list[QGetSimulationDetailV3ParameterItem] | None = None
+    parameter_items: list[QGetSimulationDetailV3ParameterItemDetail] | None = None
+    scenarios_full: list[QGetSimulationDetailV3ScenarioMapping] | None = None
+    rubrics: list[QGetSimulationDetailV3Rubric] | None = None
+    departments: list[QGetSimulationDetailV3Department] | None = None
+    parameters_full: list[QGetSimulationDetailV3Parameter] | None = None
+    fields: list[QGetSimulationDetailV3Field] | None = None
+    agents: list[QGetSimulationDetailV3Agent] | None = None
+    valid_agent_ids: list[UUID] | None = None
 
 
 
@@ -5424,90 +5567,321 @@ class GetSimulationDetailApiResponse(BaseModel):
 
 class GetSimulationNewSqlParams(BaseModel):
 
-    param_1: UUID
+    profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.param_1,
+            self.profile_id,
         )
+
+class QGetSimulationNewV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    roles: list[str] | None
+
+
+
+
+class QGetSimulationNewV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    scenario_ids: list[UUID] | None
+    rubric_ids: list[UUID] | None
+    cohort_ids: list[UUID] | None
+
+
+
+
+class QGetSimulationNewV3Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+    parameter_name: str | None
+
+
+
+
+class QGetSimulationNewV3Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+
+
+
+
+class QGetSimulationNewV3ParameterItem(BaseModel):
+
+    id: UUID | None
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetSimulationNewV3ParameterItemDetail(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+
+
+
+
+class QGetSimulationNewV3Rubric(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetSimulationNewV3Scenario(BaseModel):
+
+    scenario_id: UUID | None
+    title: str | None
+    description: str | None
+    active: bool | None
+    position: int | None
+    parameter_item_ids: list[UUID] | None
+    hints_enabled: bool | None
+    objectives_enabled: bool | None
+    image_input_enabled: bool | None
+    rubric_id: UUID | None
+    time_limit_seconds: int | None
+    usage_count: int | None
+    success_rate: int | None
+    last_used: str | None
+    can_remove: bool | None
+    has_active_video: bool | None
+
+
+
+
+class QGetSimulationNewV3ScenarioMapping(BaseModel):
+
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+    persona_ids: list[UUID] | None
+    persona_mapping: list[Composite(types.q_get_simulation_new_v3_persona)] | None
+    document_mapping: list[Composite(types.q_get_simulation_new_v3_document)] | None
+    parameter_item_mapping: list[QGetSimulationNewV3Field] | None
+    parameter_item_ids: list[UUID] | None
+    document_ids: list[UUID] | None
+
+
+
+
+class QGetSimulationNewV3Video(BaseModel):
+
+    video_id: UUID | None
+    name: str | None
+    description: str | None
+    length_seconds: int | None
 
 class GetSimulationNewSqlRow(BaseModel):
 
-    title: str
-    description: str
-    department_ids: list[str]
-    time_limit: int
-    rubric_id: str
-    active: bool
-    default_simulation: bool
-    practice_simulation: bool
-    hint_agent_id: str
-    grade_text_agent_id: str
-    grade_voice_agent_id: str
-    simulation_text_agent_id: str
-    simulation_voice_agent_id: str
-    user_role: str
-    active_cohort_count: int
-    total_cohort_links: int
-    can_edit: bool
-    scenarios_list: dict[str, Any]
-    scenario_ids: list[str]
-    valid_scenario_ids: list[str]
-    valid_video_ids: list[str]
-    valid_rubric_ids: list[str]
-    valid_department_ids: list[str]
-    scenario_mapping: dict[str, Any]
-    video_mapping: dict[str, Any]
-    rubric_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    parameter_mapping: dict[str, Any]
-    field_mapping: dict[str, Any]
-    parameter_items_list: dict[str, Any]
-    primary_department_id: str
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    actor_name: str
+    actor_name: str | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    valid_department_ids: list[UUID] | None = None
+    time_limit: int | None = None
+    rubric_id: UUID | None = None
+    valid_rubric_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    valid_scenario_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    valid_video_ids: list[UUID] | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+    hint_agent_id: UUID | None = None
+    grade_text_agent_id: UUID | None = None
+    grade_voice_agent_id: UUID | None = None
+    simulation_text_agent_id: UUID | None = None
+    simulation_voice_agent_id: UUID | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    cohort_count: int | None = None
+    scenarios: list[QGetSimulationNewV3Scenario] | None = None
+    videos: list[QGetSimulationNewV3Video] | None = None
+    parameters: list[QGetSimulationNewV3ParameterItem] | None = None
+    parameter_items: list[QGetSimulationNewV3ParameterItemDetail] | None = None
+    scenarios_full: list[QGetSimulationNewV3ScenarioMapping] | None = None
+    rubrics: list[QGetSimulationNewV3Rubric] | None = None
+    departments: list[QGetSimulationNewV3Department] | None = None
+    parameters_full: list[QGetSimulationNewV3Parameter] | None = None
+    fields: list[QGetSimulationNewV3Field] | None = None
+    agents: list[QGetSimulationNewV3Agent] | None = None
+    valid_agent_ids: list[UUID] | None = None
+    primary_department_id: UUID | None = None
 
 class GetSimulationNewApiRequest(BaseModel):
 
-    param_1: UUID
+    pass
 
 class GetSimulationNewApiResponse(BaseModel):
 
-    title: str
-    description: str
-    department_ids: list[str]
-    time_limit: int
-    rubric_id: str
-    active: bool
-    default_simulation: bool
-    practice_simulation: bool
-    hint_agent_id: str
-    grade_text_agent_id: str
-    grade_voice_agent_id: str
-    simulation_text_agent_id: str
-    simulation_voice_agent_id: str
-    user_role: str
-    active_cohort_count: int
-    total_cohort_links: int
-    can_edit: bool
-    scenarios_list: dict[str, Any]
-    scenario_ids: list[str]
-    valid_scenario_ids: list[str]
-    valid_video_ids: list[str]
-    valid_rubric_ids: list[str]
-    valid_department_ids: list[str]
-    scenario_mapping: dict[str, Any]
-    video_mapping: dict[str, Any]
-    rubric_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    parameter_mapping: dict[str, Any]
-    field_mapping: dict[str, Any]
-    parameter_items_list: dict[str, Any]
-    primary_department_id: str
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    actor_name: str
+    actor_name: str | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    valid_department_ids: list[UUID] | None = None
+    time_limit: int | None = None
+    rubric_id: UUID | None = None
+    valid_rubric_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    valid_scenario_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    valid_video_ids: list[UUID] | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+    hint_agent_id: UUID | None = None
+    grade_text_agent_id: UUID | None = None
+    grade_voice_agent_id: UUID | None = None
+    simulation_text_agent_id: UUID | None = None
+    simulation_voice_agent_id: UUID | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    cohort_count: int | None = None
+    scenarios: list[QGetSimulationNewV3Scenario] | None = None
+    videos: list[QGetSimulationNewV3Video] | None = None
+    parameters: list[QGetSimulationNewV3ParameterItem] | None = None
+    parameter_items: list[QGetSimulationNewV3ParameterItemDetail] | None = None
+    scenarios_full: list[QGetSimulationNewV3ScenarioMapping] | None = None
+    rubrics: list[QGetSimulationNewV3Rubric] | None = None
+    departments: list[QGetSimulationNewV3Department] | None = None
+    parameters_full: list[QGetSimulationNewV3Parameter] | None = None
+    fields: list[QGetSimulationNewV3Field] | None = None
+    agents: list[QGetSimulationNewV3Agent] | None = None
+    valid_agent_ids: list[UUID] | None = None
+    primary_department_id: UUID | None = None
+
+
+
+# Generated from: get_simulations_list
+
+class GetSimulationsListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListSimulationsV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListSimulationsV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListSimulationsV3Option(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QListSimulationsV3Rubric(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListSimulationsV3Scenario(BaseModel):
+
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    persona_ids: list[str] | None
+    persona_mapping: list[Composite(types.q_list_simulations_v3_persona)] | None
+    document_mapping: list[Composite(types.q_list_simulations_v3_document)] | None
+    parameter_item_mapping: list[Composite(types.q_list_simulations_v3_field)] | None
+    parameter_item_ids: list[str] | None
+    document_ids: list[str] | None
+
+
+
+
+class QListSimulationsV3Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    department_ids: list[str] | None
+    time_limit: int | None
+    active: bool | None
+    practice_simulation: bool | None
+    can_edit: bool | None
+    can_delete: bool | None
+    can_duplicate: bool | None
+    scenario_ids: list[UUID] | None
+    rubric_id: UUID | None
+    num_cohorts: int | None
+    cohort_ids: list[str] | None
+    updated_at: str | None
+
+class GetSimulationsListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    simulations: list[QListSimulationsV3Simulation] | None = None
+    scenarios: list[QListSimulationsV3Scenario] | None = None
+    rubrics: list[QListSimulationsV3Rubric] | None = None
+    departments: list[QListSimulationsV3Department] | None = None
+    cohorts: list[QListSimulationsV3Cohort] | None = None
+    rubric_options: list[QListSimulationsV3Option] | None = None
+    cohort_options: list[QListSimulationsV3Option] | None = None
+    department_options: list[QListSimulationsV3Option] | None = None
+
+class GetSimulationsListApiRequest(BaseModel):
+
+    pass
+
+class GetSimulationsListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    simulations: list[QListSimulationsV3Simulation] | None = None
+    scenarios: list[QListSimulationsV3Scenario] | None = None
+    rubrics: list[QListSimulationsV3Rubric] | None = None
+    departments: list[QListSimulationsV3Department] | None = None
+    cohorts: list[QListSimulationsV3Cohort] | None = None
+    rubric_options: list[QListSimulationsV3Option] | None = None
+    cohort_options: list[QListSimulationsV3Option] | None = None
+    department_options: list[QListSimulationsV3Option] | None = None
 
 
 
@@ -5603,22 +5977,21 @@ class StartSimulationAttemptApiResponse(BaseModel):
 
 class UpdateSimulationSqlParams(BaseModel):
 
-    simulationId: UUID
+    simulation_id: UUID
     title: str
     description: str
     active: bool
     practice_simulation: bool
-    department_ids: list[str]
-    scenario_ids: list[str]
+    department_ids: list[UUID]
+    scenario_ids: list[UUID]
     scenario_active_flags: list[bool]
-    video_ids: list[str]
+    video_ids: list[UUID]
     video_active_flags: list[bool]
     scenario_hints_enabled: list[bool]
-    scenario_rubric_ids: list[str]
+    scenario_rubric_ids: list[UUID]
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
-    unused: str
     video_show_problem_statement: list[bool]
     video_show_objectives: list[bool]
     video_show_image: list[bool]
@@ -5631,7 +6004,7 @@ class UpdateSimulationSqlParams(BaseModel):
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.simulationId,
+            self.simulation_id,
             self.title,
             self.description,
             self.active,
@@ -5646,9 +6019,6 @@ class UpdateSimulationSqlParams(BaseModel):
             self.scenario_time_limit_seconds,
             self.scenario_audio_enabled,
             self.scenario_text_enabled,
-            self.unused,
-            self.unused,
-            self.unused,
             self.video_show_problem_statement,
             self.video_show_objectives,
             self.video_show_image,
@@ -5662,27 +6032,25 @@ class UpdateSimulationSqlParams(BaseModel):
 
 class UpdateSimulationSqlRow(BaseModel):
 
-    simulation_id: str
-    actor_name: str
+    actor_name: str | None = None
 
 class UpdateSimulationApiRequest(BaseModel):
 
-    simulationId: UUID
+    simulation_id: UUID
     title: str
     description: str
     active: bool
     practice_simulation: bool
-    department_ids: list[str]
-    scenario_ids: list[str]
+    department_ids: list[UUID]
+    scenario_ids: list[UUID]
     scenario_active_flags: list[bool]
-    video_ids: list[str]
+    video_ids: list[UUID]
     video_active_flags: list[bool]
     scenario_hints_enabled: list[bool]
-    scenario_rubric_ids: list[str]
+    scenario_rubric_ids: list[UUID]
     scenario_time_limit_seconds: list[int]
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
-    unused: str
     video_show_problem_statement: list[bool]
     video_show_objectives: list[bool]
     video_show_image: list[bool]
@@ -5694,8 +6062,7 @@ class UpdateSimulationApiRequest(BaseModel):
 
 class UpdateSimulationApiResponse(BaseModel):
 
-    simulation_id: str
-    actor_name: str
+    actor_name: str | None = None
 
 
 
@@ -6299,6 +6666,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeleteSimulationApiRequest",
         "DeleteSimulationApiResponse",
     ),
+    "app/sql/v3/simulations/duplicate_simulation_complete.sql": (
+        "DuplicateSimulationSqlParams",
+        "DuplicateSimulationSqlRow",
+        "DuplicateSimulationApiRequest",
+        "DuplicateSimulationApiResponse",
+    ),
     "app/sql/v3/simulations/generate_hints_complete.sql": (
         "GenerateHintsSqlParams",
         "GenerateHintsSqlRow",
@@ -6316,6 +6689,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationNewSqlRow",
         "GetSimulationNewApiRequest",
         "GetSimulationNewApiResponse",
+    ),
+    "app/sql/v3/simulations/get_simulations_list_complete.sql": (
+        "GetSimulationsListSqlParams",
+        "GetSimulationsListSqlRow",
+        "GetSimulationsListApiRequest",
+        "GetSimulationsListApiResponse",
     ),
     "app/sql/v3/simulations/link_run_to_group_complete.sql": (
         "LinkRunToGroupSqlParams",
@@ -6894,6 +7273,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/duplicate_simulation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/simulations/generate_hints_complete.sql"]
     ) -> SqlString: ...
 
@@ -6905,6 +7289,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/simulations/get_simulation_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/simulations/get_simulations_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload

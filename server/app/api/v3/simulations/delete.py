@@ -1,15 +1,21 @@
 """Simulation delete endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (DeleteSimulationSqlParams, DeleteSimulationSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level
+SQL_PATH = "app/sql/v3/simulations/delete_simulation_complete.sql"
 
 
 # Inline request/response schemas
@@ -48,7 +54,7 @@ async def delete_simulation(
     """Delete a simulation (with usage check)."""
     tags = ["simulations"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -60,10 +66,22 @@ async def delete_simulation(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Delete simulation with existence and usage checks in a single SQL file
-        sql_query = load_sql("app/sql/v3/simulations/delete_simulation_complete.sql")
-        sql_params = (request.simulationId, profile_id)
-        result = await conn.fetchrow(sql_query, request.simulationId, profile_id)
+        # Convert to SQL params
+        params = DeleteSimulationSqlParams(
+            simulation_id=UUID(request.simulationId),
+            profile_id=UUID(profile_id),
+        )
+        sql_params = params.to_tuple()
+
+        # Execute query with typed helper
+        result = cast(
+            DeleteSimulationSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
 
         if not result:
             # Simulation doesn't exist
@@ -72,16 +90,16 @@ async def delete_simulation(
             )
 
         # Check if simulation was deleted or is in use
-        if not result["deleted"]:
+        if not result.deleted:
             # Simulation exists but is in use
-            usage_count = result["usage_count"]
+            usage_count = result.usage_count or 0
             raise HTTPException(
                 status_code=400,
                 detail=f"Cannot delete simulation: in use by {usage_count} cohort(s)",
             )
 
-        simulation_name = result["title"]
-        actor_name = result.get("actor_name")
+        simulation_name = result.title or "Unknown"
+        actor_name = result.actor_name
 
         # Set audit context with data from SQL query
         if actor_name:

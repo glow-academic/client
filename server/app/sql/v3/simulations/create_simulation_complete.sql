@@ -1,29 +1,78 @@
 -- Create simulation with departments and scenarios in a single transaction
--- Parameters: $1=title, $2=description, $3=active, $4=practice_simulation, $5=department_ids (nullable text array), $6=scenario_ids (text array), $7=scenario_active_flags (bool array), $8=scenario_hints_enabled (bool array), $9=scenario_rubric_ids (text array, nullable), $10=scenario_time_limit_seconds (int array, nullable), $11=scenario_audio_enabled (bool array), $12=scenario_text_enabled (bool array), $13=simulation_text_agent_id (text), $14=simulation_voice_agent_id (text, nullable), $15=profile_id (uuid, required)
--- Note: scenario_ids/scenario_active_flags must be same length and order
--- Note: rubric_id and time_limit are now per-scenario, not simulation-level
--- Returns: simulation_id, actor_name
--- profile_id is always a UUID (required in request body)
-WITH user_profile AS (
+-- Converted to function
+
+BEGIN;
+
+-- 1) Drop function first
+DROP FUNCTION IF EXISTS api_create_simulation_v3(text, text, boolean, boolean, uuid[], uuid[], boolean[], boolean[], uuid[], int[], boolean[], boolean[], uuid, uuid, uuid);
+
+-- 2) Recreate function
+CREATE OR REPLACE FUNCTION api_create_simulation_v3(
+    title text,
+    description text,
+    active boolean,
+    practice_simulation boolean,
+    department_ids uuid[],
+    scenario_ids uuid[],
+    scenario_active_flags boolean[],
+    scenario_hints_enabled boolean[],
+    scenario_rubric_ids uuid[],
+    scenario_time_limit_seconds int[],
+    scenario_audio_enabled boolean[],
+    scenario_text_enabled boolean[],
+    simulation_text_agent_id uuid,
+    simulation_voice_agent_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    simulation_id uuid,
+    actor_name text
+)
+LANGUAGE sql
+AS $$
+WITH params AS (
+    SELECT 
+        title AS title,
+        description AS description,
+        active AS active,
+        practice_simulation AS practice_simulation,
+        COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
+        COALESCE(scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
+        COALESCE(scenario_active_flags, ARRAY[]::boolean[]) AS scenario_active_flags,
+        COALESCE(scenario_hints_enabled, ARRAY[]::boolean[]) AS scenario_hints_enabled,
+        COALESCE(scenario_rubric_ids, ARRAY[]::uuid[]) AS scenario_rubric_ids,
+        COALESCE(scenario_time_limit_seconds, ARRAY[]::int[]) AS scenario_time_limit_seconds,
+        COALESCE(scenario_audio_enabled, ARRAY[]::boolean[]) AS scenario_audio_enabled,
+        COALESCE(scenario_text_enabled, ARRAY[]::boolean[]) AS scenario_text_enabled,
+        simulation_text_agent_id AS simulation_text_agent_id,
+        simulation_voice_agent_id AS simulation_voice_agent_id,
+        profile_id AS profile_id
+),
+user_profile AS (
     SELECT 
         p.role,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $15::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 validate_create_permissions AS (
-    -- Validate department permissions for create operation
     SELECT validate_department_create_permissions(
         up.role::text,
-        $5::text[]
+        (SELECT department_ids::text[] FROM params)
     ) as validation_passed
     FROM user_profile up
 ),
+assert_permissions AS (
+    SELECT 1
+    FROM validate_create_permissions
+    WHERE validation_passed = true
+),
 actor_profile AS (
     SELECT 
-        $15::uuid as resolved_profile_id,
+        x.profile_id AS resolved_profile_id,
         up.actor_name
-    FROM user_profile up
+    FROM params x
+    CROSS JOIN user_profile up
 ),
 new_simulation AS (
     INSERT INTO simulations (
@@ -36,27 +85,36 @@ new_simulation AS (
         created_at,
         updated_at
     )
-    VALUES ($1, $2, $3, $4, $13::uuid, NULLIF($14, '')::uuid, NOW(), NOW())
-    RETURNING id::text as simulation_id
+    SELECT 
+        x.title,
+        x.description,
+        x.active,
+        x.practice_simulation,
+        x.simulation_text_agent_id,
+        x.simulation_voice_agent_id,
+        NOW(),
+        NOW()
+    FROM params x
+    JOIN assert_permissions ap ON TRUE
+    RETURNING id as simulation_id
 ),
 link_departments AS (
-    -- Link departments if provided (array is never NULL, but may be empty)
     INSERT INTO simulation_departments (simulation_id, department_id, active, created_at, updated_at)
     SELECT 
-        ns.simulation_id::uuid,
-        dept_id::uuid,
+        ns.simulation_id,
+        dept_id,
         true,
         NOW(),
         NOW()
     FROM new_simulation ns
-    CROSS JOIN UNNEST($5::text[]) as dept_id
-    WHERE COALESCE(array_length($5::text[], 1), 0) > 0
+    CROSS JOIN params x
+    CROSS JOIN UNNEST(x.department_ids) as dept_id
+    WHERE array_length(x.department_ids, 1) > 0
     ON CONFLICT (simulation_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
 scenarios_data AS (
-    -- Prepare scenarios with their active flags, switch flags, rubric_id, and time_limit_seconds
     SELECT 
         scenario_id,
         active_flag,
@@ -76,19 +134,19 @@ scenarios_data AS (
             rubric_id,
             time_limit_seconds,
             ROW_NUMBER() OVER () as row_num
-        FROM UNNEST(
-            $6::text[], 
-            $7::bool[], 
-            COALESCE($8::bool[], ARRAY[]::bool[]),
-            COALESCE($11::bool[], ARRAY[]::bool[]),
-            COALESCE($12::bool[], ARRAY[]::bool[]),
-            COALESCE($9::text[], ARRAY[]::text[]),
-            COALESCE($10::int[], ARRAY[]::int[])
+        FROM params x
+        CROSS JOIN UNNEST(
+            x.scenario_ids, 
+            x.scenario_active_flags, 
+            x.scenario_hints_enabled,
+            x.scenario_audio_enabled,
+            x.scenario_text_enabled,
+            x.scenario_rubric_ids,
+            x.scenario_time_limit_seconds
         ) AS t(scenario_id, active_flag, hints_enabled, audio_enabled, text_enabled, rubric_id, time_limit_seconds)
     ) sub
 ),
 scenarios_with_order AS (
-    -- Sort scenarios: active first, then inactive, maintaining original order within each group
     SELECT 
         scenario_id,
         active_flag,
@@ -101,19 +159,17 @@ scenarios_with_order AS (
             ORDER BY active_flag DESC, row_num
         ) as position
     FROM scenarios_data
-    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
+    WHERE EXISTS (SELECT 1 FROM params x WHERE array_length(x.scenario_ids, 1) > 0)
 ),
 replace_time_limits AS (
-    -- Delete existing scenario time limits for this simulation (should be empty for new simulation, but included for consistency)
     DELETE FROM scenario_time_limits 
-    WHERE simulation_id IN (SELECT simulation_id::uuid FROM new_simulation)
+    WHERE simulation_id IN (SELECT simulation_id FROM new_simulation)
 ),
 link_time_limits AS (
-    -- Link per-scenario time limits to scenarios if provided
     INSERT INTO scenario_time_limits (simulation_id, scenario_id, time_limit_seconds, active, created_at, updated_at)
     SELECT 
-        ns.simulation_id::uuid,
-        swo.scenario_id::uuid,
+        ns.simulation_id,
+        swo.scenario_id,
         swo.time_limit_seconds,
         true,
         NOW(),
@@ -125,17 +181,16 @@ link_time_limits AS (
       AND swo.active_flag = true
 ),
 link_scenarios AS (
-    -- Link scenarios with proper ordering (active first, then inactive) and switch flags
     INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, hints_enabled, audio_enabled, text_enabled, rubric_id, created_at, updated_at)
     SELECT 
-        ns.simulation_id::uuid,
-        swo.scenario_id::uuid,
+        ns.simulation_id,
+        swo.scenario_id,
         swo.active_flag,
         swo.position,
         swo.hints_enabled,
         swo.audio_enabled,
         swo.text_enabled,
-        CASE WHEN swo.rubric_id = '' OR swo.rubric_id IS NULL THEN NULL ELSE swo.rubric_id::uuid END,
+        CASE WHEN swo.rubric_id IS NULL THEN NULL ELSE swo.rubric_id END,
         NOW(),
         NOW()
     FROM new_simulation ns
@@ -143,7 +198,9 @@ link_scenarios AS (
 )
 SELECT 
     ns.simulation_id,
-    ap.actor_name
+    ap.actor_name::text as actor_name
 FROM new_simulation ns
 CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;
