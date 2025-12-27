@@ -1031,11 +1031,13 @@ async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, 
         type_info = await conn.fetchrow(
             """
             SELECT 
-                typname,
-                typarray,
-                typtype
-            FROM pg_type
-            WHERE oid = $1
+                t.typname,
+                t.typarray,
+                t.typtype,
+                (n.nspname || '.' || t.typname) as full_name
+            FROM pg_type t
+            JOIN pg_namespace n ON n.oid = t.typnamespace
+            WHERE t.oid = $1
             """,
             oid,
         )
@@ -1043,6 +1045,7 @@ async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, 
             typname = type_info["typname"]
             typarray = type_info["typarray"]
             typtype = type_info["typtype"]
+            full_name = type_info["full_name"]
 
             # Handle enum types (typtype='e' or b'e')
             # Postgres enums are represented as strings in Python/asyncpg
@@ -1052,8 +1055,8 @@ async def _oid_to_python_type(oid: int, conn: asyncpg.Connection) -> tuple[str, 
             # Handle composite types (typtype='c' or b'c')
             # Composite types need special handling - we'll generate models for them
             if typtype == "c" or typtype == b"c":  # composite type
-                # Return a special marker that includes the type name
-                return f"Composite({typname})", False
+                # Return a special marker that includes the full type name with schema
+                return f"Composite({full_name})", False
 
             # If this type has an array type (typarray != 0), it's a base type
             # If typarray is 0 and typname ends with [], it's an array type

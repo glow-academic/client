@@ -47,9 +47,9 @@ type ProfileItem = LayoutContextResponse["actualProfile"];
 // ============================================================================
 
 export type DepartmentItem = LayoutContextResponse["departments"][number];
-export type CohortItem = LayoutContextResponse["cohorts"]["items"][number];
+export type CohortItem = LayoutContextResponse["cohorts"][number];
 export type SimulationContextItem =
-  LayoutContextResponse["simulations"]["items"][number];
+  LayoutContextResponse["simulations"][number];
 
 // Note: With server-side access control, users without valid sessions won't reach pages
 // (they see UnifiedAccessDenied). However, we handle null profiles gracefully for
@@ -444,11 +444,11 @@ export function ProfileProviderClient({
     selectedDepartmentIds,
     setSelectedDepartmentIds,
     effectiveDepartmentIds,
-    cohorts: initial?.cohorts?.items ?? [],
+    cohorts: initial?.cohorts ?? [], // Arrays directly (no .items property)
     cohortIds: initial?.cohortIds ?? [],
-    simulations: initial?.simulations?.items ?? [],
+    simulations: initial?.simulations ?? [], // Arrays directly (no .items property)
     simulationIds: initial?.simulationIds ?? [],
-    cohortMemberCounts: initial?.cohorts?.memberCounts ?? {},
+    cohortMemberCounts: {}, // TODO: Compute from cohorts array if needed
     earliestAttemptDate: initial?.earliestAttemptDate ?? null,
 
     // Permissions data (from server) - handle null initial gracefully

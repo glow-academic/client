@@ -25,7 +25,7 @@ const getStaff = async (
 ): Promise<StaffDetailOut> => {
   return api.post(
     "/profile/detail",
-    { body: { profileId } },
+    { body: { target_profile_id: profileId } },  // Convert to snake_case
     {
       cache: "no-store",
       headers: {

@@ -551,12 +551,17 @@ async def execute_sql_file(
         # Load SQL file
         sql_text = load_sql(sql_path)
         
-        # Only execute if it contains function definitions
-        if not _detect_function_in_sql(sql_text):
-            return True, f"Skipping {sql_path} (no function definition)"
-        
         # Check if SQL contains transaction blocks (BEGIN/COMMIT)
         has_transaction_block = _detect_transaction_block(sql_text)
+        
+        # Execute if it contains function definitions OR if it's a DDL file with transaction blocks
+        # (e.g., analytics view creation which creates materialized views and indexes)
+        has_function = _detect_function_in_sql(sql_text)
+        if not has_function and not has_transaction_block:
+            return True, f"Skipping {sql_path} (no function definition or DDL transaction block)"
+        
+        # For DDL-only files (no function), we still need to execute them
+        # but they won't be introspected later (handled in generate_types_for_sql_file)
         
         if has_transaction_block:
             # For SQL files with BEGIN/COMMIT, we need to wrap execution in a transaction
@@ -695,6 +700,12 @@ async def generate_types_for_sql_file(
         or None if skipped/error
     """
     try:
+        # Skip introspection for DDL-only files (no function definitions)
+        # These files are executed but don't need type generation
+        sql_text = load_sql(sql_path)
+        if not _detect_function_in_sql(sql_text):
+            return True, f"Skipping {sql_path} (no function definition - DDL only)", None
+        
         # Introspect SQL file
         metadata = await introspect_sql_file(sql_path, conn)
 
@@ -781,6 +792,32 @@ async def main() -> int:
 
     print(f"🔍 Found {len(sql_files)} SQL files to process")
 
+    # Custom sorting function to prioritize analytics routes
+    def _sort_sql_files(sql_file: Path) -> tuple[int, str]:
+        """Sort SQL files with analytics routes first.
+        
+        Returns:
+            Tuple of (priority, path) where:
+            - Priority 0: Analytics view creation file (must be first)
+            - Priority 1: Other analytics routes
+            - Priority 2: All other routes (sorted alphabetically)
+        """
+        sql_path = str(sql_file.relative_to(server_root))
+        
+        # Analytics view creation file must be first
+        if sql_path == "app/sql/v3/analytics/create_analytics_view_complete.sql":
+            return (0, sql_path)
+        
+        # Other analytics routes come next
+        if sql_path.startswith("app/sql/v3/analytics/"):
+            return (1, sql_path)
+        
+        # All other routes sorted alphabetically
+        return (2, sql_path)
+    
+    # Sort SQL files with analytics routes first
+    sorted_sql_files = sorted(sql_files, key=_sort_sql_files)
+
     # Connect to database
     try:
         conn = await asyncpg.connect(db_url)
@@ -798,11 +835,13 @@ async def main() -> int:
 
         # First pass: Execute all SQL files that contain functions/types
         # This ensures functions and types exist in the database before introspection
+        # Analytics routes are processed first since they depend on the materialized view
         print("\n📝 Executing SQL files with functions/types...")
+        print("   (Analytics routes processed first due to dependencies)")
         execution_errors: list[tuple[str, str]] = []
         failed_files: set[str] = set()  # Track files that failed during execution
         
-        for sql_file in sorted(sql_files):
+        for sql_file in sorted_sql_files:
             sql_path = str(sql_file.relative_to(server_root))
             execute_success, execute_message = await execute_sql_file(sql_path, conn, server_root)
             
@@ -832,9 +871,10 @@ async def main() -> int:
             print("\n   Continuing with type generation anyway...")
         
         # Second pass: Generate types for all SQL files
+        # Use same sorting order as execution phase
         print("\n🔍 Generating types from SQL files...")
         
-        for sql_file in sorted(sql_files):
+        for sql_file in sorted_sql_files:
             # Get relative path from server root
             sql_path = str(sql_file.relative_to(server_root))
             

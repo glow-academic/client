@@ -481,345 +481,65 @@ class UpdateAgentApiResponse(BaseModel):
 
 
 
-# Generated from: bulk_archive_attempts
+# Generated from: create_analytics_view_function
 
-class BulkArchiveAttemptsSqlParams(BaseModel):
+class CreateAnalyticsViewFunctionSqlParams(BaseModel):
 
-    archived: bool
-    attemptIds: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.archived,
-            self.attemptIds,
-        )
-
-class BulkArchiveAttemptsSqlRow(BaseModel):
-
-    updated_count: int
-
-class BulkArchiveAttemptsApiRequest(BaseModel):
-
-    archived: bool
-    attemptIds: list[UUID]
-
-class BulkArchiveAttemptsApiResponse(BaseModel):
-
-    updated_count: int
-
-
-
-# Generated from: get_attempt_full
-
-class GetAttemptFullSqlParams(BaseModel):
-
-    param_1: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.param_1,
-        )
-
-class GetAttemptFullSqlRow(BaseModel):
-
-    attempt: dict[str, Any]
-    simulation: dict[str, Any]
-    attemptProfiles: dict[str, Any]
-    chats: dict[str, Any]
-    scenarioDocuments: dict[str, Any]
-    aggregatedResults: dict[str, Any]
-    timer: dict[str, Any]
-    currentChatIndex: int
-    expectedChatCount: int
-    isSingleChatAttempt: bool
-    isLastAttempt: bool
-    showResults: bool
-    shouldShowControls: bool
-    remainingScenariosCount: int
-    isLastRemainingScenario: bool
-    canPickMultipleAlternatives: bool
-    isActive: bool
-    rubricStructure: dict[str, Any]
-    allSimulationScenarios: dict[str, Any]
-    availableContinuationOptions: dict[str, Any]
-
-class GetAttemptFullApiRequest(BaseModel):
-
-    param_1: UUID
-
-class GetAttemptFullApiResponse(BaseModel):
-
-    attempt: dict[str, Any]
-    simulation: dict[str, Any]
-    attemptProfiles: dict[str, Any]
-    chats: dict[str, Any]
-    scenarioDocuments: dict[str, Any]
-    aggregatedResults: dict[str, Any]
-    timer: dict[str, Any]
-    currentChatIndex: int
-    expectedChatCount: int
-    isSingleChatAttempt: bool
-    isLastAttempt: bool
-    showResults: bool
-    shouldShowControls: bool
-    remainingScenariosCount: int
-    isLastRemainingScenario: bool
-    canPickMultipleAlternatives: bool
-    isActive: bool
-    rubricStructure: dict[str, Any]
-    allSimulationScenarios: dict[str, Any]
-    availableContinuationOptions: dict[str, Any]
-
-
-
-# Generated from: update_chat_created_at
-
-class UpdateChatCreatedAtSqlParams(BaseModel):
-
-    createdAt: str
-    chatId: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.createdAt,
-            self.chatId,
-        )
-
-class UpdateChatCreatedAtSqlRow(BaseModel):
-
-    chat_id: str
-
-class UpdateChatCreatedAtApiRequest(BaseModel):
-
-    createdAt: str
-    chatId: UUID
-
-class UpdateChatCreatedAtApiResponse(BaseModel):
-
-    chat_id: str
-
-
-
-# Generated from: create_auth
-
-class CreateAuthSqlParams(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    items_json: dict[str, Any]
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.name,
-            self.description,
-            self.active,
-            self.items_json,
             self.profile_id,
         )
 
-class CreateAuthSqlRow(BaseModel):
+class CreateAnalyticsViewFunctionSqlRow(BaseModel):
 
-    auth_id: str
-    actor_name: str
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
 
-class CreateAuthApiRequest(BaseModel):
+class CreateAnalyticsViewFunctionApiRequest(BaseModel):
 
-    name: str
-    description: str
-    active: bool
-    items_json: dict[str, Any]
+    pass
 
-class CreateAuthApiResponse(BaseModel):
+class CreateAnalyticsViewFunctionApiResponse(BaseModel):
 
-    auth_id: str
-    actor_name: str
-
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
 
 
-# Generated from: delete_auth
 
-class DeleteAuthSqlParams(BaseModel):
+# Generated from: refresh_analytics
 
-    auth_id: UUID
+class RefreshAnalyticsSqlParams(BaseModel):
+
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.auth_id,
             self.profile_id,
         )
 
-class DeleteAuthSqlRow(BaseModel):
+class RefreshAnalyticsSqlRow(BaseModel):
 
-    auth_id: str
-    name: str
-    actor_name: str
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
 
-class DeleteAuthApiRequest(BaseModel):
+class RefreshAnalyticsApiRequest(BaseModel):
 
-    auth_id: UUID
+    pass
 
-class DeleteAuthApiResponse(BaseModel):
+class RefreshAnalyticsApiResponse(BaseModel):
 
-    auth_id: str
-    name: str
-    actor_name: str
-
-
-
-# Generated from: duplicate_auth
-
-class DuplicateAuthSqlParams(BaseModel):
-
-    source_auth_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.source_auth_id,
-            self.profile_id,
-        )
-
-class DuplicateAuthSqlRow(BaseModel):
-
-    auth_id: str
-    original_name: str
-    actor_name: str
-
-class DuplicateAuthApiRequest(BaseModel):
-
-    source_auth_id: UUID
-
-class DuplicateAuthApiResponse(BaseModel):
-
-    auth_id: str
-    original_name: str
-    actor_name: str
-
-
-
-# Generated from: get_auth_detail
-
-class GetAuthDetailSqlParams(BaseModel):
-
-    param_1: UUID
-    param_2: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.param_1,
-            self.param_2,
-        )
-
-class GetAuthDetailAuthItemsItem(BaseModel):
-
-    auth_item_id: str
-    name: str
-    description: str
-    position: int
-    active: int
-    value_masked: str
-    key_id: str
-    encrypted: int
-
-class GetAuthDetailSqlRow(BaseModel):
-
-    actor_name: str
-    can_edit: bool
-    name: str
-    active: bool
-    description: str
-    auth_items: dict[str, GetAuthDetailAuthItemsItem]
-
-class GetAuthDetailApiRequest(BaseModel):
-
-    param_1: UUID
-    param_2: UUID
-
-class GetAuthDetailApiResponse(BaseModel):
-
-    actor_name: str
-    can_edit: bool
-    name: str
-    active: bool
-    description: str
-    auth_items: dict[str, GetAuthDetailAuthItemsItem]
-
-
-
-# Generated from: get_login_data
-
-class GetLoginDataSqlParams(BaseModel):
-
-    department_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-        )
-
-class GetLoginDataSqlRow(BaseModel):
-
-    providers_json: dict[str, Any]
-    departments_json: dict[str, Any]
-    guest_login_enabled: bool
-    default_department_id: str
-    realm_name: str
-
-class GetLoginDataApiRequest(BaseModel):
-
-    department_id: UUID
-
-class GetLoginDataApiResponse(BaseModel):
-
-    providers_json: dict[str, Any]
-    departments_json: dict[str, Any]
-    guest_login_enabled: bool
-    default_department_id: str
-    realm_name: str
-
-
-
-# Generated from: update_auth
-
-class UpdateAuthSqlParams(BaseModel):
-
-    auth_id: UUID
-    name: str
-    description: str
-    active: bool
-    items_json: dict[str, Any]
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.auth_id,
-            self.name,
-            self.description,
-            self.active,
-            self.items_json,
-            self.profile_id,
-        )
-
-class UpdateAuthSqlRow(BaseModel):
-
-    auth_id: str
-    actor_name: str
-
-class UpdateAuthApiRequest(BaseModel):
-
-    auth_id: UUID
-    name: str
-    description: str
-    active: bool
-    items_json: dict[str, Any]
-
-class UpdateAuthApiResponse(BaseModel):
-
-    auth_id: str
-    actor_name: str
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
 
 
 
@@ -1375,246 +1095,6 @@ class UpdateCohortApiResponse(BaseModel):
 
 
 
-# Generated from: create_department
-
-class CreateDepartmentSqlParams(BaseModel):
-
-    title: str
-    description: str
-    active: bool
-    settings_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.title,
-            self.description,
-            self.active,
-            self.settings_id,
-            self.profile_id,
-        )
-
-class CreateDepartmentSqlRow(BaseModel):
-
-    department_id: str
-    actor_name: str
-
-class CreateDepartmentApiRequest(BaseModel):
-
-    title: str
-    description: str
-    active: bool
-    settings_id: UUID
-
-class CreateDepartmentApiResponse(BaseModel):
-
-    department_id: str
-    actor_name: str
-
-
-
-# Generated from: delete_department
-
-class DeleteDepartmentSqlParams(BaseModel):
-
-    departmentId: UUID
-    current_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.departmentId,
-            self.current_profile_id,
-        )
-
-class DeleteDepartmentSqlRow(BaseModel):
-
-    department_id: str
-    title: str
-    simulation_count: int
-    scenario_count: int
-    persona_count: int
-    document_count: int
-    cohort_count: int
-    total_usage: int
-    deleted: bool
-    actor_name: str
-
-class DeleteDepartmentApiRequest(BaseModel):
-
-    departmentId: UUID
-    current_profile_id: UUID
-
-class DeleteDepartmentApiResponse(BaseModel):
-
-    department_id: str
-    title: str
-    simulation_count: int
-    scenario_count: int
-    persona_count: int
-    document_count: int
-    cohort_count: int
-    total_usage: int
-    deleted: bool
-    actor_name: str
-
-
-
-# Generated from: duplicate_department
-
-class DuplicateDepartmentSqlParams(BaseModel):
-
-    department_id: UUID
-    current_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.current_profile_id,
-        )
-
-class DuplicateDepartmentSqlRow(BaseModel):
-
-    new_department_id: str
-    original_title: str
-    actor_name: str
-
-class DuplicateDepartmentApiRequest(BaseModel):
-
-    department_id: UUID
-    current_profile_id: UUID
-
-class DuplicateDepartmentApiResponse(BaseModel):
-
-    new_department_id: str
-    original_title: str
-    actor_name: str
-
-
-
-# Generated from: get_department_default
-
-class GetDepartmentDefaultSqlParams(BaseModel):
-
-    profileId: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profileId,
-        )
-
-class GetDepartmentDefaultSqlRow(BaseModel):
-
-    profile_role: str
-    settings_mapping: dict[str, Any]
-    actor_name: str
-
-class GetDepartmentDefaultApiRequest(BaseModel):
-
-    profileId: UUID
-
-class GetDepartmentDefaultApiResponse(BaseModel):
-
-    profile_role: str
-    settings_mapping: dict[str, Any]
-    actor_name: str
-
-
-
-# Generated from: update_department
-
-class UpdateDepartmentSqlParams(BaseModel):
-
-    department_id: UUID
-    title: str
-    description: str
-    active: bool
-    settings_id: str
-    current_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.title,
-            self.description,
-            self.active,
-            self.settings_id,
-            self.current_profile_id,
-        )
-
-class UpdateDepartmentSqlRow(BaseModel):
-
-    id: UUID
-    title: str
-    actor_name: str
-
-class UpdateDepartmentApiRequest(BaseModel):
-
-    department_id: UUID
-    title: str
-    description: str
-    active: bool
-    settings_id: str
-    current_profile_id: UUID
-
-class UpdateDepartmentApiResponse(BaseModel):
-
-    id: UUID
-    title: str
-    actor_name: str
-
-
-
-# Generated from: complete_document_creation
-
-class CompleteDocumentCreationSqlParams(BaseModel):
-
-    parent_document_id: UUID
-    file_path: str
-    mime_type: str
-    file_size: int
-    param_5: str
-    param_6: str
-    param_7: UUID
-    param_8: UUID
-    param_9: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.parent_document_id,
-            self.file_path,
-            self.mime_type,
-            self.file_size,
-            self.param_5,
-            self.param_6,
-            self.param_7,
-            self.param_8,
-            self.param_9,
-        )
-
-class CompleteDocumentCreationSqlRow(BaseModel):
-
-    child_document_id: str
-    upload_id: str
-
-class CompleteDocumentCreationApiRequest(BaseModel):
-
-    parent_document_id: UUID
-    file_path: str
-    mime_type: str
-    file_size: int
-    param_5: str
-    param_6: str
-    param_7: UUID
-    param_8: UUID
-    param_9: UUID
-
-class CompleteDocumentCreationApiResponse(BaseModel):
-
-    child_document_id: str
-    upload_id: str
-
-
-
 # Generated from: create_document
 
 class CreateDocumentSqlParams(BaseModel):
@@ -2006,57 +1486,6 @@ class GetDocumentsListApiResponse(BaseModel):
 
 
 
-# Generated from: insert_document
-
-class InsertDocumentSqlParams(BaseModel):
-
-    document_id: UUID
-    param_2: str
-    param_3: str
-    param_4: UUID
-    param_5: list[UUID]
-    param_6: list[UUID]
-    param_7: UUID
-    param_8: dict[str, Any]
-    param_9: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.document_id,
-            self.param_2,
-            self.param_3,
-            self.param_4,
-            self.param_5,
-            self.param_6,
-            self.param_7,
-            self.param_8,
-            self.param_9,
-        )
-
-class InsertDocumentSqlRow(BaseModel):
-
-    document_id: str
-    actor_name: str
-
-class InsertDocumentApiRequest(BaseModel):
-
-    document_id: UUID
-    param_2: str
-    param_3: str
-    param_4: UUID
-    param_5: list[UUID]
-    param_6: list[UUID]
-    param_7: UUID
-    param_8: dict[str, Any]
-    param_9: UUID
-
-class InsertDocumentApiResponse(BaseModel):
-
-    document_id: str
-    actor_name: str
-
-
-
 # Generated from: render_template
 
 class RenderTemplateSqlParams(BaseModel):
@@ -2152,213 +1581,6 @@ class UpdateDocumentApiResponse(BaseModel):
     document_id: UUID | None = None
     document_name: str | None = None
     actor_name: str | None = None
-
-
-
-# Generated from: create_eval
-
-class CreateEvalSqlParams(BaseModel):
-
-    name: str
-    description: str
-    rubric_id: UUID
-    agent_id: UUID
-    eval_agent_id: UUID
-    run_ids: list[UUID]
-    department_ids: list[UUID]
-    active: bool
-    dynamic: bool
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.name,
-            self.description,
-            self.rubric_id,
-            self.agent_id,
-            self.eval_agent_id,
-            self.run_ids,
-            self.department_ids,
-            self.active,
-            self.dynamic,
-            self.profile_id,
-        )
-
-class CreateEvalSqlRow(BaseModel):
-
-    eval_id: str
-    actor_name: str
-
-class CreateEvalApiRequest(BaseModel):
-
-    name: str
-    description: str
-    rubric_id: UUID
-    agent_id: UUID
-    eval_agent_id: UUID
-    run_ids: list[UUID]
-    department_ids: list[UUID]
-    active: bool
-    dynamic: bool
-
-class CreateEvalApiResponse(BaseModel):
-
-    eval_id: str
-    actor_name: str
-
-
-
-# Generated from: get_eval_attempt_full
-
-class GetEvalAttemptFullSqlParams(BaseModel):
-
-    attempt_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.attempt_id,
-            self.profile_id,
-        )
-
-class GetEvalAttemptFullSqlRow(BaseModel):
-
-    attempt: dict[str, Any]
-    eval: dict[str, Any]
-    runs: dict[str, Any]
-    status_summary: dict[str, Any]
-    actor_name: str
-
-class GetEvalAttemptFullApiRequest(BaseModel):
-
-    attempt_id: UUID
-
-class GetEvalAttemptFullApiResponse(BaseModel):
-
-    attempt: dict[str, Any]
-    eval: dict[str, Any]
-    runs: dict[str, Any]
-    status_summary: dict[str, Any]
-    actor_name: str
-
-
-
-# Generated from: get_eval_new
-
-class GetEvalNewSqlParams(BaseModel):
-
-    profile_id: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class GetEvalNewSqlRow(BaseModel):
-
-    eval_id: str
-    name: str
-    description: str
-    rubric_id: str
-    eval_agent_id: str
-    agent_id: str
-    agent_ids: list[str]
-    model_run_ids: list[str]
-    active: bool
-    dynamic: bool
-    department_ids: list[str]
-    valid_department_ids: list[str]
-    department_mapping: dict[str, Any]
-    eval_agent_mapping: dict[str, Any]
-    valid_eval_agent_ids: list[str]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    rubric_mapping: dict[str, Any]
-    valid_rubric_ids: list[str]
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
-class GetEvalNewApiRequest(BaseModel):
-
-    pass
-
-class GetEvalNewApiResponse(BaseModel):
-
-    eval_id: str
-    name: str
-    description: str
-    rubric_id: str
-    eval_agent_id: str
-    agent_id: str
-    agent_ids: list[str]
-    model_run_ids: list[str]
-    active: bool
-    dynamic: bool
-    department_ids: list[str]
-    valid_department_ids: list[str]
-    department_mapping: dict[str, Any]
-    eval_agent_mapping: dict[str, Any]
-    valid_eval_agent_ids: list[str]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    rubric_mapping: dict[str, Any]
-    valid_rubric_ids: list[str]
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
-
-
-# Generated from: start_eval_attempt
-
-class StartEvalAttemptSqlParams(BaseModel):
-
-    eval_id: UUID
-    conversation_mode: bool
-    conversation_agent_id: UUID
-    conversation_max_turns: int
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.eval_id,
-            self.conversation_mode,
-            self.conversation_agent_id,
-            self.conversation_max_turns,
-        )
-
-class StartEvalAttemptSqlRow(BaseModel):
-
-    attempt_id: str
-    eval_id: str
-    agent_id: str
-    eval_agent_id: str
-    rubric_id: str
-    dynamic: bool
-    conversation_mode: bool
-    conversation_agent_id: str
-    conversation_max_turns: int
-    pending_run_ids: list[str]
-
-class StartEvalAttemptApiRequest(BaseModel):
-
-    eval_id: UUID
-    conversation_mode: bool
-    conversation_agent_id: UUID
-    conversation_max_turns: int
-
-class StartEvalAttemptApiResponse(BaseModel):
-
-    attempt_id: str
-    eval_id: str
-    agent_id: str
-    eval_agent_id: str
-    rubric_id: str
-    dynamic: bool
-    conversation_mode: bool
-    conversation_agent_id: str
-    conversation_max_turns: int
-    pending_run_ids: list[str]
 
 
 
@@ -2711,654 +1933,67 @@ class UpdateFieldApiResponse(BaseModel):
 
 
 
-# Generated from: create_grade
+# Generated from: get_logs_bundle
 
-class CreateGradeSqlParams(BaseModel):
+class GetLogsBundleSqlParams(BaseModel):
 
-    run_id: UUID
-    rubric_id: UUID
-    description: str
-    passed: bool
-    score: int
-    time_taken: int
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.rubric_id,
-            self.description,
-            self.passed,
-            self.score,
-            self.time_taken,
-        )
-
-class CreateGradeSqlRow(BaseModel):
-
-    id: str
-
-class CreateGradeApiRequest(BaseModel):
-
-    run_id: UUID
-    rubric_id: UUID
-    description: str
-    passed: bool
-    score: int
-    time_taken: int
-
-class CreateGradeApiResponse(BaseModel):
-
-    id: str
-
-
-
-# Generated from: create_message_feedback
-
-class CreateMessageFeedbackSqlParams(BaseModel):
-
-    grade_id: UUID
-    message_id: UUID
-    name: str
-    description: str
-    type: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.grade_id,
-            self.message_id,
-            self.name,
-            self.description,
-            self.type,
-        )
-
-class CreateMessageFeedbackSqlRow(BaseModel):
-
-    id: str
-
-class CreateMessageFeedbackApiRequest(BaseModel):
-
-    grade_id: UUID
-    message_id: UUID
-    name: str
-    description: str
-    type: str
-
-class CreateMessageFeedbackApiResponse(BaseModel):
-
-    id: str
-
-
-
-# Generated from: get_auth_items
-
-class GetAuthItemsSqlParams(BaseModel):
-
-    auth_id: UUID
-    department_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.auth_id,
-            self.department_id,
-        )
-
-class GetAuthItemsSqlRow(BaseModel):
-
-    name: str
-    value: str
-    encrypted: bool
-
-class GetAuthItemsApiRequest(BaseModel):
-
-    auth_id: UUID
-    department_id: UUID
-
-class GetAuthItemsApiResponse(BaseModel):
-
-    name: str
-    value: str
-    encrypted: bool
-
-
-
-# Generated from: get_auth_providers
-
-class GetAuthProvidersSqlParams(BaseModel):
-
-    department_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-        )
-
-class GetAuthProvidersSqlRow(BaseModel):
-
-    id: UUID
-    slug: str
-    provider_id: str
-    name: str
-
-class GetAuthProvidersApiRequest(BaseModel):
-
-    department_id: UUID
-
-class GetAuthProvidersApiResponse(BaseModel):
-
-    id: UUID
-    slug: str
-    provider_id: str
-    name: str
-
-
-
-# Generated from: get_key_detail
-
-class GetKeyDetailSqlParams(BaseModel):
-
-    keyId: UUID
-    profileId: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.keyId,
-            self.profileId,
-        )
-
-class GetKeyDetailSqlRow(BaseModel):
-
-    key_id: UUID
-    name: str
-    key_masked: str
-    description: str
-    active: bool
-    created_at: str
-    updated_at: str
-    department_ids: list[str]
-    model_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    model_mapping: dict[str, Any]
-    can_edit: bool
-    actor_name: str
-
-class GetKeyDetailApiRequest(BaseModel):
-
-    keyId: UUID
-    profileId: UUID
-
-class GetKeyDetailApiResponse(BaseModel):
-
-    key_id: UUID
-    name: str
-    key_masked: str
-    description: str
-    active: bool
-    created_at: str
-    updated_at: str
-    department_ids: list[str]
-    model_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    model_mapping: dict[str, Any]
-    can_edit: bool
-    actor_name: str
-
-
-
-# Generated from: get_key_new
-
-class GetKeyNewSqlParams(BaseModel):
-
-    profileId: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profileId,
-        )
-
-class GetKeyNewSqlRow(BaseModel):
-
-    key_id: str
-    name: str
-    key_masked: str
-    description: str
-    active: bool
-    created_at: str
-    updated_at: str
-    department_ids: list[str]
-    model_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    department_id: str
-    model_mapping: dict[str, Any]
-    can_edit: bool
-    actor_name: str
-
-class GetKeyNewApiRequest(BaseModel):
-
-    profileId: UUID
-
-class GetKeyNewApiResponse(BaseModel):
-
-    key_id: str
-    name: str
-    key_masked: str
-    description: str
-    active: bool
-    created_at: str
-    updated_at: str
-    department_ids: list[str]
-    model_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    department_id: str
-    model_mapping: dict[str, Any]
-    can_edit: bool
-    actor_name: str
-
-
-
-# Generated from: create_model_run
-
-class CreateModelRunSqlParams(BaseModel):
-
-    department_id: UUID
-    model_id: UUID
-    entity_id: UUID
-    entity_type: str
-    profile_id: UUID
-    key_id: UUID
-    agent_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.model_id,
-            self.entity_id,
-            self.entity_type,
-            self.profile_id,
-            self.key_id,
-            self.agent_id,
-        )
-
-class CreateModelRunSqlRow(BaseModel):
-
-    run_id: str
-
-class CreateModelRunApiRequest(BaseModel):
-
-    department_id: UUID
-    model_id: UUID
-    entity_id: UUID
-    entity_type: str
-    key_id: UUID
-    agent_id: UUID
-
-class CreateModelRunApiResponse(BaseModel):
-
-    run_id: str
-
-
-
-# Generated from: log_run
-
-class LogRunSqlParams(BaseModel):
-
-    run_id: UUID
-    department_id: UUID | None = None
-    input_text_tokens: int
-    input_audio_tokens: int | None = None
-    input_image_tokens: int | None = None
-    output_text_tokens: int
-    output_audio_tokens: int | None = None
-    cached_text_tokens: int | None = None
-    cached_audio_tokens: int | None = None
-    developer_contents: list[str] = Field(default_factory=list)  # type: ignore[arg-type]
-    assistant_output: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.department_id,
-            self.input_text_tokens,
-            self.input_audio_tokens,
-            self.input_image_tokens,
-            self.output_text_tokens,
-            self.output_audio_tokens,
-            self.cached_text_tokens,
-            self.cached_audio_tokens,
-            self.developer_contents,
-            self.assistant_output,
-        )
-
-class LogRunSqlRow(BaseModel):
-
-    success: int
-
-class LogRunApiRequest(BaseModel):
-
-    run_id: UUID
-    department_id: UUID | None = None
-    input_text_tokens: int
-    input_audio_tokens: int | None = None
-    input_image_tokens: int | None = None
-    output_text_tokens: int
-    output_audio_tokens: int | None = None
-    cached_text_tokens: int | None = None
-    cached_audio_tokens: int | None = None
-    developer_contents: list[str] = Field(default_factory=list)  # type: ignore[arg-type]
-    assistant_output: str | None = None
-
-class LogRunApiResponse(BaseModel):
-
-    success: int
-
-
-
-# Generated from: create_model
-
-class CreateModelSqlParams(BaseModel):
-
-    provider_id: UUID
-    name: str
-    description: str
-    active: bool
-    param_5: str
-    param_6: list[str]
-    param_7: str
-    param_8: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.provider_id,
-            self.name,
-            self.description,
-            self.active,
-            self.param_5,
-            self.param_6,
-            self.param_7,
-            self.param_8,
-        )
-
-class CreateModelSqlRow(BaseModel):
-
-    id: str
-    actor_name: str
-
-class CreateModelApiRequest(BaseModel):
-
-    provider_id: UUID
-    name: str
-    description: str
-    active: bool
-    param_5: str
-    param_6: list[str]
-    param_7: str
-    param_8: UUID
-
-class CreateModelApiResponse(BaseModel):
-
-    id: str
-    actor_name: str
-
-
-
-# Generated from: get_model_detail
-
-class GetModelDetailSqlParams(BaseModel):
-
-    model_id: UUID
-    profile_id: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.model_id,
-            self.profile_id,
-        )
-
-class GetModelDetailSqlRow(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    value: str
-    provider: str
-    provider_id: str
-    provider_name: str
-    image_model: bool
-    valid_provider_ids: list[str]
-    provider_mapping: dict[str, Any]
-    base_url: str
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    department_ids: list[str]
-    key_mapping: dict[str, Any]
-    valid_key_ids: list[str]
-    default_key_id: str
-    temperature_lower: float
-    temperature_upper: float
-    temperature_values: dict[str, Any]
-    pricing: dict[str, Any]
-    modalities: dict[str, Any]
-    reasoning_levels: dict[str, Any]
-    voices: dict[str, Any]
-    qualities: dict[str, Any]
-    units: dict[str, Any]
-    actor_name: str
-
-class GetModelDetailApiRequest(BaseModel):
-
-    model_id: UUID
-
-class GetModelDetailApiResponse(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    value: str
-    provider: str
-    provider_id: str
-    provider_name: str
-    image_model: bool
-    valid_provider_ids: list[str]
-    provider_mapping: dict[str, Any]
-    base_url: str
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    department_ids: list[str]
-    key_mapping: dict[str, Any]
-    valid_key_ids: list[str]
-    default_key_id: str
-    temperature_lower: float
-    temperature_upper: float
-    temperature_values: dict[str, Any]
-    pricing: dict[str, Any]
-    modalities: dict[str, Any]
-    reasoning_levels: dict[str, Any]
-    voices: dict[str, Any]
-    qualities: dict[str, Any]
-    units: dict[str, Any]
-    actor_name: str
-
-
-
-# Generated from: get_model_new
-
-class GetModelNewSqlParams(BaseModel):
-
-    profile_id: str
+    profile_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
         )
 
-class GetModelNewSqlRow(BaseModel):
+class QGetLogsBundleV3TrendData(BaseModel):
 
-    valid_provider_ids: list[str]
-    provider_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    model_mapping: dict[str, Any]
-    valid_model_ids: dict[str, Any]
-    key_mapping: dict[str, Any]
-    valid_key_ids: list[str]
-    units: dict[str, Any]
-    user_role: str
-    primary_department_id: str
-    actor_name: str
+    date: str | None
+    value: float | None
+    latency: float | None
+    count: int | None
 
-class GetModelNewApiRequest(BaseModel):
+class QGetLogsBundleV3HealthKpi(BaseModel):
+
+    ok: bool | None
+    latency_ms: float | None
+    error: str | None
+    trend: list[QGetLogsBundleV3TrendData] | None
+
+class QGetLogsBundleV3HealthKpis(BaseModel):
+
+    websocket: QGetLogsBundleV3HealthKpi | None
+    redis: QGetLogsBundleV3HealthKpi | None
+    document: QGetLogsBundleV3HealthKpi | None
+    database: QGetLogsBundleV3HealthKpi | None
+    authentication: QGetLogsBundleV3HealthKpi | None
+
+
+
+
+class QGetLogsBundleV3MetricsDataPoint(BaseModel):
+
+    date: str | None
+    cpu_percent: float | None
+    latency_ms: float | None
+    memory_bytes: int | None
+    requests_total: int | None
+    errors_total: int | None
+    sample_count: int | None
+
+class GetLogsBundleSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    health_kpis: QGetLogsBundleV3HealthKpis | None = None
+    metrics: list[QGetLogsBundleV3MetricsDataPoint] | None = None
+
+class GetLogsBundleApiRequest(BaseModel):
 
     pass
 
-class GetModelNewApiResponse(BaseModel):
+class GetLogsBundleApiResponse(BaseModel):
 
-    valid_provider_ids: list[str]
-    provider_mapping: dict[str, Any]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    model_mapping: dict[str, Any]
-    valid_model_ids: dict[str, Any]
-    key_mapping: dict[str, Any]
-    valid_key_ids: list[str]
-    units: dict[str, Any]
-    user_role: str
-    primary_department_id: str
-    actor_name: str
-
-
-
-# Generated from: list_models
-
-class ListModelsSqlParams(BaseModel):
-
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class ListModelsSqlRow(BaseModel):
-
-    model_id: str
-    name: str
-    description: str
-    active: bool
-    image_model: bool
-    updated_at: str
-    provider: str
-    base_url: str
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
-class ListModelsApiRequest(BaseModel):
-
-    pass
-
-class ListModelsApiResponse(BaseModel):
-
-    model_id: str
-    name: str
-    description: str
-    active: bool
-    image_model: bool
-    updated_at: str
-    provider: str
-    base_url: str
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
-
-
-# Generated from: update_model
-
-class UpdateModelSqlParams(BaseModel):
-
-    model_id: UUID
-    provider_id: UUID
-    name: str
-    description: str
-    active: bool
-    param_6: str
-    param_7: list[str]
-    param_8: str
-    param_9: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.model_id,
-            self.provider_id,
-            self.name,
-            self.description,
-            self.active,
-            self.param_6,
-            self.param_7,
-            self.param_8,
-            self.param_9,
-        )
-
-class UpdateModelSqlRow(BaseModel):
-
-    model_id: str
-    model_name: str
-    actor_name: str
-
-class UpdateModelApiRequest(BaseModel):
-
-    model_id: UUID
-    provider_id: UUID
-    name: str
-    description: str
-    active: bool
-    param_6: str
-    param_7: list[str]
-    param_8: str
-    param_9: UUID
-
-class UpdateModelApiResponse(BaseModel):
-
-    model_id: str
-    model_name: str
-    actor_name: str
-
-
-
-# Generated from: insert_objective
-
-class InsertObjectiveSqlParams(BaseModel):
-
-    objective: str
-    idx: int
-    scenario_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.objective,
-            self.idx,
-            self.scenario_id,
-        )
-
-class InsertObjectiveSqlRow(BaseModel):
-
-    objective_id: str
-
-class InsertObjectiveApiRequest(BaseModel):
-
-    objective: str
-    idx: int
-    scenario_id: UUID
-
-class InsertObjectiveApiResponse(BaseModel):
-
-    objective_id: str
+    actor_name: str | None = None
+    health_kpis: QGetLogsBundleV3HealthKpis | None = None
+    metrics: list[QGetLogsBundleV3MetricsDataPoint] | None = None
 
 
 
@@ -4405,107 +3040,281 @@ class UpdatePersonaApiResponse(BaseModel):
 
 
 
-# Generated from: get_group_detail
+# Generated from: authorize_emulation
 
-class GetGroupDetailSqlParams(BaseModel):
+class AuthorizeEmulationSqlParams(BaseModel):
 
-    group_id: UUID
-    profile_id: str
+    requester_profile_id: UUID
+    target_profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.group_id,
+            self.requester_profile_id,
+            self.target_profile_id,
+        )
+
+class AuthorizeEmulationSqlRow(BaseModel):
+
+    allowed: bool | None = None
+    reason: str | None = None
+    actor_name: str | None = None
+
+class AuthorizeEmulationApiRequest(BaseModel):
+
+    requester_profile_id: UUID
+    target_profile_id: UUID
+
+class AuthorizeEmulationApiResponse(BaseModel):
+
+    allowed: bool | None = None
+    reason: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: check_login_authorization
+
+class CheckLoginAuthorizationSqlParams(BaseModel):
+
+    department_id: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+        )
+
+class CheckLoginAuthorizationSqlRow(BaseModel):
+
+    guest_login_enabled: bool | None = None
+    active_departments_count: int | None = None
+    department_auth_providers_count: int | None = None
+    default_settings_auth_providers_count: int | None = None
+    departments_without_auth_providers_count: int | None = None
+    department_exists: bool | None = None
+
+class CheckLoginAuthorizationApiRequest(BaseModel):
+
+    department_id: str | None = None
+
+class CheckLoginAuthorizationApiResponse(BaseModel):
+
+    guest_login_enabled: bool | None = None
+    active_departments_count: int | None = None
+    department_auth_providers_count: int | None = None
+    default_settings_auth_providers_count: int | None = None
+    departments_without_auth_providers_count: int | None = None
+    department_exists: bool | None = None
+
+
+
+# Generated from: create_or_update_profile
+
+class CreateOrUpdateProfileSqlParams(BaseModel):
+
+    profile_id_new: UUID
+    first_name: str
+    last_name: str
+    emails: list[str]
+    role: str
+    current_profile_id: UUID | None = None
+    primary_email_index: int | None = 0
+    active: bool | None = True
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id_new,
+            self.first_name,
+            self.last_name,
+            self.emails,
+            self.role,
+            self.current_profile_id,
+            self.primary_email_index,
+            self.active,
+            self.department_ids,
+            self.cohort_ids,
+        )
+
+class CreateOrUpdateProfileSqlRow(BaseModel):
+
+    profile_id: UUID | None = None
+    created: bool | None = None
+    actor_name: str | None = None
+
+class CreateOrUpdateProfileApiRequest(BaseModel):
+
+    profile_id_new: UUID
+    first_name: str
+    last_name: str
+    emails: list[str]
+    role: str
+    current_profile_id: UUID | None = None
+    primary_email_index: int | None = 0
+    active: bool | None = True
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class CreateOrUpdateProfileApiResponse(BaseModel):
+
+    profile_id: UUID | None = None
+    created: bool | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: create_profile
+
+class CreateProfileSqlParams(BaseModel):
+
+    profile_id: UUID
+    first_name: str
+    last_name: str
+    emails: list[str]
+    role: str
+    current_profile_id: UUID | None = None
+    primary_email_index: int | None = 0
+    active: bool | None = True
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    primary_department_index: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.first_name,
+            self.last_name,
+            self.emails,
+            self.role,
+            self.current_profile_id,
+            self.primary_email_index,
+            self.active,
+            self.cohort_ids,
+            self.department_ids,
+            self.primary_department_index,
+        )
+
+class CreateProfileSqlRow(BaseModel):
+
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email_exists: bool | None = None
+    actor_name: str | None = None
+
+class CreateProfileApiRequest(BaseModel):
+
+    first_name: str
+    last_name: str
+    emails: list[str]
+    role: str
+    current_profile_id: UUID | None = None
+    primary_email_index: int | None = 0
+    active: bool | None = True
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    primary_department_index: int | None = None
+
+class CreateProfileApiResponse(BaseModel):
+
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email_exists: bool | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: delete_profile
+
+class DeleteProfileSqlParams(BaseModel):
+
+    target_profile_id: UUID
+    current_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.target_profile_id,
+            self.current_profile_id,
+        )
+
+class DeleteProfileSqlRow(BaseModel):
+
+    profile_exists: bool | None = None
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
+
+class DeleteProfileApiRequest(BaseModel):
+
+    target_profile_id: UUID
+    current_profile_id: UUID
+
+class DeleteProfileApiResponse(BaseModel):
+
+    profile_exists: bool | None = None
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_profile_by_email
+
+class GetProfileByEmailSqlParams(BaseModel):
+
+    email: str
+    profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.email,
             self.profile_id,
         )
 
-class GetGroupDetailSqlRow(BaseModel):
+class GetProfileByEmailSqlRow(BaseModel):
 
-    result: dict[str, Any]
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    req_per_day: int | None = None
+    last_login: str | None = None
+    last_active: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    primary_department_id: UUID | None = None
+    actor_name: str | None = None
 
-class GetGroupDetailApiRequest(BaseModel):
+class GetProfileByEmailApiRequest(BaseModel):
 
-    group_id: UUID
+    email: str
 
-class GetGroupDetailApiResponse(BaseModel):
+class GetProfileByEmailApiResponse(BaseModel):
 
-    result: dict[str, Any]
-
-
-
-# Generated from: get_pricing_analytics
-
-class GetPricingAnalyticsSqlParams(BaseModel):
-
-    start_date: str
-    param_2: str
-    param_3: list[UUID]
-    param_4: UUID
-    param_5: list[str]
-    param_6: list[UUID]
-    param_7: list[str]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.start_date,
-            self.param_2,
-            self.param_3,
-            self.param_4,
-            self.param_5,
-            self.param_6,
-            self.param_7,
-        )
-
-class GetPricingAnalyticsSqlRow(BaseModel):
-
-    result: dict[str, Any]
-
-class GetPricingAnalyticsApiRequest(BaseModel):
-
-    start_date: str
-    param_2: str
-    param_3: list[UUID]
-    param_4: UUID
-    param_5: list[str]
-    param_6: list[UUID]
-    param_7: list[str]
-
-class GetPricingAnalyticsApiResponse(BaseModel):
-
-    result: dict[str, Any]
-
-
-
-# Generated from: insert_problem_statement
-
-class InsertProblemStatementSqlParams(BaseModel):
-
-    problem_statement: str
-    problem_statement_name: str
-    scenario_id: UUID
-    active: bool
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.problem_statement,
-            self.problem_statement_name,
-            self.scenario_id,
-            self.active,
-        )
-
-class InsertProblemStatementSqlRow(BaseModel):
-
-    problem_statement_id: str
-
-class InsertProblemStatementApiRequest(BaseModel):
-
-    problem_statement: str
-    problem_statement_name: str
-    scenario_id: UUID
-    active: bool
-
-class InsertProblemStatementApiResponse(BaseModel):
-
-    problem_statement_id: str
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    req_per_day: int | None = None
+    last_login: str | None = None
+    last_active: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    primary_department_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -4513,153 +3322,466 @@ class InsertProblemStatementApiResponse(BaseModel):
 
 class GetProfileContextSqlParams(BaseModel):
 
-    actualProfileId: UUID
-    effectiveProfileId: UUID
-    param_3: str
-    param_4: str
+    actual_profile_id: UUID | None = None
+    effective_profile_id: UUID | None = None
+    department_id: str | None = None
+    auth_mode: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.actualProfileId,
-            self.effectiveProfileId,
-            self.param_3,
-            self.param_4,
+            self.actual_profile_id,
+            self.effective_profile_id,
+            self.department_id,
+            self.auth_mode,
         )
+
+class QGetProfileContextV3Auth(BaseModel):
+
+    auth_id: UUID | None
+    name: str | None
+    description: str | None
+    slug: str | None
+
+
+
+
+class QGetProfileContextV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    title: str | None
+    description: str | None
+    active: bool | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetProfileContextV3Department(BaseModel):
+
+    department_id: UUID | None
+    title: str | None
+    description: str | None
+    active: bool | None
+    is_primary: bool | None
+
+
+
+
+class QGetProfileContextV3Provider(BaseModel):
+
+    provider_id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+
+
+
+
+class QGetProfileContextV3Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    title: str | None
+    description: str | None
+    department_ids: list[str] | None
+    time_limit: int | None
+    active: bool | None
+    practice_simulation: bool | None
+
+
+
+
+class QGetProfileContextV3ThemeTokens(BaseModel):
+
+    background: str | None
+    foreground: str | None
+    card: str | None
+    card_foreground: str | None
+    popover: str | None
+    popover_foreground: str | None
+    primary_color: str | None
+    primary_foreground: str | None
+    secondary: str | None
+    secondary_foreground: str | None
+    muted: str | None
+    muted_foreground: str | None
+    accent: str | None
+    accent_foreground: str | None
+    destructive: str | None
+    border: str | None
+    input: str | None
+    ring: str | None
+    success: str | None
+    success_foreground: str | None
+    warning: str | None
+    warning_foreground: str | None
+    info: str | None
+    info_foreground: str | None
+    chart1: str | None
+    chart2: str | None
+    chart3: str | None
+    chart4: str | None
+    chart5: str | None
+    sidebar: str | None
+    sidebar_foreground: str | None
+    sidebar_primary: str | None
+    sidebar_primary_foreground: str | None
+    sidebar_accent: str | None
+    sidebar_accent_foreground: str | None
+    sidebar_border: str | None
+    sidebar_ring: str | None
 
 class GetProfileContextSqlRow(BaseModel):
 
-    is_authorized: bool
-    actual_id: UUID
-    actual_first_name: str
-    actual_last_name: str
-    actual_emails: list[str]
-    actual_primary_email: str
-    actual_role: str
-    actual_active: bool
-    actual_req_per_day: int
-    actual_last_login: str
-    actual_last_active: str
-    actual_created_at: str
-    actual_updated_at: str
-    actual_primary_department_id: UUID
-    id: UUID
-    first_name: str
-    last_name: str
-    emails: list[str]
-    primary_email: str
-    role: str
-    active: bool
-    req_per_day: int
-    last_login: str
-    last_active: str
-    created_at: str
-    updated_at: str
-    primary_department_id: UUID
-    departments: dict[str, Any]
-    cohorts: dict[str, Any]
-    simulations: dict[str, Any]
-    earliest_attempt_date: str
-    scoped_roles: Any
-    settings_id: str
-    settings_created_at: str
-    settings_active: bool
-    settings_name: str
-    settings_description: str
-    settings_primary_color: str
-    settings_accent: str
-    settings_background: str
-    settings_surface: str
-    settings_success: str
-    settings_warning: str
-    settings_error: str
-    settings_sidebar_background: str
-    settings_sidebar_primary: str
-    settings_chart1: str
-    settings_chart2: str
-    settings_chart3: str
-    settings_chart4: str
-    settings_chart5: str
-    settings_guest_login_enabled: bool
-    settings_success_threshold: int
-    settings_warning_threshold: int
-    settings_danger_threshold: int
-    settings_auth_ids: list[str]
-    settings_auth_mapping: dict[str, Any]
-    settings_provider_ids: list[str]
-    settings_provider_mapping: dict[str, Any]
-    settings_default_guest_profile_id: str
-    settings_default_account_profile_id: str
+    is_authorized: bool | None = None
+    guest_login_enabled: bool | None = None
+    active_departments_count: int | None = None
+    department_auth_providers_count: int | None = None
+    default_settings_auth_providers_count: int | None = None
+    departments_without_auth_providers_count: int | None = None
+    department_exists: bool | None = None
+    actual_id: UUID | None = None
+    actual_first_name: str | None = None
+    actual_last_name: str | None = None
+    actual_emails: list[str] | None = None
+    actual_primary_email: str | None = None
+    actual_role: str | None = None
+    actual_active: bool | None = None
+    actual_req_per_day: int | None = None
+    actual_last_login: str | None = None
+    actual_last_active: str | None = None
+    actual_created_at: str | None = None
+    actual_updated_at: str | None = None
+    actual_primary_department_id: UUID | None = None
+    id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    req_per_day: int | None = None
+    last_login: str | None = None
+    last_active: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    primary_department_id: UUID | None = None
+    departments: list[QGetProfileContextV3Department] | None = None
+    cohorts: list[QGetProfileContextV3Cohort] | None = None
+    simulations: list[QGetProfileContextV3Simulation] | None = None
+    earliest_attempt_date: str | None = None
+    scoped_roles: list[str] | None = None
+    settings_id: str | None = None
+    settings_created_at: str | None = None
+    settings_active: bool | None = None
+    settings_name: str | None = None
+    settings_description: str | None = None
+    settings_primary_color: str | None = None
+    settings_accent: str | None = None
+    settings_background: str | None = None
+    settings_surface: str | None = None
+    settings_success: str | None = None
+    settings_warning: str | None = None
+    settings_error: str | None = None
+    settings_sidebar_background: str | None = None
+    settings_sidebar_primary: str | None = None
+    settings_chart1: str | None = None
+    settings_chart2: str | None = None
+    settings_chart3: str | None = None
+    settings_chart4: str | None = None
+    settings_chart5: str | None = None
+    settings_guest_login_enabled: bool | None = None
+    settings_success_threshold: int | None = None
+    settings_warning_threshold: int | None = None
+    settings_danger_threshold: int | None = None
+    settings_auth_ids: list[str] | None = None
+    settings_auths: list[QGetProfileContextV3Auth] | None = None
+    settings_provider_ids: list[str] | None = None
+    settings_providers: list[QGetProfileContextV3Provider] | None = None
+    settings_default_guest_profile_id: str | None = None
+    settings_default_account_profile_id: str | None = None
+    available_sections: list[str] | None = None
+    redirect_path: str | None = None
+    department_ids: list[str] | None = None
+    cohort_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    settings_tokens: QGetProfileContextV3ThemeTokens | None = None
+    actor_name: str | None = None
 
 class GetProfileContextApiRequest(BaseModel):
 
-    actualProfileId: UUID
-    effectiveProfileId: UUID
-    param_3: str
-    param_4: str
+    actual_profile_id: UUID | None = None
+    effective_profile_id: UUID | None = None
+    department_id: str | None = None
+    auth_mode: str | None = None
 
 class GetProfileContextApiResponse(BaseModel):
 
-    is_authorized: bool
-    actual_id: UUID
-    actual_first_name: str
-    actual_last_name: str
-    actual_emails: list[str]
-    actual_primary_email: str
-    actual_role: str
-    actual_active: bool
-    actual_req_per_day: int
-    actual_last_login: str
-    actual_last_active: str
-    actual_created_at: str
-    actual_updated_at: str
-    actual_primary_department_id: UUID
-    id: UUID
-    first_name: str
-    last_name: str
-    emails: list[str]
-    primary_email: str
-    role: str
-    active: bool
-    req_per_day: int
-    last_login: str
-    last_active: str
-    created_at: str
-    updated_at: str
-    primary_department_id: UUID
-    departments: dict[str, Any]
-    cohorts: dict[str, Any]
-    simulations: dict[str, Any]
-    earliest_attempt_date: str
-    scoped_roles: Any
-    settings_id: str
-    settings_created_at: str
-    settings_active: bool
-    settings_name: str
-    settings_description: str
-    settings_primary_color: str
-    settings_accent: str
-    settings_background: str
-    settings_surface: str
-    settings_success: str
-    settings_warning: str
-    settings_error: str
-    settings_sidebar_background: str
-    settings_sidebar_primary: str
-    settings_chart1: str
-    settings_chart2: str
-    settings_chart3: str
-    settings_chart4: str
-    settings_chart5: str
-    settings_guest_login_enabled: bool
-    settings_success_threshold: int
-    settings_warning_threshold: int
-    settings_danger_threshold: int
-    settings_auth_ids: list[str]
-    settings_auth_mapping: dict[str, Any]
-    settings_provider_ids: list[str]
-    settings_provider_mapping: dict[str, Any]
-    settings_default_guest_profile_id: str
-    settings_default_account_profile_id: str
+    is_authorized: bool | None = None
+    guest_login_enabled: bool | None = None
+    active_departments_count: int | None = None
+    department_auth_providers_count: int | None = None
+    default_settings_auth_providers_count: int | None = None
+    departments_without_auth_providers_count: int | None = None
+    department_exists: bool | None = None
+    actual_id: UUID | None = None
+    actual_first_name: str | None = None
+    actual_last_name: str | None = None
+    actual_emails: list[str] | None = None
+    actual_primary_email: str | None = None
+    actual_role: str | None = None
+    actual_active: bool | None = None
+    actual_req_per_day: int | None = None
+    actual_last_login: str | None = None
+    actual_last_active: str | None = None
+    actual_created_at: str | None = None
+    actual_updated_at: str | None = None
+    actual_primary_department_id: UUID | None = None
+    id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    req_per_day: int | None = None
+    last_login: str | None = None
+    last_active: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    primary_department_id: UUID | None = None
+    departments: list[QGetProfileContextV3Department] | None = None
+    cohorts: list[QGetProfileContextV3Cohort] | None = None
+    simulations: list[QGetProfileContextV3Simulation] | None = None
+    earliest_attempt_date: str | None = None
+    scoped_roles: list[str] | None = None
+    settings_id: str | None = None
+    settings_created_at: str | None = None
+    settings_active: bool | None = None
+    settings_name: str | None = None
+    settings_description: str | None = None
+    settings_primary_color: str | None = None
+    settings_accent: str | None = None
+    settings_background: str | None = None
+    settings_surface: str | None = None
+    settings_success: str | None = None
+    settings_warning: str | None = None
+    settings_error: str | None = None
+    settings_sidebar_background: str | None = None
+    settings_sidebar_primary: str | None = None
+    settings_chart1: str | None = None
+    settings_chart2: str | None = None
+    settings_chart3: str | None = None
+    settings_chart4: str | None = None
+    settings_chart5: str | None = None
+    settings_guest_login_enabled: bool | None = None
+    settings_success_threshold: int | None = None
+    settings_warning_threshold: int | None = None
+    settings_danger_threshold: int | None = None
+    settings_auth_ids: list[str] | None = None
+    settings_auths: list[QGetProfileContextV3Auth] | None = None
+    settings_provider_ids: list[str] | None = None
+    settings_providers: list[QGetProfileContextV3Provider] | None = None
+    settings_default_guest_profile_id: str | None = None
+    settings_default_account_profile_id: str | None = None
+    available_sections: list[str] | None = None
+    redirect_path: str | None = None
+    department_ids: list[str] | None = None
+    cohort_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    settings_tokens: QGetProfileContextV3ThemeTokens | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_profile_detail
+
+class GetProfileDetailSqlParams(BaseModel):
+
+    target_profile_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.target_profile_id,
+            self.profile_id,
+        )
+
+class QGetProfileDetailV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetProfileDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetProfileDetailSqlRow(BaseModel):
+
+    profile_exists: bool | None = None
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    primary_department_id: UUID | None = None
+    can_edit: bool | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_cohort_ids: list[UUID] | None = None
+    departments: list[QGetProfileDetailV3Department] | None = None
+    cohorts: list[QGetProfileDetailV3Cohort] | None = None
+    actor_name: str | None = None
+
+class GetProfileDetailApiRequest(BaseModel):
+
+    target_profile_id: UUID
+
+class GetProfileDetailApiResponse(BaseModel):
+
+    profile_exists: bool | None = None
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    primary_department_id: UUID | None = None
+    can_edit: bool | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_cohort_ids: list[UUID] | None = None
+    departments: list[QGetProfileDetailV3Department] | None = None
+    cohorts: list[QGetProfileDetailV3Cohort] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_profile_new
+
+class GetProfileNewSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetProfileNewV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetProfileNewV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetProfileNewSqlRow(BaseModel):
+
+    first_name: str | None = None
+    last_name: str | None = None
+    emails: list[str] | None = None
+    role: str | None = None
+    requests_per_day: int | None = None
+    primary_department_id: UUID | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_cohort_ids: list[UUID] | None = None
+    role_options: list[str] | None = None
+    departments: list[QGetProfileNewV3Department] | None = None
+    cohorts: list[QGetProfileNewV3Cohort] | None = None
+    actor_name: str | None = None
+
+class GetProfileNewApiRequest(BaseModel):
+
+    pass
+
+class GetProfileNewApiResponse(BaseModel):
+
+    first_name: str | None = None
+    last_name: str | None = None
+    emails: list[str] | None = None
+    role: str | None = None
+    requests_per_day: int | None = None
+    primary_department_id: UUID | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_cohort_ids: list[UUID] | None = None
+    role_options: list[str] | None = None
+    departments: list[QGetProfileNewV3Department] | None = None
+    cohorts: list[QGetProfileNewV3Cohort] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: search_simulatable_profiles
+
+class SearchSimulatableProfilesSqlParams(BaseModel):
+
+    profile_id: UUID
+    limit_count: int
+    query: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.limit_count,
+            self.query,
+        )
+
+class QSearchSimulatableProfilesV3Profile(BaseModel):
+
+    profile_id: UUID | None
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email: str | None
+    role: str | None
+    active: bool | None
+    req_per_day: int | None
+    last_login: str | None
+    last_active: str | None
+    created_at: str | None
+    updated_at: str | None
+    primary_department_id: UUID | None
+
+class SearchSimulatableProfilesSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    profiles: list[QSearchSimulatableProfilesV3Profile] | None = None
+
+class SearchSimulatableProfilesApiRequest(BaseModel):
+
+    limit_count: int
+    query: str
+
+class SearchSimulatableProfilesApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    profiles: list[QSearchSimulatableProfilesV3Profile] | None = None
 
 
 
@@ -4667,587 +3789,107 @@ class GetProfileContextApiResponse(BaseModel):
 
 class UpdateProfileSqlParams(BaseModel):
 
-    profileId: UUID
-    first_name: str
-    last_name: str
+    target_profile_id: UUID
+    profile_id: UUID
+    first_name: str | None = None
+    last_name: str | None = None
     last_login: str
-    role: str
-    active: bool
-    unused: int
+    role: str | None = None
+    active: bool | None = None
     last_active: str
-    current_profile_id: UUID
+    requests_per_day: int | None = None
+    emails: list[str] | None = None
+    primary_email_index: int | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    primary_department_index: int | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.profileId,
+            self.target_profile_id,
+            self.profile_id,
             self.first_name,
             self.last_name,
             self.last_login,
             self.role,
             self.active,
-            self.unused,
             self.last_active,
-            self.current_profile_id,
+            self.requests_per_day,
+            self.emails,
+            self.primary_email_index,
+            self.cohort_ids,
+            self.department_ids,
+            self.primary_department_index,
         )
 
 class UpdateProfileSqlRow(BaseModel):
 
-    id: UUID
-    first_name: str
-    last_name: str
-    emails: list[str]
-    primary_email: str
-    role: str
-    active: bool
-    req_per_day: int
-    last_login: str
-    last_active: str
-    created_at: str
-    updated_at: str
-    primary_department_id: UUID
-    actor_name: str
+    profile_exists: bool | None = None
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    actor_name: str | None = None
 
 class UpdateProfileApiRequest(BaseModel):
 
-    profileId: UUID
-    first_name: str
-    last_name: str
+    target_profile_id: UUID
+    first_name: str | None = None
+    last_name: str | None = None
     last_login: str
-    role: str
-    active: bool
-    unused: int
+    role: str | None = None
+    active: bool | None = None
     last_active: str
-    current_profile_id: UUID
+    requests_per_day: int | None = None
+    emails: list[str] | None = None
+    primary_email_index: int | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    primary_department_index: int | None = None
 
 class UpdateProfileApiResponse(BaseModel):
 
-    id: UUID
-    first_name: str
-    last_name: str
-    emails: list[str]
-    primary_email: str
-    role: str
-    active: bool
-    req_per_day: int
-    last_login: str
-    last_active: str
-    created_at: str
-    updated_at: str
-    primary_department_id: UUID
-    actor_name: str
+    profile_exists: bool | None = None
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    actor_name: str | None = None
 
 
 
-# Generated from: update_profile_to_active
+# Generated from: delete_prompt
 
-class UpdateProfileToActiveSqlParams(BaseModel):
+class DeletePromptSqlParams(BaseModel):
 
+    agent_id: UUID
+    prompt_id: UUID
     profile_id: UUID
-    last_active: str
+    department_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
+            self.agent_id,
+            self.prompt_id,
             self.profile_id,
-            self.last_active,
+            self.department_id,
         )
 
-class UpdateProfileToActiveSqlRow(BaseModel):
+class DeletePromptSqlRow(BaseModel):
 
-    profile_id: str
+    prompt_name: str | None = None
+    actor_name: str | None = None
 
-class UpdateProfileToActiveApiRequest(BaseModel):
+class DeletePromptApiRequest(BaseModel):
 
-    last_active: str
+    agent_id: UUID
+    prompt_id: UUID
+    department_id: UUID | None = None
 
-class UpdateProfileToActiveApiResponse(BaseModel):
+class DeletePromptApiResponse(BaseModel):
 
-    profile_id: str
-
-
-
-# Generated from: update_profile_to_inactive
-
-class UpdateProfileToInactiveSqlParams(BaseModel):
-
-    profile_id: UUID
-    last_active: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.last_active,
-        )
-
-class UpdateProfileToInactiveSqlRow(BaseModel):
-
-    profile_id: str
-
-class UpdateProfileToInactiveApiRequest(BaseModel):
-
-    last_active: str
-
-class UpdateProfileToInactiveApiResponse(BaseModel):
-
-    profile_id: str
-
-
-
-# Generated from: create_provider
-
-class CreateProviderSqlParams(BaseModel):
-
-    name: str
-    description: str
-    value: str
-    active: bool
-    base_url: str
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.name,
-            self.description,
-            self.value,
-            self.active,
-            self.base_url,
-            self.profile_id,
-        )
-
-class CreateProviderSqlRow(BaseModel):
-
-    provider_id: str
-    actor_name: str
-
-class CreateProviderApiRequest(BaseModel):
-
-    name: str
-    description: str
-    value: str
-    active: bool
-    base_url: str
-
-class CreateProviderApiResponse(BaseModel):
-
-    provider_id: str
-    actor_name: str
-
-
-
-# Generated from: get_provider_detail
-
-class GetProviderDetailSqlParams(BaseModel):
-
-    providerId: UUID
-    profileId: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.providerId,
-            self.profileId,
-        )
-
-class GetProviderDetailSqlRow(BaseModel):
-
-    provider_id: str
-    name: str
-    description: str
-    value: str
-    active: bool
-    created_at: str
-    updated_at: str
-    base_url: str
-    user_role: str
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
-class GetProviderDetailApiRequest(BaseModel):
-
-    providerId: UUID
-    profileId: UUID
-
-class GetProviderDetailApiResponse(BaseModel):
-
-    provider_id: str
-    name: str
-    description: str
-    value: str
-    active: bool
-    created_at: str
-    updated_at: str
-    base_url: str
-    user_role: str
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
-
-
-# Generated from: get_provider_new
-
-class GetProviderNewSqlParams(BaseModel):
-
-    profileId: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profileId,
-        )
-
-class GetProviderNewSqlRow(BaseModel):
-
-    provider_id: str
-    name: str
-    description: str
-    value: str
-    active: bool
-    created_at: str
-    updated_at: str
-    base_url: str
-    user_role: str
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
-class GetProviderNewApiRequest(BaseModel):
-
-    profileId: UUID
-
-class GetProviderNewApiResponse(BaseModel):
-
-    provider_id: str
-    name: str
-    description: str
-    value: str
-    active: bool
-    created_at: str
-    updated_at: str
-    base_url: str
-    user_role: str
-    can_edit: bool
-    can_delete: bool
-    actor_name: str
-
-
-
-# Generated from: update_provider
-
-class UpdateProviderSqlParams(BaseModel):
-
-    provider_id: UUID
-    name: str
-    description: str
-    value: str
-    active: bool
-    base_url: str
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.provider_id,
-            self.name,
-            self.description,
-            self.value,
-            self.active,
-            self.base_url,
-            self.profile_id,
-        )
-
-class UpdateProviderSqlRow(BaseModel):
-
-    provider_id: str
-    actor_name: str
-
-class UpdateProviderApiRequest(BaseModel):
-
-    provider_id: UUID
-    name: str
-    description: str
-    value: str
-    active: bool
-    base_url: str
-
-class UpdateProviderApiResponse(BaseModel):
-
-    provider_id: str
-    actor_name: str
-
-
-
-# Generated from: create_rubric
-
-class CreateRubricSqlParams(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    points: int
-    passPoints: int
-    department_ids: list[str]
-    standard_groups: dict[str, Any]
-    profile_id: UUID
-    rubric_agent_id: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.name,
-            self.description,
-            self.active,
-            self.points,
-            self.passPoints,
-            self.department_ids,
-            self.standard_groups,
-            self.profile_id,
-            self.rubric_agent_id,
-        )
-
-class CreateRubricSqlRow(BaseModel):
-
-    rubric_id: str
-    actor_name: str
-
-class CreateRubricApiRequest(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    points: int
-    passPoints: int
-    department_ids: list[str]
-    standard_groups: dict[str, Any]
-    rubric_agent_id: str
-
-class CreateRubricApiResponse(BaseModel):
-
-    rubric_id: str
-    actor_name: str
-
-
-
-# Generated from: delete_rubric
-
-class DeleteRubricSqlParams(BaseModel):
-
-    rubricId: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.rubricId,
-            self.profile_id,
-        )
-
-class DeleteRubricSqlRow(BaseModel):
-
-    rubric_id: str
-    name: str
-    usage_count: int
-    deleted: bool
-    actor_name: str
-
-class DeleteRubricApiRequest(BaseModel):
-
-    rubricId: UUID
-
-class DeleteRubricApiResponse(BaseModel):
-
-    rubric_id: str
-    name: str
-    usage_count: int
-    deleted: bool
-    actor_name: str
-
-
-
-# Generated from: duplicate_rubric
-
-class DuplicateRubricSqlParams(BaseModel):
-
-    originalRubricId: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.originalRubricId,
-            self.profile_id,
-        )
-
-class DuplicateRubricSqlRow(BaseModel):
-
-    rubric_id: str
-    original_name: str
-    actor_name: str
-
-class DuplicateRubricApiRequest(BaseModel):
-
-    originalRubricId: UUID
-
-class DuplicateRubricApiResponse(BaseModel):
-
-    rubric_id: str
-    original_name: str
-    actor_name: str
-
-
-
-# Generated from: get_rubric_detail
-
-class GetRubricDetailSqlParams(BaseModel):
-
-    rubric_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.rubric_id,
-            self.profile_id,
-        )
-
-class GetRubricDetailSqlRow(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    points: int
-    passpoints: int
-    rubric_agent_id: str
-    department_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    actor_name: str
-    standard_groups_complete: dict[str, Any]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    can_edit: bool
-
-class GetRubricDetailApiRequest(BaseModel):
-
-    rubric_id: UUID
-
-class GetRubricDetailApiResponse(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    points: int
-    passpoints: int
-    rubric_agent_id: str
-    department_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    actor_name: str
-    standard_groups_complete: dict[str, Any]
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-    can_edit: bool
-
-
-
-# Generated from: get_rubric_new
-
-class GetRubricNewSqlParams(BaseModel):
-
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class GetRubricNewSqlRow(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    points: int
-    passpoints: int
-    department_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    actor_name: str
-    standard_groups_complete: dict[str, Any]
-    primary_department_id: str
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-
-class GetRubricNewApiRequest(BaseModel):
-
-    pass
-
-class GetRubricNewApiResponse(BaseModel):
-
-    name: str
-    description: str
-    active: bool
-    points: int
-    passpoints: int
-    department_ids: list[str]
-    department_mapping: dict[str, Any]
-    valid_department_ids: list[str]
-    user_role: str
-    actor_name: str
-    standard_groups_complete: dict[str, Any]
-    primary_department_id: str
-    agent_mapping: dict[str, Any]
-    valid_agent_ids: list[str]
-
-
-
-# Generated from: update_rubric
-
-class UpdateRubricSqlParams(BaseModel):
-
-    rubricId: UUID
-    name: str
-    description: str
-    active: bool
-    points: int
-    passPoints: int
-    department_ids: list[str]
-    standard_groups: dict[str, Any]
-    profile_id: UUID
-    rubric_agent_id: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.rubricId,
-            self.name,
-            self.description,
-            self.active,
-            self.points,
-            self.passPoints,
-            self.department_ids,
-            self.standard_groups,
-            self.profile_id,
-            self.rubric_agent_id,
-        )
-
-class UpdateRubricSqlRow(BaseModel):
-
-    rubric_id: str
-    rubric_name: str
-    actor_name: str
-
-class UpdateRubricApiRequest(BaseModel):
-
-    rubricId: UUID
-    name: str
-    description: str
-    active: bool
-    points: int
-    passPoints: int
-    department_ids: list[str]
-    standard_groups: dict[str, Any]
-    rubric_agent_id: str
-
-class UpdateRubricApiResponse(BaseModel):
-
-    rubric_id: str
-    rubric_name: str
-    actor_name: str
+    prompt_name: str | None = None
+    actor_name: str | None = None
 
 
 
@@ -5441,48 +4083,6 @@ class DuplicateScenarioApiResponse(BaseModel):
     scenario_id: UUID | None = None
     scenario_name: str | None = None
     actor_name: str | None = None
-
-
-
-# Generated from: get_randomization_data
-
-class GetRandomizationDataSqlParams(BaseModel):
-
-    department_ids: list[UUID]
-    param_2: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_ids,
-            self.param_2,
-        )
-
-class GetRandomizationDataSqlRow(BaseModel):
-
-    personas: dict[str, Any]
-    documents: dict[str, Any]
-    parameters: dict[str, Any]
-    parameter_items: dict[str, Any]
-    document_parameter_items: dict[str, Any]
-    persona_ids: list[str]
-    document_ids: list[str]
-    parameter_item_ids: list[str]
-
-class GetRandomizationDataApiRequest(BaseModel):
-
-    department_ids: list[UUID]
-    param_2: UUID
-
-class GetRandomizationDataApiResponse(BaseModel):
-
-    personas: dict[str, Any]
-    documents: dict[str, Any]
-    parameters: dict[str, Any]
-    parameter_items: dict[str, Any]
-    document_parameter_items: dict[str, Any]
-    persona_ids: list[str]
-    document_ids: list[str]
-    parameter_item_ids: list[str]
 
 
 
@@ -6502,34 +5102,6 @@ class UpdateScenarioApiResponse(BaseModel):
 
 
 
-# Generated from: create_hints
-
-class CreateHintsSqlParams(BaseModel):
-
-    message_id: UUID
-    hint_texts: list[str]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.message_id,
-            self.hint_texts,
-        )
-
-class CreateHintsSqlRow(BaseModel):
-
-    hint_ids: dict[str, Any]
-
-class CreateHintsApiRequest(BaseModel):
-
-    message_id: UUID
-    hint_texts: list[str]
-
-class CreateHintsApiResponse(BaseModel):
-
-    hint_ids: dict[str, Any]
-
-
-
 # Generated from: create_simulation
 
 class CreateSimulationSqlParams(BaseModel):
@@ -6598,41 +5170,6 @@ class CreateSimulationApiResponse(BaseModel):
 
 
 
-# Generated from: create_user_message
-
-class CreateUserMessageSqlParams(BaseModel):
-
-    chat_id: UUID
-    message_content: str
-    run_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id,
-            self.message_content,
-            self.run_id,
-        )
-
-class CreateUserMessageSqlRow(BaseModel):
-
-    message_id: UUID
-    created_at: str
-    parent_id: UUID
-
-class CreateUserMessageApiRequest(BaseModel):
-
-    chat_id: UUID
-    message_content: str
-    run_id: UUID
-
-class CreateUserMessageApiResponse(BaseModel):
-
-    message_id: UUID
-    created_at: str
-    parent_id: UUID
-
-
-
 # Generated from: delete_simulation
 
 class DeleteSimulationSqlParams(BaseModel):
@@ -6694,87 +5231,6 @@ class DuplicateSimulationApiResponse(BaseModel):
     simulation_id: UUID | None = None
     simulation_name: str | None = None
     actor_name: str | None = None
-
-
-
-# Generated from: generate_hints
-
-class GenerateHintsSqlParams(BaseModel):
-
-    message_id: UUID
-    chat_id: UUID
-    department_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.message_id,
-            self.chat_id,
-            self.department_id,
-        )
-
-class GenerateHintsSqlRow(BaseModel):
-
-    message_id: str
-    message_created_at: str
-    chat_id: str
-    attempt_id_out: str
-    scenario_id: str
-    trace_id: str
-    chat_title: str
-    simulation_id: str
-    problem_statement: str
-    agent_id: str
-    agent_name: str
-    system_prompt: str
-    temperature: float
-    reasoning: str
-    model_id: str
-    model_name: str
-    provider_name: str
-    base_url: str
-    api_key: str
-    provider_id: str
-    profile_id: str
-    req_per_day: int
-    runs_today_count: int
-    earliest_run_created_at: str
-    documents: dict[str, Any]
-    run_id: str
-
-class GenerateHintsApiRequest(BaseModel):
-
-    message_id: UUID
-    chat_id: UUID
-    department_id: UUID
-
-class GenerateHintsApiResponse(BaseModel):
-
-    message_id: str
-    message_created_at: str
-    chat_id: str
-    attempt_id_out: str
-    scenario_id: str
-    trace_id: str
-    chat_title: str
-    simulation_id: str
-    problem_statement: str
-    agent_id: str
-    agent_name: str
-    system_prompt: str
-    temperature: float
-    reasoning: str
-    model_id: str
-    model_name: str
-    provider_name: str
-    base_url: str
-    api_key: str
-    provider_id: str
-    profile_id: str
-    req_per_day: int
-    runs_today_count: int
-    earliest_run_created_at: str
-    documents: dict[str, Any]
-    run_id: str
 
 
 
@@ -7363,94 +5819,6 @@ class GetSimulationsListApiResponse(BaseModel):
     rubric_options: list[QListSimulationsV3Option] | None = None
     cohort_options: list[QListSimulationsV3Option] | None = None
     department_options: list[QListSimulationsV3Option] | None = None
-
-
-
-# Generated from: link_run_to_group
-
-class LinkRunToGroupSqlParams(BaseModel):
-
-    group_id: UUID
-    run_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.group_id,
-            self.run_id,
-        )
-
-class LinkRunToGroupSqlRow(BaseModel):
-
-    group_id: str
-    run_id: str
-    idx: int
-
-class LinkRunToGroupApiRequest(BaseModel):
-
-    group_id: UUID
-    run_id: UUID
-
-class LinkRunToGroupApiResponse(BaseModel):
-
-    group_id: str
-    run_id: str
-    idx: int
-
-
-
-# Generated from: start_simulation_attempt
-
-class StartSimulationAttemptSqlParams(BaseModel):
-
-    simulation_id: UUID
-    infinite_mode: bool
-    profile_id: UUID
-    scenario_id_override: str
-    trace_id: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.simulation_id,
-            self.infinite_mode,
-            self.profile_id,
-            self.scenario_id_override,
-            self.trace_id,
-        )
-
-class StartSimulationAttemptSqlRow(BaseModel):
-
-    attempt_id: str
-    chat_id: str
-    chat_title: str
-    scenario_id: str
-    scenario_name: str
-    problem_statement: str
-    needs_generation: bool
-    content_type: str
-    video_id: str
-    simulation_data: dict[str, Any]
-    scenario_metadata: dict[str, Any]
-
-class StartSimulationAttemptApiRequest(BaseModel):
-
-    simulation_id: UUID
-    infinite_mode: bool
-    scenario_id_override: str
-    trace_id: str
-
-class StartSimulationAttemptApiResponse(BaseModel):
-
-    attempt_id: str
-    chat_id: str
-    chat_title: str
-    scenario_id: str
-    scenario_name: str
-    problem_statement: str
-    needs_generation: bool
-    content_type: str
-    video_id: str
-    simulation_data: dict[str, Any]
-    scenario_metadata: dict[str, Any]
 
 
 
@@ -8160,6 +6528,88 @@ class UpsertStaffApiResponse(BaseModel):
 
 
 
+# Generated from: finalize_upload
+
+class FinalizeUploadSqlParams(BaseModel):
+
+    upload_file_path: str
+    content_type: str
+    file_size: int
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.upload_file_path,
+            self.content_type,
+            self.file_size,
+            self.profile_id,
+        )
+
+class FinalizeUploadSqlRow(BaseModel):
+
+    upload_id: UUID | None = None
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+
+class FinalizeUploadApiRequest(BaseModel):
+
+    upload_file_path: str
+    content_type: str
+    file_size: int
+
+class FinalizeUploadApiResponse(BaseModel):
+
+    upload_id: UUID | None = None
+    actor_name: str | None = None
+    success: bool | None = None
+    message: str | None = None
+    status: str | None = None
+
+
+
+# Generated from: get_upload_file_info
+
+class GetUploadFileInfoSqlParams(BaseModel):
+
+    upload_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.upload_id,
+            self.profile_id,
+        )
+
+class GetUploadFileInfoSqlRow(BaseModel):
+
+    upload_exists: bool | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    size: int | None = None
+    actor_name: str | None = None
+    is_template: bool | None = None
+    template_args: dict[str, Any] | None = None
+
+class GetUploadFileInfoApiRequest(BaseModel):
+
+    upload_id: UUID
+
+class GetUploadFileInfoApiResponse(BaseModel):
+
+    upload_exists: bool | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+    size: int | None = None
+    actor_name: str | None = None
+    is_template: bool | None = None
+    template_args: dict[str, Any] | None = None
+
+
+
 
 # ============================================================================
 # REGISTRY
@@ -8208,59 +6658,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateAgentApiRequest",
         "UpdateAgentApiResponse",
     ),
-    "app/sql/v3/attempts/bulk_archive_attempts_complete.sql": (
-        "BulkArchiveAttemptsSqlParams",
-        "BulkArchiveAttemptsSqlRow",
-        "BulkArchiveAttemptsApiRequest",
-        "BulkArchiveAttemptsApiResponse",
+    "app/sql/v3/analytics/create_analytics_view_function_complete.sql": (
+        "CreateAnalyticsViewFunctionSqlParams",
+        "CreateAnalyticsViewFunctionSqlRow",
+        "CreateAnalyticsViewFunctionApiRequest",
+        "CreateAnalyticsViewFunctionApiResponse",
     ),
-    "app/sql/v3/attempts/get_attempt_full_complete.sql": (
-        "GetAttemptFullSqlParams",
-        "GetAttemptFullSqlRow",
-        "GetAttemptFullApiRequest",
-        "GetAttemptFullApiResponse",
-    ),
-    "app/sql/v3/attempts/update_chat_created_at_complete.sql": (
-        "UpdateChatCreatedAtSqlParams",
-        "UpdateChatCreatedAtSqlRow",
-        "UpdateChatCreatedAtApiRequest",
-        "UpdateChatCreatedAtApiResponse",
-    ),
-    "app/sql/v3/auth/create_auth_complete.sql": (
-        "CreateAuthSqlParams",
-        "CreateAuthSqlRow",
-        "CreateAuthApiRequest",
-        "CreateAuthApiResponse",
-    ),
-    "app/sql/v3/auth/delete_auth_complete.sql": (
-        "DeleteAuthSqlParams",
-        "DeleteAuthSqlRow",
-        "DeleteAuthApiRequest",
-        "DeleteAuthApiResponse",
-    ),
-    "app/sql/v3/auth/duplicate_auth_complete.sql": (
-        "DuplicateAuthSqlParams",
-        "DuplicateAuthSqlRow",
-        "DuplicateAuthApiRequest",
-        "DuplicateAuthApiResponse",
-    ),
-    "app/sql/v3/auth/get_auth_detail_complete.sql": (
-        "GetAuthDetailSqlParams",
-        "GetAuthDetailSqlRow",
-        "GetAuthDetailApiRequest",
-        "GetAuthDetailApiResponse",
-    ),
-    "app/sql/v3/auth/get_login_data_complete.sql": (
-        "GetLoginDataSqlParams",
-        "GetLoginDataSqlRow",
-        "GetLoginDataApiRequest",
-        "GetLoginDataApiResponse",
-    ),
-    "app/sql/v3/auth/update_auth_complete.sql": (
-        "UpdateAuthSqlParams",
-        "UpdateAuthSqlRow",
-        "UpdateAuthApiRequest",
-        "UpdateAuthApiResponse",
+    "app/sql/v3/analytics/refresh_analytics_complete.sql": (
+        "RefreshAnalyticsSqlParams",
+        "RefreshAnalyticsSqlRow",
+        "RefreshAnalyticsApiRequest",
+        "RefreshAnalyticsApiResponse",
     ),
     "app/sql/v3/cohorts/create_cohort_complete.sql": (
         "CreateCohortSqlParams",
@@ -8316,42 +6724,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateCohortApiRequest",
         "UpdateCohortApiResponse",
     ),
-    "app/sql/v3/departments/create_department_complete.sql": (
-        "CreateDepartmentSqlParams",
-        "CreateDepartmentSqlRow",
-        "CreateDepartmentApiRequest",
-        "CreateDepartmentApiResponse",
-    ),
-    "app/sql/v3/departments/delete_department_complete.sql": (
-        "DeleteDepartmentSqlParams",
-        "DeleteDepartmentSqlRow",
-        "DeleteDepartmentApiRequest",
-        "DeleteDepartmentApiResponse",
-    ),
-    "app/sql/v3/departments/duplicate_department_complete.sql": (
-        "DuplicateDepartmentSqlParams",
-        "DuplicateDepartmentSqlRow",
-        "DuplicateDepartmentApiRequest",
-        "DuplicateDepartmentApiResponse",
-    ),
-    "app/sql/v3/departments/get_department_default_complete.sql": (
-        "GetDepartmentDefaultSqlParams",
-        "GetDepartmentDefaultSqlRow",
-        "GetDepartmentDefaultApiRequest",
-        "GetDepartmentDefaultApiResponse",
-    ),
-    "app/sql/v3/departments/update_department_complete.sql": (
-        "UpdateDepartmentSqlParams",
-        "UpdateDepartmentSqlRow",
-        "UpdateDepartmentApiRequest",
-        "UpdateDepartmentApiResponse",
-    ),
-    "app/sql/v3/documents/complete_document_creation_complete.sql": (
-        "CompleteDocumentCreationSqlParams",
-        "CompleteDocumentCreationSqlRow",
-        "CompleteDocumentCreationApiRequest",
-        "CompleteDocumentCreationApiResponse",
-    ),
     "app/sql/v3/documents/create_document_complete.sql": (
         "CreateDocumentSqlParams",
         "CreateDocumentSqlRow",
@@ -8382,12 +6754,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentsListApiRequest",
         "GetDocumentsListApiResponse",
     ),
-    "app/sql/v3/documents/insert_document_complete.sql": (
-        "InsertDocumentSqlParams",
-        "InsertDocumentSqlRow",
-        "InsertDocumentApiRequest",
-        "InsertDocumentApiResponse",
-    ),
     "app/sql/v3/documents/render_template_complete.sql": (
         "RenderTemplateSqlParams",
         "RenderTemplateSqlRow",
@@ -8399,30 +6765,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateDocumentSqlRow",
         "UpdateDocumentApiRequest",
         "UpdateDocumentApiResponse",
-    ),
-    "app/sql/v3/evals/create_eval_complete.sql": (
-        "CreateEvalSqlParams",
-        "CreateEvalSqlRow",
-        "CreateEvalApiRequest",
-        "CreateEvalApiResponse",
-    ),
-    "app/sql/v3/evals/get_eval_attempt_full_complete.sql": (
-        "GetEvalAttemptFullSqlParams",
-        "GetEvalAttemptFullSqlRow",
-        "GetEvalAttemptFullApiRequest",
-        "GetEvalAttemptFullApiResponse",
-    ),
-    "app/sql/v3/evals/get_eval_new_complete.sql": (
-        "GetEvalNewSqlParams",
-        "GetEvalNewSqlRow",
-        "GetEvalNewApiRequest",
-        "GetEvalNewApiResponse",
-    ),
-    "app/sql/v3/evals/start_eval_attempt_complete.sql": (
-        "StartEvalAttemptSqlParams",
-        "StartEvalAttemptSqlRow",
-        "StartEvalAttemptApiRequest",
-        "StartEvalAttemptApiResponse",
     ),
     "app/sql/v3/fields/create_field_complete.sql": (
         "CreateFieldSqlParams",
@@ -8466,89 +6808,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateFieldApiRequest",
         "UpdateFieldApiResponse",
     ),
-    "app/sql/v3/grading/create_grade_complete.sql": (
-        "CreateGradeSqlParams",
-        "CreateGradeSqlRow",
-        "CreateGradeApiRequest",
-        "CreateGradeApiResponse",
-    ),
-    "app/sql/v3/grading/create_message_feedback_complete.sql": (
-        "CreateMessageFeedbackSqlParams",
-        "CreateMessageFeedbackSqlRow",
-        "CreateMessageFeedbackApiRequest",
-        "CreateMessageFeedbackApiResponse",
-    ),
-    "app/sql/v3/keycloak/get_auth_items_complete.sql": (
-        "GetAuthItemsSqlParams",
-        "GetAuthItemsSqlRow",
-        "GetAuthItemsApiRequest",
-        "GetAuthItemsApiResponse",
-    ),
-    "app/sql/v3/keycloak/get_auth_providers_complete.sql": (
-        "GetAuthProvidersSqlParams",
-        "GetAuthProvidersSqlRow",
-        "GetAuthProvidersApiRequest",
-        "GetAuthProvidersApiResponse",
-    ),
-    "app/sql/v3/keys/get_key_detail_complete.sql": (
-        "GetKeyDetailSqlParams",
-        "GetKeyDetailSqlRow",
-        "GetKeyDetailApiRequest",
-        "GetKeyDetailApiResponse",
-    ),
-    "app/sql/v3/keys/get_key_new_complete.sql": (
-        "GetKeyNewSqlParams",
-        "GetKeyNewSqlRow",
-        "GetKeyNewApiRequest",
-        "GetKeyNewApiResponse",
-    ),
-    "app/sql/v3/model_runs/create_model_run_complete.sql": (
-        "CreateModelRunSqlParams",
-        "CreateModelRunSqlRow",
-        "CreateModelRunApiRequest",
-        "CreateModelRunApiResponse",
-    ),
-    "app/sql/v3/model_runs/log_run_complete.sql": (
-        "LogRunSqlParams",
-        "LogRunSqlRow",
-        "LogRunApiRequest",
-        "LogRunApiResponse",
-    ),
-    "app/sql/v3/models/create_model_complete.sql": (
-        "CreateModelSqlParams",
-        "CreateModelSqlRow",
-        "CreateModelApiRequest",
-        "CreateModelApiResponse",
-    ),
-    "app/sql/v3/models/get_model_detail_complete.sql": (
-        "GetModelDetailSqlParams",
-        "GetModelDetailSqlRow",
-        "GetModelDetailApiRequest",
-        "GetModelDetailApiResponse",
-    ),
-    "app/sql/v3/models/get_model_new_complete.sql": (
-        "GetModelNewSqlParams",
-        "GetModelNewSqlRow",
-        "GetModelNewApiRequest",
-        "GetModelNewApiResponse",
-    ),
-    "app/sql/v3/models/list_models_complete.sql": (
-        "ListModelsSqlParams",
-        "ListModelsSqlRow",
-        "ListModelsApiRequest",
-        "ListModelsApiResponse",
-    ),
-    "app/sql/v3/models/update_model_complete.sql": (
-        "UpdateModelSqlParams",
-        "UpdateModelSqlRow",
-        "UpdateModelApiRequest",
-        "UpdateModelApiResponse",
-    ),
-    "app/sql/v3/objectives/insert_objective_complete.sql": (
-        "InsertObjectiveSqlParams",
-        "InsertObjectiveSqlRow",
-        "InsertObjectiveApiRequest",
-        "InsertObjectiveApiResponse",
+    "app/sql/v3/logs/get_logs_bundle_complete.sql": (
+        "GetLogsBundleSqlParams",
+        "GetLogsBundleSqlRow",
+        "GetLogsBundleApiRequest",
+        "GetLogsBundleApiResponse",
     ),
     "app/sql/v3/parameters/create_parameter_complete.sql": (
         "CreateParameterSqlParams",
@@ -8634,23 +6898,41 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdatePersonaApiRequest",
         "UpdatePersonaApiResponse",
     ),
-    "app/sql/v3/pricing/get_group_detail_complete.sql": (
-        "GetGroupDetailSqlParams",
-        "GetGroupDetailSqlRow",
-        "GetGroupDetailApiRequest",
-        "GetGroupDetailApiResponse",
+    "app/sql/v3/profile/authorize_emulation_complete.sql": (
+        "AuthorizeEmulationSqlParams",
+        "AuthorizeEmulationSqlRow",
+        "AuthorizeEmulationApiRequest",
+        "AuthorizeEmulationApiResponse",
     ),
-    "app/sql/v3/pricing/get_pricing_analytics_complete.sql": (
-        "GetPricingAnalyticsSqlParams",
-        "GetPricingAnalyticsSqlRow",
-        "GetPricingAnalyticsApiRequest",
-        "GetPricingAnalyticsApiResponse",
+    "app/sql/v3/profile/check_login_authorization_complete.sql": (
+        "CheckLoginAuthorizationSqlParams",
+        "CheckLoginAuthorizationSqlRow",
+        "CheckLoginAuthorizationApiRequest",
+        "CheckLoginAuthorizationApiResponse",
     ),
-    "app/sql/v3/problem_statements/insert_problem_statement_complete.sql": (
-        "InsertProblemStatementSqlParams",
-        "InsertProblemStatementSqlRow",
-        "InsertProblemStatementApiRequest",
-        "InsertProblemStatementApiResponse",
+    "app/sql/v3/profile/create_or_update_profile_complete.sql": (
+        "CreateOrUpdateProfileSqlParams",
+        "CreateOrUpdateProfileSqlRow",
+        "CreateOrUpdateProfileApiRequest",
+        "CreateOrUpdateProfileApiResponse",
+    ),
+    "app/sql/v3/profile/create_profile_complete.sql": (
+        "CreateProfileSqlParams",
+        "CreateProfileSqlRow",
+        "CreateProfileApiRequest",
+        "CreateProfileApiResponse",
+    ),
+    "app/sql/v3/profile/delete_profile_complete.sql": (
+        "DeleteProfileSqlParams",
+        "DeleteProfileSqlRow",
+        "DeleteProfileApiRequest",
+        "DeleteProfileApiResponse",
+    ),
+    "app/sql/v3/profile/get_profile_by_email_complete.sql": (
+        "GetProfileByEmailSqlParams",
+        "GetProfileByEmailSqlRow",
+        "GetProfileByEmailApiRequest",
+        "GetProfileByEmailApiResponse",
     ),
     "app/sql/v3/profile/get_profile_context_complete.sql": (
         "GetProfileContextSqlParams",
@@ -8658,83 +6940,35 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileContextApiRequest",
         "GetProfileContextApiResponse",
     ),
+    "app/sql/v3/profile/get_profile_detail_complete.sql": (
+        "GetProfileDetailSqlParams",
+        "GetProfileDetailSqlRow",
+        "GetProfileDetailApiRequest",
+        "GetProfileDetailApiResponse",
+    ),
+    "app/sql/v3/profile/get_profile_new_complete.sql": (
+        "GetProfileNewSqlParams",
+        "GetProfileNewSqlRow",
+        "GetProfileNewApiRequest",
+        "GetProfileNewApiResponse",
+    ),
+    "app/sql/v3/profile/search_simulatable_profiles_complete.sql": (
+        "SearchSimulatableProfilesSqlParams",
+        "SearchSimulatableProfilesSqlRow",
+        "SearchSimulatableProfilesApiRequest",
+        "SearchSimulatableProfilesApiResponse",
+    ),
     "app/sql/v3/profile/update_profile_complete.sql": (
         "UpdateProfileSqlParams",
         "UpdateProfileSqlRow",
         "UpdateProfileApiRequest",
         "UpdateProfileApiResponse",
     ),
-    "app/sql/v3/profile/update_profile_to_active_complete.sql": (
-        "UpdateProfileToActiveSqlParams",
-        "UpdateProfileToActiveSqlRow",
-        "UpdateProfileToActiveApiRequest",
-        "UpdateProfileToActiveApiResponse",
-    ),
-    "app/sql/v3/profile/update_profile_to_inactive_complete.sql": (
-        "UpdateProfileToInactiveSqlParams",
-        "UpdateProfileToInactiveSqlRow",
-        "UpdateProfileToInactiveApiRequest",
-        "UpdateProfileToInactiveApiResponse",
-    ),
-    "app/sql/v3/providers/create_provider_complete.sql": (
-        "CreateProviderSqlParams",
-        "CreateProviderSqlRow",
-        "CreateProviderApiRequest",
-        "CreateProviderApiResponse",
-    ),
-    "app/sql/v3/providers/get_provider_detail_complete.sql": (
-        "GetProviderDetailSqlParams",
-        "GetProviderDetailSqlRow",
-        "GetProviderDetailApiRequest",
-        "GetProviderDetailApiResponse",
-    ),
-    "app/sql/v3/providers/get_provider_new_complete.sql": (
-        "GetProviderNewSqlParams",
-        "GetProviderNewSqlRow",
-        "GetProviderNewApiRequest",
-        "GetProviderNewApiResponse",
-    ),
-    "app/sql/v3/providers/update_provider_complete.sql": (
-        "UpdateProviderSqlParams",
-        "UpdateProviderSqlRow",
-        "UpdateProviderApiRequest",
-        "UpdateProviderApiResponse",
-    ),
-    "app/sql/v3/rubrics/create_rubric_complete.sql": (
-        "CreateRubricSqlParams",
-        "CreateRubricSqlRow",
-        "CreateRubricApiRequest",
-        "CreateRubricApiResponse",
-    ),
-    "app/sql/v3/rubrics/delete_rubric_complete.sql": (
-        "DeleteRubricSqlParams",
-        "DeleteRubricSqlRow",
-        "DeleteRubricApiRequest",
-        "DeleteRubricApiResponse",
-    ),
-    "app/sql/v3/rubrics/duplicate_rubric_complete.sql": (
-        "DuplicateRubricSqlParams",
-        "DuplicateRubricSqlRow",
-        "DuplicateRubricApiRequest",
-        "DuplicateRubricApiResponse",
-    ),
-    "app/sql/v3/rubrics/get_rubric_detail_complete.sql": (
-        "GetRubricDetailSqlParams",
-        "GetRubricDetailSqlRow",
-        "GetRubricDetailApiRequest",
-        "GetRubricDetailApiResponse",
-    ),
-    "app/sql/v3/rubrics/get_rubric_new_complete.sql": (
-        "GetRubricNewSqlParams",
-        "GetRubricNewSqlRow",
-        "GetRubricNewApiRequest",
-        "GetRubricNewApiResponse",
-    ),
-    "app/sql/v3/rubrics/update_rubric_complete.sql": (
-        "UpdateRubricSqlParams",
-        "UpdateRubricSqlRow",
-        "UpdateRubricApiRequest",
-        "UpdateRubricApiResponse",
+    "app/sql/v3/prompts/delete_prompt_complete.sql": (
+        "DeletePromptSqlParams",
+        "DeletePromptSqlRow",
+        "DeletePromptApiRequest",
+        "DeletePromptApiResponse",
     ),
     "app/sql/v3/scenarios/create_scenario_complete.sql": (
         "CreateScenarioSqlParams",
@@ -8753,12 +6987,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateScenarioSqlRow",
         "DuplicateScenarioApiRequest",
         "DuplicateScenarioApiResponse",
-    ),
-    "app/sql/v3/scenarios/get_randomization_data_complete.sql": (
-        "GetRandomizationDataSqlParams",
-        "GetRandomizationDataSqlRow",
-        "GetRandomizationDataApiRequest",
-        "GetRandomizationDataApiResponse",
     ),
     "app/sql/v3/scenarios/get_scenario_detail_complete.sql": (
         "GetScenarioDetailSqlParams",
@@ -8784,23 +7012,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateScenarioApiRequest",
         "UpdateScenarioApiResponse",
     ),
-    "app/sql/v3/simulations/create_hints_complete.sql": (
-        "CreateHintsSqlParams",
-        "CreateHintsSqlRow",
-        "CreateHintsApiRequest",
-        "CreateHintsApiResponse",
-    ),
     "app/sql/v3/simulations/create_simulation_complete.sql": (
         "CreateSimulationSqlParams",
         "CreateSimulationSqlRow",
         "CreateSimulationApiRequest",
         "CreateSimulationApiResponse",
-    ),
-    "app/sql/v3/simulations/create_user_message_complete.sql": (
-        "CreateUserMessageSqlParams",
-        "CreateUserMessageSqlRow",
-        "CreateUserMessageApiRequest",
-        "CreateUserMessageApiResponse",
     ),
     "app/sql/v3/simulations/delete_simulation_complete.sql": (
         "DeleteSimulationSqlParams",
@@ -8813,12 +7029,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateSimulationSqlRow",
         "DuplicateSimulationApiRequest",
         "DuplicateSimulationApiResponse",
-    ),
-    "app/sql/v3/simulations/generate_hints_complete.sql": (
-        "GenerateHintsSqlParams",
-        "GenerateHintsSqlRow",
-        "GenerateHintsApiRequest",
-        "GenerateHintsApiResponse",
     ),
     "app/sql/v3/simulations/get_simulation_detail_complete.sql": (
         "GetSimulationDetailSqlParams",
@@ -8837,18 +7047,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationsListSqlRow",
         "GetSimulationsListApiRequest",
         "GetSimulationsListApiResponse",
-    ),
-    "app/sql/v3/simulations/link_run_to_group_complete.sql": (
-        "LinkRunToGroupSqlParams",
-        "LinkRunToGroupSqlRow",
-        "LinkRunToGroupApiRequest",
-        "LinkRunToGroupApiResponse",
-    ),
-    "app/sql/v3/simulations/start_simulation_attempt_complete.sql": (
-        "StartSimulationAttemptSqlParams",
-        "StartSimulationAttemptSqlRow",
-        "StartSimulationAttemptApiRequest",
-        "StartSimulationAttemptApiResponse",
     ),
     "app/sql/v3/simulations/update_simulation_complete.sql": (
         "UpdateSimulationSqlParams",
@@ -8915,6 +7113,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpsertStaffSqlRow",
         "UpsertStaffApiRequest",
         "UpsertStaffApiResponse",
+    ),
+    "app/sql/v3/uploads/finalize_upload_complete.sql": (
+        "FinalizeUploadSqlParams",
+        "FinalizeUploadSqlRow",
+        "FinalizeUploadApiRequest",
+        "FinalizeUploadApiResponse",
+    ),
+    "app/sql/v3/uploads/get_upload_file_info_complete.sql": (
+        "GetUploadFileInfoSqlParams",
+        "GetUploadFileInfoSqlRow",
+        "GetUploadFileInfoApiRequest",
+        "GetUploadFileInfoApiResponse",
     ),
 }
 
@@ -9015,47 +7225,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/attempts/bulk_archive_attempts_complete.sql"]
+        file_path: Literal["app/sql/v3/analytics/create_analytics_view_function_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/attempts/get_attempt_full_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/attempts/update_chat_created_at_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/create_auth_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/delete_auth_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/duplicate_auth_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/get_auth_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/get_login_data_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/auth/update_auth_complete.sql"]
+        file_path: Literal["app/sql/v3/analytics/refresh_analytics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -9105,36 +7280,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/create_department_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/delete_department_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/duplicate_department_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/get_department_default_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/departments/update_department_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/complete_document_creation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v3/documents/create_document_complete.sql"]
     ) -> SqlString: ...
 
@@ -9160,37 +7305,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/documents/insert_document_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v3/documents/render_template_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/documents/update_document_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/evals/create_eval_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/evals/get_eval_attempt_full_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/evals/get_eval_new_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/evals/start_eval_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -9230,72 +7350,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/create_grade_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/grading/create_message_feedback_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/keycloak/get_auth_items_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/keycloak/get_auth_providers_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/keys/get_key_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/keys/get_key_new_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/model_runs/create_model_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/model_runs/log_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/models/create_model_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/models/get_model_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/models/get_model_new_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/models/list_models_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/models/update_model_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/objectives/insert_objective_complete.sql"]
+        file_path: Literal["app/sql/v3/logs/get_logs_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -9370,17 +7425,32 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/pricing/get_group_detail_complete.sql"]
+        file_path: Literal["app/sql/v3/profile/authorize_emulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/pricing/get_pricing_analytics_complete.sql"]
+        file_path: Literal["app/sql/v3/profile/check_login_authorization_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/problem_statements/insert_problem_statement_complete.sql"]
+        file_path: Literal["app/sql/v3/profile/create_or_update_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/create_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/delete_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/get_profile_by_email_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -9390,67 +7460,27 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/get_profile_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/get_profile_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/profile/search_simulatable_profiles_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v3/profile/update_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/update_profile_to_active_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/profile/update_profile_to_inactive_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/providers/create_provider_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/providers/get_provider_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/providers/get_provider_new_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/providers/update_provider_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/rubrics/create_rubric_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/rubrics/delete_rubric_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/rubrics/duplicate_rubric_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/rubrics/get_rubric_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/rubrics/get_rubric_new_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/rubrics/update_rubric_complete.sql"]
+        file_path: Literal["app/sql/v3/prompts/delete_prompt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -9466,11 +7496,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/scenarios/duplicate_scenario_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/scenarios/get_randomization_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -9495,17 +7520,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/create_hints_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v3/simulations/create_simulation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/create_user_message_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -9516,11 +7531,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/simulations/duplicate_simulation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/generate_hints_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -9536,16 +7546,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/simulations/get_simulations_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/link_run_to_group_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v3/simulations/start_simulation_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -9601,6 +7601,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/staff/upsert_staff_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/uploads/finalize_upload_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/uploads/get_upload_file_info_complete.sql"]
     ) -> SqlString: ...
 
     @overload

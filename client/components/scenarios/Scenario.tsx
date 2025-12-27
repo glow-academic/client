@@ -3605,13 +3605,13 @@ export default function Scenario({
 
             const finalizeResult = await finalizeResponse.json();
 
-            if (!finalizeResult.success || !finalizeResult.uploadId) {
+            if (!finalizeResult.success || !finalizeResult.upload_id) {
               throw new Error(
                 finalizeResult.message || "Failed to finalize upload"
               );
             }
 
-            const databaseUploadId = finalizeResult.uploadId;
+            const databaseUploadId = finalizeResult.upload_id;
 
             // Store upload_id directly (no image creation needed)
             // Image will be linked to scenario when form is submitted

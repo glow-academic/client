@@ -1,50 +1,42 @@
 """Analytics refresh v3 API endpoint."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (RefreshAnalyticsApiRequest,
+                           RefreshAnalyticsApiResponse,
+                           RefreshAnalyticsSqlParams, RefreshAnalyticsSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/analytics/refresh_analytics_complete.sql"
 
 router = APIRouter()
 
 
-class RefreshRequest(BaseModel):
-    """Request to refresh analytics (no parameters needed)."""
-
-    pass
-
-
-class RefreshResponse(BaseModel):
-    """Materialized view refresh response."""
-
-    success: bool
-    message: str
-    status: str
-
-
 @router.post(
     "/refresh",
-    response_model=RefreshResponse,
+    response_model=RefreshAnalyticsApiResponse,
     dependencies=[
         audit_activity("analytics.refreshed", "{{ actor.name }} refreshed analytics")
     ],
 )
 async def refresh_analytics(
-    request: RefreshRequest,
+    request: RefreshAnalyticsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> RefreshResponse:
+) -> RefreshAnalyticsApiResponse:
     """Refresh the analytics materialized view."""
     tags = ["analytics"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -56,32 +48,34 @@ async def refresh_analytics(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/analytics/refresh_materialized_view.sql")
-        sql_params = ()  # No parameters for this query
-        await conn.execute(sql_query)
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double star pattern for parameter construction
+        import uuid
+        params = RefreshAnalyticsSqlParams(**request.model_dump(), profile_id=uuid.UUID(profile_id))
+        sql_params = params.to_tuple()
 
-        # Fetch actor_name separately
-        actor_name_row = await conn.fetchrow(
-            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-            profile_id,
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            RefreshAnalyticsSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
-        actor_name = actor_name_row["actor_name"] if actor_name_row else None
 
         # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        result_data = RefreshResponse(
-            success=True,
-            message="Analytics materialized view refreshed successfully",
-            status="success",
-        )
+        # Build response - SQL function returns structured data
+        api_response = RefreshAnalyticsApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

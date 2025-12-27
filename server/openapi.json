@@ -54,7 +54,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProfileDetailRequest"
+                "$ref": "#/components/schemas/GetProfileDetailApiRequest"
               }
             }
           }
@@ -65,7 +65,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProfileDetailResponseFull"
+                  "$ref": "#/components/schemas/GetProfileDetailApiResponse"
                 }
               }
             }
@@ -135,7 +135,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateProfileRequest"
+                "$ref": "#/components/schemas/UpdateProfileApiRequest"
               }
             }
           }
@@ -146,7 +146,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateProfileResponse"
+                  "$ref": "#/components/schemas/UpdateProfileApiResponse"
                 }
               }
             }
@@ -216,7 +216,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateProfileRequest"
+                "$ref": "#/components/schemas/CreateProfileApiRequest"
               }
             }
           }
@@ -227,7 +227,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateProfileResponse"
+                  "$ref": "#/components/schemas/CreateProfileApiResponse"
                 }
               }
             }
@@ -297,7 +297,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteProfileRequest"
+                "$ref": "#/components/schemas/DeleteProfileApiRequest"
               }
             }
           }
@@ -308,7 +308,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteProfileResponse"
+                  "$ref": "#/components/schemas/DeleteProfileApiResponse"
                 }
               }
             }
@@ -378,7 +378,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateOrUpdateProfileRequest"
+                "$ref": "#/components/schemas/CreateOrUpdateProfileApiRequest"
               }
             }
           }
@@ -389,7 +389,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateOrUpdateProfileResponse"
+                  "$ref": "#/components/schemas/CreateOrUpdateProfileApiResponse"
                 }
               }
             }
@@ -459,7 +459,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProfileNewRequest"
+                "$ref": "#/components/schemas/GetProfileNewApiRequest"
               }
             }
           }
@@ -470,7 +470,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProfileNewResponse"
+                  "$ref": "#/components/schemas/GetProfileNewApiResponse"
                 }
               }
             }
@@ -540,7 +540,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProfileByEmailRequest"
+                "$ref": "#/components/schemas/GetProfileByEmailApiRequest"
               }
             }
           }
@@ -551,7 +551,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProfileDetailResponse"
+                  "$ref": "#/components/schemas/GetProfileByEmailApiResponse"
                 }
               }
             }
@@ -580,7 +580,7 @@
           "profile"
         ],
         "summary": "Get Profile Context",
-        "description": "Get consolidated profile context (profile, departments, cohorts, breadcrumbs).",
+        "description": "Get consolidated profile context (profile, departments, cohorts, breadcrumbs).\n\nNOTE: Theme derivation stays in Python because it requires complex color math utilities\n(hex_to_oklch, ensure_contrast, shade, tint) that are not available in PostgreSQL.\nAll other business logic is handled in SQL (see get_profile_context_complete.sql).",
         "operationId": "get_profile_context_api_v3_profile_context_post",
         "parameters": [
           {
@@ -621,7 +621,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProfileContextRequest"
+                "$ref": "#/components/schemas/GetProfileContextApiRequest"
               }
             }
           }
@@ -632,7 +632,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProfileContextResponse"
+                  "$ref": "#/components/schemas/GetProfileContextApiResponse"
                 }
               }
             }
@@ -702,7 +702,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AuthorizeEmulationRequest"
+                "$ref": "#/components/schemas/AuthorizeEmulationApiRequest"
               }
             }
           }
@@ -713,7 +713,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthorizeEmulationResponse"
+                  "$ref": "#/components/schemas/AuthorizeEmulationApiResponse"
                 }
               }
             }
@@ -783,7 +783,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SearchSimulatableProfilesRequest"
+                "$ref": "#/components/schemas/SearchSimulatableProfilesApiRequest"
               }
             }
           }
@@ -794,7 +794,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SearchSimulatableProfilesResponse"
+                  "$ref": "#/components/schemas/SearchSimulatableProfilesApiResponse"
                 }
               }
             }
@@ -7032,7 +7032,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RefreshRequest"
+                "$ref": "#/components/schemas/RefreshAnalyticsApiRequest"
               }
             }
           }
@@ -7043,7 +7043,88 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RefreshResponse"
+                  "$ref": "#/components/schemas/RefreshAnalyticsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "analytics"
+        ]
+      }
+    },
+    "/api/v3/analytics/view": {
+      "post": {
+        "tags": [
+          "v3",
+          "analytics"
+        ],
+        "summary": "Create Analytics View",
+        "description": "Create or recreate the analytics materialized view with all indexes.",
+        "operationId": "create_analytics_view_api_v3_analytics_view_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAnalyticsViewFunctionApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateAnalyticsViewFunctionApiResponse"
                 }
               }
             }
@@ -11406,7 +11487,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LogsBundleRequest"
+                "$ref": "#/components/schemas/GetLogsBundleApiRequest"
               }
             }
           }
@@ -11417,7 +11498,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LogsBundleResponse"
+                  "$ref": "#/components/schemas/GetLogsBundleApiResponse"
                 }
               }
             }
@@ -11607,9 +11688,9 @@
           "v3",
           "prompts"
         ],
-        "summary": "Delete Agent Prompt",
-        "description": "Delete an agent prompt.",
-        "operationId": "delete_agent_prompt_api_v3_prompts_delete_post",
+        "summary": "Delete Prompt",
+        "description": "Delete a prompt.",
+        "operationId": "delete_prompt_api_v3_prompts_delete_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -11649,7 +11730,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteAgentPromptRequest"
+                "$ref": "#/components/schemas/DeletePromptApiRequest"
               }
             }
           }
@@ -11660,7 +11741,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteAgentPromptResponse"
+                  "$ref": "#/components/schemas/DeletePromptApiResponse"
                 }
               }
             }
@@ -13491,97 +13572,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TusFinalizeResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "uploads"
-        ]
-      }
-    },
-    "/api/v3/uploads/upload/{upload_id}/classify": {
-      "post": {
-        "tags": [
-          "v3",
-          "uploads"
-        ],
-        "summary": "Classify Upload",
-        "description": "Classify an uploaded file and suggest parameter items.",
-        "operationId": "classify_upload_api_v3_uploads_upload__upload_id__classify_post",
-        "parameters": [
-          {
-            "name": "upload_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Upload Id"
-            }
-          },
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClassifyUploadRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClassifyUploadResponse"
+                  "$ref": "#/components/schemas/FinalizeUploadApiResponse"
                 }
               }
             }
@@ -16784,6 +16775,59 @@
         "x-cache-tags": [
           "socket",
           "socket-client",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
+    "/socket/v3/client/uploads/classify": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Classify Upload Api",
+        "description": "Client-to-server event: Classify an uploaded file.",
+        "operationId": "classify_upload_api_socket_v3_client_uploads_classify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassifyUploadPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Classify Upload Api Socket V3 Client Uploads Classify Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
           "socket-client",
           "socket-client"
         ]
@@ -21606,6 +21650,165 @@
         ]
       }
     },
+    "/socket/v3/server/uploads/classification_progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Classify Upload Progress Api",
+        "description": "Server-to-client event: Upload classification progress update.",
+        "operationId": "classify_upload_progress_api_socket_v3_server_uploads_classification_progress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassifyUploadProgressPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Classify Upload Progress Api Socket V3 Server Uploads Classification Progress Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/uploads/classification_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Classify Upload Complete Api",
+        "description": "Server-to-client event: Upload classification completed successfully.",
+        "operationId": "classify_upload_complete_api_socket_v3_server_uploads_classification_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassifyUploadCompletePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Classify Upload Complete Api Socket V3 Server Uploads Classification Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/uploads/classification_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Classify Upload Error Api",
+        "description": "Server-to-client event: Error occurred during upload classification.",
+        "operationId": "classify_upload_error_api_socket_v3_server_uploads_classification_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassifyUploadErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Classify Upload Error Api Socket V3 Server Uploads Classification Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
     "/": {
       "get": {
         "summary": "Root Info",
@@ -22772,29 +22975,37 @@
         ],
         "title": "AuthSampleItem"
       },
-      "AuthorizeEmulationRequest": {
+      "AuthorizeEmulationApiRequest": {
         "properties": {
-          "requesterProfileId": {
+          "requester_profile_id": {
             "type": "string",
-            "title": "Requesterprofileid"
+            "format": "uuid",
+            "title": "Requester Profile Id"
           },
-          "targetProfileId": {
+          "target_profile_id": {
             "type": "string",
-            "title": "Targetprofileid"
+            "format": "uuid",
+            "title": "Target Profile Id"
           }
         },
         "type": "object",
         "required": [
-          "requesterProfileId",
-          "targetProfileId"
+          "requester_profile_id",
+          "target_profile_id"
         ],
-        "title": "AuthorizeEmulationRequest",
-        "description": "Request to authorize emulation."
+        "title": "AuthorizeEmulationApiRequest"
       },
-      "AuthorizeEmulationResponse": {
+      "AuthorizeEmulationApiResponse": {
         "properties": {
           "allowed": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Allowed"
           },
           "reason": {
@@ -22807,14 +23018,21 @@
               }
             ],
             "title": "Reason"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "allowed"
-        ],
-        "title": "AuthorizeEmulationResponse",
-        "description": "Response indicating if emulation is allowed."
+        "title": "AuthorizeEmulationApiResponse"
       },
       "AvailableContinuationOptions": {
         "properties": {
@@ -23491,28 +23709,7 @@
         ],
         "title": "ChatItem"
       },
-      "ClassifyUploadRequest": {
-        "properties": {
-          "parameterIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterids"
-          }
-        },
-        "type": "object",
-        "title": "ClassifyUploadRequest",
-        "description": "Request body for upload classification."
-      },
-      "ClassifyUploadResponse": {
+      "ClassifyUploadCompletePayload": {
         "properties": {
           "success": {
             "type": "boolean",
@@ -23531,15 +23728,6 @@
             },
             "type": "object",
             "title": "Suggestedparameteritemids"
-          },
-          "newParameterItems": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Newparameteritems",
-            "default": []
           }
         },
         "type": "object",
@@ -23548,8 +23736,85 @@
           "message",
           "suggestedParameterItemIds"
         ],
-        "title": "ClassifyUploadResponse",
-        "description": "Response from upload classification."
+        "title": "ClassifyUploadCompletePayload",
+        "description": "Response indicating upload classification completed successfully."
+      },
+      "ClassifyUploadErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "ClassifyUploadErrorPayload",
+        "description": "Response indicating an error occurred in upload classification."
+      },
+      "ClassifyUploadPayload": {
+        "properties": {
+          "uploadId": {
+            "type": "string",
+            "title": "Uploadid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "parameterIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameterids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uploadId",
+          "profileId"
+        ],
+        "title": "ClassifyUploadPayload",
+        "description": "Request to classify an uploaded file."
+      },
+      "ClassifyUploadProgressPayload": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "ClassifyUploadProgressPayload",
+        "description": "Response indicating progress in upload classification."
       },
       "CohortDailyFact": {
         "properties": {
@@ -23679,65 +23944,6 @@
         "title": "CohortFact",
         "description": "Cohort fact."
       },
-      "CohortItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "title",
-          "active",
-          "createdAt",
-          "updatedAt"
-        ],
-        "title": "CohortItem",
-        "description": "Cohort item."
-      },
       "CohortMappingItem": {
         "properties": {
           "name": {
@@ -23816,31 +24022,6 @@
         ],
         "title": "CohortPerformanceResponse",
         "description": "Cohort performance response."
-      },
-      "CohortsData": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/CohortItem"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "memberCounts": {
-            "additionalProperties": {
-              "type": "integer"
-            },
-            "type": "object",
-            "title": "Membercounts"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "memberCounts"
-        ],
-        "title": "CohortsData",
-        "description": "Cohorts data with member counts."
       },
       "ConnectionConfirmedPayload": {
         "properties": {
@@ -24129,6 +24310,61 @@
         },
         "type": "object",
         "title": "CreateAgentApiResponse"
+      },
+      "CreateAnalyticsViewFunctionApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "CreateAnalyticsViewFunctionApiRequest"
+      },
+      "CreateAnalyticsViewFunctionApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "success": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "title": "CreateAnalyticsViewFunctionApiResponse"
       },
       "CreateAuthRequest": {
         "properties": {
@@ -24906,15 +25142,20 @@
         "title": "CreateModelResponse",
         "description": "Response from create model."
       },
-      "CreateOrUpdateProfileRequest": {
+      "CreateOrUpdateProfileApiRequest": {
         "properties": {
-          "firstName": {
+          "profile_id_new": {
             "type": "string",
-            "title": "Firstname"
+            "format": "uuid",
+            "title": "Profile Id New"
           },
-          "lastName": {
+          "first_name": {
             "type": "string",
-            "title": "Lastname"
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
           },
           "emails": {
             "items": {
@@ -24922,6 +25163,22 @@
             },
             "type": "array",
             "title": "Emails"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "current_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Profile Id"
           },
           "primary_email_index": {
             "anyOf": [
@@ -24932,67 +25189,101 @@
                 "type": "null"
               }
             ],
-            "title": "Primary Email Index"
+            "title": "Primary Email Index",
+            "default": 0
           },
-          "role": {
-            "type": "string",
-            "title": "Role"
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active",
+            "default": true
           },
           "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids",
-            "default": []
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           },
           "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids",
-            "default": []
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
           }
         },
         "type": "object",
         "required": [
-          "firstName",
-          "lastName",
+          "profile_id_new",
+          "first_name",
+          "last_name",
           "emails",
           "role"
         ],
-        "title": "CreateOrUpdateProfileRequest",
-        "description": "Request to create or update a single profile."
+        "title": "CreateOrUpdateProfileApiRequest"
       },
-      "CreateOrUpdateProfileResponse": {
+      "CreateOrUpdateProfileApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
           },
           "created": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Created"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "profileId",
-          "created",
-          "message"
-        ],
-        "title": "CreateOrUpdateProfileResponse",
-        "description": "Response from create or update profile."
+        "title": "CreateOrUpdateProfileApiResponse"
       },
       "CreateParameterApiRequest": {
         "properties": {
@@ -25264,15 +25555,15 @@
         "title": "CreatePracticeScenarioPayload",
         "description": "Request to create and start a practice scenario simulation."
       },
-      "CreateProfileRequest": {
+      "CreateProfileApiRequest": {
         "properties": {
-          "firstName": {
+          "first_name": {
             "type": "string",
-            "title": "Firstname"
+            "title": "First Name"
           },
-          "lastName": {
+          "last_name": {
             "type": "string",
-            "title": "Lastname"
+            "title": "Last Name"
           },
           "emails": {
             "items": {
@@ -25280,6 +25571,22 @@
             },
             "type": "array",
             "title": "Emails"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "current_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Profile Id"
           },
           "primary_email_index": {
             "anyOf": [
@@ -25290,27 +25597,50 @@
                 "type": "null"
               }
             ],
-            "title": "Primary Email Index"
+            "title": "Primary Email Index",
+            "default": 0
           },
-          "role": {
-            "type": "string",
-            "title": "Role"
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active",
+            "default": true
           },
           "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids",
-            "default": []
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
           },
           "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids",
-            "default": []
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           },
           "primary_department_index": {
             "anyOf": [
@@ -25326,37 +25656,74 @@
         },
         "type": "object",
         "required": [
-          "firstName",
-          "lastName",
+          "first_name",
+          "last_name",
           "emails",
           "role"
         ],
-        "title": "CreateProfileRequest",
-        "description": "Request to create a single profile."
+        "title": "CreateProfileApiRequest"
       },
-      "CreateProfileResponse": {
+      "CreateProfileApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
           },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "email_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Exists"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "profileId",
-          "message"
-        ],
-        "title": "CreateProfileResponse",
-        "description": "Response from create profile."
+        "title": "CreateProfileApiResponse"
       },
       "CreateProviderRequest": {
         "properties": {
@@ -26811,53 +27178,6 @@
         "type": "object",
         "title": "DeleteAgentApiResponse"
       },
-      "DeleteAgentPromptRequest": {
-        "properties": {
-          "agentId": {
-            "type": "string",
-            "title": "Agentid"
-          },
-          "promptId": {
-            "type": "string",
-            "title": "Promptid"
-          },
-          "departmentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "agentId",
-          "promptId"
-        ],
-        "title": "DeleteAgentPromptRequest"
-      },
-      "DeleteAgentPromptResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteAgentPromptResponse"
-      },
       "DeleteAuthRequest": {
         "properties": {
           "authId": {
@@ -27344,38 +27664,169 @@
         "type": "object",
         "title": "DeletePersonaApiResponse"
       },
-      "DeleteProfileRequest": {
+      "DeleteProfileApiRequest": {
         "properties": {
-          "profileId": {
+          "target_profile_id": {
             "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "DeleteProfileRequest",
-        "description": "Request to delete profile."
-      },
-      "DeleteProfileResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+            "format": "uuid",
+            "title": "Target Profile Id"
           },
-          "message": {
+          "current_profile_id": {
             "type": "string",
-            "title": "Message"
+            "format": "uuid",
+            "title": "Current Profile Id"
           }
         },
         "type": "object",
         "required": [
-          "success",
-          "message"
+          "target_profile_id",
+          "current_profile_id"
         ],
-        "title": "DeleteProfileResponse",
-        "description": "Response from delete profile."
+        "title": "DeleteProfileApiRequest"
+      },
+      "DeleteProfileApiResponse": {
+        "properties": {
+          "profile_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Exists"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "DeleteProfileApiResponse"
+      },
+      "DeletePromptApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "prompt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Prompt Id"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "prompt_id"
+        ],
+        "title": "DeletePromptApiRequest"
+      },
+      "DeletePromptApiResponse": {
+        "properties": {
+          "prompt_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "DeletePromptApiResponse"
       },
       "DeleteProviderRequest": {
         "properties": {
@@ -27608,6 +28059,81 @@
         "title": "DepartmentDetailRequest",
         "description": "Request for department detail."
       },
+      "DepartmentItem": {
+        "properties": {
+          "department_id": {
+            "type": "string",
+            "title": "Department Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "total_price_spent": {
+            "type": "number",
+            "title": "Total Price Spent"
+          },
+          "staff_count": {
+            "type": "integer",
+            "title": "Staff Count"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "title",
+          "description",
+          "active",
+          "updated_at",
+          "total_price_spent",
+          "staff_count",
+          "cohort_ids",
+          "profile_ids",
+          "can_edit",
+          "can_delete",
+          "can_duplicate"
+        ],
+        "title": "DepartmentItem",
+        "description": "Department item for list view."
+      },
       "DepartmentNewRequest": {
         "properties": {},
         "type": "object",
@@ -27648,7 +28174,7 @@
         "properties": {
           "departments": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__departments__list__DepartmentItem"
+              "$ref": "#/components/schemas/DepartmentItem"
             },
             "type": "array",
             "title": "Departments"
@@ -30092,6 +30618,68 @@
         ],
         "title": "FilterOption",
         "description": "Filter option with count."
+      },
+      "FinalizeUploadApiResponse": {
+        "properties": {
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "success": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "title": "FinalizeUploadApiResponse"
       },
       "GenerateDocumentTemplatePayload": {
         "properties": {
@@ -32792,6 +33380,52 @@
         "type": "object",
         "title": "GetFieldsListApiResponse"
       },
+      "GetLogsBundleApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetLogsBundleApiRequest"
+      },
+      "GetLogsBundleApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "health_kpis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLogsBundleV3HealthKpis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetLogsBundleV3MetricsDataPoint"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metrics"
+          }
+        },
+        "type": "object",
+        "title": "GetLogsBundleApiResponse"
+      },
       "GetParameterDetailApiRequest": {
         "properties": {
           "parameter_id": {
@@ -34151,6 +34785,1543 @@
         },
         "type": "object",
         "title": "GetPersonasListApiResponse"
+      },
+      "GetProfileByEmailApiRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "GetProfileByEmailApiRequest"
+      },
+      "GetProfileByEmailApiResponse": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "req_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Req Per Day"
+          },
+          "last_login": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login"
+          },
+          "last_active": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Active"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetProfileByEmailApiResponse"
+      },
+      "GetProfileContextApiRequest": {
+        "properties": {
+          "actual_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Profile Id"
+          },
+          "effective_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Profile Id"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "auth_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Mode"
+          }
+        },
+        "type": "object",
+        "title": "GetProfileContextApiRequest"
+      },
+      "GetProfileContextApiResponse": {
+        "properties": {
+          "is_authorized": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Authorized"
+          },
+          "guest_login_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guest Login Enabled"
+          },
+          "active_departments_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Departments Count"
+          },
+          "department_auth_providers_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Auth Providers Count"
+          },
+          "default_settings_auth_providers_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Settings Auth Providers Count"
+          },
+          "departments_without_auth_providers_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments Without Auth Providers Count"
+          },
+          "department_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Exists"
+          },
+          "actual_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Id"
+          },
+          "actual_first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual First Name"
+          },
+          "actual_last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Last Name"
+          },
+          "actual_emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Emails"
+          },
+          "actual_primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Primary Email"
+          },
+          "actual_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Role"
+          },
+          "actual_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Active"
+          },
+          "actual_req_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Req Per Day"
+          },
+          "actual_last_login": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Last Login"
+          },
+          "actual_last_active": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Last Active"
+          },
+          "actual_created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Created At"
+          },
+          "actual_updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Updated At"
+          },
+          "actual_primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Primary Department Id"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "req_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Req Per Day"
+          },
+          "last_login": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login"
+          },
+          "last_active": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Active"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileContextV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "cohorts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileContextV3Cohort"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts"
+          },
+          "simulations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileContextV3Simulation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulations"
+          },
+          "earliest_attempt_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Earliest Attempt Date"
+          },
+          "scoped_roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scoped Roles"
+          },
+          "settings_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Id"
+          },
+          "settings_created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Created At"
+          },
+          "settings_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Active"
+          },
+          "settings_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Name"
+          },
+          "settings_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Description"
+          },
+          "settings_primary_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Primary Color"
+          },
+          "settings_accent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Accent"
+          },
+          "settings_background": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Background"
+          },
+          "settings_surface": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Surface"
+          },
+          "settings_success": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Success"
+          },
+          "settings_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Warning"
+          },
+          "settings_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Error"
+          },
+          "settings_sidebar_background": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Sidebar Background"
+          },
+          "settings_sidebar_primary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Sidebar Primary"
+          },
+          "settings_chart1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Chart1"
+          },
+          "settings_chart2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Chart2"
+          },
+          "settings_chart3": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Chart3"
+          },
+          "settings_chart4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Chart4"
+          },
+          "settings_chart5": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Chart5"
+          },
+          "settings_guest_login_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Guest Login Enabled"
+          },
+          "settings_success_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Success Threshold"
+          },
+          "settings_warning_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Warning Threshold"
+          },
+          "settings_danger_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Danger Threshold"
+          },
+          "settings_auth_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Auth Ids"
+          },
+          "settings_auths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileContextV3Auth"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Auths"
+          },
+          "settings_provider_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Provider Ids"
+          },
+          "settings_providers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileContextV3Provider"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Providers"
+          },
+          "settings_default_guest_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Default Guest Profile Id"
+          },
+          "settings_default_account_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Default Account Profile Id"
+          },
+          "available_sections": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Sections"
+          },
+          "redirect_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Redirect Path"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "settings_tokens": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetProfileContextV3ThemeTokens"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetProfileContextApiResponse"
+      },
+      "GetProfileDetailApiRequest": {
+        "properties": {
+          "target_profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target_profile_id"
+        ],
+        "title": "GetProfileDetailApiRequest"
+      },
+      "GetProfileDetailApiResponse": {
+        "properties": {
+          "profile_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Exists"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "valid_cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Cohort Ids"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileDetailV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "cohorts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileDetailV3Cohort"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetProfileDetailApiResponse"
+      },
+      "GetProfileNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetProfileNewApiRequest"
+      },
+      "GetProfileNewApiResponse": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "valid_cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Cohort Ids"
+          },
+          "role_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Options"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileNewV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "cohorts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetProfileNewV3Cohort"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetProfileNewApiResponse"
       },
       "GetScenarioDetailApiRequest": {
         "properties": {
@@ -38149,67 +40320,6 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "HealthKPI": {
-        "properties": {
-          "ok": {
-            "type": "boolean",
-            "title": "Ok"
-          },
-          "latency_ms": {
-            "type": "number",
-            "title": "Latency Ms"
-          },
-          "error": {
-            "type": "string",
-            "title": "Error"
-          },
-          "trend": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__logs__bundle__TrendData"
-            },
-            "type": "array",
-            "title": "Trend"
-          }
-        },
-        "type": "object",
-        "required": [
-          "ok",
-          "latency_ms",
-          "error",
-          "trend"
-        ],
-        "title": "HealthKPI",
-        "description": "Health KPI data for a service."
-      },
-      "HealthKPIs": {
-        "properties": {
-          "websocket": {
-            "$ref": "#/components/schemas/HealthKPI"
-          },
-          "redis": {
-            "$ref": "#/components/schemas/HealthKPI"
-          },
-          "document": {
-            "$ref": "#/components/schemas/HealthKPI"
-          },
-          "database": {
-            "$ref": "#/components/schemas/HealthKPI"
-          },
-          "authentication": {
-            "$ref": "#/components/schemas/HealthKPI"
-          }
-        },
-        "type": "object",
-        "required": [
-          "websocket",
-          "redis",
-          "document",
-          "database",
-          "authentication"
-        ],
-        "title": "HealthKPIs",
-        "description": "All health KPIs."
-      },
       "HintGenerationProgressPayload": {
         "properties": {
           "type": {
@@ -40259,33 +42369,6 @@
         "title": "LoginProvidersResponse",
         "description": "Response with list of active provider options and departments."
       },
-      "LogsBundleRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "LogsBundleRequest",
-        "description": "Logs bundle request schema."
-      },
-      "LogsBundleResponse": {
-        "properties": {
-          "health_kpis": {
-            "$ref": "#/components/schemas/HealthKPIs"
-          },
-          "metrics": {
-            "items": {
-              "$ref": "#/components/schemas/MetricsDataPoint"
-            },
-            "type": "array",
-            "title": "Metrics"
-          }
-        },
-        "type": "object",
-        "required": [
-          "health_kpis",
-          "metrics"
-        ],
-        "title": "LogsBundleResponse",
-        "description": "Logs bundle response."
-      },
       "MessageFeedbackHighlightItem": {
         "properties": {
           "section": {
@@ -40760,7 +42843,7 @@
           },
           "trendData": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__TrendData"
+              "$ref": "#/components/schemas/TrendData"
             },
             "type": "array",
             "title": "Trenddata"
@@ -40796,50 +42879,6 @@
         ],
         "title": "MetricResponse",
         "description": "Standard metric response."
-      },
-      "MetricsDataPoint": {
-        "properties": {
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "cpu_percent": {
-            "type": "number",
-            "title": "Cpu Percent"
-          },
-          "latency_ms": {
-            "type": "number",
-            "title": "Latency Ms"
-          },
-          "memory_bytes": {
-            "type": "number",
-            "title": "Memory Bytes"
-          },
-          "requests_total": {
-            "type": "integer",
-            "title": "Requests Total"
-          },
-          "errors_total": {
-            "type": "integer",
-            "title": "Errors Total"
-          },
-          "sample_count": {
-            "type": "integer",
-            "title": "Sample Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "date",
-          "cpu_percent",
-          "latency_ms",
-          "memory_bytes",
-          "requests_total",
-          "errors_total",
-          "sample_count"
-        ],
-        "title": "MetricsDataPoint",
-        "description": "App metrics data point."
       },
       "ModalitiesItem": {
         "properties": {
@@ -43350,128 +45389,6 @@
         "type": "object",
         "title": "ProcessCsvApiResponse"
       },
-      "ProfileByEmailRequest": {
-        "properties": {
-          "email": {
-            "type": "string",
-            "title": "Email"
-          }
-        },
-        "type": "object",
-        "required": [
-          "email"
-        ],
-        "title": "ProfileByEmailRequest",
-        "description": "Request to get profile by email."
-      },
-      "ProfileContextRequest": {
-        "properties": {
-          "pathname": {
-            "type": "string",
-            "title": "Pathname"
-          }
-        },
-        "type": "object",
-        "required": [
-          "pathname"
-        ],
-        "title": "ProfileContextRequest",
-        "description": "Request to get consolidated profile context.\n\nNote: actualProfileId and effectiveProfileId are now read from headers\n(X-Profile-Id and X-Effective-Profile-Id) instead of request body.\nThese fields are kept for backward compatibility but are ignored."
-      },
-      "ProfileContextResponse": {
-        "properties": {
-          "actualProfile": {
-            "$ref": "#/components/schemas/ProfileItem"
-          },
-          "effectiveProfile": {
-            "$ref": "#/components/schemas/ProfileItem"
-          },
-          "departments": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__profile__context__DepartmentItem"
-            },
-            "type": "array",
-            "title": "Departments"
-          },
-          "departmentIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Departmentids"
-          },
-          "cohorts": {
-            "$ref": "#/components/schemas/CohortsData"
-          },
-          "cohortIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohortids"
-          },
-          "simulations": {
-            "$ref": "#/components/schemas/SimulationsData"
-          },
-          "simulationIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Simulationids"
-          },
-          "earliestAttemptDate": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Earliestattemptdate"
-          },
-          "availableSections": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Availablesections"
-          },
-          "redirectPath": {
-            "type": "string",
-            "title": "Redirectpath"
-          },
-          "scopedRoles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scopedroles"
-          },
-          "settings": {
-            "$ref": "#/components/schemas/SettingsData"
-          }
-        },
-        "type": "object",
-        "required": [
-          "actualProfile",
-          "effectiveProfile",
-          "departments",
-          "departmentIds",
-          "cohorts",
-          "cohortIds",
-          "simulations",
-          "simulationIds",
-          "earliestAttemptDate",
-          "availableSections",
-          "redirectPath",
-          "scopedRoles",
-          "settings"
-        ],
-        "title": "ProfileContextResponse",
-        "description": "Response with consolidated profile context data."
-      },
       "ProfileDataEnhanced": {
         "properties": {
           "profileId": {
@@ -43541,274 +45458,6 @@
         "title": "ProfileDataEnhanced",
         "description": "Enhanced profile data row."
       },
-      "ProfileDetailRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "ProfileDetailRequest",
-        "description": "Request for profile detail."
-      },
-      "ProfileDetailResponse": {
-        "properties": {
-          "profile": {
-            "$ref": "#/components/schemas/ProfileItem"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profile"
-        ],
-        "title": "ProfileDetailResponse",
-        "description": "Response containing profile details (simple version for backward compatibility)."
-      },
-      "ProfileDetailResponseFull": {
-        "properties": {
-          "profile_id": {
-            "type": "string",
-            "title": "Profile Id"
-          },
-          "first_name": {
-            "type": "string",
-            "title": "First Name"
-          },
-          "last_name": {
-            "type": "string",
-            "title": "Last Name"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "primary_email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__profile__detail__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "valid_cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Cohort Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profile_id",
-          "first_name",
-          "last_name",
-          "name",
-          "emails",
-          "primary_email",
-          "role",
-          "requests_per_day",
-          "cohort_ids",
-          "department_ids",
-          "primary_department_id",
-          "active",
-          "can_edit",
-          "valid_department_ids",
-          "department_mapping",
-          "cohort_mapping",
-          "valid_cohort_ids"
-        ],
-        "title": "ProfileDetailResponseFull",
-        "description": "Response for profile detail endpoint (comprehensive version)."
-      },
-      "ProfileItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "firstName": {
-            "type": "string",
-            "title": "Firstname"
-          },
-          "lastName": {
-            "type": "string",
-            "title": "Lastname"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "primaryEmail": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primaryemail"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "reqPerDay": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reqperday"
-          },
-          "lastLogin": {
-            "type": "string",
-            "title": "Lastlogin"
-          },
-          "lastActive": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lastactive"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          },
-          "primaryDepartmentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primarydepartmentid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "firstName",
-          "lastName",
-          "emails",
-          "primaryEmail",
-          "role",
-          "active",
-          "reqPerDay",
-          "lastLogin",
-          "lastActive",
-          "createdAt",
-          "updatedAt",
-          "primaryDepartmentId"
-        ],
-        "title": "ProfileItem",
-        "description": "Profile data item (simple version for backward compatibility)."
-      },
       "ProfileMappingItem": {
         "properties": {
           "name": {
@@ -43876,118 +45525,6 @@
         ],
         "title": "ProfileMetrics",
         "description": "Profile metrics - each metric is a full MetricResponse object."
-      },
-      "ProfileNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "ProfileNewRequest",
-        "description": "Request to get default profile details."
-      },
-      "ProfileNewResponse": {
-        "properties": {
-          "first_name": {
-            "type": "string",
-            "title": "First Name"
-          },
-          "last_name": {
-            "type": "string",
-            "title": "Last Name"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "valid_cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Cohort Ids"
-          },
-          "role_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Role Options"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__profile__new__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "first_name",
-          "last_name",
-          "emails",
-          "role",
-          "requests_per_day",
-          "primary_department_id",
-          "active",
-          "can_edit",
-          "valid_department_ids",
-          "valid_cohort_ids",
-          "role_options",
-          "department_mapping",
-          "cohort_mapping"
-        ],
-        "title": "ProfileNewResponse",
-        "description": "Response with default profile details and metadata."
       },
       "ProviderDetailRequest": {
         "properties": {
@@ -46611,6 +48148,276 @@
         ],
         "title": "QGetFieldNewV3Parameter"
       },
+      "QGetLogsBundleV3HealthKpi": {
+        "properties": {
+          "ok": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ok"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "trend": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetLogsBundleV3TrendData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "latency_ms",
+          "error",
+          "trend"
+        ],
+        "title": "QGetLogsBundleV3HealthKpi"
+      },
+      "QGetLogsBundleV3HealthKpis": {
+        "properties": {
+          "websocket": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLogsBundleV3HealthKpi"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "redis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLogsBundleV3HealthKpi"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "document": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLogsBundleV3HealthKpi"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "database": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLogsBundleV3HealthKpi"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "authentication": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetLogsBundleV3HealthKpi"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "websocket",
+          "redis",
+          "document",
+          "database",
+          "authentication"
+        ],
+        "title": "QGetLogsBundleV3HealthKpis"
+      },
+      "QGetLogsBundleV3MetricsDataPoint": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "cpu_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpu Percent"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "memory_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Bytes"
+          },
+          "requests_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Total"
+          },
+          "errors_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors Total"
+          },
+          "sample_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "cpu_percent",
+          "latency_ms",
+          "memory_bytes",
+          "requests_total",
+          "errors_total",
+          "sample_count"
+        ],
+        "title": "QGetLogsBundleV3MetricsDataPoint"
+      },
+      "QGetLogsBundleV3TrendData": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "latency": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "value",
+          "latency",
+          "count"
+        ],
+        "title": "QGetLogsBundleV3TrendData"
+      },
       "QGetParameterDetailV3Department": {
         "properties": {
           "department_id": {
@@ -47922,6 +49729,989 @@
           "video_parameter"
         ],
         "title": "QGetPersonaNewV3Parameter"
+      },
+      "QGetProfileContextV3Auth": {
+        "properties": {
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "name",
+          "description",
+          "slug"
+        ],
+        "title": "QGetProfileContextV3Auth"
+      },
+      "QGetProfileContextV3Cohort": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "title",
+          "description",
+          "active",
+          "department_ids"
+        ],
+        "title": "QGetProfileContextV3Cohort"
+      },
+      "QGetProfileContextV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "is_primary": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Primary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "title",
+          "description",
+          "active",
+          "is_primary"
+        ],
+        "title": "QGetProfileContextV3Department"
+      },
+      "QGetProfileContextV3Provider": {
+        "properties": {
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "name",
+          "description",
+          "value"
+        ],
+        "title": "QGetProfileContextV3Provider"
+      },
+      "QGetProfileContextV3Simulation": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "practice_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Simulation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "title",
+          "description",
+          "department_ids",
+          "time_limit",
+          "active",
+          "practice_simulation"
+        ],
+        "title": "QGetProfileContextV3Simulation"
+      },
+      "QGetProfileContextV3ThemeTokens": {
+        "properties": {
+          "background": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background"
+          },
+          "foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foreground"
+          },
+          "card": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card"
+          },
+          "card_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Foreground"
+          },
+          "popover": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Popover"
+          },
+          "popover_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Popover Foreground"
+          },
+          "primary_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Color"
+          },
+          "primary_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Foreground"
+          },
+          "secondary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondary"
+          },
+          "secondary_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondary Foreground"
+          },
+          "muted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Muted"
+          },
+          "muted_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Muted Foreground"
+          },
+          "accent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accent"
+          },
+          "accent_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accent Foreground"
+          },
+          "destructive": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destructive"
+          },
+          "border": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Border"
+          },
+          "input": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input"
+          },
+          "ring": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ring"
+          },
+          "success": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success"
+          },
+          "success_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success Foreground"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          },
+          "warning_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning Foreground"
+          },
+          "info": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Info"
+          },
+          "info_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Info Foreground"
+          },
+          "chart1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart1"
+          },
+          "chart2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart2"
+          },
+          "chart3": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart3"
+          },
+          "chart4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart4"
+          },
+          "chart5": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart5"
+          },
+          "sidebar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar"
+          },
+          "sidebar_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Foreground"
+          },
+          "sidebar_primary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Primary"
+          },
+          "sidebar_primary_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Primary Foreground"
+          },
+          "sidebar_accent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Accent"
+          },
+          "sidebar_accent_foreground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Accent Foreground"
+          },
+          "sidebar_border": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Border"
+          },
+          "sidebar_ring": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Ring"
+          }
+        },
+        "type": "object",
+        "required": [
+          "background",
+          "foreground",
+          "card",
+          "card_foreground",
+          "popover",
+          "popover_foreground",
+          "primary_color",
+          "primary_foreground",
+          "secondary",
+          "secondary_foreground",
+          "muted",
+          "muted_foreground",
+          "accent",
+          "accent_foreground",
+          "destructive",
+          "border",
+          "input",
+          "ring",
+          "success",
+          "success_foreground",
+          "warning",
+          "warning_foreground",
+          "info",
+          "info_foreground",
+          "chart1",
+          "chart2",
+          "chart3",
+          "chart4",
+          "chart5",
+          "sidebar",
+          "sidebar_foreground",
+          "sidebar_primary",
+          "sidebar_primary_foreground",
+          "sidebar_accent",
+          "sidebar_accent_foreground",
+          "sidebar_border",
+          "sidebar_ring"
+        ],
+        "title": "QGetProfileContextV3ThemeTokens"
+      },
+      "QGetProfileDetailV3Cohort": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetProfileDetailV3Cohort"
+      },
+      "QGetProfileDetailV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetProfileDetailV3Department"
+      },
+      "QGetProfileNewV3Cohort": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetProfileNewV3Cohort"
+      },
+      "QGetProfileNewV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetProfileNewV3Department"
       },
       "QGetScenarioDetailV3Agent": {
         "properties": {
@@ -57164,6 +59954,175 @@
         ],
         "title": "QProcessCsvV3ProcessedRow"
       },
+      "QSearchSimulatableProfilesV3Profile": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "req_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Req Per Day"
+          },
+          "last_login": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login"
+          },
+          "last_active": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Active"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "first_name",
+          "last_name",
+          "emails",
+          "primary_email",
+          "role",
+          "active",
+          "req_per_day",
+          "last_login",
+          "last_active",
+          "created_at",
+          "updated_at",
+          "primary_department_id"
+        ],
+        "title": "QSearchSimulatableProfilesV3Profile"
+      },
       "QSearchStaffV3Cohort": {
         "properties": {
           "cohort_id": {
@@ -58060,35 +61019,60 @@
         "title": "RealtimeItem",
         "description": "RealtimeItem format for conversation history."
       },
-      "RefreshRequest": {
+      "RefreshAnalyticsApiRequest": {
         "properties": {},
         "type": "object",
-        "title": "RefreshRequest",
-        "description": "Request to refresh analytics (no parameters needed)."
+        "title": "RefreshAnalyticsApiRequest"
       },
-      "RefreshResponse": {
+      "RefreshAnalyticsApiResponse": {
         "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
           "success": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Success"
           },
           "message": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Message"
           },
           "status": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Status"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message",
-          "status"
-        ],
-        "title": "RefreshResponse",
-        "description": "Materialized view refresh response."
+        "title": "RefreshAnalyticsApiResponse"
       },
       "RegenerateScenarioPayload": {
         "properties": {
@@ -60742,9 +63726,27 @@
         "title": "ScenarioVideoToolPayload",
         "description": "Request to generate video from scenario generation tool."
       },
-      "SearchSimulatableProfilesRequest": {
+      "SearchSimulatableProfilesApiRequest": {
         "properties": {
+          "limit_count": {
+            "type": "integer",
+            "title": "Limit Count"
+          },
           "query": {
+            "type": "string",
+            "title": "Query"
+          }
+        },
+        "type": "object",
+        "required": [
+          "limit_count",
+          "query"
+        ],
+        "title": "SearchSimulatableProfilesApiRequest"
+      },
+      "SearchSimulatableProfilesApiResponse": {
+        "properties": {
+          "actor_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -60753,34 +63755,25 @@
                 "type": "null"
               }
             ],
-            "title": "Query"
+            "title": "Actor Name"
           },
-          "limit": {
-            "type": "integer",
-            "title": "Limit",
-            "default": 200
-          }
-        },
-        "type": "object",
-        "title": "SearchSimulatableProfilesRequest",
-        "description": "Request for simulatable profiles search."
-      },
-      "SearchSimulatableProfilesResponse": {
-        "properties": {
           "profiles": {
-            "items": {
-              "$ref": "#/components/schemas/ProfileItem"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QSearchSimulatableProfilesV3Profile"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Profiles"
           }
         },
         "type": "object",
-        "required": [
-          "profiles"
-        ],
-        "title": "SearchSimulatableProfilesResponse",
-        "description": "Response for simulatable profiles search endpoint."
+        "title": "SearchSimulatableProfilesApiResponse"
       },
       "SendSimulationMessageErrorPayload": {
         "properties": {
@@ -60938,96 +63931,6 @@
         ],
         "title": "SettingsActiveResponse",
         "description": "Active settings response."
-      },
-      "SettingsData": {
-        "properties": {
-          "settings_id": {
-            "type": "string",
-            "title": "Settings Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "light",
-              "dark",
-              "system"
-            ],
-            "title": "Mode",
-            "default": "light"
-          },
-          "tokens": {
-            "$ref": "#/components/schemas/ThemeTokens"
-          },
-          "guest_login_enabled": {
-            "type": "boolean",
-            "title": "Guest Login Enabled"
-          },
-          "success_threshold": {
-            "type": "integer",
-            "title": "Success Threshold"
-          },
-          "warning_threshold": {
-            "type": "integer",
-            "title": "Warning Threshold"
-          },
-          "danger_threshold": {
-            "type": "integer",
-            "title": "Danger Threshold"
-          },
-          "guestProfileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Guestprofileid"
-          },
-          "defaultAccountProfileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Defaultaccountprofileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "settings_id",
-          "created_at",
-          "active",
-          "name",
-          "description",
-          "tokens",
-          "guest_login_enabled",
-          "success_threshold",
-          "warning_threshold",
-          "danger_threshold"
-        ],
-        "title": "SettingsData",
-        "description": "Settings data included in profile context."
       },
       "SettingsDetailRequest": {
         "properties": {
@@ -61524,66 +64427,6 @@
         ],
         "title": "SimulationCompositionResponse",
         "description": "Simulation composition response."
-      },
-      "SimulationContextItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "timeLimit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timelimit"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "practiceSimulation": {
-            "type": "boolean",
-            "title": "Practicesimulation"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "timeLimit",
-          "active",
-          "practiceSimulation"
-        ],
-        "title": "SimulationContextItem",
-        "description": "Simplified simulation item for profile context."
       },
       "SimulationEndedPayload": {
         "properties": {
@@ -62732,23 +65575,6 @@
         "title": "SimulationToolCallTokenPayload",
         "description": "Internal event for tool call arguments update."
       },
-      "SimulationsData": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/SimulationContextItem"
-            },
-            "type": "array",
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "title": "SimulationsData",
-        "description": "Simulations data."
-      },
       "SkillPackage": {
         "properties": {
           "rubricId": {
@@ -63786,40 +66612,29 @@
         ],
         "title": "TimerItem"
       },
-      "TusFinalizeResponse": {
+      "TrendData": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
+          "date": {
             "type": "string",
-            "title": "Message"
+            "title": "Date"
           },
-          "status": {
-            "type": "string",
-            "title": "Status"
+          "value": {
+            "type": "number",
+            "title": "Value"
           },
-          "uploadId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Uploadid"
+          "count": {
+            "type": "integer",
+            "title": "Count"
           }
         },
         "type": "object",
         "required": [
-          "success",
-          "message",
-          "status"
+          "date",
+          "value",
+          "count"
         ],
-        "title": "TusFinalizeResponse",
-        "description": "Response from finalize upload."
+        "title": "TrendData",
+        "description": "Trend data point."
       },
       "UnitItem": {
         "properties": {
@@ -65143,13 +67958,14 @@
         "type": "object",
         "title": "UpdatePersonaApiResponse"
       },
-      "UpdateProfileRequest": {
+      "UpdateProfileApiRequest": {
         "properties": {
-          "profileId": {
+          "target_profile_id": {
             "type": "string",
-            "title": "Profileid"
+            "format": "uuid",
+            "title": "Target Profile Id"
           },
-          "firstName": {
+          "first_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -65158,9 +67974,9 @@
                 "type": "null"
               }
             ],
-            "title": "Firstname"
+            "title": "First Name"
           },
-          "lastName": {
+          "last_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -65169,18 +67985,11 @@
                 "type": "null"
               }
             ],
-            "title": "Lastname"
+            "title": "Last Name"
           },
-          "lastLogin": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lastlogin"
+          "last_login": {
+            "type": "string",
+            "title": "Last Login"
           },
           "role": {
             "anyOf": [
@@ -65204,7 +68013,11 @@
             ],
             "title": "Active"
           },
-          "reqPerDay": {
+          "last_active": {
+            "type": "string",
+            "title": "Last Active"
+          },
+          "requests_per_day": {
             "anyOf": [
               {
                 "type": "integer"
@@ -65213,40 +68026,7 @@
                 "type": "null"
               }
             ],
-            "title": "Reqperday"
-          },
-          "lastActive": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lastactive"
-          },
-          "first_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First Name"
-          },
-          "last_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Name"
+            "title": "Requests Per Day"
           },
           "emails": {
             "anyOf": [
@@ -65273,22 +68053,12 @@
             ],
             "title": "Primary Email Index"
           },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
           "cohort_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -65302,7 +68072,8 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -65326,29 +68097,84 @@
         },
         "type": "object",
         "required": [
-          "profileId"
+          "target_profile_id",
+          "last_login",
+          "last_active"
         ],
-        "title": "UpdateProfileRequest",
-        "description": "Request to update profile - supports both simple and comprehensive updates."
+        "title": "UpdateProfileApiRequest"
       },
-      "UpdateProfileResponse": {
+      "UpdateProfileApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "profile_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Exists"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateProfileResponse",
-        "description": "Response from update profile."
+        "title": "UpdateProfileApiResponse"
       },
       "UpdateProviderRequest": {
         "properties": {
@@ -67343,30 +70169,6 @@
         "title": "SimulationMappingItem",
         "description": "Simulation mapping item."
       },
-      "app__api__v3__dashboard__bundle__TrendData": {
-        "properties": {
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "value": {
-            "type": "number",
-            "title": "Value"
-          },
-          "count": {
-            "type": "integer",
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "date",
-          "value",
-          "count"
-        ],
-        "title": "TrendData",
-        "description": "Trend data point."
-      },
       "app__api__v3__dashboard__history__AttemptHistoryRow": {
         "properties": {
           "attemptId": {
@@ -67760,81 +70562,6 @@
         ],
         "title": "ModelMappingItem",
         "description": "Model mapping item."
-      },
-      "app__api__v3__departments__list__DepartmentItem": {
-        "properties": {
-          "department_id": {
-            "type": "string",
-            "title": "Department Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "total_price_spent": {
-            "type": "number",
-            "title": "Total Price Spent"
-          },
-          "staff_count": {
-            "type": "integer",
-            "title": "Staff Count"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          },
-          "profile_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Profile Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          }
-        },
-        "type": "object",
-        "required": [
-          "department_id",
-          "title",
-          "description",
-          "active",
-          "updated_at",
-          "total_price_spent",
-          "staff_count",
-          "cohort_ids",
-          "profile_ids",
-          "can_edit",
-          "can_delete",
-          "can_duplicate"
-        ],
-        "title": "DepartmentItem",
-        "description": "Department item for list view."
       },
       "app__api__v3__departments__new__DepartmentDetailResponse": {
         "properties": {
@@ -69821,35 +72548,6 @@
         "title": "SimulationMappingItem",
         "description": "Simulation mapping item."
       },
-      "app__api__v3__logs__bundle__TrendData": {
-        "properties": {
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "value": {
-            "type": "number",
-            "title": "Value"
-          },
-          "latency": {
-            "type": "number",
-            "title": "Latency"
-          },
-          "count": {
-            "type": "integer",
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "date",
-          "value",
-          "latency",
-          "count"
-        ],
-        "title": "TrendData",
-        "description": "Trend data point for health KPIs."
-      },
       "app__api__v3__models__detail__DepartmentMappingItem": {
         "properties": {
           "name": {
@@ -70662,89 +73360,6 @@
         ],
         "title": "MessageItem",
         "description": "Message item schema."
-      },
-      "app__api__v3__profile__context__DepartmentItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
-          },
-          "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "title",
-          "active",
-          "createdAt",
-          "updatedAt"
-        ],
-        "title": "DepartmentItem",
-        "description": "Department item."
-      },
-      "app__api__v3__profile__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__profile__new__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
       },
       "app__api__v3__reports__bundle__ScenarioMappingItem": {
         "properties": {

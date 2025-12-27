@@ -1,35 +1,28 @@
 """Profile delete endpoint - delete a profile."""
 
-from typing import Annotated, Any
+import uuid
+from typing import Annotated, Any, cast
 
 import asyncpg
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (DeleteProfileApiRequest, DeleteProfileApiResponse,
+                           DeleteProfileSqlParams, DeleteProfileSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/profile/delete_profile_complete.sql"
 
 router = APIRouter()
 
 
-class DeleteProfileRequest(BaseModel):
-    """Request to delete profile."""
-
-    profileId: str
-
-
-class DeleteProfileResponse(BaseModel):
-    """Response from delete profile."""
-
-    success: bool
-    message: str
-
-
 @router.post(
     "/delete",
-    response_model=DeleteProfileResponse,
+    response_model=DeleteProfileApiResponse,
     dependencies=[
         audit_activity(
             "profile.deleted", "{{ actor.name }} deleted profile '{{ profile.name }}'"
@@ -37,13 +30,13 @@ class DeleteProfileResponse(BaseModel):
     ],
 )
 async def delete_profile(
-    request: DeleteProfileRequest,
+    request: DeleteProfileApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DeleteProfileResponse:
+) -> DeleteProfileApiResponse:
     """Delete a profile."""
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -55,41 +48,48 @@ async def delete_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Single consolidated query: checks existence/default, gets name, and deletes
-        sql_query = load_sql("app/sql/v3/profile/staff/delete_profile_complete.sql")
-        sql_params = (request.profileId, current_profile_id)
+        # Convert API request to SQL params using double star pattern (add current_profile_id from header)
+        # Exclude current_profile_id from request if present (it comes from header, not request body)
+        request_dict = request.model_dump(exclude={'current_profile_id'}, exclude_none=False)
+        params = DeleteProfileSqlParams(**request_dict, current_profile_id=current_profile_id)
+        sql_params = params.to_tuple()
 
-        result = await conn.fetchrow(sql_query, request.profileId, current_profile_id)
+        result = cast(
+            DeleteProfileSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
 
-        if not result or not result["id"]:
+        # Check if profile exists
+        if not result.profile_exists:
             raise HTTPException(
-                status_code=404, detail=f"Profile not found: {request.profileId}"
+                status_code=404, detail=f"Profile not found: {request.target_profile_id}"
             )
 
-        # Verify deletion occurred (query performs the delete)
-        if not result.get("deleted", False):
+        # Verify deletion occurred
+        if not result.deleted:
             raise HTTPException(status_code=500, detail="Failed to delete profile")
 
         # Set audit context with data from SQL query
-        actor_name = result.get("actor_name")
-        profile_name = result.get("name")
-        if actor_name:
+        if result.actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": current_profile_id},
-                profile={"name": profile_name, "id": request.profileId},
+                actor={"name": result.actor_name, "id": current_profile_id},
+                profile={"name": result.name, "id": str(result.profile_id)},
             )
 
-        result_data = DeleteProfileResponse(
-            success=True, message=f"Profile '{result['name']}' deleted successfully"
-        )
+        # Convert SQL result to API response
+        response_data = DeleteProfileApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         tags = ["profile"]  # Profile operations
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

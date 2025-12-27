@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict H2Z4oxa2D4CMerEg3LiJDBzegycfLrPu8v2K2tJgEmah0sSWllAAmLJVbZjmvdO
+\restrict VqJDJASHFOavPple4A7fWnzTfSnw5Wky0zC80NKGKiVB8P4aAxhMgoiBA78NQdS
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -24,6 +24,13 @@ SET row_security = off;
 --
 
 CREATE SCHEMA audit;
+
+
+--
+-- Name: types; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA types;
 
 
 --
@@ -648,6 +655,20 @@ CREATE TABLE public.agents (
 
 
 --
+-- Name: app_metrics; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.app_metrics (
+    ts timestamp with time zone NOT NULL,
+    requests_total bigint NOT NULL,
+    errors_total bigint NOT NULL,
+    avg_latency_ms double precision NOT NULL,
+    cpu_percent double precision NOT NULL,
+    memory_bytes bigint NOT NULL
+);
+
+
+--
 -- Name: attempt_chats; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -669,642 +690,6 @@ CREATE TABLE public.attempt_profiles (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     profile_id uuid NOT NULL,
     attempt_id uuid NOT NULL
-);
-
-
---
--- Name: chat_groups; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.chat_groups (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    chat_id uuid NOT NULL,
-    group_id uuid NOT NULL
-);
-
-
---
--- Name: chats; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.chats (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    title text NOT NULL,
-    completed boolean DEFAULT false NOT NULL,
-    trace_id text NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT chats_id_v7_not_null NOT NULL,
-    scenario_id uuid
-);
-
-
---
--- Name: cohort_profiles; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.cohort_profiles (
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    cohort_id uuid NOT NULL,
-    profile_id uuid NOT NULL
-);
-
-
---
--- Name: cohort_simulations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.cohort_simulations (
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    "position" integer DEFAULT 1 NOT NULL,
-    cohort_id uuid NOT NULL,
-    simulation_id uuid NOT NULL
-);
-
-
---
--- Name: cohorts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.cohorts (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    title text NOT NULL,
-    description text DEFAULT 'No description provided'::text NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT cohorts_id_v7_not_null NOT NULL
-);
-
-
---
--- Name: grade_groups; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.grade_groups (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    chat_id uuid NOT NULL,
-    group_id uuid NOT NULL
-);
-
-
---
--- Name: grades; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.grades (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    description text DEFAULT 'No description provided'::text NOT NULL,
-    passed boolean NOT NULL,
-    score integer NOT NULL,
-    time_taken integer NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT grades_id_v7_not_null NOT NULL,
-    rubric_id uuid,
-    run_id uuid
-);
-
-
---
--- Name: group_runs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.group_runs (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    idx integer NOT NULL,
-    group_id uuid NOT NULL,
-    run_id uuid NOT NULL
-);
-
-
---
--- Name: groups; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.groups (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT groups_id_v7_not_null NOT NULL
-);
-
-
---
--- Name: message_runs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.message_runs (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    message_id uuid NOT NULL,
-    run_id uuid NOT NULL
-);
-
-
---
--- Name: messages; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.messages (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    content text,
-    role public.message_role NOT NULL,
-    completed boolean DEFAULT false NOT NULL,
-    audio boolean DEFAULT false NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT messages_id_v7_not_null NOT NULL
-);
-
-
---
--- Name: persona_departments; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.persona_departments (
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    department_id uuid NOT NULL,
-    persona_id uuid NOT NULL
-);
-
-
---
--- Name: personas; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.personas (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    name text NOT NULL,
-    description text NOT NULL,
-    color text NOT NULL,
-    icon text NOT NULL,
-    active boolean DEFAULT false NOT NULL,
-    instructions text,
-    id uuid DEFAULT uuidv7() CONSTRAINT personas_id_v7_not_null NOT NULL
-);
-
-
---
--- Name: profile_departments; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.profile_departments (
-    is_primary boolean DEFAULT false NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    department_id uuid NOT NULL,
-    profile_id uuid NOT NULL
-);
-
-
---
--- Name: profiles; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.profiles (
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    last_login timestamp with time zone DEFAULT now() NOT NULL,
-    first_name text NOT NULL,
-    last_name text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    role public.profile_role DEFAULT 'guest'::public.profile_role NOT NULL,
-    active boolean DEFAULT false NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT profiles_id_v7_not_null NOT NULL
-);
-
-
---
--- Name: rubric_departments; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.rubric_departments (
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    department_id uuid NOT NULL,
-    rubric_id uuid NOT NULL
-);
-
-
---
--- Name: rubrics; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.rubrics (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    name text NOT NULL,
-    description text NOT NULL,
-    points integer NOT NULL,
-    pass_points integer NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    agent_role public.agent_role,
-    id uuid DEFAULT uuidv7() CONSTRAINT rubrics_id_v7_not_null NOT NULL,
-    rubric_agent_id uuid
-);
-
-
---
--- Name: runs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.runs (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    input_tokens integer DEFAULT 0 NOT NULL,
-    output_tokens integer DEFAULT 0 NOT NULL,
-    cached_input_tokens integer DEFAULT 0 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT runs_id_v7_not_null NOT NULL,
-    agent_id uuid,
-    key_id uuid
-);
-
-
---
--- Name: scenario_departments; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.scenario_departments (
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    department_id uuid NOT NULL,
-    scenario_id uuid NOT NULL
-);
-
-
---
--- Name: scenario_personas; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.scenario_personas (
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    persona_id uuid NOT NULL,
-    scenario_id uuid NOT NULL
-);
-
-
---
--- Name: scenario_tree; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.scenario_tree (
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    child_id uuid NOT NULL,
-    parent_id uuid NOT NULL
-);
-
-
---
--- Name: scenarios; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.scenarios (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    name text NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    objectives_enabled boolean DEFAULT true NOT NULL,
-    images_enabled boolean DEFAULT true NOT NULL,
-    video_enabled boolean DEFAULT false NOT NULL,
-    questions_enabled boolean DEFAULT false NOT NULL,
-    description text DEFAULT ''::text NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT scenarios_id_v7_not_null NOT NULL,
-    scenario_agent_id uuid,
-    video_agent_id uuid,
-    image_agent_id uuid,
-    problem_statement_enabled boolean DEFAULT true NOT NULL
-);
-
-
---
--- Name: simulation_attempts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.simulation_attempts (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    infinite_mode boolean DEFAULT false NOT NULL,
-    archived boolean DEFAULT false NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT simulation_attempts_id_v7_not_null NOT NULL,
-    simulation_id uuid
-);
-
-
---
--- Name: simulation_departments; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.simulation_departments (
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    department_id uuid NOT NULL,
-    simulation_id uuid NOT NULL
-);
-
-
---
--- Name: simulation_scenarios; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.simulation_scenarios (
-    "position" integer DEFAULT 1 NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    hints_enabled boolean DEFAULT false NOT NULL,
-    copy_paste_allowed boolean DEFAULT false NOT NULL,
-    audio_enabled boolean DEFAULT false NOT NULL,
-    text_enabled boolean DEFAULT true NOT NULL,
-    rubric_id uuid,
-    scenario_id uuid NOT NULL,
-    simulation_id uuid NOT NULL,
-    show_problem_statement boolean DEFAULT true NOT NULL,
-    show_objectives boolean DEFAULT true NOT NULL,
-    show_images boolean DEFAULT true NOT NULL
-);
-
-
---
--- Name: simulations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.simulations (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    title text NOT NULL,
-    description text DEFAULT 'No description provided'::text NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    practice_simulation boolean DEFAULT false NOT NULL,
-    grade_voice_agent_id uuid,
-    id uuid DEFAULT uuidv7() CONSTRAINT simulations_id_v7_not_null NOT NULL,
-    simulation_text_agent_id uuid,
-    simulation_voice_agent_id uuid,
-    hint_agent_id uuid,
-    grade_text_agent_id uuid
-);
-
-
---
--- Name: analytics; Type: MATERIALIZED VIEW; Schema: public; Owner: -
---
-
-CREATE MATERIALIZED VIEW public.analytics AS
- WITH RECURSIVE scenario_roots AS (
-         SELECT s_1.id,
-            st.parent_id,
-            s_1.id AS root_id
-           FROM (public.scenarios s_1
-             JOIN public.scenario_tree st ON (((st.child_id = s_1.id) AND (st.parent_id = s_1.id))))
-        UNION ALL
-         SELECT s1.id,
-            st.parent_id,
-            sr.root_id
-           FROM ((public.scenarios s1
-             JOIN public.scenario_tree st ON (((st.child_id = s1.id) AND (st.parent_id <> s1.id))))
-             JOIN scenario_roots sr ON ((st.parent_id = sr.id)))
-        ), root_map AS (
-         SELECT s_1.id AS leaf_scenario_id,
-            COALESCE(sr.root_id, s_1.id) AS root_scenario_id
-           FROM (public.scenarios s_1
-             LEFT JOIN scenario_roots sr ON ((s_1.id = sr.id)))
-        ), latest_grade AS (
-         SELECT DISTINCT ON (c.id) c.id AS simulation_chat_id,
-            (g.score)::numeric AS score,
-            (g.time_taken)::numeric AS time_taken_seconds,
-            g.rubric_id,
-            g.created_at
-           FROM ((((public.grades g
-             JOIN public.runs r_1 ON ((r_1.id = g.run_id)))
-             JOIN public.group_runs gr ON ((gr.run_id = r_1.id)))
-             JOIN public.grade_groups gg ON ((gg.group_id = gr.group_id)))
-             JOIN public.chats c ON ((c.id = gg.chat_id)))
-          ORDER BY c.id, g.created_at DESC
-        ), active_sims AS (
-         SELECT simulations.created_at,
-            simulations.updated_at,
-            simulations.title,
-            simulations.description,
-            simulations.active,
-            simulations.practice_simulation,
-            simulations.grade_voice_agent_id,
-            simulations.id,
-            simulations.simulation_text_agent_id,
-            simulations.simulation_voice_agent_id,
-            simulations.hint_agent_id,
-            simulations.grade_text_agent_id
-           FROM public.simulations
-          WHERE (simulations.active = true)
-        ), active_scenarios AS (
-         SELECT scenarios.created_at,
-            scenarios.updated_at,
-            scenarios.name,
-            scenarios.generated,
-            scenarios.active,
-            scenarios.objectives_enabled,
-            scenarios.images_enabled,
-            scenarios.video_enabled,
-            scenarios.questions_enabled,
-            scenarios.description,
-            scenarios.id,
-            scenarios.scenario_agent_id,
-            scenarios.video_agent_id,
-            scenarios.image_agent_id
-           FROM public.scenarios
-          WHERE (scenarios.active = true)
-        ), cohorts_expanded AS (
-         SELECT c.id,
-            c.active
-           FROM public.cohorts c
-        ), cohorts_by_sim AS (
-         SELECT s_1.id AS simulation_id,
-            ARRAY( SELECT DISTINCT c.id
-                   FROM (public.cohorts c
-                     JOIN public.cohort_simulations cs ON (((cs.cohort_id = c.id) AND (cs.simulation_id = s_1.id))))
-                  WHERE (c.active = true)) AS cohort_ids
-           FROM active_sims s_1
-        ), profile_cohorts_for_sim AS (
-         SELECT sa_1.id AS attempt_id,
-            ap_1.profile_id,
-            sa_1.simulation_id,
-            ARRAY( SELECT c.id
-                   FROM ((public.cohorts c
-                     JOIN public.cohort_simulations cs ON (((cs.cohort_id = c.id) AND (cs.simulation_id = sa_1.simulation_id))))
-                     JOIN public.cohort_profiles cp ON (((cp.cohort_id = c.id) AND (cp.profile_id = ap_1.profile_id))))
-                  WHERE (c.active = true)) AS profile_cohort_ids
-           FROM (public.simulation_attempts sa_1
-             LEFT JOIN public.attempt_profiles ap_1 ON (((ap_1.attempt_id = sa_1.id) AND (ap_1.active = true))))
-        ), chat_first_attempt AS (
-         SELECT DISTINCT ON (ac.chat_id) ac.chat_id,
-            ac.attempt_id
-           FROM ((public.attempt_chats ac
-             JOIN public.simulation_attempts sa_1 ON ((sa_1.id = ac.attempt_id)))
-             LEFT JOIN public.attempt_profiles ap_1 ON (((ap_1.attempt_id = sa_1.id) AND (ap_1.active = true))))
-          ORDER BY ac.chat_id,
-                CASE
-                    WHEN (ap_1.profile_id IS NOT NULL) THEN 0
-                    ELSE 1
-                END, sa_1.created_at DESC
-        ), message_counts AS (
-         SELECT c.id AS chat_id,
-            (count(*))::integer AS num_messages_total,
-            (count(*) FILTER (WHERE (m.role = 'user'::public.message_role)))::integer AS num_query_messages,
-            (count(*) FILTER (WHERE (m.role = 'assistant'::public.message_role)))::integer AS num_response_messages
-           FROM ((((((public.chats c
-             JOIN public.chat_groups cg ON ((cg.chat_id = c.id)))
-             JOIN public.groups g ON ((g.id = cg.group_id)))
-             JOIN public.group_runs gr ON ((gr.group_id = g.id)))
-             JOIN public.runs r_1 ON ((r_1.id = gr.run_id)))
-             JOIN public.message_runs mr ON ((mr.run_id = r_1.id)))
-             JOIN public.messages m ON ((m.id = mr.message_id)))
-          GROUP BY c.id
-        ), message_deltas AS (
-         SELECT c.id AS chat_id,
-                CASE
-                    WHEN ((lag(m.role) OVER (PARTITION BY c.id ORDER BY m.created_at) = 'assistant'::public.message_role) AND (m.role = 'user'::public.message_role)) THEN GREATEST((EXTRACT(epoch FROM (m.created_at - COALESCE(lag(COALESCE(m.updated_at, m.created_at)) OVER (PARTITION BY c.id ORDER BY m.created_at), c.created_at))))::integer, 0)
-                    ELSE NULL::integer
-                END AS delta_seconds,
-            m.created_at
-           FROM ((((((public.chats c
-             JOIN public.chat_groups cg ON ((cg.chat_id = c.id)))
-             JOIN public.groups g ON ((g.id = cg.group_id)))
-             JOIN public.group_runs gr ON ((gr.group_id = g.id)))
-             JOIN public.runs r_1 ON ((r_1.id = gr.run_id)))
-             JOIN public.message_runs mr ON ((mr.run_id = r_1.id)))
-             JOIN public.messages m ON ((m.id = mr.message_id)))
-        ), message_deltas_agg AS (
-         SELECT message_deltas.chat_id,
-            array_remove(array_agg(message_deltas.delta_seconds ORDER BY message_deltas.created_at), NULL::integer) AS message_time_taken_seconds
-           FROM message_deltas
-          GROUP BY message_deltas.chat_id
-        ), effective_profile_department AS (
-         SELECT pd.profile_id,
-            COALESCE(( SELECT pd1.department_id
-                   FROM public.profile_departments pd1
-                  WHERE ((pd1.profile_id = pd.profile_id) AND pd1.is_primary)
-                 LIMIT 1), ( SELECT pd2.department_id
-                   FROM public.profile_departments pd2
-                  WHERE (pd2.profile_id = pd.profile_id)
-                  ORDER BY pd2.created_at
-                 LIMIT 1)) AS department_id
-           FROM ( SELECT DISTINCT ap_1.profile_id
-                   FROM (public.simulation_attempts sa_1
-                     JOIN public.attempt_profiles ap_1 ON (((ap_1.attempt_id = sa_1.id) AND (ap_1.active = true))))) pd
-        ), simulation_first_dept AS (
-         SELECT DISTINCT ON (simulation_departments.simulation_id) simulation_departments.simulation_id,
-            simulation_departments.department_id
-           FROM public.simulation_departments
-          WHERE (simulation_departments.active = true)
-          ORDER BY simulation_departments.simulation_id, simulation_departments.created_at
-        ), rubric_first_dept AS (
-         SELECT DISTINCT ON (rubric_departments.rubric_id) rubric_departments.rubric_id,
-            rubric_departments.department_id
-           FROM public.rubric_departments
-          WHERE (rubric_departments.active = true)
-          ORDER BY rubric_departments.rubric_id, rubric_departments.created_at
-        ), scenario_first_dept AS (
-         SELECT DISTINCT ON (scenario_departments.scenario_id) scenario_departments.scenario_id,
-            scenario_departments.department_id
-           FROM public.scenario_departments
-          WHERE (scenario_departments.active = true)
-          ORDER BY scenario_departments.scenario_id, scenario_departments.created_at
-        ), persona_first_dept AS (
-         SELECT DISTINCT ON (persona_departments.persona_id) persona_departments.persona_id,
-            persona_departments.department_id
-           FROM public.persona_departments
-          WHERE (persona_departments.active = true)
-          ORDER BY persona_departments.persona_id, persona_departments.created_at
-        ), scenario_first_persona AS (
-         SELECT DISTINCT ON (scenario_personas.scenario_id) scenario_personas.scenario_id,
-            scenario_personas.persona_id
-           FROM public.scenario_personas
-          WHERE (scenario_personas.active = true)
-          ORDER BY scenario_personas.scenario_id, scenario_personas.persona_id
-        )
- SELECT sc.id AS chat_id,
-    sa.id AS attempt_id,
-    ap.profile_id,
-    sa.simulation_id,
-    rm.root_scenario_id AS scenario_id,
-    rm.leaf_scenario_id,
-    sfp.persona_id,
-    p.color AS persona_color,
-    sim.practice_simulation AS is_practice,
-    sa.archived AS is_archived,
-    ((NOT sim.practice_simulation) AND (NOT sa.archived)) AS is_general,
-    pr.role AS profile_role,
-    cbs.cohort_ids,
-    sc.created_at AS chat_created_at,
-        CASE
-            WHEN ((lg.score IS NULL) OR (r.points IS NULL) OR (r.points = 0)) THEN NULL::numeric
-            ELSE ((lg.score / (r.points)::numeric) * 100.0)
-        END AS grade_percent,
-        CASE
-            WHEN ((lg.score IS NULL) OR (r.points IS NULL) OR (r.pass_points IS NULL)) THEN NULL::boolean
-            ELSE (lg.score >= (r.pass_points)::numeric)
-        END AS passed,
-    lg.time_taken_seconds,
-    lg.rubric_id,
-    r.points AS rubric_points,
-    r.pass_points AS rubric_pass_points,
-    (sc.completed OR (lg.simulation_chat_id IS NOT NULL)) AS completed,
-    COALESCE(mc.num_messages_total, 0) AS num_messages_total,
-    COALESCE(mc.num_query_messages, 0) AS num_query_messages,
-    COALESCE(mc.num_response_messages, 0) AS num_response_messages,
-    COALESCE(mda.message_time_taken_seconds, '{}'::integer[]) AS message_time_taken_seconds,
-    sa.created_at AS attempt_created_at,
-    pcs.profile_cohort_ids,
-    (( SELECT count(*) AS count
-           FROM public.simulation_scenarios ss
-          WHERE (ss.simulation_id = sim.id)))::integer AS sim_scenario_count,
-    lg.created_at AS grade_created_at,
-    COALESCE(epd.department_id, sfd.department_id, rfd.department_id, scfd.department_id, pfd.department_id) AS department_id
-   FROM ((((((((((((((((((((public.chats sc
-     JOIN chat_first_attempt cfa ON ((cfa.chat_id = sc.id)))
-     JOIN public.simulation_attempts sa ON ((sa.id = cfa.attempt_id)))
-     LEFT JOIN public.attempt_profiles ap ON (((ap.attempt_id = sa.id) AND (ap.active = true))))
-     JOIN active_sims sim ON ((sim.id = sa.simulation_id)))
-     JOIN public.profiles pr ON ((pr.id = ap.profile_id)))
-     JOIN active_scenarios s ON ((s.id = sc.scenario_id)))
-     JOIN root_map rm ON ((rm.leaf_scenario_id = s.id)))
-     LEFT JOIN scenario_first_persona sfp ON ((sfp.scenario_id = s.id)))
-     LEFT JOIN public.personas p ON ((p.id = sfp.persona_id)))
-     LEFT JOIN latest_grade lg ON ((lg.simulation_chat_id = sc.id)))
-     LEFT JOIN public.rubrics r ON ((r.id = lg.rubric_id)))
-     LEFT JOIN cohorts_by_sim cbs ON ((cbs.simulation_id = sa.simulation_id)))
-     LEFT JOIN profile_cohorts_for_sim pcs ON ((pcs.attempt_id = sa.id)))
-     LEFT JOIN message_counts mc ON ((mc.chat_id = sc.id)))
-     LEFT JOIN message_deltas_agg mda ON ((mda.chat_id = sc.id)))
-     LEFT JOIN effective_profile_department epd ON ((epd.profile_id = ap.profile_id)))
-     LEFT JOIN simulation_first_dept sfd ON ((sfd.simulation_id = sim.id)))
-     LEFT JOIN rubric_first_dept rfd ON ((rfd.rubric_id = r.id)))
-     LEFT JOIN scenario_first_dept scfd ON ((scfd.scenario_id = s.id)))
-     LEFT JOIN persona_first_dept pfd ON ((pfd.persona_id = p.id)))
-  WITH NO DATA;
-
-
---
--- Name: app_metrics; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.app_metrics (
-    ts timestamp with time zone NOT NULL,
-    requests_total bigint NOT NULL,
-    errors_total bigint NOT NULL,
-    avg_latency_ms double precision NOT NULL,
-    cpu_percent double precision NOT NULL,
-    memory_bytes bigint NOT NULL
 );
 
 
@@ -1367,6 +752,33 @@ CREATE TABLE public.auth_items (
 
 
 --
+-- Name: chat_groups; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chat_groups (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    chat_id uuid NOT NULL,
+    group_id uuid NOT NULL
+);
+
+
+--
+-- Name: chats; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.chats (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    title text NOT NULL,
+    completed boolean DEFAULT false NOT NULL,
+    trace_id text NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT chats_id_v7_not_null NOT NULL,
+    scenario_id uuid
+);
+
+
+--
 -- Name: cohort_departments; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1376,6 +788,47 @@ CREATE TABLE public.cohort_departments (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cohort_id uuid NOT NULL,
     department_id uuid NOT NULL
+);
+
+
+--
+-- Name: cohort_profiles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.cohort_profiles (
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    cohort_id uuid NOT NULL,
+    profile_id uuid NOT NULL
+);
+
+
+--
+-- Name: cohort_simulations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.cohort_simulations (
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    "position" integer DEFAULT 1 NOT NULL,
+    cohort_id uuid NOT NULL,
+    simulation_id uuid NOT NULL
+);
+
+
+--
+-- Name: cohorts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.cohorts (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    title text NOT NULL,
+    description text DEFAULT 'No description provided'::text NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT cohorts_id_v7_not_null NOT NULL
 );
 
 
@@ -1661,6 +1114,58 @@ CREATE TABLE public.fields (
 
 
 --
+-- Name: grade_groups; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.grade_groups (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    chat_id uuid NOT NULL,
+    group_id uuid NOT NULL
+);
+
+
+--
+-- Name: grades; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.grades (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    description text DEFAULT 'No description provided'::text NOT NULL,
+    passed boolean NOT NULL,
+    score integer NOT NULL,
+    time_taken integer NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT grades_id_v7_not_null NOT NULL,
+    rubric_id uuid,
+    run_id uuid
+);
+
+
+--
+-- Name: group_runs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.group_runs (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    idx integer NOT NULL,
+    group_id uuid NOT NULL,
+    run_id uuid NOT NULL
+);
+
+
+--
+-- Name: groups; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.groups (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT groups_id_v7_not_null NOT NULL
+);
+
+
+--
 -- Name: image_departments; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1797,6 +1302,18 @@ CREATE TABLE public.message_personas (
 
 
 --
+-- Name: message_runs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.message_runs (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    message_id uuid NOT NULL,
+    run_id uuid NOT NULL
+);
+
+
+--
 -- Name: message_tree; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1806,6 +1323,21 @@ CREATE TABLE public.message_tree (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     parent_id uuid NOT NULL,
     child_id uuid NOT NULL
+);
+
+
+--
+-- Name: messages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.messages (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    content text,
+    role public.message_role NOT NULL,
+    completed boolean DEFAULT false NOT NULL,
+    audio boolean DEFAULT false NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT messages_id_v7_not_null NOT NULL
 );
 
 
@@ -2025,6 +1557,19 @@ CREATE TABLE public.parameters (
 
 
 --
+-- Name: persona_departments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.persona_departments (
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    department_id uuid NOT NULL,
+    persona_id uuid NOT NULL
+);
+
+
+--
 -- Name: persona_examples; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2046,6 +1591,23 @@ CREATE TABLE public.persona_fields (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     field_id uuid NOT NULL,
     persona_id uuid NOT NULL
+);
+
+
+--
+-- Name: personas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.personas (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL,
+    description text NOT NULL,
+    color text NOT NULL,
+    icon text NOT NULL,
+    active boolean DEFAULT false NOT NULL,
+    instructions text,
+    id uuid DEFAULT uuidv7() CONSTRAINT personas_id_v7_not_null NOT NULL
 );
 
 
@@ -2089,6 +1651,20 @@ CREATE TABLE public.profile_activity (
 
 
 --
+-- Name: profile_departments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.profile_departments (
+    is_primary boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    department_id uuid NOT NULL,
+    profile_id uuid NOT NULL
+);
+
+
+--
 -- Name: profile_emails; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2121,6 +1697,22 @@ CREATE TABLE public.profile_request_limits (
 --
 
 COMMENT ON TABLE public.profile_request_limits IS 'Stores daily request limits for profiles. One row per profile.';
+
+
+--
+-- Name: profiles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.profiles (
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    last_login timestamp with time zone DEFAULT now() NOT NULL,
+    first_name text NOT NULL,
+    last_name text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    role public.profile_role DEFAULT 'guest'::public.profile_role NOT NULL,
+    active boolean DEFAULT false NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT profiles_id_v7_not_null NOT NULL
+);
 
 
 --
@@ -2264,6 +1856,19 @@ CREATE TABLE public.quizzes (
 
 
 --
+-- Name: rubric_departments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rubric_departments (
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    department_id uuid NOT NULL,
+    rubric_id uuid NOT NULL
+);
+
+
+--
 -- Name: rubric_groups; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2272,6 +1877,24 @@ CREATE TABLE public.rubric_groups (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     group_id uuid NOT NULL,
     rubric_id uuid NOT NULL
+);
+
+
+--
+-- Name: rubrics; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rubrics (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL,
+    description text NOT NULL,
+    points integer NOT NULL,
+    pass_points integer NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    agent_role public.agent_role,
+    id uuid DEFAULT uuidv7() CONSTRAINT rubrics_id_v7_not_null NOT NULL,
+    rubric_agent_id uuid
 );
 
 
@@ -2325,6 +1948,35 @@ CREATE TABLE public.run_profiles (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     profile_id uuid NOT NULL,
     run_id uuid NOT NULL
+);
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.runs (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    input_tokens integer DEFAULT 0 NOT NULL,
+    output_tokens integer DEFAULT 0 NOT NULL,
+    cached_input_tokens integer DEFAULT 0 NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT runs_id_v7_not_null NOT NULL,
+    agent_id uuid,
+    key_id uuid
+);
+
+
+--
+-- Name: scenario_departments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.scenario_departments (
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    department_id uuid NOT NULL,
+    scenario_id uuid NOT NULL
 );
 
 
@@ -2462,6 +2114,19 @@ CREATE TABLE public.scenario_persona_ranges (
 
 
 --
+-- Name: scenario_personas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.scenario_personas (
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    persona_id uuid NOT NULL,
+    scenario_id uuid NOT NULL
+);
+
+
+--
 -- Name: scenario_problem_statements; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2518,6 +2183,19 @@ CREATE TABLE public.scenario_time_limits (
 
 
 --
+-- Name: scenario_tree; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.scenario_tree (
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    child_id uuid NOT NULL,
+    parent_id uuid NOT NULL
+);
+
+
+--
 -- Name: scenario_video_images; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2542,6 +2220,29 @@ CREATE TABLE public.scenario_videos (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     scenario_id uuid NOT NULL,
     video_id uuid NOT NULL
+);
+
+
+--
+-- Name: scenarios; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.scenarios (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name text NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    objectives_enabled boolean DEFAULT true NOT NULL,
+    images_enabled boolean DEFAULT true NOT NULL,
+    video_enabled boolean DEFAULT false NOT NULL,
+    questions_enabled boolean DEFAULT false NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT scenarios_id_v7_not_null NOT NULL,
+    scenario_agent_id uuid,
+    video_agent_id uuid,
+    image_agent_id uuid,
+    problem_statement_enabled boolean DEFAULT true NOT NULL
 );
 
 
@@ -2698,6 +2399,32 @@ CREATE TABLE public.settings_default_guest (
 
 
 --
+-- Name: simulation_attempts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.simulation_attempts (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    infinite_mode boolean DEFAULT false NOT NULL,
+    archived boolean DEFAULT false NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT simulation_attempts_id_v7_not_null NOT NULL,
+    simulation_id uuid
+);
+
+
+--
+-- Name: simulation_departments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.simulation_departments (
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    department_id uuid NOT NULL,
+    simulation_id uuid NOT NULL
+);
+
+
+--
 -- Name: simulation_hints; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2706,6 +2433,48 @@ CREATE TABLE public.simulation_hints (
     hint text NOT NULL,
     idx integer NOT NULL,
     simulation_message_id uuid
+);
+
+
+--
+-- Name: simulation_scenarios; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.simulation_scenarios (
+    "position" integer DEFAULT 1 NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    hints_enabled boolean DEFAULT false NOT NULL,
+    copy_paste_allowed boolean DEFAULT false NOT NULL,
+    audio_enabled boolean DEFAULT false NOT NULL,
+    text_enabled boolean DEFAULT true NOT NULL,
+    rubric_id uuid,
+    scenario_id uuid NOT NULL,
+    simulation_id uuid NOT NULL,
+    show_problem_statement boolean DEFAULT true NOT NULL,
+    show_objectives boolean DEFAULT true NOT NULL,
+    show_images boolean DEFAULT true NOT NULL
+);
+
+
+--
+-- Name: simulations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.simulations (
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    title text NOT NULL,
+    description text DEFAULT 'No description provided'::text NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    practice_simulation boolean DEFAULT false NOT NULL,
+    grade_voice_agent_id uuid,
+    id uuid DEFAULT uuidv7() CONSTRAINT simulations_id_v7_not_null NOT NULL,
+    simulation_text_agent_id uuid,
+    simulation_voice_agent_id uuid,
+    hint_agent_id uuid,
+    grade_text_agent_id uuid
 );
 
 
@@ -4248,195 +4017,6 @@ CREATE INDEX agent_voices_model_voice_id_v7_idx ON public.agent_voices USING btr
 --
 
 CREATE INDEX agents_model_id_v7_idx ON public.agents USING btree (model_id);
-
-
---
--- Name: analytics_attempt_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_attempt_created_at_idx ON public.analytics USING btree (attempt_created_at);
-
-
---
--- Name: analytics_chat_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_chat_created_at_idx ON public.analytics USING btree (chat_created_at);
-
-
---
--- Name: analytics_chat_created_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_chat_created_idx ON public.analytics USING btree (chat_created_at);
-
-
---
--- Name: analytics_chat_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_chat_id_idx ON public.analytics USING btree (chat_id);
-
-
---
--- Name: analytics_cohort_ids_gin; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_cohort_ids_gin ON public.analytics USING gin (cohort_ids);
-
-
---
--- Name: analytics_department_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_department_id_idx ON public.analytics USING btree (department_id);
-
-
---
--- Name: analytics_general_unarch_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_general_unarch_idx ON public.analytics USING btree (attempt_created_at, profile_id) WHERE ((is_general = true) AND (is_archived = false));
-
-
---
--- Name: analytics_is_archived_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_is_archived_idx ON public.analytics USING btree (is_archived);
-
-
---
--- Name: analytics_is_archived_true_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_is_archived_true_idx ON public.analytics USING btree (attempt_created_at) WHERE (is_archived = true);
-
-
---
--- Name: analytics_is_general_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_is_general_idx ON public.analytics USING btree (is_general);
-
-
---
--- Name: analytics_is_general_true_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_is_general_true_idx ON public.analytics USING btree (attempt_created_at) WHERE (is_general = true);
-
-
---
--- Name: analytics_is_practice_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_is_practice_idx ON public.analytics USING btree (is_practice);
-
-
---
--- Name: analytics_is_practice_is_archived_is_general_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_is_practice_is_archived_is_general_idx ON public.analytics USING btree (is_practice, is_archived, is_general);
-
-
---
--- Name: analytics_is_practice_true_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_is_practice_true_idx ON public.analytics USING btree (attempt_created_at) WHERE (is_practice = true);
-
-
---
--- Name: analytics_leaf_scenario_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_leaf_scenario_id_idx ON public.analytics USING btree (leaf_scenario_id);
-
-
---
--- Name: analytics_passed_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_passed_idx ON public.analytics USING btree (passed);
-
-
---
--- Name: analytics_pk; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX analytics_pk ON public.analytics USING btree (chat_id);
-
-
---
--- Name: analytics_practice_unarch_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_practice_unarch_idx ON public.analytics USING btree (attempt_created_at, profile_id) WHERE ((is_practice = true) AND (is_archived = false));
-
-
---
--- Name: analytics_profile_cohort_ids_gin; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_profile_cohort_ids_gin ON public.analytics USING gin (profile_cohort_ids);
-
-
---
--- Name: analytics_profile_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_profile_id_idx ON public.analytics USING btree (profile_id);
-
-
---
--- Name: analytics_profile_role_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_profile_role_idx ON public.analytics USING btree (profile_role);
-
-
---
--- Name: analytics_profile_time_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_profile_time_idx ON public.analytics USING btree (profile_id, attempt_created_at DESC);
-
-
---
--- Name: analytics_role_time_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_role_time_idx ON public.analytics USING btree (profile_role, attempt_created_at);
-
-
---
--- Name: analytics_scenario_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_scenario_id_idx ON public.analytics USING btree (scenario_id);
-
-
---
--- Name: analytics_simulation_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_simulation_id_idx ON public.analytics USING btree (simulation_id);
-
-
---
--- Name: analytics_simulation_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_simulation_idx ON public.analytics USING btree (simulation_id);
-
-
---
--- Name: analytics_time_taken_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX analytics_time_taken_idx ON public.analytics USING btree (time_taken_seconds);
 
 
 --
@@ -8784,5 +8364,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict H2Z4oxa2D4CMerEg3LiJDBzegycfLrPu8v2K2tJgEmah0sSWllAAmLJVbZjmvdO
+\unrestrict VqJDJASHFOavPple4A7fWnzTfSnw5Wky0zC80NKGKiVB8P4aAxhMgoiBA78NQdS
 

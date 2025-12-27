@@ -1593,9 +1593,9 @@ export default function Agent({
 
                   try {
                     await handleDeleteAgentPrompt({
-                      agentId,
-                      promptId: promptToDelete.promptId,
-                      departmentId: promptToDelete.isDepartmentSpecific
+                      agent_id: agentId,
+                      prompt_id: promptToDelete.promptId,
+                      department_id: promptToDelete.isDepartmentSpecific
                         ? formData?.departmentIds &&
                           formData.departmentIds.length > 0
                           ? formData.departmentIds[0]!

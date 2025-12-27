@@ -156,6 +156,10 @@ export interface paths {
         /**
          * Get Profile Context
          * @description Get consolidated profile context (profile, departments, cohorts, breadcrumbs).
+         *
+         *     NOTE: Theme derivation stays in Python because it requires complex color math utilities
+         *     (hex_to_oklch, ensure_contrast, shade, tint) that are not available in PostgreSQL.
+         *     All other business logic is handled in SQL (see get_profile_context_complete.sql).
          */
         post: operations["get_profile_context_api_v3_profile_context_post"];
         delete?: never;
@@ -1757,6 +1761,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/analytics/view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Analytics View
+         * @description Create or recreate the analytics materialized view with all indexes.
+         */
+        post: operations["create_analytics_view_api_v3_analytics_view_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/activity/bundle": {
         parameters: {
             query?: never;
@@ -2887,10 +2911,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Delete Agent Prompt
-         * @description Delete an agent prompt.
+         * Delete Prompt
+         * @description Delete a prompt.
          */
-        post: operations["delete_agent_prompt_api_v3_prompts_delete_post"];
+        post: operations["delete_prompt_api_v3_prompts_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3308,26 +3332,6 @@ export interface paths {
          * @description Finalize a TUS upload and create upload record.
          */
         post: operations["tus_finalize_api_v3_uploads_upload__upload_id__finalize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/uploads/upload/{upload_id}/classify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Classify Upload
-         * @description Classify an uploaded file and suggest parameter items.
-         */
-        post: operations["classify_upload_api_v3_uploads_upload__upload_id__classify_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4508,6 +4512,26 @@ export interface paths {
          * @description Client-to-server event: Update standard group descriptions from rubric generation tool.
          */
         post: operations["rubric_tool_standard_group_descriptions_api_socket_v3_client_rubrics_tools_standard_group_descriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/client/uploads/classify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Classify Upload Api
+         * @description Client-to-server event: Classify an uploaded file.
+         */
+        post: operations["classify_upload_api_socket_v3_client_uploads_classify_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6294,6 +6318,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v3/server/uploads/classification_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Classify Upload Progress Api
+         * @description Server-to-client event: Upload classification progress update.
+         */
+        post: operations["classify_upload_progress_api_socket_v3_server_uploads_classification_progress_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/uploads/classification_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Classify Upload Complete Api
+         * @description Server-to-client event: Upload classification completed successfully.
+         */
+        post: operations["classify_upload_complete_api_socket_v3_server_uploads_classification_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/uploads/classification_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Classify Upload Error Api
+         * @description Server-to-client event: Error occurred during upload classification.
+         */
+        post: operations["classify_upload_error_api_socket_v3_server_uploads_classification_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -6824,25 +6908,27 @@ export interface components {
             /** Description */
             description: string;
         };
-        /**
-         * AuthorizeEmulationRequest
-         * @description Request to authorize emulation.
-         */
-        AuthorizeEmulationRequest: {
-            /** Requesterprofileid */
-            requesterProfileId: string;
-            /** Targetprofileid */
-            targetProfileId: string;
+        /** AuthorizeEmulationApiRequest */
+        AuthorizeEmulationApiRequest: {
+            /**
+             * Requester Profile Id
+             * Format: uuid
+             */
+            requester_profile_id: string;
+            /**
+             * Target Profile Id
+             * Format: uuid
+             */
+            target_profile_id: string;
         };
-        /**
-         * AuthorizeEmulationResponse
-         * @description Response indicating if emulation is allowed.
-         */
-        AuthorizeEmulationResponse: {
+        /** AuthorizeEmulationApiResponse */
+        AuthorizeEmulationApiResponse: {
             /** Allowed */
-            allowed: boolean;
+            allowed?: boolean | null;
             /** Reason */
             reason?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * AvailableContinuationOptions
@@ -7017,18 +7103,10 @@ export interface components {
             documentIds: string[];
         };
         /**
-         * ClassifyUploadRequest
-         * @description Request body for upload classification.
+         * ClassifyUploadCompletePayload
+         * @description Response indicating upload classification completed successfully.
          */
-        ClassifyUploadRequest: {
-            /** Parameterids */
-            parameterIds?: string[] | null;
-        };
-        /**
-         * ClassifyUploadResponse
-         * @description Response from upload classification.
-         */
-        ClassifyUploadResponse: {
+        ClassifyUploadCompletePayload: {
             /** Success */
             success: boolean;
             /** Message */
@@ -7037,13 +7115,38 @@ export interface components {
             suggestedParameterItemIds: {
                 [key: string]: string[];
             };
-            /**
-             * Newparameteritems
-             * @default []
-             */
-            newParameterItems: {
-                [key: string]: unknown;
-            }[];
+        };
+        /**
+         * ClassifyUploadErrorPayload
+         * @description Response indicating an error occurred in upload classification.
+         */
+        ClassifyUploadErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * ClassifyUploadPayload
+         * @description Request to classify an uploaded file.
+         */
+        ClassifyUploadPayload: {
+            /** Uploadid */
+            uploadId: string;
+            /** Profileid */
+            profileId: string;
+            /** Parameterids */
+            parameterIds?: string[] | null;
+        };
+        /**
+         * ClassifyUploadProgressPayload
+         * @description Response indicating progress in upload classification.
+         */
+        ClassifyUploadProgressPayload: {
+            /** Type */
+            type: string;
+            /** Message */
+            message?: string | null;
         };
         /**
          * CohortDailyFact
@@ -7106,26 +7209,6 @@ export interface components {
             attempts: number;
         };
         /**
-         * CohortItem
-         * @description Cohort item.
-         */
-        CohortItem: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-        };
-        /**
          * CohortMappingItem
          * @description Cohort mapping item.
          */
@@ -7155,18 +7238,6 @@ export interface components {
              * @enum {string}
              */
             status: "success" | "warning" | "danger" | "neutral";
-        };
-        /**
-         * CohortsData
-         * @description Cohorts data with member counts.
-         */
-        CohortsData: {
-            /** Items */
-            items: components["schemas"]["CohortItem"][];
-            /** Membercounts */
-            memberCounts: {
-                [key: string]: number;
-            };
         };
         /**
          * ConnectionConfirmedPayload
@@ -7252,6 +7323,19 @@ export interface components {
             agent_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
+        };
+        /** CreateAnalyticsViewFunctionApiRequest */
+        CreateAnalyticsViewFunctionApiRequest: Record<string, never>;
+        /** CreateAnalyticsViewFunctionApiResponse */
+        CreateAnalyticsViewFunctionApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Success */
+            success?: boolean | null;
+            /** Message */
+            message?: string | null;
+            /** Status */
+            status?: string | null;
         };
         /**
          * CreateAuthRequest
@@ -7521,45 +7605,46 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * CreateOrUpdateProfileRequest
-         * @description Request to create or update a single profile.
-         */
-        CreateOrUpdateProfileRequest: {
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
+        /** CreateOrUpdateProfileApiRequest */
+        CreateOrUpdateProfileApiRequest: {
+            /**
+             * Profile Id New
+             * Format: uuid
+             */
+            profile_id_new: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
             /** Emails */
             emails: string[];
-            /** Primary Email Index */
-            primary_email_index?: number | null;
             /** Role */
             role: string;
+            /** Current Profile Id */
+            current_profile_id?: string | null;
             /**
-             * Department Ids
-             * @default []
+             * Primary Email Index
+             * @default 0
              */
-            department_ids: string[];
+            primary_email_index: number | null;
             /**
-             * Cohort Ids
-             * @default []
+             * Active
+             * @default true
              */
-            cohort_ids: string[];
+            active: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
         };
-        /**
-         * CreateOrUpdateProfileResponse
-         * @description Response from create or update profile.
-         */
-        CreateOrUpdateProfileResponse: {
-            /** Success */
-            success: boolean;
-            /** Profileid */
-            profileId: string;
+        /** CreateOrUpdateProfileApiResponse */
+        CreateOrUpdateProfileApiResponse: {
+            /** Profile Id */
+            profile_id?: string | null;
             /** Created */
-            created: boolean;
-            /** Message */
-            message: string;
+            created?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** CreateParameterApiRequest */
         CreateParameterApiRequest: {
@@ -7653,45 +7738,47 @@ export interface components {
             /** Profile Id */
             profile_id?: string | null;
         };
-        /**
-         * CreateProfileRequest
-         * @description Request to create a single profile.
-         */
-        CreateProfileRequest: {
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
+        /** CreateProfileApiRequest */
+        CreateProfileApiRequest: {
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
             /** Emails */
             emails: string[];
-            /** Primary Email Index */
-            primary_email_index?: number | null;
             /** Role */
             role: string;
+            /** Current Profile Id */
+            current_profile_id?: string | null;
             /**
-             * Cohort Ids
-             * @default []
+             * Primary Email Index
+             * @default 0
              */
-            cohort_ids: string[];
+            primary_email_index: number | null;
             /**
-             * Department Ids
-             * @default []
+             * Active
+             * @default true
              */
-            department_ids: string[];
+            active: boolean | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Primary Department Index */
             primary_department_index?: number | null;
         };
-        /**
-         * CreateProfileResponse
-         * @description Response from create profile.
-         */
-        CreateProfileResponse: {
-            /** Success */
-            success: boolean;
-            /** Profileid */
-            profileId: string;
-            /** Message */
-            message: string;
+        /** CreateProfileApiResponse */
+        CreateProfileApiResponse: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Email Exists */
+            email_exists?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * CreateProviderRequest
@@ -8152,22 +8239,6 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** DeleteAgentPromptRequest */
-        DeleteAgentPromptRequest: {
-            /** Agentid */
-            agentId: string;
-            /** Promptid */
-            promptId: string;
-            /** Departmentid */
-            departmentId?: string | null;
-        };
-        /** DeleteAgentPromptResponse */
-        DeleteAgentPromptResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
         /**
          * DeleteAuthRequest
          * @description Request to delete auth.
@@ -8353,23 +8424,57 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * DeleteProfileRequest
-         * @description Request to delete profile.
-         */
-        DeleteProfileRequest: {
-            /** Profileid */
-            profileId: string;
+        /** DeleteProfileApiRequest */
+        DeleteProfileApiRequest: {
+            /**
+             * Target Profile Id
+             * Format: uuid
+             */
+            target_profile_id: string;
+            /**
+             * Current Profile Id
+             * Format: uuid
+             */
+            current_profile_id: string;
         };
-        /**
-         * DeleteProfileResponse
-         * @description Response from delete profile.
-         */
-        DeleteProfileResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** DeleteProfileApiResponse */
+        DeleteProfileApiResponse: {
+            /** Profile Exists */
+            profile_exists?: boolean | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Deleted */
+            deleted?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** DeletePromptApiRequest */
+        DeletePromptApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Prompt Id
+             * Format: uuid
+             */
+            prompt_id: string;
+            /** Department Id */
+            department_id?: string | null;
+        };
+        /** DeletePromptApiResponse */
+        DeletePromptApiResponse: {
+            /** Prompt Name */
+            prompt_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * DeleteProviderRequest
@@ -8458,6 +8563,36 @@ export interface components {
             departmentId: string;
         };
         /**
+         * DepartmentItem
+         * @description Department item for list view.
+         */
+        DepartmentItem: {
+            /** Department Id */
+            department_id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Updated At */
+            updated_at: string;
+            /** Total Price Spent */
+            total_price_spent: number;
+            /** Staff Count */
+            staff_count: number;
+            /** Cohort Ids */
+            cohort_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+        };
+        /**
          * DepartmentNewRequest
          * @description Request for default department detail.
          */
@@ -8485,7 +8620,7 @@ export interface components {
          */
         DepartmentsListResponse: {
             /** Departments */
-            departments: components["schemas"]["app__api__v3__departments__list__DepartmentItem"][];
+            departments: components["schemas"]["DepartmentItem"][];
             /** Cohort Mapping */
             cohort_mapping: {
                 [key: string]: components["schemas"]["CohortMappingItem"];
@@ -9505,6 +9640,19 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** FinalizeUploadApiResponse */
+        FinalizeUploadApiResponse: {
+            /** Upload Id */
+            upload_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Success */
+            success?: boolean | null;
+            /** Message */
+            message?: string | null;
+            /** Status */
+            status?: string | null;
+        };
         /**
          * GenerateDocumentTemplatePayload
          * @description Request to generate a document template.
@@ -10074,6 +10222,16 @@ export interface components {
             /** Department Options */
             department_options?: components["schemas"]["QListFieldsV3Option"][] | null;
         };
+        /** GetLogsBundleApiRequest */
+        GetLogsBundleApiRequest: Record<string, never>;
+        /** GetLogsBundleApiResponse */
+        GetLogsBundleApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            health_kpis?: components["schemas"]["QGetLogsBundleV3HealthKpis"] | null;
+            /** Metrics */
+            metrics?: components["schemas"]["QGetLogsBundleV3MetricsDataPoint"][] | null;
+        };
         /** GetParameterDetailApiRequest */
         GetParameterDetailApiRequest: {
             /**
@@ -10313,6 +10471,285 @@ export interface components {
             agents?: components["schemas"]["QListPersonasV3Agent"][] | null;
             /** Departments */
             departments?: components["schemas"]["QListPersonasV3Department"][] | null;
+        };
+        /** GetProfileByEmailApiRequest */
+        GetProfileByEmailApiRequest: {
+            /** Email */
+            email: string;
+        };
+        /** GetProfileByEmailApiResponse */
+        GetProfileByEmailApiResponse: {
+            /** Profile Id */
+            profile_id?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Emails */
+            emails?: string[] | null;
+            /** Primary Email */
+            primary_email?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Req Per Day */
+            req_per_day?: number | null;
+            /** Last Login */
+            last_login?: string | null;
+            /** Last Active */
+            last_active?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetProfileContextApiRequest */
+        GetProfileContextApiRequest: {
+            /** Actual Profile Id */
+            actual_profile_id?: string | null;
+            /** Effective Profile Id */
+            effective_profile_id?: string | null;
+            /** Department Id */
+            department_id?: string | null;
+            /** Auth Mode */
+            auth_mode?: string | null;
+        };
+        /** GetProfileContextApiResponse */
+        GetProfileContextApiResponse: {
+            /** Is Authorized */
+            is_authorized?: boolean | null;
+            /** Guest Login Enabled */
+            guest_login_enabled?: boolean | null;
+            /** Active Departments Count */
+            active_departments_count?: number | null;
+            /** Department Auth Providers Count */
+            department_auth_providers_count?: number | null;
+            /** Default Settings Auth Providers Count */
+            default_settings_auth_providers_count?: number | null;
+            /** Departments Without Auth Providers Count */
+            departments_without_auth_providers_count?: number | null;
+            /** Department Exists */
+            department_exists?: boolean | null;
+            /** Actual Id */
+            actual_id?: string | null;
+            /** Actual First Name */
+            actual_first_name?: string | null;
+            /** Actual Last Name */
+            actual_last_name?: string | null;
+            /** Actual Emails */
+            actual_emails?: string[] | null;
+            /** Actual Primary Email */
+            actual_primary_email?: string | null;
+            /** Actual Role */
+            actual_role?: string | null;
+            /** Actual Active */
+            actual_active?: boolean | null;
+            /** Actual Req Per Day */
+            actual_req_per_day?: number | null;
+            /** Actual Last Login */
+            actual_last_login?: string | null;
+            /** Actual Last Active */
+            actual_last_active?: string | null;
+            /** Actual Created At */
+            actual_created_at?: string | null;
+            /** Actual Updated At */
+            actual_updated_at?: string | null;
+            /** Actual Primary Department Id */
+            actual_primary_department_id?: string | null;
+            /** Id */
+            id?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Emails */
+            emails?: string[] | null;
+            /** Primary Email */
+            primary_email?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Req Per Day */
+            req_per_day?: number | null;
+            /** Last Login */
+            last_login?: string | null;
+            /** Last Active */
+            last_active?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetProfileContextV3Department"][] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["QGetProfileContextV3Cohort"][] | null;
+            /** Simulations */
+            simulations?: components["schemas"]["QGetProfileContextV3Simulation"][] | null;
+            /** Earliest Attempt Date */
+            earliest_attempt_date?: string | null;
+            /** Scoped Roles */
+            scoped_roles?: string[] | null;
+            /** Settings Id */
+            settings_id?: string | null;
+            /** Settings Created At */
+            settings_created_at?: string | null;
+            /** Settings Active */
+            settings_active?: boolean | null;
+            /** Settings Name */
+            settings_name?: string | null;
+            /** Settings Description */
+            settings_description?: string | null;
+            /** Settings Primary Color */
+            settings_primary_color?: string | null;
+            /** Settings Accent */
+            settings_accent?: string | null;
+            /** Settings Background */
+            settings_background?: string | null;
+            /** Settings Surface */
+            settings_surface?: string | null;
+            /** Settings Success */
+            settings_success?: string | null;
+            /** Settings Warning */
+            settings_warning?: string | null;
+            /** Settings Error */
+            settings_error?: string | null;
+            /** Settings Sidebar Background */
+            settings_sidebar_background?: string | null;
+            /** Settings Sidebar Primary */
+            settings_sidebar_primary?: string | null;
+            /** Settings Chart1 */
+            settings_chart1?: string | null;
+            /** Settings Chart2 */
+            settings_chart2?: string | null;
+            /** Settings Chart3 */
+            settings_chart3?: string | null;
+            /** Settings Chart4 */
+            settings_chart4?: string | null;
+            /** Settings Chart5 */
+            settings_chart5?: string | null;
+            /** Settings Guest Login Enabled */
+            settings_guest_login_enabled?: boolean | null;
+            /** Settings Success Threshold */
+            settings_success_threshold?: number | null;
+            /** Settings Warning Threshold */
+            settings_warning_threshold?: number | null;
+            /** Settings Danger Threshold */
+            settings_danger_threshold?: number | null;
+            /** Settings Auth Ids */
+            settings_auth_ids?: string[] | null;
+            /** Settings Auths */
+            settings_auths?: components["schemas"]["QGetProfileContextV3Auth"][] | null;
+            /** Settings Provider Ids */
+            settings_provider_ids?: string[] | null;
+            /** Settings Providers */
+            settings_providers?: components["schemas"]["QGetProfileContextV3Provider"][] | null;
+            /** Settings Default Guest Profile Id */
+            settings_default_guest_profile_id?: string | null;
+            /** Settings Default Account Profile Id */
+            settings_default_account_profile_id?: string | null;
+            /** Available Sections */
+            available_sections?: string[] | null;
+            /** Redirect Path */
+            redirect_path?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            settings_tokens?: components["schemas"]["QGetProfileContextV3ThemeTokens"] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetProfileDetailApiRequest */
+        GetProfileDetailApiRequest: {
+            /**
+             * Target Profile Id
+             * Format: uuid
+             */
+            target_profile_id: string;
+        };
+        /** GetProfileDetailApiResponse */
+        GetProfileDetailApiResponse: {
+            /** Profile Exists */
+            profile_exists?: boolean | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Emails */
+            emails?: string[] | null;
+            /** Primary Email */
+            primary_email?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Requests Per Day */
+            requests_per_day?: number | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Valid Cohort Ids */
+            valid_cohort_ids?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetProfileDetailV3Department"][] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["QGetProfileDetailV3Cohort"][] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetProfileNewApiRequest */
+        GetProfileNewApiRequest: Record<string, never>;
+        /** GetProfileNewApiResponse */
+        GetProfileNewApiResponse: {
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Emails */
+            emails?: string[] | null;
+            /** Role */
+            role?: string | null;
+            /** Requests Per Day */
+            requests_per_day?: number | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Valid Cohort Ids */
+            valid_cohort_ids?: string[] | null;
+            /** Role Options */
+            role_options?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetProfileNewV3Department"][] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["QGetProfileNewV3Cohort"][] | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** GetScenarioDetailApiRequest */
         GetScenarioDetailApiRequest: {
@@ -11067,31 +11504,6 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
-         * HealthKPI
-         * @description Health KPI data for a service.
-         */
-        HealthKPI: {
-            /** Ok */
-            ok: boolean;
-            /** Latency Ms */
-            latency_ms: number;
-            /** Error */
-            error: string;
-            /** Trend */
-            trend: components["schemas"]["app__api__v3__logs__bundle__TrendData"][];
-        };
-        /**
-         * HealthKPIs
-         * @description All health KPIs.
-         */
-        HealthKPIs: {
-            websocket: components["schemas"]["HealthKPI"];
-            redis: components["schemas"]["HealthKPI"];
-            document: components["schemas"]["HealthKPI"];
-            database: components["schemas"]["HealthKPI"];
-            authentication: components["schemas"]["HealthKPI"];
-        };
-        /**
          * HintGenerationProgressPayload
          * @description Response indicating progress in hint generation.
          */
@@ -11749,20 +12161,6 @@ export interface components {
             /** Realm Name */
             realm_name: string;
         };
-        /**
-         * LogsBundleRequest
-         * @description Logs bundle request schema.
-         */
-        LogsBundleRequest: Record<string, never>;
-        /**
-         * LogsBundleResponse
-         * @description Logs bundle response.
-         */
-        LogsBundleResponse: {
-            health_kpis: components["schemas"]["HealthKPIs"];
-            /** Metrics */
-            metrics: components["schemas"]["MetricsDataPoint"][];
-        };
         /** MessageFeedbackHighlightItem */
         MessageFeedbackHighlightItem: {
             /** Section */
@@ -11953,33 +12351,13 @@ export interface components {
             /** Keyfield */
             keyField?: string | null;
             /** Trenddata */
-            trendData: components["schemas"]["app__api__v3__dashboard__bundle__TrendData"][];
+            trendData: components["schemas"]["TrendData"][];
             /** Datapoints */
             dataPoints: components["schemas"]["DataPoint"][];
             /** Hover */
             hover?: {
                 [key: string]: unknown;
             } | null;
-        };
-        /**
-         * MetricsDataPoint
-         * @description App metrics data point.
-         */
-        MetricsDataPoint: {
-            /** Date */
-            date: string;
-            /** Cpu Percent */
-            cpu_percent: number;
-            /** Latency Ms */
-            latency_ms: number;
-            /** Memory Bytes */
-            memory_bytes: number;
-            /** Requests Total */
-            requests_total: number;
-            /** Errors Total */
-            errors_total: number;
-            /** Sample Count */
-            sample_count: number;
         };
         /** ModalitiesItem */
         ModalitiesItem: {
@@ -12852,53 +13230,6 @@ export interface components {
             actor_name?: string | null;
         };
         /**
-         * ProfileByEmailRequest
-         * @description Request to get profile by email.
-         */
-        ProfileByEmailRequest: {
-            /** Email */
-            email: string;
-        };
-        /**
-         * ProfileContextRequest
-         * @description Request to get consolidated profile context.
-         *
-         *     Note: actualProfileId and effectiveProfileId are now read from headers
-         *     (X-Profile-Id and X-Effective-Profile-Id) instead of request body.
-         *     These fields are kept for backward compatibility but are ignored.
-         */
-        ProfileContextRequest: {
-            /** Pathname */
-            pathname: string;
-        };
-        /**
-         * ProfileContextResponse
-         * @description Response with consolidated profile context data.
-         */
-        ProfileContextResponse: {
-            actualProfile: components["schemas"]["ProfileItem"];
-            effectiveProfile: components["schemas"]["ProfileItem"];
-            /** Departments */
-            departments: components["schemas"]["app__api__v3__profile__context__DepartmentItem"][];
-            /** Departmentids */
-            departmentIds: string[];
-            cohorts: components["schemas"]["CohortsData"];
-            /** Cohortids */
-            cohortIds: string[];
-            simulations: components["schemas"]["SimulationsData"];
-            /** Simulationids */
-            simulationIds: string[];
-            /** Earliestattemptdate */
-            earliestAttemptDate: string | null;
-            /** Availablesections */
-            availableSections: string[];
-            /** Redirectpath */
-            redirectPath: string;
-            /** Scopedroles */
-            scopedRoles: string[];
-            settings: components["schemas"]["SettingsData"];
-        };
-        /**
          * ProfileDataEnhanced
          * @description Enhanced profile data row.
          */
@@ -12931,97 +13262,6 @@ export interface components {
             metrics: components["schemas"]["ProfileMetrics"];
         };
         /**
-         * ProfileDetailRequest
-         * @description Request for profile detail.
-         */
-        ProfileDetailRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * ProfileDetailResponse
-         * @description Response containing profile details (simple version for backward compatibility).
-         */
-        ProfileDetailResponse: {
-            profile: components["schemas"]["ProfileItem"];
-        };
-        /**
-         * ProfileDetailResponseFull
-         * @description Response for profile detail endpoint (comprehensive version).
-         */
-        ProfileDetailResponseFull: {
-            /** Profile Id */
-            profile_id: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Name */
-            name: string;
-            /** Emails */
-            emails: string[];
-            /** Primary Email */
-            primary_email: string | null;
-            /** Role */
-            role: string;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Primary Department Id */
-            primary_department_id: string | null;
-            /** Active */
-            active: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__profile__detail__DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Valid Cohort Ids */
-            valid_cohort_ids: string[];
-        };
-        /**
-         * ProfileItem
-         * @description Profile data item (simple version for backward compatibility).
-         */
-        ProfileItem: {
-            /** Id */
-            id: string;
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
-            /** Emails */
-            emails: string[];
-            /** Primaryemail */
-            primaryEmail: string | null;
-            /** Role */
-            role: string;
-            /** Active */
-            active: boolean;
-            /** Reqperday */
-            reqPerDay: number | null;
-            /** Lastlogin */
-            lastLogin: string;
-            /** Lastactive */
-            lastActive: string | null;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Primarydepartmentid */
-            primaryDepartmentId: string | null;
-        };
-        /**
          * ProfileMappingItem
          * @description Profile mapping item.
          */
@@ -13046,47 +13286,6 @@ export interface components {
             stagnationRate: components["schemas"]["MetricResponse"];
             timeSpent: components["schemas"]["MetricResponse"];
             totalAttempts: components["schemas"]["MetricResponse"];
-        };
-        /**
-         * ProfileNewRequest
-         * @description Request to get default profile details.
-         */
-        ProfileNewRequest: Record<string, never>;
-        /**
-         * ProfileNewResponse
-         * @description Response with default profile details and metadata.
-         */
-        ProfileNewResponse: {
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Emails */
-            emails: string[];
-            /** Role */
-            role: string;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Primary Department Id */
-            primary_department_id: string | null;
-            /** Active */
-            active: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Valid Cohort Ids */
-            valid_cohort_ids: string[];
-            /** Role Options */
-            role_options: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__profile__new__DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
         };
         /**
          * ProviderDetailRequest
@@ -13649,6 +13848,53 @@ export interface components {
             /** Description */
             description: string | null;
         };
+        /** QGetLogsBundleV3HealthKpi */
+        QGetLogsBundleV3HealthKpi: {
+            /** Ok */
+            ok: boolean | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Error */
+            error: string | null;
+            /** Trend */
+            trend: components["schemas"]["QGetLogsBundleV3TrendData"][] | null;
+        };
+        /** QGetLogsBundleV3HealthKpis */
+        QGetLogsBundleV3HealthKpis: {
+            websocket: components["schemas"]["QGetLogsBundleV3HealthKpi"] | null;
+            redis: components["schemas"]["QGetLogsBundleV3HealthKpi"] | null;
+            document: components["schemas"]["QGetLogsBundleV3HealthKpi"] | null;
+            database: components["schemas"]["QGetLogsBundleV3HealthKpi"] | null;
+            authentication: components["schemas"]["QGetLogsBundleV3HealthKpi"] | null;
+        };
+        /** QGetLogsBundleV3MetricsDataPoint */
+        QGetLogsBundleV3MetricsDataPoint: {
+            /** Date */
+            date: string | null;
+            /** Cpu Percent */
+            cpu_percent: number | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Memory Bytes */
+            memory_bytes: number | null;
+            /** Requests Total */
+            requests_total: number | null;
+            /** Errors Total */
+            errors_total: number | null;
+            /** Sample Count */
+            sample_count: number | null;
+        };
+        /** QGetLogsBundleV3TrendData */
+        QGetLogsBundleV3TrendData: {
+            /** Date */
+            date: string | null;
+            /** Value */
+            value: number | null;
+            /** Latency */
+            latency: number | null;
+            /** Count */
+            count: number | null;
+        };
         /** QGetParameterDetailV3Department */
         QGetParameterDetailV3Department: {
             /** Department Id */
@@ -13896,6 +14142,184 @@ export interface components {
             scenario_parameter: boolean | null;
             /** Video Parameter */
             video_parameter: boolean | null;
+        };
+        /** QGetProfileContextV3Auth */
+        QGetProfileContextV3Auth: {
+            /** Auth Id */
+            auth_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Slug */
+            slug: string | null;
+        };
+        /** QGetProfileContextV3Cohort */
+        QGetProfileContextV3Cohort: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Title */
+            title: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetProfileContextV3Department */
+        QGetProfileContextV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Title */
+            title: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Is Primary */
+            is_primary: boolean | null;
+        };
+        /** QGetProfileContextV3Provider */
+        QGetProfileContextV3Provider: {
+            /** Provider Id */
+            provider_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Value */
+            value: string | null;
+        };
+        /** QGetProfileContextV3Simulation */
+        QGetProfileContextV3Simulation: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Title */
+            title: string | null;
+            /** Description */
+            description: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Practice Simulation */
+            practice_simulation: boolean | null;
+        };
+        /** QGetProfileContextV3ThemeTokens */
+        QGetProfileContextV3ThemeTokens: {
+            /** Background */
+            background: string | null;
+            /** Foreground */
+            foreground: string | null;
+            /** Card */
+            card: string | null;
+            /** Card Foreground */
+            card_foreground: string | null;
+            /** Popover */
+            popover: string | null;
+            /** Popover Foreground */
+            popover_foreground: string | null;
+            /** Primary Color */
+            primary_color: string | null;
+            /** Primary Foreground */
+            primary_foreground: string | null;
+            /** Secondary */
+            secondary: string | null;
+            /** Secondary Foreground */
+            secondary_foreground: string | null;
+            /** Muted */
+            muted: string | null;
+            /** Muted Foreground */
+            muted_foreground: string | null;
+            /** Accent */
+            accent: string | null;
+            /** Accent Foreground */
+            accent_foreground: string | null;
+            /** Destructive */
+            destructive: string | null;
+            /** Border */
+            border: string | null;
+            /** Input */
+            input: string | null;
+            /** Ring */
+            ring: string | null;
+            /** Success */
+            success: string | null;
+            /** Success Foreground */
+            success_foreground: string | null;
+            /** Warning */
+            warning: string | null;
+            /** Warning Foreground */
+            warning_foreground: string | null;
+            /** Info */
+            info: string | null;
+            /** Info Foreground */
+            info_foreground: string | null;
+            /** Chart1 */
+            chart1: string | null;
+            /** Chart2 */
+            chart2: string | null;
+            /** Chart3 */
+            chart3: string | null;
+            /** Chart4 */
+            chart4: string | null;
+            /** Chart5 */
+            chart5: string | null;
+            /** Sidebar */
+            sidebar: string | null;
+            /** Sidebar Foreground */
+            sidebar_foreground: string | null;
+            /** Sidebar Primary */
+            sidebar_primary: string | null;
+            /** Sidebar Primary Foreground */
+            sidebar_primary_foreground: string | null;
+            /** Sidebar Accent */
+            sidebar_accent: string | null;
+            /** Sidebar Accent Foreground */
+            sidebar_accent_foreground: string | null;
+            /** Sidebar Border */
+            sidebar_border: string | null;
+            /** Sidebar Ring */
+            sidebar_ring: string | null;
+        };
+        /** QGetProfileDetailV3Cohort */
+        QGetProfileDetailV3Cohort: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetProfileDetailV3Department */
+        QGetProfileDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetProfileNewV3Cohort */
+        QGetProfileNewV3Cohort: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetProfileNewV3Department */
+        QGetProfileNewV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
         };
         /** QGetScenarioDetailV3Agent */
         QGetScenarioDetailV3Agent: {
@@ -15543,6 +15967,35 @@ export interface components {
             /** Errors */
             errors: components["schemas"]["QProcessCsvV3CsvRowError"][] | null;
         };
+        /** QSearchSimulatableProfilesV3Profile */
+        QSearchSimulatableProfilesV3Profile: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email */
+            primary_email: string | null;
+            /** Role */
+            role: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Req Per Day */
+            req_per_day: number | null;
+            /** Last Login */
+            last_login: string | null;
+            /** Last Active */
+            last_active: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Primary Department Id */
+            primary_department_id: string | null;
+        };
         /** QSearchStaffV3Cohort */
         QSearchStaffV3Cohort: {
             /** Cohort Id */
@@ -15755,22 +16208,18 @@ export interface components {
             /** Itemid */
             itemId?: string | null;
         };
-        /**
-         * RefreshRequest
-         * @description Request to refresh analytics (no parameters needed).
-         */
-        RefreshRequest: Record<string, never>;
-        /**
-         * RefreshResponse
-         * @description Materialized view refresh response.
-         */
-        RefreshResponse: {
+        /** RefreshAnalyticsApiRequest */
+        RefreshAnalyticsApiRequest: Record<string, never>;
+        /** RefreshAnalyticsApiResponse */
+        RefreshAnalyticsApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
             /** Success */
-            success: boolean;
+            success?: boolean | null;
             /** Message */
-            message: string;
+            message?: string | null;
             /** Status */
-            status: string;
+            status?: string | null;
         };
         /**
          * RegenerateScenarioPayload
@@ -16690,26 +17139,19 @@ export interface components {
             /** Department Id */
             department_id?: string | null;
         };
-        /**
-         * SearchSimulatableProfilesRequest
-         * @description Request for simulatable profiles search.
-         */
-        SearchSimulatableProfilesRequest: {
+        /** SearchSimulatableProfilesApiRequest */
+        SearchSimulatableProfilesApiRequest: {
+            /** Limit Count */
+            limit_count: number;
             /** Query */
-            query?: string | null;
-            /**
-             * Limit
-             * @default 200
-             */
-            limit: number;
+            query: string;
         };
-        /**
-         * SearchSimulatableProfilesResponse
-         * @description Response for simulatable profiles search endpoint.
-         */
-        SearchSimulatableProfilesResponse: {
+        /** SearchSimulatableProfilesApiResponse */
+        SearchSimulatableProfilesApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
             /** Profiles */
-            profiles: components["schemas"]["ProfileItem"][];
+            profiles?: components["schemas"]["QSearchSimulatableProfilesV3Profile"][] | null;
         };
         /**
          * SendSimulationMessageErrorPayload
@@ -16749,41 +17191,6 @@ export interface components {
          * @description Active settings response.
          */
         SettingsActiveResponse: {
-            /** Settings Id */
-            settings_id: string;
-            /** Created At */
-            created_at: string;
-            /** Active */
-            active: boolean;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Mode
-             * @default light
-             * @enum {string}
-             */
-            mode: "light" | "dark" | "system";
-            tokens: components["schemas"]["ThemeTokens"];
-            /** Guest Login Enabled */
-            guest_login_enabled: boolean;
-            /** Success Threshold */
-            success_threshold: number;
-            /** Warning Threshold */
-            warning_threshold: number;
-            /** Danger Threshold */
-            danger_threshold: number;
-            /** Guestprofileid */
-            guestProfileId?: string | null;
-            /** Defaultaccountprofileid */
-            defaultAccountProfileId?: string | null;
-        };
-        /**
-         * SettingsData
-         * @description Settings data included in profile context.
-         */
-        SettingsData: {
             /** Settings Id */
             settings_id: string;
             /** Created At */
@@ -16997,26 +17404,6 @@ export interface components {
              * @enum {string}
              */
             status: "success" | "warning" | "danger" | "neutral";
-        };
-        /**
-         * SimulationContextItem
-         * @description Simplified simulation item for profile context.
-         */
-        SimulationContextItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Timelimit */
-            timeLimit: number | null;
-            /** Active */
-            active: boolean;
-            /** Practicesimulation */
-            practiceSimulation: boolean;
         };
         /**
          * SimulationEndedPayload
@@ -17469,14 +17856,6 @@ export interface components {
             sid?: string | null;
         };
         /**
-         * SimulationsData
-         * @description Simulations data.
-         */
-        SimulationsData: {
-            /** Items */
-            items: components["schemas"]["SimulationContextItem"][];
-        };
-        /**
          * SkillPackage
          * @description Skill package.
          */
@@ -17925,18 +18304,16 @@ export interface components {
             formatted: string;
         };
         /**
-         * TusFinalizeResponse
-         * @description Response from finalize upload.
+         * TrendData
+         * @description Trend data point.
          */
-        TusFinalizeResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Status */
-            status: string;
-            /** Uploadid */
-            uploadId?: string | null;
+        TrendData: {
+            /** Date */
+            date: string;
+            /** Value */
+            value: number;
+            /** Count */
+            count: number;
         };
         /** UnitItem */
         UnitItem: {
@@ -18356,37 +18733,31 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * UpdateProfileRequest
-         * @description Request to update profile - supports both simple and comprehensive updates.
-         */
-        UpdateProfileRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Firstname */
-            firstName?: string | null;
-            /** Lastname */
-            lastName?: string | null;
-            /** Lastlogin */
-            lastLogin?: string | null;
-            /** Role */
-            role?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Reqperday */
-            reqPerDay?: number | null;
-            /** Lastactive */
-            lastActive?: string | null;
+        /** UpdateProfileApiRequest */
+        UpdateProfileApiRequest: {
+            /**
+             * Target Profile Id
+             * Format: uuid
+             */
+            target_profile_id: string;
             /** First Name */
             first_name?: string | null;
             /** Last Name */
             last_name?: string | null;
+            /** Last Login */
+            last_login: string;
+            /** Role */
+            role?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Last Active */
+            last_active: string;
+            /** Requests Per Day */
+            requests_per_day?: number | null;
             /** Emails */
             emails?: string[] | null;
             /** Primary Email Index */
             primary_email_index?: number | null;
-            /** Requests Per Day */
-            requests_per_day?: number | null;
             /** Cohort Ids */
             cohort_ids?: string[] | null;
             /** Department Ids */
@@ -18394,15 +18765,20 @@ export interface components {
             /** Primary Department Index */
             primary_department_index?: number | null;
         };
-        /**
-         * UpdateProfileResponse
-         * @description Response from update profile.
-         */
-        UpdateProfileResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** UpdateProfileApiResponse */
+        UpdateProfileApiResponse: {
+            /** Profile Exists */
+            profile_exists?: boolean | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * UpdateProviderRequest
@@ -19092,18 +19468,6 @@ export interface components {
             department_ids?: string[] | null;
         };
         /**
-         * TrendData
-         * @description Trend data point.
-         */
-        app__api__v3__dashboard__bundle__TrendData: {
-            /** Date */
-            date: string;
-            /** Value */
-            value: number;
-            /** Count */
-            count: number;
-        };
-        /**
          * AttemptHistoryRow
          * @description Attempt history row - shared across dashboard, home, reports, and practice history endpoints.
          */
@@ -19246,36 +19610,6 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-        };
-        /**
-         * DepartmentItem
-         * @description Department item for list view.
-         */
-        app__api__v3__departments__list__DepartmentItem: {
-            /** Department Id */
-            department_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Updated At */
-            updated_at: string;
-            /** Total Price Spent */
-            total_price_spent: number;
-            /** Staff Count */
-            staff_count: number;
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Profile Ids */
-            profile_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
         };
         /**
          * DepartmentDetailResponse
@@ -19954,20 +20288,6 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /**
-         * TrendData
-         * @description Trend data point for health KPIs.
-         */
-        app__api__v3__logs__bundle__TrendData: {
-            /** Date */
-            date: string;
-            /** Value */
-            value: number;
-            /** Latency */
-            latency: number;
-            /** Count */
-            count: number;
-        };
         /** DepartmentMappingItem */
         app__api__v3__models__detail__DepartmentMappingItem: {
             /** Name */
@@ -20252,44 +20572,6 @@ export interface components {
             depth?: number | null;
         };
         /**
-         * DepartmentItem
-         * @description Department item.
-         */
-        app__api__v3__profile__context__DepartmentItem: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active: boolean;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__profile__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__profile__new__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
          * ScenarioMappingItem
          * @description Scenario mapping item.
          */
@@ -20482,7 +20764,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProfileDetailRequest"];
+                "application/json": components["schemas"]["GetProfileDetailApiRequest"];
             };
         };
         responses: {
@@ -20492,7 +20774,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfileDetailResponseFull"];
+                    "application/json": components["schemas"]["GetProfileDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20518,7 +20800,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateProfileRequest"];
+                "application/json": components["schemas"]["UpdateProfileApiRequest"];
             };
         };
         responses: {
@@ -20528,7 +20810,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateProfileResponse"];
+                    "application/json": components["schemas"]["UpdateProfileApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20554,7 +20836,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateProfileRequest"];
+                "application/json": components["schemas"]["CreateProfileApiRequest"];
             };
         };
         responses: {
@@ -20564,7 +20846,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateProfileResponse"];
+                    "application/json": components["schemas"]["CreateProfileApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20590,7 +20872,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteProfileRequest"];
+                "application/json": components["schemas"]["DeleteProfileApiRequest"];
             };
         };
         responses: {
@@ -20600,7 +20882,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteProfileResponse"];
+                    "application/json": components["schemas"]["DeleteProfileApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20626,7 +20908,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateOrUpdateProfileRequest"];
+                "application/json": components["schemas"]["CreateOrUpdateProfileApiRequest"];
             };
         };
         responses: {
@@ -20636,7 +20918,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateOrUpdateProfileResponse"];
+                    "application/json": components["schemas"]["CreateOrUpdateProfileApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20662,7 +20944,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProfileNewRequest"];
+                "application/json": components["schemas"]["GetProfileNewApiRequest"];
             };
         };
         responses: {
@@ -20672,7 +20954,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfileNewResponse"];
+                    "application/json": components["schemas"]["GetProfileNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20698,7 +20980,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProfileByEmailRequest"];
+                "application/json": components["schemas"]["GetProfileByEmailApiRequest"];
             };
         };
         responses: {
@@ -20708,7 +20990,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfileDetailResponse"];
+                    "application/json": components["schemas"]["GetProfileByEmailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20734,7 +21016,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProfileContextRequest"];
+                "application/json": components["schemas"]["GetProfileContextApiRequest"];
             };
         };
         responses: {
@@ -20744,7 +21026,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfileContextResponse"];
+                    "application/json": components["schemas"]["GetProfileContextApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20770,7 +21052,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AuthorizeEmulationRequest"];
+                "application/json": components["schemas"]["AuthorizeEmulationApiRequest"];
             };
         };
         responses: {
@@ -20780,7 +21062,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthorizeEmulationResponse"];
+                    "application/json": components["schemas"]["AuthorizeEmulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20806,7 +21088,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchSimulatableProfilesRequest"];
+                "application/json": components["schemas"]["SearchSimulatableProfilesApiRequest"];
             };
         };
         responses: {
@@ -20816,7 +21098,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchSimulatableProfilesResponse"];
+                    "application/json": components["schemas"]["SearchSimulatableProfilesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23580,7 +23862,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RefreshRequest"];
+                "application/json": components["schemas"]["RefreshAnalyticsApiRequest"];
             };
         };
         responses: {
@@ -23590,7 +23872,43 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
+                    "application/json": components["schemas"]["RefreshAnalyticsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_analytics_view_api_v3_analytics_view_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAnalyticsViewFunctionApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateAnalyticsViewFunctionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25524,7 +25842,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LogsBundleRequest"];
+                "application/json": components["schemas"]["GetLogsBundleApiRequest"];
             };
         };
         responses: {
@@ -25534,7 +25852,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LogsBundleResponse"];
+                    "application/json": components["schemas"]["GetLogsBundleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25620,7 +25938,7 @@ export interface operations {
             };
         };
     };
-    delete_agent_prompt_api_v3_prompts_delete_post: {
+    delete_prompt_api_v3_prompts_delete_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25632,7 +25950,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteAgentPromptRequest"];
+                "application/json": components["schemas"]["DeletePromptApiRequest"];
             };
         };
         responses: {
@@ -25642,7 +25960,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteAgentPromptResponse"];
+                    "application/json": components["schemas"]["DeletePromptApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -26454,45 +26772,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TusFinalizeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    classify_upload_api_v3_uploads_upload__upload_id__classify_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClassifyUploadRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClassifyUploadResponse"];
+                    "application/json": components["schemas"]["FinalizeUploadApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -28522,6 +28802,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["StandardGroupDescriptionsToolPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    classify_upload_api_socket_v3_client_uploads_classify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassifyUploadPayload"];
             };
         };
         responses: {
@@ -31637,6 +31952,111 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["StandardGroupDescriptionsToolErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    classify_upload_progress_api_socket_v3_server_uploads_classification_progress_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassifyUploadProgressPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    classify_upload_complete_api_socket_v3_server_uploads_classification_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassifyUploadCompletePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    classify_upload_error_api_socket_v3_server_uploads_classification_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassifyUploadErrorPayload"];
             };
         };
         responses: {

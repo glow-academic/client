@@ -268,11 +268,11 @@ export default function AttemptInput({
             );
 
             const json = await res.json();
-            if (!json.success || !json.uploadId) {
+            if (!json.success || !json.upload_id) {
               throw new Error(json.message || "Failed to finalize upload");
             }
 
-            resolve(json.uploadId as string);
+            resolve(json.upload_id as string);
           } catch (e) {
             reject(e);
           }

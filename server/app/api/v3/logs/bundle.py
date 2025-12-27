@@ -1,102 +1,41 @@
 """Logs bundle endpoint - POST /logs/bundle"""
 
-import json
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    GetLogsBundleApiRequest,
+    GetLogsBundleApiResponse,
+    GetLogsBundleSqlParams,
+    GetLogsBundleSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/logs/get_logs_bundle_complete.sql"
 
 router = APIRouter()
 
 
-# Inline request/response schemas
-class LogsBundleRequest(BaseModel):
-    """Logs bundle request schema."""
-
-    # profileId removed - comes from X-Profile-Id header
-
-
-class TrendData(BaseModel):
-    """Trend data point for health KPIs."""
-
-    date: str
-    value: float
-    latency: float
-    count: int
-
-
-class HealthKPI(BaseModel):
-    """Health KPI data for a service."""
-
-    ok: bool
-    latency_ms: float
-    error: str
-    trend: list[TrendData]
-
-
-class HealthKPIs(BaseModel):
-    """All health KPIs."""
-
-    websocket: HealthKPI
-    redis: HealthKPI
-    document: HealthKPI
-    database: HealthKPI
-    authentication: HealthKPI
-
-
-class MetricsDataPoint(BaseModel):
-    """App metrics data point."""
-
-    date: str
-    cpu_percent: float
-    latency_ms: float
-    memory_bytes: float
-    requests_total: int
-    errors_total: int
-    sample_count: int
-
-
-class LogsBundleResponse(BaseModel):
-    """Logs bundle response."""
-
-    health_kpis: HealthKPIs
-    metrics: list[MetricsDataPoint]
-
-
-def _parse_json_strings_recursive(obj: Any) -> Any:
-    """Recursively parse JSON strings in nested structures."""
-    if isinstance(obj, str):
-        try:
-            return json.loads(obj)
-        except (json.JSONDecodeError, ValueError):
-            return obj
-    elif isinstance(obj, dict):
-        return {k: _parse_json_strings_recursive(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [_parse_json_strings_recursive(item) for item in obj]
-    else:
-        return obj
-
-
 @router.post(
     "/bundle",
-    response_model=LogsBundleResponse,
+    response_model=GetLogsBundleApiResponse,
     dependencies=[audit_activity("logs.bundle", "{{ actor.name }} viewed logs")],
 )
 async def get_logs_bundle(
-    request: LogsBundleRequest,
+    request: GetLogsBundleApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> LogsBundleResponse:
+) -> GetLogsBundleApiResponse:
     """Get logs bundle with health KPIs and metrics."""
     tags = ["logs"]  # From router tags
 
@@ -113,94 +52,50 @@ async def get_logs_bundle(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return LogsBundleResponse.model_validate(cached["data"])
+            return GetLogsBundleApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
 
-        sql_query = load_sql("app/sql/v3/logs/bundle.sql")
-        sql_params = ()  # No parameters for this query
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double star pattern for parameter construction
+        import uuid
+        profile_id_uuid = uuid.UUID(profile_id) if profile_id else None
+        params = GetLogsBundleSqlParams(**request.model_dump(), profile_id=profile_id_uuid)
+        sql_params = params.to_tuple()
 
-        # Execute query
-        result = await conn.fetchval(sql_query)
-
-        # Handle empty results gracefully
-        parsed_result = result or {}
-        if isinstance(parsed_result, str):
-            parsed_result = json.loads(parsed_result)
-        if not isinstance(parsed_result, dict):
-            parsed_result = {}
-
-        # Parse health KPIs
-        health_kpis_data = parsed_result.get("health_kpis", {})
-
-        def parse_health_kpi(kpi_data: dict[str, Any]) -> HealthKPI:
-            """Parse a single health KPI with proper trend data."""
-            trend_data = kpi_data.get("trend", [])
-            if isinstance(trend_data, str):
-                trend_data = json.loads(trend_data)
-            if not isinstance(trend_data, list):
-                trend_data = []
-            trend = [TrendData(**item) for item in trend_data if isinstance(item, dict)]
-
-            return HealthKPI(
-                ok=kpi_data.get("ok", False),
-                latency_ms=kpi_data.get("latency_ms", 0.0),
-                error=kpi_data.get("error", ""),
-                trend=trend,
-            )
-
-        health_kpis = HealthKPIs(
-            websocket=parse_health_kpi(health_kpis_data.get("websocket", {})),
-            redis=parse_health_kpi(health_kpis_data.get("redis", {})),
-            document=parse_health_kpi(health_kpis_data.get("document", {})),
-            database=parse_health_kpi(health_kpis_data.get("database", {})),
-            authentication=parse_health_kpi(health_kpis_data.get("authentication", {})),
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetLogsBundleSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        # Parse metrics
-        metrics_data = parsed_result.get("metrics", [])
-        if isinstance(metrics_data, str):
-            metrics_data = json.loads(metrics_data)
-        metrics = [
-            MetricsDataPoint(**item)
-            for item in (metrics_data if isinstance(metrics_data, list) else [])
-        ]
+        # Set audit context using actor_name from SQL result
+        if result.actor_name and profile_id:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        # Build response
-        response_data = LogsBundleResponse(
-            health_kpis=health_kpis,
-            metrics=metrics,
-        )
+        # Build response - SQL function returns structured data
+        api_response = GetLogsBundleApiResponse.model_validate(result.model_dump())
 
-        # Fetch actor_name separately
-        actor_name = None
-        if profile_id:
-            actor_name_row = await conn.fetchrow(
-                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-                profile_id,
-            )
-            actor_name = actor_name_row["actor_name"] if actor_name_row else None
-
-        # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
-
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs for JSON caching)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": api_response.model_dump(mode="json")},
             ttl=60,  # Cache for 1 minute (health data changes frequently)
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

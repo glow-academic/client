@@ -3,7 +3,8 @@
 import json
 import os
 import urllib.parse
-from typing import Annotated, Any
+import uuid
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.api.v3.settings.active import ThemeTokens
@@ -11,12 +12,18 @@ from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.infra.v3.templates.jinja_renderer import render_template
 from app.main import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
+from app.sql.types import (GetUploadFileInfoApiRequest,
+                           GetUploadFileInfoSqlParams, GetUploadFileInfoSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, Response
 from utils.document.pdf_first_page_to_image_bytes import \
     pdf_first_page_to_image_bytes
 from utils.mime.get_content_type import get_content_type
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/uploads/get_upload_file_info_complete.sql"
 
 router = APIRouter()
 
@@ -37,41 +44,48 @@ async def download_upload(
     preview: bool = Query(default=False, description="Return preview image for PDFs"),
 ) -> FileResponse | Response:
     """Download an upload by ID. If preview=True and file is PDF, returns first page as PNG."""
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        sql_query = load_sql("app/sql/v3/uploads/get_upload_file_info.sql")
-        sql_params = (upload_id,)
-        result = await conn.fetchrow(sql_query, upload_id)
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id if hasattr(http_request.state, "profile_id") else None
 
-        if not result:
+        # Convert upload_id to UUID and prepare SQL params
+        # Use double star pattern for parameter construction
+        upload_id_uuid = uuid.UUID(upload_id)
+        profile_id_uuid = uuid.UUID(profile_id) if profile_id else uuid.UUID("00000000-0000-0000-0000-000000000000")
+        
+        params = GetUploadFileInfoSqlParams(
+            upload_id=upload_id_uuid,
+            profile_id=profile_id_uuid,
+        )
+        sql_params = params.to_tuple()
+
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetUploadFileInfoSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
+
+        # Check if upload exists
+        if not result.upload_exists:
             raise HTTPException(status_code=404, detail="Upload not found")
 
-        # Fetch actor_name separately
-        profile_id = (
-            http_request.state.profile_id
-            if hasattr(http_request.state, "profile_id")
-            else None
-        )
-        actor_name_row = None
-        if profile_id:
-            actor_name_row = await conn.fetchrow(
-                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-                profile_id,
-            )
-        actor_name = actor_name_row["actor_name"] if actor_name_row else None
-
         # Set audit context
-        if actor_name:
+        if result.actor_name and profile_id:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": profile_id},
+                actor={"name": result.actor_name, "id": profile_id},
                 upload={"id": upload_id},
             )
 
         # Handle subfolder paths (e.g., "audio/uuid.ext", "image/sc.png")
-        stored_path = result["file_path"]
+        stored_path = result.file_path or ""
         if stored_path.startswith("audio/"):
             file_path = os.path.join(AUDIO_FOLDER, os.path.basename(stored_path))
         elif stored_path.startswith("image/"):
@@ -82,7 +96,7 @@ async def download_upload(
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="Upload file not found")
 
-        content_type = get_content_type(result["file_path"], result["mime_type"])
+        content_type = get_content_type(result.file_path or "", result.mime_type or "")
 
         # Handle preview mode for PDFs
         if preview and content_type == "application/pdf":
@@ -98,23 +112,17 @@ async def download_upload(
             # If preview generation fails, fallback to original file
 
         # Handle template HTML processing
-        is_html = content_type == "text/html" or result["file_path"].lower().endswith(
+        is_html = content_type == "text/html" or (result.file_path or "").lower().endswith(
             ".html"
         )
-        if is_html:
-            # Check if upload is associated with a template document
-            template_info = None
-            try:
-                template_query = load_sql("app/sql/v3/uploads/get_upload_template_info.sql")
-                template_info = await conn.fetchrow(template_query, upload_id)
-            except Exception:
-                # If template query fails (e.g., upload not linked to document), treat as non-template
-                template_info = None
-
-            if template_info and template_info.get("template") is True:
-                template_args_raw = template_info.get("template_args") or {}
-                if isinstance(template_args_raw, str):
-                    template_args_raw = json.loads(template_args_raw)
+        if is_html and result.is_template:
+            # Template args are already returned from SQL function as JSONB
+            # JSONB is automatically converted to dict by asyncpg, but we need to handle it properly
+            template_args_raw: dict[str, Any] = {}
+            if result.template_args:
+                # asyncpg converts JSONB to dict, but type checker doesn't know this
+                if isinstance(result.template_args, dict):
+                    template_args_raw = result.template_args
 
                 # Extract placeholder values from schema
                 def extract_placeholders(
@@ -254,7 +262,7 @@ async def download_upload(
                     pass
 
         # Extract filename from file_path (remove directory if present)
-        filename = os.path.basename(result["file_path"])
+        filename = os.path.basename(result.file_path or "")
 
         # Properly encode filename for HTTP headers
         encoded_filename = urllib.parse.quote(filename, safe="")

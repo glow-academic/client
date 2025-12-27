@@ -1,42 +1,29 @@
 """Search simulatable profiles endpoint - search profiles that can be emulated."""
 
-import json
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg
-from app.api.v3.profile.detail import ProfileItem
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (SearchSimulatableProfilesApiRequest, SearchSimulatableProfilesApiResponse,
+                           SearchSimulatableProfilesSqlParams, SearchSimulatableProfilesSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/profile/search_simulatable_profiles_complete.sql"
 
 router = APIRouter()
 
 
-class SearchSimulatableProfilesRequest(BaseModel):
-    """Request for simulatable profiles search."""
-
-    query: str | None = (
-        None  # Search term (first_name, last_name, email, role). Empty/None returns all profiles (up to limit)
-    )
-    limit: int = 200  # Maximum number of results
-    # profileId removed - comes from X-Profile-Id header
-
-
-class SearchSimulatableProfilesResponse(BaseModel):
-    """Response for simulatable profiles search endpoint."""
-
-    profiles: list[ProfileItem]  # Filtered profiles list (max limit items)
-
-
 @router.post(
     "/simulatable",
-    response_model=SearchSimulatableProfilesResponse,
+    response_model=SearchSimulatableProfilesApiResponse,
     dependencies=[
         audit_activity(
             "profile.simulatable", "{{ actor.name }} searched simulatable profiles"
@@ -44,11 +31,11 @@ class SearchSimulatableProfilesResponse(BaseModel):
     ],
 )
 async def search_simulatable_profiles(
-    request: SearchSimulatableProfilesRequest,
+    request: SearchSimulatableProfilesApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> SearchSimulatableProfilesResponse:
+) -> SearchSimulatableProfilesApiResponse:
     """Search profiles that can be emulated by the requester."""
     tags = ["profile"]  # From router tags
 
@@ -61,7 +48,10 @@ async def search_simulatable_profiles(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return SearchSimulatableProfilesResponse.model_validate(cached["data"])
+        return SearchSimulatableProfilesApiResponse.model_validate(cached["data"])
+
+    sql_query = load_sql_query(SQL_PATH)
+    sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
@@ -72,83 +62,36 @@ async def search_simulatable_profiles(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Load SQL query
-        sql_query = load_sql("app/sql/v3/profile/search_simulatable_profiles.sql")
-
-        # Build parameters: always pass $3 (search term), NULL if no search
-        # $1: profile_id, $2: limit, $3: search (optional)
-        search_term = request.query.strip() if request.query and request.query.strip() else None
-        params: list[Any] = [profile_id, request.limit, search_term]
-
-        result = await conn.fetchrow(sql_query, *params)
-
-        if not result:
-            # Return empty list if no data
-            response_data = SearchSimulatableProfilesResponse(profiles=[])
-
-            # Cache response
-            await set_cached(
-                cache_key_val,
-                {"data": response_data.model_dump()},
-                ttl=60,
-                tags=tags,
-            )
-            response.headers["X-Cache-Tags"] = ",".join(tags)
-            response.headers["X-Cache-Hit"] = "0"
-
-            return response_data
-
-        # Parse profiles JSONB array
-        profiles = []
-        profiles_data = result.get("profiles")
-        if isinstance(profiles_data, str):
-            profiles_data = json.loads(profiles_data)
-        if profiles_data and isinstance(profiles_data, list):
-            for item in profiles_data:
-                if isinstance(item, dict):
-                    # Helper to convert datetime to ISO string if needed
-                    def to_iso_string(val: str | None) -> str:
-                        if val is None:
-                            return ""
-                        return val
-
-                    emails = item.get("emails") or []
-                    primary_email = item.get("primary_email")
-                    profiles.append(
-                        ProfileItem(
-                            id=str(item.get("id", "")),
-                            firstName=item.get("first_name", ""),
-                            lastName=item.get("last_name", ""),
-                            emails=emails if isinstance(emails, list) else [],
-                            primaryEmail=primary_email,
-                            role=item.get("role", ""),
-                            active=item.get("active", False),
-                            reqPerDay=item.get("req_per_day", 0),
-                            lastLogin=to_iso_string(item.get("last_login")),
-                            lastActive=to_iso_string(item.get("last_active")),
-                            createdAt=to_iso_string(item.get("created_at")),
-                            updatedAt=to_iso_string(item.get("updated_at")),
-                            primaryDepartmentId=item.get("primary_department_id"),
-                        )
-                    )
-
-        response_data = SearchSimulatableProfilesResponse(profiles=profiles)
-
-        # Fetch actor_name separately
-        actor_name_row = await conn.fetchrow(
-            "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-            profile_id,
+        # Convert API request to SQL params using double star pattern
+        # Auto-generated types: limit_count (int), query (str)
+        # SQL function handles empty query string
+        params = SearchSimulatableProfilesSqlParams(
+            **request.model_dump(),
+            profile_id=profile_id,
         )
-        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+        sql_params = params.to_tuple()
 
-        # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+        # Execute SQL with typed helper - automatically detects and calls function if present
+        result = cast(
+            SearchSimulatableProfilesSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
 
-        # Cache response
+        # Convert SQL result to API response (auto-generated types, no manual transformation)
+        response_data = SearchSimulatableProfilesApiResponse.model_validate(result.model_dump())
+
+        # Set audit context using actor_name from SQL result
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": response_data.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )
@@ -164,6 +107,6 @@ async def search_simulatable_profiles(
             route_path=http_request.url.path,
             operation="search_simulatable_profiles",
             sql_query=sql_query,
-            sql_params=params,
+            sql_params=sql_params,
             request=http_request,
         )

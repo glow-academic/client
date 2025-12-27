@@ -1,48 +1,29 @@
 """Profile create or update endpoint - create or update a profile based on email."""
 
 import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (CreateOrUpdateProfileApiRequest,
+                           CreateOrUpdateProfileApiResponse,
+                           CreateOrUpdateProfileSqlParams,
+                           CreateOrUpdateProfileSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/profile/create_or_update_profile_complete.sql"
 
 router = APIRouter()
 
 
-class CreateOrUpdateProfileRequest(BaseModel):
-    """Request to create or update a single profile."""
-
-    firstName: str
-    lastName: str
-    emails: list[
-        str
-    ]  # List of emails (first one will be set as primary if primary_email_index not specified)
-    primary_email_index: int | None = (
-        None  # Index in emails array for primary (defaults to 0)
-    )
-    role: str
-    department_ids: list[str] = []
-    cohort_ids: list[str] = []
-
-
-class CreateOrUpdateProfileResponse(BaseModel):
-    """Response from create or update profile."""
-
-    success: bool
-    profileId: str
-    created: bool  # True if created, False if updated
-    message: str
-
-
 @router.post(
     "/upsert",
-    response_model=CreateOrUpdateProfileResponse,
+    response_model=CreateOrUpdateProfileApiResponse,
     dependencies=[
         audit_activity(
             "profile.upserted",
@@ -51,13 +32,13 @@ class CreateOrUpdateProfileResponse(BaseModel):
     ],
 )
 async def create_or_update_profile(
-    request: CreateOrUpdateProfileRequest,
+    request: CreateOrUpdateProfileApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateOrUpdateProfileResponse:
+) -> CreateOrUpdateProfileApiResponse:
     """Create or update a profile based on email."""
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -76,106 +57,65 @@ async def create_or_update_profile(
         if primary_index < 0 or primary_index >= len(request.emails):
             raise HTTPException(status_code=400, detail="Invalid primary_email_index")
 
-        primary_email = request.emails[primary_index]
+        # Get current_profile_id from header (optional for upsert)
+        current_profile_id = http_request.state.profile_id
 
-        # Convert string UUIDs to UUID arrays
-        dept_uuids = (
-            [uuid.UUID(d) for d in request.department_ids]
-            if request.department_ids
-            else []
-        )
-        cohort_uuids = (
-            [uuid.UUID(c) for c in request.cohort_ids] if request.cohort_ids else []
-        )
-
-        # Single consolidated query for create/update with departments and cohorts
-        sql_query = load_sql("app/sql/v3/profile/staff/create_or_update_staff_complete.sql")
+        # Generate new profile ID (will be used if profile doesn't exist)
         profile_id_new = uuid.uuid4()
-        sql_params = (
-            profile_id_new,
-            request.firstName,
-            request.lastName,
-            primary_email,
-            request.role,
-            True,  # active
-            dept_uuids,
-            cohort_uuids,
-            None,  # current_profile_id (no role validation for single create/update)
+
+        # Convert API request to SQL params using double star pattern
+        # Pydantic handles UUID conversion from strings automatically if types are correct
+        # SQL handles None-to-empty conversions via COALESCE in params CTE
+        # Exclude profile_id_new and current_profile_id from request if present (we generate/override them)
+        request_dict = request.model_dump(exclude={'profile_id_new', 'current_profile_id'}, exclude_none=False)
+        params = CreateOrUpdateProfileSqlParams(
+            **request_dict,
+            profile_id_new=profile_id_new,
+            current_profile_id=current_profile_id,
         )
+        sql_params = params.to_tuple()
 
         async with transaction(conn):
-            result = await conn.fetchrow(sql_query, *sql_params)
+            # Execute SQL with typed helper
+            result = cast(
+                CreateOrUpdateProfileSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
             if not result:
                 raise HTTPException(
                     status_code=500, detail="Failed to create or update profile"
                 )
 
-            profile_id = result["profile_id"]
-            created = result["created"]
-
-            # Update all emails: deactivate existing, then insert/activate new ones
-            # First, deactivate all existing emails for this profile
-            await conn.execute(
-                "UPDATE profile_emails SET active = false, updated_at = NOW() WHERE profile_id = $1",
-                profile_id,
-            )
-
-            # Insert/update all emails (set primary based on index)
-            for i, email in enumerate(request.emails):
-                is_primary = i == primary_index
-                await conn.execute(
-                    """
-                    INSERT INTO profile_emails (profile_id, email, is_primary, active)
-                    VALUES ($1::uuid, $2, $3, true)
-                    ON CONFLICT (email) DO UPDATE SET
-                        profile_id = EXCLUDED.profile_id,
-                        is_primary = EXCLUDED.is_primary,
-                        active = true,
-                        updated_at = NOW()
-                """,
-                    profile_id,
-                    email,
-                    is_primary,
-                )
-            message = (
-                f"Profile '{request.firstName} {request.lastName}' created successfully"
-                if created
-                else f"Profile '{request.firstName} {request.lastName}' updated successfully"
-            )
-
-            # Fetch actor_name separately
-            profile_id_for_actor = http_request.state.profile_id
-            actor_name = None
-            if profile_id_for_actor:
-                actor_name_row = await conn.fetchrow(
-                    "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-                    profile_id_for_actor,
-                )
-                actor_name = actor_name_row["actor_name"] if actor_name_row else None
+            profile_id = result.profile_id
+            created = result.created
 
             # Set audit context
-            if actor_name:
+            profile_name = f"{request.first_name} {request.last_name}"
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id_for_actor},
+                    actor={"name": result.actor_name, "id": current_profile_id} if current_profile_id else {},
                     created="created" if created else "updated",
                     profile={
-                        "name": f"{request.firstName} {request.lastName}",
+                        "name": profile_name,
                         "id": str(profile_id),
                     },
                 )
 
-        result_data = CreateOrUpdateProfileResponse(
-            success=True, profileId=profile_id, created=created, message=message
-        )
+        # Convert SQL result to API response
+        response_data = CreateOrUpdateProfileApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         tags = ["profile"]  # Profile operations
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

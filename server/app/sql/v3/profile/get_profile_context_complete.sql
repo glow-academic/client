@@ -1,43 +1,378 @@
 -- Get profile context with emulation validation in a single transaction
--- Parameters: 
---   $1=actualProfileId (uuid or null), $2=effectiveProfileId (uuid or null)
---   $3=departmentId (text, optional - from cookies), $4=authMode (text, optional - "default-guest" | "default-account")
--- Returns: Complete profile context data, or NULL if emulation is unauthorized
--- Note: If actualProfileId/effectiveProfileId are null, profile is resolved from department settings using cookies
-WITH resolve_profile_from_department AS (
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+--
+-- Business Logic Overview:
+-- 1. Profile Resolution: Resolves profile IDs from cookies (department-id, auth-mode) when profile IDs are null
+--    - Supports guest/default-account login via cookies
+--    - Falls back to default settings if no department-specific settings exist
+-- 2. Emulation Validation: Validates that actual profile can emulate effective profile based on role hierarchy
+--    - superadmin can emulate anyone
+--    - admin can emulate instructional/member/guest
+--    - instructional can emulate member/guest
+--    - member/guest cannot emulate others
+-- 3. Scoped Roles: Computes roles that effective profile has scope to see (for UI filtering)
+-- 4. Settings Resolution: Resolves settings with priority: department-specific → default → any active
+-- 5. Collections: Returns arrays of composite types (departments, cohorts, simulations) - NO JSONB
+--
+-- NOTE: Theme derivation (converting primitives to tokens) stays in Python because it requires
+-- complex color math utilities (hex_to_oklch, ensure_contrast, shade, tint) that are not available
+-- in PostgreSQL. The SQL returns theme primitives (colors as strings), and Python derives the
+-- full ThemeTokens structure for the frontend.
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_profile_context_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_profile_context_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+-- Drop all types matching prefix pattern to handle type additions/removals
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_profile_context_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_profile_context_v3_department AS (
+    department_id uuid,
+    title text,
+    description text,
+    active boolean,
+    is_primary boolean
+);
+
+CREATE TYPE types.q_get_profile_context_v3_cohort AS (
+    cohort_id uuid,
+    title text,
+    description text,
+    active boolean,
+    department_ids text[]
+);
+
+CREATE TYPE types.q_get_profile_context_v3_simulation AS (
+    simulation_id uuid,
+    title text,
+    description text,
+    department_ids text[],
+    time_limit integer,
+    active boolean,
+    practice_simulation boolean
+);
+
+CREATE TYPE types.q_get_profile_context_v3_auth AS (
+    auth_id uuid,
+    name text,
+    description text,
+    slug text
+);
+
+CREATE TYPE types.q_get_profile_context_v3_provider AS (
+    provider_id uuid,
+    name text,
+    description text,
+    value text
+);
+
+CREATE TYPE types.q_get_profile_context_v3_theme_tokens AS (
+    background text,
+    foreground text,
+    card text,
+    card_foreground text,
+    popover text,
+    popover_foreground text,
+    primary_color text,
+    primary_foreground text,
+    secondary text,
+    secondary_foreground text,
+    muted text,
+    muted_foreground text,
+    accent text,
+    accent_foreground text,
+    destructive text,
+    border text,
+    input text,
+    ring text,
+    success text,
+    success_foreground text,
+    warning text,
+    warning_foreground text,
+    info text,
+    info_foreground text,
+    chart1 text,
+    chart2 text,
+    chart3 text,
+    chart4 text,
+    chart5 text,
+    sidebar text,
+    sidebar_foreground text,
+    sidebar_primary text,
+    sidebar_primary_foreground text,
+    sidebar_accent text,
+    sidebar_accent_foreground text,
+    sidebar_border text,
+    sidebar_ring text
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_profile_context_v3(
+    actual_profile_id uuid DEFAULT NULL,
+    effective_profile_id uuid DEFAULT NULL,
+    department_id text DEFAULT NULL,
+    auth_mode text DEFAULT NULL
+)
+RETURNS TABLE (
+    is_authorized boolean,
+    -- Authorization check fields (for default-account and guest login validation)
+    guest_login_enabled boolean,
+    active_departments_count bigint,
+    department_auth_providers_count bigint,
+    default_settings_auth_providers_count bigint,
+    departments_without_auth_providers_count bigint,
+    department_exists boolean,
+    -- Actual profile fields (prefixed with actual_)
+    actual_id uuid,
+    actual_first_name text,
+    actual_last_name text,
+    actual_emails text[],
+    actual_primary_email text,
+    actual_role text,
+    actual_active boolean,
+    actual_req_per_day integer,
+    actual_last_login timestamptz,
+    actual_last_active timestamptz,
+    actual_created_at timestamptz,
+    actual_updated_at timestamptz,
+    actual_primary_department_id uuid,
+    -- Effective profile fields (unprefixed)
+    id uuid,
+    first_name text,
+    last_name text,
+    emails text[],
+    primary_email text,
+    role text,
+    active boolean,
+    req_per_day integer,
+    last_login timestamptz,
+    last_active timestamptz,
+    created_at timestamptz,
+    updated_at timestamptz,
+    primary_department_id uuid,
+    -- Context data (based on effective profile)
+    departments types.q_get_profile_context_v3_department[],
+    cohorts types.q_get_profile_context_v3_cohort[],
+    simulations types.q_get_profile_context_v3_simulation[],
+    earliest_attempt_date timestamptz,
+    scoped_roles text[],
+    -- Settings data (all fields prefixed with settings_)
+    settings_id text,
+    settings_created_at timestamptz,
+    settings_active boolean,
+    settings_name text,
+    settings_description text,
+    settings_primary_color text,
+    settings_accent text,
+    settings_background text,
+    settings_surface text,
+    settings_success text,
+    settings_warning text,
+    settings_error text,
+    settings_sidebar_background text,
+    settings_sidebar_primary text,
+    settings_chart1 text,
+    settings_chart2 text,
+    settings_chart3 text,
+    settings_chart4 text,
+    settings_chart5 text,
+    settings_guest_login_enabled boolean,
+    settings_success_threshold integer,
+    settings_warning_threshold integer,
+    settings_danger_threshold integer,
+    settings_auth_ids text[],
+    settings_auths types.q_get_profile_context_v3_auth[],
+    settings_provider_ids text[],
+    settings_providers types.q_get_profile_context_v3_provider[],
+    settings_default_guest_profile_id text,
+    settings_default_account_profile_id text,
+    -- Computed fields
+    available_sections text[],
+    redirect_path text,
+    department_ids text[],
+    cohort_ids text[],
+    simulation_ids text[],
+    settings_tokens types.q_get_profile_context_v3_theme_tokens,
+    actor_name text
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT 
+        actual_profile_id AS actual_profile_id,
+        effective_profile_id AS effective_profile_id,
+        department_id AS department_id,
+        auth_mode AS auth_mode
+),
+params_normalized AS (
+    -- Normalize department_id: convert empty string to NULL
+    SELECT 
+        CASE 
+            WHEN department_id IS NULL OR department_id = '' THEN NULL::uuid
+            ELSE department_id::uuid
+        END as department_id_uuid
+    FROM params
+),
+-- Authorization check CTEs (merged from check_login_authorization_complete.sql)
+default_settings_for_auth AS (
+    -- Get settings with no department links (cross-department/default)
+    SELECT s.id as settings_id, s.guest_login_enabled
+    FROM settings s
+    WHERE s.active = true
+      AND NOT EXISTS (
+          SELECT 1 FROM department_settings sd 
+          WHERE sd.settings_id = s.id AND sd.active = true
+      )
+    LIMIT 1
+),
+dept_specific_settings_for_auth AS (
+    -- Get department-specific settings (if department_id provided)
+    SELECT s.id as settings_id, s.guest_login_enabled
+    FROM settings s
+    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+    CROSS JOIN params_normalized pn
+    WHERE pn.department_id_uuid IS NOT NULL
+      AND ds.department_id = pn.department_id_uuid
+      AND s.active = true
+    LIMIT 1
+),
+selected_settings_for_auth AS (
+    -- Priority: department-specific settings, then default, then any active
+    SELECT 
+        COALESCE(
+            (SELECT settings_id FROM dept_specific_settings_for_auth),
+            (SELECT settings_id FROM default_settings_for_auth),
+            (SELECT id FROM settings WHERE active = true LIMIT 1)
+        ) as settings_id,
+        COALESCE(
+            (SELECT guest_login_enabled FROM dept_specific_settings_for_auth),
+            (SELECT guest_login_enabled FROM default_settings_for_auth),
+            false
+        ) as guest_login_enabled
+),
+active_departments_count AS (
+    -- Count all active departments
+    SELECT COUNT(*) as count
+    FROM departments
+    WHERE active = true
+),
+department_exists_check AS (
+    -- Check if the specified department exists and is active (if department_id provided)
+    SELECT 
+        CASE 
+            WHEN pn.department_id_uuid IS NOT NULL THEN
+                EXISTS(
+                    SELECT 1 FROM departments d
+                    WHERE d.id = pn.department_id_uuid
+                    AND d.active = true
+                )
+            ELSE false
+        END as department_exists
+    FROM params_normalized pn
+),
+department_auth_providers_count AS (
+    -- Count auth providers for specific department (if department_id provided)
+    SELECT COUNT(DISTINCT a.id) as count
+    FROM departments d
+    JOIN department_settings ds ON ds.department_id = d.id AND ds.active = true
+    JOIN settings s ON s.id = ds.settings_id AND s.active = true
+    JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
+    JOIN auth a ON a.id = sa.auth_id AND a.active = true
+    CROSS JOIN params_normalized pn
+    WHERE pn.department_id_uuid IS NOT NULL
+      AND d.id = pn.department_id_uuid
+      AND d.active = true
+),
+default_settings_auth_providers_count AS (
+    -- Count auth providers for default settings (no department links)
+    SELECT COUNT(DISTINCT a.id) as count
+    FROM default_settings_for_auth ds
+    JOIN settings s ON s.id = ds.settings_id
+    JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
+    JOIN auth a ON a.id = sa.auth_id AND a.active = true
+),
+departments_without_auth_providers_count AS (
+    -- Count departments that have no auth providers configured
+    SELECT COUNT(DISTINCT d.id) as count
+    FROM departments d
+    WHERE d.active = true
+      AND NOT EXISTS (
+          SELECT 1
+          FROM department_settings ds
+          JOIN settings s ON s.id = ds.settings_id AND s.active = true
+          JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
+          JOIN auth a ON a.id = sa.auth_id AND a.active = true
+          WHERE ds.department_id = d.id
+            AND ds.active = true
+      )
+),
+resolve_profile_from_department AS (
     -- Resolve profile ID from department settings when profile IDs are null
     -- This happens when user is accessing via guest/default-account cookies
-    -- department-id ($3) can be NULL for default settings (no department-specific settings)
+    -- department-id can be NULL for default settings (no department-specific settings)
     SELECT 
         CASE 
             -- If both profile IDs are null and we have auth_mode, resolve from settings
-            WHEN $1::uuid IS NULL AND $2::uuid IS NULL 
-                 AND $4::text IN ('default-guest', 'default-account') THEN
+            WHEN (SELECT actual_profile_id FROM params) IS NULL 
+                 AND (SELECT effective_profile_id FROM params) IS NULL 
+                 AND (SELECT auth_mode FROM params) IN ('default-guest', 'default-account') THEN
                 COALESCE(
                     -- Try department-specific settings first (only if department_id is provided)
                     CASE 
-                        WHEN $3::text IS NOT NULL AND $3::text != '' THEN
+                        WHEN (SELECT department_id FROM params) IS NOT NULL 
+                             AND (SELECT department_id FROM params) != '' THEN
                             CASE 
-                                WHEN $4::text = 'default-guest' THEN
+                                WHEN (SELECT auth_mode FROM params) = 'default-guest' THEN
                                     (SELECT sdg.profile_id
                                      FROM settings s
                                      JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
                                      JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
-                                     WHERE ds.department_id = $3::uuid AND s.active = true
+                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid AND s.active = true
                                      LIMIT 1)
-                                WHEN $4::text = 'default-account' THEN
+                                WHEN (SELECT auth_mode FROM params) = 'default-account' THEN
                                     (SELECT sda.profile_id
                                      FROM settings s
                                      JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
                                      JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
-                                     WHERE ds.department_id = $3::uuid AND s.active = true
+                                     WHERE ds.department_id = (SELECT department_id FROM params)::uuid AND s.active = true
                                      LIMIT 1)
                             END
                         ELSE NULL::uuid
                     END,
                     -- Fallback to default settings (no department links) - always try this
                     CASE 
-                        WHEN $4::text = 'default-guest' THEN
+                        WHEN (SELECT auth_mode FROM params) = 'default-guest' THEN
                             (SELECT sdg.profile_id
                              FROM settings s
                              JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
@@ -47,7 +382,7 @@ WITH resolve_profile_from_department AS (
                                    WHERE ds.settings_id = s.id AND ds.active = true
                                )
                              LIMIT 1)
-                        WHEN $4::text = 'default-account' THEN
+                        WHEN (SELECT auth_mode FROM params) = 'default-account' THEN
                             (SELECT sda.profile_id
                              FROM settings s
                              JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
@@ -65,8 +400,8 @@ WITH resolve_profile_from_department AS (
 resolved_profile_ids AS (
     -- Use provided profile IDs if available, otherwise use resolved profile from department
     SELECT 
-        COALESCE($1::uuid, (SELECT resolved_profile_id FROM resolve_profile_from_department)) as actual_profile_id,
-        COALESCE($2::uuid, (SELECT resolved_profile_id FROM resolve_profile_from_department)) as effective_profile_id
+        COALESCE((SELECT actual_profile_id FROM params), (SELECT resolved_profile_id FROM resolve_profile_from_department)) as actual_profile_id,
+        COALESCE((SELECT effective_profile_id FROM params), (SELECT resolved_profile_id FROM resolve_profile_from_department)) as effective_profile_id
 ),
 emulation_validation AS (
     -- Validate emulation is authorized when profiles differ
@@ -106,11 +441,11 @@ scoped_roles_computed AS (
     -- Compute scoped roles based on effective profile's role
     SELECT 
         CASE 
-            WHEN epr.role = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::profile_role[]
-            WHEN epr.role = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest']::profile_role[]
-            WHEN epr.role = 'instructional' THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
-            WHEN epr.role = 'member' THEN ARRAY['member']::profile_role[]
-            ELSE ARRAY['guest']::profile_role[]
+            WHEN epr.role = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::text[]
+            WHEN epr.role = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest']::text[]
+            WHEN epr.role = 'instructional' THEN ARRAY['instructional', 'member', 'guest']::text[]
+            WHEN epr.role = 'member' THEN ARRAY['member']::text[]
+            ELSE ARRAY['guest']::text[]
         END as scoped_roles
     FROM effective_profile_role epr
 ),
@@ -198,7 +533,7 @@ cohort_data AS (
         c.title,
         c.description,
         c.active,
-        COALESCE(cdd.department_ids, NULL) as department_ids
+        COALESCE(cdd.department_ids, ARRAY[]::text[]) as department_ids
     FROM cohort_profiles pc
     JOIN cohorts c ON c.id = pc.cohort_id
     LEFT JOIN (
@@ -219,7 +554,7 @@ sim_data AS (
         s.id,
         s.title,
         s.description,
-        COALESCE(sdd.department_ids, NULL) as department_ids,
+        COALESCE(sdd.department_ids, ARRAY[]::text[]) as department_ids,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -241,6 +576,42 @@ sim_data AS (
         GROUP BY sd.simulation_id
     ) sdd ON sdd.simulation_id = s.id
     WHERE s.active = true
+),
+departments_aggregated AS (
+    -- Aggregate departments into composite type array
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (d.id, d.title, d.description, d.active, d.is_primary)::types.q_get_profile_context_v3_department
+                ORDER BY d.is_primary DESC, d.title
+            ),
+            '{}'::types.q_get_profile_context_v3_department[]
+        ) as departments
+    FROM dept_data d
+),
+cohorts_aggregated AS (
+    -- Aggregate cohorts into composite type array
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (c.id, c.title, c.description, c.active, c.department_ids)::types.q_get_profile_context_v3_cohort
+                ORDER BY c.title
+            ),
+            '{}'::types.q_get_profile_context_v3_cohort[]
+        ) as cohorts
+    FROM cohort_data c
+),
+simulations_aggregated AS (
+    -- Aggregate simulations into composite type array
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (s.id, s.title, s.description, s.department_ids, s.time_limit, s.active, s.practice_simulation)::types.q_get_profile_context_v3_simulation
+                ORDER BY s.title
+            ),
+            '{}'::types.q_get_profile_context_v3_simulation[]
+        ) as simulations
+    FROM sim_data s
 ),
 earliest_attempt AS (
     -- Earliest attempt across all departments the effective profile belongs to
@@ -304,16 +675,12 @@ settings_resolution AS (
         SELECT 
             ARRAY_AGG(a.id::text ORDER BY a.name) as auth_ids,
             COALESCE(
-                jsonb_object_agg(
-                    a.id::text,
-                    jsonb_build_object(
-                        'name', a.name,
-                        'description', COALESCE(a.description, ''),
-                        'slug', a.slug
-                    )
+                ARRAY_AGG(
+                    (a.id, a.name, COALESCE(a.description, ''), a.slug)::types.q_get_profile_context_v3_auth
+                    ORDER BY a.name
                 ),
-                '{}'::jsonb
-            ) as auth_mapping
+                '{}'::types.q_get_profile_context_v3_auth[]
+            ) as auths
         FROM selected_settings ss
         JOIN setting_auths sa ON sa.settings_id = ss.settings_id AND sa.active = true
         JOIN auth a ON a.id = sa.auth_id AND a.active = true
@@ -323,16 +690,12 @@ settings_resolution AS (
         SELECT 
             ARRAY_AGG(p.id::text ORDER BY p.name) as provider_ids,
             COALESCE(
-                jsonb_object_agg(
-                    p.id::text,
-                    jsonb_build_object(
-                        'name', p.name,
-                        'description', COALESCE(p.description, ''),
-                        'value', p.value
-                    )
+                ARRAY_AGG(
+                    (p.id, p.name, COALESCE(p.description, ''), p.value)::types.q_get_profile_context_v3_provider
+                    ORDER BY p.name
                 ),
-                '{}'::jsonb
-            ) as provider_mapping
+                '{}'::types.q_get_profile_context_v3_provider[]
+            ) as providers
         FROM selected_settings ss
         JOIN setting_providers sp ON sp.settings_id = ss.settings_id AND sp.active = true
         JOIN providers p ON p.id = sp.provider_id AND p.active = true
@@ -390,9 +753,9 @@ settings_resolution AS (
         s.warning_threshold,
         s.danger_threshold,
         COALESCE(sad.auth_ids, ARRAY[]::text[]) as settings_auth_ids,
-        COALESCE(sad.auth_mapping, '{}'::jsonb) as settings_auth_mapping,
+        COALESCE(sad.auths, '{}'::types.q_get_profile_context_v3_auth[]) as settings_auths,
         COALESCE(spd.provider_ids, ARRAY[]::text[]) as settings_provider_ids,
-        COALESCE(spd.provider_mapping, '{}'::jsonb) as settings_provider_mapping,
+        COALESCE(spd.providers, '{}'::types.q_get_profile_context_v3_provider[]) as settings_providers,
         sdgd.default_guest_profile_id,
         sdad.default_account_profile_id
     FROM selected_settings ss
@@ -402,15 +765,89 @@ settings_resolution AS (
     LEFT JOIN settings_default_guest_data sdgd ON true
     LEFT JOIN settings_default_account_data sdad ON true
     LIMIT 1
+),
+actor_name_computed AS (
+    -- Compute actor_name from effective_profile_id if available, else actual_profile_id
+    -- This is used for audit logging
+    SELECT 
+        COALESCE(
+            (SELECT first_name || ' ' || last_name 
+             FROM profiles 
+             WHERE id = (SELECT effective_profile_id FROM resolved_profile_ids)),
+            (SELECT first_name || ' ' || last_name 
+             FROM profiles 
+             WHERE id = (SELECT actual_profile_id FROM resolved_profile_ids))
+        ) as actor_name
+),
+available_sections_computed AS (
+    -- Compute available sections based on effective profile's role
+    -- Replicates get_available_subsections_for_role logic
+    SELECT 
+        CASE 
+            WHEN epr.role = 'superadmin' THEN ARRAY['home', 'practice', 'analytics', 'create', 'management']::text[]
+            WHEN epr.role = 'admin' THEN ARRAY['home', 'practice', 'analytics', 'create', 'management']::text[]
+            WHEN epr.role = 'instructional' THEN ARRAY['home', 'practice', 'analytics', 'create']::text[]
+            WHEN epr.role = 'member' THEN ARRAY['home', 'practice']::text[]
+            ELSE ARRAY['practice']::text[]  -- guest
+        END as available_sections
+    FROM effective_profile_role epr
+),
+redirect_path_computed AS (
+    -- Compute redirect path based on effective profile's role
+    -- Replicates get_redirect_path_for_role logic
+    SELECT 
+        CASE 
+            WHEN epr.role = 'guest' THEN '/practice'::text
+            WHEN epr.role = 'member' THEN '/home'::text
+            WHEN epr.role = 'instructional' THEN '/analytics/dashboard'::text
+            WHEN epr.role = 'admin' THEN '/analytics/dashboard'::text
+            WHEN epr.role = 'superadmin' THEN '/analytics/dashboard'::text
+            ELSE '/home'::text
+        END as redirect_path
+    FROM effective_profile_role epr
+),
+department_ids_computed AS (
+    -- Extract department IDs from dept_data
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(d.id::text ORDER BY d.is_primary DESC, d.title),
+            ARRAY[]::text[]
+        ) as department_ids
+    FROM dept_data d
+),
+cohort_ids_computed AS (
+    -- Extract cohort IDs from cohort_data
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(c.id::text ORDER BY c.title),
+            ARRAY[]::text[]
+        ) as cohort_ids
+    FROM cohort_data c
+),
+simulation_ids_computed AS (
+    -- Extract simulation IDs from sim_data
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(s.id::text ORDER BY s.title),
+            ARRAY[]::text[]
+        ) as simulation_ids
+    FROM sim_data s
 )
 SELECT 
     -- Emulation authorization flag
-    ev.is_authorized,
+    ev.is_authorized::boolean as is_authorized,
+    -- Authorization check fields (for default-account and guest login validation)
+    (SELECT guest_login_enabled FROM selected_settings_for_auth) as guest_login_enabled,
+    (SELECT count FROM active_departments_count) as active_departments_count,
+    COALESCE((SELECT count FROM department_auth_providers_count), 0) as department_auth_providers_count,
+    COALESCE((SELECT count FROM default_settings_auth_providers_count), 0) as default_settings_auth_providers_count,
+    COALESCE((SELECT count FROM departments_without_auth_providers_count), 0) as departments_without_auth_providers_count,
+    (SELECT department_exists FROM department_exists_check) as department_exists,
     -- Actual profile fields (prefixed with actual_)
     apd.id as actual_id,
     apd.first_name as actual_first_name,
     apd.last_name as actual_last_name,
-    apd.emails as actual_emails,
+    COALESCE(apd.emails, ARRAY[]::text[]) as actual_emails,
     apd.primary_email as actual_primary_email,
     apd.role as actual_role,
     apd.active as actual_active,
@@ -420,11 +857,11 @@ SELECT
     apd.created_at as actual_created_at,
     apd.updated_at as actual_updated_at,
     apd.primary_department_id as actual_primary_department_id,
-    -- Effective profile fields (unprefixed )
+    -- Effective profile fields (unprefixed)
     epd.id,
     epd.first_name,
     epd.last_name,
-    epd.emails,
+    COALESCE(epd.emails, ARRAY[]::text[]) as emails,
     epd.primary_email,
     epd.role,
     epd.active,
@@ -434,42 +871,10 @@ SELECT
     epd.created_at,
     epd.updated_at,
     epd.primary_department_id,
-    -- Context data (based on effective profile)
-    COALESCE(
-        (SELECT jsonb_agg(jsonb_build_object(
-            'id', d.id::text,
-            'title', d.title,
-            'description', d.description,
-            'active', d.active,
-            'is_primary', d.is_primary
-        ) ORDER BY d.is_primary DESC, d.title)
-        FROM dept_data d),
-        '[]'::jsonb
-    ) as departments,
-    COALESCE(
-        (SELECT jsonb_agg(jsonb_build_object(
-            'id', c.id::text,
-            'title', c.title,
-            'description', c.description,
-            'active', c.active,
-            'department_ids', c.department_ids
-        ) ORDER BY c.title)
-        FROM cohort_data c),
-        '[]'::jsonb
-    ) as cohorts,
-    COALESCE(
-        (SELECT jsonb_agg(jsonb_build_object(
-            'id', s.id::text,
-            'title', s.title,
-            'description', s.description,
-            'department_ids', s.department_ids,
-            'time_limit', s.time_limit,
-            'active', s.active,
-            'practice_simulation', s.practice_simulation
-        ) ORDER BY s.title)
-        FROM sim_data s),
-        '[]'::jsonb
-    ) as simulations,
+    -- Context data (based on effective profile) - using composite types
+    da.departments as departments,
+    ca.cohorts as cohorts,
+    sa.simulations as simulations,
     (SELECT earliest FROM earliest_attempt) as earliest_attempt_date,
     (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles,
     -- Settings data (all fields prefixed with settings_)
@@ -497,18 +902,39 @@ SELECT
     (SELECT warning_threshold FROM settings_resolution) as settings_warning_threshold,
     (SELECT danger_threshold FROM settings_resolution) as settings_danger_threshold,
     (SELECT settings_auth_ids FROM settings_resolution) as settings_auth_ids,
-    (SELECT settings_auth_mapping FROM settings_resolution) as settings_auth_mapping,
+    (SELECT settings_auths FROM settings_resolution) as settings_auths,
     (SELECT settings_provider_ids FROM settings_resolution) as settings_provider_ids,
-    (SELECT settings_provider_mapping FROM settings_resolution) as settings_provider_mapping,
+    (SELECT settings_providers FROM settings_resolution) as settings_providers,
     (SELECT default_guest_profile_id FROM settings_resolution) as settings_default_guest_profile_id,
-    (SELECT default_account_profile_id FROM settings_resolution) as settings_default_account_profile_id
+    (SELECT default_account_profile_id FROM settings_resolution) as settings_default_account_profile_id,
+    -- Computed fields
+    (SELECT available_sections FROM available_sections_computed) as available_sections,
+    (SELECT redirect_path FROM redirect_path_computed) as redirect_path,
+    (SELECT department_ids FROM department_ids_computed) as department_ids,
+    (SELECT cohort_ids FROM cohort_ids_computed) as cohort_ids,
+    (SELECT simulation_ids FROM simulation_ids_computed) as simulation_ids,
+    -- Return empty theme tokens struct for type introspection (Python will override with computed values)
+    -- 37 fields: background, foreground, card, card_foreground, popover, popover_foreground, primary_color, primary_foreground, secondary, secondary_foreground, muted, muted_foreground, accent, accent_foreground, destructive, border, input, ring, success, success_foreground, warning, warning_foreground, info, info_foreground, chart1, chart2, chart3, chart4, chart5, sidebar, sidebar_foreground, sidebar_primary, sidebar_primary_foreground, sidebar_accent, sidebar_accent_foreground, sidebar_border, sidebar_ring
+    ('', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '')::types.q_get_profile_context_v3_theme_tokens as settings_tokens,
+    (SELECT actor_name FROM actor_name_computed) as actor_name
 FROM emulation_validation ev
 CROSS JOIN resolved_profile_ids rpi
 CROSS JOIN actual_profile_data apd
 CROSS JOIN effective_profile_data epd
 CROSS JOIN scoped_roles_computed src
 CROSS JOIN settings_resolution sr
+CROSS JOIN departments_aggregated da
+CROSS JOIN cohorts_aggregated ca
+CROSS JOIN simulations_aggregated sa
+CROSS JOIN actor_name_computed anc
+CROSS JOIN available_sections_computed asc_computed
+CROSS JOIN redirect_path_computed rpc
+CROSS JOIN department_ids_computed dic
+CROSS JOIN cohort_ids_computed cic
+CROSS JOIN simulation_ids_computed sic
 WHERE ev.is_authorized = true  -- Only return data if emulation is authorized
   AND rpi.actual_profile_id IS NOT NULL  -- Ensure we have valid profile IDs
   AND rpi.effective_profile_id IS NOT NULL
+$$;
 
+COMMIT;

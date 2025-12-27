@@ -847,13 +847,13 @@ export default function Document({
 
             const finalizeResult = await finalizeUploadAction(tusUploadId);
 
-            if (!finalizeResult.success || !finalizeResult.uploadId) {
+            if (!finalizeResult.success || !finalizeResult.upload_id) {
               throw new Error(
                 finalizeResult.message || "Failed to finalize upload",
               );
             }
 
-            const databaseUploadId = finalizeResult.uploadId;
+            const databaseUploadId = finalizeResult.upload_id;
 
             let suggestedParameterItemIds: string[] = [];
             try {

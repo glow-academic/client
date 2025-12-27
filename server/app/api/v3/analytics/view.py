@@ -1,43 +1,40 @@
-"""Delete prompt endpoint."""
+"""Analytics view creation v3 API endpoint."""
 
-import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (DeletePromptApiRequest, DeletePromptApiResponse,
-                           DeletePromptSqlParams, DeletePromptSqlRow,
-                           load_sql_query)
+from app.sql.types import (CreateAnalyticsViewFunctionApiRequest,
+                           CreateAnalyticsViewFunctionApiResponse,
+                           CreateAnalyticsViewFunctionSqlParams,
+                           CreateAnalyticsViewFunctionSqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import execute_sql_typed
+from utils.sql_helper import execute_sql_typed, load_sql
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v3/prompts/delete_prompt_complete.sql"
-
+SQL_PATH = "app/sql/v3/analytics/create_analytics_view_function_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
-    "/delete",
-    response_model=DeletePromptApiResponse,
+    "/view",
+    response_model=CreateAnalyticsViewFunctionApiResponse,
     dependencies=[
-        audit_activity(
-            "prompt.deleted", "{{ actor.name }} deleted prompt '{{ prompt.name }}'"
-        )
+        audit_activity("analytics.view.created", "{{ actor.name }} created analytics view")
     ],
 )
-async def delete_prompt(
-    request: DeletePromptApiRequest,
+async def create_analytics_view(
+    request: CreateAnalyticsViewFunctionApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DeletePromptApiResponse:
-    """Delete a prompt."""
-    tags = ["prompts"]  # From router tags
+) -> CreateAnalyticsViewFunctionApiResponse:
+    """Create or recreate the analytics materialized view with all indexes."""
+    tags = ["analytics"]  # From router tags
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -51,14 +48,20 @@ async def delete_prompt(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert API request to SQL params (add profile_id from header)
+        # Execute the view creation SQL (DDL operations) first
+        # Note: DDL operations cannot be in functions, so this is handled separately
+        view_creation_sql = load_sql("app/sql/v3/analytics/create_analytics_view_complete.sql")
+        await conn.execute(view_creation_sql)
+
+        # Now call the function to get actor_name and response
         # Use double star pattern for parameter construction
-        params = DeletePromptSqlParams(**request.model_dump(), profile_id=uuid.UUID(profile_id))
+        import uuid
+        params = CreateAnalyticsViewFunctionSqlParams(**request.model_dump(), profile_id=uuid.UUID(profile_id))
         sql_params = params.to_tuple()
 
         # Execute query with typed helper - automatically detects and calls function if present
         result = cast(
-            DeletePromptSqlRow,
+            CreateAnalyticsViewFunctionSqlRow,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
@@ -67,15 +70,11 @@ async def delete_prompt(
         )
 
         # Set audit context
-        if result.prompt_name and result.actor_name:
-            audit_set(
-                http_request,
-                actor={"name": result.actor_name, "id": profile_id},
-                prompt={"name": result.prompt_name, "id": request.prompt_id},
-            )
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        # Build response - SQL function always returns a row
-        api_response = DeletePromptApiResponse.model_validate(result.model_dump())
+        # Build response - SQL function returns structured data
+        api_response = CreateAnalyticsViewFunctionApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
@@ -84,14 +83,13 @@ async def delete_prompt(
         return api_response
     except HTTPException:
         raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="delete_prompt",
+            operation="create_analytics_view",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,
         )
+

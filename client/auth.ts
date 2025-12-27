@@ -39,8 +39,8 @@ async function createGuestProfile(
   try {
     await api.post("/profile/create", {
       body: {
-        firstName,
-        lastName,
+        first_name: firstName,
+        last_name: lastName,
         emails: [email],
         role: "guest",
         cohort_ids: [],
@@ -148,8 +148,8 @@ export const {
           try {
             await api.post("/profile/update", {
               body: {
-                profileId: existingProfile.id,
-                lastLogin: new Date().toISOString(),
+                profile_id: existingProfile.id,
+                last_login: new Date().toISOString(),
               },
             });
           } catch (error) {
@@ -202,10 +202,10 @@ export const {
             try {
               await api.post("/profile/update", {
                 body: {
-                  profileId: existingProfile.id,
-                  firstName,
-                  lastName,
-                  lastLogin: new Date().toISOString(),
+                  profile_id: existingProfile.id,
+                  first_name: firstName,
+                  last_name: lastName,
+                  last_login: new Date().toISOString(),
                 },
               });
             } catch (error) {

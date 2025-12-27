@@ -60,6 +60,7 @@ CREATE OR REPLACE FUNCTION api_search_simulatable_profiles_v3(
     query text
 )
 RETURNS TABLE (
+    actor_name text,
     profiles types.q_search_simulatable_profiles_v3_profile[]
 )
 LANGUAGE sql
@@ -71,10 +72,15 @@ WITH params AS (
         limit_count AS limit_count,
         query AS query
 ),
-requester_role AS (
-    SELECT role
+requester_profile AS (
+    SELECT 
+        role,
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
     FROM profiles p
     WHERE p.id = (SELECT profile_id FROM params)
+),
+requester_role AS (
+    SELECT role FROM requester_profile
 ),
 simulatable_data AS (
     SELECT 
@@ -118,6 +124,7 @@ simulatable_data AS (
     LIMIT (SELECT limit_count FROM params)
 )
 SELECT 
+    (SELECT actor_name FROM requester_profile)::text as actor_name,
     COALESCE(
         ARRAY_AGG(
             (sp.id, sp.first_name, sp.last_name, COALESCE(sp.emails, ARRAY[]::text[]), sp.primary_email, sp.role, sp.active, sp.req_per_day, sp.last_login, sp.last_active, sp.created_at, sp.updated_at, sp.primary_department_id)::types.q_search_simulatable_profiles_v3_profile
