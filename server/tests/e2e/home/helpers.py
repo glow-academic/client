@@ -139,7 +139,7 @@ def fetch_attempt_full(
     )
     return _post_json(
         request,
-        "/api/v3/attempts/full",
+        "/api/v3/attempts/simulation",
         {"attemptId": attempt_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

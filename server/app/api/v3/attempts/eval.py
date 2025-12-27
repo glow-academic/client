@@ -1,4 +1,4 @@
-"""Eval attempt full endpoint - returns complete eval attempt data with runs and status."""
+"""Eval attempt endpoint - returns complete eval attempt data with runs and status."""
 
 import json
 from typing import Annotated, Any
@@ -96,11 +96,11 @@ router = APIRouter()
 
 
 @router.post(
-    "/full",
+    "/eval",
     response_model=EvalAttemptFullResponse,
     dependencies=[
         audit_activity(
-            "eval.attempt.viewed", "{{ actor.name }} viewed eval attempt details"
+            "attempt.eval.viewed", "{{ actor.name }} viewed eval attempt details"
         )
     ],
 )
@@ -111,7 +111,7 @@ async def get_eval_attempt_full(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> EvalAttemptFullResponse:
     """Get complete eval attempt data with all runs and status."""
-    tags = ["evals", "attempts"]  # From router tags
+    tags = ["attempts"]  # From router tags
 
     # Check for cache bypass header (for hard refresh)
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -141,7 +141,7 @@ async def get_eval_attempt_full(
             )
 
         # Load SQL string
-        sql_query = load_sql("app/sql/v3/evals/get_eval_attempt_full_complete.sql")
+        sql_query = load_sql("app/sql/v3/attempts/get_eval_attempt_complete.sql")
         sql_params = (request.attemptId, profile_id)
         result = await conn.fetchrow(sql_query, *sql_params)
 
@@ -332,3 +332,4 @@ async def get_eval_attempt_full(
             sql_params=sql_params,
             request=http_request,
         )
+

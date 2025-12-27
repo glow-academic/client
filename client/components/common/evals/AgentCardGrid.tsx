@@ -15,7 +15,7 @@ type AgentMappingItem =
   components["schemas"]["app__api__v3__evals__detail__AgentMappingItem"];
 
 export interface AgentCardGridProps {
-  agentMapping: Record<string, AgentMappingItem>;
+  agents: Array<{ agent_id: string; name: string; description?: string; roles?: string[] }>;
   validAgentIds: string[];
   selectedAgentIds: string[];
   onSelect: (ids: string[]) => void;
@@ -25,7 +25,7 @@ export interface AgentCardGridProps {
 }
 
 export function AgentCardGrid({
-  agentMapping,
+  agents,
   validAgentIds,
   selectedAgentIds,
   onSelect,
@@ -33,16 +33,21 @@ export function AgentCardGrid({
 }: AgentCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
 
-  // Build agents from mapping
+  // Build agents from array, filtered by validAgentIds
   const baseAgents = React.useMemo(() => {
-    const agents = validAgentIds.map((id) => ({
-      id,
-      ...agentMapping[id],
-    }));
+    const validAgentIdsSet = new Set(validAgentIds);
+    const filtered = agents
+      .filter((agent) => validAgentIdsSet.has(agent.agent_id))
+      .map((agent) => ({
+        id: agent.agent_id,
+        name: agent.name || "",
+        description: agent.description,
+        roles: agent.roles || [],
+      }));
 
     // Sort by name
-    return agents.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-  }, [validAgentIds, agentMapping]);
+    return filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }, [agents, validAgentIds]);
 
   // Apply search filter, then sort selected first
   const filteredAgents = React.useMemo(() => {

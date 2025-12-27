@@ -16,7 +16,7 @@ export interface RubricMappingItem {
 }
 
 export interface RubricCardGridProps {
-  rubricMapping: Record<string, RubricMappingItem>;
+  rubrics: Array<{ rubric_id: string; name: string; description?: string; agent_role?: string }>;
   validRubricIds: string[];
   selectedRubricId: string | null;
   onSelect: (id: string | null) => void;
@@ -26,7 +26,7 @@ export interface RubricCardGridProps {
 }
 
 export function RubricCardGrid({
-  rubricMapping,
+  rubrics,
   validRubricIds,
   selectedRubricId,
   onSelect,
@@ -34,16 +34,21 @@ export function RubricCardGrid({
 }: RubricCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
 
-  // Build rubrics from mapping
+  // Build rubrics from array, filtered by validRubricIds
   const baseRubrics = React.useMemo(() => {
-    const rubrics = validRubricIds.map((id) => ({
-      id,
-      ...rubricMapping[id],
-    }));
+    const validRubricIdsSet = new Set(validRubricIds);
+    const filtered = rubrics
+      .filter((rubric) => validRubricIdsSet.has(rubric.rubric_id))
+      .map((rubric) => ({
+        id: rubric.rubric_id,
+        name: rubric.name || "",
+        description: rubric.description,
+        agent_role: rubric.agent_role,
+      }));
 
     // Sort by name
-    return rubrics.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-  }, [validRubricIds, rubricMapping]);
+    return filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }, [rubrics, validRubricIds]);
 
   // Apply search filter, then sort selected first
   const filteredRubrics = React.useMemo(() => {

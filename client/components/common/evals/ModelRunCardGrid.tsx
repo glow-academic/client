@@ -12,8 +12,10 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 
-type ModelRunsFilters = InputOf<"/api/v3/evals/runs", "post">;
-type ModelRunsResponse = OutputOf<"/api/v3/evals/runs", "post">;
+type EvalNewIn = InputOf<"/api/v3/evals/new", "post">;
+type EvalNewOut = OutputOf<"/api/v3/evals/new", "post">;
+type EvalDetailIn = InputOf<"/api/v3/evals/detail", "post">;
+type EvalDetailOut = OutputOf<"/api/v3/evals/detail", "post">;
 
 export interface ModelRunCardGridProps {
   profileId: string;
@@ -21,6 +23,7 @@ export interface ModelRunCardGridProps {
   onSelect: (ids: string[]) => void;
   agentIds?: string[];
   readonly?: boolean;
+  evalId?: string; // Optional - if provided, use /evals/detail, otherwise use /evals/new
 }
 
 export function ModelRunCardGrid({
@@ -29,10 +32,11 @@ export function ModelRunCardGrid({
   onSelect,
   agentIds,
   readonly = false,
+  evalId,
 }: ModelRunCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [modelRuns, setModelRuns] = React.useState<
-    ModelRunsResponse["model_runs"]
+    EvalNewOut["available_model_runs"] | EvalDetailOut["available_model_runs"]
   >([]);
   const [loading, setLoading] = React.useState(false);
 
@@ -41,21 +45,35 @@ export function ModelRunCardGrid({
     const fetchModelRuns = async () => {
       setLoading(true);
       try {
-        const requestBody: ModelRunsFilters["body"] = {
-          search: searchTerm || null,
-          page: 1,
-          pageSize: 50,
-          // Only filter by agentIds if agents are actually selected
-          // When no agents selected, show top 50 model runs (naive approach)
-          agentIds: agentIds && agentIds.length > 0 ? agentIds : null,
-          eval: true,
-        };
-        // profileId comes from X-Profile-Id header automatically
-        const response = await api.post("/evals/runs", {
-          body: requestBody,
-        });
-        const typedResponse = response as ModelRunsResponse;
-        setModelRuns(typedResponse.model_runs || []);
+        // Use /evals/detail if evalId provided, otherwise /evals/new
+        if (evalId) {
+          const requestBody: EvalDetailIn["body"] = {
+            evalId,
+            available_model_runs_search: searchTerm || null,
+            available_model_runs_agent_ids:
+              agentIds && agentIds.length > 0 ? agentIds : null,
+            available_model_runs_page: 1,
+            available_model_runs_page_size: 50,
+          };
+          const response = await api.post("/evals/detail", {
+            body: requestBody,
+          });
+          const typedResponse = response as EvalDetailOut;
+          setModelRuns(typedResponse.available_model_runs || []);
+        } else {
+          const requestBody: EvalNewIn["body"] = {
+            available_model_runs_search: searchTerm || null,
+            available_model_runs_agent_ids:
+              agentIds && agentIds.length > 0 ? agentIds : null,
+            available_model_runs_page: 1,
+            available_model_runs_page_size: 50,
+          };
+          const response = await api.post("/evals/new", {
+            body: requestBody,
+          });
+          const typedResponse = response as EvalNewOut;
+          setModelRuns(typedResponse.available_model_runs || []);
+        }
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error("Failed to fetch model runs:", error);
@@ -65,7 +83,7 @@ export function ModelRunCardGrid({
     };
 
     fetchModelRuns();
-  }, [profileId, searchTerm, agentIds]);
+  }, [profileId, searchTerm, agentIds, evalId]);
 
   // Apply search filter and sort selected first
   const filteredModelRuns = React.useMemo(() => {

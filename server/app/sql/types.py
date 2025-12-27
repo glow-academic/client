@@ -1953,6 +1953,544 @@ class UpdateDocumentApiResponse(BaseModel):
 
 
 
+# Generated from: create_eval
+
+class CreateEvalSqlParams(BaseModel):
+
+    name: str
+    description: str
+    rubric_id: UUID
+    agent_id: UUID
+    eval_agent_id: UUID
+    model_run_ids: list[UUID]
+    department_ids: list[UUID]
+    active: bool
+    dynamic: bool
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.description,
+            self.rubric_id,
+            self.agent_id,
+            self.eval_agent_id,
+            self.model_run_ids,
+            self.department_ids,
+            self.active,
+            self.dynamic,
+            self.profile_id,
+        )
+
+class CreateEvalSqlRow(BaseModel):
+
+    eval_id: UUID | None = None
+    actor_name: str | None = None
+
+class CreateEvalApiRequest(BaseModel):
+
+    name: str
+    description: str
+    rubric_id: UUID
+    agent_id: UUID
+    eval_agent_id: UUID
+    model_run_ids: list[UUID]
+    department_ids: list[UUID]
+    active: bool
+    dynamic: bool
+
+class CreateEvalApiResponse(BaseModel):
+
+    eval_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: delete_eval
+
+class DeleteEvalSqlParams(BaseModel):
+
+    eval_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.profile_id,
+        )
+
+class DeleteEvalSqlRow(BaseModel):
+
+    eval_id: UUID | None = None
+    eval_name: str | None = None
+    actor_name: str | None = None
+
+class DeleteEvalApiRequest(BaseModel):
+
+    eval_id: UUID
+
+class DeleteEvalApiResponse(BaseModel):
+
+    eval_id: UUID | None = None
+    eval_name: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_eval_detail
+
+class GetEvalDetailSqlParams(BaseModel):
+
+    eval_id: UUID
+    profile_id: UUID
+    available_model_runs_search: str | None = None
+    available_model_runs_agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    available_model_runs_page: int | None = 1
+    available_model_runs_page_size: int | None = 50
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.profile_id,
+            self.available_model_runs_search,
+            self.available_model_runs_agent_ids,
+            self.available_model_runs_page,
+            self.available_model_runs_page_size,
+        )
+
+class QGetEvalDetailV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    roles: list[str] | None
+
+
+
+
+class QGetEvalDetailV3AvailableModelRun(BaseModel):
+
+    model_run_id: UUID | None
+    created_at: str | None
+    model_id: UUID | None
+    model_name: str | None
+    profile_id: UUID | None
+    profile_name: str | None
+    agent_id: UUID | None
+    agent_name: str | None
+    persona_id: UUID | None
+    persona_name: str | None
+    actor_type: str | None
+
+
+
+
+class QGetEvalDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetEvalDetailV3ModelRun(BaseModel):
+
+    model_run_id: UUID | None
+    completed: bool | None
+    assigned_at: str | None
+    status_updated_at: str | None
+    model_run_created_at: str | None
+    model_id: UUID | None
+    model_name: str | None
+    agent_id: UUID | None
+    agent_name: str | None
+    persona_id: UUID | None
+    persona_name: str | None
+    profile_id: UUID | None
+    profile_name: str | None
+    has_grade: bool | None
+    grade_score: int | None
+    grade_passed: bool | None
+    grade_created_at: str | None
+
+
+
+
+class QGetEvalDetailV3Rubric(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+    agent_role: str | None
+
+class GetEvalDetailSqlRow(BaseModel):
+
+    eval_exists: bool | None = None
+    actor_name: str | None = None
+    eval_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    rubric_id: UUID | None = None
+    agent_id: UUID | None = None
+    eval_agent_id: UUID | None = None
+    active: bool | None = None
+    dynamic: bool | None = None
+    rubric_name: str | None = None
+    rubric_description: str | None = None
+    rubric_points: int | None = None
+    rubric_pass_points: int | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    department_ids: list[str] | None = None
+    total_runs: int | None = None
+    completed_runs: int | None = None
+    pending_runs: int | None = None
+    status: str | None = None
+    model_runs: list[QGetEvalDetailV3ModelRun] | None = None
+    departments: list[QGetEvalDetailV3Department] | None = None
+    valid_department_ids: list[str] | None = None
+    eval_agents: list[QGetEvalDetailV3Agent] | None = None
+    valid_eval_agent_ids: list[str] | None = None
+    agents: list[QGetEvalDetailV3Agent] | None = None
+    valid_agent_ids: list[str] | None = None
+    rubrics: list[QGetEvalDetailV3Rubric] | None = None
+    valid_rubric_ids: list[str] | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    available_model_runs: list[QGetEvalDetailV3AvailableModelRun] | None = None
+    available_model_runs_total_count: int | None = None
+    available_model_runs_page: int | None = None
+    available_model_runs_page_size: int | None = None
+    available_model_runs_total_pages: int | None = None
+
+class GetEvalDetailApiRequest(BaseModel):
+
+    eval_id: UUID
+    available_model_runs_search: str | None = None
+    available_model_runs_agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    available_model_runs_page: int | None = 1
+    available_model_runs_page_size: int | None = 50
+
+class GetEvalDetailApiResponse(BaseModel):
+
+    eval_exists: bool | None = None
+    actor_name: str | None = None
+    eval_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    rubric_id: UUID | None = None
+    agent_id: UUID | None = None
+    eval_agent_id: UUID | None = None
+    active: bool | None = None
+    dynamic: bool | None = None
+    rubric_name: str | None = None
+    rubric_description: str | None = None
+    rubric_points: int | None = None
+    rubric_pass_points: int | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    department_ids: list[str] | None = None
+    total_runs: int | None = None
+    completed_runs: int | None = None
+    pending_runs: int | None = None
+    status: str | None = None
+    model_runs: list[QGetEvalDetailV3ModelRun] | None = None
+    departments: list[QGetEvalDetailV3Department] | None = None
+    valid_department_ids: list[str] | None = None
+    eval_agents: list[QGetEvalDetailV3Agent] | None = None
+    valid_eval_agent_ids: list[str] | None = None
+    agents: list[QGetEvalDetailV3Agent] | None = None
+    valid_agent_ids: list[str] | None = None
+    rubrics: list[QGetEvalDetailV3Rubric] | None = None
+    valid_rubric_ids: list[str] | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    available_model_runs: list[QGetEvalDetailV3AvailableModelRun] | None = None
+    available_model_runs_total_count: int | None = None
+    available_model_runs_page: int | None = None
+    available_model_runs_page_size: int | None = None
+    available_model_runs_total_pages: int | None = None
+
+
+
+# Generated from: get_eval_new
+
+class GetEvalNewSqlParams(BaseModel):
+
+    profile_id: UUID
+    available_model_runs_search: str | None = None
+    available_model_runs_agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    available_model_runs_page: int | None = 1
+    available_model_runs_page_size: int | None = 50
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.available_model_runs_search,
+            self.available_model_runs_agent_ids,
+            self.available_model_runs_page,
+            self.available_model_runs_page_size,
+        )
+
+class GetEvalNewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    eval_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    rubric_id: UUID | None = None
+    eval_agent_id: UUID | None = None
+    agent_id: UUID | None = None
+    agent_ids: list[str] | None = None
+    model_run_ids: list[str] | None = None
+    active: bool | None = None
+    dynamic: bool | None = None
+    department_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    departments: list[QGetEvalDetailV3Department] | None = None
+    eval_agents: list[QGetEvalDetailV3Agent] | None = None
+    valid_eval_agent_ids: list[str] | None = None
+    agents: list[QGetEvalDetailV3Agent] | None = None
+    valid_agent_ids: list[str] | None = None
+    rubrics: list[QGetEvalDetailV3Rubric] | None = None
+    valid_rubric_ids: list[str] | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    available_model_runs: list[QGetEvalDetailV3AvailableModelRun] | None = None
+    available_model_runs_total_count: int | None = None
+    available_model_runs_page: int | None = None
+    available_model_runs_page_size: int | None = None
+    available_model_runs_total_pages: int | None = None
+
+class GetEvalNewApiRequest(BaseModel):
+
+    available_model_runs_search: str | None = None
+    available_model_runs_agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    available_model_runs_page: int | None = 1
+    available_model_runs_page_size: int | None = 50
+
+class GetEvalNewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    eval_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    rubric_id: UUID | None = None
+    eval_agent_id: UUID | None = None
+    agent_id: UUID | None = None
+    agent_ids: list[str] | None = None
+    model_run_ids: list[str] | None = None
+    active: bool | None = None
+    dynamic: bool | None = None
+    department_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    departments: list[QGetEvalDetailV3Department] | None = None
+    eval_agents: list[QGetEvalDetailV3Agent] | None = None
+    valid_eval_agent_ids: list[str] | None = None
+    agents: list[QGetEvalDetailV3Agent] | None = None
+    valid_agent_ids: list[str] | None = None
+    rubrics: list[QGetEvalDetailV3Rubric] | None = None
+    valid_rubric_ids: list[str] | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    available_model_runs: list[QGetEvalDetailV3AvailableModelRun] | None = None
+    available_model_runs_total_count: int | None = None
+    available_model_runs_page: int | None = None
+    available_model_runs_page_size: int | None = None
+    available_model_runs_total_pages: int | None = None
+
+
+
+# Generated from: get_evals_list
+
+class GetEvalsListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListEvalsV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListEvalsV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListEvalsV3Eval(BaseModel):
+
+    eval_id: UUID | None
+    name: str | None
+    description: str | None
+    rubric_id: UUID | None
+    agent_id: UUID | None
+    rubric_name: str | None
+    rubric_description: str | None
+    total_runs: int | None
+    completed_runs: int | None
+    pending_runs: int | None
+    status: str | None
+    created_at: str | None
+    updated_at: str | None
+    department_ids: list[str] | None
+    can_edit: bool | None
+    can_delete: bool | None
+
+
+
+
+class QListEvalsV3Option(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QListEvalsV3Rubric(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+
+
+
+class QListEvalsV3RubricStandardGroup(BaseModel):
+
+    rubric_id: UUID | None
+    standard_group_id: UUID | None
+    standard_ids: list[UUID] | None
+
+
+
+
+class QListEvalsV3Standard(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QListEvalsV3StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetEvalsListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    evals: list[QListEvalsV3Eval] | None = None
+    rubrics: list[QListEvalsV3Rubric] | None = None
+    departments: list[QListEvalsV3Department] | None = None
+    agents: list[QListEvalsV3Agent] | None = None
+    standard_groups: list[QListEvalsV3StandardGroup] | None = None
+    standards: list[QListEvalsV3Standard] | None = None
+    rubric_standard_groups: list[QListEvalsV3RubricStandardGroup] | None = None
+    rubric_options: list[QListEvalsV3Option] | None = None
+    department_options: list[QListEvalsV3Option] | None = None
+    agent_options: list[QListEvalsV3Option] | None = None
+
+class GetEvalsListApiRequest(BaseModel):
+
+    pass
+
+class GetEvalsListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    evals: list[QListEvalsV3Eval] | None = None
+    rubrics: list[QListEvalsV3Rubric] | None = None
+    departments: list[QListEvalsV3Department] | None = None
+    agents: list[QListEvalsV3Agent] | None = None
+    standard_groups: list[QListEvalsV3StandardGroup] | None = None
+    standards: list[QListEvalsV3Standard] | None = None
+    rubric_standard_groups: list[QListEvalsV3RubricStandardGroup] | None = None
+    rubric_options: list[QListEvalsV3Option] | None = None
+    department_options: list[QListEvalsV3Option] | None = None
+    agent_options: list[QListEvalsV3Option] | None = None
+
+
+
+# Generated from: update_eval
+
+class UpdateEvalSqlParams(BaseModel):
+
+    eval_id: UUID
+    name: str
+    description: str
+    rubric_id: UUID
+    agent_id: UUID
+    eval_agent_id: UUID
+    model_run_ids: list[UUID]
+    department_ids: list[UUID]
+    active: bool
+    dynamic: bool
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.name,
+            self.description,
+            self.rubric_id,
+            self.agent_id,
+            self.eval_agent_id,
+            self.model_run_ids,
+            self.department_ids,
+            self.active,
+            self.dynamic,
+            self.profile_id,
+        )
+
+class UpdateEvalSqlRow(BaseModel):
+
+    eval_id: UUID | None = None
+    eval_name: str | None = None
+    actor_name: str | None = None
+
+class UpdateEvalApiRequest(BaseModel):
+
+    eval_id: UUID
+    name: str
+    description: str
+    rubric_id: UUID
+    agent_id: UUID
+    eval_agent_id: UUID
+    model_run_ids: list[UUID]
+    department_ids: list[UUID]
+    active: bool
+    dynamic: bool
+
+class UpdateEvalApiResponse(BaseModel):
+
+    eval_id: UUID | None = None
+    eval_name: str | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: create_field
 
 class CreateFieldSqlParams(BaseModel):
@@ -7730,6 +8268,42 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateDocumentApiRequest",
         "UpdateDocumentApiResponse",
     ),
+    "app/sql/v3/evals/create_eval_complete.sql": (
+        "CreateEvalSqlParams",
+        "CreateEvalSqlRow",
+        "CreateEvalApiRequest",
+        "CreateEvalApiResponse",
+    ),
+    "app/sql/v3/evals/delete_eval_complete.sql": (
+        "DeleteEvalSqlParams",
+        "DeleteEvalSqlRow",
+        "DeleteEvalApiRequest",
+        "DeleteEvalApiResponse",
+    ),
+    "app/sql/v3/evals/get_eval_detail_complete.sql": (
+        "GetEvalDetailSqlParams",
+        "GetEvalDetailSqlRow",
+        "GetEvalDetailApiRequest",
+        "GetEvalDetailApiResponse",
+    ),
+    "app/sql/v3/evals/get_eval_new_complete.sql": (
+        "GetEvalNewSqlParams",
+        "GetEvalNewSqlRow",
+        "GetEvalNewApiRequest",
+        "GetEvalNewApiResponse",
+    ),
+    "app/sql/v3/evals/get_evals_list_complete.sql": (
+        "GetEvalsListSqlParams",
+        "GetEvalsListSqlRow",
+        "GetEvalsListApiRequest",
+        "GetEvalsListApiResponse",
+    ),
+    "app/sql/v3/evals/update_eval_complete.sql": (
+        "UpdateEvalSqlParams",
+        "UpdateEvalSqlRow",
+        "UpdateEvalApiRequest",
+        "UpdateEvalApiResponse",
+    ),
     "app/sql/v3/fields/create_field_complete.sql": (
         "CreateFieldSqlParams",
         "CreateFieldSqlRow",
@@ -8352,6 +8926,36 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/documents/update_document_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/create_eval_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/delete_eval_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/get_eval_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/get_eval_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/get_evals_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/evals/update_eval_complete.sql"]
     ) -> SqlString: ...
 
     @overload

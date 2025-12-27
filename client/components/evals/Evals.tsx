@@ -143,7 +143,7 @@ export default function Evals({
     try {
       await deleteEvalAction({
         body: {
-          evalId: deleteItem.id,
+          eval_id: deleteItem.id, // Convert camelCase to snake_case
         },
       });
       // profileId comes from X-Profile-Id header automatically

@@ -1,30 +1,20 @@
 """Eval delete endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
-import asyncpg  # type: ignore
+import asyncpg
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (DeleteEvalApiRequest, DeleteEvalApiResponse,
+                           DeleteEvalSqlParams, DeleteEvalSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DeleteEvalRequest(BaseModel):
-    """Request to delete an eval."""
-
-    evalId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DeleteEvalResponse(BaseModel):
-    """Response from delete eval."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/evals/delete_eval_complete.sql"
 
 
 router = APIRouter()
@@ -32,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/delete",
-    response_model=DeleteEvalResponse,
+    response_model=DeleteEvalApiResponse,
     dependencies=[
         audit_activity(
             "eval.deleted", "{{ actor.name }} deleted eval '{{ eval.name }}'"
@@ -40,55 +30,62 @@ router = APIRouter()
     ],
 )
 async def delete_eval(
-    request: DeleteEvalRequest,
+    request: DeleteEvalApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DeleteEvalResponse:
+) -> DeleteEvalApiResponse:
     """Delete an eval."""
     tags = ["evals"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
         profile_id = http_request.state.profile_id
-        async with transaction(conn):
-            # Check if eval exists
-            eval_check = await conn.fetchrow(
-                "SELECT id, name FROM evals WHERE id = $1",
-                request.evalId,
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
             )
-            if not eval_check:
-                raise ValueError(f"Eval not found: {request.evalId}")
 
-            # Delete eval (cascades via FK)
-            sql_query = load_sql("app/sql/v3/evals/delete_eval.sql")
-            sql_params = (request.evalId, profile_id)
-            result = await conn.fetchrow(sql_query, *sql_params)
+        async with transaction(conn):
+            # Convert API request to SQL params (add profile_id from header)
+            # Use double star pattern: **request.model_dump()
+            params = DeleteEvalSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            if not result:
-                raise ValueError("Failed to delete eval")
+            # Execute query with typed helper - automatically detects and calls function if present
+            result = cast(
+                DeleteEvalSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
-            eval_name = result["eval_name"]
-            actor_name = result["actor_name"]
+            if not result or not result.eval_id:
+                raise ValueError(f"Eval not found: {request.eval_id}")
+
+            eval_name = result.eval_name
+            actor_name = result.actor_name
+
             if actor_name:
                 audit_set(
                     http_request,
                     actor={"name": actor_name, "id": profile_id},
-                    eval={"name": eval_name, "id": request.evalId},
+                    eval={"name": eval_name, "id": str(request.eval_id)},
                 )
 
-        result_data = DeleteEvalResponse(
-            success=True,
-            message=f"Eval '{eval_name}' deleted successfully",
-        )
+        # Convert SQL result to API response
+        api_response = DeleteEvalApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

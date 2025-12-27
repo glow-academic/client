@@ -394,7 +394,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/full",
+    "/simulation",
     response_model=AttemptFullResponse,
     dependencies=[
         audit_activity(
@@ -435,7 +435,7 @@ async def get_attempt_full(
         current_profile_id = http_request.state.profile_id
         # Note: profileId is optional - if not provided, skip role check for backward compatibility
 
-        sql_query = load_sql("app/sql/v3/attempts/get_attempt_full_complete.sql")
+        sql_query = load_sql("app/sql/v3/attempts/get_simulation_attempt_complete.sql")
         sql_params = (request.attemptId,)
         result = await conn.fetchrow(sql_query, *sql_params)
 

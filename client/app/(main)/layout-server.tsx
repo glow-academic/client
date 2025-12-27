@@ -18,8 +18,8 @@ type CreateFeedbackIn = InputOf<"/api/v3/feedback/create", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v3/feedback/create", "post">;
 type RefreshAnalyticsIn = InputOf<"/api/v3/analytics/refresh", "post">;
 type RefreshAnalyticsOut = OutputOf<"/api/v3/analytics/refresh", "post">;
-type AttemptFullIn = InputOf<"/api/v3/attempts/full", "post">;
-type AttemptFullOut = OutputOf<"/api/v3/attempts/full", "post">;
+type AttemptFullIn = InputOf<"/api/v3/attempts/simulation", "post">;
+type AttemptFullOut = OutputOf<"/api/v3/attempts/simulation", "post">;
 type SearchSimulatableProfilesIn = InputOf<
   "/api/v3/profile/simulatable",
   "post"
@@ -81,7 +81,7 @@ const getAttemptFull = async (
   _attemptId: string,
   input: AttemptFullIn
 ): Promise<AttemptFullOut> => {
-  return api.post("/attempts/full", input, {
+  return api.post("/attempts/simulation", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",

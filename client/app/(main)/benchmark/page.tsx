@@ -12,18 +12,33 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalsListIn = InputOf<"/api/v3/evals/list", "post">;
-type EvalsListOut = OutputOf<"/api/v3/evals/list", "post">;
+type BenchmarkBundleIn = InputOf<"/api/v3/benchmark/bundle", "post">;
+type BenchmarkBundleOut = OutputOf<"/api/v3/benchmark/bundle", "post">;
+// For backward compatibility, extract evals list structure from bundle
+type EvalsListOut = {
+  evals: BenchmarkBundleOut["evals"];
+  rubric_mapping: BenchmarkBundleOut["rubric_mapping"];
+  department_mapping: BenchmarkBundleOut["department_mapping"];
+  agent_mapping: BenchmarkBundleOut["agent_mapping"];
+  standard_groups_mapping: BenchmarkBundleOut["standard_groups_mapping"];
+  standards_mapping: BenchmarkBundleOut["standards_mapping"];
+  rubric_standard_groups_mapping: BenchmarkBundleOut["rubric_standard_groups_mapping"];
+  rubric_options: BenchmarkBundleOut["rubric_options"];
+  department_options: BenchmarkBundleOut["department_options"];
+  agent_options: BenchmarkBundleOut["agent_options"];
+};
 
 /** ---- Direct fetch (no Next.js cache) ----
- * Eval list responses can get large. Using cache: 'no-store' to disable Next.js default fetch caching.
+ * Benchmark bundle responses can get large. Using cache: 'no-store' to disable Next.js default fetch caching.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getEvalsList = async (input: EvalsListIn): Promise<EvalsListOut> => {
+const getBenchmarkBundle = async (
+  input: BenchmarkBundleIn,
+): Promise<BenchmarkBundleOut> => {
   "use server";
   const bypassCache = await isHardRefresh();
 
-  return api.post("/evals/list", input, {
+  return api.post("/benchmark/bundle", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -43,13 +58,27 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function BenchmarkPage() {
-  // Build evals filters (empty body - profileId comes from header)
-  const evalsFilters: EvalsListIn = {
+  // Build benchmark bundle filters (empty body - profileId comes from header)
+  const bundleFilters: BenchmarkBundleIn = {
     body: {},
   };
 
-  // Fetch evals list server-side (now includes rubric mappings)
-  const evalsData = await getEvalsList(evalsFilters);
+  // Fetch benchmark bundle server-side (includes evals list and attempts)
+  const bundleData = await getBenchmarkBundle(bundleFilters);
+
+  // Extract evals list structure from bundle for Benchmark component
+  const evalsData: EvalsListOut = {
+    evals: bundleData.evals,
+    rubric_mapping: bundleData.rubric_mapping,
+    department_mapping: bundleData.department_mapping,
+    agent_mapping: bundleData.agent_mapping,
+    standard_groups_mapping: bundleData.standard_groups_mapping,
+    standards_mapping: bundleData.standards_mapping,
+    rubric_standard_groups_mapping: bundleData.rubric_standard_groups_mapping,
+    rubric_options: bundleData.rubric_options,
+    department_options: bundleData.department_options,
+    agent_options: bundleData.agent_options,
+  };
 
   // Build rubric mappings from evals list response (similar to practice page)
   // Transform standard_groups_mapping and standards_mapping into rubric-specific mappings
@@ -132,4 +161,4 @@ export default async function BenchmarkPage() {
 }
 
 /** ---- Export types for client component ---- */
-export type { EvalsListIn, EvalsListOut };
+export type { BenchmarkBundleIn, BenchmarkBundleOut, EvalsListOut };

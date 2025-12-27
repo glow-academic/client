@@ -46,15 +46,15 @@ import {
 } from "@tanstack/react-table";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalAttemptsListIn = InputOf<"/api/v3/evals/attempts/list", "post">;
-type EvalAttemptsListOut = OutputOf<"/api/v3/evals/attempts/list", "post">;
-type EvalAttemptItem = EvalAttemptsListOut["attempts"][number];
+type BenchmarkBundleIn = InputOf<"/api/v3/benchmark/bundle", "post">;
+type BenchmarkBundleOut = OutputOf<"/api/v3/benchmark/bundle", "post">;
+type EvalAttemptItem = BenchmarkBundleOut["attempts"][number];
 
-/** ---- Fetch eval attempts ---- */
-const getEvalAttempts = async (
-  input: EvalAttemptsListIn
-): Promise<EvalAttemptsListOut> => {
-  return api.post("/evals/attempts/list", input, {
+/** ---- Fetch benchmark bundle (includes attempts) ---- */
+const getBenchmarkBundle = async (
+  input: BenchmarkBundleIn
+): Promise<BenchmarkBundleOut> => {
+  return api.post("/benchmark/bundle", input, {
     cache: "no-store",
   });
 };
@@ -138,7 +138,7 @@ export default function EvalAttemptsTable({
           ? statusFilter[0] 
           : undefined;
 
-        const filters: EvalAttemptsListIn = {
+        const filters: BenchmarkBundleIn = {
           body: {
             page,
             pageSize,
@@ -147,7 +147,7 @@ export default function EvalAttemptsTable({
           },
         };
 
-        const data = await getEvalAttempts(filters);
+        const data = await getBenchmarkBundle(filters);
         setAttempts(data.attempts);
         setTotalCount(data.total_count);
       } catch {

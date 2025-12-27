@@ -1,4 +1,4 @@
-"""Integration tests for POST /api/v3/attempts/full endpoint.
+"""Integration tests for POST /api/v3/attempts/simulation endpoint.
 
 This test file covers the core business logic for the attempt full data endpoint:
 
@@ -224,7 +224,7 @@ async def test_get_attempt_full_parent_scenario_id_mapping(
 
     # Call API
     response = await client.post(
-        "/api/v3/attempts/full",
+        "/api/v3/attempts/simulation",
         json={"attemptId": attempt_id},
         headers={"X-Cache-Update": "999999"},
     )
@@ -326,7 +326,7 @@ async def test_get_attempt_full_current_chat_index(
 
     # Call API
     response = await client.post(
-        "/api/v3/attempts/full",
+        "/api/v3/attempts/simulation",
         json={"attemptId": attempt_id},
         headers={"X-Cache-Update": "999999"},
     )

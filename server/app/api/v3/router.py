@@ -15,6 +15,7 @@ from app.api.v3.agents import router as agents_router
 from app.api.v3.analytics import router as analytics_router
 from app.api.v3.attempts import router as attempts_router
 from app.api.v3.auth import router as auth_router
+from app.api.v3.benchmark import router as benchmark_router
 from app.api.v3.cohorts import router as cohorts_router
 from app.api.v3.dashboard import router as dashboard_router
 
@@ -110,6 +111,7 @@ router.include_router(prompts_router)
 router.include_router(staff_router)
 
 # Batch G: Utility Routes
+router.include_router(benchmark_router)
 router.include_router(home_router)
 router.include_router(practice_router)
 router.include_router(pricing_router)

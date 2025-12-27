@@ -1401,126 +1401,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/evals/runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Model Runs
-         * @description Get paginated, filtered model_runs for eval selection.
-         */
-        post: operations["get_model_runs_api_v3_evals_runs_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/evals/run": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Run Eval
-         * @description Run an eval on its pending model_runs.
-         */
-        post: operations["run_eval_api_v3_evals_run_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/evals/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Stop Eval
-         * @description Stop a running eval.
-         */
-        post: operations["stop_eval_api_v3_evals_stop_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/evals/attempt/full": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Eval Attempt Full
-         * @description Get complete eval attempt data with all runs and status.
-         */
-        post: operations["get_eval_attempt_full_api_v3_evals_attempt_full_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/evals/attempt/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Eval Attempt
-         * @description Update eval attempt conversation settings.
-         */
-        post: operations["update_eval_attempt_api_v3_evals_attempt_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/evals/attempts/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Eval Attempts List
-         * @description Get eval attempts list with pagination, filtering, and status information.
-         */
-        post: operations["get_eval_attempts_list_api_v3_evals_attempts_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/rubrics/list": {
         parameters: {
             query?: never;
@@ -2881,7 +2761,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/attempts/full": {
+    "/api/v3/attempts/simulation": {
         parameters: {
             query?: never;
             header?: never;
@@ -2894,7 +2774,27 @@ export interface paths {
          * Get Attempt Full
          * @description Get complete attempt data with all related entities and computed values.
          */
-        post: operations["get_attempt_full_api_v3_attempts_full_post"];
+        post: operations["get_attempt_full_api_v3_attempts_simulation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/attempts/eval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Eval Attempt Full
+         * @description Get complete eval attempt data with all runs and status.
+         */
+        post: operations["get_eval_attempt_full_api_v3_attempts_eval_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3115,6 +3015,26 @@ export interface paths {
          * @description Bulk create or update staff members.
          */
         post: operations["bulk_create_or_update_staff_api_v3_staff_upsert_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/benchmark/bundle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Benchmark Bundle
+         * @description Get benchmark bundle with evals list and eval attempts list.
+         */
+        post: operations["get_benchmark_bundle_api_v3_benchmark_bundle_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6540,6 +6460,18 @@ export interface components {
             /** Totalpages */
             totalPages: number;
         };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item with role information.
+         */
+        AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles: string[];
+        };
         /** AggregatedResults */
         AggregatedResults: {
             /** Totalscore */
@@ -6624,7 +6556,7 @@ export interface components {
          * @description Response containing complete attempt data with all nested structures.
          */
         AttemptFullResponse: {
-            attempt: components["schemas"]["app__api__v3__attempts__full__AttemptItem"];
+            attempt: components["schemas"]["app__api__v3__attempts__simulation__AttemptItem"];
             simulation: components["schemas"]["SimulationItem"];
             /** Attemptprofiles */
             attemptProfiles: components["schemas"]["AttemptProfileItem"][];
@@ -6946,6 +6878,90 @@ export interface components {
              */
             hasOptions: boolean;
         };
+        /**
+         * BenchmarkBundleFilters
+         * @description Filters for benchmark bundle request.
+         */
+        BenchmarkBundleFilters: {
+            /** Evalids */
+            evalIds?: string[] | null;
+            /** Status */
+            status?: string | null;
+            /** Archived */
+            archived?: boolean | null;
+            /** Search */
+            search?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @default 20
+             */
+            pageSize: number;
+        };
+        /**
+         * BenchmarkBundleResponse
+         * @description Response for benchmark bundle endpoint.
+         */
+        BenchmarkBundleResponse: {
+            /** Evals */
+            evals: components["schemas"]["app__api__v3__benchmark__bundle__EvalItem"][];
+            /** Attempts */
+            attempts: components["schemas"]["EvalAttemptItem"][];
+            /** Total Count */
+            total_count: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+            /** Rubric Mapping */
+            rubric_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Standard Groups Mapping */
+            standard_groups_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__benchmark__bundle__StandardGroupMappingItem"];
+            };
+            /** Standards Mapping */
+            standards_mapping: {
+                [key: string]: components["schemas"]["StandardMappingItem"];
+            };
+            /** Rubric Standard Groups Mapping */
+            rubric_standard_groups_mapping: {
+                [key: string]: {
+                    [key: string]: string[];
+                };
+            };
+            /** Rubric Options */
+            rubric_options: {
+                [key: string]: string;
+            }[];
+            /** Department Options */
+            department_options: {
+                [key: string]: string;
+            }[];
+            /** Agent Options */
+            agent_options: {
+                [key: string]: string;
+            }[];
+        };
         /** BulkArchiveAttemptsRequest */
         BulkArchiveAttemptsRequest: {
             /** Archived */
@@ -7059,7 +7075,7 @@ export interface components {
             chat: components["schemas"]["ChatItem"];
             scenario: components["schemas"]["ScenarioItem"] | null;
             /** Messages */
-            messages: components["schemas"]["app__api__v3__attempts__full__MessageItem"][];
+            messages: components["schemas"]["app__api__v3__attempts__simulation__MessageItem"][];
             /** Hints */
             hints: components["schemas"]["HintsByMessage"][];
             grade?: components["schemas"]["GradeItem"] | null;
@@ -7426,52 +7442,42 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * CreateEvalRequest
-         * @description Request to create an eval.
-         */
-        CreateEvalRequest: {
+        /** CreateEvalApiRequest */
+        CreateEvalApiRequest: {
             /** Name */
             name: string;
             /** Description */
             description: string;
-            /** Rubric Id */
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
             rubric_id: string;
-            /** Agent Id */
+            /**
+             * Agent Id
+             * Format: uuid
+             */
             agent_id: string;
-            /** Eval Agent Id */
+            /**
+             * Eval Agent Id
+             * Format: uuid
+             */
             eval_agent_id: string;
             /** Model Run Ids */
             model_run_ids: string[];
             /** Department Ids */
-            department_ids?: string[] | null;
-            /**
-             * Active
-             * @default true
-             */
+            department_ids: string[];
+            /** Active */
             active: boolean;
-            /**
-             * Dynamic
-             * @default false
-             */
+            /** Dynamic */
             dynamic: boolean;
-            /**
-             * Run
-             * @default false
-             */
-            run: boolean;
         };
-        /**
-         * CreateEvalResponse
-         * @description Response from create eval.
-         */
-        CreateEvalResponse: {
-            /** Success */
-            success: boolean;
-            /** Evalid */
-            evalId: string;
-            /** Message */
-            message: string;
+        /** CreateEvalApiResponse */
+        CreateEvalApiResponse: {
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** CreateFeedbackRequest */
         CreateFeedbackRequest: {
@@ -8295,23 +8301,22 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * DeleteEvalRequest
-         * @description Request to delete an eval.
-         */
-        DeleteEvalRequest: {
-            /** Evalid */
-            evalId: string;
+        /** DeleteEvalApiRequest */
+        DeleteEvalApiRequest: {
+            /**
+             * Eval Id
+             * Format: uuid
+             */
+            eval_id: string;
         };
-        /**
-         * DeleteEvalResponse
-         * @description Response from delete eval.
-         */
-        DeleteEvalResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** DeleteEvalApiResponse */
+        DeleteEvalApiResponse: {
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Eval Name */
+            eval_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** DeleteFieldApiRequest */
         DeleteFieldApiRequest: {
@@ -8967,8 +8972,8 @@ export interface components {
          * @description Response for eval attempt full endpoint.
          */
         EvalAttemptFullResponse: {
-            attempt: components["schemas"]["app__api__v3__evals__attempt__full__AttemptItem"];
-            eval: components["schemas"]["app__api__v3__evals__attempt__full__EvalItem"];
+            attempt: components["schemas"]["app__api__v3__attempts__eval__AttemptItem"];
+            eval: components["schemas"]["app__api__v3__attempts__eval__EvalItem"];
             /** Runs */
             runs: components["schemas"]["RunItem"][];
             status_summary: components["schemas"]["StatusSummary"];
@@ -9004,46 +9009,6 @@ export interface components {
             pending_runs: number;
         };
         /**
-         * EvalAttemptsFilters
-         * @description Filters for eval attempts list request.
-         */
-        EvalAttemptsFilters: {
-            /** Evalids */
-            evalIds?: string[] | null;
-            /** Status */
-            status?: string | null;
-            /** Archived */
-            archived?: boolean | null;
-            /** Search */
-            search?: string | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number;
-            /**
-             * Pagesize
-             * @default 20
-             */
-            pageSize: number;
-        };
-        /**
-         * EvalAttemptsListResponse
-         * @description Response for eval attempts list endpoint.
-         */
-        EvalAttemptsListResponse: {
-            /** Attempts */
-            attempts: components["schemas"]["EvalAttemptItem"][];
-            /** Total Count */
-            total_count: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /**
          * EvalCompletedPayload
          * @description Response indicating all runs in eval are completed.
          */
@@ -9054,14 +9019,6 @@ export interface components {
             attempt_id: string;
             /** Message */
             message: string;
-        };
-        /**
-         * EvalDetailRequest
-         * @description Request to get eval details.
-         */
-        EvalDetailRequest: {
-            /** Evalid */
-            evalId: string;
         };
         /**
          * EvalEnterErrorPayload
@@ -9139,11 +9096,6 @@ export interface components {
             /** Attempt Id */
             attempt_id: string;
         };
-        /**
-         * EvalNewRequest
-         * @description Request for default eval detail.
-         */
-        EvalNewRequest: Record<string, never>;
         /**
          * EvalProcessNextErrorPayload
          * @description Response indicating an error occurred while processing next run.
@@ -9376,61 +9328,6 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
-        };
-        /**
-         * EvalsFilters
-         * @description Filters for evals list request.
-         */
-        EvalsFilters: Record<string, never>;
-        /**
-         * EvalsListResponse
-         * @description Response for evals list endpoint.
-         */
-        EvalsListResponse: {
-            /** Evals */
-            evals: components["schemas"]["app__api__v3__evals__list__EvalItem"][];
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__evals__list__StandardGroupMappingItem"];
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["StandardMappingItem"];
-            };
-            /** Rubric Standard Groups Mapping */
-            rubric_standard_groups_mapping: {
-                [key: string]: {
-                    [key: string]: string[];
-                };
-            };
-            /** Rubric Options */
-            rubric_options: {
-                [key: string]: string;
-            }[];
-            /** Department Options */
-            department_options: {
-                [key: string]: string;
-            }[];
-            /** Agent Options */
-            agent_options: {
-                [key: string]: string;
-            }[];
         };
         /**
          * ExportRequest
@@ -10152,6 +10049,206 @@ export interface components {
             valid_department_ids?: string[] | null;
             /** Document Type Options */
             document_type_options?: string[] | null;
+        };
+        /** GetEvalDetailApiRequest */
+        GetEvalDetailApiRequest: {
+            /**
+             * Eval Id
+             * Format: uuid
+             */
+            eval_id: string;
+            /** Available Model Runs Search */
+            available_model_runs_search?: string | null;
+            /** Available Model Runs Agent Ids */
+            available_model_runs_agent_ids?: string[] | null;
+            /**
+             * Available Model Runs Page
+             * @default 1
+             */
+            available_model_runs_page: number | null;
+            /**
+             * Available Model Runs Page Size
+             * @default 50
+             */
+            available_model_runs_page_size: number | null;
+        };
+        /** GetEvalDetailApiResponse */
+        GetEvalDetailApiResponse: {
+            /** Eval Exists */
+            eval_exists?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Eval Agent Id */
+            eval_agent_id?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Dynamic */
+            dynamic?: boolean | null;
+            /** Rubric Name */
+            rubric_name?: string | null;
+            /** Rubric Description */
+            rubric_description?: string | null;
+            /** Rubric Points */
+            rubric_points?: number | null;
+            /** Rubric Pass Points */
+            rubric_pass_points?: number | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Total Runs */
+            total_runs?: number | null;
+            /** Completed Runs */
+            completed_runs?: number | null;
+            /** Pending Runs */
+            pending_runs?: number | null;
+            /** Status */
+            status?: string | null;
+            /** Model Runs */
+            model_runs?: components["schemas"]["QGetEvalDetailV3ModelRun"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetEvalDetailV3Department"][] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Eval Agents */
+            eval_agents?: components["schemas"]["QGetEvalDetailV3Agent"][] | null;
+            /** Valid Eval Agent Ids */
+            valid_eval_agent_ids?: string[] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetEvalDetailV3Agent"][] | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetEvalDetailV3Rubric"][] | null;
+            /** Valid Rubric Ids */
+            valid_rubric_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Available Model Runs */
+            available_model_runs?: components["schemas"]["QGetEvalDetailV3AvailableModelRun"][] | null;
+            /** Available Model Runs Total Count */
+            available_model_runs_total_count?: number | null;
+            /** Available Model Runs Page */
+            available_model_runs_page?: number | null;
+            /** Available Model Runs Page Size */
+            available_model_runs_page_size?: number | null;
+            /** Available Model Runs Total Pages */
+            available_model_runs_total_pages?: number | null;
+        };
+        /** GetEvalNewApiRequest */
+        GetEvalNewApiRequest: {
+            /** Available Model Runs Search */
+            available_model_runs_search?: string | null;
+            /** Available Model Runs Agent Ids */
+            available_model_runs_agent_ids?: string[] | null;
+            /**
+             * Available Model Runs Page
+             * @default 1
+             */
+            available_model_runs_page: number | null;
+            /**
+             * Available Model Runs Page Size
+             * @default 50
+             */
+            available_model_runs_page_size: number | null;
+        };
+        /** GetEvalNewApiResponse */
+        GetEvalNewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Eval Agent Id */
+            eval_agent_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Model Run Ids */
+            model_run_ids?: string[] | null;
+            /** Active */
+            active?: boolean | null;
+            /** Dynamic */
+            dynamic?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetEvalDetailV3Department"][] | null;
+            /** Eval Agents */
+            eval_agents?: components["schemas"]["QGetEvalDetailV3Agent"][] | null;
+            /** Valid Eval Agent Ids */
+            valid_eval_agent_ids?: string[] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetEvalDetailV3Agent"][] | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetEvalDetailV3Rubric"][] | null;
+            /** Valid Rubric Ids */
+            valid_rubric_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Available Model Runs */
+            available_model_runs?: components["schemas"]["QGetEvalDetailV3AvailableModelRun"][] | null;
+            /** Available Model Runs Total Count */
+            available_model_runs_total_count?: number | null;
+            /** Available Model Runs Page */
+            available_model_runs_page?: number | null;
+            /** Available Model Runs Page Size */
+            available_model_runs_page_size?: number | null;
+            /** Available Model Runs Total Pages */
+            available_model_runs_total_pages?: number | null;
+        };
+        /** GetEvalsListApiRequest */
+        GetEvalsListApiRequest: Record<string, never>;
+        /** GetEvalsListApiResponse */
+        GetEvalsListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Evals */
+            evals?: components["schemas"]["QListEvalsV3Eval"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QListEvalsV3Rubric"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QListEvalsV3Department"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QListEvalsV3Agent"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["QListEvalsV3StandardGroup"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["QListEvalsV3Standard"][] | null;
+            /** Rubric Standard Groups */
+            rubric_standard_groups?: components["schemas"]["QListEvalsV3RubricStandardGroup"][] | null;
+            /** Rubric Options */
+            rubric_options?: components["schemas"]["QListEvalsV3Option"][] | null;
+            /** Department Options */
+            department_options?: components["schemas"]["QListEvalsV3Option"][] | null;
+            /** Agent Options */
+            agent_options?: components["schemas"]["QListEvalsV3Option"][] | null;
         };
         /** GetFieldDetailApiRequest */
         GetFieldDetailApiRequest: {
@@ -12528,60 +12625,28 @@ export interface components {
             output_ppm: number;
         };
         /**
-         * ModelRunsFilters
-         * @description Filters for model_runs query request.
+         * ModelRunItem
+         * @description Model run item with aggregated metrics.
          */
-        ModelRunsFilters: {
-            /** Startdate */
-            startDate?: string | null;
-            /** Enddate */
-            endDate?: string | null;
-            /** Modelids */
-            modelIds?: string[] | null;
-            /** Agentids */
-            agentIds?: string[] | null;
-            /** Personaids */
-            personaIds?: string[] | null;
-            /** Agenttype */
-            agentType?: string | null;
-            /** Search */
-            search?: string | null;
-            /** Eval */
-            eval?: boolean | null;
-            /** Page */
-            page?: number | null;
-            /** Pagesize */
-            pageSize?: number | null;
-        };
-        /**
-         * ModelRunsResponse
-         * @description Response for model_runs query endpoint.
-         */
-        ModelRunsResponse: {
-            /** Model Runs */
-            model_runs: components["schemas"]["app__api__v3__evals__runs__ModelRunItem"][];
-            /** Total Count */
-            total_count: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: string;
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: string;
-            };
+        ModelRunItem: {
+            /** Model Run Id */
+            model_run_id: string;
+            /** Created At */
+            created_at: string;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** Model Id */
+            model_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Debug Info */
+            debug_info?: components["schemas"]["DebugInfoItem"][] | null;
         };
         /**
          * NumericAttemptFact
@@ -13008,7 +13073,7 @@ export interface components {
          */
         PricingAnalyticsResponse: {
             /** Model Runs */
-            model_runs: components["schemas"]["app__api__v3__pricing__analytics__ModelRunItem"][];
+            model_runs: components["schemas"]["ModelRunItem"][];
             /** Model Mapping */
             model_mapping: {
                 [key: string]: components["schemas"]["ModelMappingWithPricing"];
@@ -13844,6 +13909,99 @@ export interface components {
             created_at: string | null;
             /** Updated At */
             updated_at: string | null;
+        };
+        /** QGetEvalDetailV3Agent */
+        QGetEvalDetailV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Roles */
+            roles: string[] | null;
+        };
+        /** QGetEvalDetailV3AvailableModelRun */
+        QGetEvalDetailV3AvailableModelRun: {
+            /** Model Run Id */
+            model_run_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Model Name */
+            model_name: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Profile Name */
+            profile_name: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Agent Name */
+            agent_name: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Actor Type */
+            actor_type: string | null;
+        };
+        /** QGetEvalDetailV3Department */
+        QGetEvalDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetEvalDetailV3ModelRun */
+        QGetEvalDetailV3ModelRun: {
+            /** Model Run Id */
+            model_run_id: string | null;
+            /** Completed */
+            completed: boolean | null;
+            /** Assigned At */
+            assigned_at: string | null;
+            /** Status Updated At */
+            status_updated_at: string | null;
+            /** Model Run Created At */
+            model_run_created_at: string | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Model Name */
+            model_name: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Agent Name */
+            agent_name: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Profile Name */
+            profile_name: string | null;
+            /** Has Grade */
+            has_grade: boolean | null;
+            /** Grade Score */
+            grade_score: number | null;
+            /** Grade Passed */
+            grade_passed: boolean | null;
+            /** Grade Created At */
+            grade_created_at: string | null;
+        };
+        /** QGetEvalDetailV3Rubric */
+        QGetEvalDetailV3Rubric: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Agent Role */
+            agent_role: string | null;
         };
         /** QGetFieldDetailV3Department */
         QGetFieldDetailV3Department: {
@@ -15619,6 +15777,112 @@ export interface components {
             /** Label */
             label: string | null;
         };
+        /** QListEvalsV3Agent */
+        QListEvalsV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListEvalsV3Department */
+        QListEvalsV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListEvalsV3Eval */
+        QListEvalsV3Eval: {
+            /** Eval Id */
+            eval_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Rubric Name */
+            rubric_name: string | null;
+            /** Rubric Description */
+            rubric_description: string | null;
+            /** Total Runs */
+            total_runs: number | null;
+            /** Completed Runs */
+            completed_runs: number | null;
+            /** Pending Runs */
+            pending_runs: number | null;
+            /** Status */
+            status: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+        };
+        /** QListEvalsV3Option */
+        QListEvalsV3Option: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
+        /** QListEvalsV3Rubric */
+        QListEvalsV3Rubric: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+        };
+        /** QListEvalsV3RubricStandardGroup */
+        QListEvalsV3RubricStandardGroup: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Standard Ids */
+            standard_ids: string[] | null;
+        };
+        /** QListEvalsV3Standard */
+        QListEvalsV3Standard: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** QListEvalsV3StandardGroup */
+        QListEvalsV3StandardGroup: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+        };
         /** QListFieldsV3Department */
         QListFieldsV3Department: {
             /** Department Id */
@@ -16753,7 +17017,7 @@ export interface components {
             rubric_agent_id?: string | null;
             /** Agent Mapping */
             agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__rubrics__detail__AgentMappingItem"];
+                [key: string]: components["schemas"]["AgentMappingItem"];
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
@@ -16906,7 +17170,7 @@ export interface components {
             };
             /** Standardgroupsmapping */
             standardGroupsMapping: {
-                [key: string]: components["schemas"]["app__api__v3__attempts__full__StandardGroupMappingItem"];
+                [key: string]: components["schemas"]["app__api__v3__attempts__simulation__StandardGroupMappingItem"];
             };
             /** Standardsmapping */
             standardsMapping: {
@@ -16947,28 +17211,6 @@ export interface components {
             simulation_options: {
                 [key: string]: string;
             }[];
-        };
-        /**
-         * RunEvalRequest
-         * @description Request to run an eval.
-         */
-        RunEvalRequest: {
-            /** Evalid */
-            evalId: string;
-        };
-        /**
-         * RunEvalResponse
-         * @description Response from run eval.
-         */
-        RunEvalResponse: {
-            /** Success */
-            success: boolean;
-            /** Evalid */
-            evalId: string;
-            /** Queued Count */
-            queued_count: number;
-            /** Message */
-            message: string;
         };
         /**
          * RunItem
@@ -18328,28 +18570,6 @@ export interface components {
             total: number;
         };
         /**
-         * StopEvalRequest
-         * @description Request to stop an eval.
-         */
-        StopEvalRequest: {
-            /** Evalid */
-            evalId: string;
-        };
-        /**
-         * StopEvalResponse
-         * @description Response from stop eval.
-         */
-        StopEvalResponse: {
-            /** Success */
-            success: boolean;
-            /** Evalid */
-            evalId: string;
-            /** Stopped Count */
-            stopped_count: number;
-            /** Message */
-            message: string;
-        };
-        /**
          * StopSimulationErrorPayload
          * @description Response indicating an error occurred while stopping simulation.
          */
@@ -18712,69 +18932,49 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * UpdateEvalAttemptRequest
-         * @description Request to update an eval attempt.
-         */
-        UpdateEvalAttemptRequest: {
-            /** Attemptid */
-            attemptId: string;
-            /** Conversation Mode */
-            conversation_mode?: boolean | null;
-            /** Conversation Agent Id */
-            conversation_agent_id?: string | null;
-            /** Conversation Max Turns */
-            conversation_max_turns?: number | null;
-        };
-        /**
-         * UpdateEvalAttemptResponse
-         * @description Response from update eval attempt.
-         */
-        UpdateEvalAttemptResponse: {
-            /** Success */
-            success: boolean;
-            /** Attemptid */
-            attemptId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * UpdateEvalRequest
-         * @description Request to update an eval.
-         */
-        UpdateEvalRequest: {
-            /** Evalid */
-            evalId: string;
+        /** UpdateEvalApiRequest */
+        UpdateEvalApiRequest: {
+            /**
+             * Eval Id
+             * Format: uuid
+             */
+            eval_id: string;
             /** Name */
             name: string;
             /** Description */
             description: string;
-            /** Rubric Id */
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
             rubric_id: string;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Eval Agent Id */
-            eval_agent_id?: string | null;
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Eval Agent Id
+             * Format: uuid
+             */
+            eval_agent_id: string;
             /** Model Run Ids */
-            model_run_ids?: string[] | null;
+            model_run_ids: string[];
             /** Department Ids */
-            department_ids?: string[] | null;
+            department_ids: string[];
             /** Active */
-            active?: boolean | null;
+            active: boolean;
             /** Dynamic */
-            dynamic?: boolean | null;
+            dynamic: boolean;
         };
-        /**
-         * UpdateEvalResponse
-         * @description Response from update eval.
-         */
-        UpdateEvalResponse: {
-            /** Success */
-            success: boolean;
-            /** Evalid */
-            evalId: string;
-            /** Message */
-            message: string;
+        /** UpdateEvalApiResponse */
+        UpdateEvalApiResponse: {
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Eval Name */
+            eval_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** UpdateFieldApiRequest */
         UpdateFieldApiRequest: {
@@ -19571,8 +19771,65 @@ export interface components {
             /** Upload Id */
             upload_id?: string | null;
         };
+        /**
+         * AttemptItem
+         * @description Eval attempt item.
+         */
+        app__api__v3__attempts__eval__AttemptItem: {
+            /** Id */
+            id: string;
+            /** Created At */
+            created_at: string;
+            /** Eval Id */
+            eval_id: string;
+            /** Archived */
+            archived: boolean;
+            /**
+             * Conversation Mode
+             * @default false
+             */
+            conversation_mode: boolean;
+            /** Conversation Agent Id */
+            conversation_agent_id?: string | null;
+            /** Conversation Max Turns */
+            conversation_max_turns?: number | null;
+        };
+        /**
+         * EvalItem
+         * @description Eval item in attempt response.
+         */
+        app__api__v3__attempts__eval__EvalItem: {
+            /** Eval Id */
+            eval_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Agent Id */
+            agent_id: string;
+            /** Eval Agent Id */
+            eval_agent_id: string;
+            /**
+             * Dynamic
+             * @default false
+             */
+            dynamic: boolean;
+            /** Rubric Name */
+            rubric_name: string;
+            /** Rubric Description */
+            rubric_description: string;
+            /**
+             * System Prompt
+             * @default
+             */
+            system_prompt: string;
+            /** Conversation Agent Name */
+            conversation_agent_name?: string | null;
+        };
         /** AttemptItem */
-        app__api__v3__attempts__full__AttemptItem: {
+        app__api__v3__attempts__simulation__AttemptItem: {
             /** Id */
             id: string;
             /** Createdat */
@@ -19587,7 +19844,7 @@ export interface components {
             profileId?: string | null;
         };
         /** MessageItem */
-        app__api__v3__attempts__full__MessageItem: {
+        app__api__v3__attempts__simulation__MessageItem: {
             /** Id */
             id: string;
             /** Createdat */
@@ -19608,7 +19865,59 @@ export interface components {
             feedbacks?: components["schemas"]["MessageFeedbackItem"][] | null;
         };
         /** StandardGroupMappingItem */
-        app__api__v3__attempts__full__StandardGroupMappingItem: {
+        app__api__v3__attempts__simulation__StandardGroupMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+            /** Passpoints */
+            passPoints: number;
+        };
+        /**
+         * EvalItem
+         * @description Individual eval item in the response.
+         */
+        app__api__v3__benchmark__bundle__EvalItem: {
+            /** Eval Id */
+            eval_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Agent Id */
+            agent_id: string;
+            /** Rubric Name */
+            rubric_name: string;
+            /** Rubric Description */
+            rubric_description: string;
+            /** Total Runs */
+            total_runs: number;
+            /** Completed Runs */
+            completed_runs: number;
+            /** Pending Runs */
+            pending_runs: number;
+            /** Status */
+            status: string;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+        };
+        /**
+         * StandardGroupMappingItem
+         * @description Standard group mapping item with rubric context.
+         */
+        app__api__v3__benchmark__bundle__StandardGroupMappingItem: {
             /** Name */
             name: string;
             /** Description */
@@ -19739,401 +20048,6 @@ export interface components {
             cohortNames: string[];
             /** Practicescenarioid */
             practiceScenarioId?: string | null;
-        };
-        /**
-         * AttemptItem
-         * @description Eval attempt item.
-         */
-        app__api__v3__evals__attempt__full__AttemptItem: {
-            /** Id */
-            id: string;
-            /** Created At */
-            created_at: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Archived */
-            archived: boolean;
-            /**
-             * Conversation Mode
-             * @default false
-             */
-            conversation_mode: boolean;
-            /** Conversation Agent Id */
-            conversation_agent_id?: string | null;
-            /** Conversation Max Turns */
-            conversation_max_turns?: number | null;
-        };
-        /**
-         * EvalItem
-         * @description Eval item in attempt response.
-         */
-        app__api__v3__evals__attempt__full__EvalItem: {
-            /** Eval Id */
-            eval_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Agent Id */
-            agent_id: string;
-            /** Eval Agent Id */
-            eval_agent_id: string;
-            /**
-             * Dynamic
-             * @default false
-             */
-            dynamic: boolean;
-            /** Rubric Name */
-            rubric_name: string;
-            /** Rubric Description */
-            rubric_description: string;
-            /**
-             * System Prompt
-             * @default
-             */
-            system_prompt: string;
-            /** Conversation Agent Name */
-            conversation_agent_name?: string | null;
-        };
-        /**
-         * AgentMappingItem
-         * @description Agent mapping item with role information.
-         */
-        app__api__v3__evals__detail__AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Roles
-             * @default []
-             */
-            roles: string[];
-        };
-        /**
-         * EvalDetailResponse
-         * @description Detailed eval response with all fields and metadata.
-         */
-        app__api__v3__evals__detail__EvalDetailResponse: {
-            /** Eval Id */
-            eval_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Eval Agent Id */
-            eval_agent_id: string | null;
-            /** Active */
-            active: boolean;
-            /** Dynamic */
-            dynamic: boolean;
-            /** Rubric Name */
-            rubric_name: string;
-            /** Rubric Description */
-            rubric_description: string;
-            /** Rubric Points */
-            rubric_points: number;
-            /** Rubric Pass Points */
-            rubric_pass_points: number;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Total Runs */
-            total_runs: number;
-            /** Completed Runs */
-            completed_runs: number;
-            /** Pending Runs */
-            pending_runs: number;
-            /** Status */
-            status: string;
-            /** Model Runs */
-            model_runs: components["schemas"]["app__api__v3__evals__detail__ModelRunItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Eval Agent Mapping */
-            eval_agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__evals__detail__AgentMappingItem"];
-            } | null;
-            /** Valid Eval Agent Ids */
-            valid_eval_agent_ids: string[] | null;
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__evals__detail__AgentMappingItem"];
-            };
-            /** Valid Agent Ids */
-            valid_agent_ids: string[];
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: components["schemas"]["RubricMappingItem"];
-            } | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * ModelRunItem
-         * @description Model run item in eval detail.
-         */
-        app__api__v3__evals__detail__ModelRunItem: {
-            /** Model Run Id */
-            model_run_id: string;
-            /** Completed */
-            completed: boolean;
-            /** Assigned At */
-            assigned_at: string;
-            /** Status Updated At */
-            status_updated_at: string;
-            /** Model Run Created At */
-            model_run_created_at: string;
-            /** Model Id */
-            model_id: string | null;
-            /** Model Name */
-            model_name: string | null;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Agent Name */
-            agent_name: string | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Has Grade */
-            has_grade: boolean;
-            /** Grade Score */
-            grade_score: number | null;
-            /** Grade Passed */
-            grade_passed: boolean | null;
-            /** Grade Created At */
-            grade_created_at: string | null;
-        };
-        /**
-         * EvalItem
-         * @description Individual eval item in the response.
-         */
-        app__api__v3__evals__list__EvalItem: {
-            /** Eval Id */
-            eval_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Agent Id */
-            agent_id: string;
-            /** Rubric Name */
-            rubric_name: string;
-            /** Rubric Description */
-            rubric_description: string;
-            /** Total Runs */
-            total_runs: number;
-            /** Completed Runs */
-            completed_runs: number;
-            /** Pending Runs */
-            pending_runs: number;
-            /** Status */
-            status: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * StandardGroupMappingItem
-         * @description Standard group mapping item with rubric context.
-         */
-        app__api__v3__evals__list__StandardGroupMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-        };
-        /**
-         * AgentMappingItem
-         * @description Agent mapping item with role information.
-         */
-        app__api__v3__evals__new__AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Roles
-             * @default []
-             */
-            roles: string[];
-        };
-        /**
-         * EvalDetailResponse
-         * @description Detailed eval response with all fields and metadata.
-         */
-        app__api__v3__evals__new__EvalDetailResponse: {
-            /** Eval Id */
-            eval_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Eval Agent Id */
-            eval_agent_id: string | null;
-            /** Active */
-            active: boolean;
-            /** Dynamic */
-            dynamic: boolean;
-            /** Rubric Name */
-            rubric_name: string;
-            /** Rubric Description */
-            rubric_description: string;
-            /** Rubric Points */
-            rubric_points: number;
-            /** Rubric Pass Points */
-            rubric_pass_points: number;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Total Runs */
-            total_runs: number;
-            /** Completed Runs */
-            completed_runs: number;
-            /** Pending Runs */
-            pending_runs: number;
-            /** Status */
-            status: string;
-            /** Model Runs */
-            model_runs: components["schemas"]["app__api__v3__evals__new__ModelRunItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Eval Agent Mapping */
-            eval_agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__evals__new__AgentMappingItem"];
-            } | null;
-            /** Valid Eval Agent Ids */
-            valid_eval_agent_ids: string[] | null;
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__evals__new__AgentMappingItem"];
-            };
-            /** Valid Agent Ids */
-            valid_agent_ids: string[];
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: components["schemas"]["RubricMappingItem"];
-            } | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * ModelRunItem
-         * @description Model run item in eval detail.
-         */
-        app__api__v3__evals__new__ModelRunItem: {
-            /** Model Run Id */
-            model_run_id: string;
-            /** Completed */
-            completed: boolean;
-            /** Assigned At */
-            assigned_at: string;
-            /** Status Updated At */
-            status_updated_at: string;
-            /** Model Run Created At */
-            model_run_created_at: string;
-            /** Model Id */
-            model_id: string | null;
-            /** Model Name */
-            model_name: string | null;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Agent Name */
-            agent_name: string | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Has Grade */
-            has_grade: boolean;
-            /** Grade Score */
-            grade_score: number | null;
-            /** Grade Passed */
-            grade_passed: boolean | null;
-            /** Grade Created At */
-            grade_created_at: string | null;
-        };
-        /**
-         * ModelRunItem
-         * @description Model run item for selection.
-         */
-        app__api__v3__evals__runs__ModelRunItem: {
-            /** Model Run Id */
-            model_run_id: string;
-            /** Created At */
-            created_at: string;
-            /** Model Id */
-            model_id: string | null;
-            /** Model Name */
-            model_name: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Agent Name */
-            agent_name: string | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Actor Type */
-            actor_type: string | null;
         };
         /**
          * AttemptHistoryRow
@@ -20510,30 +20424,6 @@ export interface components {
             passPoints: number;
         };
         /**
-         * ModelRunItem
-         * @description Model run item with aggregated metrics.
-         */
-        app__api__v3__pricing__analytics__ModelRunItem: {
-            /** Model Run Id */
-            model_run_id: string;
-            /** Created At */
-            created_at: string;
-            /** Input Tokens */
-            input_tokens: number;
-            /** Output Tokens */
-            output_tokens: number;
-            /** Model Id */
-            model_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Debug Info */
-            debug_info?: components["schemas"]["DebugInfoItem"][] | null;
-        };
-        /**
          * MessageItem
          * @description Message item schema.
          */
@@ -20620,18 +20510,6 @@ export interface components {
             description?: string | null;
             /** Points */
             points: number;
-        };
-        /**
-         * AgentMappingItem
-         * @description Agent mapping item with role information.
-         */
-        app__api__v3__rubrics__detail__AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Roles */
-            roles: string[];
         };
         /**
          * SimulationMappingItem
@@ -22998,7 +22876,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EvalsFilters"];
+                "application/json": components["schemas"]["GetEvalsListApiRequest"];
             };
         };
         responses: {
@@ -23008,7 +22886,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EvalsListResponse"];
+                    "application/json": components["schemas"]["GetEvalsListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23034,7 +22912,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EvalDetailRequest"];
+                "application/json": components["schemas"]["GetEvalDetailApiRequest"];
             };
         };
         responses: {
@@ -23044,7 +22922,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__evals__detail__EvalDetailResponse"];
+                    "application/json": components["schemas"]["GetEvalDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23070,7 +22948,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EvalNewRequest"];
+                "application/json": components["schemas"]["GetEvalNewApiRequest"];
             };
         };
         responses: {
@@ -23080,7 +22958,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__evals__new__EvalDetailResponse"];
+                    "application/json": components["schemas"]["GetEvalNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23106,7 +22984,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateEvalRequest"];
+                "application/json": components["schemas"]["CreateEvalApiRequest"];
             };
         };
         responses: {
@@ -23116,7 +22994,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateEvalResponse"];
+                    "application/json": components["schemas"]["CreateEvalApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23142,7 +23020,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateEvalRequest"];
+                "application/json": components["schemas"]["UpdateEvalApiRequest"];
             };
         };
         responses: {
@@ -23152,7 +23030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateEvalResponse"];
+                    "application/json": components["schemas"]["UpdateEvalApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23178,7 +23056,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteEvalRequest"];
+                "application/json": components["schemas"]["DeleteEvalApiRequest"];
             };
         };
         responses: {
@@ -23188,223 +23066,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteEvalResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_model_runs_api_v3_evals_runs_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ModelRunsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ModelRunsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    run_eval_api_v3_evals_run_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RunEvalRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RunEvalResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    stop_eval_api_v3_evals_stop_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StopEvalRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StopEvalResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_eval_attempt_full_api_v3_evals_attempt_full_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EvalAttemptFullRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EvalAttemptFullResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_eval_attempt_api_v3_evals_attempt_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateEvalAttemptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateEvalAttemptResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_eval_attempts_list_api_v3_evals_attempts_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EvalAttemptsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EvalAttemptsListResponse"];
+                    "application/json": components["schemas"]["DeleteEvalApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25866,7 +25528,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_full_api_v3_attempts_full_post: {
+    get_attempt_full_api_v3_attempts_simulation_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25889,6 +25551,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AttemptFullResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_eval_attempt_full_api_v3_attempts_eval_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalAttemptFullRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalAttemptFullResponse"];
                 };
             };
             /** @description Validation Error */
@@ -26285,6 +25983,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpsertStaffApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_benchmark_bundle_api_v3_benchmark_bundle_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BenchmarkBundleFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BenchmarkBundleResponse"];
                 };
             };
             /** @description Validation Error */

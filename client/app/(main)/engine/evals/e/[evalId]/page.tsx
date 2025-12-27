@@ -15,10 +15,7 @@ import type { Metadata } from "next";
 type EvalDetailOut = OutputOf<"/api/v3/evals/detail", "post">;
 type UpdateEvalIn = InputOf<"/api/v3/evals/update", "post">;
 type UpdateEvalOut = OutputOf<"/api/v3/evals/update", "post">;
-type RunEvalIn = InputOf<"/api/v3/evals/run", "post">;
-type RunEvalOut = OutputOf<"/api/v3/evals/run", "post">;
-type StopEvalIn = InputOf<"/api/v3/evals/stop", "post">;
-type StopEvalOut = OutputOf<"/api/v3/evals/stop", "post">;
+// Note: Run/stop eval functionality moved to websocket events (evals_start, evals_stop)
 
 /** ---- Direct fetch for eval detail ---- */
 const getEvalDetail = async (
@@ -27,7 +24,7 @@ const getEvalDetail = async (
   const bypassCache = await isHardRefresh();
   return api.post(
     "/evals/detail",
-    { body: { evalId } },
+    { body: { eval_id: evalId } }, // Convert camelCase to snake_case
     {
       cache: "no-store",
       ...(bypassCache && {
@@ -87,8 +84,4 @@ export type {
   EvalDetailOut,
   UpdateEvalIn,
   UpdateEvalOut,
-  RunEvalIn,
-  RunEvalOut,
-  StopEvalIn,
-  StopEvalOut,
 };

@@ -35,24 +35,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type {
   AgentsListOut,
-  UpdateEvalAttemptIn,
-  UpdateEvalAttemptOut,
 } from "@/app/(main)/benchmark/a/[attemptId]/page";
 
-type EvalAttemptFullOut = OutputOf<"/api/v3/evals/attempt/full", "post">;
+type EvalAttemptFullOut = OutputOf<"/api/v3/attempts/eval", "post">;
 
 export interface EvalAttemptStatusProps {
   attemptId: string;
   attemptData: EvalAttemptFullOut;
   agentsList: AgentsListOut;
-  updateEvalAttemptSettings: (input: UpdateEvalAttemptIn) => Promise<UpdateEvalAttemptOut>;
 }
 
 export default function EvalAttemptStatus({
   attemptId,
   attemptData,
   agentsList,
-  updateEvalAttemptSettings,
 }: EvalAttemptStatusProps) {
   const { socket, isConnected, effectiveProfile, activeProfile } = useProfile();
   const [runs, setRuns] = useState(attemptData.runs || []);
@@ -72,7 +68,6 @@ export default function EvalAttemptStatus({
   const [systemPrompt, setSystemPrompt] = useState(evalInfo.system_prompt || "");
   const [applySystemPromptToAll, setApplySystemPromptToAll] = useState(false);
   const [applyConversationSettingsToAll, setApplyConversationSettingsToAll] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
   
   // Build agent mapping for picker
   const agentMapping = useMemo(() => {
@@ -365,41 +360,7 @@ export default function EvalAttemptStatus({
     [runs]
   );
 
-  // Handle updating eval attempt settings
-  const handleUpdateSettings = useCallback(async () => {
-    if (isUpdating) return;
-    
-    setIsUpdating(true);
-    try {
-      await updateEvalAttemptSettings({
-        body: {
-          attemptId,
-          conversation_mode: conversationMode,
-          conversation_agent_id: conversationAgentId ?? null,
-          conversation_max_turns: conversationMaxTurns ?? null,
-        },
-      });
-      toast.success("Settings updated successfully");
-    } catch {
-      toast.error("Failed to update settings");
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [
-    isUpdating,
-    attemptId,
-    conversationMode,
-    conversationAgentId,
-    conversationMaxTurns,
-    updateEvalAttemptSettings,
-  ]);
-
-  // Update conversation settings when they change (if apply to all is checked)
-  useEffect(() => {
-    if (applyConversationSettingsToAll && (conversationAgentId || conversationMaxTurns)) {
-      handleUpdateSettings();
-    }
-  }, [applyConversationSettingsToAll, conversationAgentId, conversationMaxTurns, handleUpdateSettings]);
+  // Note: Update functionality removed - use websocket events instead if needed
 
   return (
     <div className="space-y-6">
@@ -474,7 +435,7 @@ export default function EvalAttemptStatus({
                       id="system-prompt"
                       value={systemPrompt}
                       onChange={(e) => setSystemPrompt(e.target.value)}
-                      disabled={!evalInfo.dynamic || isUpdating}
+                      disabled={!evalInfo.dynamic}
                       className="min-h-[200px] font-mono text-sm"
                       placeholder="System prompt for the agent being evaluated..."
                     />
@@ -531,7 +492,7 @@ export default function EvalAttemptStatus({
                           `${item.name} ${item.description || ""}`
                         }
                         placeholder="Select conversation agent..."
-                        disabled={isUpdating}
+                        disabled={false}
                         multiSelect={false}
                         hideSelectedChips={true}
                         buttonClassName="w-full"
@@ -549,7 +510,7 @@ export default function EvalAttemptStatus({
                             e.target.value ? parseInt(e.target.value, 10) : null
                           )
                         }
-                        disabled={isUpdating}
+                        disabled={false}
                         placeholder="Enter max conversation turns..."
                       />
                     </div>
@@ -568,13 +529,7 @@ export default function EvalAttemptStatus({
                         Apply to all runs
                       </Label>
                     </div>
-                    <Button
-                      onClick={handleUpdateSettings}
-                      disabled={isUpdating}
-                      size="sm"
-                    >
-                      {isUpdating ? "Updating..." : "Save Settings"}
-                    </Button>
+                    {/* Note: Settings update functionality removed - use websocket events if needed */}
                   </div>
                 </AccordionContent>
               </AccordionItem>

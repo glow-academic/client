@@ -134,7 +134,7 @@ export default function Eval({
       const newParamsString = params.toString();
       router.replace(`${pathname}?${newParamsString}`, { scroll: false });
     },
-    [searchParams, pathname, router],
+    [searchParams, pathname, router]
   );
 
   // Track if we've initialized URL params from server data to prevent infinite loops
@@ -144,9 +144,9 @@ export default function Eval({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null,
+        effectiveProfile?.primaryDepartmentId ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   const initialFormData: FormData = useMemo(() => {
@@ -241,51 +241,37 @@ export default function Eval({
       return baseIds;
     }
 
-    // Get agent roles from selected agents
+    // Get agent roles from selected agents (using arrays)
     const agentRoles = new Set<string>();
+    const agentsArray = evalData?.agents || [];
     selectedAgentIds.forEach((agentId) => {
-      const agent = evalData?.agent_mapping?.[agentId];
+      const agent = agentsArray.find((a) => a.agent_id === agentId);
       if (agent?.roles && agent.roles.length > 0) {
         agent.roles.forEach((role) => agentRoles.add(role));
       }
     });
 
-    // Filter rubrics by agent role
-    // Rubric mapping includes agent_role field
-    const rubricMapping = evalData?.rubric_mapping || {};
+    // Filter rubrics by agent role (using arrays)
+    const rubricsArray = evalData?.rubrics || [];
     return baseIds.filter((rubricId) => {
-      const rubric = rubricMapping[rubricId];
+      const rubric = rubricsArray.find((r) => r.rubric_id === rubricId);
       if (!rubric) return false;
-      const rubricAgentRole = (rubric as { agent_role?: string })?.agent_role;
-      if (!rubricAgentRole) return true; // Include if no agent_role specified
-      return agentRoles.has(rubricAgentRole);
+      if (!rubric.agent_role) return true; // Include if no agent_role specified
+      return agentRoles.has(rubric.agent_role);
     });
   }, [
     evalData?.valid_rubric_ids,
-    evalData?.rubric_mapping,
-    evalData?.agent_mapping,
+    evalData?.rubrics,
+    evalData?.agents,
     currentAgentIds,
   ]);
 
-  // Build rubric mapping filtered by valid rubric IDs
-  const rubricMapping = useMemo(() => {
-    const allMapping = evalData?.rubric_mapping || {};
+  // Build filtered rubrics array (for RubricCardGrid)
+  const filteredRubrics = useMemo(() => {
+    const allRubrics = evalData?.rubrics || [];
     const validIds = new Set(validRubricIds);
-    const filtered: Record<
-      string,
-      { name: string; description?: string; agent_role?: string }
-    > = {};
-    Object.entries(allMapping).forEach(([id, rubric]) => {
-      if (validIds.has(id)) {
-        filtered[id] = rubric as {
-          name: string;
-          description?: string;
-          agent_role?: string;
-        };
-      }
-    });
-    return filtered;
-  }, [evalData?.rubric_mapping, validRubricIds]);
+    return allRubrics.filter((rubric) => validIds.has(rubric.rubric_id));
+  }, [evalData?.rubrics, validRubricIds]);
 
   // Handle agent selection from picker (single selection only)
   const handleAgentSelection = useCallback(
@@ -304,7 +290,7 @@ export default function Eval({
         updateUrlParams({ rubricId: null });
       }
     },
-    [updateUrlParams, currentRubricId, validRubricIds],
+    [updateUrlParams, currentRubricId, validRubricIds]
   );
 
   // Handle rubric selection
@@ -315,7 +301,7 @@ export default function Eval({
         rubricId: rubricId || null,
       });
     },
-    [updateUrlParams],
+    [updateUrlParams]
   );
 
   // Handle model run selection
@@ -326,7 +312,7 @@ export default function Eval({
         modelRunIds: modelRunIds.length > 0 ? modelRunIds : null,
       });
     },
-    [updateUrlParams],
+    [updateUrlParams]
   );
 
   // Sync selections from URL params
@@ -536,7 +522,7 @@ export default function Eval({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | string[] | null,
+    value: string | boolean | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -573,7 +559,7 @@ export default function Eval({
       currentAgentIds.length,
       currentRubricId,
       currentModelRunIds.length,
-    ],
+    ]
   );
 
   // Steps array
@@ -661,19 +647,19 @@ export default function Eval({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        validDepartmentIds,
+        validDepartmentIds
       );
 
       const targetEvalId = evalId || editingEvalId;
 
       if (targetEvalId) {
-        // UPDATE mode
+        // UPDATE mode - convert camelCase to snake_case
         const updateRequest: UpdateEvalBody = {
-          evalId: targetEvalId,
+          eval_id: targetEvalId, // Convert evalId to eval_id
           name: formData.name || "",
           description: formData.description || "",
           rubric_id: currentRubricId || "",
-          agent_id: currentAgentIds[0] || null, // For now, use first agent (can be extended to support multiple)
+          agent_id: currentAgentIds[0] || "", // Convert to UUID string (API will validate)
           eval_agent_id: formData.eval_agent_id || "",
           department_ids: finalDepartmentIds || [],
           active: formData.active ?? true,
@@ -684,18 +670,17 @@ export default function Eval({
 
         toast.success("Eval updated successfully!");
       } else {
-        // CREATE mode
+        // CREATE mode - already using snake_case
         const createRequest: CreateEvalBody = {
           name: formData.name || "",
           description: formData.description || "",
           rubric_id: currentRubricId || "",
-          agent_id: currentAgentIds[0] || "", // For now, use first agent
+          agent_id: currentAgentIds[0] || "", // Convert to UUID string (API will validate)
           eval_agent_id: formData.eval_agent_id || "",
           department_ids: finalDepartmentIds || [],
           active: formData.active || true,
           dynamic: formData.dynamic || false,
           model_run_ids: currentModelRunIds,
-          run: false, // Default to false, user can run manually later
         };
         await handleCreateEval(createRequest);
 
@@ -707,7 +692,7 @@ export default function Eval({
     } catch (error) {
       const targetEvalId = evalId || editingEvalId;
       toast.error(
-        `Failed to ${targetEvalId ? "update" : "create"} eval: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${targetEvalId ? "update" : "create"} eval: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -728,10 +713,12 @@ export default function Eval({
     handleUpdateClick();
   };
 
-  // Get eval agent mapping (agents with 'eval' role)
-  const evalAgentMapping = useMemo(() => {
-    return evalData?.eval_agent_mapping || evalData?.agent_mapping || {};
-  }, [evalData?.eval_agent_mapping, evalData?.agent_mapping]);
+  // Get eval agents array (agents with 'eval' role) - prefer eval_agents, fallback to agents
+  const evalAgentsArray = useMemo(() => {
+    return evalData?.eval_agents && evalData.eval_agents.length > 0
+      ? evalData.eval_agents
+      : evalData?.agents || [];
+  }, [evalData?.eval_agents, evalData?.agents]);
 
   const validEvalAgentIds = useMemo(() => {
     return evalData?.valid_eval_agent_ids || evalData?.valid_agent_ids || [];
@@ -785,7 +772,7 @@ export default function Eval({
                     ? "bg-green-500 text-white"
                     : steps[0]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted",
+                      : "bg-muted"
                 )}
               >
                 {steps[0]?.status === "completed" ? (
@@ -804,7 +791,7 @@ export default function Eval({
                     onChange={(e) => handleInputChange("name", e.target.value)}
                     className={cn(
                       "w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                      errors.name && "border-destructive",
+                      errors.name && "border-destructive"
                     )}
                     placeholder="New Eval"
                     disabled={isReadonly}
@@ -846,13 +833,13 @@ export default function Eval({
                   <Label htmlFor="department">Department</Label>
                   {formData?.departmentIds !== undefined ? (
                     <GenericPicker
-                      items={evalData?.department_mapping || {}}
+                      items={evalData?.departments || []}
                       itemIds={evalData?.valid_department_ids || []}
                       selectedIds={formData.departmentIds || []}
                       onSelect={(ids) =>
                         handleInputChange("departmentIds", ids)
                       }
-                      getId={(dept) => (dept as unknown as { id: string }).id}
+                      getId={(dept) => dept.department_id}
                       getLabel={(dept) => dept.name || ""}
                       getSearchText={(dept) =>
                         `${dept.name} ${dept.description || ""}`
@@ -873,7 +860,7 @@ export default function Eval({
                 <Label htmlFor="eval_agent_id">Eval Agent</Label>
                 {formData?.eval_agent_id !== undefined ? (
                   <GenericPicker
-                    items={evalAgentMapping}
+                    items={evalAgentsArray}
                     itemIds={validEvalAgentIds}
                     selectedIds={
                       formData.eval_agent_id ? [formData.eval_agent_id] : []
@@ -881,18 +868,18 @@ export default function Eval({
                     onSelect={(ids) =>
                       handleInputChange("eval_agent_id", ids[0] || null)
                     }
-                    getId={(item) => (item as unknown as { id: string }).id}
-                    getLabel={(item) => item["name"] || ""}
+                    getId={(item) => item.agent_id}
+                    getLabel={(item) => item.name || ""}
                     getSearchText={(item) =>
-                      `${item["name"]} ${item["description"] || ""}`
+                      `${item.name} ${item.description || ""}`
                     }
                     renderPreview={(item) => (
                       <div className="grid gap-2">
                         <h4 className="font-medium leading-none">
-                          {item["name"] || "No agent selected"}
+                          {item.name || "No agent selected"}
                         </h4>
                         <div className="text-sm text-muted-foreground">
-                          {item["description"] || "No description available"}
+                          {item.description || "No description available"}
                         </div>
                       </div>
                     )}
@@ -900,10 +887,10 @@ export default function Eval({
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <div className="flex-1 min-w-0">
-                            <div className="truncate">{item["name"]}</div>
-                            {item["description"] && (
+                            <div className="truncate">{item.name}</div>
+                            {item.description && (
                               <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                {item["description"]}
+                                {item.description}
                               </div>
                             )}
                           </div>
@@ -973,7 +960,8 @@ export default function Eval({
                   ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground pl-5">
-                  When enabled, the agent being evaluated will be re-run with a modified system prompt before grading
+                  When enabled, the agent being evaluated will be re-run with a
+                  modified system prompt before grading
                 </p>
               </div>
             </div>
@@ -987,7 +975,7 @@ export default function Eval({
             !isEditMode &&
               steps[1]?.status === "active" &&
               "ring-2 ring-primary",
-            !isEditMode && steps[1]?.status === "pending" && "opacity-50",
+            !isEditMode && steps[1]?.status === "pending" && "opacity-50"
           )}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -999,7 +987,7 @@ export default function Eval({
                     ? "bg-green-500 text-white"
                     : steps[1]?.status === "active"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted",
+                      : "bg-muted"
                 )}
               >
                 {steps[1]?.status === "completed" ? (
@@ -1020,7 +1008,7 @@ export default function Eval({
           </CardHeader>
           <CardContent className="space-y-3 px-6">
             <AgentCardGrid
-              agentMapping={evalData?.agent_mapping || {}}
+              agents={evalData?.agents || []}
               validAgentIds={validAgentIds}
               selectedAgentIds={
                 searchParams.get("agentIds")?.split(",").filter(Boolean) ||
@@ -1040,7 +1028,7 @@ export default function Eval({
               !isEditMode &&
                 steps[2]?.status === "active" &&
                 "ring-2 ring-primary",
-              !isEditMode && steps[2]?.status === "pending" && "opacity-50",
+              !isEditMode && steps[2]?.status === "pending" && "opacity-50"
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1052,7 +1040,7 @@ export default function Eval({
                       ? "bg-green-500 text-white"
                       : steps[2]?.status === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted",
+                        : "bg-muted"
                   )}
                 >
                   {steps[2]?.status === "completed" ? (
@@ -1078,7 +1066,7 @@ export default function Eval({
                 </div>
               ) : (
                 <RubricCardGrid
-                  rubricMapping={rubricMapping}
+                  rubrics={filteredRubrics}
                   validRubricIds={validRubricIds}
                   selectedRubricId={
                     searchParams.get("rubricId") || currentRubricId
@@ -1099,7 +1087,7 @@ export default function Eval({
               !isEditMode &&
                 steps[3]?.status === "active" &&
                 "ring-2 ring-primary",
-              !isEditMode && steps[3]?.status === "pending" && "opacity-50",
+              !isEditMode && steps[3]?.status === "pending" && "opacity-50"
             )}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
@@ -1111,7 +1099,7 @@ export default function Eval({
                       ? "bg-green-500 text-white"
                       : steps[3]?.status === "active"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted",
+                        : "bg-muted"
                   )}
                 >
                   {steps[3]?.status === "completed" ? (
@@ -1143,6 +1131,7 @@ export default function Eval({
                   onSelect={handleModelRunSelection}
                   agentIds={currentAgentIds}
                   readonly={isReadonly}
+                  evalId={evalId || editingEvalId || undefined}
                 />
               )}
             </CardContent>

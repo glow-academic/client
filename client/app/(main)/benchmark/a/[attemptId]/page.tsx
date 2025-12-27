@@ -12,11 +12,9 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalAttemptFullIn = InputOf<"/api/v3/evals/attempt/full", "post">;
-type EvalAttemptFullOut = OutputOf<"/api/v3/evals/attempt/full", "post">;
+type EvalAttemptFullIn = InputOf<"/api/v3/attempts/eval", "post">;
+type EvalAttemptFullOut = OutputOf<"/api/v3/attempts/eval", "post">;
 type AgentsListOut = OutputOf<"/api/v3/agents/list", "post">;
-type UpdateEvalAttemptIn = InputOf<"/api/v3/evals/attempt/update", "post">;
-type UpdateEvalAttemptOut = OutputOf<"/api/v3/evals/attempt/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for websocket/attempt pages.
@@ -25,7 +23,7 @@ const getEvalAttemptFull = async (
   _attemptId: string,
   input: EvalAttemptFullIn,
 ): Promise<EvalAttemptFullOut> => {
-  return api.post("/evals/attempt/full", input, {
+  return api.post("/attempts/eval", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -36,13 +34,6 @@ const getEvalAttemptFull = async (
 const getAgentsList = async (): Promise<AgentsListOut> => {
   "use server";
   return api.post("/agents/list", { body: {} }, { cache: "no-store" });
-};
-
-const updateEvalAttemptSettings = async (
-  input: UpdateEvalAttemptIn,
-): Promise<UpdateEvalAttemptOut> => {
-  "use server";
-  return api.post("/evals/attempt/update", input, { cache: "no-store" });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -95,7 +86,6 @@ export default async function BenchmarkAttemptPage({
           attemptId={attemptId}
           attemptData={attemptData}
           agentsList={agentsList}
-          updateEvalAttemptSettings={updateEvalAttemptSettings}
         />
       </div>
     );
@@ -125,7 +115,5 @@ export type {
   EvalAttemptFullIn,
   EvalAttemptFullOut,
   AgentsListOut,
-  UpdateEvalAttemptIn,
-  UpdateEvalAttemptOut,
 };
 
