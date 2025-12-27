@@ -178,21 +178,19 @@ export default function Rubric({
       return;
     }
 
-    // Transform standard groups - sort by position
+    // Transform standard groups from arrays - sort by position
     const groups: StandardGroup[] = [];
-    if (rubricData.standard_group_ids) {
-      rubricData.standard_group_ids.forEach((groupId) => {
-        const groupMapping = rubricData.standard_groups_mapping[groupId];
-        const groupDetail = rubricData.standard_groups_detail[groupId];
-        if (groupMapping && groupDetail) {
+    if (rubricData.standard_groups) {
+      rubricData.standard_groups.forEach((group) => {
+        if (group.standard_group_id) {
           groups.push({
-            id: groupId,
-            name: groupMapping["name"] || "",
-            description: groupMapping["description"] || "",
-            points: groupDetail["points"] || 0,
-            passPoints: groupDetail["passPoints"] || 0,
-            position: groupDetail["position"] ?? 1,
-            active: groupDetail["active"] ?? true,
+            id: String(group.standard_group_id),
+            name: group.name || "",
+            description: group.description || "",
+            points: group.points || 0,
+            passPoints: group.pass_points || 0,
+            position: group.position ?? 1,
+            active: group.active ?? true,
           });
         }
       });
@@ -201,34 +199,37 @@ export default function Rubric({
     groups.sort((a, b) => a.position - b.position);
     setStandardGroups(groups);
 
-    // Transform standards
+    // Transform standards from arrays
     const standardsList: Standard[] = [];
     const cells: GridCell[] = [];
-    if (rubricData.standard_group_ids) {
-      rubricData.standard_group_ids.forEach((groupId) => {
-        const groupDetail = rubricData.standard_groups_detail[groupId];
-        const standardIds = groupDetail?.["standard_ids"] || [];
-        standardIds.forEach((standardId) => {
-          const standard = rubricData.standards_mapping[standardId];
-          if (standard) {
-            const name = standard["name"];
-            const points = standard["points"];
-            if (name && typeof points === "number") {
-              standardsList.push({
-                id: standardId,
-                name,
-                points,
-                standardGroupId: groupId,
-              });
-              // Initialize grid cell with standard's description for its group
-              cells.push({
-                standardGroupId: groupId,
-                standardId,
-                description: standard["description"] || "",
-              });
+    if (rubricData.standard_groups && rubricData.standards) {
+      rubricData.standard_groups.forEach((group) => {
+        if (group.standard_group_id && group.standard_ids) {
+          const groupId = String(group.standard_group_id);
+          group.standard_ids.forEach((standardId) => {
+            const standard = rubricData.standards?.find(
+              (s) => s.standard_id === standardId
+            );
+            if (standard && standard.standard_id) {
+              const name = standard.name;
+              const points = standard.points;
+              if (name && typeof points === "number") {
+                standardsList.push({
+                  id: String(standardId),
+                  name,
+                  points,
+                  standardGroupId: groupId,
+                });
+                // Initialize grid cell with standard's description for its group
+                cells.push({
+                  standardGroupId: groupId,
+                  standardId: String(standardId),
+                  description: standard.description || "",
+                });
+              }
             }
-          }
-        });
+          });
+        }
       });
     }
     setStandards(standardsList);
@@ -245,10 +246,10 @@ export default function Rubric({
   useEffect(() => {
     if (!rubricData) return;
 
-    const agentMapping = rubricData.agent_mapping || {};
+    const agents = rubricData.agents || [];
     const rubricAgentIds =
       rubricData.valid_agent_ids?.filter((id) => {
-        const agent = agentMapping[id];
+        const agent = agents.find((a) => String(a.agent_id) === id);
         return agent?.roles?.includes("rubric");
       }) || [];
 
@@ -1093,7 +1094,19 @@ export default function Rubric({
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 <GenericPicker
-                  items={rubricData.department_mapping || {}}
+                  items={(() => {
+                    // Convert departments array to dict format expected by GenericPicker
+                    const mapping: Record<string, { name: string; description: string }> = {};
+                    (rubricData.departments || []).forEach((dept) => {
+                      if (dept.department_id) {
+                        mapping[String(dept.department_id)] = {
+                          name: dept.name || "",
+                          description: dept.description || "",
+                        };
+                      }
+                    });
+                    return mapping;
+                  })()}
                   itemIds={rubricData.valid_department_ids}
                   selectedIds={formData.departmentIds || []}
                   onSelect={(ids) =>
@@ -1115,10 +1128,10 @@ export default function Rubric({
 
           {/* Rubric Agent Selection */}
           {(() => {
-            const agentMapping = rubricData?.agent_mapping || {};
+            const agents = rubricData?.agents || [];
             const rubricAgentIds =
               rubricData?.valid_agent_ids?.filter((id) => {
-                const agent = agentMapping[id];
+                const agent = agents.find((a) => String(a.agent_id) === id);
                 return agent?.roles?.includes("rubric");
               }) || [];
 
@@ -1133,7 +1146,20 @@ export default function Rubric({
                 <Label htmlFor="rubricAgentId">Rubric Agent</Label>
                 {formData?.rubricAgentId !== undefined ? (
                   <GenericPicker
-                    items={agentMapping}
+                    items={(() => {
+                      // Convert agents array to dict format expected by GenericPicker
+                      const mapping: Record<string, { name: string; description: string; roles: string[] }> = {};
+                      agents.forEach((agent) => {
+                        if (agent.agent_id) {
+                          mapping[String(agent.agent_id)] = {
+                            name: agent.name || "",
+                            description: agent.description || "",
+                            roles: agent.roles || [],
+                          };
+                        }
+                      });
+                      return mapping;
+                    })()}
                     itemIds={rubricAgentIds}
                     selectedIds={
                       formData?.rubricAgentId ? [formData.rubricAgentId] : []

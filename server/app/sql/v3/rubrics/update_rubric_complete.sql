@@ -1,27 +1,121 @@
 -- Update rubric with departments, standard groups, and standards in a single transaction
--- Parameters: $1=rubricId, $2=name, $3=description (nullable), $4=active, $5=points, $6=passPoints, $7=department_ids (nullable text array), $8=standard_groups (JSONB array), $9=profile_id (uuid), $10=rubric_agent_id (uuid, nullable)
--- Returns: rubric_id, rubric_name, actor_name
-WITH user_profile AS (
+-- Converted to function with input composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_update_rubric_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_update_rubric_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE (drop dependent types first)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    -- Drop standard_group first (depends on standard)
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname = 'i_update_rubric_v3_standard_group'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+    -- Then drop standard
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname = 'i_update_rubric_v3_standard'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types (reuse create types - same structure)
+-- Note: If i_create_rubric_v3 types already exist, we can reuse them
+-- But for clarity, we'll create update-specific ones
+CREATE TYPE types.i_update_rubric_v3_standard AS (
+    name text,
+    description text,
+    points int
+);
+
+CREATE TYPE types.i_update_rubric_v3_standard_group AS (
+    name text,
+    short_name text,
+    description text,
+    points int,
+    pass_points int,
+    position int,
+    active boolean,
+    standards types.i_update_rubric_v3_standard[]
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_update_rubric_v3(
+    rubric_id uuid,
+    name text,
+    description text,
+    active boolean,
+    points int,
+    pass_points int,
+    profile_id uuid,
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    standard_groups types.i_update_rubric_v3_standard_group[] DEFAULT ARRAY[]::types.i_update_rubric_v3_standard_group[],
+    rubric_agent_id uuid DEFAULT NULL
+)
+RETURNS TABLE (
+    rubric_id uuid,
+    rubric_name text,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT 
+        rubric_id AS rubric_id,
+        name AS name,
+        COALESCE(NULLIF(description, ''), '') AS description,
+        active AS active,
+        points AS points,
+        pass_points AS pass_points,
+        COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
+        COALESCE(standard_groups, ARRAY[]::types.i_update_rubric_v3_standard_group[]) AS standard_groups,
+        rubric_agent_id AS rubric_agent_id,
+        profile_id AS profile_id
+),
+user_profile AS (
     SELECT
         p.role,
-        p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $9::uuid
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 object_current_departments AS (
-    -- Get rubric's current active department links
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
     FROM rubric_departments
-    WHERE rubric_id = $1::uuid AND active = true
+    WHERE rubric_id = (SELECT rubric_id FROM params) AND active = true
 ),
 user_departments AS (
-    -- Get user's departments
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
     FROM profile_departments
-    WHERE profile_id = $9::uuid AND active = true
+    WHERE profile_id = (SELECT profile_id FROM params) AND active = true
 ),
 validate_update_permissions AS (
-    -- Validate department permissions for update operation
     SELECT validate_department_update_permissions(
         up.role::text,
         ocd.department_ids,
@@ -33,65 +127,64 @@ validate_update_permissions AS (
 ),
 actor_profile AS (
     SELECT
-        $9::uuid as profile_id,
+        x.profile_id,
         up.actor_name
-    FROM user_profile up
+    FROM params x
+    CROSS JOIN user_profile up
 ),
 update_rubric AS (
-    UPDATE rubrics SET
-        name = $2,
-        description = COALESCE($3, ''),
-        active = $4,
-        points = $5,
-        pass_points = $6,
-        rubric_agent_id = CASE WHEN $10::text IS NULL OR $10::text = '' THEN NULL ELSE $10::uuid END,
+    UPDATE rubrics r SET
+        name = x.name,
+        description = x.description,
+        active = x.active,
+        points = x.points,
+        pass_points = x.pass_points,
+        rubric_agent_id = x.rubric_agent_id,
         updated_at = NOW()
-    WHERE id = $1::uuid
-    RETURNING id::text as rubric_id, name as rubric_name
+    FROM params x
+    WHERE r.id = x.rubric_id
+    RETURNING r.id as rubric_id, r.name as rubric_name
 ),
 replace_departments AS (
-    -- Deactivate all existing department links
     UPDATE rubric_departments 
     SET active = false, updated_at = NOW()
-    WHERE rubric_id = $1::uuid AND active = true
+    WHERE rubric_id = (SELECT rubric_id FROM params) AND active = true
 ),
 link_departments AS (
-    -- Insert new department links if provided (array is never NULL, but may be empty)
     INSERT INTO rubric_departments (rubric_id, department_id, active, created_at, updated_at)
     SELECT 
-        $1::uuid,
-        dept_id::uuid,
+        x.rubric_id,
+        dept_id,
         true,
         NOW(),
         NOW()
-    FROM UNNEST($7::text[]) as dept_id
-    WHERE COALESCE(array_length($7::text[], 1), 0) > 0
+    FROM params x
+    CROSS JOIN UNNEST(x.department_ids) as dept_id
+    WHERE array_length(x.department_ids, 1) > 0
     ON CONFLICT (rubric_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
 delete_standard_groups AS (
-    -- Delete old standard groups (cascade deletes standards)
-    DELETE FROM standard_groups WHERE rubric_id = $1::uuid
+    DELETE FROM standard_groups WHERE rubric_id = (SELECT rubric_id FROM params)
 ),
-standard_groups_data AS (
-    -- Unnest standard groups from JSONB array with ordinality to preserve order
+standard_groups_unnested AS (
     SELECT 
-        $1::uuid as rubric_id,
-        (group_data.value->>'name')::text as name,
-        NULLIF(group_data.value->>'short_name', '')::text as short_name,
-        NULLIF(group_data.value->>'description', '')::text as description,
-        (group_data.value->>'points')::int as points,
-        (group_data.value->>'passPoints')::int as pass_points,
-        COALESCE((group_data.value->>'position')::int, group_data.ordinality) as position,
-        COALESCE((group_data.value->>'active')::boolean, true) as active,
-        COALESCE(group_data.value->'standards', '[]'::jsonb) as standards_json,
-        group_data.ordinality as group_order
-    FROM jsonb_array_elements($8::jsonb) WITH ORDINALITY as group_data
-    WHERE COALESCE(jsonb_array_length($8::jsonb), 0) > 0
+        x.rubric_id,
+        (ROW_NUMBER() OVER (PARTITION BY x.rubric_id ORDER BY ordinality))::int as group_order,
+        sg.name,
+        COALESCE(NULLIF(sg.short_name, ''), NULL)::text as short_name,
+        COALESCE(NULLIF(sg.description, ''), NULL)::text as description,
+        sg.points,
+        sg.pass_points,
+        COALESCE(sg.position, (ROW_NUMBER() OVER (PARTITION BY x.rubric_id ORDER BY ordinality)))::int as position,
+        COALESCE(sg.active, true)::boolean as active,
+        sg.standards
+    FROM params x
+    CROSS JOIN UNNEST(x.standard_groups) WITH ORDINALITY as sg
+    WHERE array_length(x.standard_groups, 1) > 0
 ),
 new_standard_groups AS (
-    -- Create standard groups and return with all attributes for matching
     INSERT INTO standard_groups (
         rubric_id,
         name,
@@ -111,37 +204,34 @@ new_standard_groups AS (
         pass_points,
         position,
         active
-    FROM standard_groups_data
+    FROM standard_groups_unnested
     RETURNING id, rubric_id, name, short_name, description, points, pass_points, position, active
 ),
 standard_groups_with_order AS (
-    -- Match created groups back to their standards_json using all attributes
     SELECT DISTINCT ON (nsg.id)
         nsg.id as standard_group_id,
-        sgd.standards_json
+        sgu.standards
     FROM new_standard_groups nsg
-    JOIN standard_groups_data sgd ON 
-        sgd.name = nsg.name 
-        AND sgd.rubric_id = nsg.rubric_id
-        AND COALESCE(sgd.short_name, '') = COALESCE(nsg.short_name, '')
-        AND COALESCE(sgd.description, '') = COALESCE(nsg.description, '')
-        AND sgd.points = nsg.points
-        AND sgd.pass_points = nsg.pass_points
-    ORDER BY nsg.id, sgd.group_order
+    JOIN standard_groups_unnested sgu ON 
+        sgu.name = nsg.name 
+        AND sgu.rubric_id = nsg.rubric_id
+        AND COALESCE(sgu.short_name, '') = COALESCE(nsg.short_name, '')
+        AND COALESCE(sgu.description, '') = COALESCE(nsg.description, '')
+        AND sgu.points = nsg.points
+        AND sgu.pass_points = nsg.pass_points
+    ORDER BY nsg.id, sgu.group_order
 ),
-standards_data AS (
-    -- Unnest standards from each group's standards array
+standards_unnested AS (
     SELECT 
         sgwo.standard_group_id,
-        (standard_data.value->>'name')::text as name,
-        NULLIF(standard_data.value->>'description', '')::text as description,
-        (standard_data.value->>'points')::int as points
+        std.name,
+        COALESCE(NULLIF(std.description, ''), NULL)::text as description,
+        std.points
     FROM standard_groups_with_order sgwo
-    CROSS JOIN jsonb_array_elements(sgwo.standards_json) WITH ORDINALITY as standard_data
-    WHERE COALESCE(jsonb_array_length(sgwo.standards_json), 0) > 0
+    CROSS JOIN UNNEST(sgwo.standards) as std
+    WHERE array_length(sgwo.standards, 1) > 0
 ),
 new_standards AS (
-    -- Create standards
     INSERT INTO standards (
         standard_group_id,
         name,
@@ -153,10 +243,12 @@ new_standards AS (
         name,
         description,
         points
-    FROM standards_data
+    FROM standards_unnested
     RETURNING id
 )
 SELECT ur.rubric_id, ur.rubric_name, ap.actor_name
 FROM update_rubric ur
 CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;

@@ -1,103 +1,245 @@
 -- Get rubric detail with departments, standard groups, and access control
--- Parameters: $1 = rubric_id (uuid), $2 = profile_id (uuid)
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
-WITH resolve_profile_id AS (
-    -- Resolve profile ID from parameter
-    SELECT $2::uuid as resolved_profile_id
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_rubric_detail_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_rubric_detail_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_rubric_detail_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types
+CREATE TYPE types.q_get_rubric_detail_v3_standard AS (
+    standard_id uuid,
+    name text,
+    description text,
+    points int
+);
+
+CREATE TYPE types.q_get_rubric_detail_v3_standard_group AS (
+    standard_group_id uuid,
+    name text,
+    description text,
+    points int,
+    pass_points int,
+    position int,
+    active boolean,
+    standard_ids uuid[]
+);
+
+CREATE TYPE types.q_get_rubric_detail_v3_department AS (
+    department_id uuid,
+    name text,
+    description text
+);
+
+CREATE TYPE types.q_get_rubric_detail_v3_agent AS (
+    agent_id uuid,
+    name text,
+    description text,
+    roles text[]
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_get_rubric_detail_v3(
+    rubric_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    rubric_exists boolean,
+    rubric_id uuid,
+    name text,
+    description text,
+    department_ids text[],
+    valid_department_ids text[],
+    points int,
+    pass_points int,
+    active boolean,
+    can_edit boolean,
+    rubric_agent_id uuid,
+    valid_agent_ids text[],
+    actor_name text,
+    standard_group_ids uuid[],
+    standard_groups types.q_get_rubric_detail_v3_standard_group[],
+    standards types.q_get_rubric_detail_v3_standard[],
+    departments types.q_get_rubric_detail_v3_department[],
+    agents types.q_get_rubric_detail_v3_agent[]
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT rubric_id AS rubric_id, profile_id AS profile_id
+),
+rubric_exists_check AS (
+    SELECT EXISTS(
+        SELECT 1 FROM rubrics WHERE id = (SELECT rubric_id FROM params)
+    )::boolean as rubric_exists
 ),
 rubric_data AS (
     SELECT 
-        name,
-        description,
-        active,
-        points,
-        pass_points as passpoints,
-        rubric_agent_id::text as rubric_agent_id
-    FROM rubrics
-    WHERE id = $1
+        r.id as rubric_id,
+        r.name,
+        r.description,
+        r.active,
+        r.points,
+        r.pass_points,
+        r.rubric_agent_id
+    FROM rubrics r
+    WHERE r.id = (SELECT rubric_id FROM params)
 ),
 rubric_departments_data AS (
     SELECT 
         ARRAY_AGG(rd.department_id::text ORDER BY rd.created_at) as department_ids
     FROM rubric_departments rd
-    WHERE rd.rubric_id = $1 AND rd.active = true
+    WHERE rd.rubric_id = (SELECT rubric_id FROM params) AND rd.active = true
+),
+user_departments AS (
+    SELECT department_id
+    FROM params x
+    JOIN profile_departments ON profile_departments.profile_id = x.profile_id AND profile_departments.active = true
 ),
 valid_depts AS (
     SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                d.id::text,
-                jsonb_build_object(
-                    'name', d.title,
-                    'description', COALESCE(d.description, '')
-                )
-            ),
-            '{}'::jsonb
-        ) as dept_mapping,
         array_agg(d.id::text ORDER BY d.title) as dept_ids
     FROM departments d
-    JOIN resolve_profile_id rpi ON true
+    JOIN params x ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
+    WHERE pd.profile_id = x.profile_id AND d.active = true
 ),
 user_profile AS (
     SELECT 
         role as user_role,
         COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 profile_data AS (
     SELECT user_role FROM user_profile
 ),
 user_has_rubric_access AS (
-    -- Check if user has access to rubric via department links
     SELECT EXISTS(
         SELECT 1 FROM rubric_departments rd
-        JOIN resolve_profile_id rpi ON true
+        JOIN params x ON true
         JOIN profile_departments pd ON pd.department_id = rd.department_id
-        WHERE rd.rubric_id = $1 AND rd.active = true
-        AND pd.profile_id = rpi.resolved_profile_id AND pd.active = true
+        WHERE rd.rubric_id = x.rubric_id AND rd.active = true
+        AND pd.profile_id = x.profile_id AND pd.active = true
     ) OR EXISTS(
-        SELECT 1 FROM resolve_profile_id rpi
-        JOIN profiles p ON p.id = rpi.resolved_profile_id
+        SELECT 1 FROM params x
+        JOIN profiles p ON p.id = x.profile_id
         WHERE p.role = 'superadmin'
     ) OR (
-        -- Default rubrics (no department links) are accessible to all
         SELECT COUNT(*) FROM rubric_departments rd
-        WHERE rd.rubric_id = $1 AND rd.active = true
+        WHERE rd.rubric_id = (SELECT rubric_id FROM params) AND rd.active = true
     ) = 0 as has_access
 ),
 user_departments_for_agents AS (
-    SELECT DISTINCT department_id
-    FROM profile_departments
-    JOIN resolve_profile_id rpi ON profile_id = rpi.resolved_profile_id
-    WHERE active = true
+    SELECT DISTINCT pd.department_id
+    FROM profile_departments pd
+    JOIN params x ON pd.profile_id = x.profile_id
+    WHERE pd.active = true
 ),
-valid_agents AS (
-    -- Get agents with role 'rubric'
-    -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
-    -- Also include agent assigned to this rubric (rubric_agent_id) even if it doesn't pass department filter
+standard_groups_data AS (
+    SELECT 
+        sg.id as standard_group_id,
+        sg.name,
+        sg.description,
+        sg.points,
+        sg.pass_points,
+        sg.position,
+        sg.active,
+        ARRAY_AGG(s.id ORDER BY s.name) as standard_ids
+    FROM standard_groups sg
+    LEFT JOIN standards s ON s.standard_group_id = sg.id
+    WHERE sg.rubric_id = (SELECT rubric_id FROM params)
+    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sg.position, sg.active
+),
+standard_groups_aggregated AS (
+    SELECT 
+        ARRAY_AGG(sg.standard_group_id ORDER BY sg.position, sg.name) as standard_group_ids,
+        COALESCE(
+            ARRAY_AGG(
+                (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.position, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]))::types.q_get_rubric_detail_v3_standard_group
+                ORDER BY sg.position, sg.name
+            ),
+            '{}'::types.q_get_rubric_detail_v3_standard_group[]
+        ) as standard_groups
+    FROM standard_groups_data sg
+),
+standards_distinct AS (
+    SELECT DISTINCT ON (s.id)
+        s.id, s.name, COALESCE(s.description, '') as description, s.points
+    FROM standards s
+    WHERE s.standard_group_id IN (SELECT standard_group_id FROM standard_groups_data)
+    ORDER BY s.id, s.name
+),
+standards_aggregated AS (
     SELECT 
         COALESCE(
-            jsonb_object_agg(
-                a.id::text,
-                jsonb_build_object(
-                    'name', a.name,
-                    'description', COALESCE(a.description, ''),
-                    'roles', ARRAY[a.role::text]
-                )
+            ARRAY_AGG(
+                (sd.id, sd.name, sd.description, sd.points)::types.q_get_rubric_detail_v3_standard
+                ORDER BY sd.name
             ),
-            '{}'::jsonb
-        ) as agent_mapping,
-        array_agg(a.id::text ORDER BY a.name) as agent_ids
+            '{}'::types.q_get_rubric_detail_v3_standard[]
+        ) as standards
+    FROM standards_distinct sd
+),
+departments_distinct AS (
+    SELECT DISTINCT ON (d.id)
+        d.id, d.title, COALESCE(d.description, '') as description
+    FROM departments d
+    WHERE d.id IN (SELECT department_id FROM user_departments)
+    ORDER BY d.id, d.title
+),
+departments_aggregated AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (dd.id, dd.title, dd.description)::types.q_get_rubric_detail_v3_department
+                ORDER BY dd.title
+            ),
+            '{}'::types.q_get_rubric_detail_v3_department[]
+        ) as departments
+    FROM departments_distinct dd
+),
+valid_agents_data AS (
+    SELECT 
+        a.id as agent_id,
+        a.name,
+        a.description,
+        ARRAY[a.role::text] as roles
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN rubric_data rd
     WHERE a.active = true 
     AND a.role = 'rubric'
     AND (
-        -- Department access: has matching department link OR has no department links at all (cross-dept)
         EXISTS (
             SELECT 1 FROM agent_departments ad2 
             WHERE ad2.agent_id = a.id 
@@ -109,70 +251,60 @@ valid_agents AS (
             WHERE ad3.agent_id = a.id 
             AND ad3.active = true
         )
-        -- Include agent assigned to this rubric even if it doesn't pass department filter
-        OR a.id::text = rd.rubric_agent_id
+        OR a.id::text = rd.rubric_agent_id::text
     )
 ),
-standard_groups_with_standards AS (
+agents_aggregated AS (
     SELECT 
         COALESCE(
-            jsonb_agg(
-                jsonb_build_object(
-                    'id', sg.id::text,
-                    'name', sg.name,
-                    'description', COALESCE(sg.description, ''),
-                    'points', sg.points,
-                    'passPoints', sg.pass_points,
-                    'position', sg.position,
-                    'active', sg.active,
-                    'standards', (
-                        SELECT COALESCE(
-                            jsonb_agg(
-                                jsonb_build_object(
-                                    'id', s.id::text,
-                                    'name', s.name,
-                                    'description', COALESCE(s.description, ''),
-                                    'points', s.points
-                                )
-                                ORDER BY s.name
-                            ),
-                            '[]'::jsonb
-                        )
-                        FROM standards s
-                        WHERE s.standard_group_id = sg.id
-                    )
-                )
-                ORDER BY sg.position
+            ARRAY_AGG(a.agent_id::text ORDER BY a.name),
+            ARRAY[]::text[]
+        ) as valid_agent_ids,
+        COALESCE(
+            ARRAY_AGG(
+                (a.agent_id, a.name, COALESCE(a.description, ''), a.roles)::types.q_get_rubric_detail_v3_agent
+                ORDER BY a.name
             ),
-            '[]'::jsonb
-        ) as groups_json
-    FROM standard_groups sg
-    WHERE sg.rubric_id = $1
+            '{}'::types.q_get_rubric_detail_v3_agent[]
+        ) as agents
+    FROM valid_agents_data a
 )
 SELECT 
-    r.*,
-    rdd.department_ids,
-    vd.dept_mapping as department_mapping,
-    vd.dept_ids as valid_department_ids,
-    pr.user_role,
-    up.actor_name,
-    sg.groups_json as standard_groups_complete,
-    COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
-    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
+    rec.rubric_exists,
+    rd.rubric_id,
+    rd.name,
+    rd.description,
+    COALESCE(rdd.department_ids, ARRAY[]::text[]) as department_ids,
+    COALESCE(vd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
+    rd.points,
+    rd.pass_points,
+    rd.active,
     CASE 
-        -- Default rubrics (no department_ids) are read-only for non-superadmin
         WHEN (COALESCE(rdd.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND pr.user_role != 'superadmin') THEN false
         WHEN pr.user_role = 'superadmin' THEN true
         WHEN pr.user_role IN ('admin', 'instructional') AND uhra.has_access THEN true
         ELSE false
-    END as can_edit
-FROM rubric_data r
+    END as can_edit,
+    rd.rubric_agent_id,
+    COALESCE(aa.valid_agent_ids, ARRAY[]::text[]) as valid_agent_ids,
+    up.actor_name,
+    COALESCE(sga.standard_group_ids, ARRAY[]::uuid[]) as standard_group_ids,
+    sga.standard_groups,
+    sta.standards,
+    da.departments,
+    aa.agents
+FROM rubric_exists_check rec
+CROSS JOIN rubric_data rd
 LEFT JOIN rubric_departments_data rdd ON true
 CROSS JOIN valid_depts vd
 CROSS JOIN profile_data pr
 CROSS JOIN user_profile up
-CROSS JOIN standard_groups_with_standards sg
+CROSS JOIN standard_groups_aggregated sga
+CROSS JOIN standards_aggregated sta
+CROSS JOIN departments_aggregated da
 CROSS JOIN user_has_rubric_access uhra
-CROSS JOIN valid_agents va
-WHERE uhra.has_access = true
+CROSS JOIN agents_aggregated aa
+WHERE uhra.has_access = true OR rec.rubric_exists = false
+$$;
 
+COMMIT;

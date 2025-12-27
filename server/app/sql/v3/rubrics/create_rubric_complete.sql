@@ -1,27 +1,121 @@
 -- Create rubric with departments, standard groups, and standards in a single transaction
--- Parameters: $1=name, $2=description (nullable), $3=active, $4=points, $5=passPoints, $6=department_ids (nullable text array), $7=standard_groups (JSONB array), $8=profile_id (uuid, required), $9=rubric_agent_id (uuid, nullable)
--- Returns: rubric_id, actor_name
--- profile_id is always a UUID (required in request body)
-WITH user_profile AS (
+-- Converted to function with input composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_create_rubric_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_create_rubric_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE (drop dependent types first)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    -- Drop standard_group first (depends on standard)
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname = 'i_create_rubric_v3_standard_group'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+    -- Then drop standard
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname = 'i_create_rubric_v3_standard'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types (input types for function parameters)
+CREATE TYPE types.i_create_rubric_v3_standard AS (
+    name text,
+    description text,
+    points int
+);
+
+CREATE TYPE types.i_create_rubric_v3_standard_group AS (
+    name text,
+    short_name text,
+    description text,
+    points int,
+    pass_points int,
+    position int,
+    active boolean,
+    standards types.i_create_rubric_v3_standard[]
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_create_rubric_v3(
+    name text,
+    description text,
+    active boolean,
+    points int,
+    pass_points int,
+    profile_id uuid,
+    department_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    standard_groups types.i_create_rubric_v3_standard_group[] DEFAULT ARRAY[]::types.i_create_rubric_v3_standard_group[],
+    rubric_agent_id uuid DEFAULT NULL
+)
+RETURNS TABLE (
+    rubric_id uuid,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT 
+        name AS name,
+        COALESCE(NULLIF(description, ''), '') AS description,
+        active AS active,
+        points AS points,
+        pass_points AS pass_points,
+        COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
+        COALESCE(standard_groups, ARRAY[]::types.i_create_rubric_v3_standard_group[]) AS standard_groups,
+        rubric_agent_id AS rubric_agent_id,
+        profile_id AS profile_id
+),
+user_profile AS (
     SELECT 
         p.role,
-        p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $8::uuid
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 validate_create_permissions AS (
-    -- Validate department permissions for create operation
     SELECT validate_department_create_permissions(
         up.role::text,
-        $6::text[]
+        ARRAY_AGG(did::text)
     ) as validation_passed
-    FROM user_profile up
+    FROM params x
+    CROSS JOIN UNNEST(x.department_ids) as did
+    CROSS JOIN user_profile up
+    GROUP BY up.role
 ),
 actor_profile AS (
     SELECT 
-        $8::uuid as resolved_profile_id,
+        x.profile_id as resolved_profile_id,
         up.actor_name
-    FROM user_profile up
+    FROM params x
+    CROSS JOIN user_profile up
 ),
 new_rubric AS (
     INSERT INTO rubrics (
@@ -32,51 +126,50 @@ new_rubric AS (
         pass_points,
         rubric_agent_id
     )
-    VALUES (
-        $1,
-        COALESCE($2, ''),
-        $3,
-        $4,
-        $5,
-        CASE WHEN $9::text IS NULL OR $9::text = '' THEN NULL ELSE $9::uuid END
-    )
-    RETURNING id::text as rubric_id
+    SELECT 
+        x.name,
+        x.description,
+        x.active,
+        x.points,
+        x.pass_points,
+        x.rubric_agent_id
+    FROM params x
+    RETURNING id as rubric_id
 ),
 link_departments AS (
-    -- Link departments if provided (array is never NULL, but may be empty)
     INSERT INTO rubric_departments (rubric_id, department_id, active, created_at, updated_at)
     SELECT 
-        nr.rubric_id::uuid,
-        dept_id::uuid,
+        nr.rubric_id,
+        dept_id,
         true,
         NOW(),
         NOW()
     FROM new_rubric nr
-    CROSS JOIN UNNEST($6::text[]) as dept_id
-    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
+    CROSS JOIN params x
+    CROSS JOIN UNNEST(x.department_ids) as dept_id
+    WHERE array_length(x.department_ids, 1) > 0
     ON CONFLICT (rubric_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
-standard_groups_data AS (
-    -- Unnest standard groups from JSONB array with ordinality to preserve order
+standard_groups_unnested AS (
     SELECT 
         nr.rubric_id,
-        (group_data.value->>'name')::text as name,
-        NULLIF(group_data.value->>'short_name', '')::text as short_name,
-        NULLIF(group_data.value->>'description', '')::text as description,
-        (group_data.value->>'points')::int as points,
-        (group_data.value->>'passPoints')::int as pass_points,
-        COALESCE((group_data.value->>'position')::int, group_data.ordinality) as position,
-        COALESCE((group_data.value->>'active')::boolean, true) as active,
-        COALESCE(group_data.value->'standards', '[]'::jsonb) as standards_json,
-        group_data.ordinality as group_order
+        (ROW_NUMBER() OVER (PARTITION BY nr.rubric_id ORDER BY ordinality))::int as group_order,
+        sg.name,
+        COALESCE(NULLIF(sg.short_name, ''), NULL)::text as short_name,
+        COALESCE(NULLIF(sg.description, ''), NULL)::text as description,
+        sg.points,
+        sg.pass_points,
+        COALESCE(sg.position, (ROW_NUMBER() OVER (PARTITION BY nr.rubric_id ORDER BY ordinality)))::int as position,
+        COALESCE(sg.active, true)::boolean as active,
+        sg.standards
     FROM new_rubric nr
-    CROSS JOIN jsonb_array_elements($7::jsonb) WITH ORDINALITY as group_data
-    WHERE COALESCE(jsonb_array_length($7::jsonb), 0) > 0
+    CROSS JOIN params x
+    CROSS JOIN UNNEST(x.standard_groups) WITH ORDINALITY as sg
+    WHERE array_length(x.standard_groups, 1) > 0
 ),
 new_standard_groups AS (
-    -- Create standard groups and return with all attributes for matching
     INSERT INTO standard_groups (
         rubric_id,
         name,
@@ -88,7 +181,7 @@ new_standard_groups AS (
         active
     )
     SELECT 
-        rubric_id::uuid,
+        rubric_id,
         name,
         short_name,
         description,
@@ -96,37 +189,34 @@ new_standard_groups AS (
         pass_points,
         position,
         active
-    FROM standard_groups_data
+    FROM standard_groups_unnested
     RETURNING id, rubric_id, name, short_name, description, points, pass_points, position, active
 ),
 standard_groups_with_order AS (
-    -- Match created groups back to their standards_json using all attributes
     SELECT DISTINCT ON (nsg.id)
         nsg.id as standard_group_id,
-        sgd.standards_json
+        sgu.standards
     FROM new_standard_groups nsg
-    JOIN standard_groups_data sgd ON 
-        sgd.name = nsg.name 
-        AND sgd.rubric_id::uuid = nsg.rubric_id
-        AND COALESCE(sgd.short_name, '') = COALESCE(nsg.short_name, '')
-        AND COALESCE(sgd.description, '') = COALESCE(nsg.description, '')
-        AND sgd.points = nsg.points
-        AND sgd.pass_points = nsg.pass_points
-    ORDER BY nsg.id, sgd.group_order
+    JOIN standard_groups_unnested sgu ON 
+        sgu.name = nsg.name 
+        AND sgu.rubric_id = nsg.rubric_id
+        AND COALESCE(sgu.short_name, '') = COALESCE(nsg.short_name, '')
+        AND COALESCE(sgu.description, '') = COALESCE(nsg.description, '')
+        AND sgu.points = nsg.points
+        AND sgu.pass_points = nsg.pass_points
+    ORDER BY nsg.id, sgu.group_order
 ),
-standards_data AS (
-    -- Unnest standards from each group's standards array
+standards_unnested AS (
     SELECT 
         sgwo.standard_group_id,
-        (standard_data.value->>'name')::text as name,
-        NULLIF(standard_data.value->>'description', '')::text as description,
-        (standard_data.value->>'points')::int as points
+        std.name,
+        COALESCE(NULLIF(std.description, ''), NULL)::text as description,
+        std.points
     FROM standard_groups_with_order sgwo
-    CROSS JOIN jsonb_array_elements(sgwo.standards_json) WITH ORDINALITY as standard_data
-    WHERE COALESCE(jsonb_array_length(sgwo.standards_json), 0) > 0
+    CROSS JOIN UNNEST(sgwo.standards) as std
+    WHERE array_length(sgwo.standards, 1) > 0
 ),
 new_standards AS (
-    -- Create standards
     INSERT INTO standards (
         standard_group_id,
         name,
@@ -138,7 +228,7 @@ new_standards AS (
         name,
         description,
         points
-    FROM standards_data
+    FROM standards_unnested
     RETURNING id
 )
 SELECT 
@@ -146,4 +236,6 @@ SELECT
     ap.actor_name
 FROM new_rubric nr
 CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;

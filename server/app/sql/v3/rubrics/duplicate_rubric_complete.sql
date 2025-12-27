@@ -1,15 +1,48 @@
 -- Duplicate rubric with departments, standard groups, and standards in a single transaction
--- Parameters: $1=originalRubricId, $2=profile_id (uuid)
--- Returns: rubric_id, original_name, actor_name
-WITH actor_profile AS (
+-- Converted to function
+-- Uses safe drop/recreate pattern: drop function first, then recreate
+
+BEGIN;
+
+-- 1) Drop function first
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_duplicate_rubric_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_duplicate_rubric_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Recreate function
+CREATE OR REPLACE FUNCTION api_duplicate_rubric_v3(
+    original_rubric_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    rubric_id uuid,
+    original_name text,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT original_rubric_id AS original_rubric_id, profile_id AS profile_id
+),
+actor_profile AS (
     SELECT
-        $2::uuid as profile_id,
-        p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+        x.profile_id,
+        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 original_rubric AS (
-    -- Get original rubric data
     SELECT 
         id,
         name,
@@ -17,16 +50,14 @@ original_rubric AS (
         points,
         pass_points
     FROM rubrics
-    WHERE id = $1::uuid
+    WHERE id = (SELECT original_rubric_id FROM params)
 ),
 original_departments AS (
-    -- Get original department links
     SELECT department_id
     FROM rubric_departments
-    WHERE rubric_id = $1::uuid AND active = true
+    WHERE rubric_id = (SELECT original_rubric_id FROM params) AND active = true
 ),
 original_groups AS (
-    -- Get original standard groups
     SELECT 
         id,
         name,
@@ -34,12 +65,11 @@ original_groups AS (
         description,
         points,
         pass_points,
-        ROW_NUMBER() OVER (ORDER BY name) as group_order
+        ROW_NUMBER() OVER (ORDER BY position, name) as group_order
     FROM standard_groups
-    WHERE rubric_id = $1::uuid
+    WHERE rubric_id = (SELECT original_rubric_id FROM params)
 ),
 original_standards AS (
-    -- Get original standards with their group IDs
     SELECT 
         s.id,
         s.standard_group_id,
@@ -52,7 +82,6 @@ original_standards AS (
     ORDER BY og.group_order, s.name
 ),
 new_rubric AS (
-    -- Create duplicate rubric
     INSERT INTO rubrics (
         name,
         description,
@@ -67,13 +96,12 @@ new_rubric AS (
         points,
         pass_points
     FROM original_rubric
-    RETURNING id::text as rubric_id
+    RETURNING id as rubric_id
 ),
 link_departments AS (
-    -- Copy department links if they existed
     INSERT INTO rubric_departments (rubric_id, department_id, active, created_at, updated_at)
     SELECT 
-        nr.rubric_id::uuid,
+        nr.rubric_id,
         od.department_id,
         true,
         NOW(),
@@ -86,7 +114,6 @@ link_departments AS (
         updated_at = NOW()
 ),
 new_standard_groups AS (
-    -- Create duplicate standard groups
     INSERT INTO standard_groups (
         rubric_id,
         name,
@@ -96,7 +123,7 @@ new_standard_groups AS (
         pass_points
     )
     SELECT 
-        nr.rubric_id::uuid,
+        nr.rubric_id,
         og.name,
         og.short_name,
         og.description,
@@ -107,7 +134,6 @@ new_standard_groups AS (
     RETURNING id, rubric_id, name, short_name, description, points, pass_points
 ),
 new_groups_with_order AS (
-    -- Add group_order back to new groups for matching
     SELECT 
         nsg.*,
         og.group_order
@@ -120,14 +146,13 @@ new_groups_with_order AS (
         AND og.pass_points = nsg.pass_points
 ),
 groups_mapping AS (
-    -- Map old group IDs to new group IDs using all attributes
     SELECT DISTINCT ON (og.id)
         og.id as old_group_id,
         ngwo.id as new_group_id
     FROM original_groups og
     JOIN new_groups_with_order ngwo ON 
         ngwo.name = og.name
-        AND ngwo.rubric_id = (SELECT rubric_id::uuid FROM new_rubric)
+        AND ngwo.rubric_id = (SELECT rubric_id FROM new_rubric)
         AND COALESCE(ngwo.short_name, '') = COALESCE(og.short_name, '')
         AND COALESCE(ngwo.description, '') = COALESCE(og.description, '')
         AND ngwo.points = og.points
@@ -136,7 +161,6 @@ groups_mapping AS (
     ORDER BY og.id, ngwo.id
 ),
 new_standards AS (
-    -- Create duplicate standards
     INSERT INTO standards (
         standard_group_id,
         name,
@@ -159,4 +183,6 @@ SELECT
 FROM new_rubric nr
 CROSS JOIN original_rubric or_r
 CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;

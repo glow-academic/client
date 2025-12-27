@@ -1,59 +1,20 @@
 """Rubric create endpoint - v3 API."""
 
-import json
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (CreateRubricApiRequest, CreateRubricApiResponse,
+                           CreateRubricSqlParams, CreateRubricSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class StandardItem(BaseModel):
-    """Standard item for create."""
-
-    name: str
-    description: str | None = None
-    points: int
-
-
-class StandardGroupItem(BaseModel):
-    """Standard group item for create."""
-
-    name: str
-    short_name: str | None = None
-    description: str | None = None
-    points: int
-    passPoints: int
-    position: int | None = None
-    active: bool = True
-    standards: list[StandardItem] = []
-
-
-class CreateRubricRequest(BaseModel):
-    """Request for creating a rubric."""
-
-    name: str
-    description: str | None = None
-    active: bool = True
-    points: int
-    passPoints: int
-    department_ids: list[str] = []
-    standard_groups: list[StandardGroupItem] = []
-    rubric_agent_id: str | None = None
-    # profileId removed - comes from X-Profile-Id header
-
-
-class CreateRubricResponse(BaseModel):
-    """Response for creating a rubric."""
-
-    success: bool
-    rubricId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/rubrics/create_rubric_complete.sql"
 
 
 router = APIRouter()
@@ -61,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/create",
-    response_model=CreateRubricResponse,
+    response_model=CreateRubricApiResponse,
     dependencies=[
         audit_activity(
             "rubric.created", "{{ actor.name }} created rubric '{{ rubric.name }}'"
@@ -69,15 +30,15 @@ router = APIRouter()
     ],
 )
 async def create_rubric(
-    request: CreateRubricRequest,
+    request: CreateRubricApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateRubricResponse:
+) -> CreateRubricApiResponse:
     """Create a new rubric with nested structure."""
     tags = ["rubrics"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -89,73 +50,44 @@ async def create_rubric(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert standard groups to JSONB array for SQL
-        standard_groups_json = json.dumps(
-            [
-                {
-                    "name": group.name,
-                    "short_name": group.short_name,
-                    "description": group.description,
-                    "points": group.points,
-                    "passPoints": group.passPoints,
-                    "position": group.position,
-                    "active": group.active,
-                    "standards": [
-                        {
-                            "name": standard.name,
-                            "description": standard.description,
-                            "points": standard.points,
-                        }
-                        for standard in group.standards
-                    ],
-                }
-                for group in request.standard_groups
-            ]
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double star pattern: **request.model_dump()
+        params = CreateRubricSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
+
+        # Execute SQL with typed helper
+        result = cast(
+            CreateRubricSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        # Ensure department_ids is always an array (empty if None)
-        department_ids = request.department_ids if request.department_ids else []
-
-        # Create rubric with departments, standard groups, and standards in a single SQL file
-        sql_query = load_sql("app/sql/v3/rubrics/create_rubric_complete.sql")
-        sql_params = (
-            request.name,
-            request.description,
-            request.active,
-            request.points,
-            request.passPoints,
-            department_ids,
-            standard_groups_json,
-            profile_id,
-            request.rubric_agent_id,
-        )
-        row = await conn.fetchrow(sql_query, *sql_params)
-
-        if not row:
+        if not result.rubric_id:
             raise HTTPException(status_code=500, detail="Failed to create rubric")
 
-        rubric_id = row["rubric_id"]
-        actor_name = row.get("actor_name")
-
         # Set audit context with data from SQL query
-        if actor_name:
+        if result.actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": profile_id},
-                rubric={"name": request.name, "id": rubric_id},
+                actor={"name": result.actor_name, "id": profile_id},
+                rubric={"name": request.name, "id": str(result.rubric_id)},
             )
 
-        result = CreateRubricResponse(
-            success=True,
-            rubricId=rubric_id,
-            message="Rubric created successfully",
-        )
+        # Convert SQL result to API response
+        api_response = CreateRubricApiResponse.model_validate({
+            "success": True,
+            "rubric_id": result.rubric_id,
+            "message": "Rubric created successfully",
+        })
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

@@ -6460,18 +6460,6 @@ export interface components {
             /** Totalpages */
             totalPages: number;
         };
-        /**
-         * AgentMappingItem
-         * @description Agent mapping item with role information.
-         */
-        AgentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Roles */
-            roles: string[];
-        };
         /** AggregatedResults */
         AggregatedResults: {
             /** Totalscore */
@@ -7657,48 +7645,31 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * CreateRubricRequest
-         * @description Request for creating a rubric.
-         */
-        CreateRubricRequest: {
+        /** CreateRubricApiRequest */
+        CreateRubricApiRequest: {
             /** Name */
             name: string;
             /** Description */
-            description?: string | null;
-            /**
-             * Active
-             * @default true
-             */
+            description: string;
+            /** Active */
             active: boolean;
             /** Points */
             points: number;
-            /** Passpoints */
-            passPoints: number;
-            /**
-             * Department Ids
-             * @default []
-             */
-            department_ids: string[];
-            /**
-             * Standard Groups
-             * @default []
-             */
-            standard_groups: components["schemas"]["app__api__v3__rubrics__create__StandardGroupItem"][];
+            /** Pass Points */
+            pass_points: number;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["ICreateRubricV3StandardGroup"][] | null;
             /** Rubric Agent Id */
             rubric_agent_id?: string | null;
         };
-        /**
-         * CreateRubricResponse
-         * @description Response for creating a rubric.
-         */
-        CreateRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Rubricid */
-            rubricId: string;
-            /** Message */
-            message: string;
+        /** CreateRubricApiResponse */
+        CreateRubricApiResponse: {
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** CreateScenarioApiRequest */
         CreateScenarioApiRequest: {
@@ -8335,23 +8306,26 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DeleteRubricRequest
-         * @description Request for deleting a rubric.
-         */
-        DeleteRubricRequest: {
-            /** Rubricid */
-            rubricId: string;
+        /** DeleteRubricApiRequest */
+        DeleteRubricApiRequest: {
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
         };
-        /**
-         * DeleteRubricResponse
-         * @description Response for deleting a rubric.
-         */
-        DeleteRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** DeleteRubricApiResponse */
+        DeleteRubricApiResponse: {
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Usage Count */
+            usage_count?: number | null;
+            /** Deleted */
+            deleted?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** DeleteScenarioApiRequest */
         DeleteScenarioApiRequest: {
@@ -8655,25 +8629,22 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * DuplicateRubricRequest
-         * @description Request for duplicating a rubric.
-         */
-        DuplicateRubricRequest: {
-            /** Rubricid */
-            rubricId: string;
+        /** DuplicateRubricApiRequest */
+        DuplicateRubricApiRequest: {
+            /**
+             * Original Rubric Id
+             * Format: uuid
+             */
+            original_rubric_id: string;
         };
-        /**
-         * DuplicateRubricResponse
-         * @description Response for duplicating a rubric.
-         */
-        DuplicateRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Rubricid */
-            rubricId: string;
-            /** Message */
-            message: string;
+        /** DuplicateRubricApiResponse */
+        DuplicateRubricApiResponse: {
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Original Name */
+            original_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** DuplicateScenarioApiRequest */
         DuplicateScenarioApiRequest: {
@@ -10972,6 +10943,113 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** GetRubricDetailApiRequest */
+        GetRubricDetailApiRequest: {
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
+        };
+        /** GetRubricDetailApiResponse */
+        GetRubricDetailApiResponse: {
+            /** Rubric Exists */
+            rubric_exists?: boolean | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+            /** Active */
+            active?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Rubric Agent Id */
+            rubric_agent_id?: string | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["QGetRubricDetailV3StandardGroup"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["QGetRubricDetailV3Standard"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetRubricDetailV3Department"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetRubricDetailV3Agent"][] | null;
+        };
+        /** GetRubricNewApiRequest */
+        GetRubricNewApiRequest: Record<string, never>;
+        /** GetRubricNewApiResponse */
+        GetRubricNewApiResponse: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Points */
+            points?: number | null;
+            /** Pass Points */
+            pass_points?: number | null;
+            /** Active */
+            active?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Rubric Agent Id */
+            rubric_agent_id?: string | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["QGetRubricNewV3StandardGroup"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["QGetRubricNewV3Standard"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetRubricNewV3Department"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetRubricNewV3Agent"][] | null;
+        };
+        /** GetRubricsListApiRequest */
+        GetRubricsListApiRequest: Record<string, never>;
+        /** GetRubricsListApiResponse */
+        GetRubricsListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetRubricsListV3Rubric"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["QGetRubricsListV3StandardGroup"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["QGetRubricsListV3Standard"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetRubricsListV3Department"][] | null;
+            /** Simulations */
+            simulations?: components["schemas"]["QGetRubricsListV3Simulation"][] | null;
+            /** Simulation Options */
+            simulation_options?: components["schemas"]["QGetRubricsListV3Simulation"][] | null;
+        };
         /** GetScenarioDetailApiRequest */
         GetScenarioDetailApiRequest: {
             /**
@@ -12007,6 +12085,34 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
+        /** ICreateRubricV3Standard */
+        ICreateRubricV3Standard: {
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** ICreateRubricV3StandardGroup */
+        ICreateRubricV3StandardGroup: {
+            /** Name */
+            name: string | null;
+            /** Short Name */
+            short_name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+            /** Position */
+            position: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Standards */
+            standards: components["schemas"]["ICreateRubricV3Standard"][] | null;
+        };
         /** IProcessCsvV3ColumnMapping */
         IProcessCsvV3ColumnMapping: {
             /** Csv Column */
@@ -12057,6 +12163,34 @@ export interface components {
             default: boolean | null;
             /** Active */
             active: boolean | null;
+        };
+        /** IUpdateRubricV3Standard */
+        IUpdateRubricV3Standard: {
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** IUpdateRubricV3StandardGroup */
+        IUpdateRubricV3StandardGroup: {
+            /** Name */
+            name: string | null;
+            /** Short Name */
+            short_name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+            /** Position */
+            position: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Standards */
+            standards: components["schemas"]["IUpdateRubricV3Standard"][] | null;
         };
         /** IUpsertStaffV3Profile */
         IUpsertStaffV3Profile: {
@@ -14730,6 +14864,187 @@ export interface components {
             /** Description */
             description: string | null;
         };
+        /** QGetRubricDetailV3Agent */
+        QGetRubricDetailV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Roles */
+            roles: string[] | null;
+        };
+        /** QGetRubricDetailV3Department */
+        QGetRubricDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetRubricDetailV3Standard */
+        QGetRubricDetailV3Standard: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** QGetRubricDetailV3StandardGroup */
+        QGetRubricDetailV3StandardGroup: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+            /** Position */
+            position: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Standard Ids */
+            standard_ids: string[] | null;
+        };
+        /** QGetRubricNewV3Agent */
+        QGetRubricNewV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Roles */
+            roles: string[] | null;
+        };
+        /** QGetRubricNewV3Department */
+        QGetRubricNewV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetRubricNewV3Standard */
+        QGetRubricNewV3Standard: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** QGetRubricNewV3StandardGroup */
+        QGetRubricNewV3StandardGroup: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+            /** Position */
+            position: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Standard Ids */
+            standard_ids: string[] | null;
+        };
+        /** QGetRubricsListV3Department */
+        QGetRubricsListV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetRubricsListV3Rubric */
+        QGetRubricsListV3Rubric: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+            /** Pass Percentage */
+            pass_percentage: number | null;
+            /** Agent Role */
+            agent_role: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Simulation Ids */
+            simulation_ids: string[] | null;
+            /** Active Simulation Count */
+            active_simulation_count: number | null;
+            /** Total Simulation Links */
+            total_simulation_links: number | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Can Duplicate */
+            can_duplicate: boolean | null;
+            /** Standard Group Ids */
+            standard_group_ids: string[] | null;
+        };
+        /** QGetRubricsListV3Simulation */
+        QGetRubricsListV3Simulation: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Time Limit */
+            time_limit: number | null;
+        };
+        /** QGetRubricsListV3Standard */
+        QGetRubricsListV3Standard: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** QGetRubricsListV3StandardGroup */
+        QGetRubricsListV3StandardGroup: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+        };
         /** QGetScenarioDetailV3Agent */
         QGetScenarioDetailV3Agent: {
             /** Agent Id */
@@ -17059,64 +17374,6 @@ export interface components {
             }[];
         };
         /**
-         * RubricDetailRequest
-         * @description Request for rubric detail.
-         */
-        RubricDetailRequest: {
-            /** Rubricid */
-            rubricId: string;
-        };
-        /**
-         * RubricDetailResponse
-         * @description Response for rubric detail endpoint.
-         */
-        RubricDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Active */
-            active: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Standard Group Ids */
-            standard_group_ids: string[];
-            /** Standard Groups Detail */
-            standard_groups_detail: {
-                [key: string]: components["schemas"]["StandardGroupDetail"];
-            };
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["StandardMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Rubric Agent Id */
-            rubric_agent_id?: string | null;
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: components["schemas"]["AgentMappingItem"];
-            };
-            /** Valid Agent Ids */
-            valid_agent_ids: string[];
-        };
-        /**
          * RubricGenerationCompletePayload
          * @description Response indicating rubric generation completed successfully.
          */
@@ -17188,44 +17445,6 @@ export interface components {
             status: "success" | "warning" | "danger" | "neutral";
         };
         /**
-         * RubricItem
-         * @description Rubric item for list view.
-         */
-        RubricItem: {
-            /** Rubric Id */
-            rubric_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Passpercentage */
-            passPercentage: number;
-            /** Agent Role */
-            agent_role?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids: string[];
-            /** Active Simulation Count */
-            active_simulation_count: number;
-            /** Total Simulation Links */
-            total_simulation_links: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Standard Groups */
-            standard_groups: {
-                [key: string]: string[];
-            };
-        };
-        /**
          * RubricMappingItem
          * @description Rubric mapping item.
          */
@@ -17251,11 +17470,6 @@ export interface components {
             /** Hasdata */
             hasData: boolean;
         };
-        /**
-         * RubricNewRequest
-         * @description Request for default rubric detail.
-         */
-        RubricNewRequest: Record<string, never>;
         /** RubricStructure */
         RubricStructure: {
             /** Standardgroups */
@@ -17272,39 +17486,6 @@ export interface components {
                     [key: string]: unknown;
                 };
             };
-        };
-        /**
-         * RubricsListRequest
-         * @description Request for rubrics list.
-         */
-        RubricsListRequest: Record<string, never>;
-        /**
-         * RubricsListResponse
-         * @description Response for rubrics list.
-         */
-        RubricsListResponse: {
-            /** Rubrics */
-            rubrics: components["schemas"]["RubricItem"][];
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__rubrics__list__StandardGroupMappingItem"];
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["StandardMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__rubrics__list__SimulationMappingItem"];
-            };
-            /** Simulation Options */
-            simulation_options: {
-                [key: string]: string;
-            }[];
         };
         /**
          * RunItem
@@ -18542,22 +18723,6 @@ export interface components {
             }[];
         };
         /**
-         * StandardGroupDetail
-         * @description Standard group detail for detail response.
-         */
-        StandardGroupDetail: {
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Position */
-            position: number;
-            /** Active */
-            active: boolean;
-            /** Standard Ids */
-            standard_ids: string[];
-        };
-        /**
          * StandardMappingItem
          * @description Standard mapping item with points.
          */
@@ -19325,45 +19490,38 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * UpdateRubricRequest
-         * @description Request for updating a rubric.
-         */
-        UpdateRubricRequest: {
-            /** Rubricid */
-            rubricId: string;
+        /** UpdateRubricApiRequest */
+        UpdateRubricApiRequest: {
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
             /** Name */
             name: string;
             /** Description */
-            description?: string | null;
+            description: string;
             /** Active */
             active: boolean;
             /** Points */
             points: number;
-            /** Passpoints */
-            passPoints: number;
-            /**
-             * Department Ids
-             * @default []
-             */
-            department_ids: string[];
-            /**
-             * Standard Groups
-             * @default []
-             */
-            standard_groups: components["schemas"]["app__api__v3__rubrics__update__StandardGroupItem"][];
+            /** Pass Points */
+            pass_points: number;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["IUpdateRubricV3StandardGroup"][] | null;
             /** Rubric Agent Id */
             rubric_agent_id?: string | null;
         };
-        /**
-         * UpdateRubricResponse
-         * @description Response for updating a rubric.
-         */
-        UpdateRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** UpdateRubricApiResponse */
+        UpdateRubricApiResponse: {
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Rubric Name */
+            rubric_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** UpdateScenarioApiRequest */
         UpdateScenarioApiRequest: {
@@ -20568,120 +20726,6 @@ export interface components {
             rubric_points?: number | null;
             /** Rubric Pass Points */
             rubric_pass_points?: number | null;
-        };
-        /**
-         * StandardGroupItem
-         * @description Standard group item for create.
-         */
-        app__api__v3__rubrics__create__StandardGroupItem: {
-            /** Name */
-            name: string;
-            /** Short Name */
-            short_name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Position */
-            position?: number | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /**
-             * Standards
-             * @default []
-             */
-            standards: components["schemas"]["app__api__v3__rubrics__create__StandardItem"][];
-        };
-        /**
-         * StandardItem
-         * @description Standard item for create.
-         */
-        app__api__v3__rubrics__create__StandardItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points: number;
-        };
-        /**
-         * SimulationMappingItem
-         * @description Simulation mapping item.
-         */
-        app__api__v3__rubrics__list__SimulationMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /**
-         * StandardGroupMappingItem
-         * @description Standard group mapping item.
-         */
-        app__api__v3__rubrics__list__StandardGroupMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Points
-             * @default 0
-             */
-            points: number;
-            /**
-             * Passpoints
-             * @default 0
-             */
-            passPoints: number;
-        };
-        /**
-         * StandardGroupItem
-         * @description Standard group item for update.
-         */
-        app__api__v3__rubrics__update__StandardGroupItem: {
-            /** Name */
-            name: string;
-            /** Short Name */
-            short_name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Position */
-            position?: number | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /**
-             * Standards
-             * @default []
-             */
-            standards: components["schemas"]["app__api__v3__rubrics__update__StandardItem"][];
-        };
-        /**
-         * StandardItem
-         * @description Standard item for update.
-         */
-        app__api__v3__rubrics__update__StandardItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Points */
-            points: number;
         };
     };
     responses: never;
@@ -23190,7 +23234,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RubricsListRequest"];
+                "application/json": components["schemas"]["GetRubricsListApiRequest"];
             };
         };
         responses: {
@@ -23200,7 +23244,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RubricsListResponse"];
+                    "application/json": components["schemas"]["GetRubricsListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23226,7 +23270,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RubricDetailRequest"];
+                "application/json": components["schemas"]["GetRubricDetailApiRequest"];
             };
         };
         responses: {
@@ -23236,7 +23280,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RubricDetailResponse"];
+                    "application/json": components["schemas"]["GetRubricDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23262,7 +23306,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RubricNewRequest"];
+                "application/json": components["schemas"]["GetRubricNewApiRequest"];
             };
         };
         responses: {
@@ -23272,7 +23316,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RubricDetailResponse"];
+                    "application/json": components["schemas"]["GetRubricNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23298,7 +23342,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DuplicateRubricRequest"];
+                "application/json": components["schemas"]["DuplicateRubricApiRequest"];
             };
         };
         responses: {
@@ -23308,7 +23352,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DuplicateRubricResponse"];
+                    "application/json": components["schemas"]["DuplicateRubricApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23334,7 +23378,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateRubricRequest"];
+                "application/json": components["schemas"]["CreateRubricApiRequest"];
             };
         };
         responses: {
@@ -23344,7 +23388,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateRubricResponse"];
+                    "application/json": components["schemas"]["CreateRubricApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23370,7 +23414,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateRubricRequest"];
+                "application/json": components["schemas"]["UpdateRubricApiRequest"];
             };
         };
         responses: {
@@ -23380,7 +23424,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateRubricResponse"];
+                    "application/json": components["schemas"]["UpdateRubricApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23406,7 +23450,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteRubricRequest"];
+                "application/json": components["schemas"]["DeleteRubricApiRequest"];
             };
         };
         responses: {
@@ -23416,7 +23460,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteRubricResponse"];
+                    "application/json": components["schemas"]["DeleteRubricApiResponse"];
                 };
             };
             /** @description Validation Error */

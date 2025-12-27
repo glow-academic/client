@@ -1,30 +1,20 @@
 """Rubric duplicate endpoint - v3 API."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (DuplicateRubricApiRequest, DuplicateRubricApiResponse,
+                           DuplicateRubricSqlParams, DuplicateRubricSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class DuplicateRubricRequest(BaseModel):
-    """Request for duplicating a rubric."""
-
-    rubricId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DuplicateRubricResponse(BaseModel):
-    """Response for duplicating a rubric."""
-
-    success: bool
-    rubricId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/rubrics/duplicate_rubric_complete.sql"
 
 
 router = APIRouter()
@@ -32,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/duplicate",
-    response_model=DuplicateRubricResponse,
+    response_model=DuplicateRubricApiResponse,
     dependencies=[
         audit_activity(
             "rubric.duplicated",
@@ -41,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def duplicate_rubric(
-    request: DuplicateRubricRequest,
+    request: DuplicateRubricApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DuplicateRubricResponse:
+) -> DuplicateRubricApiResponse:
     """Duplicate a rubric with entire hierarchy."""
     tags = ["rubrics"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -61,35 +51,43 @@ async def duplicate_rubric(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Duplicate rubric with departments, standard groups, and standards in a single SQL file
-        sql_query = load_sql("app/sql/v3/rubrics/duplicate_rubric_complete.sql")
-        sql_params = (request.rubricId, profile_id)
-        row = await conn.fetchrow(sql_query, request.rubricId, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = DuplicateRubricSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        if not row:
+        # Execute SQL with typed helper
+        result = cast(
+            DuplicateRubricSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
+
+        if not result.rubric_id:
             raise HTTPException(status_code=404, detail="Rubric not found")
 
-        rubric_id = row["rubric_id"]
-        original_name = row["original_name"]
-        actor_name = row["actor_name"]
-        if actor_name:
+        # Set audit context with data from SQL query
+        if result.actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": profile_id},
-                rubric={"name": original_name, "id": rubric_id},
+                actor={"name": result.actor_name, "id": profile_id},
+                rubric={"name": result.original_name, "id": str(result.rubric_id)},
             )
 
-        result = DuplicateRubricResponse(
-            success=True,
-            rubricId=rubric_id,
-            message=f"Rubric '{original_name}' duplicated successfully",
-        )
+        # Convert SQL result to API response
+        api_response = DuplicateRubricApiResponse.model_validate({
+            "success": True,
+            "rubric_id": result.rubric_id,
+            "message": f"Rubric '{result.original_name}' duplicated successfully",
+        })
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

@@ -1,31 +1,22 @@
 """Rubric new endpoint - v3 API."""
 
-import json
-import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-# Reuse models from detail.py
-from app.api.v3.rubrics.detail import (AgentMapping, AgentMappingItem,
-                                       DepartmentMappingItem,
-                                       RubricDetailResponse,
-                                       StandardGroupDetail,
-                                       StandardMappingItem)
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (GetRubricNewApiRequest, GetRubricNewApiResponse,
+                           GetRubricNewSqlParams, GetRubricNewSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class RubricNewRequest(BaseModel):
-    """Request for default rubric detail."""
-
-    # profileId removed - comes from X-Profile-Id header
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/rubrics/get_rubric_new_complete.sql"
 
 
 router = APIRouter()
@@ -33,185 +24,68 @@ router = APIRouter()
 
 @router.post(
     "/new",
-    response_model=RubricDetailResponse,
+    response_model=GetRubricNewApiResponse,
     dependencies=[
         audit_activity("rubric.new", "{{ actor.name }} opened new rubric form")
     ],
 )
 async def get_rubric_new(
-    request_body: RubricNewRequest,
-    request: Request,
+    request: GetRubricNewApiRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> RubricDetailResponse:
+) -> GetRubricNewApiResponse:
     """Get default rubric detail information."""
     tags = ["rubrics"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = request_body.model_dump()
-    cache_key_val = cache_key(request.url.path, body_dict)
+    body_dict = request.model_dump(mode='json')
+    cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return RubricDetailResponse.model_validate(cached["data"])
+        return GetRubricNewApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
-        profile_id = request.state.profile_id
+        profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/rubrics/get_rubric_new_complete.sql")
-        sql_params = (uuid.UUID(profile_id),)
-        row = await conn.fetchrow(sql_query, uuid.UUID(profile_id))
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetRubricNewSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        if not row:
-            raise HTTPException(
-                status_code=404, detail="No rubrics found for user's departments"
-            )
-
-        actor_name = row.get("actor_name")
-        if actor_name:
-            audit_set(request, actor={"name": actor_name, "id": profile_id})
-
-        # Parse standard groups from JSONB (same as detail.py)
-        standard_groups_detail: dict[str, StandardGroupDetail] = {}
-        standard_groups_mapping: dict[str, dict[str, str]] = {}
-        standards_mapping: dict[str, StandardMappingItem] = {}
-        standard_group_ids: list[str] = []
-
-        if row.get("standard_groups_complete"):
-            groups_data = row["standard_groups_complete"]
-            if isinstance(groups_data, str):
-                groups_data = json.loads(groups_data)
-            if isinstance(groups_data, list):
-                for group in groups_data:
-                    if isinstance(group, dict):
-                        group_id = group.get("id", "")
-                        standard_group_ids.append(group_id)
-                        standard_ids = []
-                        if group.get("standards"):
-                            for std in group["standards"]:
-                                if isinstance(std, dict):
-                                    std_id = std.get("id", "")
-                                    standard_ids.append(std_id)
-                                    standards_mapping[std_id] = StandardMappingItem(
-                                        name=std.get("name", ""),
-                                        description=std.get("description", ""),
-                                        points=std.get("points", 0),
-                                    )
-                        standard_groups_detail[group_id] = StandardGroupDetail(
-                            points=group.get("points", 0),
-                            passPoints=group.get("passPoints", 0),
-                            position=group.get("position", 1),
-                            active=group.get("active", True),
-                            standard_ids=standard_ids,
-                        )
-                        standard_groups_mapping[group_id] = {
-                            "name": group.get("name", ""),
-                            "description": group.get("description", ""),
-                        }
-
-        # Parse department mapping (same as detail.py)
-        department_mapping: dict[str, DepartmentMappingItem] = {}
-        if row.get("department_mapping"):
-            dept_data = row["department_mapping"]
-            if isinstance(dept_data, str):
-                dept_data = json.loads(dept_data)
-            if isinstance(dept_data, dict):
-                for did, ddata in dept_data.items():
-                    if isinstance(ddata, dict):
-                        department_mapping[did] = DepartmentMappingItem(
-                            name=ddata.get("name", ""),
-                            description=ddata.get("description", ""),
-                        )
-
-        # Get user role and primary department for default behavior
-        user_role = row.get("user_role", "trainee")
-        is_superadmin = user_role == "superadmin"
-        primary_department_id = row.get("primary_department_id")
-
-        # Set default department_ids based on role
-        # Superadmin: None (empty = all departments = default object)
-        # Non-superadmin: [primaryDepartmentId] if available
-        if is_superadmin:
-            dept_ids = None
-        else:
-            dept_ids = [primary_department_id] if primary_department_id else []
-
-        is_default = dept_ids is None or len(dept_ids) == 0
-        # Default rubrics (no department_ids) are read-only for non-superadmin
-        can_edit = not (is_default and not is_superadmin) and user_role in (
-            "admin",
-            "superadmin",
+        # Execute SQL with typed helper (single row result)
+        result = cast(
+            GetRubricNewSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        # Convert arrays
-        valid_department_ids = [
-            str(did) for did in (row.get("valid_department_ids") or [])
-        ]
+        # Set audit context
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        # Get rubric_agent_id from row (may be null for new rubrics)
-        rubric_agent_id = row.get("rubric_agent_id")
-        rubric_agent_id_str = str(rubric_agent_id) if rubric_agent_id else None
+        # Convert SQL result to API response
+        response_data = GetRubricNewApiResponse.model_validate(result.model_dump())
 
-        # Parse agent mapping
-        agent_mapping: AgentMapping = {}
-        if row.get("agent_mapping"):
-            agent_data = row["agent_mapping"]
-            if isinstance(agent_data, str):
-                agent_data = json.loads(agent_data)
-            if isinstance(agent_data, dict):
-                for aid, adata in agent_data.items():
-                    if isinstance(adata, dict):
-                        roles = adata.get("roles", [])
-                        if isinstance(roles, str):
-                            try:
-                                roles = json.loads(roles)
-                            except json.JSONDecodeError:
-                                roles = []
-                        if not isinstance(roles, list):
-                            roles = []
-                        agent_mapping[aid] = AgentMappingItem(
-                            name=adata.get("name", ""),
-                            description=adata.get("description", ""),
-                            roles=[str(r) for r in roles],
-                        )
-
-        valid_agent_ids = [str(aid) for aid in (row.get("valid_agent_ids") or [])]
-
-        response_data = RubricDetailResponse(
-            name=row.get("name", ""),
-            description=row.get("description", ""),
-            department_ids=dept_ids,
-            valid_department_ids=valid_department_ids,
-            points=row.get("points", 0),
-            passPoints=row.get("passpoints", 0),
-            active=row.get("active", False),
-            can_edit=can_edit,
-            standard_group_ids=standard_group_ids,
-            standard_groups_detail=standard_groups_detail,
-            standard_groups_mapping=standard_groups_mapping,
-            standards_mapping=standards_mapping,
-            department_mapping=department_mapping,
-            rubric_agent_id=rubric_agent_id_str,
-            agent_mapping=agent_mapping,
-            valid_agent_ids=valid_agent_ids,
-        )
-
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": response_data.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )
@@ -224,9 +98,9 @@ async def get_rubric_new(
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=request.url.path,
+            route_path=http_request.url.path,
             operation="get_rubric_new",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=request,
+            request=http_request,
         )

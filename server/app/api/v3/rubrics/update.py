@@ -1,59 +1,20 @@
 """Rubric update endpoint - v3 API."""
 
-import json
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (UpdateRubricApiRequest, UpdateRubricApiResponse,
+                           UpdateRubricSqlParams, UpdateRubricSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class StandardItem(BaseModel):
-    """Standard item for update."""
-
-    name: str
-    description: str | None = None
-    points: int
-
-
-class StandardGroupItem(BaseModel):
-    """Standard group item for update."""
-
-    name: str
-    short_name: str | None = None
-    description: str | None = None
-    points: int
-    passPoints: int
-    position: int | None = None
-    active: bool = True
-    standards: list[StandardItem] = []
-
-
-class UpdateRubricRequest(BaseModel):
-    """Request for updating a rubric."""
-
-    rubricId: str
-    name: str
-    description: str | None = None
-    active: bool
-    points: int
-    passPoints: int
-    department_ids: list[str] = []
-    standard_groups: list[StandardGroupItem] = []
-    rubric_agent_id: str | None = None
-    # profileId removed - comes from X-Profile-Id header
-
-
-class UpdateRubricResponse(BaseModel):
-    """Response for updating a rubric."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/rubrics/update_rubric_complete.sql"
 
 
 router = APIRouter()
@@ -61,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/update",
-    response_model=UpdateRubricResponse,
+    response_model=UpdateRubricApiResponse,
     dependencies=[
         audit_activity(
             "rubric.updated", "{{ actor.name }} updated rubric '{{ rubric.name }}'"
@@ -69,15 +30,15 @@ router = APIRouter()
     ],
 )
 async def update_rubric(
-    request: UpdateRubricRequest,
+    request: UpdateRubricApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateRubricResponse:
+) -> UpdateRubricApiResponse:
     """Update an existing rubric (replaces entire hierarchy)."""
     tags = ["rubrics"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -89,72 +50,44 @@ async def update_rubric(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert standard groups to JSONB array for SQL
-        standard_groups_json = json.dumps(
-            [
-                {
-                    "name": group.name,
-                    "short_name": group.short_name,
-                    "description": group.description,
-                    "points": group.points,
-                    "passPoints": group.passPoints,
-                    "position": group.position,
-                    "active": group.active,
-                    "standards": [
-                        {
-                            "name": standard.name,
-                            "description": standard.description,
-                            "points": standard.points,
-                        }
-                        for standard in group.standards
-                    ],
-                }
-                for group in request.standard_groups
-            ]
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double star pattern: **request.model_dump()
+        params = UpdateRubricSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
+
+        # Execute SQL with typed helper
+        result = cast(
+            UpdateRubricSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        # Ensure department_ids is always an array (empty if None)
-        department_ids = request.department_ids if request.department_ids else []
-
-        # Update rubric with departments, standard groups, and standards in a single SQL file
-        sql_query = load_sql("app/sql/v3/rubrics/update_rubric_complete.sql")
-        sql_params = (
-            request.rubricId,
-            request.name,
-            request.description,
-            request.active,
-            request.points,
-            request.passPoints,
-            department_ids,
-            standard_groups_json,
-            profile_id,
-            request.rubric_agent_id,
-        )
-        row = await conn.fetchrow(sql_query, *sql_params)
-
-        if not row:
+        if not result.rubric_id:
             raise HTTPException(status_code=404, detail="Rubric not found")
 
-        rubric_name = row["rubric_name"]
-        actor_name = row["actor_name"]
-        if actor_name:
+        # Set audit context with data from SQL query
+        if result.actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": profile_id},
-                rubric={"name": rubric_name, "id": request.rubricId},
+                actor={"name": result.actor_name, "id": profile_id},
+                rubric={"name": result.rubric_name, "id": str(request.rubric_id)},
             )
 
-        result = UpdateRubricResponse(
-            success=True,
-            message="Rubric updated successfully",
-        )
+        # Convert SQL result to API response
+        api_response = UpdateRubricApiResponse.model_validate({
+            "success": True,
+            "message": "Rubric updated successfully",
+        })
 
         # Invalidate cache after mutation (both list and individual rubric)
-        all_tags = tags + [f"rubric:{request.rubricId}"]
+        all_tags = tags + [f"rubric:{request.rubric_id}"]
         await invalidate_tags(all_tags)
         response.headers["X-Invalidate-Tags"] = ",".join(all_tags)
 
-        return result
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

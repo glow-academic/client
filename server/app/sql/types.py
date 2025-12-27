@@ -6132,6 +6132,518 @@ class DeletePromptApiResponse(BaseModel):
 
 
 
+# Generated from: create_rubric
+
+class ICreateRubricV3Standard(BaseModel):
+
+    name: str | None
+    description: str | None
+    points: int | None
+
+class ICreateRubricV3StandardGroup(BaseModel):
+
+    name: str | None
+    short_name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+    position: int | None
+    active: bool | None
+    standards: list[ICreateRubricV3Standard] | None
+
+class CreateRubricSqlParams(BaseModel):
+
+    name: str
+    description: str
+    active: bool
+    points: int
+    pass_points: int
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    standard_groups: list[ICreateRubricV3StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric_agent_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert standard_groups composite array to tuples for asyncpg
+        standard_groups_tuples = [
+            (conn.name, conn.short_name, conn.description, conn.points, conn.pass_points, conn.position, conn.active, conn.standards)
+            for conn in self.standard_groups
+        ]
+        return (
+            self.name,
+            self.description,
+            self.active,
+            self.points,
+            self.pass_points,
+            self.profile_id,
+            self.department_ids,
+            standard_groups_tuples,
+            self.rubric_agent_id,
+        )
+
+class CreateRubricSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    actor_name: str | None = None
+
+class CreateRubricApiRequest(BaseModel):
+
+    name: str
+    description: str
+    active: bool
+    points: int
+    pass_points: int
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    standard_groups: list[ICreateRubricV3StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric_agent_id: UUID | None = None
+
+class CreateRubricApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: delete_rubric
+
+class DeleteRubricSqlParams(BaseModel):
+
+    rubric_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.rubric_id,
+            self.profile_id,
+        )
+
+class DeleteRubricSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+    usage_count: int | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
+
+class DeleteRubricApiRequest(BaseModel):
+
+    rubric_id: UUID
+
+class DeleteRubricApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    name: str | None = None
+    usage_count: int | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: duplicate_rubric
+
+class DuplicateRubricSqlParams(BaseModel):
+
+    original_rubric_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.original_rubric_id,
+            self.profile_id,
+        )
+
+class DuplicateRubricSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicateRubricApiRequest(BaseModel):
+
+    original_rubric_id: UUID
+
+class DuplicateRubricApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_rubric_detail
+
+class GetRubricDetailSqlParams(BaseModel):
+
+    rubric_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.rubric_id,
+            self.profile_id,
+        )
+
+class QGetRubricDetailV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    roles: list[str] | None
+
+
+
+
+class QGetRubricDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetRubricDetailV3Standard(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetRubricDetailV3StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+    position: int | None
+    active: bool | None
+    standard_ids: list[UUID] | None
+
+class GetRubricDetailSqlRow(BaseModel):
+
+    rubric_exists: bool | None = None
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    points: int | None = None
+    pass_points: int | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    rubric_agent_id: UUID | None = None
+    valid_agent_ids: list[str] | None = None
+    actor_name: str | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_groups: list[QGetRubricDetailV3StandardGroup] | None = None
+    standards: list[QGetRubricDetailV3Standard] | None = None
+    departments: list[QGetRubricDetailV3Department] | None = None
+    agents: list[QGetRubricDetailV3Agent] | None = None
+
+class GetRubricDetailApiRequest(BaseModel):
+
+    rubric_id: UUID
+
+class GetRubricDetailApiResponse(BaseModel):
+
+    rubric_exists: bool | None = None
+    rubric_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    points: int | None = None
+    pass_points: int | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    rubric_agent_id: UUID | None = None
+    valid_agent_ids: list[str] | None = None
+    actor_name: str | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_groups: list[QGetRubricDetailV3StandardGroup] | None = None
+    standards: list[QGetRubricDetailV3Standard] | None = None
+    departments: list[QGetRubricDetailV3Department] | None = None
+    agents: list[QGetRubricDetailV3Agent] | None = None
+
+
+
+# Generated from: get_rubric_new
+
+class GetRubricNewSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetRubricNewV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    roles: list[str] | None
+
+
+
+
+class QGetRubricNewV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetRubricNewV3Standard(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetRubricNewV3StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+    position: int | None
+    active: bool | None
+    standard_ids: list[UUID] | None
+
+class GetRubricNewSqlRow(BaseModel):
+
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    points: int | None = None
+    pass_points: int | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    rubric_agent_id: UUID | None = None
+    valid_agent_ids: list[str] | None = None
+    actor_name: str | None = None
+    user_role: str | None = None
+    primary_department_id: UUID | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_groups: list[QGetRubricNewV3StandardGroup] | None = None
+    standards: list[QGetRubricNewV3Standard] | None = None
+    departments: list[QGetRubricNewV3Department] | None = None
+    agents: list[QGetRubricNewV3Agent] | None = None
+
+class GetRubricNewApiRequest(BaseModel):
+
+    pass
+
+class GetRubricNewApiResponse(BaseModel):
+
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    points: int | None = None
+    pass_points: int | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    rubric_agent_id: UUID | None = None
+    valid_agent_ids: list[str] | None = None
+    actor_name: str | None = None
+    user_role: str | None = None
+    primary_department_id: UUID | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_groups: list[QGetRubricNewV3StandardGroup] | None = None
+    standards: list[QGetRubricNewV3Standard] | None = None
+    departments: list[QGetRubricNewV3Department] | None = None
+    agents: list[QGetRubricNewV3Agent] | None = None
+
+
+
+# Generated from: get_rubrics_list
+
+class GetRubricsListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetRubricsListV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetRubricsListV3Rubric(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+    pass_percentage: int | None
+    agent_role: str | None
+    department_ids: list[str] | None
+    simulation_ids: list[str] | None
+    active_simulation_count: int | None
+    total_simulation_links: int | None
+    can_edit: bool | None
+    can_delete: bool | None
+    can_duplicate: bool | None
+    standard_group_ids: list[UUID] | None
+
+
+
+
+class QGetRubricsListV3Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+
+
+
+
+class QGetRubricsListV3Standard(BaseModel):
+
+    standard_id: UUID | None
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetRubricsListV3StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetRubricsListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    rubrics: list[QGetRubricsListV3Rubric] | None = None
+    standard_groups: list[QGetRubricsListV3StandardGroup] | None = None
+    standards: list[QGetRubricsListV3Standard] | None = None
+    departments: list[QGetRubricsListV3Department] | None = None
+    simulations: list[QGetRubricsListV3Simulation] | None = None
+    simulation_options: list[QGetRubricsListV3Simulation] | None = None
+
+class GetRubricsListApiRequest(BaseModel):
+
+    pass
+
+class GetRubricsListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    rubrics: list[QGetRubricsListV3Rubric] | None = None
+    standard_groups: list[QGetRubricsListV3StandardGroup] | None = None
+    standards: list[QGetRubricsListV3Standard] | None = None
+    departments: list[QGetRubricsListV3Department] | None = None
+    simulations: list[QGetRubricsListV3Simulation] | None = None
+    simulation_options: list[QGetRubricsListV3Simulation] | None = None
+
+
+
+# Generated from: update_rubric
+
+class IUpdateRubricV3Standard(BaseModel):
+
+    name: str | None
+    description: str | None
+    points: int | None
+
+class IUpdateRubricV3StandardGroup(BaseModel):
+
+    name: str | None
+    short_name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+    position: int | None
+    active: bool | None
+    standards: list[IUpdateRubricV3Standard] | None
+
+class UpdateRubricSqlParams(BaseModel):
+
+    rubric_id: UUID
+    name: str
+    description: str
+    active: bool
+    points: int
+    pass_points: int
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    standard_groups: list[IUpdateRubricV3StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric_agent_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert standard_groups composite array to tuples for asyncpg
+        standard_groups_tuples = [
+            (conn.name, conn.short_name, conn.description, conn.points, conn.pass_points, conn.position, conn.active, conn.standards)
+            for conn in self.standard_groups
+        ]
+        return (
+            self.rubric_id,
+            self.name,
+            self.description,
+            self.active,
+            self.points,
+            self.pass_points,
+            self.profile_id,
+            self.department_ids,
+            standard_groups_tuples,
+            self.rubric_agent_id,
+        )
+
+class UpdateRubricSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    rubric_name: str | None = None
+    actor_name: str | None = None
+
+class UpdateRubricApiRequest(BaseModel):
+
+    rubric_id: UUID
+    name: str
+    description: str
+    active: bool
+    points: int
+    pass_points: int
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    standard_groups: list[IUpdateRubricV3StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric_agent_id: UUID | None = None
+
+class UpdateRubricApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    rubric_name: str | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: create_scenario
 
 class QCreateScenarioV3Parameter(BaseModel):
@@ -9419,6 +9931,48 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeletePromptApiRequest",
         "DeletePromptApiResponse",
     ),
+    "app/sql/v3/rubrics/create_rubric_complete.sql": (
+        "CreateRubricSqlParams",
+        "CreateRubricSqlRow",
+        "CreateRubricApiRequest",
+        "CreateRubricApiResponse",
+    ),
+    "app/sql/v3/rubrics/delete_rubric_complete.sql": (
+        "DeleteRubricSqlParams",
+        "DeleteRubricSqlRow",
+        "DeleteRubricApiRequest",
+        "DeleteRubricApiResponse",
+    ),
+    "app/sql/v3/rubrics/duplicate_rubric_complete.sql": (
+        "DuplicateRubricSqlParams",
+        "DuplicateRubricSqlRow",
+        "DuplicateRubricApiRequest",
+        "DuplicateRubricApiResponse",
+    ),
+    "app/sql/v3/rubrics/get_rubric_detail_complete.sql": (
+        "GetRubricDetailSqlParams",
+        "GetRubricDetailSqlRow",
+        "GetRubricDetailApiRequest",
+        "GetRubricDetailApiResponse",
+    ),
+    "app/sql/v3/rubrics/get_rubric_new_complete.sql": (
+        "GetRubricNewSqlParams",
+        "GetRubricNewSqlRow",
+        "GetRubricNewApiRequest",
+        "GetRubricNewApiResponse",
+    ),
+    "app/sql/v3/rubrics/get_rubrics_list_complete.sql": (
+        "GetRubricsListSqlParams",
+        "GetRubricsListSqlRow",
+        "GetRubricsListApiRequest",
+        "GetRubricsListApiResponse",
+    ),
+    "app/sql/v3/rubrics/update_rubric_complete.sql": (
+        "UpdateRubricSqlParams",
+        "UpdateRubricSqlRow",
+        "UpdateRubricApiRequest",
+        "UpdateRubricApiResponse",
+    ),
     "app/sql/v3/scenarios/create_scenario_complete.sql": (
         "CreateScenarioSqlParams",
         "CreateScenarioSqlRow",
@@ -10105,6 +10659,41 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/prompts/delete_prompt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/create_rubric_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/delete_rubric_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/duplicate_rubric_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/get_rubric_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/get_rubric_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/get_rubrics_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/rubrics/update_rubric_complete.sql"]
     ) -> SqlString: ...
 
     @overload

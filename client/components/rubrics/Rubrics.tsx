@@ -92,20 +92,16 @@ export default function Rubrics({
   const rubricsData = serverListData;
 
   const rubrics = useMemo(() => rubricsData?.rubrics || [], [rubricsData]);
-  const standardGroupsMapping = useMemo(
-    () => rubricsData?.standard_groups_mapping || {},
+  const standardGroups = useMemo(
+    () => rubricsData?.standard_groups || [],
     [rubricsData],
   );
-  const standardsMapping = useMemo(
-    () => rubricsData?.standards_mapping || {},
+  const standards = useMemo(
+    () => rubricsData?.standards || [],
     [rubricsData],
   );
-  const departmentMapping = useMemo(
-    () =>
-      (rubricsData?.department_mapping as Record<
-        string,
-        { name: string; description: string }
-      >) || {},
+  const departments = useMemo(
+    () => rubricsData?.departments || [],
     [rubricsData],
   );
 
@@ -117,31 +113,21 @@ export default function Rubrics({
         rubric.department_ids.forEach((id) => allDepartmentIds.add(id));
       }
     });
-    return Object.entries(departmentMapping)
-      .filter(([id]) => allDepartmentIds.has(id))
-      .map(([id, obj]) => ({
-        value: id,
-        label: obj?.name || id,
+    return departments
+      .filter((dept) => dept.department_id && allDepartmentIds.has(String(dept.department_id)))
+      .map((dept) => ({
+        value: String(dept.department_id),
+        label: dept.name || String(dept.department_id),
       }));
-  }, [departmentMapping, rubrics]);
+  }, [departments, rubrics]);
 
-  // Use server-provided simulation options - filter to only show options that have actual data
+  // Use server-provided simulation options (SQL handles filtering and disambiguation)
   const simulationOptions = useMemo(() => {
-    const allSimulationIds = new Set<string>();
-    rubrics.forEach((rubric) => {
-      if (rubric.simulation_ids) {
-        rubric.simulation_ids.forEach((id) => allSimulationIds.add(id));
-      }
-    });
-    return (rubricsData?.simulation_options || [])
-      .map((opt) => ({
-        value: opt["value"] as string,
-        label: opt["label"] as string,
-      }))
-      .filter(
-        (opt) => opt.value && opt.label && allSimulationIds.has(opt.value),
-      );
-  }, [rubricsData?.simulation_options, rubrics]);
+    return (rubricsData?.simulation_options || []).map((opt) => ({
+      value: String(opt.simulation_id),
+      label: opt.name || String(opt.simulation_id),
+    }));
+  }, [rubricsData?.simulation_options]);
 
   // Filter pass percentage options to only show ranges that have actual data
   const passPercentageOptions = useMemo(() => {
@@ -355,15 +341,15 @@ export default function Rubrics({
   const renderRubricCard = (rubric: (typeof rubrics)[number]) => {
     // Calculate pass percentage from standard groups (sum of passPoints / sum of points)
     // This matches how RubricDetails calculates it
-    const groupIds = Object.keys(rubric.standard_groups || {});
+    const groupIds = rubric.standard_group_ids || [];
     let totalPoints = 0;
     let totalPassPoints = 0;
 
     groupIds.forEach((groupId) => {
-      const group = standardGroupsMapping[groupId];
+      const group = standardGroups.find((g) => g.standard_group_id === groupId);
       if (group) {
         totalPoints += group.points || 0;
-        totalPassPoints += group.passPoints || 0;
+        totalPassPoints += group.pass_points || 0;
       }
     });
 
@@ -465,9 +451,47 @@ export default function Rubrics({
         {/* Rubric Table */}
         <CardContent className="p-6">
           <TableRubric
-            standardGroups={rubric.standard_groups}
-            standardGroupsMapping={standardGroupsMapping}
-            standardsMapping={standardsMapping}
+            standardGroups={(() => {
+              // Convert standard_group_ids array to dict format expected by TableRubric
+              const groupsDict: Record<string, string[]> = {};
+              const groupIds = rubric.standard_group_ids || [];
+              groupIds.forEach((groupId) => {
+                const group = standardGroups.find((g) => g.standard_group_id === groupId);
+                if (group && group.standard_ids) {
+                  groupsDict[String(groupId)] = group.standard_ids.map(String);
+                }
+              });
+              return groupsDict;
+            })()}
+            standardGroupsMapping={(() => {
+              // Convert standard_groups array to dict format expected by TableRubric
+              const mapping: Record<string, { name: string; description: string; points: number; passPoints: number }> = {};
+              standardGroups.forEach((group) => {
+                if (group.standard_group_id) {
+                  mapping[String(group.standard_group_id)] = {
+                    name: group.name || "",
+                    description: group.description || "",
+                    points: group.points || 0,
+                    passPoints: group.pass_points || 0,
+                  };
+                }
+              });
+              return mapping;
+            })()}
+            standardsMapping={(() => {
+              // Convert standards array to dict format expected by TableRubric
+              const mapping: Record<string, { name: string; description: string; points: number }> = {};
+              standards.forEach((standard) => {
+                if (standard.standard_id) {
+                  mapping[String(standard.standard_id)] = {
+                    name: standard.name || "",
+                    description: standard.description || "",
+                    points: standard.points || 0,
+                  };
+                }
+              });
+              return mapping;
+            })()}
             showFullStandardsOnMobile={true}
           />
         </CardContent>

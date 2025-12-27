@@ -5643,7 +5643,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RubricsListRequest"
+                "$ref": "#/components/schemas/GetRubricsListApiRequest"
               }
             }
           }
@@ -5654,7 +5654,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RubricsListResponse"
+                  "$ref": "#/components/schemas/GetRubricsListApiResponse"
                 }
               }
             }
@@ -5724,7 +5724,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RubricDetailRequest"
+                "$ref": "#/components/schemas/GetRubricDetailApiRequest"
               }
             }
           }
@@ -5735,7 +5735,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RubricDetailResponse"
+                  "$ref": "#/components/schemas/GetRubricDetailApiResponse"
                 }
               }
             }
@@ -5805,7 +5805,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RubricNewRequest"
+                "$ref": "#/components/schemas/GetRubricNewApiRequest"
               }
             }
           }
@@ -5816,7 +5816,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RubricDetailResponse"
+                  "$ref": "#/components/schemas/GetRubricNewApiResponse"
                 }
               }
             }
@@ -5886,7 +5886,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DuplicateRubricRequest"
+                "$ref": "#/components/schemas/DuplicateRubricApiRequest"
               }
             }
           }
@@ -5897,7 +5897,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DuplicateRubricResponse"
+                  "$ref": "#/components/schemas/DuplicateRubricApiResponse"
                 }
               }
             }
@@ -5967,7 +5967,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateRubricRequest"
+                "$ref": "#/components/schemas/CreateRubricApiRequest"
               }
             }
           }
@@ -5978,7 +5978,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateRubricResponse"
+                  "$ref": "#/components/schemas/CreateRubricApiResponse"
                 }
               }
             }
@@ -6048,7 +6048,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateRubricRequest"
+                "$ref": "#/components/schemas/UpdateRubricApiRequest"
               }
             }
           }
@@ -6059,7 +6059,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateRubricResponse"
+                  "$ref": "#/components/schemas/UpdateRubricApiResponse"
                 }
               }
             }
@@ -6129,7 +6129,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteRubricRequest"
+                "$ref": "#/components/schemas/DeleteRubricApiRequest"
               }
             }
           }
@@ -6140,7 +6140,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteRubricResponse"
+                  "$ref": "#/components/schemas/DeleteRubricApiResponse"
                 }
               }
             }
@@ -21717,33 +21717,6 @@
         "title": "ActivityListResponse",
         "description": "Response for activity list endpoint."
       },
-      "AgentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "roles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Roles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "roles"
-        ],
-        "title": "AgentMappingItem",
-        "description": "Agent mapping item with role information."
-      },
       "AggregatedResults": {
         "properties": {
           "totalScore": {
@@ -25403,56 +25376,62 @@
         "title": "CreateProviderResponse",
         "description": "Response from create provider."
       },
-      "CreateRubricRequest": {
+      "CreateRubricApiRequest": {
         "properties": {
           "name": {
             "type": "string",
             "title": "Name"
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Description"
           },
           "active": {
             "type": "boolean",
-            "title": "Active",
-            "default": true
+            "title": "Active"
           },
           "points": {
             "type": "integer",
             "title": "Points"
           },
-          "passPoints": {
+          "pass_points": {
             "type": "integer",
-            "title": "Passpoints"
+            "title": "Pass Points"
           },
           "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids",
-            "default": []
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           },
           "standard_groups": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__rubrics__create__StandardGroupItem"
-            },
-            "type": "array",
-            "title": "Standard Groups",
-            "default": []
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ICreateRubricV3StandardGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
           },
           "rubric_agent_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -25464,35 +25443,41 @@
         "type": "object",
         "required": [
           "name",
+          "description",
+          "active",
           "points",
-          "passPoints"
+          "pass_points"
         ],
-        "title": "CreateRubricRequest",
-        "description": "Request for creating a rubric."
+        "title": "CreateRubricApiRequest"
       },
-      "CreateRubricResponse": {
+      "CreateRubricApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
           },
-          "rubricId": {
-            "type": "string",
-            "title": "Rubricid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "rubricId",
-          "message"
-        ],
-        "title": "CreateRubricResponse",
-        "description": "Response for creating a rubric."
+        "title": "CreateRubricApiResponse"
       },
       "CreateScenarioApiRequest": {
         "properties": {
@@ -27637,38 +27622,81 @@
         "title": "DeleteProviderResponse",
         "description": "Response from delete provider."
       },
-      "DeleteRubricRequest": {
+      "DeleteRubricApiRequest": {
         "properties": {
-          "rubricId": {
+          "rubric_id": {
             "type": "string",
-            "title": "Rubricid"
+            "format": "uuid",
+            "title": "Rubric Id"
           }
         },
         "type": "object",
         "required": [
-          "rubricId"
+          "rubric_id"
         ],
-        "title": "DeleteRubricRequest",
-        "description": "Request for deleting a rubric."
+        "title": "DeleteRubricApiRequest"
       },
-      "DeleteRubricResponse": {
+      "DeleteRubricApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Count"
+          },
+          "deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteRubricResponse",
-        "description": "Response for deleting a rubric."
+        "title": "DeleteRubricApiResponse"
       },
       "DeleteScenarioApiRequest": {
         "properties": {
@@ -28590,43 +28618,59 @@
         "type": "object",
         "title": "DuplicatePersonaApiResponse"
       },
-      "DuplicateRubricRequest": {
+      "DuplicateRubricApiRequest": {
         "properties": {
-          "rubricId": {
+          "original_rubric_id": {
             "type": "string",
-            "title": "Rubricid"
+            "format": "uuid",
+            "title": "Original Rubric Id"
           }
         },
         "type": "object",
         "required": [
-          "rubricId"
+          "original_rubric_id"
         ],
-        "title": "DuplicateRubricRequest",
-        "description": "Request for duplicating a rubric."
+        "title": "DuplicateRubricApiRequest"
       },
-      "DuplicateRubricResponse": {
+      "DuplicateRubricApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
           },
-          "rubricId": {
-            "type": "string",
-            "title": "Rubricid"
+          "original_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Name"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "rubricId",
-          "message"
-        ],
-        "title": "DuplicateRubricResponse",
-        "description": "Response for duplicating a rubric."
+        "title": "DuplicateRubricApiResponse"
       },
       "DuplicateScenarioApiRequest": {
         "properties": {
@@ -38695,6 +38739,593 @@
         "type": "object",
         "title": "GetProfileNewApiResponse"
       },
+      "GetRubricDetailApiRequest": {
+        "properties": {
+          "rubric_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Rubric Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubric_id"
+        ],
+        "title": "GetRubricDetailApiRequest"
+      },
+      "GetRubricDetailApiResponse": {
+        "properties": {
+          "rubric_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Exists"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "rubric_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Agent Id"
+          },
+          "valid_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Agent Ids"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "standard_group_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Ids"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricDetailV3StandardGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricDetailV3Standard"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricDetailV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricDetailV3Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          }
+        },
+        "type": "object",
+        "title": "GetRubricDetailApiResponse"
+      },
+      "GetRubricNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetRubricNewApiRequest"
+      },
+      "GetRubricNewApiResponse": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "rubric_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Agent Id"
+          },
+          "valid_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Agent Ids"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Role"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "standard_group_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Ids"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricNewV3StandardGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricNewV3Standard"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricNewV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricNewV3Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          }
+        },
+        "type": "object",
+        "title": "GetRubricNewApiResponse"
+      },
+      "GetRubricsListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetRubricsListApiRequest"
+      },
+      "GetRubricsListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "rubrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricsListV3Rubric"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubrics"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricsListV3StandardGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricsListV3Standard"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricsListV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "simulations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricsListV3Simulation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulations"
+          },
+          "simulation_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetRubricsListV3Simulation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Options"
+          }
+        },
+        "type": "object",
+        "title": "GetRubricsListApiResponse"
+      },
       "GetScenarioDetailApiRequest": {
         "properties": {
           "scenario_id": {
@@ -43754,6 +44385,157 @@
         ],
         "title": "ICreateParameterV3FieldConnection"
       },
+      "ICreateRubricV3Standard": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "points"
+        ],
+        "title": "ICreateRubricV3Standard"
+      },
+      "ICreateRubricV3StandardGroup": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Short Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ICreateRubricV3Standard"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "short_name",
+          "description",
+          "points",
+          "pass_points",
+          "position",
+          "active",
+          "standards"
+        ],
+        "title": "ICreateRubricV3StandardGroup"
+      },
       "IProcessCsvV3ColumnMapping": {
         "properties": {
           "csv_column": {
@@ -44015,6 +44797,157 @@
           "active"
         ],
         "title": "IUpdateParameterV3FieldConnection"
+      },
+      "IUpdateRubricV3Standard": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "points"
+        ],
+        "title": "IUpdateRubricV3Standard"
+      },
+      "IUpdateRubricV3StandardGroup": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Short Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IUpdateRubricV3Standard"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "short_name",
+          "description",
+          "points",
+          "pass_points",
+          "position",
+          "active",
+          "standards"
+        ],
+        "title": "IUpdateRubricV3StandardGroup"
       },
       "IUpsertStaffV3Profile": {
         "properties": {
@@ -55105,6 +56038,1001 @@
           "description"
         ],
         "title": "QGetProfileNewV3Department"
+      },
+      "QGetRubricDetailV3Agent": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "name",
+          "description",
+          "roles"
+        ],
+        "title": "QGetRubricDetailV3Agent"
+      },
+      "QGetRubricDetailV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetRubricDetailV3Department"
+      },
+      "QGetRubricDetailV3Standard": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "name",
+          "description",
+          "points"
+        ],
+        "title": "QGetRubricDetailV3Standard"
+      },
+      "QGetRubricDetailV3StandardGroup": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "standard_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "name",
+          "description",
+          "points",
+          "pass_points",
+          "position",
+          "active",
+          "standard_ids"
+        ],
+        "title": "QGetRubricDetailV3StandardGroup"
+      },
+      "QGetRubricNewV3Agent": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "name",
+          "description",
+          "roles"
+        ],
+        "title": "QGetRubricNewV3Agent"
+      },
+      "QGetRubricNewV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetRubricNewV3Department"
+      },
+      "QGetRubricNewV3Standard": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "name",
+          "description",
+          "points"
+        ],
+        "title": "QGetRubricNewV3Standard"
+      },
+      "QGetRubricNewV3StandardGroup": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "standard_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "name",
+          "description",
+          "points",
+          "pass_points",
+          "position",
+          "active",
+          "standard_ids"
+        ],
+        "title": "QGetRubricNewV3StandardGroup"
+      },
+      "QGetRubricsListV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetRubricsListV3Department"
+      },
+      "QGetRubricsListV3Rubric": {
+        "properties": {
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          },
+          "pass_percentage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Percentage"
+          },
+          "agent_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Role"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "active_simulation_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Simulation Count"
+          },
+          "total_simulation_links": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Simulation Links"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          },
+          "standard_group_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rubric_id",
+          "name",
+          "description",
+          "points",
+          "pass_points",
+          "pass_percentage",
+          "agent_role",
+          "department_ids",
+          "simulation_ids",
+          "active_simulation_count",
+          "total_simulation_links",
+          "can_edit",
+          "can_delete",
+          "can_duplicate",
+          "standard_group_ids"
+        ],
+        "title": "QGetRubricsListV3Rubric"
+      },
+      "QGetRubricsListV3Simulation": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "name",
+          "description",
+          "time_limit"
+        ],
+        "title": "QGetRubricsListV3Simulation"
+      },
+      "QGetRubricsListV3Standard": {
+        "properties": {
+          "standard_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Id"
+          },
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_id",
+          "standard_group_id",
+          "name",
+          "description",
+          "points"
+        ],
+        "title": "QGetRubricsListV3Standard"
+      },
+      "QGetRubricsListV3StandardGroup": {
+        "properties": {
+          "standard_group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Group Id"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Points"
+          },
+          "pass_points": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_group_id",
+          "rubric_id",
+          "name",
+          "description",
+          "points",
+          "pass_points"
+        ],
+        "title": "QGetRubricsListV3StandardGroup"
       },
       "QGetScenarioDetailV3Agent": {
         "properties": {
@@ -67296,152 +69224,6 @@
         "title": "ResponseInputItem",
         "description": "Input item for agent conversation (TResponseInputItem format)."
       },
-      "RubricDetailRequest": {
-        "properties": {
-          "rubricId": {
-            "type": "string",
-            "title": "Rubricid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "rubricId"
-        ],
-        "title": "RubricDetailRequest",
-        "description": "Request for rubric detail."
-      },
-      "RubricDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "points": {
-            "type": "integer",
-            "title": "Points"
-          },
-          "passPoints": {
-            "type": "integer",
-            "title": "Passpoints"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "standard_group_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Standard Group Ids"
-          },
-          "standard_groups_detail": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/StandardGroupDetail"
-            },
-            "type": "object",
-            "title": "Standard Groups Detail"
-          },
-          "standard_groups_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Standard Groups Mapping"
-          },
-          "standards_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/StandardMappingItem"
-            },
-            "type": "object",
-            "title": "Standards Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "rubric_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Agent Id"
-          },
-          "agent_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/AgentMappingItem"
-            },
-            "type": "object",
-            "title": "Agent Mapping"
-          },
-          "valid_agent_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Agent Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "department_ids",
-          "valid_department_ids",
-          "points",
-          "passPoints",
-          "active",
-          "can_edit",
-          "standard_group_ids",
-          "standard_groups_detail",
-          "standard_groups_mapping",
-          "standards_mapping",
-          "department_mapping",
-          "agent_mapping",
-          "valid_agent_ids"
-        ],
-        "title": "RubricDetailResponse",
-        "description": "Response for rubric detail endpoint."
-      },
       "RubricGenerationCompletePayload": {
         "properties": {
           "success": {
@@ -67630,114 +69412,6 @@
         "title": "RubricHeatmapResponse",
         "description": "Rubric heatmap response."
       },
-      "RubricItem": {
-        "properties": {
-          "rubric_id": {
-            "type": "string",
-            "title": "Rubric Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "points": {
-            "type": "integer",
-            "title": "Points"
-          },
-          "passPoints": {
-            "type": "integer",
-            "title": "Passpoints"
-          },
-          "passPercentage": {
-            "type": "integer",
-            "title": "Passpercentage"
-          },
-          "agent_role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Role"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "simulation_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Simulation Ids"
-          },
-          "active_simulation_count": {
-            "type": "integer",
-            "title": "Active Simulation Count"
-          },
-          "total_simulation_links": {
-            "type": "integer",
-            "title": "Total Simulation Links"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "standard_groups": {
-            "additionalProperties": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "type": "object",
-            "title": "Standard Groups"
-          }
-        },
-        "type": "object",
-        "required": [
-          "rubric_id",
-          "name",
-          "description",
-          "points",
-          "passPoints",
-          "passPercentage",
-          "simulation_ids",
-          "active_simulation_count",
-          "total_simulation_links",
-          "can_edit",
-          "can_delete",
-          "can_duplicate",
-          "standard_groups"
-        ],
-        "title": "RubricItem",
-        "description": "Rubric item for list view."
-      },
       "RubricMappingItem": {
         "properties": {
           "name": {
@@ -67806,12 +69480,6 @@
         "title": "RubricMatrixPackage",
         "description": "Per-rubric matrix package."
       },
-      "RubricNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "RubricNewRequest",
-        "description": "Request for default rubric detail."
-      },
       "RubricStructure": {
         "properties": {
           "standardGroups": {
@@ -67847,72 +69515,6 @@
           "standardsMapping"
         ],
         "title": "RubricStructure"
-      },
-      "RubricsListRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "RubricsListRequest",
-        "description": "Request for rubrics list."
-      },
-      "RubricsListResponse": {
-        "properties": {
-          "rubrics": {
-            "items": {
-              "$ref": "#/components/schemas/RubricItem"
-            },
-            "type": "array",
-            "title": "Rubrics"
-          },
-          "standard_groups_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__rubrics__list__StandardGroupMappingItem"
-            },
-            "type": "object",
-            "title": "Standard Groups Mapping"
-          },
-          "standards_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/StandardMappingItem"
-            },
-            "type": "object",
-            "title": "Standards Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "simulation_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__rubrics__list__SimulationMappingItem"
-            },
-            "type": "object",
-            "title": "Simulation Mapping"
-          },
-          "simulation_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Simulation Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "rubrics",
-          "standard_groups_mapping",
-          "standards_mapping",
-          "department_mapping",
-          "simulation_mapping",
-          "simulation_options"
-        ],
-        "title": "RubricsListResponse",
-        "description": "Response for rubrics list."
       },
       "RunItem": {
         "properties": {
@@ -71222,43 +72824,6 @@
         "title": "StandardGroupDescriptionsToolPayload",
         "description": "Request to update standard group descriptions from rubric generation tool."
       },
-      "StandardGroupDetail": {
-        "properties": {
-          "points": {
-            "type": "integer",
-            "title": "Points"
-          },
-          "passPoints": {
-            "type": "integer",
-            "title": "Passpoints"
-          },
-          "position": {
-            "type": "integer",
-            "title": "Position"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "standard_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Standard Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "points",
-          "passPoints",
-          "position",
-          "active",
-          "standard_ids"
-        ],
-        "title": "StandardGroupDetail",
-        "description": "Standard group detail for detail response."
-      },
       "StandardMappingItem": {
         "properties": {
           "name": {
@@ -73565,25 +75130,19 @@
         "title": "UpdateProviderResponse",
         "description": "Response from update provider."
       },
-      "UpdateRubricRequest": {
+      "UpdateRubricApiRequest": {
         "properties": {
-          "rubricId": {
+          "rubric_id": {
             "type": "string",
-            "title": "Rubricid"
+            "format": "uuid",
+            "title": "Rubric Id"
           },
           "name": {
             "type": "string",
             "title": "Name"
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Description"
           },
           "active": {
@@ -73594,30 +75153,44 @@
             "type": "integer",
             "title": "Points"
           },
-          "passPoints": {
+          "pass_points": {
             "type": "integer",
-            "title": "Passpoints"
+            "title": "Pass Points"
           },
           "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids",
-            "default": []
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           },
           "standard_groups": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__rubrics__update__StandardGroupItem"
-            },
-            "type": "array",
-            "title": "Standard Groups",
-            "default": []
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IUpdateRubricV3StandardGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
           },
           "rubric_agent_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -73628,33 +75201,54 @@
         },
         "type": "object",
         "required": [
-          "rubricId",
+          "rubric_id",
           "name",
+          "description",
           "active",
           "points",
-          "passPoints"
+          "pass_points"
         ],
-        "title": "UpdateRubricRequest",
-        "description": "Request for updating a rubric."
+        "title": "UpdateRubricApiRequest"
       },
-      "UpdateRubricResponse": {
+      "UpdateRubricApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "rubric_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateRubricResponse",
-        "description": "Response for updating a rubric."
+        "title": "UpdateRubricApiResponse"
       },
       "UpdateScenarioApiRequest": {
         "properties": {
@@ -77121,279 +78715,6 @@
         ],
         "title": "SimulationMappingItem",
         "description": "Simulation mapping item."
-      },
-      "app__api__v3__rubrics__create__StandardGroupItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "short_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Short Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "points": {
-            "type": "integer",
-            "title": "Points"
-          },
-          "passPoints": {
-            "type": "integer",
-            "title": "Passpoints"
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Position"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          },
-          "standards": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__rubrics__create__StandardItem"
-            },
-            "type": "array",
-            "title": "Standards",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "points",
-          "passPoints"
-        ],
-        "title": "StandardGroupItem",
-        "description": "Standard group item for create."
-      },
-      "app__api__v3__rubrics__create__StandardItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "points": {
-            "type": "integer",
-            "title": "Points"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "points"
-        ],
-        "title": "StandardItem",
-        "description": "Standard item for create."
-      },
-      "app__api__v3__rubrics__list__SimulationMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "SimulationMappingItem",
-        "description": "Simulation mapping item."
-      },
-      "app__api__v3__rubrics__list__StandardGroupMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "points": {
-            "type": "integer",
-            "title": "Points",
-            "default": 0
-          },
-          "passPoints": {
-            "type": "integer",
-            "title": "Passpoints",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "StandardGroupMappingItem",
-        "description": "Standard group mapping item."
-      },
-      "app__api__v3__rubrics__update__StandardGroupItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "short_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Short Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "points": {
-            "type": "integer",
-            "title": "Points"
-          },
-          "passPoints": {
-            "type": "integer",
-            "title": "Passpoints"
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Position"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          },
-          "standards": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__rubrics__update__StandardItem"
-            },
-            "type": "array",
-            "title": "Standards",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "points",
-          "passPoints"
-        ],
-        "title": "StandardGroupItem",
-        "description": "Standard group item for update."
-      },
-      "app__api__v3__rubrics__update__StandardItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "points": {
-            "type": "integer",
-            "title": "Points"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "points"
-        ],
-        "title": "StandardItem",
-        "description": "Standard item for update."
       }
     }
   }
