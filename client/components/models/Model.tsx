@@ -200,20 +200,25 @@ export default function Model({
     return false;
   }, []);
 
-  // Get department and key mappings
-  const modelDataForMappings = isEditMode ? modelDetail : modelDetailDefault;
-  const departmentMapping = useMemo(() => {
-    return modelDataForMappings?.department_mapping || {};
-  }, [modelDataForMappings]);
+  // Get department and key arrays (replacing mappings)
+  const modelDataForArrays = isEditMode ? modelDetail : modelDetailDefault;
+  const departments = useMemo(() => {
+    return modelDataForArrays?.departments || [];
+  }, [modelDataForArrays]);
 
   const validDepartmentIds = useMemo(() => {
-    return modelDataForMappings?.valid_department_ids || [];
-  }, [modelDataForMappings]);
+    return modelDataForArrays?.valid_department_ids || [];
+  }, [modelDataForArrays]);
 
-  // Get provider mapping and convert to ProviderOption array
-  const providerMapping = useMemo(() => {
-    return modelDataForMappings?.provider_mapping || {};
-  }, [modelDataForMappings]);
+  // Get provider array (replacing provider_mapping)
+  const providers = useMemo(() => {
+    return modelDataForArrays?.providers || [];
+  }, [modelDataForArrays]);
+
+  // Get keys array (replacing key_mapping)
+  const keys = useMemo(() => {
+    return modelDataForArrays?.keys || [];
+  }, [modelDataForArrays]);
 
   // Get current department_ids and key_id for edit mode
   const currentDepartmentIds = useMemo(() => {
@@ -962,7 +967,11 @@ export default function Model({
                 <Label htmlFor="department">Department</Label>
                 {formData?.departmentIds !== undefined ? (
                   <GenericPicker
-                    items={departmentMapping}
+                    items={departments.map((d) => ({
+                      id: d.department_id,
+                      name: d.name,
+                      description: d.description,
+                    }))}
                     itemIds={validDepartmentIds}
                     selectedIds={formData.departmentIds || []}
                     onSelect={(ids) =>
@@ -1370,8 +1379,11 @@ export default function Model({
               </CardHeader>
               <CardContent className="space-y-4 px-6">
                 <ProviderCardGrid
-                  providerMapping={providerMapping}
-                  validProviderIds={Object.keys(providerMapping)}
+                  providerMapping={providers.reduce((acc, p) => {
+                    acc[String(p.provider_id)] = { name: p.name, description: p.description };
+                    return acc;
+                  }, {} as Record<string, { name: string; description: string }>)}
+                  validProviderIds={providers.map((p) => String(p.provider_id))}
                   selectedProviderId={formData.provider_id || null}
                   onSelect={(providerId) => {
                     handleInputChange("provider_id", providerId || "");

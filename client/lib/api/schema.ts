@@ -7557,12 +7557,12 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * CreateModelRequest
-         * @description Request to create model.
-         */
-        CreateModelRequest: {
-            /** Provider Id */
+        /** CreateModelApiRequest */
+        CreateModelApiRequest: {
+            /**
+             * Provider Id
+             * Format: uuid
+             */
             provider_id: string;
             /** Name */
             name: string;
@@ -7576,16 +7576,13 @@ export interface components {
             department_ids?: string[] | null;
             /** Base Url */
             base_url?: string | null;
-            /** Temperature Bounds */
-            temperature_bounds?: {
-                [key: string]: unknown;
-            } | null;
+            temperature_bounds?: components["schemas"]["ICreateModelV3TemperatureBounds"] | null;
             /** Pricing */
-            pricing?: components["schemas"]["PricingEntry"][] | null;
-            /** Modalities */
-            modalities?: {
-                [key: string]: string[];
-            } | null;
+            pricing?: components["schemas"]["ICreateModelV3Pricing"][] | null;
+            /** Input Modalities */
+            input_modalities?: string[] | null;
+            /** Output Modalities */
+            output_modalities?: string[] | null;
             /** Reasoning Levels */
             reasoning_levels?: string[] | null;
             /** Voices */
@@ -7593,17 +7590,12 @@ export interface components {
             /** Qualities */
             qualities?: string[] | null;
         };
-        /**
-         * CreateModelResponse
-         * @description Response from create model.
-         */
-        CreateModelResponse: {
-            /** Success */
-            success: boolean;
-            /** Modelid */
-            modelId: string;
-            /** Message */
-            message: string;
+        /** CreateModelApiResponse */
+        CreateModelApiResponse: {
+            /** Model Id */
+            model_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** CreateOrUpdateProfileApiRequest */
         CreateOrUpdateProfileApiRequest: {
@@ -8368,23 +8360,28 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * DeleteModelRequest
-         * @description Request to delete model.
-         */
-        DeleteModelRequest: {
-            /** Modelid */
-            modelId: string;
+        /** DeleteModelApiRequest */
+        DeleteModelApiRequest: {
+            /**
+             * Model Id
+             * Format: uuid
+             */
+            model_id: string;
         };
-        /**
-         * DeleteModelResponse
-         * @description Response from delete model.
-         */
-        DeleteModelResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** DeleteModelApiResponse */
+        DeleteModelApiResponse: {
+            /** Model Exists */
+            model_exists?: boolean | null;
+            /** Deleted */
+            deleted?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Personas Usage Count */
+            personas_usage_count?: number | null;
+            /** Agents Usage Count */
+            agents_usage_count?: number | null;
         };
         /** DeleteParameterApiRequest */
         DeleteParameterApiRequest: {
@@ -8591,6 +8588,16 @@ export interface components {
             can_delete: boolean;
             /** Can Duplicate */
             can_duplicate: boolean;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item.
+         */
+        DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * DepartmentNewRequest
@@ -8827,25 +8834,24 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * DuplicateModelRequest
-         * @description Request to duplicate model.
-         */
-        DuplicateModelRequest: {
-            /** Modelid */
-            modelId: string;
+        /** DuplicateModelApiRequest */
+        DuplicateModelApiRequest: {
+            /**
+             * Model Id
+             * Format: uuid
+             */
+            model_id: string;
         };
-        /**
-         * DuplicateModelResponse
-         * @description Response from duplicate model.
-         */
-        DuplicateModelResponse: {
-            /** Success */
-            success: boolean;
-            /** Modelid */
-            modelId: string;
-            /** Message */
-            message: string;
+        /** DuplicateModelApiResponse */
+        DuplicateModelApiResponse: {
+            /** Model Exists */
+            model_exists?: boolean | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Original Name */
+            original_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** DuplicateParameterApiRequest */
         DuplicateParameterApiRequest: {
@@ -9470,7 +9476,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__evals__list__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
             /** Agent Mapping */
             agent_mapping: {
@@ -10231,6 +10237,101 @@ export interface components {
             health_kpis?: components["schemas"]["QGetLogsBundleV3HealthKpis"] | null;
             /** Metrics */
             metrics?: components["schemas"]["QGetLogsBundleV3MetricsDataPoint"][] | null;
+        };
+        /** GetModelDetailApiRequest */
+        GetModelDetailApiRequest: {
+            /**
+             * Model Id
+             * Format: uuid
+             */
+            model_id: string;
+        };
+        /** GetModelDetailApiResponse */
+        GetModelDetailApiResponse: {
+            /** Model Exists */
+            model_exists?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Image Model */
+            image_model?: boolean | null;
+            /** Provider */
+            provider?: string | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Provider Name */
+            provider_name?: string | null;
+            /** Value */
+            value?: string | null;
+            /** Base Url */
+            base_url?: string | null;
+            /** Valid Provider Ids */
+            valid_provider_ids?: string[] | null;
+            /** Providers */
+            providers?: components["schemas"]["QGetModelDetailV3Provider"][] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetModelDetailV3Department"][] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Valid Key Ids */
+            valid_key_ids?: string[] | null;
+            /** Keys */
+            keys?: components["schemas"]["QGetModelDetailV3Key"][] | null;
+            /** Default Key Id */
+            default_key_id?: string | null;
+            /** Temperature Lower */
+            temperature_lower?: number | null;
+            /** Temperature Upper */
+            temperature_upper?: number | null;
+            /** Temperature Values */
+            temperature_values?: string[] | null;
+            /** Pricing */
+            pricing?: components["schemas"]["QGetModelDetailV3Pricing"][] | null;
+            modalities?: components["schemas"]["QGetModelDetailV3Modalities"] | null;
+            /** Reasoning Levels */
+            reasoning_levels?: string[] | null;
+            /** Voices */
+            voices?: components["schemas"]["QGetModelDetailV3Voice"][] | null;
+            /** Qualities */
+            qualities?: string[] | null;
+            /** Units */
+            units?: components["schemas"]["QGetModelDetailV3Unit"][] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetModelNewApiRequest */
+        GetModelNewApiRequest: Record<string, never>;
+        /** GetModelNewApiResponse */
+        GetModelNewApiResponse: {
+            /** Valid Provider Ids */
+            valid_provider_ids?: string[] | null;
+            /** Providers */
+            providers?: components["schemas"]["QGetModelNewV3Provider"][] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetModelNewV3Department"][] | null;
+            /** Valid Model Ids */
+            valid_model_ids?: string[] | null;
+            /** Models */
+            models?: components["schemas"]["QGetModelNewV3Model"][] | null;
+            /** Valid Key Ids */
+            valid_key_ids?: string[] | null;
+            /** Keys */
+            keys?: components["schemas"]["QGetModelNewV3Key"][] | null;
+            /** Units */
+            units?: components["schemas"]["QGetModelNewV3Unit"][] | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** GetParameterDetailApiRequest */
         GetParameterDetailApiRequest: {
@@ -11742,6 +11843,26 @@ export interface components {
             /** Primary Department Index */
             primary_department_index: number | null;
         };
+        /** ICreateModelV3Pricing */
+        ICreateModelV3Pricing: {
+            /** Pricing Type */
+            pricing_type: string | null;
+            /** Unit Id */
+            unit_id: string | null;
+            /** Price */
+            price: number | null;
+        };
+        /** ICreateModelV3TemperatureBounds */
+        ICreateModelV3TemperatureBounds: {
+            /** Bounds Type */
+            bounds_type: string | null;
+            /** Lower Bound */
+            lower_bound: number | null;
+            /** Upper Bound */
+            upper_bound: number | null;
+            /** Values Array */
+            values_array: number[] | null;
+        };
         /** ICreateParameterV3FieldConnection */
         ICreateParameterV3FieldConnection: {
             /** Field Id */
@@ -11757,6 +11878,26 @@ export interface components {
             csv_column: string | null;
             /** Target Field */
             target_field: string | null;
+        };
+        /** IUpdateModelV3Pricing */
+        IUpdateModelV3Pricing: {
+            /** Pricing Type */
+            pricing_type: string | null;
+            /** Unit Id */
+            unit_id: string | null;
+            /** Price */
+            price: number | null;
+        };
+        /** IUpdateModelV3TemperatureBounds */
+        IUpdateModelV3TemperatureBounds: {
+            /** Bounds Type */
+            bounds_type: string | null;
+            /** Lower Bound */
+            lower_bound: number | null;
+            /** Upper Bound */
+            upper_bound: number | null;
+            /** Values Array */
+            values_array: number[] | null;
         };
         /** IUpdateParameterV3FieldConnection */
         IUpdateParameterV3FieldConnection: {
@@ -11892,7 +12033,7 @@ export interface components {
             can_edit: boolean;
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__keys__detail__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
             /** Model Mapping */
             model_mapping: {
@@ -11930,6 +12071,20 @@ export interface components {
             can_delete: boolean;
             /** Can Duplicate */
             can_duplicate: boolean;
+        };
+        /**
+         * KeyMappingItem
+         * @description Key mapping item.
+         */
+        KeyMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Key Masked */
+            key_masked: string;
+            /** Active */
+            active: boolean;
         };
         /**
          * KeyNewRequest
@@ -12102,6 +12257,19 @@ export interface components {
             cohort_title?: string | null;
             /** Actor Name */
             actor_name?: string | null;
+        };
+        /** ListModelsApiRequest */
+        ListModelsApiRequest: Record<string, never>;
+        /** ListModelsApiResponse */
+        ListModelsApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Models */
+            models?: components["schemas"]["QListModelsV3Model"][] | null;
+            /** Provider Options */
+            provider_options?: components["schemas"]["QListModelsV3ProviderOption"][] | null;
+            /** Status Options */
+            status_options?: components["schemas"]["QListModelsV3StatusOption"][] | null;
         };
         /**
          * LogRunPayload
@@ -12359,106 +12527,15 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        /** ModalitiesItem */
-        ModalitiesItem: {
-            /** Input */
-            input: string[];
-            /** Output */
-            output: string[];
-        };
-        /** ModelDetailRequest */
-        ModelDetailRequest: {
-            /** Modelid */
-            modelId: string;
-        };
-        /** ModelDetailResponse */
-        ModelDetailResponse: {
+        /**
+         * ModelMappingItem
+         * @description Model mapping item.
+         */
+        ModelMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
-            /** Active */
-            active: boolean;
-            /** Image Model */
-            image_model: boolean;
-            /** Provider */
-            provider: string;
-            /** Provider Id */
-            provider_id: string;
-            /** Provider Name */
-            provider_name: string;
-            /** Value */
-            value: string;
-            /** Base Url */
-            base_url: string;
-            /** Valid Provider Ids */
-            valid_provider_ids: string[];
-            /** Provider Mapping */
-            provider_mapping: {
-                [key: string]: components["schemas"]["ProviderMappingItem"];
-            };
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__models__detail__DepartmentMappingItem"];
-            };
-            /** Department Ids */
-            department_ids: string[];
-            /** Valid Key Ids */
-            valid_key_ids: string[];
-            /** Key Mapping */
-            key_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__models__detail__KeyMappingItem"];
-            };
-            /** Default Key Id */
-            default_key_id: string | null;
-            /** Temperature Lower */
-            temperature_lower: number;
-            /** Temperature Upper */
-            temperature_upper: number;
-            /** Temperature Values */
-            temperature_values: string[];
-            /** Pricing */
-            pricing: components["schemas"]["PricingItem"][];
-            modalities: components["schemas"]["ModalitiesItem"];
-            /** Reasoning Levels */
-            reasoning_levels: string[];
-            /** Voices */
-            voices: {
-                [key: string]: unknown;
-            }[];
-            /** Qualities */
-            qualities: string[];
-            /** Units */
-            units: components["schemas"]["UnitItem"][];
-        };
-        /** ModelItem */
-        ModelItem: {
-            /** Model Id */
-            model_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Image Model */
-            image_model: boolean;
-            /** Updated At */
-            updated_at: string;
-            /** Provider */
-            provider: string;
-            /** Provider Id */
-            provider_id: string;
-            /** Provider Name */
-            provider_name: string;
-            /** Base Url */
-            base_url: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
         };
         /**
          * ModelMappingWithPricing
@@ -12473,41 +12550,6 @@ export interface components {
             input_ppm: number;
             /** Output Ppm */
             output_ppm: number;
-        };
-        /** ModelNewRequest */
-        ModelNewRequest: Record<string, never>;
-        /** ModelNewResponse */
-        ModelNewResponse: {
-            /** Valid Provider Ids */
-            valid_provider_ids: string[];
-            /** Provider Mapping */
-            provider_mapping: {
-                [key: string]: components["schemas"]["ProviderMappingItem"];
-            };
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__models__new__DepartmentMappingItem"];
-            };
-            /** Valid Model Ids */
-            valid_model_ids: string[];
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__models__new__ModelMappingItem"];
-            };
-            /** Valid Key Ids */
-            valid_key_ids: string[];
-            /** Key Mapping */
-            key_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__models__new__KeyMappingItem"];
-            };
-            /** Units */
-            units: components["schemas"]["UnitItem"][];
-            /** User Role */
-            user_role: string;
-            /** Primary Department Id */
-            primary_department_id: string | null;
         };
         /**
          * ModelRunsFilters
@@ -12564,21 +12606,6 @@ export interface components {
             persona_mapping: {
                 [key: string]: string;
             };
-        };
-        /** ModelsFilters */
-        ModelsFilters: Record<string, never>;
-        /** ModelsListResponse */
-        ModelsListResponse: {
-            /** Models */
-            models: components["schemas"]["ModelItem"][];
-            /** Provider Options */
-            provider_options: {
-                [key: string]: string;
-            }[];
-            /** Status Options */
-            status_options: {
-                [key: string]: string;
-            }[];
         };
         /**
          * NumericAttemptFact
@@ -12898,7 +12925,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__practice__overview__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
@@ -13023,15 +13050,6 @@ export interface components {
                 [key: string]: string;
             };
         };
-        /** PricingEntry */
-        PricingEntry: {
-            /** Type */
-            type: string;
-            /** Unit Id */
-            unit_id: string;
-            /** Price */
-            price: number;
-        };
         /**
          * PricingGroupDetailResponse
          * @description Response schema for pricing group detail (multiple runs).
@@ -13055,19 +13073,6 @@ export interface components {
             profileMapping: {
                 [key: string]: string;
             };
-        };
-        /** PricingItem */
-        PricingItem: {
-            /** Type */
-            type: string;
-            /** Unit Id */
-            unit_id: string;
-            /** Unit Name */
-            unit_name: string;
-            /** Unit Category */
-            unit_category: string;
-            /** Price */
-            price: number;
         };
         /**
          * PricingRunDetailRequest
@@ -13348,13 +13353,6 @@ export interface components {
             can_delete: boolean;
             /** Can Duplicate */
             can_duplicate: boolean;
-        };
-        /** ProviderMappingItem */
-        ProviderMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
         };
         /**
          * ProviderNewRequest
@@ -13894,6 +13892,130 @@ export interface components {
             latency: number | null;
             /** Count */
             count: number | null;
+        };
+        /** QGetModelDetailV3Department */
+        QGetModelDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetModelDetailV3Key */
+        QGetModelDetailV3Key: {
+            /** Key Id */
+            key_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Key Masked */
+            key_masked: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetModelDetailV3Modalities */
+        QGetModelDetailV3Modalities: {
+            /** Input */
+            input: string[] | null;
+            /** Output */
+            output: string[] | null;
+        };
+        /** QGetModelDetailV3Pricing */
+        QGetModelDetailV3Pricing: {
+            /** Pricing Type */
+            pricing_type: string | null;
+            /** Unit Id */
+            unit_id: string | null;
+            /** Unit Name */
+            unit_name: string | null;
+            /** Unit Category */
+            unit_category: string | null;
+            /** Price */
+            price: number | null;
+        };
+        /** QGetModelDetailV3Provider */
+        QGetModelDetailV3Provider: {
+            /** Provider Id */
+            provider_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetModelDetailV3Unit */
+        QGetModelDetailV3Unit: {
+            /** Unit Id */
+            unit_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Unit Category */
+            unit_category: string | null;
+            /** Value */
+            value: number | null;
+        };
+        /** QGetModelDetailV3Voice */
+        QGetModelDetailV3Voice: {
+            /** Voice Id */
+            voice_id: string | null;
+            /** Voice */
+            voice: string | null;
+        };
+        /** QGetModelNewV3Department */
+        QGetModelNewV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetModelNewV3Key */
+        QGetModelNewV3Key: {
+            /** Key Id */
+            key_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Key Masked */
+            key_masked: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetModelNewV3Model */
+        QGetModelNewV3Model: {
+            /** Model Id */
+            model_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetModelNewV3Provider */
+        QGetModelNewV3Provider: {
+            /** Provider Id */
+            provider_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetModelNewV3Unit */
+        QGetModelNewV3Unit: {
+            /** Unit Id */
+            unit_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Unit Category */
+            unit_category: string | null;
+            /** Value */
+            value: number | null;
         };
         /** QGetParameterDetailV3Department */
         QGetParameterDetailV3Department: {
@@ -15469,6 +15591,47 @@ export interface components {
             /** Description */
             description: string | null;
         };
+        /** QListModelsV3Model */
+        QListModelsV3Model: {
+            /** Model Id */
+            model_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Image Model */
+            image_model: boolean | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Provider */
+            provider: string | null;
+            /** Provider Id */
+            provider_id: string | null;
+            /** Provider Name */
+            provider_name: string | null;
+            /** Base Url */
+            base_url: string | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+        };
+        /** QListModelsV3ProviderOption */
+        QListModelsV3ProviderOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
+        /** QListModelsV3StatusOption */
+        QListModelsV3StatusOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
         /** QListParametersV3Department */
         QListParametersV3Department: {
             /** Department Id */
@@ -16504,7 +16667,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__rubrics__detail__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
             /** Rubric Agent Id */
             rubric_agent_id?: string | null;
@@ -16694,7 +16857,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__rubrics__list__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
@@ -18315,17 +18478,6 @@ export interface components {
             /** Count */
             count: number;
         };
-        /** UnitItem */
-        UnitItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Unit Category */
-            unit_category: string;
-            /** Value */
-            value: number;
-        };
         /** UpdateAgentApiRequest */
         UpdateAgentApiRequest: {
             /**
@@ -18617,14 +18769,17 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * UpdateModelRequest
-         * @description Request to update model.
-         */
-        UpdateModelRequest: {
-            /** Modelid */
-            modelId: string;
-            /** Provider Id */
+        /** UpdateModelApiRequest */
+        UpdateModelApiRequest: {
+            /**
+             * Model Id
+             * Format: uuid
+             */
+            model_id: string;
+            /**
+             * Provider Id
+             * Format: uuid
+             */
             provider_id: string;
             /** Name */
             name: string;
@@ -18638,16 +18793,13 @@ export interface components {
             department_ids?: string[] | null;
             /** Base Url */
             base_url?: string | null;
-            /** Temperature Bounds */
-            temperature_bounds?: {
-                [key: string]: unknown;
-            } | null;
+            temperature_bounds?: components["schemas"]["IUpdateModelV3TemperatureBounds"] | null;
             /** Pricing */
-            pricing?: components["schemas"]["PricingEntry"][] | null;
-            /** Modalities */
-            modalities?: {
-                [key: string]: string[];
-            } | null;
+            pricing?: components["schemas"]["IUpdateModelV3Pricing"][] | null;
+            /** Input Modalities */
+            input_modalities?: string[] | null;
+            /** Output Modalities */
+            output_modalities?: string[] | null;
             /** Reasoning Levels */
             reasoning_levels?: string[] | null;
             /** Voices */
@@ -18655,15 +18807,14 @@ export interface components {
             /** Qualities */
             qualities?: string[] | null;
         };
-        /**
-         * UpdateModelResponse
-         * @description Response from update model.
-         */
-        UpdateModelResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** UpdateModelApiResponse */
+        UpdateModelApiResponse: {
+            /** Model Exists */
+            model_exists?: boolean | null;
+            /** Model Name */
+            model_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** UpdateParameterApiRequest */
         UpdateParameterApiRequest: {
@@ -19556,7 +19707,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__departments__detail__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
@@ -19564,52 +19715,18 @@ export interface components {
             valid_model_ids: string[];
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__departments__detail__ModelMappingItem"];
+                [key: string]: components["schemas"]["ModelMappingItem"];
             };
             /** Valid Key Ids */
             valid_key_ids: string[];
             /** Key Mapping */
             key_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__departments__detail__KeyMappingItem"];
+                [key: string]: components["schemas"]["KeyMappingItem"];
             };
             /** Model Key Mapping */
             model_key_mapping: {
                 [key: string]: string;
             };
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__departments__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * KeyMappingItem
-         * @description Key mapping item.
-         */
-        app__api__v3__departments__detail__KeyMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Key Masked */
-            key_masked: string;
-            /** Active */
-            active: boolean;
-        };
-        /**
-         * ModelMappingItem
-         * @description Model mapping item.
-         */
-        app__api__v3__departments__detail__ModelMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
         };
         /**
          * DepartmentDetailResponse
@@ -19646,18 +19763,8 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__departments__new__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__departments__new__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
         };
         /**
          * AttemptItem
@@ -19732,16 +19839,6 @@ export interface components {
             roles: string[];
         };
         /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__evals__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
          * EvalDetailResponse
          * @description Detailed eval response with all fields and metadata.
          */
@@ -19788,7 +19885,7 @@ export interface components {
             model_runs: components["schemas"]["app__api__v3__evals__detail__ModelRunItem"][];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__evals__detail__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
@@ -19854,16 +19951,6 @@ export interface components {
             grade_passed: boolean | null;
             /** Grade Created At */
             grade_created_at: string | null;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__evals__list__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
         };
         /**
          * EvalItem
@@ -19933,16 +20020,6 @@ export interface components {
             roles: string[];
         };
         /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__evals__new__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
          * EvalDetailResponse
          * @description Detailed eval response with all fields and metadata.
          */
@@ -19989,7 +20066,7 @@ export interface components {
             model_runs: components["schemas"]["app__api__v3__evals__new__ModelRunItem"][];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__evals__new__DepartmentMappingItem"];
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
@@ -20219,16 +20296,6 @@ export interface components {
             passPoints: number;
         };
         /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__keys__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
          * ScenarioMappingItem
          * @description Scenario mapping item with extended fields for nested data.
          */
@@ -20287,53 +20354,6 @@ export interface components {
             time_limit?: number | null;
             /** Department Ids */
             department_ids?: string[] | null;
-        };
-        /** DepartmentMappingItem */
-        app__api__v3__models__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /** KeyMappingItem */
-        app__api__v3__models__detail__KeyMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Key Masked */
-            key_masked: string;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** DepartmentMappingItem */
-        app__api__v3__models__new__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /** KeyMappingItem */
-        app__api__v3__models__new__KeyMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Key Masked */
-            key_masked: string;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** ModelMappingItem */
-        app__api__v3__models__new__ModelMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
         };
         /**
          * AttemptHistoryRow
@@ -20440,16 +20460,6 @@ export interface components {
             cohortNames: string[];
             /** Practicescenarioid */
             practiceScenarioId?: string | null;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__practice__overview__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
         };
         /**
          * ScenarioMappingItem
@@ -20648,26 +20658,6 @@ export interface components {
             description: string;
             /** Roles */
             roles: string[];
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__rubrics__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__rubrics__list__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
         };
         /**
          * SimulationMappingItem
@@ -24762,7 +24752,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ModelsFilters"];
+                "application/json": components["schemas"]["ListModelsApiRequest"];
             };
         };
         responses: {
@@ -24772,7 +24762,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ModelsListResponse"];
+                    "application/json": components["schemas"]["ListModelsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24798,7 +24788,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ModelDetailRequest"];
+                "application/json": components["schemas"]["GetModelDetailApiRequest"];
             };
         };
         responses: {
@@ -24808,7 +24798,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ModelDetailResponse"];
+                    "application/json": components["schemas"]["GetModelDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24834,7 +24824,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ModelNewRequest"];
+                "application/json": components["schemas"]["GetModelNewApiRequest"];
             };
         };
         responses: {
@@ -24844,7 +24834,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ModelNewResponse"];
+                    "application/json": components["schemas"]["GetModelNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24870,7 +24860,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateModelRequest"];
+                "application/json": components["schemas"]["CreateModelApiRequest"];
             };
         };
         responses: {
@@ -24880,7 +24870,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateModelResponse"];
+                    "application/json": components["schemas"]["CreateModelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24906,7 +24896,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateModelRequest"];
+                "application/json": components["schemas"]["UpdateModelApiRequest"];
             };
         };
         responses: {
@@ -24916,7 +24906,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateModelResponse"];
+                    "application/json": components["schemas"]["UpdateModelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24942,7 +24932,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteModelRequest"];
+                "application/json": components["schemas"]["DeleteModelApiRequest"];
             };
         };
         responses: {
@@ -24952,7 +24942,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteModelResponse"];
+                    "application/json": components["schemas"]["DeleteModelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24978,7 +24968,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DuplicateModelRequest"];
+                "application/json": components["schemas"]["DuplicateModelApiRequest"];
             };
         };
         responses: {
@@ -24988,7 +24978,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DuplicateModelResponse"];
+                    "application/json": components["schemas"]["DuplicateModelApiResponse"];
                 };
             };
             /** @description Validation Error */

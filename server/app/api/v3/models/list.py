@@ -1,67 +1,43 @@
 """Models list endpoint."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (ListModelsApiRequest, ListModelsApiResponse,
+                           ListModelsSqlParams, ListModelsSqlRow)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class ModelsFilters(BaseModel):
-    pass
-    # profileId removed - comes from X-Profile-Id header
-
-
-class ModelItem(BaseModel):
-    model_id: str
-    name: str
-    description: str
-    active: bool
-    image_model: bool
-    updated_at: str
-    provider: str  # provider value from providers table
-    provider_id: str  # provider UUID
-    provider_name: str  # provider display name
-    base_url: str  # empty string if not custom model
-    can_edit: bool
-    can_delete: bool
-
-
-class ModelsListResponse(BaseModel):
-    models: list[ModelItem]
-    provider_options: list[dict[str, str]]  # Array of {value, label} for enum values
-    status_options: list[dict[str, str]]  # Array of {value, label}
-
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/models/list_models_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
     "/list",
-    response_model=ModelsListResponse,
+    response_model=ListModelsApiResponse,
     dependencies=[
         audit_activity("models.list", "{{ actor.name }} visited the Models page")
     ],
 )
 async def get_models_list(
-    filters: ModelsFilters,
+    request: ListModelsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> ModelsListResponse:
+) -> ListModelsApiResponse:
     """Get models list (flat structure with provider info)."""
     tags = ["models"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = filters.model_dump()
+    body_dict = request.model_dump(mode='json')
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
@@ -69,7 +45,7 @@ async def get_models_list(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return ModelsListResponse.model_validate(cached["data"])
+        return ListModelsApiResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -83,73 +59,38 @@ async def get_models_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/models/list_models_complete.sql")
-        sql_params = (profile_id,)
-        models_result = await conn.fetch(sql_query, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = ListModelsSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        # Get actor name from first row (same for all rows)
-        actor_name = models_result[0]["actor_name"] if models_result else None
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            ListModelsSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
 
         # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        models = []
+        # Convert SQL result to API response
+        api_response = ListModelsApiResponse.model_validate(result.model_dump())
 
-        for row in models_result:
-            updated_at = row.get("updated_at", "")
-            if hasattr(updated_at, "isoformat"):
-                updated_at = updated_at.isoformat()
-            elif not isinstance(updated_at, str):
-                updated_at = str(updated_at)
-
-            model_item = ModelItem(
-                model_id=str(row["model_id"]),
-                name=row["name"],
-                description=row["description"],
-                active=row["active"],
-                image_model=row["image_model"],
-                updated_at=updated_at,
-                provider=str(row["provider"]),
-                provider_id=str(row.get("provider_id", "")),
-                provider_name=str(row.get("provider_name", "")),
-                base_url=str(row.get("base_url", "")),
-                can_edit=row["can_edit"],
-                can_delete=row["can_delete"],
-            )
-            models.append(model_item)
-
-        # Build facet options server-side from providers table
-        provider_options_query = (
-            "SELECT value, name FROM providers WHERE active = true ORDER BY name"
-        )
-        provider_rows = await conn.fetch(provider_options_query)
-        provider_options = [
-            {"value": str(row["value"]), "label": row["name"]} for row in provider_rows
-        ]
-
-        status_options = [
-            {"value": "true", "label": "Active"},
-            {"value": "false", "label": "Inactive"},
-        ]
-
-        response_data = ModelsListResponse(
-            models=models,
-            provider_options=provider_options,
-            status_options=status_options,
-        )
-
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": api_response.model_dump(mode="json")},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

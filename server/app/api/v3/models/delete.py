@@ -1,38 +1,26 @@
 """Model delete endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (DeleteModelApiRequest, DeleteModelApiResponse,
+                           DeleteModelSqlParams, DeleteModelSqlRow)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DeleteModelRequest(BaseModel):
-    """Request to delete model."""
-
-    modelId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DeleteModelResponse(BaseModel):
-    """Response from delete model."""
-
-    success: bool
-    message: str
-
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/models/delete_model_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
     "/delete",
-    response_model=DeleteModelResponse,
+    response_model=DeleteModelApiResponse,
     dependencies=[
         audit_activity(
             "model.deleted", "{{ actor.name }} deleted model '{{ model.name }}'"
@@ -40,11 +28,11 @@ router = APIRouter()
     ],
 )
 async def delete_model(
-    request: DeleteModelRequest,
+    request: DeleteModelApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DeleteModelResponse:
+) -> DeleteModelApiResponse:
     """Delete a model if not in use."""
     tags = ["models"]  # From router tags
 
@@ -61,51 +49,60 @@ async def delete_model(
             )
 
         async with transaction(conn):
-            # Delete model with usage checks and name fetch (single query)
-            sql_query = load_sql("app/sql/v3/models/delete.sql")
-            sql_params = (request.modelId, profile_id)
-            result = await conn.fetchrow(sql_query, request.modelId, profile_id)
+            # Convert API request to SQL params (add profile_id from header)
+            params = DeleteModelSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            if not result:
-                raise ValueError("Failed to check model usage")
+            # Execute SQL with typed helper
+            result = cast(
+                DeleteModelSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
-            personas_usage_count = result.get("personas_usage_count", 0)
-            agents_usage_count = result.get("agents_usage_count", 0)
-
-            if personas_usage_count > 0:
-                raise ValueError("Cannot delete model: It is in use by personas")
-
-            if agents_usage_count > 0:
-                raise ValueError("Cannot delete model: It is in use by agents")
-
-            if not result.get("deleted"):
-                raise ValueError(f"Model not found: {request.modelId}")
-
-            model_name = result.get("name", "Unknown")
-            actor_name = result.get("actor_name")
-
-            # Set audit context with data from SQL query
-            if actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    model={"name": model_name, "id": request.modelId},
+            # Check if model exists using SQL result
+            if not result.model_exists:
+                raise HTTPException(
+                    status_code=404, detail=f"Model {request.model_id} not found"
                 )
 
-            result_data = DeleteModelResponse(
-                success=True,
-                message=f"Model '{model_name}' deleted successfully",
-            )
+            # Check usage counts
+            if result.personas_usage_count and result.personas_usage_count > 0:
+                raise HTTPException(
+                    status_code=400, detail="Cannot delete model: It is in use by personas"
+                )
+
+            if result.agents_usage_count and result.agents_usage_count > 0:
+                raise HTTPException(
+                    status_code=400, detail="Cannot delete model: It is in use by agents"
+                )
+
+            if not result.deleted:
+                raise HTTPException(
+                    status_code=400, detail=f"Failed to delete model: {request.model_id}"
+                )
+
+            # Set audit context with data from SQL query
+            if result.actor_name:
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": profile_id},
+                    model={"name": result.name or "Unknown", "id": str(request.model_id)},
+                )
+
+            # Convert SQL result to API response
+            api_response = DeleteModelApiResponse.model_validate(result.model_dump())
 
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-            return result_data
+            return api_response
     except HTTPException:
         raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

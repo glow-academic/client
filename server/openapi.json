@@ -9057,7 +9057,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ModelsFilters"
+                "$ref": "#/components/schemas/ListModelsApiRequest"
               }
             }
           }
@@ -9068,7 +9068,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ModelsListResponse"
+                  "$ref": "#/components/schemas/ListModelsApiResponse"
                 }
               }
             }
@@ -9138,7 +9138,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ModelDetailRequest"
+                "$ref": "#/components/schemas/GetModelDetailApiRequest"
               }
             }
           }
@@ -9149,7 +9149,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ModelDetailResponse"
+                  "$ref": "#/components/schemas/GetModelDetailApiResponse"
                 }
               }
             }
@@ -9219,7 +9219,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ModelNewRequest"
+                "$ref": "#/components/schemas/GetModelNewApiRequest"
               }
             }
           }
@@ -9230,7 +9230,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ModelNewResponse"
+                  "$ref": "#/components/schemas/GetModelNewApiResponse"
                 }
               }
             }
@@ -9300,7 +9300,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateModelRequest"
+                "$ref": "#/components/schemas/CreateModelApiRequest"
               }
             }
           }
@@ -9311,7 +9311,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateModelResponse"
+                  "$ref": "#/components/schemas/CreateModelApiResponse"
                 }
               }
             }
@@ -9381,7 +9381,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateModelRequest"
+                "$ref": "#/components/schemas/UpdateModelApiRequest"
               }
             }
           }
@@ -9392,7 +9392,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateModelResponse"
+                  "$ref": "#/components/schemas/UpdateModelApiResponse"
                 }
               }
             }
@@ -9462,7 +9462,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteModelRequest"
+                "$ref": "#/components/schemas/DeleteModelApiRequest"
               }
             }
           }
@@ -9473,7 +9473,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteModelResponse"
+                  "$ref": "#/components/schemas/DeleteModelApiResponse"
                 }
               }
             }
@@ -9543,7 +9543,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DuplicateModelRequest"
+                "$ref": "#/components/schemas/DuplicateModelApiRequest"
               }
             }
           }
@@ -9554,7 +9554,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DuplicateModelResponse"
+                  "$ref": "#/components/schemas/DuplicateModelApiResponse"
                 }
               }
             }
@@ -24974,10 +24974,11 @@
         "title": "CreateKeyResponse",
         "description": "Response from create key."
       },
-      "CreateModelRequest": {
+      "CreateModelApiRequest": {
         "properties": {
           "provider_id": {
             "type": "string",
+            "format": "uuid",
             "title": "Provider Id"
           },
           "name": {
@@ -25000,7 +25001,8 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -25024,20 +25026,18 @@
           "temperature_bounds": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/ICreateModelV3TemperatureBounds"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Temperature Bounds"
+            ]
           },
           "pricing": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/PricingEntry"
+                  "$ref": "#/components/schemas/ICreateModelV3Pricing"
                 },
                 "type": "array"
               },
@@ -25047,22 +25047,33 @@
             ],
             "title": "Pricing"
           },
-          "modalities": {
+          "input_modalities": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "type": "array"
+                "items": {
+                  "type": "string"
                 },
-                "type": "object"
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Modalities"
+            "title": "Input Modalities"
+          },
+          "output_modalities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Modalities"
           },
           "reasoning_levels": {
             "anyOf": [
@@ -25115,32 +25126,36 @@
           "active",
           "value"
         ],
-        "title": "CreateModelRequest",
-        "description": "Request to create model."
+        "title": "CreateModelApiRequest"
       },
-      "CreateModelResponse": {
+      "CreateModelApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
           },
-          "modelId": {
-            "type": "string",
-            "title": "Modelid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "modelId",
-          "message"
-        ],
-        "title": "CreateModelResponse",
-        "description": "Response from create model."
+        "title": "CreateModelApiResponse"
       },
       "CreateOrUpdateProfileApiRequest": {
         "properties": {
@@ -27503,38 +27518,91 @@
         "title": "DeleteKeyResponse",
         "description": "Response from delete key."
       },
-      "DeleteModelRequest": {
+      "DeleteModelApiRequest": {
         "properties": {
-          "modelId": {
+          "model_id": {
             "type": "string",
-            "title": "Modelid"
+            "format": "uuid",
+            "title": "Model Id"
           }
         },
         "type": "object",
         "required": [
-          "modelId"
+          "model_id"
         ],
-        "title": "DeleteModelRequest",
-        "description": "Request to delete model."
+        "title": "DeleteModelApiRequest"
       },
-      "DeleteModelResponse": {
+      "DeleteModelApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "model_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Exists"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "personas_usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas Usage Count"
+          },
+          "agents_usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents Usage Count"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteModelResponse",
-        "description": "Response from delete model."
+        "title": "DeleteModelApiResponse"
       },
       "DeleteParameterApiRequest": {
         "properties": {
@@ -28134,6 +28202,25 @@
         "title": "DepartmentItem",
         "description": "Department item for list view."
       },
+      "DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item."
+      },
       "DepartmentNewRequest": {
         "properties": {},
         "type": "object",
@@ -28715,43 +28802,70 @@
         "type": "object",
         "title": "DuplicateFieldApiResponse"
       },
-      "DuplicateModelRequest": {
+      "DuplicateModelApiRequest": {
         "properties": {
-          "modelId": {
+          "model_id": {
             "type": "string",
-            "title": "Modelid"
+            "format": "uuid",
+            "title": "Model Id"
           }
         },
         "type": "object",
         "required": [
-          "modelId"
+          "model_id"
         ],
-        "title": "DuplicateModelRequest",
-        "description": "Request to duplicate model."
+        "title": "DuplicateModelApiRequest"
       },
-      "DuplicateModelResponse": {
+      "DuplicateModelApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "model_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Exists"
           },
-          "modelId": {
-            "type": "string",
-            "title": "Modelid"
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "original_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "modelId",
-          "message"
-        ],
-        "title": "DuplicateModelResponse",
-        "description": "Response from duplicate model."
+        "title": "DuplicateModelApiResponse"
       },
       "DuplicateParameterApiRequest": {
         "properties": {
@@ -30195,7 +30309,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__evals__list__DepartmentMappingItem"
+              "$ref": "#/components/schemas/DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -33425,6 +33539,553 @@
         },
         "type": "object",
         "title": "GetLogsBundleApiResponse"
+      },
+      "GetModelDetailApiRequest": {
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Model Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id"
+        ],
+        "title": "GetModelDetailApiRequest"
+      },
+      "GetModelDetailApiResponse": {
+        "properties": {
+          "model_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Exists"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "image_model": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Model"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "provider_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Name"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "valid_provider_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Provider Ids"
+          },
+          "providers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelDetailV3Provider"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providers"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelDetailV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "valid_key_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Key Ids"
+          },
+          "keys": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelDetailV3Key"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keys"
+          },
+          "default_key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Key Id"
+          },
+          "temperature_lower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Lower"
+          },
+          "temperature_upper": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Upper"
+          },
+          "temperature_values": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Values"
+          },
+          "pricing": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelDetailV3Pricing"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing"
+          },
+          "modalities": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelDetailV3Modalities"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasoning_levels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels"
+          },
+          "voices": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelDetailV3Voice"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices"
+          },
+          "qualities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelDetailV3Unit"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetModelDetailApiResponse"
+      },
+      "GetModelNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetModelNewApiRequest"
+      },
+      "GetModelNewApiResponse": {
+        "properties": {
+          "valid_provider_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Provider Ids"
+          },
+          "providers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelNewV3Provider"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providers"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelNewV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "valid_model_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Model Ids"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelNewV3Model"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "valid_key_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Key Ids"
+          },
+          "keys": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelNewV3Key"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keys"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelNewV3Unit"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
+          },
+          "user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Role"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetModelNewApiResponse"
       },
       "GetParameterDetailApiRequest": {
         "properties": {
@@ -41152,6 +41813,110 @@
         ],
         "title": "IBulkCreateStaffV3Profile"
       },
+      "ICreateModelV3Pricing": {
+        "properties": {
+          "pricing_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Type"
+          },
+          "unit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Id"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricing_type",
+          "unit_id",
+          "price"
+        ],
+        "title": "ICreateModelV3Pricing"
+      },
+      "ICreateModelV3TemperatureBounds": {
+        "properties": {
+          "bounds_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bounds Type"
+          },
+          "lower_bound": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lower Bound"
+          },
+          "upper_bound": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upper Bound"
+          },
+          "values_array": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Values Array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bounds_type",
+          "lower_bound",
+          "upper_bound",
+          "values_array"
+        ],
+        "title": "ICreateModelV3TemperatureBounds"
+      },
       "ICreateParameterV3FieldConnection": {
         "properties": {
           "field_id": {
@@ -41228,6 +41993,110 @@
           "target_field"
         ],
         "title": "IProcessCsvV3ColumnMapping"
+      },
+      "IUpdateModelV3Pricing": {
+        "properties": {
+          "pricing_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Type"
+          },
+          "unit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Id"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricing_type",
+          "unit_id",
+          "price"
+        ],
+        "title": "IUpdateModelV3Pricing"
+      },
+      "IUpdateModelV3TemperatureBounds": {
+        "properties": {
+          "bounds_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bounds Type"
+          },
+          "lower_bound": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lower Bound"
+          },
+          "upper_bound": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upper Bound"
+          },
+          "values_array": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Values Array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bounds_type",
+          "lower_bound",
+          "upper_bound",
+          "values_array"
+        ],
+        "title": "IUpdateModelV3TemperatureBounds"
       },
       "IUpdateParameterV3FieldConnection": {
         "properties": {
@@ -41673,7 +42542,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__keys__detail__DepartmentMappingItem"
+              "$ref": "#/components/schemas/DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -41788,6 +42657,35 @@
         ],
         "title": "KeyItem",
         "description": "Key item for list view."
+      },
+      "KeyMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "key_masked": {
+            "type": "string",
+            "title": "Key Masked"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "key_masked",
+          "active"
+        ],
+        "title": "KeyMappingItem",
+        "description": "Key mapping item."
       },
       "KeyNewRequest": {
         "properties": {},
@@ -42167,6 +43065,70 @@
         },
         "type": "object",
         "title": "LeaveCohortApiResponse"
+      },
+      "ListModelsApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "ListModelsApiRequest"
+      },
+      "ListModelsApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListModelsV3Model"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "provider_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListModelsV3ProviderOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Options"
+          },
+          "status_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListModelsV3StatusOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Options"
+          }
+        },
+        "type": "object",
+        "title": "ListModelsApiResponse"
       },
       "LogRunPayload": {
         "properties": {
@@ -42880,44 +43842,7 @@
         "title": "MetricResponse",
         "description": "Standard metric response."
       },
-      "ModalitiesItem": {
-        "properties": {
-          "input": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Input"
-          },
-          "output": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Output"
-          }
-        },
-        "type": "object",
-        "required": [
-          "input",
-          "output"
-        ],
-        "title": "ModalitiesItem"
-      },
-      "ModelDetailRequest": {
-        "properties": {
-          "modelId": {
-            "type": "string",
-            "title": "Modelid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "modelId"
-        ],
-        "title": "ModelDetailRequest"
-      },
-      "ModelDetailResponse": {
+      "ModelMappingItem": {
         "properties": {
           "name": {
             "type": "string",
@@ -42926,248 +43851,15 @@
           "description": {
             "type": "string",
             "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "image_model": {
-            "type": "boolean",
-            "title": "Image Model"
-          },
-          "provider": {
-            "type": "string",
-            "title": "Provider"
-          },
-          "provider_id": {
-            "type": "string",
-            "title": "Provider Id"
-          },
-          "provider_name": {
-            "type": "string",
-            "title": "Provider Name"
-          },
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "base_url": {
-            "type": "string",
-            "title": "Base Url"
-          },
-          "valid_provider_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Provider Ids"
-          },
-          "provider_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ProviderMappingItem"
-            },
-            "type": "object",
-            "title": "Provider Mapping"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__models__detail__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "valid_key_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Key Ids"
-          },
-          "key_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__models__detail__KeyMappingItem"
-            },
-            "type": "object",
-            "title": "Key Mapping"
-          },
-          "default_key_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Default Key Id"
-          },
-          "temperature_lower": {
-            "type": "number",
-            "title": "Temperature Lower"
-          },
-          "temperature_upper": {
-            "type": "number",
-            "title": "Temperature Upper"
-          },
-          "temperature_values": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Temperature Values"
-          },
-          "pricing": {
-            "items": {
-              "$ref": "#/components/schemas/PricingItem"
-            },
-            "type": "array",
-            "title": "Pricing"
-          },
-          "modalities": {
-            "$ref": "#/components/schemas/ModalitiesItem"
-          },
-          "reasoning_levels": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Reasoning Levels"
-          },
-          "voices": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Voices"
-          },
-          "qualities": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Qualities"
-          },
-          "units": {
-            "items": {
-              "$ref": "#/components/schemas/UnitItem"
-            },
-            "type": "array",
-            "title": "Units"
           }
         },
         "type": "object",
         "required": [
           "name",
-          "description",
-          "active",
-          "image_model",
-          "provider",
-          "provider_id",
-          "provider_name",
-          "value",
-          "base_url",
-          "valid_provider_ids",
-          "provider_mapping",
-          "valid_department_ids",
-          "department_mapping",
-          "department_ids",
-          "valid_key_ids",
-          "key_mapping",
-          "default_key_id",
-          "temperature_lower",
-          "temperature_upper",
-          "temperature_values",
-          "pricing",
-          "modalities",
-          "reasoning_levels",
-          "voices",
-          "qualities",
-          "units"
+          "description"
         ],
-        "title": "ModelDetailResponse"
-      },
-      "ModelItem": {
-        "properties": {
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "image_model": {
-            "type": "boolean",
-            "title": "Image Model"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "provider": {
-            "type": "string",
-            "title": "Provider"
-          },
-          "provider_id": {
-            "type": "string",
-            "title": "Provider Id"
-          },
-          "provider_name": {
-            "type": "string",
-            "title": "Provider Name"
-          },
-          "base_url": {
-            "type": "string",
-            "title": "Base Url"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "model_id",
-          "name",
-          "description",
-          "active",
-          "image_model",
-          "updated_at",
-          "provider",
-          "provider_id",
-          "provider_name",
-          "base_url",
-          "can_edit",
-          "can_delete"
-        ],
-        "title": "ModelItem"
+        "title": "ModelMappingItem",
+        "description": "Model mapping item."
       },
       "ModelMappingWithPricing": {
         "properties": {
@@ -43197,108 +43889,6 @@
         ],
         "title": "ModelMappingWithPricing",
         "description": "Model mapping with pricing information."
-      },
-      "ModelNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "ModelNewRequest"
-      },
-      "ModelNewResponse": {
-        "properties": {
-          "valid_provider_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Provider Ids"
-          },
-          "provider_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ProviderMappingItem"
-            },
-            "type": "object",
-            "title": "Provider Mapping"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__models__new__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "valid_model_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Model Ids"
-          },
-          "model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__models__new__ModelMappingItem"
-            },
-            "type": "object",
-            "title": "Model Mapping"
-          },
-          "valid_key_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Key Ids"
-          },
-          "key_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__models__new__KeyMappingItem"
-            },
-            "type": "object",
-            "title": "Key Mapping"
-          },
-          "units": {
-            "items": {
-              "$ref": "#/components/schemas/UnitItem"
-            },
-            "type": "array",
-            "title": "Units"
-          },
-          "user_role": {
-            "type": "string",
-            "title": "User Role"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "valid_provider_ids",
-          "provider_mapping",
-          "valid_department_ids",
-          "department_mapping",
-          "valid_model_ids",
-          "model_mapping",
-          "valid_key_ids",
-          "key_mapping",
-          "units",
-          "user_role",
-          "primary_department_id"
-        ],
-        "title": "ModelNewResponse"
       },
       "ModelRunsFilters": {
         "properties": {
@@ -43489,49 +44079,6 @@
         ],
         "title": "ModelRunsResponse",
         "description": "Response for model_runs query endpoint."
-      },
-      "ModelsFilters": {
-        "properties": {},
-        "type": "object",
-        "title": "ModelsFilters"
-      },
-      "ModelsListResponse": {
-        "properties": {
-          "models": {
-            "items": {
-              "$ref": "#/components/schemas/ModelItem"
-            },
-            "type": "array",
-            "title": "Models"
-          },
-          "provider_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Provider Options"
-          },
-          "status_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Status Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "models",
-          "provider_options",
-          "status_options"
-        ],
-        "title": "ModelsListResponse"
       },
       "NumericAttemptFact": {
         "properties": {
@@ -44317,7 +44864,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__practice__overview__DepartmentMappingItem"
+              "$ref": "#/components/schemas/DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -44799,29 +45346,6 @@
         "title": "PricingAnalyticsResponse",
         "description": "Response for pricing analytics."
       },
-      "PricingEntry": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "unit_id": {
-            "type": "string",
-            "title": "Unit Id"
-          },
-          "price": {
-            "type": "number",
-            "title": "Price"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "unit_id",
-          "price"
-        ],
-        "title": "PricingEntry"
-      },
       "PricingGroupDetailResponse": {
         "properties": {
           "groupId": {
@@ -44870,39 +45394,6 @@
         ],
         "title": "PricingGroupDetailResponse",
         "description": "Response schema for pricing group detail (multiple runs)."
-      },
-      "PricingItem": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "unit_id": {
-            "type": "string",
-            "title": "Unit Id"
-          },
-          "unit_name": {
-            "type": "string",
-            "title": "Unit Name"
-          },
-          "unit_category": {
-            "type": "string",
-            "title": "Unit Category"
-          },
-          "price": {
-            "type": "number",
-            "title": "Price"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "unit_id",
-          "unit_name",
-          "unit_category",
-          "price"
-        ],
-        "title": "PricingItem"
       },
       "PricingRunDetailRequest": {
         "properties": {
@@ -45662,24 +46153,6 @@
         ],
         "title": "ProviderItem",
         "description": "Provider item for list view."
-      },
-      "ProviderMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ProviderMappingItem"
       },
       "ProviderNewRequest": {
         "properties": {},
@@ -48417,6 +48890,655 @@
           "count"
         ],
         "title": "QGetLogsBundleV3TrendData"
+      },
+      "QGetModelDetailV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetModelDetailV3Department"
+      },
+      "QGetModelDetailV3Key": {
+        "properties": {
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "key_masked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Masked"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id",
+          "name",
+          "description",
+          "key_masked",
+          "active",
+          "department_ids"
+        ],
+        "title": "QGetModelDetailV3Key"
+      },
+      "QGetModelDetailV3Modalities": {
+        "properties": {
+          "input": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input",
+          "output"
+        ],
+        "title": "QGetModelDetailV3Modalities"
+      },
+      "QGetModelDetailV3Pricing": {
+        "properties": {
+          "pricing_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Type"
+          },
+          "unit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Id"
+          },
+          "unit_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Name"
+          },
+          "unit_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Category"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricing_type",
+          "unit_id",
+          "unit_name",
+          "unit_category",
+          "price"
+        ],
+        "title": "QGetModelDetailV3Pricing"
+      },
+      "QGetModelDetailV3Provider": {
+        "properties": {
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetModelDetailV3Provider"
+      },
+      "QGetModelDetailV3Unit": {
+        "properties": {
+          "unit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "unit_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Category"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unit_id",
+          "name",
+          "unit_category",
+          "value"
+        ],
+        "title": "QGetModelDetailV3Unit"
+      },
+      "QGetModelDetailV3Voice": {
+        "properties": {
+          "voice_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Id"
+          },
+          "voice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice"
+          }
+        },
+        "type": "object",
+        "required": [
+          "voice_id",
+          "voice"
+        ],
+        "title": "QGetModelDetailV3Voice"
+      },
+      "QGetModelNewV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetModelNewV3Department"
+      },
+      "QGetModelNewV3Key": {
+        "properties": {
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "key_masked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Masked"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id",
+          "name",
+          "description",
+          "key_masked",
+          "active",
+          "department_ids"
+        ],
+        "title": "QGetModelNewV3Key"
+      },
+      "QGetModelNewV3Model": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetModelNewV3Model"
+      },
+      "QGetModelNewV3Provider": {
+        "properties": {
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetModelNewV3Provider"
+      },
+      "QGetModelNewV3Unit": {
+        "properties": {
+          "unit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "unit_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Category"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unit_id",
+          "name",
+          "unit_category",
+          "value"
+        ],
+        "title": "QGetModelNewV3Unit"
       },
       "QGetParameterDetailV3Department": {
         "properties": {
@@ -57176,6 +58298,224 @@
         ],
         "title": "QListFieldsV3Parameter"
       },
+      "QListModelsV3Model": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "image_model": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Model"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "provider_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Name"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "name",
+          "description",
+          "active",
+          "image_model",
+          "updated_at",
+          "provider",
+          "provider_id",
+          "provider_name",
+          "base_url",
+          "can_edit",
+          "can_delete"
+        ],
+        "title": "QListModelsV3Model"
+      },
+      "QListModelsV3ProviderOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "QListModelsV3ProviderOption"
+      },
+      "QListModelsV3StatusOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "QListModelsV3StatusOption"
+      },
       "QListParametersV3Department": {
         "properties": {
           "department_id": {
@@ -61955,7 +63295,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__rubrics__detail__DepartmentMappingItem"
+              "$ref": "#/components/schemas/DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -62444,7 +63784,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__rubrics__list__DepartmentMappingItem"
+              "$ref": "#/components/schemas/DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -66636,34 +67976,6 @@
         "title": "TrendData",
         "description": "Trend data point."
       },
-      "UnitItem": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "unit_category": {
-            "type": "string",
-            "title": "Unit Category"
-          },
-          "value": {
-            "type": "integer",
-            "title": "Value"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "unit_category",
-          "value"
-        ],
-        "title": "UnitItem"
-      },
       "UpdateAgentApiRequest": {
         "properties": {
           "agent_id": {
@@ -67591,14 +68903,16 @@
         "title": "UpdateKeyResponse",
         "description": "Response from update key."
       },
-      "UpdateModelRequest": {
+      "UpdateModelApiRequest": {
         "properties": {
-          "modelId": {
+          "model_id": {
             "type": "string",
-            "title": "Modelid"
+            "format": "uuid",
+            "title": "Model Id"
           },
           "provider_id": {
             "type": "string",
+            "format": "uuid",
             "title": "Provider Id"
           },
           "name": {
@@ -67621,7 +68935,8 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -67645,20 +68960,18 @@
           "temperature_bounds": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/IUpdateModelV3TemperatureBounds"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Temperature Bounds"
+            ]
           },
           "pricing": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/PricingEntry"
+                  "$ref": "#/components/schemas/IUpdateModelV3Pricing"
                 },
                 "type": "array"
               },
@@ -67668,22 +68981,33 @@
             ],
             "title": "Pricing"
           },
-          "modalities": {
+          "input_modalities": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "type": "array"
+                "items": {
+                  "type": "string"
                 },
-                "type": "object"
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Modalities"
+            "title": "Input Modalities"
+          },
+          "output_modalities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Modalities"
           },
           "reasoning_levels": {
             "anyOf": [
@@ -67730,34 +69054,53 @@
         },
         "type": "object",
         "required": [
-          "modelId",
+          "model_id",
           "provider_id",
           "name",
           "description",
           "active",
           "value"
         ],
-        "title": "UpdateModelRequest",
-        "description": "Request to update model."
+        "title": "UpdateModelApiRequest"
       },
-      "UpdateModelResponse": {
+      "UpdateModelApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "model_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Exists"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateModelResponse",
-        "description": "Response from update model."
+        "title": "UpdateModelApiResponse"
       },
       "UpdateParameterApiRequest": {
         "properties": {
@@ -70423,7 +71766,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__departments__detail__DepartmentMappingItem"
+              "$ref": "#/components/schemas/DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -70444,7 +71787,7 @@
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__departments__detail__ModelMappingItem"
+              "$ref": "#/components/schemas/ModelMappingItem"
             },
             "type": "object",
             "title": "Model Mapping"
@@ -70458,7 +71801,7 @@
           },
           "key_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__departments__detail__KeyMappingItem"
+              "$ref": "#/components/schemas/KeyMappingItem"
             },
             "type": "object",
             "title": "Key Mapping"
@@ -70495,73 +71838,6 @@
         ],
         "title": "DepartmentDetailResponse",
         "description": "Response for department detail."
-      },
-      "app__api__v3__departments__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__departments__detail__KeyMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "key_masked": {
-            "type": "string",
-            "title": "Key Masked"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "key_masked",
-          "active"
-        ],
-        "title": "KeyMappingItem",
-        "description": "Key mapping item."
-      },
-      "app__api__v3__departments__detail__ModelMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ModelMappingItem",
-        "description": "Model mapping item."
       },
       "app__api__v3__departments__new__DepartmentDetailResponse": {
         "properties": {
@@ -70628,7 +71904,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__departments__new__DepartmentMappingItem"
+              "$ref": "#/components/schemas/DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -70652,25 +71928,6 @@
         ],
         "title": "DepartmentDetailResponse",
         "description": "Response for department detail."
-      },
-      "app__api__v3__departments__new__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
       },
       "app__api__v3__evals__attempt__full__AttemptItem": {
         "properties": {
@@ -70825,25 +72082,6 @@
         "title": "AgentMappingItem",
         "description": "Agent mapping item with role information."
       },
-      "app__api__v3__evals__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
       "app__api__v3__evals__detail__EvalDetailResponse": {
         "properties": {
           "eval_id": {
@@ -70955,7 +72193,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__evals__detail__DepartmentMappingItem"
+              "$ref": "#/components/schemas/DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -71253,25 +72491,6 @@
         "title": "ModelRunItem",
         "description": "Model run item in eval detail."
       },
-      "app__api__v3__evals__list__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
       "app__api__v3__evals__list__EvalItem": {
         "properties": {
           "eval_id": {
@@ -71427,25 +72646,6 @@
         "title": "AgentMappingItem",
         "description": "Agent mapping item with role information."
       },
-      "app__api__v3__evals__new__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
       "app__api__v3__evals__new__EvalDetailResponse": {
         "properties": {
           "eval_id": {
@@ -71557,7 +72757,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__evals__new__DepartmentMappingItem"
+              "$ref": "#/components/schemas/DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -72422,25 +73622,6 @@
         "title": "StandardGroupMappingItem",
         "description": "Standard group mapping item with rubric context."
       },
-      "app__api__v3__keys__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
       "app__api__v3__leaderboard__bundle__ScenarioMappingItem": {
         "properties": {
           "name": {
@@ -72547,146 +73728,6 @@
         ],
         "title": "SimulationMappingItem",
         "description": "Simulation mapping item."
-      },
-      "app__api__v3__models__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem"
-      },
-      "app__api__v3__models__detail__KeyMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "key_masked": {
-            "type": "string",
-            "title": "Key Masked"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "key_masked",
-          "active",
-          "department_ids"
-        ],
-        "title": "KeyMappingItem"
-      },
-      "app__api__v3__models__new__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem"
-      },
-      "app__api__v3__models__new__KeyMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "key_masked": {
-            "type": "string",
-            "title": "Key Masked"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "key_masked",
-          "active",
-          "department_ids"
-        ],
-        "title": "KeyMappingItem"
-      },
-      "app__api__v3__models__new__ModelMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ModelMappingItem"
       },
       "app__api__v3__practice__history__AttemptHistoryRow": {
         "properties": {
@@ -73054,25 +74095,6 @@
         ],
         "title": "AttemptHistoryRow",
         "description": "Attempt history row."
-      },
-      "app__api__v3__practice__overview__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
       },
       "app__api__v3__practice__overview__ScenarioMappingItem": {
         "properties": {
@@ -73558,44 +74580,6 @@
         ],
         "title": "AgentMappingItem",
         "description": "Agent mapping item with role information."
-      },
-      "app__api__v3__rubrics__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__rubrics__list__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
       },
       "app__api__v3__rubrics__list__SimulationMappingItem": {
         "properties": {

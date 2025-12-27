@@ -238,7 +238,7 @@ export default function Models({
     try {
       await deleteModelAction({
         body: {
-          modelId: deleteItem.id,
+          model_id: deleteItem.id,
         },
       });
       // profileId comes from X-Profile-Id header automatically
@@ -275,7 +275,7 @@ export default function Models({
     try {
       await duplicateModelAction({
         body: {
-          modelId: model.model_id,
+          model_id: model.model_id,
         },
       });
       // profileId comes from X-Profile-Id header automatically

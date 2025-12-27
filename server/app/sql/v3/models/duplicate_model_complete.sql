@@ -41,34 +41,38 @@ model_exists_check AS (
 ),
 actor_profile AS (
     SELECT 
-        (SELECT profile_id FROM params)::uuid as profile_id,
+        x.profile_id,
         COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
-    FROM profiles p
-    WHERE p.id = (SELECT profile_id FROM params)::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 source_model AS (
     SELECT 
-        name,
-        description,
-        active,
-        provider_id
-    FROM models
-    WHERE id = (SELECT model_id FROM params)
+        m.name,
+        m.description,
+        m.active,
+        m.provider_id,
+        m.value
+    FROM params x
+    JOIN models m ON m.id = x.model_id
 ),
 duplicated_model AS (
     INSERT INTO models (
         provider_id,
         name,
         description,
-        active
+        active,
+        value
     )
     SELECT 
         sm.provider_id,
         sm.name,
         sm.description || ' Copy',
-        sm.active
+        sm.active,
+        sm.value
     FROM source_model sm
-    WHERE EXISTS(SELECT 1 FROM model_exists_check WHERE model_exists = true)
+    CROSS JOIN model_exists_check mec
+    WHERE mec.model_exists = true
     RETURNING id
 )
 SELECT 
@@ -77,9 +81,10 @@ SELECT
     sm.name::text as original_name,
     ap.actor_name::text as actor_name
 FROM model_exists_check mec
+CROSS JOIN source_model sm
+CROSS JOIN duplicated_model dm
 CROSS JOIN actor_profile ap
-LEFT JOIN source_model sm ON mec.model_exists = true
-LEFT JOIN duplicated_model dm ON mec.model_exists = true
+WHERE mec.model_exists = true
 LIMIT 1
 $$;
 

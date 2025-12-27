@@ -1997,6 +1997,559 @@ class GetLogsBundleApiResponse(BaseModel):
 
 
 
+# Generated from: create_model
+
+class ICreateModelV3Pricing(BaseModel):
+
+    pricing_type: str | None
+    unit_id: UUID | None
+    price: float | None
+
+
+
+
+class ICreateModelV3TemperatureBounds(BaseModel):
+
+    bounds_type: str | None
+    lower_bound: float | None
+    upper_bound: float | None
+    values_array: list[float] | None
+
+class CreateModelSqlParams(BaseModel):
+
+    provider_id: UUID
+    name: str
+    description: str
+    active: bool
+    value: str
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    base_url: str | None = None
+    temperature_bounds: ICreateModelV3TemperatureBounds | None = None
+    pricing: list[ICreateModelV3Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    input_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    output_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    reasoning_levels: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    voices: list[str] | None = None
+    qualities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert pricing composite array to tuples for asyncpg
+        pricing_tuples = [
+            (conn.pricing_type, conn.unit_id, conn.price)
+            for conn in self.pricing
+        ]
+        return (
+            self.provider_id,
+            self.name,
+            self.description,
+            self.active,
+            self.value,
+            self.profile_id,
+            self.department_ids,
+            self.base_url,
+            self.temperature_bounds,
+            pricing_tuples,
+            self.input_modalities,
+            self.output_modalities,
+            self.reasoning_levels,
+            self.voices,
+            self.qualities,
+        )
+
+class CreateModelSqlRow(BaseModel):
+
+    model_id: UUID | None = None
+    actor_name: str | None = None
+
+class CreateModelApiRequest(BaseModel):
+
+    provider_id: UUID
+    name: str
+    description: str
+    active: bool
+    value: str
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    base_url: str | None = None
+    temperature_bounds: ICreateModelV3TemperatureBounds | None = None
+    pricing: list[ICreateModelV3Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    input_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    output_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    reasoning_levels: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    voices: list[str] | None = None
+    qualities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class CreateModelApiResponse(BaseModel):
+
+    model_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: delete_model
+
+class DeleteModelSqlParams(BaseModel):
+
+    model_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.model_id,
+            self.profile_id,
+        )
+
+class DeleteModelSqlRow(BaseModel):
+
+    model_exists: bool | None = None
+    deleted: bool | None = None
+    name: str | None = None
+    actor_name: str | None = None
+    personas_usage_count: int | None = None
+    agents_usage_count: int | None = None
+
+class DeleteModelApiRequest(BaseModel):
+
+    model_id: UUID
+
+class DeleteModelApiResponse(BaseModel):
+
+    model_exists: bool | None = None
+    deleted: bool | None = None
+    name: str | None = None
+    actor_name: str | None = None
+    personas_usage_count: int | None = None
+    agents_usage_count: int | None = None
+
+
+
+# Generated from: duplicate_model
+
+class DuplicateModelSqlParams(BaseModel):
+
+    model_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.model_id,
+            self.profile_id,
+        )
+
+class DuplicateModelSqlRow(BaseModel):
+
+    model_exists: bool | None = None
+    model_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicateModelApiRequest(BaseModel):
+
+    model_id: UUID
+
+class DuplicateModelApiResponse(BaseModel):
+
+    model_exists: bool | None = None
+    model_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_model_detail
+
+class GetModelDetailSqlParams(BaseModel):
+
+    model_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.model_id,
+            self.profile_id,
+        )
+
+class QGetModelDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetModelDetailV3Key(BaseModel):
+
+    key_id: UUID | None
+    name: str | None
+    description: str | None
+    key_masked: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+
+
+
+
+class QGetModelDetailV3Modalities(BaseModel):
+
+    input: list[str] | None
+    output: list[str] | None
+
+
+
+
+class QGetModelDetailV3Pricing(BaseModel):
+
+    pricing_type: str | None
+    unit_id: UUID | None
+    unit_name: str | None
+    unit_category: str | None
+    price: float | None
+
+
+
+
+class QGetModelDetailV3Provider(BaseModel):
+
+    provider_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetModelDetailV3Unit(BaseModel):
+
+    unit_id: UUID | None
+    name: str | None
+    unit_category: str | None
+    value: int | None
+
+
+
+
+class QGetModelDetailV3Voice(BaseModel):
+
+    voice_id: UUID | None
+    voice: str | None
+
+class GetModelDetailSqlRow(BaseModel):
+
+    model_exists: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    image_model: bool | None = None
+    provider: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    value: str | None = None
+    base_url: str | None = None
+    valid_provider_ids: list[UUID] | None = None
+    providers: list[QGetModelDetailV3Provider] | None = None
+    valid_department_ids: list[UUID] | None = None
+    departments: list[QGetModelDetailV3Department] | None = None
+    department_ids: list[UUID] | None = None
+    valid_key_ids: list[UUID] | None = None
+    keys: list[QGetModelDetailV3Key] | None = None
+    default_key_id: UUID | None = None
+    temperature_lower: float | None = None
+    temperature_upper: float | None = None
+    temperature_values: list[str] | None = None
+    pricing: list[QGetModelDetailV3Pricing] | None = None
+    modalities: QGetModelDetailV3Modalities | None = None
+    reasoning_levels: list[str] | None = None
+    voices: list[QGetModelDetailV3Voice] | None = None
+    qualities: list[str] | None = None
+    units: list[QGetModelDetailV3Unit] | None = None
+    actor_name: str | None = None
+
+class GetModelDetailApiRequest(BaseModel):
+
+    model_id: UUID
+
+class GetModelDetailApiResponse(BaseModel):
+
+    model_exists: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    image_model: bool | None = None
+    provider: str | None = None
+    provider_id: UUID | None = None
+    provider_name: str | None = None
+    value: str | None = None
+    base_url: str | None = None
+    valid_provider_ids: list[UUID] | None = None
+    providers: list[QGetModelDetailV3Provider] | None = None
+    valid_department_ids: list[UUID] | None = None
+    departments: list[QGetModelDetailV3Department] | None = None
+    department_ids: list[UUID] | None = None
+    valid_key_ids: list[UUID] | None = None
+    keys: list[QGetModelDetailV3Key] | None = None
+    default_key_id: UUID | None = None
+    temperature_lower: float | None = None
+    temperature_upper: float | None = None
+    temperature_values: list[str] | None = None
+    pricing: list[QGetModelDetailV3Pricing] | None = None
+    modalities: QGetModelDetailV3Modalities | None = None
+    reasoning_levels: list[str] | None = None
+    voices: list[QGetModelDetailV3Voice] | None = None
+    qualities: list[str] | None = None
+    units: list[QGetModelDetailV3Unit] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_model_new
+
+class GetModelNewSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetModelNewV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetModelNewV3Key(BaseModel):
+
+    key_id: UUID | None
+    name: str | None
+    description: str | None
+    key_masked: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+
+
+
+
+class QGetModelNewV3Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetModelNewV3Provider(BaseModel):
+
+    provider_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetModelNewV3Unit(BaseModel):
+
+    unit_id: UUID | None
+    name: str | None
+    unit_category: str | None
+    value: int | None
+
+class GetModelNewSqlRow(BaseModel):
+
+    valid_provider_ids: list[UUID] | None = None
+    providers: list[QGetModelNewV3Provider] | None = None
+    valid_department_ids: list[UUID] | None = None
+    departments: list[QGetModelNewV3Department] | None = None
+    valid_model_ids: list[UUID] | None = None
+    models: list[QGetModelNewV3Model] | None = None
+    valid_key_ids: list[UUID] | None = None
+    keys: list[QGetModelNewV3Key] | None = None
+    units: list[QGetModelNewV3Unit] | None = None
+    user_role: str | None = None
+    primary_department_id: UUID | None = None
+    actor_name: str | None = None
+
+class GetModelNewApiRequest(BaseModel):
+
+    pass
+
+class GetModelNewApiResponse(BaseModel):
+
+    valid_provider_ids: list[UUID] | None = None
+    providers: list[QGetModelNewV3Provider] | None = None
+    valid_department_ids: list[UUID] | None = None
+    departments: list[QGetModelNewV3Department] | None = None
+    valid_model_ids: list[UUID] | None = None
+    models: list[QGetModelNewV3Model] | None = None
+    valid_key_ids: list[UUID] | None = None
+    keys: list[QGetModelNewV3Key] | None = None
+    units: list[QGetModelNewV3Unit] | None = None
+    user_role: str | None = None
+    primary_department_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: list_models
+
+class ListModelsSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListModelsV3Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    image_model: bool | None
+    updated_at: str | None
+    provider: str | None
+    provider_id: UUID | None
+    provider_name: str | None
+    base_url: str | None
+    can_edit: bool | None
+    can_delete: bool | None
+
+
+
+
+class QListModelsV3ProviderOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QListModelsV3StatusOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+class ListModelsSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    models: list[QListModelsV3Model] | None = None
+    provider_options: list[QListModelsV3ProviderOption] | None = None
+    status_options: list[QListModelsV3StatusOption] | None = None
+
+class ListModelsApiRequest(BaseModel):
+
+    pass
+
+class ListModelsApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    models: list[QListModelsV3Model] | None = None
+    provider_options: list[QListModelsV3ProviderOption] | None = None
+    status_options: list[QListModelsV3StatusOption] | None = None
+
+
+
+# Generated from: update_model
+
+class IUpdateModelV3Pricing(BaseModel):
+
+    pricing_type: str | None
+    unit_id: UUID | None
+    price: float | None
+
+
+
+
+class IUpdateModelV3TemperatureBounds(BaseModel):
+
+    bounds_type: str | None
+    lower_bound: float | None
+    upper_bound: float | None
+    values_array: list[float] | None
+
+class UpdateModelSqlParams(BaseModel):
+
+    model_id: UUID
+    provider_id: UUID
+    name: str
+    description: str
+    active: bool
+    value: str
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    base_url: str | None = None
+    temperature_bounds: IUpdateModelV3TemperatureBounds | None = None
+    pricing: list[IUpdateModelV3Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    input_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    output_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    reasoning_levels: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    voices: list[str] | None = None
+    qualities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert pricing composite array to tuples for asyncpg
+        pricing_tuples = [
+            (conn.pricing_type, conn.unit_id, conn.price)
+            for conn in self.pricing
+        ]
+        return (
+            self.model_id,
+            self.provider_id,
+            self.name,
+            self.description,
+            self.active,
+            self.value,
+            self.profile_id,
+            self.department_ids,
+            self.base_url,
+            self.temperature_bounds,
+            pricing_tuples,
+            self.input_modalities,
+            self.output_modalities,
+            self.reasoning_levels,
+            self.voices,
+            self.qualities,
+        )
+
+class UpdateModelSqlRow(BaseModel):
+
+    model_exists: bool | None = None
+    model_name: str | None = None
+    actor_name: str | None = None
+
+class UpdateModelApiRequest(BaseModel):
+
+    model_id: UUID
+    provider_id: UUID
+    name: str
+    description: str
+    active: bool
+    value: str
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    base_url: str | None = None
+    temperature_bounds: IUpdateModelV3TemperatureBounds | None = None
+    pricing: list[IUpdateModelV3Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    input_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    output_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    reasoning_levels: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    voices: list[str] | None = None
+    qualities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class UpdateModelApiResponse(BaseModel):
+
+    model_exists: bool | None = None
+    model_name: str | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: create_parameter
 
 class ICreateParameterV3FieldConnection(BaseModel):
@@ -6814,6 +7367,48 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLogsBundleApiRequest",
         "GetLogsBundleApiResponse",
     ),
+    "app/sql/v3/models/create_model_complete.sql": (
+        "CreateModelSqlParams",
+        "CreateModelSqlRow",
+        "CreateModelApiRequest",
+        "CreateModelApiResponse",
+    ),
+    "app/sql/v3/models/delete_model_complete.sql": (
+        "DeleteModelSqlParams",
+        "DeleteModelSqlRow",
+        "DeleteModelApiRequest",
+        "DeleteModelApiResponse",
+    ),
+    "app/sql/v3/models/duplicate_model_complete.sql": (
+        "DuplicateModelSqlParams",
+        "DuplicateModelSqlRow",
+        "DuplicateModelApiRequest",
+        "DuplicateModelApiResponse",
+    ),
+    "app/sql/v3/models/get_model_detail_complete.sql": (
+        "GetModelDetailSqlParams",
+        "GetModelDetailSqlRow",
+        "GetModelDetailApiRequest",
+        "GetModelDetailApiResponse",
+    ),
+    "app/sql/v3/models/get_model_new_complete.sql": (
+        "GetModelNewSqlParams",
+        "GetModelNewSqlRow",
+        "GetModelNewApiRequest",
+        "GetModelNewApiResponse",
+    ),
+    "app/sql/v3/models/list_models_complete.sql": (
+        "ListModelsSqlParams",
+        "ListModelsSqlRow",
+        "ListModelsApiRequest",
+        "ListModelsApiResponse",
+    ),
+    "app/sql/v3/models/update_model_complete.sql": (
+        "UpdateModelSqlParams",
+        "UpdateModelSqlRow",
+        "UpdateModelApiRequest",
+        "UpdateModelApiResponse",
+    ),
     "app/sql/v3/parameters/create_parameter_complete.sql": (
         "CreateParameterSqlParams",
         "CreateParameterSqlRow",
@@ -7351,6 +7946,41 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/logs/get_logs_bundle_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/create_model_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/delete_model_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/duplicate_model_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/get_model_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/get_model_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/list_models_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/models/update_model_complete.sql"]
     ) -> SqlString: ...
 
     @overload
