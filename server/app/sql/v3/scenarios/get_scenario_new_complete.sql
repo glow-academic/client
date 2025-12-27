@@ -5,7 +5,10 @@
 BEGIN;
 
 -- 1) Drop function first (breaks dependency on types)
+-- Drop with old signature (for migration)
 DROP FUNCTION IF EXISTS api_get_scenario_new_v3(uuid, boolean, boolean, uuid[], uuid[], uuid[], uuid[], uuid[], boolean);
+-- Drop with new signature (with filter parameters)
+DROP FUNCTION IF EXISTS api_get_scenario_new_v3(uuid, boolean, boolean, uuid[], uuid[], uuid[], uuid[], uuid[], boolean, uuid[], uuid[], uuid[], uuid[], uuid[], text, text, text, boolean, boolean, boolean, jsonb);
 
 -- 2) Drop types WITHOUT CASCADE
 -- If any other object depends on them, this will ERROR and stop the migration (good)
@@ -177,7 +180,22 @@ CREATE OR REPLACE FUNCTION api_get_scenario_new_v3(
     template_document_ids uuid[] DEFAULT NULL,
     objective_ids uuid[] DEFAULT NULL,
     image_ids uuid[] DEFAULT NULL,
-    use_video boolean DEFAULT NULL
+    use_video boolean DEFAULT NULL,
+    -- Filter parameters
+    filter_department_ids uuid[] DEFAULT NULL,
+    filter_persona_ids uuid[] DEFAULT NULL,
+    filter_document_ids uuid[] DEFAULT NULL,
+    filter_parameter_ids uuid[] DEFAULT NULL,
+    filter_field_ids uuid[] DEFAULT NULL,
+    -- Search parameters
+    persona_search text DEFAULT NULL,
+    document_search text DEFAULT NULL,
+    parameter_search text DEFAULT NULL,
+    -- Show selected filters
+    persona_show_selected boolean DEFAULT NULL,
+    document_show_selected boolean DEFAULT NULL,
+    parameter_show_selected boolean DEFAULT NULL,
+    field_show_selected_by_param jsonb DEFAULT NULL
 )
 RETURNS TABLE (
     actor_name text,
@@ -185,6 +203,8 @@ RETURNS TABLE (
     department_ids text[],
     valid_persona_ids text[],
     valid_document_ids text[],
+    valid_parameter_ids text[],
+    valid_field_ids text[],
     primary_department_id text,
     scenario_agent_id text,
     image_agent_id text,
@@ -228,7 +248,22 @@ WITH params AS (
         COALESCE(template_document_ids, ARRAY[]::uuid[]) AS template_document_ids,
         COALESCE(objective_ids, ARRAY[]::uuid[]) AS objective_ids,
         COALESCE(image_ids, ARRAY[]::uuid[]) AS image_ids,
-        COALESCE(use_video, false) AS use_video
+        COALESCE(use_video, false) AS use_video,
+        -- Filter parameters
+        COALESCE(filter_department_ids, ARRAY[]::uuid[]) AS filter_department_ids,
+        COALESCE(filter_persona_ids, ARRAY[]::uuid[]) AS filter_persona_ids,
+        COALESCE(filter_document_ids, ARRAY[]::uuid[]) AS filter_document_ids,
+        COALESCE(filter_parameter_ids, ARRAY[]::uuid[]) AS filter_parameter_ids,
+        COALESCE(filter_field_ids, ARRAY[]::uuid[]) AS filter_field_ids,
+        -- Search parameters
+        COALESCE(NULLIF(persona_search, ''), NULL) AS persona_search,
+        COALESCE(NULLIF(document_search, ''), NULL) AS document_search,
+        COALESCE(NULLIF(parameter_search, ''), NULL) AS parameter_search,
+        -- Show selected filters
+        COALESCE(persona_show_selected, false) AS persona_show_selected,
+        COALESCE(document_show_selected, false) AS document_show_selected,
+        COALESCE(parameter_show_selected, false) AS parameter_show_selected,
+        field_show_selected_by_param AS field_show_selected_by_param
 ),
 params_single AS (
     SELECT * FROM params LIMIT 1
@@ -415,6 +450,54 @@ persona_data AS (
                     )
             END
         )
+        -- Filter by selected departments
+        AND (
+            (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) = 0
+            OR EXISTS (
+                SELECT 1 FROM persona_departments pd_filter
+                WHERE pd_filter.persona_id = p.id
+                AND pd_filter.active = true
+                AND pd_filter.department_id = ANY((SELECT filter_department_ids FROM params LIMIT 1)::uuid[])
+            )
+        )
+        -- Filter by selected parameters (persona must have fields from selected parameters)
+        AND (
+            (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) = 0
+            OR EXISTS (
+                SELECT 1 FROM persona_fields pf_filter
+                JOIN parameter_fields pfield_filter ON pfield_filter.field_id = pf_filter.field_id
+                WHERE pf_filter.persona_id = p.id
+                AND pf_filter.active = true
+                AND pfield_filter.active = true
+                AND pfield_filter.parameter_id = ANY((SELECT filter_parameter_ids FROM params LIMIT 1)::uuid[])
+            )
+        )
+        -- Filter by selected fields (persona must have selected fields)
+        AND (
+            (SELECT array_length(filter_field_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_field_ids, 1) FROM params LIMIT 1) = 0
+            OR EXISTS (
+                SELECT 1 FROM persona_fields pf_field_filter
+                WHERE pf_field_filter.persona_id = p.id
+                AND pf_field_filter.active = true
+                AND pf_field_filter.field_id = ANY((SELECT filter_field_ids FROM params LIMIT 1)::uuid[])
+            )
+        )
+        -- Search filter
+        AND (
+            (SELECT persona_search FROM params LIMIT 1) IS NULL
+            OR LOWER(p.name) LIKE '%' || LOWER((SELECT persona_search FROM params LIMIT 1)) || '%'
+            OR LOWER(COALESCE(p.description, '')) LIKE '%' || LOWER((SELECT persona_search FROM params LIMIT 1)) || '%'
+        )
+        -- Show selected filter
+        AND (
+            (SELECT persona_show_selected FROM params LIMIT 1) = false
+            OR (SELECT array_length(filter_persona_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_persona_ids, 1) FROM params LIMIT 1) = 0
+            OR p.id = ANY((SELECT filter_persona_ids FROM params LIMIT 1)::uuid[])
+        )
     ORDER BY p.name
 ),
 persona_parameter_relationships AS (
@@ -472,7 +555,7 @@ all_personas_array AS (
     LEFT JOIN persona_fields_data pfd ON pfd.persona_id = p.id
     LEFT JOIN persona_examples_data ped ON ped.persona_id = p.id
 ),
-document_data AS (
+document_data_base AS (
     SELECT 
         d.id,
         d.name,
@@ -553,8 +636,8 @@ document_data AS (
         ''::text as description
     FROM documents d
     WHERE d.active = true
-    AND (SELECT document_ids FROM extracted_params) IS NOT NULL
-    AND array_length((SELECT document_ids FROM extracted_params), 1) > 0
+    AND (SELECT document_ids FROM extracted_params LIMIT 1) IS NOT NULL
+    AND array_length((SELECT document_ids FROM extracted_params LIMIT 1), 1) > 0
             AND d.id IN (SELECT unnest((SELECT document_ids FROM extracted_params LIMIT 1)::uuid[]))
     AND (
         CASE 
@@ -623,8 +706,8 @@ document_data AS (
         ''::text as description
     FROM documents d
     WHERE d.active = true
-    AND (SELECT template_document_ids FROM extracted_params) IS NOT NULL
-    AND array_length((SELECT template_document_ids FROM extracted_params), 1) > 0
+    AND (SELECT template_document_ids FROM extracted_params LIMIT 1) IS NOT NULL
+    AND array_length((SELECT template_document_ids FROM extracted_params LIMIT 1), 1) > 0
     AND d.id IN (SELECT unnest((SELECT template_document_ids FROM extracted_params LIMIT 1)::uuid[]))
     AND (
         CASE 
@@ -686,7 +769,63 @@ document_data AS (
                 )
         END
     )
-    ORDER BY name
+),
+document_data AS (
+    SELECT DISTINCT
+        ddb.id,
+        ddb.name,
+        ddb.description
+    FROM document_data_base ddb
+    WHERE
+        -- Filter by selected departments
+        (
+            (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) = 0
+            OR EXISTS (
+                SELECT 1 FROM document_departments dd_filter
+                WHERE dd_filter.document_id = ddb.id
+                AND dd_filter.active = true
+                AND dd_filter.department_id = ANY((SELECT filter_department_ids FROM params LIMIT 1)::uuid[])
+            )
+        )
+        -- Filter by selected parameters (document must have fields from selected parameters)
+        AND (
+            (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) = 0
+            OR EXISTS (
+                SELECT 1 FROM document_fields df_filter
+                JOIN parameter_fields pfield_filter ON pfield_filter.field_id = df_filter.field_id
+                WHERE df_filter.document_id = ddb.id
+                AND df_filter.active = true
+                AND pfield_filter.active = true
+                AND pfield_filter.parameter_id = ANY((SELECT filter_parameter_ids FROM params LIMIT 1)::uuid[])
+            )
+        )
+        -- Filter by selected fields (document must have selected fields)
+        AND (
+            (SELECT array_length(filter_field_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_field_ids, 1) FROM params LIMIT 1) = 0
+            OR EXISTS (
+                SELECT 1 FROM document_fields df_field_filter
+                WHERE df_field_filter.document_id = ddb.id
+                AND df_field_filter.active = true
+                AND df_field_filter.field_id = ANY((SELECT filter_field_ids FROM params LIMIT 1)::uuid[])
+            )
+        )
+        -- Search filter
+        AND (
+            (SELECT document_search FROM params LIMIT 1) IS NULL
+            OR LOWER(ddb.name) LIKE '%' || LOWER((SELECT document_search FROM params LIMIT 1)) || '%'
+            OR LOWER(COALESCE(ddb.description, '')) LIKE '%' || LOWER((SELECT document_search FROM params LIMIT 1)) || '%'
+        )
+        -- Show selected filter
+        AND (
+            (SELECT document_show_selected FROM params LIMIT 1) = false
+            OR (SELECT array_length(filter_document_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_document_ids, 1) FROM params LIMIT 1) = 0
+            OR ddb.id = ANY((SELECT filter_document_ids FROM params LIMIT 1)::uuid[])
+        )
+    ORDER BY ddb.name
 ),
 document_parameter_relationships AS (
     SELECT DISTINCT
@@ -792,6 +931,32 @@ parameter_data AS (
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                       JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id 
                       WHERE pf2.parameter_id = p.id AND pf2.active = true)
+        -- Filter by selected departments
+        AND (
+            (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) = 0
+            OR EXISTS (
+                SELECT 1 FROM parameter_fields pf_dept_filter
+                JOIN field_departments fd_dept_filter ON fd_dept_filter.field_id = pf_dept_filter.field_id
+                WHERE pf_dept_filter.parameter_id = p.id
+                AND pf_dept_filter.active = true
+                AND fd_dept_filter.active = true
+                AND fd_dept_filter.department_id = ANY((SELECT filter_department_ids FROM params LIMIT 1)::uuid[])
+            )
+        )
+        -- Search filter
+        AND (
+            (SELECT parameter_search FROM params LIMIT 1) IS NULL
+            OR LOWER(p.name) LIKE '%' || LOWER((SELECT parameter_search FROM params LIMIT 1)) || '%'
+            OR LOWER(COALESCE(p.description, '')) LIKE '%' || LOWER((SELECT parameter_search FROM params LIMIT 1)) || '%'
+        )
+        -- Show selected filter
+        AND (
+            (SELECT parameter_show_selected FROM params LIMIT 1) = false
+            OR (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) = 0
+            OR p.id = ANY((SELECT filter_parameter_ids FROM params LIMIT 1)::uuid[])
+        )
     ORDER BY p.name
 ),
 all_parameters_array AS (
@@ -822,6 +987,59 @@ parameter_item_data AS (
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
+        -- Filter by selected departments
+        AND (
+            (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) = 0
+            OR EXISTS (
+                SELECT 1 FROM field_departments fd_dept_filter
+                WHERE fd_dept_filter.field_id = f.id
+                AND fd_dept_filter.active = true
+                AND fd_dept_filter.department_id = ANY((SELECT filter_department_ids FROM params LIMIT 1)::uuid[])
+            )
+            OR NOT EXISTS (SELECT 1 FROM field_departments fd_no_dept WHERE fd_no_dept.field_id = f.id AND fd_no_dept.active = true)
+        )
+        -- Filter by selected parameters (field must belong to selected parameter)
+        AND (
+            (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) = 0
+            OR pf.parameter_id = ANY((SELECT filter_parameter_ids FROM params LIMIT 1)::uuid[])
+        )
+        -- Filter by selected fields
+        AND (
+            (SELECT array_length(filter_field_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_field_ids, 1) FROM params LIMIT 1) = 0
+            OR f.id = ANY((SELECT filter_field_ids FROM params LIMIT 1)::uuid[])
+        )
+        -- Filter by selected personas (field must be linked to selected personas)
+        AND (
+            (SELECT array_length(filter_persona_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_persona_ids, 1) FROM params LIMIT 1) = 0
+            OR EXISTS (
+                SELECT 1 FROM persona_fields pf_persona_filter
+                WHERE pf_persona_filter.field_id = f.id
+                AND pf_persona_filter.active = true
+                AND pf_persona_filter.persona_id = ANY((SELECT filter_persona_ids FROM params LIMIT 1)::uuid[])
+            )
+        )
+        -- Filter by selected documents (field must be linked to selected documents)
+        AND (
+            (SELECT array_length(filter_document_ids, 1) FROM params LIMIT 1) IS NULL
+            OR (SELECT array_length(filter_document_ids, 1) FROM params LIMIT 1) = 0
+            OR EXISTS (
+                SELECT 1 FROM document_fields df_doc_filter
+                WHERE df_doc_filter.field_id = f.id
+                AND df_doc_filter.active = true
+                AND df_doc_filter.document_id = ANY((SELECT filter_document_ids FROM params LIMIT 1)::uuid[])
+            )
+        )
+        -- Per-parameter show_selected filter (check if field_show_selected_by_param has this parameter set to true)
+        AND (
+            (SELECT field_show_selected_by_param FROM params LIMIT 1) IS NULL
+            OR NOT (SELECT field_show_selected_by_param FROM params LIMIT 1) ? pf.parameter_id::text
+            OR (SELECT (field_show_selected_by_param->>pf.parameter_id::text)::boolean FROM params LIMIT 1) = false
+            OR f.id = ANY((SELECT filter_field_ids FROM params LIMIT 1)::uuid[])
+        )
     ORDER BY p.name, f.name
 ),
 field_conditional_parameters_data AS (
@@ -858,7 +1076,7 @@ all_parameters_detail_array AS (
 primary_department_id AS (
     SELECT department_id::text
     FROM profile_departments
-    WHERE profile_id = (SELECT profile_id FROM extracted_params) AND is_primary = TRUE
+    WHERE profile_id = (SELECT profile_id FROM extracted_params LIMIT 1) AND is_primary = TRUE
     LIMIT 1
 ),
 first_user_department AS (
@@ -869,7 +1087,7 @@ first_user_department AS (
 ),
 resolved_department_for_agents AS (
     SELECT COALESCE(
-        (SELECT pd.department_id FROM profile_departments pd WHERE pd.profile_id = (SELECT profile_id FROM extracted_params) AND pd.is_primary = TRUE LIMIT 1),
+        (SELECT pd.department_id FROM profile_departments pd WHERE pd.profile_id = (SELECT profile_id FROM extracted_params LIMIT 1) AND pd.is_primary = TRUE LIMIT 1),
         (SELECT id FROM first_user_department)
     ) as department_id
 ),
@@ -988,7 +1206,7 @@ all_objectives_array AS (
     LEFT JOIN objective_departments od_dept ON od_dept.objective_id = o.id AND od_dept.active = true
     WHERE (
         ((SELECT objective_ids FROM extracted_params LIMIT 1) IS NOT NULL AND array_length((SELECT objective_ids FROM extracted_params LIMIT 1), 1) > 0 AND o.id = ANY((SELECT objective_ids FROM extracted_params LIMIT 1)::uuid[]))
-        OR ((SELECT objective_ids FROM extracted_params) IS NULL OR array_length((SELECT objective_ids FROM extracted_params), 1) = 0)
+        OR ((SELECT objective_ids FROM extracted_params LIMIT 1) IS NULL OR array_length((SELECT objective_ids FROM extracted_params LIMIT 1), 1) = 0)
     )
     AND (
         od_dept.department_id IN (SELECT id FROM user_departments)
@@ -1009,7 +1227,7 @@ all_problem_statements_array AS (
         OR NOT EXISTS (SELECT 1 FROM problem_statement_departments psd2 WHERE psd2.problem_statement_id = ps.id AND psd2.active = true)
     )
     AND (
-        ((SELECT problem_statement_ids FROM extracted_params) IS NULL OR array_length((SELECT problem_statement_ids FROM extracted_params), 1) = 0)
+        ((SELECT problem_statement_ids FROM extracted_params LIMIT 1) IS NULL OR array_length((SELECT problem_statement_ids FROM extracted_params LIMIT 1), 1) = 0)
         OR ps.id IN (SELECT unnest((SELECT problem_statement_ids FROM extracted_params LIMIT 1)::uuid[]))
     )
 ),
@@ -1134,6 +1352,14 @@ SELECT
         (SELECT ARRAY_AGG(id::text) FROM document_data),
         ARRAY[]::text[]
     ) as valid_document_ids,
+    COALESCE(
+        (SELECT ARRAY_AGG(parameter_id::text ORDER BY name) FROM all_parameters_array),
+        ARRAY[]::text[]
+    ) as valid_parameter_ids,
+    COALESCE(
+        (SELECT ARRAY_AGG(field_id::text ORDER BY parameter_name, name) FROM all_fields_array),
+        ARRAY[]::text[]
+    ) as valid_field_ids,
     (SELECT department_id FROM primary_department_id) as primary_department_id,
     COALESCE((SELECT agent_id FROM default_scenario_agent), '') as scenario_agent_id,
     COALESCE((SELECT agent_id FROM default_image_agent), '') as image_agent_id,

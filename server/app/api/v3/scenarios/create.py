@@ -7,13 +7,9 @@ import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    CreateScenarioApiRequest,
-    CreateScenarioApiResponse,
-    CreateScenarioSqlParams,
-    CreateScenarioSqlRow,
-    load_sql_query,
-)
+from app.sql.types import (CreateScenarioApiRequest, CreateScenarioApiResponse,
+                           CreateScenarioSqlParams, CreateScenarioSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
@@ -152,37 +148,20 @@ async def create_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert API request to SQL params (add profile_id from header)
-        # Construct dict with preprocessed values for SQL params
+        # Convert API request to SQL params (use double star pattern)
         # SQL handles None-to-empty conversions via COALESCE in params CTE
-        request_dict = {
-            "name": request.name,
-            "description": request.description,
-            "active": request.active,
-            "objectives_enabled": request.objectives_enabled,
-            "images_enabled": request.images_enabled,
-            "video_enabled": request.video_enabled,
-            "questions_enabled": request.questions_enabled,
-            "problem_statement_enabled": request.problem_statement_enabled,
-            "video_agent_id": request.video_agent_id,
-            "problem_statement": request.problem_statement,
-            "problem_statement_name": request.problem_statement_name,
-            "problem_statement_versions": problem_statement_versions,
-            "department_ids": request.department_ids,
-            "persona_ids": request.persona_ids,
-            "document_ids": request.document_ids,
-            "template_document_ids": request.template_document_ids,
-            "objective_ids": filtered_objective_ids,
-            "parameter_item_ids": parameter_item_ids,
-            "upload_images_json": upload_images_json,
-            "video_ids": request.video_ids,
-            "active_video_id": request.active_video_id,
-            "question_ids": request.question_ids,
-            "question_timestamps": question_timestamps_json,
-            "run_id": None,
-            "parameter_ids": parameter_ids,
-        }
-        params = CreateScenarioSqlParams(**request_dict, profile_id=profile_id)
+        # Override fields that need preprocessing
+        params = CreateScenarioSqlParams(
+            **request.model_dump(),
+            profile_id=profile_id,
+            objective_ids=filtered_objective_ids,
+            parameter_item_ids=parameter_item_ids,
+            parameter_ids=parameter_ids,
+            problem_statement_versions=problem_statement_versions,
+            upload_images_json=upload_images_json,
+            question_timestamps=question_timestamps_json,
+            run_id=None,
+        )
         sql_params = params.to_tuple()
 
         # Execute SQL with typed helper (single row result)

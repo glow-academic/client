@@ -5,13 +5,12 @@ import os
 import uuid
 from typing import Any
 
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
 from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
 from app.socket.v3.documents.generate import (
     DocumentTemplateGenerationCompletePayload,
     document_template_generation_complete)
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
@@ -102,27 +101,34 @@ async def _document_template_create_impl(
                         f"Created template {template_id} and linked to document {document_id} and run {run_id}"
                     )
 
-                # Fetch updated template_mapping
-                sql_get_template_mapping = load_sql(
-                    "app/sql/v3/documents/get_template_mapping.sql"
-                )
-                mapping_row = await conn.fetchrow(
-                    sql_get_template_mapping, str(document_id)
-                )
-                if mapping_row and mapping_row.get("template_mapping"):
-                    mapping_data = mapping_row["template_mapping"]
-                    if isinstance(mapping_data, str):
-                        try:
-                            template_mapping = json.loads(mapping_data)
-                        except json.JSONDecodeError:
-                            logger.warning(
-                                f"Failed to parse template_mapping JSON: {mapping_data}"
-                            )
-                            template_mapping = {}
-                    elif isinstance(mapping_data, dict):
-                        template_mapping = mapping_data
-                    else:
-                        template_mapping = {}
+                # Fetch updated templates and build mapping from array (no JSONB)
+                # Query templates directly - build mapping client-side from array
+                templates_query = """
+                    SELECT 
+                        t.upload_id,
+                        t.id as template_id,
+                        t.args as template_args,
+                        dt.active,
+                        dt.created_at,
+                        dt.updated_at
+                    FROM document_templates dt
+                    JOIN templates t ON t.id = dt.template_id
+                    WHERE dt.document_id = $1::uuid
+                    ORDER BY dt.created_at DESC
+                """
+                template_rows = await conn.fetch(templates_query, str(document_id))
+                
+                # Build mapping from array (replacing JSONB pattern)
+                template_mapping = {}
+                for row in template_rows:
+                    upload_id_str = str(row["upload_id"])
+                    template_mapping[upload_id_str] = {
+                        "template_id": str(row["template_id"]),
+                        "template_args": row["template_args"] if isinstance(row["template_args"], dict) else json.loads(row["template_args"]) if isinstance(row["template_args"], str) else {},
+                        "active": row["active"],
+                        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                        "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                    }
 
                 # Invalidate documents cache
                 await invalidate_tags(["documents"])

@@ -1,34 +1,102 @@
 -- Update scenario with all relationships in a single transaction
--- Parameters: $1=scenarioId, $2=name, $3=description, $4=active, $5=objectives_enabled,
---            $6=images_enabled, $7=video_enabled, $8=questions_enabled, $9=problem_statement_enabled, $10=video_agent_id (uuid, nullable),
---            $11=problem_statement (text), $12=problem_statement_name (text, nullable - defaults to scenario name),
---            $13=department_ids (text array, nullable), $14=persona_ids (text array, nullable),
---            $15=document_ids (text array), $16=template_document_ids (text array, nullable), $17=objective_ids (text array),
---            $18=parameter_item_ids (text array, flattened from parameters dict),
---            $19=upload_images_json (JSONB string with upload images array), $20=scenario_agent_id (nullable uuid), $21=image_agent_id (nullable uuid),
---            $22=parameter_ids (text array, nullable), $23=profile_id (uuid, required)
--- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
--- Returns: scenario_id, name, actor_name if updated, or no rows if scenario doesn't exist
--- Note: objective_ids should only contain new objective text (composite IDs filtered in Python)
--- profile_id is always a UUID (required in request body)
-WITH user_profile AS (
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DROP FUNCTION IF EXISTS api_update_scenario_v3(uuid, text, boolean, boolean, boolean, boolean, boolean, boolean, text, text[], text[], text[], text[], jsonb, uuid, text[], text, text[], jsonb, uuid, uuid, text[], uuid, text, text, text[], text[], text[], text[], text[], jsonb);
+
+-- 2) Drop types WITHOUT CASCADE
+-- No composite types needed for this simple endpoint
+
+-- 3) Recreate function
+CREATE OR REPLACE FUNCTION api_update_scenario_v3(
+    scenario_id uuid,
+    name text,
+    active boolean,
+    objectives_enabled boolean,
+    images_enabled boolean,
+    video_enabled boolean,
+    questions_enabled boolean,
+    problem_statement_enabled boolean,
+    problem_statement text,
+    document_ids text[],
+    objective_ids text[],
+    parameter_item_ids text[],
+    profile_id uuid,
+    description text DEFAULT NULL,
+    video_agent_id uuid DEFAULT NULL,
+    problem_statement_name text DEFAULT NULL,
+    department_ids text[] DEFAULT NULL,
+    persona_ids text[] DEFAULT NULL,
+    template_document_ids text[] DEFAULT NULL,
+    upload_images_json jsonb DEFAULT NULL,
+    scenario_agent_id uuid DEFAULT NULL,
+    image_agent_id uuid DEFAULT NULL,
+    parameter_ids text[] DEFAULT NULL,
+    video_ids text[] DEFAULT NULL,
+    active_video_id text DEFAULT NULL,
+    question_ids text[] DEFAULT NULL,
+    question_timestamps jsonb DEFAULT NULL
+)
+RETURNS TABLE (
+    scenario_exists boolean,
+    scenario_id uuid,
+    name text,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT
+        scenario_id AS scenario_id,
+        name AS name,
+        COALESCE(NULLIF(description, ''), '') AS description,
+        active AS active,
+        objectives_enabled AS objectives_enabled,
+        images_enabled AS images_enabled,
+        video_enabled AS video_enabled,
+        questions_enabled AS questions_enabled,
+        problem_statement_enabled AS problem_statement_enabled,
+        video_agent_id AS video_agent_id,
+        problem_statement AS problem_statement,
+        COALESCE(problem_statement_name, name) AS problem_statement_name,
+        COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
+        COALESCE(persona_ids, ARRAY[]::text[]) AS persona_ids,
+        COALESCE(document_ids, ARRAY[]::text[]) AS document_ids,
+        COALESCE(template_document_ids, ARRAY[]::text[]) AS template_document_ids,
+        COALESCE(objective_ids, ARRAY[]::text[]) AS objective_ids,
+        COALESCE(parameter_item_ids, ARRAY[]::text[]) AS parameter_item_ids,
+        COALESCE(upload_images_json, '[]'::jsonb) AS upload_images_json,
+        scenario_agent_id AS scenario_agent_id,
+        image_agent_id AS image_agent_id,
+        COALESCE(parameter_ids, ARRAY[]::text[]) AS parameter_ids,
+        COALESCE(video_ids, ARRAY[]::text[]) AS video_ids,
+        active_video_id AS active_video_id,
+        COALESCE(question_ids, ARRAY[]::text[]) AS question_ids,
+        question_timestamps AS question_timestamps,
+        profile_id AS profile_id
+),
+user_profile AS (
     SELECT 
         p.role,
         COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
-    FROM profiles p
-    WHERE p.id = $23::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     -- Get scenario's current active department links
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
     FROM scenario_departments
-    WHERE scenario_id = $1::uuid AND active = true
+    WHERE scenario_id = (SELECT scenario_id FROM params) AND active = true
 ),
 user_departments AS (
     -- Get user's departments
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
     FROM profile_departments
-    WHERE profile_id = $23::uuid AND active = true
+    WHERE profile_id = (SELECT profile_id FROM params) AND active = true
 ),
 validate_update_permissions AS (
     -- Validate department permissions for update operation
@@ -43,60 +111,66 @@ validate_update_permissions AS (
 ),
 actor_profile AS (
     SELECT 
-        $23::uuid as resolved_profile_id,
+        (SELECT profile_id FROM params) as resolved_profile_id,
         up.actor_name
     FROM user_profile up
 ),
-scenario_exists AS (
+scenario_exists_check AS (
     -- Check if scenario exists
+    SELECT EXISTS(
+        SELECT 1 FROM scenarios WHERE id = (SELECT scenario_id FROM params)
+    )::boolean as scenario_exists
+),
+scenario_exists AS (
+    -- Get scenario info if exists
     SELECT id, name
     FROM scenarios
-    WHERE id = $1::uuid
+    WHERE id = (SELECT scenario_id FROM params)
 ),
 update_scenario AS (
     -- Update scenario basic fields
     UPDATE scenarios
     SET 
-        name = $2,
-        description = COALESCE($3, ''),
-        active = $4,
-        objectives_enabled = $5,
-        images_enabled = $6,
-        video_enabled = $7,
-        questions_enabled = $8,
-        problem_statement_enabled = $9,
-        video_agent_id = COALESCE($10::uuid, video_agent_id),
-        scenario_agent_id = COALESCE($20::uuid, scenario_agent_id),
-        image_agent_id = COALESCE($21::uuid, image_agent_id),
+        name = (SELECT name FROM params),
+        description = (SELECT description FROM params),
+        active = (SELECT active FROM params),
+        objectives_enabled = (SELECT objectives_enabled FROM params),
+        images_enabled = (SELECT images_enabled FROM params),
+        video_enabled = (SELECT video_enabled FROM params),
+        questions_enabled = (SELECT questions_enabled FROM params),
+        problem_statement_enabled = (SELECT problem_statement_enabled FROM params),
+        video_agent_id = COALESCE((SELECT video_agent_id FROM params), video_agent_id),
+        scenario_agent_id = COALESCE((SELECT scenario_agent_id FROM params), scenario_agent_id),
+        image_agent_id = COALESCE((SELECT image_agent_id FROM params), image_agent_id),
         updated_at = NOW()
     WHERE id IN (SELECT id FROM scenario_exists)
-    RETURNING id::text as scenario_id, name
+    RETURNING id as scenario_id, name
 ),
 deactivate_problem_statements AS (
     -- Deactivate all existing problem statement links (preserve history)
     UPDATE scenario_problem_statements
     SET active = false, updated_at = NOW()
-    WHERE scenario_id = $1::uuid AND active = true
+    WHERE scenario_id = (SELECT scenario_id FROM params) AND active = true
     RETURNING problem_statement_id
 ),
 create_problem_statement AS (
     -- Create new problem_statement record (strong entity)
     INSERT INTO problem_statements (name, problem_statement, created_at, updated_at)
     SELECT 
-        COALESCE($12::text, $2::text) as name,  -- Use provided name or scenario name
-        $11::text,
+        (SELECT problem_statement_name FROM params) as name,
+        (SELECT problem_statement FROM params),
         NOW(),
         NOW()
     WHERE EXISTS (SELECT 1 FROM scenario_exists) 
-      AND $12::text IS NOT NULL 
-      AND $12::text != ''
+      AND (SELECT problem_statement_name FROM params) IS NOT NULL 
+      AND (SELECT problem_statement_name FROM params) != ''
     RETURNING id as problem_statement_id
 ),
 link_problem_statement AS (
     -- Link new problem statement to scenario via junction table
     INSERT INTO scenario_problem_statements (scenario_id, problem_statement_id, active, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        (SELECT scenario_id FROM params),
         cps.problem_statement_id,
         true,
         NOW(),
@@ -107,20 +181,20 @@ link_problem_statement AS (
 replace_departments AS (
     -- Delete all existing department links
     DELETE FROM scenario_departments 
-    WHERE scenario_id = $1::uuid
+    WHERE scenario_id = (SELECT scenario_id FROM params)
 ),
 insert_departments AS (
     -- Insert new department links
     INSERT INTO scenario_departments (scenario_id, department_id, active, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        (SELECT scenario_id FROM params),
         dept_id::uuid,
         true,
         NOW(),
         NOW()
-    FROM UNNEST($13::text[]) as dept_id
+    FROM UNNEST((SELECT department_ids FROM params)) as dept_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($13::text[], 1), 0) > 0
+      AND COALESCE(array_length((SELECT department_ids FROM params), 1), 0) > 0
     ON CONFLICT (scenario_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -128,20 +202,20 @@ insert_departments AS (
 replace_personas AS (
     -- Delete all existing persona links
     DELETE FROM scenario_personas 
-    WHERE scenario_id = $1::uuid
+    WHERE scenario_id = (SELECT scenario_id FROM params)
 ),
 insert_personas AS (
     -- Insert new persona links
     INSERT INTO scenario_personas (scenario_id, persona_id, active, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        (SELECT scenario_id FROM params),
         persona_id::uuid,
         true,
         NOW(),
         NOW()
-    FROM UNNEST($14::text[]) as persona_id
+    FROM UNNEST((SELECT persona_ids FROM params)) as persona_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($14::text[], 1), 0) > 0
+      AND COALESCE(array_length((SELECT persona_ids FROM params), 1), 0) > 0
     ON CONFLICT (scenario_id, persona_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -149,25 +223,25 @@ insert_personas AS (
 replace_documents AS (
     -- Delete all existing document links
     DELETE FROM scenario_documents 
-    WHERE scenario_id = $1::uuid
+    WHERE scenario_id = (SELECT scenario_id FROM params)
 ),
 insert_documents AS (
     -- Insert new document links (both regular and template documents)
     INSERT INTO scenario_documents (scenario_id, document_id, active, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        (SELECT scenario_id FROM params),
         doc_id::uuid,
         true,
         NOW(),
         NOW()
     FROM (
-        SELECT doc_id FROM UNNEST($15::text[]) as doc_id
+        SELECT doc_id FROM UNNEST((SELECT document_ids FROM params)) as doc_id
         UNION ALL
-        SELECT doc_id FROM UNNEST(COALESCE($16::text[], ARRAY[]::text[])) as doc_id
+        SELECT doc_id FROM UNNEST((SELECT template_document_ids FROM params)) as doc_id
     ) all_docs
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND (COALESCE(array_length($15::text[], 1), 0) > 0 
-           OR COALESCE(array_length($16::text[], 1), 0) > 0)
+      AND (COALESCE(array_length((SELECT document_ids FROM params), 1), 0) > 0 
+           OR COALESCE(array_length((SELECT template_document_ids FROM params), 1), 0) > 0)
     ON CONFLICT (scenario_id, document_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -175,16 +249,16 @@ insert_documents AS (
 replace_objectives AS (
     -- Delete all existing objective links
     DELETE FROM scenario_objectives 
-    WHERE scenario_id = $1::uuid
+    WHERE scenario_id = (SELECT scenario_id FROM params)
 ),
 objectives_with_index AS (
     -- Prepare objectives with their index
     SELECT 
         obj_text,
         ROW_NUMBER() OVER () - 1 as idx
-    FROM UNNEST($17::text[]) as obj_text
+    FROM UNNEST((SELECT objective_ids FROM params)) as obj_text
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($17::text[], 1), 0) > 0
+      AND COALESCE(array_length((SELECT objective_ids FROM params), 1), 0) > 0
 ),
 existing_objectives AS (
     -- Find existing objectives by text
@@ -215,7 +289,7 @@ insert_objectives AS (
     -- Link objectives to scenario via junction table
     INSERT INTO scenario_objectives (scenario_id, objective_id, idx, created_at)
     SELECT 
-        $1::uuid,
+        (SELECT scenario_id FROM params),
         ao.objective_id,
         owi.idx,
         NOW()
@@ -225,20 +299,20 @@ insert_objectives AS (
 replace_parameters AS (
     -- Delete all existing field links
     DELETE FROM scenario_fields 
-    WHERE scenario_id = $1::uuid
+    WHERE scenario_id = (SELECT scenario_id FROM params)
 ),
 insert_parameters AS (
     -- Insert new field links
     INSERT INTO scenario_fields (scenario_id, field_id, active, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        (SELECT scenario_id FROM params),
         field_id::uuid,
         true,
         NOW(),
         NOW()
-    FROM UNNEST($18::text[]) as field_id
+    FROM UNNEST((SELECT parameter_item_ids FROM params)) as field_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($18::text[], 1), 0) > 0
+      AND COALESCE(array_length((SELECT parameter_item_ids FROM params), 1), 0) > 0
     ON CONFLICT (scenario_id, field_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -246,7 +320,7 @@ insert_parameters AS (
 delete_old_images AS (
     -- Delete old scenario image links (junction table entries)
     DELETE FROM scenario_images
-    WHERE scenario_id = $1::uuid
+    WHERE scenario_id = (SELECT scenario_id FROM params)
 ),
 create_images AS (
     -- Create images if they don't exist
@@ -256,9 +330,9 @@ create_images AS (
         NOW(),
         NOW(),
         true
-    FROM jsonb_array_elements(COALESCE($19::jsonb, '[]'::jsonb)) as img
+    FROM jsonb_array_elements((SELECT upload_images_json FROM params)) as img
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND jsonb_array_length(COALESCE($19::jsonb, '[]'::jsonb)) > 0
+      AND jsonb_array_length((SELECT upload_images_json FROM params)) > 0
       AND NOT EXISTS (
           SELECT 1 FROM images i
           JOIN image_uploads iu ON iu.image_id = i.id
@@ -276,9 +350,9 @@ link_image_uploads AS (
         NOW(),
         NOW()
     FROM create_images ci
-    CROSS JOIN jsonb_array_elements(COALESCE($19::jsonb, '[]'::jsonb)) as img
+    CROSS JOIN jsonb_array_elements((SELECT upload_images_json FROM params)) as img
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND jsonb_array_length(COALESCE($19::jsonb, '[]'::jsonb)) > 0
+      AND jsonb_array_length((SELECT upload_images_json FROM params)) > 0
     ON CONFLICT (image_id, upload_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -286,7 +360,7 @@ link_image_uploads AS (
 get_images AS (
     -- Get existing images via image_uploads junction table
     SELECT i.id as image_id
-    FROM jsonb_array_elements(COALESCE($19::jsonb, '[]'::jsonb)) as img
+    FROM jsonb_array_elements((SELECT upload_images_json FROM params)) as img
     JOIN image_uploads iu ON iu.upload_id = (img->>'upload_id')::uuid
     JOIN images i ON i.id = iu.image_id AND i.name = img->>'name'
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
@@ -301,14 +375,14 @@ link_images AS (
     -- Link images to scenario via junction table
     INSERT INTO scenario_images (scenario_id, image_id, active, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        (SELECT scenario_id FROM params),
         ai.image_id,
         true,
         NOW(),
         NOW()
     FROM all_images ai
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND jsonb_array_length(COALESCE($19::jsonb, '[]'::jsonb)) > 0
+      AND jsonb_array_length((SELECT upload_images_json FROM params)) > 0
     ON CONFLICT (scenario_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -317,24 +391,24 @@ deactivate_scenario_parameters AS (
     -- Soft-delete removed parameters (set active = false for parameters not in new list)
     UPDATE scenario_parameters
     SET active = false, updated_at = NOW()
-    WHERE scenario_id = $1::uuid
+    WHERE scenario_id = (SELECT scenario_id FROM params)
     AND active = true
     AND (
-        COALESCE(array_length($22::text[], 1), 0) = 0
-        OR parameter_id NOT IN (SELECT unnest($22::text[])::uuid)
+        COALESCE(array_length((SELECT parameter_ids FROM params), 1), 0) = 0
+        OR parameter_id NOT IN (SELECT unnest((SELECT parameter_ids FROM params))::uuid)
     )
 ),
 link_scenario_parameters AS (
     -- Insert or reactivate parameter links if provided (array is never NULL, but may be empty)
     INSERT INTO scenario_parameters (scenario_id, parameter_id, active, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        (SELECT scenario_id FROM params),
         param_id::uuid,
         true,
         NOW(),
         NOW()
-    FROM UNNEST($22::text[]) as param_id
-    WHERE COALESCE(array_length($22::text[], 1), 0) > 0
+    FROM UNNEST((SELECT parameter_ids FROM params)) as param_id
+    WHERE COALESCE(array_length((SELECT parameter_ids FROM params), 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -344,27 +418,27 @@ link_scenario_parameters AS (
 scenario_content_images AS (
     SELECT DISTINCT image_id
     FROM scenario_images
-    WHERE scenario_id = $1::uuid
+    WHERE scenario_id = (SELECT scenario_id FROM params)
 ),
 scenario_content_objectives AS (
     SELECT DISTINCT objective_id
     FROM scenario_objectives
-    WHERE scenario_id = $1::uuid
+    WHERE scenario_id = (SELECT scenario_id FROM params)
 ),
 scenario_content_problem_statements AS (
     SELECT DISTINCT problem_statement_id
     FROM scenario_problem_statements
-    WHERE scenario_id = $1::uuid AND active = true
+    WHERE scenario_id = (SELECT scenario_id FROM params) AND active = true
 ),
 scenario_content_videos AS (
     SELECT DISTINCT video_id
     FROM scenario_videos
-    WHERE scenario_id = $1::uuid
+    WHERE scenario_id = (SELECT scenario_id FROM params)
 ),
 scenario_content_questions AS (
     SELECT DISTINCT question_id
     FROM scenario_questions
-    WHERE scenario_id = $1::uuid AND active = true
+    WHERE scenario_id = (SELECT scenario_id FROM params) AND active = true
 ),
 -- Replace department links for images
 replace_image_departments AS (
@@ -380,8 +454,8 @@ link_image_departments AS (
         NOW(),
         NOW()
     FROM scenario_content_images sci
-    CROSS JOIN UNNEST($13::text[]) as dept_id
-    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    CROSS JOIN UNNEST((SELECT department_ids FROM params)) as dept_id
+    WHERE COALESCE(array_length((SELECT department_ids FROM params), 1), 0) > 0
     ON CONFLICT (image_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -400,8 +474,8 @@ link_video_departments AS (
         NOW(),
         NOW()
     FROM scenario_content_videos scv
-    CROSS JOIN UNNEST($13::text[]) as dept_id
-    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    CROSS JOIN UNNEST((SELECT department_ids FROM params)) as dept_id
+    WHERE COALESCE(array_length((SELECT department_ids FROM params), 1), 0) > 0
     ON CONFLICT (video_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -420,8 +494,8 @@ link_objective_departments AS (
         NOW(),
         NOW()
     FROM scenario_content_objectives sco
-    CROSS JOIN UNNEST($13::text[]) as dept_id
-    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    CROSS JOIN UNNEST((SELECT department_ids FROM params)) as dept_id
+    WHERE COALESCE(array_length((SELECT department_ids FROM params), 1), 0) > 0
     ON CONFLICT (objective_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -440,8 +514,8 @@ link_question_departments AS (
         NOW(),
         NOW()
     FROM scenario_content_questions scq
-    CROSS JOIN UNNEST($13::text[]) as dept_id
-    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    CROSS JOIN UNNEST((SELECT department_ids FROM params)) as dept_id
+    WHERE COALESCE(array_length((SELECT department_ids FROM params), 1), 0) > 0
     ON CONFLICT (question_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -460,8 +534,8 @@ link_problem_statement_departments AS (
         NOW(),
         NOW()
     FROM scenario_content_problem_statements scps
-    CROSS JOIN UNNEST($13::text[]) as dept_id
-    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    CROSS JOIN UNNEST((SELECT department_ids FROM params)) as dept_id
+    WHERE COALESCE(array_length((SELECT department_ids FROM params), 1), 0) > 0
     ON CONFLICT (problem_statement_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -470,21 +544,21 @@ link_problem_statement_departments AS (
 -- Upsert persona ranges (create if not exists, update if exists)
 upsert_persona_ranges AS (
     INSERT INTO scenario_persona_ranges (scenario_id, min_count, max_count)
-    SELECT us.scenario_id::uuid, 1, 3
+    SELECT us.scenario_id, 1, 3
     FROM update_scenario us
     ON CONFLICT (scenario_id) DO UPDATE SET
         updated_at = NOW()
 ),
 upsert_document_ranges AS (
     INSERT INTO scenario_document_ranges (scenario_id, min_count, max_count)
-    SELECT us.scenario_id::uuid, 0, 3
+    SELECT us.scenario_id, 0, 3
     FROM update_scenario us
     ON CONFLICT (scenario_id) DO UPDATE SET
         updated_at = NOW()
 ),
 upsert_parameter_ranges AS (
     INSERT INTO scenario_parameter_ranges (scenario_id, min_count, max_count)
-    SELECT us.scenario_id::uuid, 0, 3
+    SELECT us.scenario_id, 0, 3
     FROM update_scenario us
     ON CONFLICT (scenario_id) DO UPDATE SET
         updated_at = NOW()
@@ -493,20 +567,24 @@ upsert_field_ranges AS (
     -- Upsert field ranges for each parameter linked to the scenario
     INSERT INTO scenario_field_ranges (scenario_id, parameter_id, min_count, max_count)
     SELECT 
-        us.scenario_id::uuid,
+        us.scenario_id,
         param_id::uuid,
         1,  -- default min
         3   -- default max
     FROM update_scenario us
-    CROSS JOIN UNNEST($22::text[]) as param_id
-    WHERE COALESCE(array_length($22::text[], 1), 0) > 0
+    CROSS JOIN UNNEST((SELECT parameter_ids FROM params)) as param_id
+    WHERE COALESCE(array_length((SELECT parameter_ids FROM params), 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
         updated_at = NOW()
 )
 SELECT 
-    us.scenario_id,
-    us.name,
-    ap.actor_name
-FROM update_scenario us
+    sec.scenario_exists::boolean as scenario_exists,
+    us.scenario_id::uuid as scenario_id,
+    us.name::text as name,
+    ap.actor_name::text as actor_name
+FROM scenario_exists_check sec
+LEFT JOIN update_scenario us ON sec.scenario_exists = true
 CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;

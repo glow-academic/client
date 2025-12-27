@@ -726,11 +726,11 @@ class GetAuthDetailAuthItemsItem(BaseModel):
 
 class GetAuthDetailSqlRow(BaseModel):
 
-    actor_name: str
-    can_edit: bool
-    name: str
     description: str
+    name: str
+    can_edit: bool
     active: bool
+    actor_name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 class GetAuthDetailApiRequest(BaseModel):
@@ -740,11 +740,11 @@ class GetAuthDetailApiRequest(BaseModel):
 
 class GetAuthDetailApiResponse(BaseModel):
 
-    actor_name: str
-    can_edit: bool
-    name: str
     description: str
+    name: str
+    can_edit: bool
     active: bool
+    actor_name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 
@@ -5474,6 +5474,18 @@ class GetScenarioDetailSqlParams(BaseModel):
     problem_statement_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     use_video: bool | None = None
+    filter_department_ids: list[UUID] | None = None
+    filter_persona_ids: list[UUID] | None = None
+    filter_document_ids: list[UUID] | None = None
+    filter_parameter_ids: list[UUID] | None = None
+    filter_field_ids: list[UUID] | None = None
+    persona_search: str | None = None
+    document_search: str | None = None
+    parameter_search: str | None = None
+    persona_show_selected: bool | None = None
+    document_show_selected: bool | None = None
+    parameter_show_selected: bool | None = None
+    field_show_selected_by_param: dict[str, Any] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -5485,6 +5497,18 @@ class GetScenarioDetailSqlParams(BaseModel):
             self.problem_statement_ids,
             self.template_document_ids,
             self.use_video,
+            self.filter_department_ids,
+            self.filter_persona_ids,
+            self.filter_document_ids,
+            self.filter_parameter_ids,
+            self.filter_field_ids,
+            self.persona_search,
+            self.document_search,
+            self.parameter_search,
+            self.persona_show_selected,
+            self.document_show_selected,
+            self.parameter_show_selected,
+            self.field_show_selected_by_param,
         )
 
 class QGetScenarioDetailV3Agent(BaseModel):
@@ -5697,7 +5721,7 @@ class GetScenarioDetailSqlRow(BaseModel):
     active: bool | None = None
     generated: bool | None = None
     department_ids: list[str] | None = None
-    parent_scenario_id: str | None = None
+    parent_scenario_id: UUID | None = None
     hints_enabled: bool | None = None
     objectives_enabled: bool | None = None
     image_input_enabled: bool | None = None
@@ -5712,6 +5736,9 @@ class GetScenarioDetailSqlRow(BaseModel):
     user_role: str | None = None
     actor_name: str | None = None
     parameter_ids: list[str] | None = None
+    valid_parameter_ids: list[str] | None = None
+    valid_field_ids: list[str] | None = None
+    question_ids: list[str] | None = None
     persona_range_min: int | None = None
     persona_range_max: int | None = None
     document_range_min: int | None = None
@@ -5725,6 +5752,9 @@ class GetScenarioDetailSqlRow(BaseModel):
     image_agent_id: str | None = None
     video_agent_id: str | None = None
     valid_agent_ids: list[str] | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
     field_ranges: list[QGetScenarioDetailV3FieldRange] | None = None
     personas: list[QGetScenarioDetailV3Persona] | None = None
     documents: list[QGetScenarioDetailV3Document] | None = None
@@ -5751,6 +5781,18 @@ class GetScenarioDetailApiRequest(BaseModel):
     problem_statement_ids: list[UUID] | None = None
     template_document_ids: list[UUID] | None = None
     use_video: bool | None = None
+    filter_department_ids: list[UUID] | None = None
+    filter_persona_ids: list[UUID] | None = None
+    filter_document_ids: list[UUID] | None = None
+    filter_parameter_ids: list[UUID] | None = None
+    filter_field_ids: list[UUID] | None = None
+    persona_search: str | None = None
+    document_search: str | None = None
+    parameter_search: str | None = None
+    persona_show_selected: bool | None = None
+    document_show_selected: bool | None = None
+    parameter_show_selected: bool | None = None
+    field_show_selected_by_param: dict[str, Any] | None = None
 
 class GetScenarioDetailApiResponse(BaseModel):
 
@@ -5763,7 +5805,7 @@ class GetScenarioDetailApiResponse(BaseModel):
     active: bool | None = None
     generated: bool | None = None
     department_ids: list[str] | None = None
-    parent_scenario_id: str | None = None
+    parent_scenario_id: UUID | None = None
     hints_enabled: bool | None = None
     objectives_enabled: bool | None = None
     image_input_enabled: bool | None = None
@@ -5778,6 +5820,9 @@ class GetScenarioDetailApiResponse(BaseModel):
     user_role: str | None = None
     actor_name: str | None = None
     parameter_ids: list[str] | None = None
+    valid_parameter_ids: list[str] | None = None
+    valid_field_ids: list[str] | None = None
+    question_ids: list[str] | None = None
     persona_range_min: int | None = None
     persona_range_max: int | None = None
     document_range_min: int | None = None
@@ -5791,6 +5836,9 @@ class GetScenarioDetailApiResponse(BaseModel):
     image_agent_id: str | None = None
     video_agent_id: str | None = None
     valid_agent_ids: list[str] | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
     field_ranges: list[QGetScenarioDetailV3FieldRange] | None = None
     personas: list[QGetScenarioDetailV3Persona] | None = None
     documents: list[QGetScenarioDetailV3Document] | None = None
@@ -5823,6 +5871,18 @@ class GetScenarioNewSqlParams(BaseModel):
     objective_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     use_video: bool | None = None
+    filter_department_ids: list[UUID] | None = None
+    filter_persona_ids: list[UUID] | None = None
+    filter_document_ids: list[UUID] | None = None
+    filter_parameter_ids: list[UUID] | None = None
+    filter_field_ids: list[UUID] | None = None
+    persona_search: str | None = None
+    document_search: str | None = None
+    parameter_search: str | None = None
+    persona_show_selected: bool | None = None
+    document_show_selected: bool | None = None
+    parameter_show_selected: bool | None = None
+    field_show_selected_by_param: dict[str, Any] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -5835,6 +5895,18 @@ class GetScenarioNewSqlParams(BaseModel):
             self.objective_ids,
             self.image_ids,
             self.use_video,
+            self.filter_department_ids,
+            self.filter_persona_ids,
+            self.filter_document_ids,
+            self.filter_parameter_ids,
+            self.filter_field_ids,
+            self.persona_search,
+            self.document_search,
+            self.parameter_search,
+            self.persona_show_selected,
+            self.document_show_selected,
+            self.parameter_show_selected,
+            self.field_show_selected_by_param,
         )
 
 class QGetScenarioNewV3Agent(BaseModel):
@@ -6024,6 +6096,8 @@ class GetScenarioNewSqlRow(BaseModel):
     department_ids: list[str] | None = None
     valid_persona_ids: list[str] | None = None
     valid_document_ids: list[str] | None = None
+    valid_parameter_ids: list[str] | None = None
+    valid_field_ids: list[str] | None = None
     primary_department_id: str | None = None
     scenario_agent_id: str | None = None
     image_agent_id: str | None = None
@@ -6064,6 +6138,18 @@ class GetScenarioNewApiRequest(BaseModel):
     objective_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     use_video: bool | None = None
+    filter_department_ids: list[UUID] | None = None
+    filter_persona_ids: list[UUID] | None = None
+    filter_document_ids: list[UUID] | None = None
+    filter_parameter_ids: list[UUID] | None = None
+    filter_field_ids: list[UUID] | None = None
+    persona_search: str | None = None
+    document_search: str | None = None
+    parameter_search: str | None = None
+    persona_show_selected: bool | None = None
+    document_show_selected: bool | None = None
+    parameter_show_selected: bool | None = None
+    field_show_selected_by_param: dict[str, Any] | None = None
 
 class GetScenarioNewApiResponse(BaseModel):
 
@@ -6072,6 +6158,8 @@ class GetScenarioNewApiResponse(BaseModel):
     department_ids: list[str] | None = None
     valid_persona_ids: list[str] | None = None
     valid_document_ids: list[str] | None = None
+    valid_parameter_ids: list[str] | None = None
+    valid_field_ids: list[str] | None = None
     primary_department_id: str | None = None
     scenario_agent_id: str | None = None
     image_agent_id: str | None = None
@@ -6180,7 +6268,7 @@ class QListScenariosV3Scenario(BaseModel):
     problem_statement: str | None
     active: bool | None
     generated: bool | None
-    parent_scenario_id: str | None
+    parent_scenario_id: UUID | None
     department_ids: list[str] | None
     objective_ids: list[str] | None
     persona_ids: list[str] | None
@@ -6242,94 +6330,107 @@ class GetScenariosListApiResponse(BaseModel):
 
 class UpdateScenarioSqlParams(BaseModel):
 
-    scenarioId: UUID
+    scenario_id: UUID
     name: str
-    description: str
     active: bool
     objectives_enabled: bool
-    param_6: bool
-    param_7: bool
-    param_8: bool
-    param_9: bool
-    param_10: UUID
-    param_11: str
-    param_12: str
-    param_13: list[str]
-    param_14: list[str]
-    param_15: list[str]
-    param_16: list[str]
-    param_17: list[str]
-    param_18: list[str]
-    param_19: dict[str, Any]
-    param_20: UUID
-    param_21: UUID
-    param_22: list[str]
-    param_23: UUID
+    images_enabled: bool
+    video_enabled: bool
+    questions_enabled: bool
+    problem_statement_enabled: bool
+    problem_statement: str
+    document_ids: list[str]
+    objective_ids: list[str]
+    parameter_item_ids: list[str]
+    profile_id: UUID
+    description: str | None = None
+    video_agent_id: UUID | None = None
+    problem_statement_name: str | None = None
+    department_ids: list[str] | None = None
+    persona_ids: list[str] | None = None
+    template_document_ids: list[str] | None = None
+    upload_images_json: dict[str, Any] | None = None
+    scenario_agent_id: UUID | None = None
+    image_agent_id: UUID | None = None
+    parameter_ids: list[str] | None = None
+    video_ids: list[str] | None = None
+    active_video_id: str | None = None
+    question_ids: list[str] | None = None
+    question_timestamps: dict[str, Any] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.scenarioId,
+            self.scenario_id,
             self.name,
-            self.description,
             self.active,
             self.objectives_enabled,
-            self.param_6,
-            self.param_7,
-            self.param_8,
-            self.param_9,
-            self.param_10,
-            self.param_11,
-            self.param_12,
-            self.param_13,
-            self.param_14,
-            self.param_15,
-            self.param_16,
-            self.param_17,
-            self.param_18,
-            self.param_19,
-            self.param_20,
-            self.param_21,
-            self.param_22,
-            self.param_23,
+            self.images_enabled,
+            self.video_enabled,
+            self.questions_enabled,
+            self.problem_statement_enabled,
+            self.problem_statement,
+            self.document_ids,
+            self.objective_ids,
+            self.parameter_item_ids,
+            self.profile_id,
+            self.description,
+            self.video_agent_id,
+            self.problem_statement_name,
+            self.department_ids,
+            self.persona_ids,
+            self.template_document_ids,
+            self.upload_images_json,
+            self.scenario_agent_id,
+            self.image_agent_id,
+            self.parameter_ids,
+            self.video_ids,
+            self.active_video_id,
+            self.question_ids,
+            self.question_timestamps,
         )
 
 class UpdateScenarioSqlRow(BaseModel):
 
-    scenario_id: str
-    name: str
-    actor_name: str
+    scenario_exists: bool | None = None
+    scenario_id: UUID | None = None
+    name: str | None = None
+    actor_name: str | None = None
 
 class UpdateScenarioApiRequest(BaseModel):
 
-    scenarioId: UUID
+    scenario_id: UUID
     name: str
-    description: str
     active: bool
     objectives_enabled: bool
-    param_6: bool
-    param_7: bool
-    param_8: bool
-    param_9: bool
-    param_10: UUID
-    param_11: str
-    param_12: str
-    param_13: list[str]
-    param_14: list[str]
-    param_15: list[str]
-    param_16: list[str]
-    param_17: list[str]
-    param_18: list[str]
-    param_19: dict[str, Any]
-    param_20: UUID
-    param_21: UUID
-    param_22: list[str]
-    param_23: UUID
+    images_enabled: bool
+    video_enabled: bool
+    questions_enabled: bool
+    problem_statement_enabled: bool
+    problem_statement: str
+    document_ids: list[str]
+    objective_ids: list[str]
+    parameter_item_ids: list[str]
+    description: str | None = None
+    video_agent_id: UUID | None = None
+    problem_statement_name: str | None = None
+    department_ids: list[str] | None = None
+    persona_ids: list[str] | None = None
+    template_document_ids: list[str] | None = None
+    upload_images_json: dict[str, Any] | None = None
+    scenario_agent_id: UUID | None = None
+    image_agent_id: UUID | None = None
+    parameter_ids: list[str] | None = None
+    video_ids: list[str] | None = None
+    active_video_id: str | None = None
+    question_ids: list[str] | None = None
+    question_timestamps: dict[str, Any] | None = None
 
 class UpdateScenarioApiResponse(BaseModel):
 
-    scenario_id: str
-    name: str
-    actor_name: str
+    scenario_exists: bool | None = None
+    scenario_id: UUID | None = None
+    name: str | None = None
+    actor_name: str | None = None
 
 
 

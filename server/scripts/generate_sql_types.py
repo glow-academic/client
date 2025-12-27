@@ -585,6 +585,50 @@ async def execute_sql_file(
                 return True, f"Executed {sql_path}"
                 
             except Exception as e:
+                error_str = str(e)
+                
+                # Extract line number and position from PostgreSQL error if available
+                line_match = re.search(r'LINE (\d+)', error_str, re.IGNORECASE)
+                line_num = line_match.group(1) if line_match else None
+                position_match = re.search(r'position (\d+)', error_str, re.IGNORECASE)
+                position = int(position_match.group(1)) if position_match else None
+                
+                # Extract SQL snippet around error position for better error messages
+                sql_snippet = None
+                
+                # Try to extract line-based context if we have a line number
+                if line_num:
+                    try:
+                        lines = sql_without_transaction.split('\n')
+                        line_idx = int(line_num) - 1
+                        if 0 <= line_idx < len(lines):
+                            # Get 5 lines before and after for context
+                            start = max(0, line_idx - 5)
+                            end = min(len(lines), line_idx + 6)
+                            context_lines = lines[start:end]
+                            sql_snippet = '\n'.join(f"{start + i + 1:4d} | {line}" if i + start != line_idx else f"{start + i + 1:4d} | {line}  <-- ERROR"
+                                                   for i, line in enumerate(context_lines))
+                    except (ValueError, IndexError):
+                        pass
+                
+                # Fallback to position-based extraction if line number extraction failed
+                if not sql_snippet and position and position < len(sql_without_transaction):
+                    start = max(0, position - 300)
+                    end = min(len(sql_without_transaction), position + 300)
+                    sql_snippet = sql_without_transaction[start:end]
+                
+                # Format error message similar to psql for better debugging
+                error_parts = [f"Error executing {sql_path}"]
+                if line_num:
+                    error_parts.append(f"LINE {line_num}")
+                if position:
+                    error_parts.append(f"position {position}")
+                error_parts.append(f"\n{error_str}")
+                if sql_snippet:
+                    error_parts.append(f"\n\nSQL context:\n{sql_snippet}")
+                
+                formatted_error = "\n".join(error_parts)
+                
                 # Rollback to savepoint on error to restore connection state
                 try:
                     await conn.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
@@ -595,8 +639,8 @@ async def execute_sql_file(
                         await conn.execute("ROLLBACK")
                     except Exception:
                         pass  # Connection may be corrupted, caller will handle
-                    return False, f"Error executing {sql_path}: {str(e)} (rollback also failed: {str(rollback_error)})"
-                return False, f"Error executing {sql_path}: {str(e)}"
+                    return False, f"{formatted_error}\n(rollback also failed: {str(rollback_error)})"
+                return False, formatted_error
         else:
             # No transaction block, execute normally
             await conn.execute(sql_text)

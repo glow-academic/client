@@ -185,17 +185,32 @@ export default function Document({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     null,
   );
-  const [templateMapping, setTemplateMapping] = useState<
-    Record<
+  // Build templateMapping from templates array (composite types - no JSONB)
+  const templateMapping = useMemo(() => {
+    if (!isEditMode || !documentDetail?.templates) return {};
+    const mapping: Record<
       string,
       {
+        template_id: string;
         template_args: Record<string, unknown>;
         active: boolean;
         created_at: string;
         updated_at: string;
       }
-    >
-  >({});
+    > = {};
+    documentDetail.templates.forEach((template) => {
+      if (template.template_id) {
+        mapping[template.template_id] = {
+          template_id: template.template_id,
+          template_args: template.template_args || {},
+          active: template.active ?? false,
+          created_at: template.created_at || "",
+          updated_at: template.updated_at || "",
+        };
+      }
+    });
+    return mapping;
+  }, [isEditMode, documentDetail?.templates]);
   const [clientRenderedHtml, setClientRenderedHtml] = useState<string | null>(
     renderedHtml,
   );
@@ -371,11 +386,8 @@ export default function Document({
         documentAgentId: documentDetail.document_agent_id || null,
       });
 
-      // Always initialize template_mapping if it exists (regardless of template flag)
-      // This allows showing past templates even if document is not currently a template
-      if (documentDetail.template_mapping) {
-        setTemplateMapping(documentDetail.template_mapping);
-      }
+      // Template mapping is now built from templates array (composite types)
+      // No need to initialize - it's built via useMemo above
 
       // Initialize template args if template document
       if (documentDetail.template) {
@@ -1106,20 +1118,9 @@ export default function Document({
         setSelectedTemplateId(result.upload_id || null);
         setIsTemplateMode(true);
 
-        // If template_mapping is returned (when documentId was provided), update state
-        if (result.template_mapping && isEditMode) {
-          // Type assertion needed since API returns dict[str, Any] but we need TemplateInfo structure
-          const mapping = result.template_mapping as Record<
-            string,
-            {
-              template_args: Record<string, unknown>;
-              active: boolean;
-              created_at: string;
-              updated_at: string;
-            }
-          >;
-          setTemplateMapping(mapping);
-        }
+        // Template mapping is now built from templates array via useMemo
+        // No need to update from WebSocket event - will refresh when documentDetail updates
+        // Note: WebSocket event may return template_mapping keyed by upload_id, but we use template_id
 
         toast.success("Template generated successfully");
       } else {
@@ -1987,20 +1988,19 @@ export default function Document({
                 <div className="flex items-center gap-2">
                   {isEditMode &&
                     documentDetail &&
-                    Object.keys(templateMapping).length > 0 && (
+                    documentDetail.templates &&
+                    documentDetail.templates.length > 0 && (
                       <div className="flex items-center gap-2">
                         <GenericPicker
-                          items={templateMapping}
-                          itemIds={Object.keys(templateMapping)}
+                          items={documentDetail.templates}
+                          itemIds={documentDetail.templates.map((t) => t.template_id)}
                           selectedIds={
                             selectedTemplateId ? [selectedTemplateId] : []
                           }
                           onSelect={(ids) =>
                             handleTemplateSelect(ids[0] || null)
                           }
-                          getId={(item) =>
-                            (item as unknown as { id: string }).id
-                          }
+                          getId={(item) => item.template_id}
                           getLabel={(item) => {
                             const date = new Date(item.updated_at);
                             return `Version ${date.toLocaleDateString()}`;

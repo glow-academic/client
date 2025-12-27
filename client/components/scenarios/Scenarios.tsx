@@ -110,8 +110,25 @@ export function Scenarios({
     [scenariosData?.scenarios],
   );
   const personaMapping = useMemo(
-    () => scenariosData?.persona_mapping || {},
-    [scenariosData?.persona_mapping],
+    () => {
+      // Build mapping from arrays (arrays are now the source of truth)
+      const data = scenariosData as any;
+      const map: Record<string, any> = {};
+      if (data?.personas && Array.isArray(data.personas)) {
+        data.personas.forEach((p: any) => {
+          if (p.persona_id) {
+            map[String(p.persona_id)] = {
+              name: p.name || "",
+              description: p.description || "",
+              color: p.color || "",
+              icon: p.icon || "",
+            };
+          }
+        });
+      }
+      return map;
+    },
+    [scenariosData],
   );
 
   // Define GroupedScenario type based on scenarios

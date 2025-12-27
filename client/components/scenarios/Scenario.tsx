@@ -785,9 +785,41 @@ export default function Scenario({
     []
   );
 
-  // Extract mappings from V2 response - defined early so they can be used in buildSearchParams
+  // Build mappings from arrays (arrays are now the source of truth)
   const fieldMapping = useMemo(() => {
-    return scenarioData?.field_mapping || {};
+    const data = scenarioData as any;
+    const map: Record<string, any> = {};
+    if (data?.fields && Array.isArray(data.fields)) {
+      data.fields.forEach((f: any) => {
+        if (f.field_id) {
+          map[String(f.field_id)] = {
+            name: f.name || "",
+            description: f.description || "",
+            parameter_id: f.parameter_id ? String(f.parameter_id) : "",
+            parameter_name: f.parameter_name || "",
+            conditional_parameter_ids:
+              f.conditional_parameter_ids?.map((id: any) => String(id)) || [],
+          };
+        }
+      });
+    }
+    return map;
+  }, [scenarioData]);
+
+  // Helper to get objective mapping from arrays
+  const getObjectiveMapping = useMemo(() => {
+    const map: Record<string, { name: string }> = {};
+    const data = scenarioData as any;
+    if (data?.objectives && Array.isArray(data.objectives)) {
+      data.objectives.forEach((obj: any) => {
+        if (obj.objective_id) {
+          map[String(obj.objective_id)] = {
+            name: obj.name || obj.description || "",
+          };
+        }
+      });
+    }
+    return map;
   }, [scenarioData]);
 
   // Helper functions to update URL-backed state via setQ
@@ -1185,39 +1217,151 @@ export default function Scenario({
     isEditMode,
   ]);
 
-  // Extract mappings from V2 response
-  const personaMapping = useMemo(
-    () => scenarioData?.persona_mapping || {},
-    [scenarioData]
-  );
-  // Backend now includes selected documents in document_mapping with all necessary fields
+  // Convert arrays to lookup maps for performance (prefer arrays, fallback to mappings for backward compatibility)
+  const personaMapping = useMemo(() => {
+    // Prefer arrays (new format) - use type assertion since types may not be updated yet
+    const data = scenarioData as any;
+    if (
+      data?.personas &&
+      Array.isArray(data.personas) &&
+      data.personas.length > 0
+    ) {
+      const map: Record<string, any> = {};
+      data.personas.forEach((p: any) => {
+        if (p.persona_id) {
+          map[String(p.persona_id)] = {
+            name: p.name || "",
+            description: p.description || "",
+            color: p.color || "",
+            icon: p.icon || "",
+            image_model: p.image_model || false,
+            parameter_ids: p.parameter_ids?.map((id: any) => String(id)) || [],
+            field_ids: p.field_ids?.map((id: any) => String(id)) || [],
+            example: p.example,
+          };
+        }
+      });
+      return map;
+    }
+    // Fallback to mapping (backward compatibility)
+    return data?.persona_mapping || {};
+  }, [scenarioData]);
+
   const documentMapping = useMemo((): Record<string, DocumentMappingItem> => {
-    return (scenarioData?.document_mapping || {}) as Record<
-      string,
-      DocumentMappingItem
-    >;
+    // Use arrays directly (server is source of truth - arrays are guaranteed)
+    const data = scenarioData as any;
+    const documents = data?.documents || [];
+    const map: Record<string, DocumentMappingItem> = {};
+    if (Array.isArray(documents)) {
+      documents.forEach((d: any) => {
+        if (d.document_id) {
+          map[String(d.document_id)] = {
+            name: d.name || "",
+            description: d.description || "",
+            filePath: d.file_path || null,
+            mimeType: d.mime_type || null,
+            parameter_ids: d.parameter_ids?.map((id: any) => String(id)) || [],
+            field_ids: d.field_ids?.map((id: any) => String(id)) || [],
+            parent_document_id: d.parent_document_id
+              ? String(d.parent_document_id)
+              : null,
+          };
+        }
+      });
+    }
+    return map;
   }, [scenarioData]);
-  const parameterMapping = useMemo(
-    () => scenarioData?.parameter_mapping || {},
-    [scenarioData]
-  );
+
+  const parameterMapping = useMemo(() => {
+    // Use arrays directly (server is source of truth - arrays are guaranteed)
+    const data = scenarioData as any;
+    const parameters = data?.parameters || [];
+    const map: Record<string, any> = {};
+    if (Array.isArray(parameters)) {
+      parameters.forEach((p: any) => {
+        if (p.parameter_id) {
+          map[String(p.parameter_id)] = {
+            name: p.name || "",
+            description: p.description || "",
+            numerical: false,
+            document_parameter: p.document_parameter || false,
+            persona_parameter: p.persona_parameter || false,
+            scenario_parameter: p.scenario_parameter || false,
+            video_parameter: p.video_parameter || false,
+          };
+        }
+      });
+    }
+    return map;
+  }, [scenarioData]);
+
   // fieldMapping is defined above (before buildSearchParams) so it can be used there
-  const simulationMapping = useMemo(
-    () => scenarioData?.simulation_mapping || {},
-    [scenarioData]
-  );
-  // Backend now includes selected departments in department_mapping
-  const departmentMapping = useMemo(() => {
-    return scenarioData?.department_mapping || {};
+  const simulationMapping = useMemo(() => {
+    // Use arrays directly (server is source of truth - arrays are guaranteed)
+    const data = scenarioData as any;
+    const simulations = data?.simulations || [];
+    const map: Record<string, any> = {};
+    if (Array.isArray(simulations)) {
+      simulations.forEach((s: any) => {
+        if (s.simulation_id) {
+          map[String(s.simulation_id)] = {
+            name: s.name || "",
+            description: s.description || "",
+            time_limit: s.time_limit,
+            department_ids:
+              s.department_ids?.map((id: any) => String(id)) || [],
+          };
+        }
+      });
+    }
+    return map;
   }, [scenarioData]);
-  // Extract agent mapping
+
+  const departmentMapping = useMemo(() => {
+    // Use arrays directly (server is source of truth - arrays are guaranteed)
+    const data = scenarioData as any;
+    const departments = data?.departments || [];
+    const map: Record<string, any> = {};
+    if (Array.isArray(departments)) {
+      departments.forEach((d: any) => {
+        if (d.department_id) {
+          map[String(d.department_id)] = {
+            name: d.name || "",
+            description: d.description || "",
+            persona_ids: d.persona_ids?.map((id: any) => String(id)) || [],
+            document_ids: d.document_ids?.map((id: any) => String(id)) || [],
+            parameter_ids: d.parameter_ids?.map((id: any) => String(id)) || [],
+            parameter_item_ids: d.field_ids?.map((id: any) => String(id)) || [],
+          };
+        }
+      });
+    }
+    return map;
+  }, [scenarioData]);
+
   const agentMapping = useMemo(() => {
-    return scenarioData?.agent_mapping || {};
+    // Use arrays directly (server is source of truth - arrays are guaranteed)
+    const data = scenarioData as any;
+    const agents = data?.agents || [];
+    const map: Record<string, any> = {};
+    if (Array.isArray(agents)) {
+      agents.forEach((a: any) => {
+        if (a.agent_id) {
+          map[String(a.agent_id)] = {
+            name: a.name || "",
+            description: a.description || "",
+            roles: a.roles || [],
+          };
+        }
+      });
+    }
+    return map;
   }, [scenarioData]);
   // Merge server problem statement mapping with local versions (for create mode)
   // IDs from database are unique, so just merge - local versions override server versions if same ID
   const problemStatementMapping = useMemo(() => {
-    const serverMappingRaw = scenarioData?.problem_statement_mapping || {};
+    const data = scenarioData as any;
+    const serverMappingRaw = data?.problem_statement_mapping || {};
     // Normalize server mapping to ensure all entries have name field (for backward compatibility)
     const serverMapping: Record<
       string,
@@ -1260,7 +1404,7 @@ export default function Scenario({
 
     // Simple merge: server versions + local versions (local takes precedence if same ID)
     return { ...serverMapping, ...localMapping };
-  }, [scenarioData?.problem_statement_mapping, localProblemStatementVersions]);
+  }, [scenarioData, localProblemStatementVersions]);
 
   // Compute selected problem statement ID for picker (DHH-style: derive from state, not effects)
   const selectedProblemStatementId = useMemo(() => {
@@ -1554,7 +1698,7 @@ export default function Scenario({
     currentFieldIds.forEach((fieldId) => {
       const field = fieldMapping[fieldId];
       if (field?.conditional_parameter_ids) {
-        field.conditional_parameter_ids.forEach((paramId) =>
+        field.conditional_parameter_ids.forEach((paramId: string) =>
           conditionalParamIds.add(paramId)
         );
       }
@@ -1832,16 +1976,11 @@ export default function Scenario({
     // No URL text - populate from IDs if available
     if (
       currentObjectiveIds.length > 0 &&
-      scenarioData?.objective_mapping &&
-      Object.keys(scenarioData.objective_mapping).length > 0
+      Object.keys(getObjectiveMapping).length > 0
     ) {
-      const objectiveMapping = (scenarioData.objective_mapping || {}) as Record<
-        string,
-        { name: string }
-      >;
       const objectivesFromIds = getObjectivesFromMapping(
         currentObjectiveIds,
-        objectiveMapping
+        getObjectiveMapping
       );
       // Only update if different (avoid unnecessary re-renders)
       const currentObjectivesString = JSON.stringify(contentState.objectives);
@@ -1852,7 +1991,7 @@ export default function Scenario({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentObjectiveIds, scenarioData?.objective_mapping, searchParams]);
+  }, [currentObjectiveIds, getObjectiveMapping, searchParams]);
 
   // Handle randomized selections from WebSocket event
   useEffect(() => {
@@ -1907,9 +2046,9 @@ export default function Scenario({
           finalFieldIds = randomized.fieldIds;
         }
         // Wrap field updates in transition too for smooth transitions
-          startTransition(() => {
-            updateFieldIds(finalFieldIds!);
-          });
+        startTransition(() => {
+          updateFieldIds(finalFieldIds!);
+        });
       }
 
       // Update URL params with randomized selections
@@ -1937,9 +2076,12 @@ export default function Scenario({
       }
     };
 
-    const handleRandomizeError = (data: { success: boolean; message: string }) => {
+    const handleRandomizeError = (data: {
+      success: boolean;
+      message: string;
+    }) => {
       toast.error(data.message || "Failed to randomize selections");
-          setRandomizingSection(null);
+      setRandomizingSection(null);
     };
 
     socket.on("scenario_randomize_complete", handleRandomizeComplete);
@@ -1982,7 +2124,6 @@ export default function Scenario({
   // Follows analytics pattern: Form state → URL → router.refresh() → Server re-fetch → Filtered data
   // Server already parses URL params and returns filtered data, so no need for URL → Form sync
   useEffect(() => {
-
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
@@ -2095,10 +2236,7 @@ export default function Scenario({
       updateObjectives(
         getObjectivesFromMapping(
           scenarioData.objective_ids,
-          (scenarioData.objective_mapping || {}) as Record<
-            string,
-            { name: string }
-          >
+          getObjectiveMapping
         )
       );
       // Load scenario flags from server data
@@ -2292,10 +2430,7 @@ export default function Scenario({
       setOriginalObjectives(
         getObjectivesFromMapping(
           scenarioData.objective_ids,
-          (scenarioData.objective_mapping || {}) as Record<
-            string,
-            { name: string }
-          >
+          getObjectiveMapping
         )
       );
       formDataInitializedRef.current = true;
@@ -2371,14 +2506,12 @@ export default function Scenario({
       // URL params are the source of truth (DHH-style)
       const currentObjectiveIdsFromQ = q.objectiveIds ?? [];
       if (currentObjectiveIdsFromQ.length > 0) {
-        // Populate currentObjectives from objective IDs using objective_mapping
-        // Note: objective_mapping might not be available yet, so we'll populate in a separate useEffect
-        const objectiveMapping = (scenarioData?.objective_mapping ||
-          {}) as Record<string, { name: string }>;
-        if (Object.keys(objectiveMapping).length > 0) {
+        // Populate currentObjectives from objective IDs using objective mapping
+        // Use the helper function that prefers arrays, falls back to mapping
+        if (Object.keys(getObjectiveMapping).length > 0) {
           const objectivesFromIds = getObjectivesFromMapping(
             currentObjectiveIdsFromQ,
-            objectiveMapping
+            getObjectiveMapping
           );
           updateObjectives(objectivesFromIds);
           setContentState((prev) => ({
@@ -2392,11 +2525,10 @@ export default function Scenario({
       const currentProblemStatementIdsFromQ = q.problemStatementIds ?? [];
       if (currentProblemStatementIdsFromQ.length > 0) {
         // Set first as active and update name if needed
-        // Check scenarioData directly for problem_statement_mapping (DHH-style: simple, inline)
-        const mappingRaw = scenarioData?.problem_statement_mapping || {};
+        // Use problemStatementMapping which prefers arrays, falls back to mapping
         const firstId = currentProblemStatementIdsFromQ[0];
         if (firstId) {
-          const firstProblemStatementRaw = mappingRaw[firstId];
+          const firstProblemStatementRaw = problemStatementMapping[firstId];
           if (firstProblemStatementRaw) {
             // Normalize to ensure name field exists (for backward compatibility)
             const firstProblemStatement = {
@@ -2850,12 +2982,15 @@ export default function Scenario({
 
     // Add individual parameter steps
     const parameterSteps: Step[] = Object.entries(generalParameterMapping).map(
-      ([paramId, param]) => ({
-        id: `parameter-${paramId}`,
-        title: param.name,
-        description: param.description || "",
-        status: getStepStatus(`parameter-${paramId}`),
-      })
+      ([paramId, param]) => {
+        const p = param as { name: string; description?: string };
+        return {
+          id: `parameter-${paramId}`,
+          title: p.name,
+          description: p.description || "",
+          status: getStepStatus(`parameter-${paramId}`),
+        };
+      }
     );
 
     const contentStep: Step = {
@@ -3632,6 +3767,9 @@ export default function Scenario({
         currentFieldIds, // Renamed from currentParameterItemIds
         fieldMapping // Renamed from parameterItemMapping
       );
+      // Flatten parameters dict to parameter_item_ids array (required by API)
+      const parameterItemIds = Object.values(parametersDict).flat();
+      const parameterIds = Object.keys(parametersDict);
       const payload: {
         name: string;
         description?: string | null;
@@ -3646,6 +3784,7 @@ export default function Scenario({
         upload_ids: string[] | null;
         image_names: string[] | null;
         parameters: Record<string, string[]>;
+        parameter_item_ids: string[];
         parameter_ids?: string[] | null;
         scenario_agent_id?: string | null;
         image_agent_id?: string | null;
@@ -3681,6 +3820,8 @@ export default function Scenario({
           ? [contentState.image.name]
           : null,
         parameters: parametersDict,
+        parameter_item_ids: parameterItemIds,
+        parameter_ids: parameterIds.length > 0 ? parameterIds : null,
         scenario_agent_id: basicInfoState.scenarioAgentId || null,
         image_agent_id: basicInfoState.imageAgentId || null,
         video_enabled: useVideo,
@@ -3729,7 +3870,7 @@ export default function Scenario({
         // UPDATE mode - V2 handles all junction tables automatically
         try {
           await handleUpdateScenario({
-            scenarioId: scenarioId!,
+            scenario_id: scenarioId!,
             ...payload,
             objectives_enabled: useObjectives,
             images_enabled: useImage,
@@ -4043,12 +4184,14 @@ export default function Scenario({
             const selectedItemsForParam = currentFieldIds.filter(
               (itemId) => fieldMapping[itemId]?.parameter_id === paramId
             );
+            // Get full parameter from parameterMapping (has all required fields)
+            const fullParam = parameterMapping[paramId] || param;
 
             return (
               <ParameterItemSection
                 key={paramId}
                 parameterId={paramId}
-                parameter={param}
+                parameter={fullParam as any}
                 validFieldIds={validItemsForParam}
                 fieldMapping={fieldMapping}
                 selectedFieldIds={selectedItemsForParam}
