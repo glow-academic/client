@@ -9,7 +9,7 @@
 #   Local:   ./export.sh --env alpha --destination /path/to/folder [--yes]
 #
 # Options:
-#   -e, --env ENV          Environment (alpha, beta, or prod)
+#   -e, --env ENV          Environment (alpha, beta, prod, or local)
 #   -d, --destination DEST Destination path (user@host:/path for remote, /path/to/folder for local)
 #   -y, --yes              Skip confirmation prompt
 #   -h, --help             Show this help message
@@ -84,7 +84,7 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  -e, --env ENV          Environment (alpha, beta, or prod)"
+            echo "  -e, --env ENV          Environment (alpha, beta, prod, or local)"
             echo "  -d, --destination DEST Destination path (user@host:/path for remote, /path/to/folder for local)"
             echo "  -y, --yes              Skip confirmation prompt"
             echo "  -h, --help             Show this help message"
@@ -93,6 +93,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0                                    # Interactive mode"
             echo "  $0 -e alpha -d ai:/path/to/folder    # Remote (SCP)"
             echo "  $0 -e alpha -d ./exports              # Local directory"
+            echo "  $0 -e local -d ./exports             # Use local .env file"
             echo "  $0 -e prod -d user@host:/path -y     # Remote with auto-confirm"
             exit 0
             ;;
@@ -112,27 +113,35 @@ if [ -z "$ENV" ]; then
     echo "  1) alpha"
     echo "  2) beta"
     echo "  3) prod"
-    read -p "Enter choice (1-3): " env_choice
+    echo "  4) local"
+    read -p "Enter choice (1-4): " env_choice
     
     case $env_choice in
         1) ENV="alpha" ;;
         2) ENV="beta" ;;
         3) ENV="prod" ;;
+        4) ENV="local" ;;
         *)
-            error "Invalid choice. Must be 1, 2, or 3"
+            error "Invalid choice. Must be 1, 2, 3, or 4"
             exit 1
             ;;
     esac
 else
     # Validate environment from argument
-    if [[ ! "$ENV" =~ ^(alpha|beta|prod)$ ]]; then
-        error "Invalid environment: $ENV. Must be alpha, beta, or prod"
+    if [[ ! "$ENV" =~ ^(alpha|beta|prod|local)$ ]]; then
+        error "Invalid environment: $ENV. Must be alpha, beta, prod, or local"
         exit 1
     fi
 fi
 
+# Determine environment file based on environment
+if [ "$ENV" = "local" ]; then
+    ENV_FILE=".env"
+else
+    ENV_FILE=".env.$ENV"
+fi
+
 # Validate environment file exists
-ENV_FILE=".env.$ENV"
 if [ ! -f "$ENV_FILE" ]; then
     error "Environment file $ENV_FILE not found"
     exit 1

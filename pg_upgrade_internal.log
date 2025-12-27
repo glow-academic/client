@@ -1,6 +1,0 @@
-
------------------------------------------------------------------
-  pg_upgrade run on Sat Dec 20 05:17:24 2025
------------------------------------------------------------------
-
-check for "/opt/homebrew/opt/postgresql@18/bin/postgres" failed: incorrect version: found "postgres (PostgreSQL) 18.1 (Homebrew)", expected "postgres (PostgreSQL) 14.17 (Homebrew)"
