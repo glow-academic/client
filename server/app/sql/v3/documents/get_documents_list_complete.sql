@@ -5,17 +5,37 @@
 BEGIN;
 
 -- 1) Drop function first (breaks dependency on types)
-DROP FUNCTION IF EXISTS api_list_documents_v3(uuid);
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_list_documents_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_list_documents_v3(%s)', r.sig);
+    END LOOP;
+END $$;
 
 -- 2) Drop types WITHOUT CASCADE
+-- Drop all types matching prefix pattern to handle type additions/removals
 -- If any other object depends on them, this will ERROR and stop the migration (good)
-DROP TYPE IF EXISTS types.q_list_documents_v3_document;
-DROP TYPE IF EXISTS types.q_list_documents_v3_scenario;
-DROP TYPE IF EXISTS types.q_list_documents_v3_field;
-DROP TYPE IF EXISTS types.q_list_documents_v3_department;
-DROP TYPE IF EXISTS types.q_list_documents_v3_parameter;
-DROP TYPE IF EXISTS types.q_list_documents_v3_scenario_option;
-DROP TYPE IF EXISTS types.q_list_documents_v3_department_option;
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_list_documents_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
 
 -- 3) Recreate types
 CREATE TYPE types.q_list_documents_v3_document AS (

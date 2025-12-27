@@ -11730,7 +11730,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StaffFilters"
+                "$ref": "#/components/schemas/GetStaffListApiRequest"
               }
             }
           }
@@ -11741,7 +11741,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaffListResponse"
+                  "$ref": "#/components/schemas/GetStaffListApiResponse"
                 }
               }
             }
@@ -11811,7 +11811,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StaffDetailRequest"
+                "$ref": "#/components/schemas/GetStaffDetailApiRequest"
               }
             }
           }
@@ -11822,7 +11822,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaffDetailResponse"
+                  "$ref": "#/components/schemas/GetStaffDetailApiResponse"
                 }
               }
             }
@@ -11892,7 +11892,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StaffNewRequest"
+                "$ref": "#/components/schemas/GetStaffNewApiRequest"
               }
             }
           }
@@ -11903,7 +11903,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaffNewResponse"
+                  "$ref": "#/components/schemas/GetStaffNewApiResponse"
                 }
               }
             }
@@ -11973,7 +11973,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SearchStaffRequest"
+                "$ref": "#/components/schemas/GetStaffSearchApiRequest"
               }
             }
           }
@@ -11984,7 +11984,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SearchStaffResponse"
+                  "$ref": "#/components/schemas/GetStaffSearchApiResponse"
                 }
               }
             }
@@ -12054,7 +12054,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProcessCSVRequest"
+                "$ref": "#/components/schemas/ProcessCsvApiRequest"
               }
             }
           }
@@ -12065,7 +12065,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProcessCSVResponse"
+                  "$ref": "#/components/schemas/ProcessCsvApiResponse"
                 }
               }
             }
@@ -12135,7 +12135,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateStaffDataRequest"
+                "$ref": "#/components/schemas/GetCreateStaffDataApiRequest"
               }
             }
           }
@@ -12146,7 +12146,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateStaffDataResponse"
+                  "$ref": "#/components/schemas/GetCreateStaffDataApiResponse"
                 }
               }
             }
@@ -12216,7 +12216,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BulkCreateStaffRequest"
+                "$ref": "#/components/schemas/BulkCreateStaffApiRequest"
               }
             }
           }
@@ -12227,7 +12227,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BulkCreateStaffResponse"
+                  "$ref": "#/components/schemas/BulkCreateStaffApiResponse"
                 }
               }
             }
@@ -12297,7 +12297,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BulkUpdateStaffRequest"
+                "$ref": "#/components/schemas/BulkUpdateStaffApiRequest"
               }
             }
           }
@@ -12308,7 +12308,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BulkUpdateStaffResponse"
+                  "$ref": "#/components/schemas/BulkUpdateStaffApiResponse"
                 }
               }
             }
@@ -12378,7 +12378,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BulkDeleteStaffRequest"
+                "$ref": "#/components/schemas/BulkDeleteStaffApiRequest"
               }
             }
           }
@@ -12389,7 +12389,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BulkDeleteStaffResponse"
+                  "$ref": "#/components/schemas/BulkDeleteStaffApiResponse"
                 }
               }
             }
@@ -12459,7 +12459,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BulkCreateOrUpdateStaffRequest"
+                "$ref": "#/components/schemas/UpsertStaffApiRequest"
               }
             }
           }
@@ -12470,7 +12470,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BulkCreateOrUpdateStaffResponse"
+                  "$ref": "#/components/schemas/UpsertStaffApiResponse"
                 }
               }
             }
@@ -23040,11 +23040,11 @@
         "title": "BulkArchiveFilters",
         "description": "Filter schema for bulk archive operations."
       },
-      "BulkCreateOrUpdateStaffRequest": {
+      "BulkCreateStaffApiRequest": {
         "properties": {
           "profiles": {
             "items": {
-              "$ref": "#/components/schemas/CreateOrUpdateProfileRequest"
+              "$ref": "#/components/schemas/IBulkCreateStaffV3Profile"
             },
             "type": "array",
             "title": "Profiles"
@@ -23054,134 +23054,108 @@
         "required": [
           "profiles"
         ],
-        "title": "BulkCreateOrUpdateStaffRequest",
-        "description": "Request to bulk create or update staff members."
+        "title": "BulkCreateStaffApiRequest"
       },
-      "BulkCreateOrUpdateStaffResponse": {
+      "BulkCreateStaffApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids"
           },
-          "profileIds": {
+          "existing_emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Emails"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "BulkCreateStaffApiResponse"
+      },
+      "BulkDeleteStaffApiRequest": {
+        "properties": {
+          "profile_ids": {
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
             "type": "array",
-            "title": "Profileids"
-          },
-          "created_count": {
-            "type": "integer",
-            "title": "Created Count"
-          },
-          "updated_count": {
-            "type": "integer",
-            "title": "Updated Count"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
+            "title": "Profile Ids"
           }
         },
         "type": "object",
         "required": [
-          "success",
-          "profileIds",
-          "created_count",
-          "updated_count",
-          "message"
+          "profile_ids"
         ],
-        "title": "BulkCreateOrUpdateStaffResponse",
-        "description": "Response from bulk create or update staff."
+        "title": "BulkDeleteStaffApiRequest"
       },
-      "BulkCreateStaffRequest": {
+      "BulkDeleteStaffApiResponse": {
         "properties": {
-          "profiles": {
-            "items": {
-              "$ref": "#/components/schemas/CreateProfileRequest"
-            },
-            "type": "array",
-            "title": "Profiles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profiles"
-        ],
-        "title": "BulkCreateStaffRequest",
-        "description": "Request to bulk create staff members."
-      },
-      "BulkCreateStaffResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "deleted_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted Count"
           },
-          "profileIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Profileids"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "profileIds",
-          "message"
-        ],
-        "title": "BulkCreateStaffResponse",
-        "description": "Response from bulk create staff."
+        "title": "BulkDeleteStaffApiResponse"
       },
-      "BulkDeleteStaffRequest": {
+      "BulkUpdateStaffApiRequest": {
         "properties": {
-          "profileIds": {
+          "profile_ids": {
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
             "type": "array",
-            "title": "Profileids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileIds"
-        ],
-        "title": "BulkDeleteStaffRequest",
-        "description": "Request to bulk delete staff."
-      },
-      "BulkDeleteStaffResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "BulkDeleteStaffResponse",
-        "description": "Response from bulk delete staff."
-      },
-      "BulkUpdateStaffRequest": {
-        "properties": {
-          "profileIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Profileids"
+            "title": "Profile Ids"
           },
           "role": {
             "anyOf": [
@@ -23194,31 +23168,6 @@
             ],
             "title": "Role"
           },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
           "active": {
             "anyOf": [
               {
@@ -23229,41 +23178,51 @@
               }
             ],
             "title": "Active"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
           }
         },
         "type": "object",
         "required": [
-          "profileIds"
+          "profile_ids"
         ],
-        "title": "BulkUpdateStaffRequest",
-        "description": "Request to bulk update staff."
+        "title": "BulkUpdateStaffApiRequest"
       },
-      "BulkUpdateStaffResponse": {
+      "BulkUpdateStaffApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "updated_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated Count"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "BulkUpdateStaffResponse",
-        "description": "Response from bulk update staff."
-      },
-      "CSVColumnMapping": {
-        "properties": {
-          "csv_column": {
-            "type": "string",
-            "title": "Csv Column"
-          },
-          "target_field": {
+          "actor_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -23272,40 +23231,11 @@
                 "type": "null"
               }
             ],
-            "title": "Target Field"
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "csv_column",
-          "target_field"
-        ],
-        "title": "CSVColumnMapping",
-        "description": "Mapping of CSV column to target field."
-      },
-      "CSVRowError": {
-        "properties": {
-          "row_index": {
-            "type": "integer",
-            "title": "Row Index"
-          },
-          "field": {
-            "type": "string",
-            "title": "Field"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "row_index",
-          "field",
-          "message"
-        ],
-        "title": "CSVRowError",
-        "description": "Error for a specific CSV row."
+        "title": "BulkUpdateStaffApiResponse"
       },
       "CachedTokenDetails": {
         "properties": {
@@ -26003,64 +25933,6 @@
         },
         "type": "object",
         "title": "CreateSimulationApiResponse"
-      },
-      "CreateStaffDataRequest": {
-        "properties": {
-          "departmentIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Departmentids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "departmentIds"
-        ],
-        "title": "CreateStaffDataRequest",
-        "description": "Request for create staff data (mappings, etc.)."
-      },
-      "CreateStaffDataResponse": {
-        "properties": {
-          "staff": {
-            "items": {
-              "$ref": "#/components/schemas/StaffItem"
-            },
-            "type": "array",
-            "title": "Staff"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__staff__data__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "role_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Role Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "staff",
-          "department_mapping",
-          "cohort_mapping",
-          "role_options"
-        ],
-        "title": "CreateStaffDataResponse",
-        "description": "Response with all data needed for create staff UI."
       },
       "DailyData": {
         "properties": {
@@ -31862,6 +31734,96 @@
         "type": "object",
         "title": "GetCohortsListApiResponse"
       },
+      "GetCreateStaffDataApiRequest": {
+        "properties": {
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_ids"
+        ],
+        "title": "GetCreateStaffDataApiRequest"
+      },
+      "GetCreateStaffDataApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "staff": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetCreateStaffDataV3Staff"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff"
+          },
+          "cohorts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetCreateStaffDataV3Cohort"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetCreateStaffDataV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "role_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Options"
+          }
+        },
+        "type": "object",
+        "title": "GetCreateStaffDataApiResponse"
+      },
       "GetDocumentDetailApiRequest": {
         "properties": {
           "document_id": {
@@ -37143,6 +37105,674 @@
         "type": "object",
         "title": "GetSimulationsListApiResponse"
       },
+      "GetStaffDetailApiRequest": {
+        "properties": {
+          "target_profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Target Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target_profile_id"
+        ],
+        "title": "GetStaffDetailApiRequest"
+      },
+      "GetStaffDetailApiResponse": {
+        "properties": {
+          "staff_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Exists"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "valid_cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Cohort Ids"
+          },
+          "cohorts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetStaffDetailV3Cohort"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetStaffDetailV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          }
+        },
+        "type": "object",
+        "title": "GetStaffDetailApiResponse"
+      },
+      "GetStaffListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetStaffListApiRequest"
+      },
+      "GetStaffListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "current_user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current User Role"
+          },
+          "staff": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListStaffV3Staff"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff"
+          },
+          "cohorts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListStaffV3Cohort"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListStaffV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "trend_data_active": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListStaffV3TrendData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Data Active"
+          },
+          "trend_data_admin": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListStaffV3TrendData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Data Admin"
+          },
+          "trend_data_instructional": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListStaffV3TrendData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Data Instructional"
+          },
+          "trend_data_member": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListStaffV3TrendData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Data Member"
+          },
+          "trend_data_total_requests": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListStaffV3TrendData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Data Total Requests"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "role_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Options"
+          },
+          "cohort_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Options"
+          },
+          "last_active_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Active Options"
+          }
+        },
+        "type": "object",
+        "title": "GetStaffListApiResponse"
+      },
+      "GetStaffNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetStaffNewApiRequest"
+      },
+      "GetStaffNewApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Role"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "valid_cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Cohort Ids"
+          },
+          "role_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Options"
+          },
+          "cohorts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetStaffNewV3Cohort"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetStaffNewV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          }
+        },
+        "type": "object",
+        "title": "GetStaffNewApiResponse"
+      },
+      "GetStaffSearchApiRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "limit_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Count",
+            "default": 200
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "cohort_ids",
+          "department_ids"
+        ],
+        "title": "GetStaffSearchApiRequest"
+      },
+      "GetStaffSearchApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "staff": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QSearchStaffV3Staff"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff"
+          },
+          "cohorts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QSearchStaffV3Cohort"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QSearchStaffV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          }
+        },
+        "type": "object",
+        "title": "GetStaffSearchApiResponse"
+      },
       "GradeItem": {
         "properties": {
           "id": {
@@ -38313,6 +38943,105 @@
         "title": "HomeSimulationItem",
         "description": "Home simulation item."
       },
+      "IBulkCreateStaffV3Profile": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email Index"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "primary_department_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "emails",
+          "primary_email_index",
+          "role",
+          "department_ids",
+          "primary_department_index"
+        ],
+        "title": "IBulkCreateStaffV3Profile"
+      },
       "ICreateParameterV3FieldConnection": {
         "properties": {
           "field_id": {
@@ -38358,6 +39087,38 @@
         ],
         "title": "ICreateParameterV3FieldConnection"
       },
+      "IProcessCsvV3ColumnMapping": {
+        "properties": {
+          "csv_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csv Column"
+          },
+          "target_field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Field"
+          }
+        },
+        "type": "object",
+        "required": [
+          "csv_column",
+          "target_field"
+        ],
+        "title": "IProcessCsvV3ColumnMapping"
+      },
       "IUpdateParameterV3FieldConnection": {
         "properties": {
           "field_id": {
@@ -38402,6 +39163,121 @@
           "active"
         ],
         "title": "IUpdateParameterV3FieldConnection"
+      },
+      "IUpsertStaffV3Profile": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email Index"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "emails",
+          "primary_email_index",
+          "role",
+          "active",
+          "department_ids",
+          "cohort_ids"
+        ],
+        "title": "IUpsertStaffV3Profile"
       },
       "ImageGenerationCompletePayload": {
         "properties": {
@@ -42397,7 +43273,7 @@
         "title": "ProblemStatementToolPayload",
         "description": "Request to create problem statement from scenario generation tool."
       },
-      "ProcessCSVRequest": {
+      "ProcessCsvApiRequest": {
         "properties": {
           "csv_content": {
             "type": "string",
@@ -42405,7 +43281,7 @@
           },
           "column_mappings": {
             "items": {
-              "$ref": "#/components/schemas/CSVColumnMapping"
+              "$ref": "#/components/schemas/IProcessCsvV3ColumnMapping"
             },
             "type": "array",
             "title": "Column Mappings"
@@ -42416,125 +43292,63 @@
           "csv_content",
           "column_mappings"
         ],
-        "title": "ProcessCSVRequest",
-        "description": "Request to process CSV file."
+        "title": "ProcessCsvApiRequest"
       },
-      "ProcessCSVResponse": {
+      "ProcessCsvApiResponse": {
         "properties": {
           "success": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Success"
           },
+          "headers": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headers"
+          },
           "rows": {
-            "items": {
-              "$ref": "#/components/schemas/ProcessedCSVRow"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QProcessCsvV3ProcessedRow"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Rows"
           },
-          "headers": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Headers"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "rows",
-          "headers"
-        ],
-        "title": "ProcessCSVResponse",
-        "description": "Response from CSV processing."
-      },
-      "ProcessedCSVRow": {
-        "properties": {
-          "row_index": {
-            "type": "integer",
-            "title": "Row Index"
-          },
-          "firstName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Firstname"
-          },
-          "lastName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lastname"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails",
-            "default": []
-          },
-          "primary_email_index": {
-            "type": "integer",
-            "title": "Primary Email Index",
-            "default": 0
-          },
-          "role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids",
-            "default": []
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids",
-            "default": []
-          },
-          "errors": {
-            "items": {
-              "$ref": "#/components/schemas/CSVRowError"
-            },
-            "type": "array",
-            "title": "Errors"
-          }
-        },
-        "type": "object",
-        "required": [
-          "row_index",
-          "firstName",
-          "lastName",
-          "role",
-          "errors"
-        ],
-        "title": "ProcessedCSVRow",
-        "description": "Processed row from CSV."
+        "title": "ProcessCsvApiResponse"
       },
       "ProfileByEmailRequest": {
         "properties": {
@@ -44975,6 +45789,294 @@
           "description"
         ],
         "title": "QGetCohortSearchV3Department"
+      },
+      "QGetCreateStaffDataV3Cohort": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetCreateStaffDataV3Cohort"
+      },
+      "QGetCreateStaffDataV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetCreateStaffDataV3Department"
+      },
+      "QGetCreateStaffDataV3Staff": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "last_active": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Active"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "total_requests": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Requests"
+          },
+          "requests_in_last_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests In Last Day"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "first_name",
+          "last_name",
+          "emails",
+          "primary_email",
+          "name",
+          "role",
+          "active",
+          "last_active",
+          "cohort_ids",
+          "department_ids",
+          "primary_department_id",
+          "requests_per_day",
+          "total_requests",
+          "requests_in_last_day"
+        ],
+        "title": "QGetCreateStaffDataV3Staff"
       },
       "QGetDocumentDetailV3Agent": {
         "properties": {
@@ -51628,6 +52730,186 @@
         ],
         "title": "QGetSimulationNewV3Video"
       },
+      "QGetStaffDetailV3Cohort": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetStaffDetailV3Cohort"
+      },
+      "QGetStaffDetailV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetStaffDetailV3Department"
+      },
+      "QGetStaffNewV3Cohort": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetStaffNewV3Cohort"
+      },
+      "QGetStaffNewV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetStaffNewV3Department"
+      },
       "QListAgentsV3Agent": {
         "properties": {
           "agent_id": {
@@ -55342,6 +56624,870 @@
         ],
         "title": "QListSimulationsV3Simulation"
       },
+      "QListStaffV3Cohort": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "name",
+          "description"
+        ],
+        "title": "QListStaffV3Cohort"
+      },
+      "QListStaffV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QListStaffV3Department"
+      },
+      "QListStaffV3Staff": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initials"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "last_active": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Active"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "total_requests": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Requests"
+          },
+          "requests_in_last_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests In Last Day"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "first_name",
+          "last_name",
+          "emails",
+          "primary_email",
+          "name",
+          "role",
+          "initials",
+          "active",
+          "last_active",
+          "cohort_ids",
+          "department_ids",
+          "primary_department_id",
+          "requests_per_day",
+          "total_requests",
+          "requests_in_last_day",
+          "can_edit",
+          "can_delete"
+        ],
+        "title": "QListStaffV3Staff"
+      },
+      "QListStaffV3TrendData": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "value",
+          "count"
+        ],
+        "title": "QListStaffV3TrendData"
+      },
+      "QProcessCsvV3CsvRowError": {
+        "properties": {
+          "row_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row Index"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row_index",
+          "field",
+          "message"
+        ],
+        "title": "QProcessCsvV3CsvRowError"
+      },
+      "QProcessCsvV3ProcessedRow": {
+        "properties": {
+          "row_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row Index"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email Index"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QProcessCsvV3CsvRowError"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row_index",
+          "first_name",
+          "last_name",
+          "emails",
+          "primary_email_index",
+          "role",
+          "department_ids",
+          "cohort_ids",
+          "errors"
+        ],
+        "title": "QProcessCsvV3ProcessedRow"
+      },
+      "QSearchStaffV3Cohort": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "name",
+          "description"
+        ],
+        "title": "QSearchStaffV3Cohort"
+      },
+      "QSearchStaffV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QSearchStaffV3Department"
+      },
+      "QSearchStaffV3Staff": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initials"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "last_active": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Active"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "total_requests": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Requests"
+          },
+          "requests_in_last_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests In Last Day"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "first_name",
+          "last_name",
+          "emails",
+          "primary_email",
+          "name",
+          "role",
+          "initials",
+          "active",
+          "last_active",
+          "cohort_ids",
+          "department_ids",
+          "primary_department_id",
+          "requests_per_day",
+          "total_requests",
+          "requests_in_last_day",
+          "can_edit",
+          "can_delete"
+        ],
+        "title": "QSearchStaffV3Staff"
+      },
       "QUpdateScenarioV3Parameter": {
         "properties": {
           "parameter_id": {
@@ -58636,90 +60782,6 @@
         "title": "SearchSimulatableProfilesResponse",
         "description": "Response for simulatable profiles search endpoint."
       },
-      "SearchStaffRequest": {
-        "properties": {
-          "query": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Query"
-          },
-          "cohortIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohortids"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "limit": {
-            "type": "integer",
-            "title": "Limit",
-            "default": 200
-          }
-        },
-        "type": "object",
-        "title": "SearchStaffRequest",
-        "description": "Request for staff search."
-      },
-      "SearchStaffResponse": {
-        "properties": {
-          "staff": {
-            "items": {
-              "$ref": "#/components/schemas/StaffItem"
-            },
-            "type": "array",
-            "title": "Staff"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__staff__search__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "staff",
-          "cohort_mapping",
-          "department_mapping"
-        ],
-        "title": "SearchStaffResponse",
-        "description": "Response for staff search endpoint."
-      },
       "SendSimulationMessageErrorPayload": {
         "properties": {
           "success": {
@@ -60837,488 +62899,6 @@
         ],
         "title": "SkillStandardFact",
         "description": "Skill standard fact."
-      },
-      "StaffDetailRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "StaffDetailRequest",
-        "description": "Request for staff detail."
-      },
-      "StaffDetailResponse": {
-        "properties": {
-          "profile_id": {
-            "type": "string",
-            "title": "Profile Id"
-          },
-          "first_name": {
-            "type": "string",
-            "title": "First Name"
-          },
-          "last_name": {
-            "type": "string",
-            "title": "Last Name"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "primary_email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__staff__detail__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "valid_cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Cohort Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profile_id",
-          "first_name",
-          "last_name",
-          "name",
-          "emails",
-          "primary_email",
-          "role",
-          "requests_per_day",
-          "cohort_ids",
-          "department_ids",
-          "primary_department_id",
-          "active",
-          "can_edit",
-          "valid_department_ids",
-          "department_mapping",
-          "cohort_mapping",
-          "valid_cohort_ids"
-        ],
-        "title": "StaffDetailResponse",
-        "description": "Response for staff detail endpoint."
-      },
-      "StaffFilters": {
-        "properties": {},
-        "type": "object",
-        "title": "StaffFilters",
-        "description": "Filters for staff list."
-      },
-      "StaffItem": {
-        "properties": {
-          "profile_id": {
-            "type": "string",
-            "title": "Profile Id"
-          },
-          "first_name": {
-            "type": "string",
-            "title": "First Name"
-          },
-          "last_name": {
-            "type": "string",
-            "title": "Last Name"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "primary_email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "initials": {
-            "type": "string",
-            "title": "Initials"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "last_active": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Active"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "primary_department_id": {
-            "type": "string",
-            "title": "Primary Department Id"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "total_requests": {
-            "type": "integer",
-            "title": "Total Requests"
-          },
-          "requests_in_last_day": {
-            "type": "integer",
-            "title": "Requests In Last Day"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profile_id",
-          "first_name",
-          "last_name",
-          "emails",
-          "primary_email",
-          "name",
-          "role",
-          "initials",
-          "active",
-          "last_active",
-          "cohort_ids",
-          "department_ids",
-          "primary_department_id",
-          "requests_per_day",
-          "total_requests",
-          "requests_in_last_day",
-          "can_edit",
-          "can_delete"
-        ],
-        "title": "StaffItem",
-        "description": "Staff item in list response."
-      },
-      "StaffListResponse": {
-        "properties": {
-          "staff": {
-            "items": {
-              "$ref": "#/components/schemas/StaffItem"
-            },
-            "type": "array",
-            "title": "Staff"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__staff__list__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "trend_data": {
-            "additionalProperties": {
-              "items": {
-                "$ref": "#/components/schemas/app__api__v3__staff__list__TrendData"
-              },
-              "type": "array"
-            },
-            "type": "object",
-            "title": "Trend Data"
-          },
-          "role_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Role Options"
-          },
-          "cohort_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Cohort Options"
-          },
-          "last_active_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Last Active Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "staff",
-          "cohort_mapping",
-          "department_mapping",
-          "valid_department_ids",
-          "trend_data",
-          "role_options",
-          "cohort_options",
-          "last_active_options"
-        ],
-        "title": "StaffListResponse",
-        "description": "Response for staff list endpoint."
-      },
-      "StaffNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "StaffNewRequest",
-        "description": "Request to get default staff details."
-      },
-      "StaffNewResponse": {
-        "properties": {
-          "first_name": {
-            "type": "string",
-            "title": "First Name"
-          },
-          "last_name": {
-            "type": "string",
-            "title": "Last Name"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "valid_cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Cohort Ids"
-          },
-          "role_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Role Options"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__staff__new__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "first_name",
-          "last_name",
-          "emails",
-          "role",
-          "requests_per_day",
-          "primary_department_id",
-          "active",
-          "can_edit",
-          "valid_department_ids",
-          "valid_cohort_ids",
-          "role_options",
-          "department_mapping",
-          "cohort_mapping"
-        ],
-        "title": "StaffNewResponse",
-        "description": "Response with default staff details and metadata."
       },
       "StandardGroup": {
         "properties": {
@@ -64669,6 +66249,82 @@
         },
         "type": "object",
         "title": "UpdateSimulationApiResponse"
+      },
+      "UpsertStaffApiRequest": {
+        "properties": {
+          "profiles": {
+            "items": {
+              "$ref": "#/components/schemas/IUpsertStaffV3Profile"
+            },
+            "type": "array",
+            "title": "Profiles"
+          },
+          "current_profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Current Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profiles",
+          "current_profile_id"
+        ],
+        "title": "UpsertStaffApiRequest"
+      },
+      "UpsertStaffApiResponse": {
+        "properties": {
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids"
+          },
+          "created_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created Count"
+          },
+          "updated_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated Count"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "UpsertStaffApiResponse"
       },
       "ValidationError": {
         "properties": {
@@ -69498,125 +71154,6 @@
         ],
         "title": "StandardItem",
         "description": "Standard item for update."
-      },
-      "app__api__v3__staff__data__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__staff__detail__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__staff__list__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__staff__list__TrendData": {
-        "properties": {
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "value": {
-            "type": "number",
-            "title": "Value"
-          },
-          "count": {
-            "type": "integer",
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "date",
-          "value",
-          "count"
-        ],
-        "title": "TrendData",
-        "description": "Trend data point."
-      },
-      "app__api__v3__staff__new__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
-      },
-      "app__api__v3__staff__search__DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item."
       }
     }
   }

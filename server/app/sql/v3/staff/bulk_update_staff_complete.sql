@@ -5,19 +5,33 @@
 BEGIN;
 
 -- 1) Drop function first (breaks dependency on types)
-DROP FUNCTION IF EXISTS api_bulk_update_staff_v3(uuid[], text, boolean, integer, uuid, uuid);
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_bulk_update_staff_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_bulk_update_staff_v3(%s)', r.sig);
+    END LOOP;
+END $$;
 
 -- 2) Drop types WITHOUT CASCADE
 -- No composite types needed for this function (returns simple types)
 
 -- 3) Recreate function
 CREATE OR REPLACE FUNCTION api_bulk_update_staff_v3(
+    profile_id uuid,  -- current user's profile_id (required, comes first)
     profile_ids uuid[],
-    role text,
-    active boolean,
-    requests_per_day integer,  -- NULL to skip, -1 for unlimited
-    primary_department_id uuid,
-    profile_id uuid  -- current user's profile_id
+    role text DEFAULT NULL,  -- NULL to skip
+    active boolean DEFAULT NULL,  -- NULL to skip
+    requests_per_day integer DEFAULT NULL,  -- NULL to skip, -1 for unlimited
+    primary_department_id uuid DEFAULT NULL  -- NULL to skip
 )
 RETURNS TABLE (
     updated_count integer,

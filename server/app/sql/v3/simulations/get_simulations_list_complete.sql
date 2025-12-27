@@ -4,18 +4,33 @@
 BEGIN;
 
 -- 1) Drop function first (breaks dependency on types)
-DROP FUNCTION IF EXISTS api_list_simulations_v3(uuid);
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_list_simulations_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_list_simulations_v3(%s)', r.sig);
+    END LOOP;
+END $$;
 
 -- 2) Drop types WITHOUT CASCADE
-DROP TYPE IF EXISTS types.q_list_simulations_v3_simulation;
+-- Drop types in correct order (parent types first, then child types)
+-- Drop scenario first (depends on document), then document, then other types
 DROP TYPE IF EXISTS types.q_list_simulations_v3_scenario;
+DROP TYPE IF EXISTS types.q_list_simulations_v3_document;
+DROP TYPE IF EXISTS types.q_list_simulations_v3_field;
+DROP TYPE IF EXISTS types.q_list_simulations_v3_simulation;
 DROP TYPE IF EXISTS types.q_list_simulations_v3_rubric;
 DROP TYPE IF EXISTS types.q_list_simulations_v3_department;
 DROP TYPE IF EXISTS types.q_list_simulations_v3_cohort;
-DROP TYPE IF EXISTS types.q_list_simulations_v3_persona;
-DROP TYPE IF EXISTS types.q_list_simulations_v3_document;
-DROP TYPE IF EXISTS types.q_list_simulations_v3_field;
 DROP TYPE IF EXISTS types.q_list_simulations_v3_option;
+DROP TYPE IF EXISTS types.q_list_simulations_v3_persona;
 
 -- 3) Recreate types (define base types first, then composite types that reference them)
 CREATE TYPE types.q_list_simulations_v3_persona AS (

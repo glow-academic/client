@@ -3,7 +3,21 @@
 
 BEGIN;
 
-DROP FUNCTION IF EXISTS api_create_cohort_v3(text, text, boolean, text[], text[], text[], uuid);
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_create_cohort_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_create_cohort_v3(%s)', r.sig);
+    END LOOP;
+END $$;
 
 CREATE OR REPLACE FUNCTION api_create_cohort_v3(
     title text,

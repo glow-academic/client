@@ -728,9 +728,9 @@ class GetAuthDetailSqlRow(BaseModel):
 
     actor_name: str
     can_edit: bool
-    description: str
-    active: bool
     name: str
+    active: bool
+    description: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 class GetAuthDetailApiRequest(BaseModel):
@@ -742,9 +742,9 @@ class GetAuthDetailApiResponse(BaseModel):
 
     actor_name: str
     can_edit: bool
-    description: str
-    active: bool
     name: str
+    active: bool
+    description: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 
@@ -7547,6 +7547,619 @@ class UpdateSimulationApiResponse(BaseModel):
 
 
 
+# Generated from: bulk_create_staff
+
+class IBulkCreateStaffV3Profile(BaseModel):
+
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email_index: int | None
+    role: str | None
+    department_ids: list[UUID] | None
+    primary_department_index: int | None
+
+class BulkCreateStaffSqlParams(BaseModel):
+
+    profiles: list[IBulkCreateStaffV3Profile]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert profiles composite array to tuples for asyncpg
+        profiles_tuples = [
+            (conn.first_name, conn.last_name, conn.emails, conn.primary_email_index, conn.role, conn.department_ids, conn.primary_department_index)
+            for conn in self.profiles
+        ]
+        return (
+            profiles_tuples,
+            self.profile_id,
+        )
+
+class BulkCreateStaffSqlRow(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    existing_emails: list[str] | None = None
+    actor_name: str | None = None
+
+class BulkCreateStaffApiRequest(BaseModel):
+
+    profiles: list[IBulkCreateStaffV3Profile]
+
+class BulkCreateStaffApiResponse(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    existing_emails: list[str] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: bulk_delete_staff
+
+class BulkDeleteStaffSqlParams(BaseModel):
+
+    profile_ids: list[UUID]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_ids,
+            self.profile_id,
+        )
+
+class BulkDeleteStaffSqlRow(BaseModel):
+
+    deleted_count: int | None = None
+    actor_name: str | None = None
+
+class BulkDeleteStaffApiRequest(BaseModel):
+
+    profile_ids: list[UUID]
+
+class BulkDeleteStaffApiResponse(BaseModel):
+
+    deleted_count: int | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: bulk_update_staff
+
+class BulkUpdateStaffSqlParams(BaseModel):
+
+    profile_id: UUID
+    profile_ids: list[UUID]
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    primary_department_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.profile_ids,
+            self.role,
+            self.active,
+            self.requests_per_day,
+            self.primary_department_id,
+        )
+
+class BulkUpdateStaffSqlRow(BaseModel):
+
+    updated_count: int | None = None
+    actor_name: str | None = None
+
+class BulkUpdateStaffApiRequest(BaseModel):
+
+    profile_ids: list[UUID]
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    primary_department_id: UUID | None = None
+
+class BulkUpdateStaffApiResponse(BaseModel):
+
+    updated_count: int | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_create_staff_data
+
+class GetCreateStaffDataSqlParams(BaseModel):
+
+    department_ids: list[UUID]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_ids,
+            self.profile_id,
+        )
+
+class QGetCreateStaffDataV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetCreateStaffDataV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetCreateStaffDataV3Staff(BaseModel):
+
+    profile_id: UUID | None
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email: str | None
+    name: str | None
+    role: str | None
+    active: bool | None
+    last_active: str | None
+    cohort_ids: list[str] | None
+    department_ids: list[str] | None
+    primary_department_id: str | None
+    requests_per_day: int | None
+    total_requests: int | None
+    requests_in_last_day: int | None
+
+class GetCreateStaffDataSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    staff: list[QGetCreateStaffDataV3Staff] | None = None
+    cohorts: list[QGetCreateStaffDataV3Cohort] | None = None
+    departments: list[QGetCreateStaffDataV3Department] | None = None
+    role_options: list[str] | None = None
+
+class GetCreateStaffDataApiRequest(BaseModel):
+
+    department_ids: list[UUID]
+
+class GetCreateStaffDataApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    staff: list[QGetCreateStaffDataV3Staff] | None = None
+    cohorts: list[QGetCreateStaffDataV3Cohort] | None = None
+    departments: list[QGetCreateStaffDataV3Department] | None = None
+    role_options: list[str] | None = None
+
+
+
+# Generated from: get_staff_detail
+
+class GetStaffDetailSqlParams(BaseModel):
+
+    target_profile_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.target_profile_id,
+            self.profile_id,
+        )
+
+class QGetStaffDetailV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetStaffDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetStaffDetailSqlRow(BaseModel):
+
+    staff_exists: bool | None = None
+    actor_name: str | None = None
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    cohort_ids: list[str] | None = None
+    department_ids: list[str] | None = None
+    primary_department_id: str | None = None
+    can_edit: bool | None = None
+    valid_department_ids: list[str] | None = None
+    valid_cohort_ids: list[str] | None = None
+    cohorts: list[QGetStaffDetailV3Cohort] | None = None
+    departments: list[QGetStaffDetailV3Department] | None = None
+
+class GetStaffDetailApiRequest(BaseModel):
+
+    target_profile_id: UUID
+
+class GetStaffDetailApiResponse(BaseModel):
+
+    staff_exists: bool | None = None
+    actor_name: str | None = None
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    cohort_ids: list[str] | None = None
+    department_ids: list[str] | None = None
+    primary_department_id: str | None = None
+    can_edit: bool | None = None
+    valid_department_ids: list[str] | None = None
+    valid_cohort_ids: list[str] | None = None
+    cohorts: list[QGetStaffDetailV3Cohort] | None = None
+    departments: list[QGetStaffDetailV3Department] | None = None
+
+
+
+# Generated from: get_staff_list
+
+class GetStaffListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListStaffV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListStaffV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListStaffV3Staff(BaseModel):
+
+    profile_id: UUID | None
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email: str | None
+    name: str | None
+    role: str | None
+    initials: str | None
+    active: bool | None
+    last_active: str | None
+    cohort_ids: list[str] | None
+    department_ids: list[str] | None
+    primary_department_id: str | None
+    requests_per_day: int | None
+    total_requests: int | None
+    requests_in_last_day: int | None
+    can_edit: bool | None
+    can_delete: bool | None
+
+
+
+
+class QListStaffV3TrendData(BaseModel):
+
+    date: str | None
+    value: float | None
+    count: int | None
+
+class GetStaffListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    current_user_role: str | None = None
+    staff: list[QListStaffV3Staff] | None = None
+    cohorts: list[QListStaffV3Cohort] | None = None
+    departments: list[QListStaffV3Department] | None = None
+    trend_data_active: list[QListStaffV3TrendData] | None = None
+    trend_data_admin: list[QListStaffV3TrendData] | None = None
+    trend_data_instructional: list[QListStaffV3TrendData] | None = None
+    trend_data_member: list[QListStaffV3TrendData] | None = None
+    trend_data_total_requests: list[QListStaffV3TrendData] | None = None
+    valid_department_ids: list[str] | None = None
+    role_options: list[str] | None = None
+    cohort_options: list[str] | None = None
+    last_active_options: list[str] | None = None
+
+class GetStaffListApiRequest(BaseModel):
+
+    pass
+
+class GetStaffListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    current_user_role: str | None = None
+    staff: list[QListStaffV3Staff] | None = None
+    cohorts: list[QListStaffV3Cohort] | None = None
+    departments: list[QListStaffV3Department] | None = None
+    trend_data_active: list[QListStaffV3TrendData] | None = None
+    trend_data_admin: list[QListStaffV3TrendData] | None = None
+    trend_data_instructional: list[QListStaffV3TrendData] | None = None
+    trend_data_member: list[QListStaffV3TrendData] | None = None
+    trend_data_total_requests: list[QListStaffV3TrendData] | None = None
+    valid_department_ids: list[str] | None = None
+    role_options: list[str] | None = None
+    cohort_options: list[str] | None = None
+    last_active_options: list[str] | None = None
+
+
+
+# Generated from: get_staff_new
+
+class GetStaffNewSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetStaffNewV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetStaffNewV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetStaffNewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    primary_department_id: str | None = None
+    valid_department_ids: list[str] | None = None
+    valid_cohort_ids: list[str] | None = None
+    role_options: list[str] | None = None
+    cohorts: list[QGetStaffNewV3Cohort] | None = None
+    departments: list[QGetStaffNewV3Department] | None = None
+
+class GetStaffNewApiRequest(BaseModel):
+
+    pass
+
+class GetStaffNewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    user_role: str | None = None
+    primary_department_id: str | None = None
+    valid_department_ids: list[str] | None = None
+    valid_cohort_ids: list[str] | None = None
+    role_options: list[str] | None = None
+    cohorts: list[QGetStaffNewV3Cohort] | None = None
+    departments: list[QGetStaffNewV3Department] | None = None
+
+
+
+# Generated from: get_staff_search
+
+class GetStaffSearchSqlParams(BaseModel):
+
+    query: str
+    profile_id: UUID
+    cohort_ids: list[UUID]
+    department_ids: list[UUID]
+    limit_count: int | None = 200
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.query,
+            self.profile_id,
+            self.cohort_ids,
+            self.department_ids,
+            self.limit_count,
+        )
+
+class QSearchStaffV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QSearchStaffV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QSearchStaffV3Staff(BaseModel):
+
+    profile_id: UUID | None
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email: str | None
+    name: str | None
+    role: str | None
+    initials: str | None
+    active: bool | None
+    last_active: str | None
+    cohort_ids: list[str] | None
+    department_ids: list[str] | None
+    primary_department_id: str | None
+    requests_per_day: int | None
+    total_requests: int | None
+    requests_in_last_day: int | None
+    can_edit: bool | None
+    can_delete: bool | None
+
+class GetStaffSearchSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    staff: list[QSearchStaffV3Staff] | None = None
+    cohorts: list[QSearchStaffV3Cohort] | None = None
+    departments: list[QSearchStaffV3Department] | None = None
+
+class GetStaffSearchApiRequest(BaseModel):
+
+    query: str
+    cohort_ids: list[UUID]
+    department_ids: list[UUID]
+    limit_count: int | None = 200
+
+class GetStaffSearchApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    staff: list[QSearchStaffV3Staff] | None = None
+    cohorts: list[QSearchStaffV3Cohort] | None = None
+    departments: list[QSearchStaffV3Department] | None = None
+
+
+
+# Generated from: process_csv
+
+class IProcessCsvV3ColumnMapping(BaseModel):
+
+    csv_column: str | None
+    target_field: str | None
+
+class ProcessCsvSqlParams(BaseModel):
+
+    csv_content: str
+    column_mappings: list[IProcessCsvV3ColumnMapping]
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert column_mappings composite array to tuples for asyncpg
+        column_mappings_tuples = [
+            (conn.csv_column, conn.target_field)
+            for conn in self.column_mappings
+        ]
+        return (
+            self.csv_content,
+            column_mappings_tuples,
+            self.profile_id,
+        )
+
+class QProcessCsvV3CsvRowError(BaseModel):
+
+    row_index: int | None
+    field: str | None
+    message: str | None
+
+class QProcessCsvV3ProcessedRow(BaseModel):
+
+    row_index: int | None
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email_index: int | None
+    role: str | None
+    department_ids: list[str] | None
+    cohort_ids: list[str] | None
+    errors: list[QProcessCsvV3CsvRowError] | None
+
+class ProcessCsvSqlRow(BaseModel):
+
+    success: bool | None = None
+    headers: list[str] | None = None
+    rows: list[QProcessCsvV3ProcessedRow] | None = None
+    actor_name: str | None = None
+
+class ProcessCsvApiRequest(BaseModel):
+
+    csv_content: str
+    column_mappings: list[IProcessCsvV3ColumnMapping]
+
+class ProcessCsvApiResponse(BaseModel):
+
+    success: bool | None = None
+    headers: list[str] | None = None
+    rows: list[QProcessCsvV3ProcessedRow] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: upsert_staff
+
+class IUpsertStaffV3Profile(BaseModel):
+
+    first_name: str | None
+    last_name: str | None
+    emails: list[str] | None
+    primary_email_index: int | None
+    role: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    cohort_ids: list[UUID] | None
+
+class UpsertStaffSqlParams(BaseModel):
+
+    profiles: list[IUpsertStaffV3Profile]
+    current_profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert profiles composite array to tuples for asyncpg
+        profiles_tuples = [
+            (conn.first_name, conn.last_name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids, conn.cohort_ids)
+            for conn in self.profiles
+        ]
+        return (
+            profiles_tuples,
+            self.current_profile_id,
+        )
+
+class UpsertStaffSqlRow(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    created_count: int | None = None
+    updated_count: int | None = None
+    actor_name: str | None = None
+
+class UpsertStaffApiRequest(BaseModel):
+
+    profiles: list[IUpsertStaffV3Profile]
+    current_profile_id: UUID
+
+class UpsertStaffApiResponse(BaseModel):
+
+    profile_ids: list[UUID] | None = None
+    created_count: int | None = None
+    updated_count: int | None = None
+    actor_name: str | None = None
+
+
+
 
 # ============================================================================
 # REGISTRY
@@ -8243,6 +8856,66 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateSimulationApiRequest",
         "UpdateSimulationApiResponse",
     ),
+    "app/sql/v3/staff/bulk_create_staff_complete.sql": (
+        "BulkCreateStaffSqlParams",
+        "BulkCreateStaffSqlRow",
+        "BulkCreateStaffApiRequest",
+        "BulkCreateStaffApiResponse",
+    ),
+    "app/sql/v3/staff/bulk_delete_staff_complete.sql": (
+        "BulkDeleteStaffSqlParams",
+        "BulkDeleteStaffSqlRow",
+        "BulkDeleteStaffApiRequest",
+        "BulkDeleteStaffApiResponse",
+    ),
+    "app/sql/v3/staff/bulk_update_staff_complete.sql": (
+        "BulkUpdateStaffSqlParams",
+        "BulkUpdateStaffSqlRow",
+        "BulkUpdateStaffApiRequest",
+        "BulkUpdateStaffApiResponse",
+    ),
+    "app/sql/v3/staff/get_create_staff_data_complete.sql": (
+        "GetCreateStaffDataSqlParams",
+        "GetCreateStaffDataSqlRow",
+        "GetCreateStaffDataApiRequest",
+        "GetCreateStaffDataApiResponse",
+    ),
+    "app/sql/v3/staff/get_staff_detail_complete.sql": (
+        "GetStaffDetailSqlParams",
+        "GetStaffDetailSqlRow",
+        "GetStaffDetailApiRequest",
+        "GetStaffDetailApiResponse",
+    ),
+    "app/sql/v3/staff/get_staff_list_complete.sql": (
+        "GetStaffListSqlParams",
+        "GetStaffListSqlRow",
+        "GetStaffListApiRequest",
+        "GetStaffListApiResponse",
+    ),
+    "app/sql/v3/staff/get_staff_new_complete.sql": (
+        "GetStaffNewSqlParams",
+        "GetStaffNewSqlRow",
+        "GetStaffNewApiRequest",
+        "GetStaffNewApiResponse",
+    ),
+    "app/sql/v3/staff/get_staff_search_complete.sql": (
+        "GetStaffSearchSqlParams",
+        "GetStaffSearchSqlRow",
+        "GetStaffSearchApiRequest",
+        "GetStaffSearchApiResponse",
+    ),
+    "app/sql/v3/staff/process_csv_complete.sql": (
+        "ProcessCsvSqlParams",
+        "ProcessCsvSqlRow",
+        "ProcessCsvApiRequest",
+        "ProcessCsvApiResponse",
+    ),
+    "app/sql/v3/staff/upsert_staff_complete.sql": (
+        "UpsertStaffSqlParams",
+        "UpsertStaffSqlRow",
+        "UpsertStaffApiRequest",
+        "UpsertStaffApiResponse",
+    ),
 }
 
 
@@ -8878,6 +9551,56 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/simulations/update_simulation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/staff/bulk_create_staff_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/staff/bulk_delete_staff_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/staff/bulk_update_staff_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/staff/get_create_staff_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/staff/get_staff_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/staff/get_staff_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/staff/get_staff_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/staff/get_staff_search_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/staff/process_csv_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/staff/upsert_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload

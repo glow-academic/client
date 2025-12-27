@@ -4,7 +4,8 @@ import * as React from "react";
 import { Search, Check, CheckCircle2, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export interface DepartmentMappingItem {
+export interface DepartmentItem {
+  department_id: string;
   name: string;
   description: string;
 }
@@ -13,7 +14,7 @@ export interface StaffDepartmentCardGridProps {
   departmentIds: string[];
   primaryDepartmentId: string | undefined;
   validDepartmentIds: string[];
-  departmentMapping: Record<string, DepartmentMappingItem>;
+  departments: DepartmentItem[];  // Array of department objects (replaces departmentMapping)
   onDepartmentIdsChange: (ids: string[]) => void;
   onPrimaryDepartmentIdChange: (id: string | undefined) => void;
   readonly?: boolean;
@@ -23,25 +24,35 @@ export function StaffDepartmentCardGrid({
   departmentIds,
   primaryDepartmentId,
   validDepartmentIds,
-  departmentMapping,
+  departments,
   onDepartmentIdsChange,
   onPrimaryDepartmentIdChange,
   readonly = false,
 }: StaffDepartmentCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
 
-  // Build departments from mapping
+  // Build departments from array, filtered by validDepartmentIds
   const baseDepartments = React.useMemo(() => {
-    const departments = validDepartmentIds.map((id) => ({
-      id,
-      ...departmentMapping[id],
-    }));
+    const deptMap = new Map(departments.map((d) => [d.department_id, d]));
+    const validDepartments = validDepartmentIds
+      .map((id) => {
+        const dept = deptMap.get(id);
+        if (dept) {
+          return {
+            id: dept.department_id,
+            name: dept.name || "",
+            description: dept.description || "",
+          };
+        }
+        return null;
+      })
+      .filter((d): d is { id: string; name: string; description: string } => d !== null);
 
     // Sort by name
-    return departments.sort((a, b) =>
+    return validDepartments.sort((a, b) =>
       (a.name || "").localeCompare(b.name || ""),
     );
-  }, [validDepartmentIds, departmentMapping]);
+  }, [validDepartmentIds, departments]);
 
   // Apply search filter, then sort selected first
   const filteredDepartments = React.useMemo(() => {

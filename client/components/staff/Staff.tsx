@@ -212,13 +212,13 @@ type CSVStage = "upload" | "mapping" | "review";
 
 const TARGET_FIELDS = [
   {
-    value: "firstName",
+    value: "first_name",  // snake_case
     label: "First Name",
     description: "The staff member's first name",
     required: true,
   },
   {
-    value: "lastName",
+    value: "last_name",  // snake_case
     label: "Last Name",
     description: "The staff member's last name",
     required: true,
@@ -278,10 +278,10 @@ const autoMapColumn = (columnName: string): string | null => {
   if (
     ["first name", "firstname", "first_name", "fname", "first"].includes(lower)
   ) {
-    return "firstName";
+    return "first_name";  // snake_case
   }
   if (["last name", "lastname", "last_name", "lname", "last"].includes(lower)) {
-    return "lastName";
+    return "last_name";  // snake_case
   }
   if (
     ["email", "alias", "username", "user", "login", "email address"].includes(
@@ -463,24 +463,29 @@ export default function Staff({
     () => serverListData?.staff || [],
     [serverListData?.staff],
   );
-  const cohortMapping = useMemo(
-    () => serverListData?.cohort_mapping || {},
-    [serverListData?.cohort_mapping],
+  const cohorts = useMemo(
+    () => serverListData?.cohorts || [],
+    [serverListData?.cohorts],
   );
-  const departmentMapping = useMemo(
-    () => serverListData?.department_mapping || {},
-    [serverListData?.department_mapping],
+  const departments = useMemo(
+    () => serverListData?.departments || [],
+    [serverListData?.departments],
   );
   const trendData = useMemo(
-    () =>
-      serverListData?.trend_data || {
-        active: [],
-        admin: [],
-        instructional: [],
-        member: [],
-        total_requests: [],
-      },
-    [serverListData?.trend_data],
+    () => ({
+      active: serverListData?.trend_data_active || [],
+      admin: serverListData?.trend_data_admin || [],
+      instructional: serverListData?.trend_data_instructional || [],
+      member: serverListData?.trend_data_member || [],
+      total_requests: serverListData?.trend_data_total_requests || [],
+    }),
+    [
+      serverListData?.trend_data_active,
+      serverListData?.trend_data_admin,
+      serverListData?.trend_data_instructional,
+      serverListData?.trend_data_member,
+      serverListData?.trend_data_total_requests,
+    ],
   );
 
   // Calculate counts for KPI cards
@@ -680,7 +685,7 @@ export default function Staff({
           }));
           setColumnMappings(mappings);
 
-          const requiredFields = ["firstName", "lastName", "email"];
+          const requiredFields = ["first_name", "last_name", "email"];  // snake_case
           const initialIncludes: Record<string, boolean> = {};
           headers.forEach((header) => {
             const mappedField = autoMapColumn(header);
@@ -729,24 +734,24 @@ export default function Staff({
   const downloadTemplate = useCallback(() => {
     const template = [
       {
-        firstName: "Sarah",
-        lastName: "Johnson",
+        first_name: "Sarah",  // snake_case
+        last_name: "Johnson",  // snake_case
         email: "redacted@purdue.edu",
         role: "instructional",
         department: "",
         cohort: "",
       },
       {
-        firstName: "Jane",
-        lastName: "Smith",
+        first_name: "Jane",  // snake_case
+        last_name: "Smith",  // snake_case
         email: "redacted@purdue.edu",
         role: "instructional",
         department: "",
         cohort: "",
       },
       {
-        firstName: "John",
-        lastName: "Doe",
+        first_name: "John",  // snake_case
+        last_name: "Doe",  // snake_case
         email: "redacted@purdue.edu",
         role: "member",
         department: "",
@@ -969,8 +974,8 @@ export default function Staff({
           emails.push("");
         }
         return {
-          firstName: row.firstName!,
-          lastName: row.lastName!,
+          first_name: row.first_name!,  // snake_case
+          last_name: row.last_name!,  // snake_case
           emails: emails,
           primary_email_index:
             row.primary_email_index !== undefined &&
@@ -1156,7 +1161,7 @@ export default function Staff({
                   variant="secondary"
                   className="text-xs whitespace-nowrap flex-shrink-0"
                 >
-                  {cohortMapping[id]?.name || id}
+                  {cohorts.find((c) => c.cohort_id === id)?.name || id}
                 </Badge>
               ))}
             </div>
@@ -1189,7 +1194,7 @@ export default function Staff({
                   variant="secondary"
                   className="text-xs whitespace-nowrap flex-shrink-0"
                 >
-                  {departmentMapping[id]?.name || id}
+                  {departments.find((d) => d.department_id === id)?.name || id}
                 </Badge>
               ))}
             </div>
@@ -1294,7 +1299,7 @@ export default function Staff({
         },
       },
     ],
-    [cohortMapping, departmentMapping],
+    [cohorts, departments],
   );
 
   // Build columns with checkbox + actions
@@ -1581,12 +1586,10 @@ export default function Staff({
                   <DataTableFacetedFilter
                     column={departmentIdsColumn}
                     title="Department"
-                    options={Object.entries(departmentMapping).map(
-                      ([id, item]) => ({
-                        value: id,
-                        label: item.name,
-                      }),
-                    )}
+                    options={departments.map((dept) => ({
+                      value: dept.department_id,
+                      label: dept.name,
+                    }))}
                   />
                 )}
 
@@ -2075,10 +2078,10 @@ export default function Staff({
                             .map((row, index) => {
                               const editableRow = editableRows[index] || row;
                               const hasFirstNameError = editableRow.errors.some(
-                                (e) => e.field === "firstName",
+                                (e) => e.field === "first_name",  // snake_case
                               );
                               const hasLastNameError = editableRow.errors.some(
-                                (e) => e.field === "lastName",
+                                (e) => e.field === "last_name",  // snake_case
                               );
                               const hasAliasError = editableRow.errors.some(
                                 (e) => e.field === "email",
@@ -2115,11 +2118,11 @@ export default function Staff({
                                     }
                                   >
                                     <Input
-                                      value={editableRow.firstName || ""}
+                                      value={editableRow.first_name || ""}  // snake_case
                                       onChange={(e) =>
                                         updateEditableRow(
                                           index,
-                                          "firstName",
+                                          "first_name",  // snake_case
                                           e.target.value || null,
                                         )
                                       }
@@ -2134,11 +2137,11 @@ export default function Staff({
                                     }
                                   >
                                     <Input
-                                      value={editableRow.lastName || ""}
+                                      value={editableRow.last_name || ""}  // snake_case
                                       onChange={(e) =>
                                         updateEditableRow(
                                           index,
-                                          "lastName",
+                                          "last_name",  // snake_case
                                           e.target.value || null,
                                         )
                                       }
@@ -2542,7 +2545,7 @@ export default function Staff({
                     }
                     if (!bulkDeleteStaffAction) return;
                     await bulkDeleteStaffAction({
-                      body: { profileIds: deletableIds },
+                      body: { profile_ids: deletableIds },
                     });
                     router.refresh();
                     toast.success("Selected staff deleted");

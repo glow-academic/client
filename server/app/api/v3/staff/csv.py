@@ -1,77 +1,41 @@
 """Staff process CSV endpoint - process CSV file and map columns to target fields."""
 
 import csv
+import uuid
 from io import StringIO
-from typing import Annotated
+from typing import Annotated, Any, cast
 
 import asyncpg
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (ProcessCsvApiRequest, ProcessCsvApiResponse,
+                           ProcessCsvSqlParams, ProcessCsvSqlRow,
+                           QProcessCsvV3CsvRowError, QProcessCsvV3ProcessedRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/staff/process_csv_complete.sql"
 
 router = APIRouter()
 
 
-class CSVColumnMapping(BaseModel):
-    """Mapping of CSV column to target field."""
-
-    csv_column: str
-    target_field: str | None  # firstName, lastName, email, department, cohort
-
-
-class CSVRowError(BaseModel):
-    """Error for a specific CSV row."""
-
-    row_index: int
-    field: str
-    message: str
-
-
-class ProcessCSVRequest(BaseModel):
-    """Request to process CSV file."""
-
-    csv_content: str
-    column_mappings: list[CSVColumnMapping]
-
-
-class ProcessedCSVRow(BaseModel):
-    """Processed row from CSV."""
-
-    row_index: int
-    firstName: str | None
-    lastName: str | None
-    emails: list[str] = []  # Array of emails (parsed from comma-separated values)
-    primary_email_index: int = 0  # Index of primary email (defaults to 0)
-    role: str | None
-    department_ids: list[str] = []  # Array for multi-select support
-    cohort_ids: list[str] = []  # Array for multi-select support
-    errors: list[CSVRowError]
-
-
-class ProcessCSVResponse(BaseModel):
-    """Response from CSV processing."""
-
-    success: bool
-    rows: list[ProcessedCSVRow]
-    headers: list[str]
-
-
 @router.post(
     "/csv",
-    response_model=ProcessCSVResponse,
+    response_model=ProcessCsvApiResponse,
     dependencies=[audit_activity("staff.csv", "{{ actor.name }} processed staff CSV")],
 )
 async def process_csv(
-    request: ProcessCSVRequest,
+    request: ProcessCsvApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> ProcessCSVResponse:
+) -> ProcessCsvApiResponse:
     """Process CSV file and map columns to target fields."""
     tags = ["staff"]  # From router tags
 
@@ -84,9 +48,20 @@ async def process_csv(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return ProcessCSVResponse.model_validate(cached["data"])
+        return ProcessCsvApiResponse.model_validate(cached["data"])
+
+    sql_query = load_sql_query(SQL_PATH)
+    sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get profile_id from header
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
         # Parse CSV content
         csv_file = StringIO(request.csv_content)
         reader = csv.DictReader(csv_file)
@@ -95,18 +70,19 @@ async def process_csv(
         # Build mapping dict for quick lookup
         column_to_field: dict[str, str | None] = {}
         for mapping in request.column_mappings:
-            column_to_field[mapping.csv_column] = mapping.target_field
+            if mapping.csv_column is not None:
+                column_to_field[mapping.csv_column] = mapping.target_field
 
-        rows: list[ProcessedCSVRow] = []
+        processed_rows: list[QProcessCsvV3ProcessedRow] = []
         row_index = 0
 
         for csv_row in reader:
             row_index += 1
-            errors: list[CSVRowError] = []
+            errors: list[QProcessCsvV3CsvRowError] = []
 
-            # Extract values based on mappings
-            firstName = None
-            lastName = None
+            # Extract values based on mappings (snake_case field names)
+            first_name = None
+            last_name = None
             emails: list[str] = []
             role = None
             department_ids: list[str] = []
@@ -116,10 +92,10 @@ async def process_csv(
                 field = column_to_field.get(header)
                 value = csv_row.get(header, "").strip() if header else ""
 
-                if field == "firstName":
-                    firstName = value if value else None
-                elif field == "lastName":
-                    lastName = value if value else None
+                if field == "first_name":
+                    first_name = value if value else None
+                elif field == "last_name":
+                    last_name = value if value else None
                 elif field == "email":
                     # Support comma-separated emails
                     if value:
@@ -127,7 +103,6 @@ async def process_csv(
                             e.strip().lower() for e in value.split(",") if e.strip()
                         ]
                         emails.extend(email_values)
-                    # If no emails found, emails stays empty
                 elif field == "role":
                     role = value if value else None
                 elif field == "department":
@@ -144,25 +119,25 @@ async def process_csv(
                         cohort_ids.extend(cohort_values)
 
             # Validate required fields
-            if not firstName:
+            if not first_name:
                 errors.append(
-                    CSVRowError(
+                    QProcessCsvV3CsvRowError(
                         row_index=row_index,
-                        field="firstName",
+                        field="first_name",
                         message="First name is required",
                     )
                 )
-            if not lastName:
+            if not last_name:
                 errors.append(
-                    CSVRowError(
+                    QProcessCsvV3CsvRowError(
                         row_index=row_index,
-                        field="lastName",
+                        field="last_name",
                         message="Last name is required",
                     )
                 )
             if len(emails) == 0:
                 errors.append(
-                    CSVRowError(
+                    QProcessCsvV3CsvRowError(
                         row_index=row_index,
                         field="emails",
                         message="At least one email is required",
@@ -173,49 +148,60 @@ async def process_csv(
             if not role:
                 role = "member"
 
-            rows.append(
-                ProcessedCSVRow(
+            processed_rows.append(
+                QProcessCsvV3ProcessedRow(
                     row_index=row_index,
-                    firstName=firstName,
-                    lastName=lastName,
-                    emails=emails,
+                    first_name=first_name,
+                    last_name=last_name,
+                    emails=emails if emails else None,
                     primary_email_index=0,  # First email is primary by default
                     role=role,
-                    department_ids=department_ids,
-                    cohort_ids=cohort_ids,
-                    errors=errors,
+                    department_ids=department_ids if department_ids else None,
+                    cohort_ids=cohort_ids if cohort_ids else None,
+                    errors=errors if errors else None,
                 )
             )
 
-        response_data = ProcessCSVResponse(
-            success=True, rows=rows, headers=list(headers)
+        # Call SQL function to get actor_name (function accepts csv_content and column_mappings for type generation)
+        params = ProcessCsvSqlParams(
+            csv_content=request.csv_content,
+            column_mappings=request.column_mappings,
+            profile_id=uuid.UUID(profile_id),
+        )
+        sql_params = params.to_tuple()
+
+        result = cast(
+            ProcessCsvSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        # Fetch actor_name separately
-        profile_id = http_request.state.profile_id
-        actor_name_row = None
-        if profile_id:
-            actor_name_row = await conn.fetchrow(
-                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-                profile_id,
-            )
-        actor_name = actor_name_row["actor_name"] if actor_name_row else None
-
         # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        # Cache response
+        # Construct API response with parsed data + actor_name from SQL
+        api_response = ProcessCsvApiResponse(
+            success=True,
+            headers=list(headers),
+            rows=processed_rows,
+            actor_name=result.actor_name,
+        )
+
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

@@ -6,7 +6,8 @@
 
 import { StaffCohortCardGrid } from "@/components/staff/StaffCohortCardGrid";
 
-export interface CohortMappingItem {
+export interface CohortItem {
+  cohort_id: string;
   name: string;
   description: string;
 }
@@ -15,7 +16,7 @@ export interface StaffCohortsSectionProps {
   // Data
   cohortIds: string[];
   validCohortIds: string[];
-  cohortMapping: Record<string, CohortMappingItem>;
+  cohorts: CohortItem[];  // Array of cohort objects (replaces cohortMapping)
 
   // Callbacks
   onCohortIdsChange: (ids: string[]) => void;
@@ -28,7 +29,7 @@ export interface StaffCohortsSectionProps {
 export function StaffCohortsSection({
   cohortIds,
   validCohortIds,
-  cohortMapping,
+  cohorts,
   onCohortIdsChange,
   isReadonly,
   isSubmitting,
@@ -38,7 +39,7 @@ export function StaffCohortsSection({
       <StaffCohortCardGrid
         cohortIds={cohortIds}
         validCohortIds={validCohortIds}
-        cohortMapping={cohortMapping}
+        cohorts={cohorts}
         onCohortIdsChange={onCohortIdsChange}
         readonly={isReadonly || isSubmitting}
       />

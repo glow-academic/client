@@ -4,20 +4,34 @@
 BEGIN;
 
 -- 1) Drop function first (breaks dependency on types)
-DROP FUNCTION IF EXISTS api_get_simulation_new_v3(uuid);
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_simulation_new_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_simulation_new_v3(%s)', r.sig);
+    END LOOP;
+END $$;
 
--- 2) Drop types WITHOUT CASCADE (drop both old and new names for migration)
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_scenario CASCADE;
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_parameter_item CASCADE;
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_parameter_item_detail CASCADE;
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_scenario_mapping CASCADE;
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_scenario_full CASCADE;
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_persona;
+-- 2) Drop types WITHOUT CASCADE
+-- Drop types in correct order (parent types first, then child types)
+-- Drop scenario_full first (depends on document), then document, then other types
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_scenario_full;
 DROP TYPE IF EXISTS types.q_get_simulation_new_v3_document;
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_scenario;
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_parameter_item;
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_parameter_item_detail;
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_department;
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_persona;
+DROP TYPE IF EXISTS types.q_get_simulation_new_v3_parameter;
 DROP TYPE IF EXISTS types.q_get_simulation_new_v3_field;
 DROP TYPE IF EXISTS types.q_get_simulation_new_v3_rubric;
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_department;
-DROP TYPE IF EXISTS types.q_get_simulation_new_v3_parameter;
 DROP TYPE IF EXISTS types.q_get_simulation_new_v3_agent;
 DROP TYPE IF EXISTS types.q_get_simulation_new_v3_video;
 

@@ -1,35 +1,29 @@
 """Staff bulk delete endpoint - bulk delete staff members."""
 
-from typing import Annotated, Any
+import uuid
+from typing import Annotated, Any, cast
 
 import asyncpg
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (BulkDeleteStaffApiRequest,
+                           BulkDeleteStaffApiResponse,
+                           BulkDeleteStaffSqlParams, BulkDeleteStaffSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/staff/bulk_delete_staff_complete.sql"
 
 router = APIRouter()
 
 
-class BulkDeleteStaffRequest(BaseModel):
-    """Request to bulk delete staff."""
-
-    profileIds: list[str]
-
-
-class BulkDeleteStaffResponse(BaseModel):
-    """Response from bulk delete staff."""
-
-    success: bool
-    message: str
-
-
 @router.post(
     "/delete",
-    response_model=BulkDeleteStaffResponse,
+    response_model=BulkDeleteStaffApiResponse,
     dependencies=[
         audit_activity(
             "staff.deleted", "{{ actor.name }} deleted {{ count }} staff member(s)"
@@ -37,26 +31,43 @@ class BulkDeleteStaffResponse(BaseModel):
     ],
 )
 async def bulk_delete_staff(
-    request: BulkDeleteStaffRequest,
+    request: BulkDeleteStaffApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> BulkDeleteStaffResponse:
+) -> BulkDeleteStaffApiResponse:
     """Bulk delete profiles."""
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Single consolidated query: checks defaults and deletes non-default profiles
-        sql_query = load_sql("app/sql/v3/profile/staff/bulk_delete_profiles_complete.sql")
-        sql_params = (request.profileIds,)
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
 
-        result = await conn.fetchrow(sql_query, request.profileIds)
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double-star pattern
+        params = BulkDeleteStaffSqlParams(**request.model_dump(), profile_id=uuid.UUID(profile_id))
+        sql_params = params.to_tuple()
+
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            BulkDeleteStaffSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
 
         if not result:
             raise HTTPException(status_code=500, detail="Failed to delete profiles")
 
-        deleted_count = result.get("deleted_count", 0)
+        deleted_count = result.deleted_count or 0
 
         if deleted_count == 0:
             raise HTTPException(
@@ -64,25 +75,17 @@ async def bulk_delete_staff(
                 detail="No profiles could be deleted",
             )
 
-        message = f"{deleted_count} staff members deleted successfully"
-
-        result_data = BulkDeleteStaffResponse(success=True, message=message)
-
-        # Fetch actor_name separately
-        profile_id = http_request.state.profile_id
-        actor_name_row = None
-        if profile_id:
-            actor_name_row = await conn.fetchrow(
-                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-                profile_id,
-            )
-        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+        # Return auto-generated response type
+        result_data = BulkDeleteStaffApiResponse(
+            deleted_count=deleted_count,
+            actor_name=result.actor_name,
+        )
 
         # Set audit context
-        if actor_name:
+        if result.actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": profile_id},
+                actor={"name": result.actor_name, "id": profile_id},
                 count=deleted_count,
             )
 

@@ -4,8 +4,21 @@
 
 BEGIN;
 
--- 1) Drop function first (drop all overloads)
-DROP FUNCTION IF EXISTS api_update_document_v3(uuid, uuid, text, text, boolean, boolean, uuid, text[], uuid, uuid, uuid, jsonb) CASCADE;
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_update_document_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_update_document_v3(%s)', r.sig);
+    END LOOP;
+END $$;
 
 -- 2) Recreate function
 CREATE OR REPLACE FUNCTION api_update_document_v3(

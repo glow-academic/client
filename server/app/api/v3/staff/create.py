@@ -1,38 +1,29 @@
 """Staff bulk create endpoint - bulk create staff members."""
 
 import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg
-from app.api.v3.profile.create import CreateProfileRequest
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (BulkCreateStaffApiRequest,
+                           BulkCreateStaffApiResponse,
+                           BulkCreateStaffSqlParams, BulkCreateStaffSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
+
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/staff/bulk_create_staff_complete.sql"
 
 router = APIRouter()
 
 
-class BulkCreateStaffRequest(BaseModel):
-    """Request to bulk create staff members."""
-
-    profiles: list[CreateProfileRequest]
-
-
-class BulkCreateStaffResponse(BaseModel):
-    """Response from bulk create staff."""
-
-    success: bool
-    profileIds: list[str]
-    message: str
-
-
 @router.post(
     "/create",
-    response_model=BulkCreateStaffResponse,
+    response_model=BulkCreateStaffApiResponse,
     dependencies=[
         audit_activity(
             "staff.created", "{{ actor.name }} created {{ count }} staff member(s)"
@@ -40,27 +31,40 @@ class BulkCreateStaffResponse(BaseModel):
     ],
 )
 async def bulk_create_staff(
-    request: BulkCreateStaffRequest,
+    request: BulkCreateStaffApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> BulkCreateStaffResponse:
+) -> BulkCreateStaffApiResponse:
     """Bulk create profiles."""
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Prepare arrays for bulk operation (maintain parallel structure)
-        profile_ids = [str(uuid.uuid4()) for _ in request.profiles]
-        first_names = [p.firstName for p in request.profiles]
-        last_names = [p.lastName for p in request.profiles]
-        # Extract primary email from each profile's emails array
-        emails = []
-        for p in request.profiles:
+        # Get profile_id from header (set by router-level dependency)
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
+        # Validate profiles
+        for i, p in enumerate(request.profiles):
+            if not p.first_name:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Profile {i+1} must have a first name",
+                )
+            if not p.last_name:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Profile {i+1} must have a last name",
+                )
             if not p.emails or len(p.emails) == 0:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Profile {p.firstName} {p.lastName} must have at least one email",
+                    detail=f"Profile {p.first_name} {p.last_name} must have at least one email",
                 )
             primary_index = (
                 p.primary_email_index if p.primary_email_index is not None else 0
@@ -68,45 +72,30 @@ async def bulk_create_staff(
             if primary_index < 0 or primary_index >= len(p.emails):
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Invalid primary_email_index for {p.firstName} {p.lastName}",
+                    detail=f"Invalid primary_email_index for {p.first_name} {p.last_name}",
                 )
-            emails.append(p.emails[primary_index])
-        roles = [p.role for p in request.profiles]
-        # Department IDs must be parallel array (use empty string for profiles without departments)
-        # Extract primary department from department_ids array using primary_department_index
-        department_ids: list[str] = []
-        for p in request.profiles:
-            if p.department_ids and p.primary_department_index is not None:
-                primary_dept_index = p.primary_department_index
-                if primary_dept_index >= 0 and primary_dept_index < len(
-                    p.department_ids
-                ):
-                    dept_id = p.department_ids[primary_dept_index]
-                    department_ids.append(dept_id)
-                else:
-                    department_ids.append("")  # Empty string for no department
-            else:
-                department_ids.append("")  # Empty string for no department
 
-        # Single consolidated query: validates emails, creates all profiles, and inserts departments
-        sql_query = load_sql("app/sql/v3/profile/staff/bulk_create_profile_complete.sql")
-        sql_params = (
-            profile_ids,
-            first_names,
-            last_names,
-            emails,
-            roles,
-            department_ids if department_ids else [],
-        )
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double-star pattern - SQL function handles the composite type array
+        params = BulkCreateStaffSqlParams(**request.model_dump(), profile_id=uuid.UUID(profile_id))
+        sql_params = params.to_tuple()
 
         async with transaction(conn):
-            result = await conn.fetchrow(sql_query, *sql_params)
+            # Execute query with typed helper - automatically detects and calls function if present
+            result = cast(
+                BulkCreateStaffSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
             if not result:
                 raise HTTPException(status_code=500, detail="Failed to create profiles")
 
             # Check if any emails already exist
-            existing_emails = result.get("existing_emails", [])
+            existing_emails = result.existing_emails or []
             if existing_emails:
                 raise HTTPException(
                     status_code=400,
@@ -114,58 +103,19 @@ async def bulk_create_staff(
                 )
 
             # Get created profile IDs
-            created_ids = result.get("profile_ids", [])
+            created_ids = result.profile_ids or []
             if not created_ids:
                 raise HTTPException(status_code=500, detail="Failed to create profiles")
 
-            profile_ids = [str(pid) for pid in created_ids]
-
-            # Insert additional emails for each profile
-            for i, profile_req in enumerate(request.profiles):
-                if len(profile_req.emails) > 1:
-                    profile_id = profile_ids[i]
-                    primary_index = (
-                        profile_req.primary_email_index
-                        if profile_req.primary_email_index is not None
-                        else 0
-                    )
-                    additional_emails = [
-                        e
-                        for j, e in enumerate(profile_req.emails)
-                        if j != primary_index
-                    ]
-                    if additional_emails:
-                        insert_email_sql = """
-                            INSERT INTO profile_emails (profile_id, email, is_primary, active)
-                            SELECT $1::uuid, unnest($2::text[]), false, true
-                            WHERE NOT EXISTS (SELECT 1 FROM profile_emails WHERE email = unnest($2::text[]) AND active = true)
-                        """
-                        await conn.execute(
-                            insert_email_sql, profile_id, additional_emails
-                        )
-
-        result_data = BulkCreateStaffResponse(
-            success=True,
-            profileIds=profile_ids,
-            message=f"{len(profile_ids)} staff members created successfully",
-        )
-
-        # Fetch actor_name separately
-        profile_id = http_request.state.profile_id
-        actor_name_row = None
-        if profile_id:
-            actor_name_row = await conn.fetchrow(
-                "SELECT first_name || ' ' || last_name as actor_name FROM profiles WHERE id = $1",
-                profile_id,
-            )
-        actor_name = actor_name_row["actor_name"] if actor_name_row else None
+        # Return auto-generated response type
+        api_response = BulkCreateStaffApiResponse.model_validate(result.model_dump())
 
         # Set audit context
-        if actor_name:
+        if result.actor_name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": profile_id},
-                count=len(profile_ids),
+                actor={"name": result.actor_name, "id": profile_id},
+                count=len(created_ids),
             )
 
         # Invalidate cache after mutation
@@ -173,7 +123,7 @@ async def bulk_create_staff(
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

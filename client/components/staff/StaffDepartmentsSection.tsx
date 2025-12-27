@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
-export interface DepartmentMappingItem {
+export interface DepartmentItem {
+  department_id: string;
   name: string;
   description: string;
 }
@@ -20,7 +21,7 @@ export interface StaffDepartmentsSectionProps {
   departmentIds: string[];
   primaryDepartmentIndex: number | undefined;
   validDepartmentIds: string[];
-  departmentMapping: Record<string, DepartmentMappingItem>;
+  departments: DepartmentItem[];  // Array of department objects (replaces departmentMapping)
 
   // Callbacks
   onDepartmentIdsChange: (ids: string[]) => void;
@@ -35,7 +36,7 @@ export function StaffDepartmentsSection({
   departmentIds,
   primaryDepartmentIndex,
   validDepartmentIds,
-  departmentMapping,
+  departments,
   onDepartmentIdsChange,
   onPrimaryDepartmentIndexChange,
   isReadonly,
@@ -68,7 +69,12 @@ export function StaffDepartmentsSection({
         <div className="space-y-2">
           <Label>Departments</Label>
           <GenericPicker
-            items={departmentMapping}
+            items={departments.reduce((acc, dept) => {
+              if (dept.department_id) {
+                acc[dept.department_id] = { name: dept.name || "", description: dept.description || "" };
+              }
+              return acc;
+            }, {} as Record<string, { name: string; description: string }>)}
             itemIds={validDepartmentIds}
             selectedIds={departmentIds}
             onSelect={(ids) => {
@@ -98,7 +104,7 @@ export function StaffDepartmentsSection({
               <Label className="text-sm">Selected Departments</Label>
               <div className="space-y-1">
                 {departmentIds.map((deptId, index) => {
-                  const dept = departmentMapping[deptId];
+                  const dept = departments.find((d) => d.department_id === deptId);
                   if (!dept) return null;
                   const isPrimary = index === primaryDepartmentIndex;
                   return (

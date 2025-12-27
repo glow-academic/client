@@ -104,7 +104,7 @@ export default async function StaffPage() {
 
   // Fetch initial create staff data for CreateStaffButton
   const initialCreateStaffData = await getCreateStaffData({
-    body: { departmentIds: [] },
+    body: { department_ids: [] },
   });
 
   return (

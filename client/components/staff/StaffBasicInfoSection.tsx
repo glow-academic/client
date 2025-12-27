@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
-export interface DepartmentMappingItem {
+export interface DepartmentItem {
+  department_id: string;
   name: string;
   description: string;
 }
@@ -23,7 +24,7 @@ export interface StaffBasicInfoSectionProps {
   departmentIds: string[];
   primaryDepartmentId: string | undefined;
   validDepartmentIds: string[];
-  departmentMapping: Record<string, DepartmentMappingItem>;
+  departments: DepartmentItem[];  // Array of department objects (replaces departmentMapping)
   requestsPerDay: number | "";
   requestsPerDayEnabled: boolean;
   active: boolean;
@@ -48,7 +49,7 @@ export function StaffBasicInfoSection({
   departmentIds,
   primaryDepartmentId,
   validDepartmentIds,
-  departmentMapping,
+  departments,
   requestsPerDay,
   requestsPerDayEnabled,
   active,
@@ -114,7 +115,7 @@ export function StaffBasicInfoSection({
           departmentIds={departmentIds}
           primaryDepartmentId={primaryDepartmentId}
           validDepartmentIds={validDepartmentIds}
-          departmentMapping={departmentMapping}
+          departments={departments}
           onDepartmentIdsChange={(ids) => {
             onDepartmentIdsChange(ids);
             // If primary department is not in the new list, clear it

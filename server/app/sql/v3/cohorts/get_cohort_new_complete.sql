@@ -5,16 +5,63 @@
 BEGIN;
 
 -- 1) Drop functions that depend on these types first (breaks dependency on types)
-DROP FUNCTION IF EXISTS api_get_cohort_search_v3(uuid, uuid, text, uuid[], int);
-DROP FUNCTION IF EXISTS api_get_cohort_new_v3(uuid);
-DROP FUNCTION IF EXISTS api_get_cohort_detail_v3(uuid, uuid);
+-- Drop all versions of the functions using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_cohort_new_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_cohort_new_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_cohort_detail_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_cohort_detail_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_cohort_search_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_cohort_search_v3(%s)', r.sig);
+    END LOOP;
+END $$;
 
 -- 2) Drop types WITHOUT CASCADE (reuse detail types, only drop new ones)
-DROP TYPE IF EXISTS types.q_get_cohort_new_v3_staff_item;
-DROP TYPE IF EXISTS types.q_get_cohort_new_v3_profile;
-DROP TYPE IF EXISTS types.q_get_cohort_new_v3_cohort;
-DROP TYPE IF EXISTS types.q_get_cohort_new_v3_department_for_staff;
-DROP TYPE IF EXISTS types.q_get_cohort_new_v3_department;
+-- Drop all types matching prefix pattern to handle type additions/removals
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'q_get_cohort_new_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
 
 -- 3) Recreate types (reuse detail simulation types, create new ones for staff/objects)
 CREATE TYPE types.q_get_cohort_new_v3_staff_item AS (

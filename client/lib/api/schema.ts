@@ -6910,115 +6910,51 @@ export interface components {
             /** Infinitemode */
             infiniteMode?: boolean | null;
         };
-        /**
-         * BulkCreateOrUpdateStaffRequest
-         * @description Request to bulk create or update staff members.
-         */
-        BulkCreateOrUpdateStaffRequest: {
+        /** BulkCreateStaffApiRequest */
+        BulkCreateStaffApiRequest: {
             /** Profiles */
-            profiles: components["schemas"]["CreateOrUpdateProfileRequest"][];
+            profiles: components["schemas"]["IBulkCreateStaffV3Profile"][];
         };
-        /**
-         * BulkCreateOrUpdateStaffResponse
-         * @description Response from bulk create or update staff.
-         */
-        BulkCreateOrUpdateStaffResponse: {
-            /** Success */
-            success: boolean;
-            /** Profileids */
-            profileIds: string[];
-            /** Created Count */
-            created_count: number;
-            /** Updated Count */
-            updated_count: number;
-            /** Message */
-            message: string;
+        /** BulkCreateStaffApiResponse */
+        BulkCreateStaffApiResponse: {
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Existing Emails */
+            existing_emails?: string[] | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
-        /**
-         * BulkCreateStaffRequest
-         * @description Request to bulk create staff members.
-         */
-        BulkCreateStaffRequest: {
-            /** Profiles */
-            profiles: components["schemas"]["CreateProfileRequest"][];
+        /** BulkDeleteStaffApiRequest */
+        BulkDeleteStaffApiRequest: {
+            /** Profile Ids */
+            profile_ids: string[];
         };
-        /**
-         * BulkCreateStaffResponse
-         * @description Response from bulk create staff.
-         */
-        BulkCreateStaffResponse: {
-            /** Success */
-            success: boolean;
-            /** Profileids */
-            profileIds: string[];
-            /** Message */
-            message: string;
+        /** BulkDeleteStaffApiResponse */
+        BulkDeleteStaffApiResponse: {
+            /** Deleted Count */
+            deleted_count?: number | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
-        /**
-         * BulkDeleteStaffRequest
-         * @description Request to bulk delete staff.
-         */
-        BulkDeleteStaffRequest: {
-            /** Profileids */
-            profileIds: string[];
-        };
-        /**
-         * BulkDeleteStaffResponse
-         * @description Response from bulk delete staff.
-         */
-        BulkDeleteStaffResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * BulkUpdateStaffRequest
-         * @description Request to bulk update staff.
-         */
-        BulkUpdateStaffRequest: {
-            /** Profileids */
-            profileIds: string[];
+        /** BulkUpdateStaffApiRequest */
+        BulkUpdateStaffApiRequest: {
+            /** Profile Ids */
+            profile_ids: string[];
             /** Role */
             role?: string | null;
-            /** Requests Per Day */
-            requests_per_day?: number | string | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
             /** Active */
             active?: boolean | null;
+            /** Requests Per Day */
+            requests_per_day?: number | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
         };
-        /**
-         * BulkUpdateStaffResponse
-         * @description Response from bulk update staff.
-         */
-        BulkUpdateStaffResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * CSVColumnMapping
-         * @description Mapping of CSV column to target field.
-         */
-        CSVColumnMapping: {
-            /** Csv Column */
-            csv_column: string;
-            /** Target Field */
-            target_field: string | null;
-        };
-        /**
-         * CSVRowError
-         * @description Error for a specific CSV row.
-         */
-        CSVRowError: {
-            /** Row Index */
-            row_index: number;
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
+        /** BulkUpdateStaffApiResponse */
+        BulkUpdateStaffApiResponse: {
+            /** Updated Count */
+            updated_count?: number | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * CachedTokenDetails
@@ -7934,32 +7870,6 @@ export interface components {
             simulation_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
-        };
-        /**
-         * CreateStaffDataRequest
-         * @description Request for create staff data (mappings, etc.).
-         */
-        CreateStaffDataRequest: {
-            /** Departmentids */
-            departmentIds: string[];
-        };
-        /**
-         * CreateStaffDataResponse
-         * @description Response with all data needed for create staff UI.
-         */
-        CreateStaffDataResponse: {
-            /** Staff */
-            staff: components["schemas"]["StaffItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__staff__data__DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Role Options */
-            role_options: string[];
         };
         /**
          * DailyData
@@ -9967,6 +9877,24 @@ export interface components {
             /** Departments */
             departments?: components["schemas"]["QListCohortsV3Department"][] | null;
         };
+        /** GetCreateStaffDataApiRequest */
+        GetCreateStaffDataApiRequest: {
+            /** Department Ids */
+            department_ids: string[];
+        };
+        /** GetCreateStaffDataApiResponse */
+        GetCreateStaffDataApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Staff */
+            staff?: components["schemas"]["QGetCreateStaffDataV3Staff"][] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["QGetCreateStaffDataV3Cohort"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetCreateStaffDataV3Department"][] | null;
+            /** Role Options */
+            role_options?: string[] | null;
+        };
         /** GetDocumentDetailApiRequest */
         GetDocumentDetailApiRequest: {
             /**
@@ -10875,6 +10803,134 @@ export interface components {
             /** Department Options */
             department_options?: components["schemas"]["QListSimulationsV3Option"][] | null;
         };
+        /** GetStaffDetailApiRequest */
+        GetStaffDetailApiRequest: {
+            /**
+             * Target Profile Id
+             * Format: uuid
+             */
+            target_profile_id: string;
+        };
+        /** GetStaffDetailApiResponse */
+        GetStaffDetailApiResponse: {
+            /** Staff Exists */
+            staff_exists?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Emails */
+            emails?: string[] | null;
+            /** Primary Email */
+            primary_email?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Requests Per Day */
+            requests_per_day?: number | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Valid Cohort Ids */
+            valid_cohort_ids?: string[] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["QGetStaffDetailV3Cohort"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetStaffDetailV3Department"][] | null;
+        };
+        /** GetStaffListApiRequest */
+        GetStaffListApiRequest: Record<string, never>;
+        /** GetStaffListApiResponse */
+        GetStaffListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Current User Role */
+            current_user_role?: string | null;
+            /** Staff */
+            staff?: components["schemas"]["QListStaffV3Staff"][] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["QListStaffV3Cohort"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QListStaffV3Department"][] | null;
+            /** Trend Data Active */
+            trend_data_active?: components["schemas"]["QListStaffV3TrendData"][] | null;
+            /** Trend Data Admin */
+            trend_data_admin?: components["schemas"]["QListStaffV3TrendData"][] | null;
+            /** Trend Data Instructional */
+            trend_data_instructional?: components["schemas"]["QListStaffV3TrendData"][] | null;
+            /** Trend Data Member */
+            trend_data_member?: components["schemas"]["QListStaffV3TrendData"][] | null;
+            /** Trend Data Total Requests */
+            trend_data_total_requests?: components["schemas"]["QListStaffV3TrendData"][] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Role Options */
+            role_options?: string[] | null;
+            /** Cohort Options */
+            cohort_options?: string[] | null;
+            /** Last Active Options */
+            last_active_options?: string[] | null;
+        };
+        /** GetStaffNewApiRequest */
+        GetStaffNewApiRequest: Record<string, never>;
+        /** GetStaffNewApiResponse */
+        GetStaffNewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Valid Cohort Ids */
+            valid_cohort_ids?: string[] | null;
+            /** Role Options */
+            role_options?: string[] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["QGetStaffNewV3Cohort"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetStaffNewV3Department"][] | null;
+        };
+        /** GetStaffSearchApiRequest */
+        GetStaffSearchApiRequest: {
+            /** Query */
+            query: string;
+            /** Cohort Ids */
+            cohort_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /**
+             * Limit Count
+             * @default 200
+             */
+            limit_count: number | null;
+        };
+        /** GetStaffSearchApiResponse */
+        GetStaffSearchApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Staff */
+            staff?: components["schemas"]["QSearchStaffV3Staff"][] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["QSearchStaffV3Cohort"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QSearchStaffV3Department"][] | null;
+        };
         /** GradeItem */
         GradeItem: {
             /** Id */
@@ -11257,6 +11313,23 @@ export interface components {
             /** Cohortnames */
             cohortNames?: string | null;
         };
+        /** IBulkCreateStaffV3Profile */
+        IBulkCreateStaffV3Profile: {
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email Index */
+            primary_email_index: number | null;
+            /** Role */
+            role: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Primary Department Index */
+            primary_department_index: number | null;
+        };
         /** ICreateParameterV3FieldConnection */
         ICreateParameterV3FieldConnection: {
             /** Field Id */
@@ -11266,6 +11339,13 @@ export interface components {
             /** Active */
             active: boolean | null;
         };
+        /** IProcessCsvV3ColumnMapping */
+        IProcessCsvV3ColumnMapping: {
+            /** Csv Column */
+            csv_column: string | null;
+            /** Target Field */
+            target_field: string | null;
+        };
         /** IUpdateParameterV3FieldConnection */
         IUpdateParameterV3FieldConnection: {
             /** Field Id */
@@ -11274,6 +11354,25 @@ export interface components {
             default: boolean | null;
             /** Active */
             active: boolean | null;
+        };
+        /** IUpsertStaffV3Profile */
+        IUpsertStaffV3Profile: {
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email Index */
+            primary_email_index: number | null;
+            /** Role */
+            role: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Cohort Ids */
+            cohort_ids: string[] | null;
         };
         /**
          * ImageGenerationCompletePayload
@@ -12734,63 +12833,23 @@ export interface components {
             /** Scenario Id */
             scenario_id?: string | null;
         };
-        /**
-         * ProcessCSVRequest
-         * @description Request to process CSV file.
-         */
-        ProcessCSVRequest: {
+        /** ProcessCsvApiRequest */
+        ProcessCsvApiRequest: {
             /** Csv Content */
             csv_content: string;
             /** Column Mappings */
-            column_mappings: components["schemas"]["CSVColumnMapping"][];
+            column_mappings: components["schemas"]["IProcessCsvV3ColumnMapping"][];
         };
-        /**
-         * ProcessCSVResponse
-         * @description Response from CSV processing.
-         */
-        ProcessCSVResponse: {
+        /** ProcessCsvApiResponse */
+        ProcessCsvApiResponse: {
             /** Success */
-            success: boolean;
-            /** Rows */
-            rows: components["schemas"]["ProcessedCSVRow"][];
+            success?: boolean | null;
             /** Headers */
-            headers: string[];
-        };
-        /**
-         * ProcessedCSVRow
-         * @description Processed row from CSV.
-         */
-        ProcessedCSVRow: {
-            /** Row Index */
-            row_index: number;
-            /** Firstname */
-            firstName: string | null;
-            /** Lastname */
-            lastName: string | null;
-            /**
-             * Emails
-             * @default []
-             */
-            emails: string[];
-            /**
-             * Primary Email Index
-             * @default 0
-             */
-            primary_email_index: number;
-            /** Role */
-            role: string | null;
-            /**
-             * Department Ids
-             * @default []
-             */
-            department_ids: string[];
-            /**
-             * Cohort Ids
-             * @default []
-             */
-            cohort_ids: string[];
-            /** Errors */
-            errors: components["schemas"]["CSVRowError"][];
+            headers?: string[] | null;
+            /** Rows */
+            rows?: components["schemas"]["QProcessCsvV3ProcessedRow"][] | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * ProfileByEmailRequest
@@ -13435,6 +13494,57 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+        };
+        /** QGetCreateStaffDataV3Cohort */
+        QGetCreateStaffDataV3Cohort: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetCreateStaffDataV3Department */
+        QGetCreateStaffDataV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetCreateStaffDataV3Staff */
+        QGetCreateStaffDataV3Staff: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email */
+            primary_email: string | null;
+            /** Name */
+            name: string | null;
+            /** Role */
+            role: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Last Active */
+            last_active: string | null;
+            /** Cohort Ids */
+            cohort_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Primary Department Id */
+            primary_department_id: string | null;
+            /** Requests Per Day */
+            requests_per_day: number | null;
+            /** Total Requests */
+            total_requests: number | null;
+            /** Requests In Last Day */
+            requests_in_last_day: number | null;
         };
         /** QGetDocumentDetailV3Agent */
         QGetDocumentDetailV3Agent: {
@@ -14634,6 +14744,42 @@ export interface components {
             /** Length Seconds */
             length_seconds: number | null;
         };
+        /** QGetStaffDetailV3Cohort */
+        QGetStaffDetailV3Cohort: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetStaffDetailV3Department */
+        QGetStaffDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetStaffNewV3Cohort */
+        QGetStaffNewV3Cohort: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetStaffNewV3Department */
+        QGetStaffNewV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
         /** QListAgentsV3Agent */
         QListAgentsV3Agent: {
             /** Agent Id */
@@ -15300,6 +15446,159 @@ export interface components {
             cohort_ids: string[] | null;
             /** Updated At */
             updated_at: string | null;
+        };
+        /** QListStaffV3Cohort */
+        QListStaffV3Cohort: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListStaffV3Department */
+        QListStaffV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QListStaffV3Staff */
+        QListStaffV3Staff: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email */
+            primary_email: string | null;
+            /** Name */
+            name: string | null;
+            /** Role */
+            role: string | null;
+            /** Initials */
+            initials: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Last Active */
+            last_active: string | null;
+            /** Cohort Ids */
+            cohort_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Primary Department Id */
+            primary_department_id: string | null;
+            /** Requests Per Day */
+            requests_per_day: number | null;
+            /** Total Requests */
+            total_requests: number | null;
+            /** Requests In Last Day */
+            requests_in_last_day: number | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+        };
+        /** QListStaffV3TrendData */
+        QListStaffV3TrendData: {
+            /** Date */
+            date: string | null;
+            /** Value */
+            value: number | null;
+            /** Count */
+            count: number | null;
+        };
+        /** QProcessCsvV3CsvRowError */
+        QProcessCsvV3CsvRowError: {
+            /** Row Index */
+            row_index: number | null;
+            /** Field */
+            field: string | null;
+            /** Message */
+            message: string | null;
+        };
+        /** QProcessCsvV3ProcessedRow */
+        QProcessCsvV3ProcessedRow: {
+            /** Row Index */
+            row_index: number | null;
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email Index */
+            primary_email_index: number | null;
+            /** Role */
+            role: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Cohort Ids */
+            cohort_ids: string[] | null;
+            /** Errors */
+            errors: components["schemas"]["QProcessCsvV3CsvRowError"][] | null;
+        };
+        /** QSearchStaffV3Cohort */
+        QSearchStaffV3Cohort: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QSearchStaffV3Department */
+        QSearchStaffV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QSearchStaffV3Staff */
+        QSearchStaffV3Staff: {
+            /** Profile Id */
+            profile_id: string | null;
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email */
+            primary_email: string | null;
+            /** Name */
+            name: string | null;
+            /** Role */
+            role: string | null;
+            /** Initials */
+            initials: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Last Active */
+            last_active: string | null;
+            /** Cohort Ids */
+            cohort_ids: string[] | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Primary Department Id */
+            primary_department_id: string | null;
+            /** Requests Per Day */
+            requests_per_day: number | null;
+            /** Total Requests */
+            total_requests: number | null;
+            /** Requests In Last Day */
+            requests_in_last_day: number | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
         };
         /** QUpdateScenarioV3Parameter */
         QUpdateScenarioV3Parameter: {
@@ -16413,39 +16712,6 @@ export interface components {
             profiles: components["schemas"]["ProfileItem"][];
         };
         /**
-         * SearchStaffRequest
-         * @description Request for staff search.
-         */
-        SearchStaffRequest: {
-            /** Query */
-            query?: string | null;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /**
-             * Limit
-             * @default 200
-             */
-            limit: number;
-        };
-        /**
-         * SearchStaffResponse
-         * @description Response for staff search endpoint.
-         */
-        SearchStaffResponse: {
-            /** Staff */
-            staff: components["schemas"]["StaffItem"][];
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__staff__search__DepartmentMappingItem"];
-            };
-        };
-        /**
          * SendSimulationMessageErrorPayload
          * @description Response indicating an error occurred while sending simulation message.
          */
@@ -17270,180 +17536,6 @@ export interface components {
             points: number;
             /** Avgpct */
             avgPct: number;
-        };
-        /**
-         * StaffDetailRequest
-         * @description Request for staff detail.
-         */
-        StaffDetailRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * StaffDetailResponse
-         * @description Response for staff detail endpoint.
-         */
-        StaffDetailResponse: {
-            /** Profile Id */
-            profile_id: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Name */
-            name: string;
-            /** Emails */
-            emails: string[];
-            /** Primary Email */
-            primary_email: string | null;
-            /** Role */
-            role: string;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Primary Department Id */
-            primary_department_id: string | null;
-            /** Active */
-            active: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__staff__detail__DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Valid Cohort Ids */
-            valid_cohort_ids: string[];
-        };
-        /**
-         * StaffFilters
-         * @description Filters for staff list.
-         */
-        StaffFilters: Record<string, never>;
-        /**
-         * StaffItem
-         * @description Staff item in list response.
-         */
-        StaffItem: {
-            /** Profile Id */
-            profile_id: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Emails */
-            emails: string[];
-            /** Primary Email */
-            primary_email: string | null;
-            /** Name */
-            name: string;
-            /** Role */
-            role: string;
-            /** Initials */
-            initials: string;
-            /** Active */
-            active: boolean;
-            /** Last Active */
-            last_active: string | null;
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Primary Department Id */
-            primary_department_id: string;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Total Requests */
-            total_requests: number;
-            /** Requests In Last Day */
-            requests_in_last_day: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * StaffListResponse
-         * @description Response for staff list endpoint.
-         */
-        StaffListResponse: {
-            /** Staff */
-            staff: components["schemas"]["StaffItem"][];
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__staff__list__DepartmentMappingItem"];
-            };
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Trend Data */
-            trend_data: {
-                [key: string]: components["schemas"]["app__api__v3__staff__list__TrendData"][];
-            };
-            /** Role Options */
-            role_options: {
-                [key: string]: string;
-            }[];
-            /** Cohort Options */
-            cohort_options: {
-                [key: string]: string;
-            }[];
-            /** Last Active Options */
-            last_active_options: {
-                [key: string]: string;
-            }[];
-        };
-        /**
-         * StaffNewRequest
-         * @description Request to get default staff details.
-         */
-        StaffNewRequest: Record<string, never>;
-        /**
-         * StaffNewResponse
-         * @description Response with default staff details and metadata.
-         */
-        StaffNewResponse: {
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Emails */
-            emails: string[];
-            /** Role */
-            role: string;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Primary Department Id */
-            primary_department_id: string | null;
-            /** Active */
-            active: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Valid Cohort Ids */
-            valid_cohort_ids: string[];
-            /** Role Options */
-            role_options: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__staff__new__DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
         };
         /**
          * StandardGroup
@@ -18606,6 +18698,27 @@ export interface components {
         };
         /** UpdateSimulationApiResponse */
         UpdateSimulationApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** UpsertStaffApiRequest */
+        UpsertStaffApiRequest: {
+            /** Profiles */
+            profiles: components["schemas"]["IUpsertStaffV3Profile"][];
+            /**
+             * Current Profile Id
+             * Format: uuid
+             */
+            current_profile_id: string;
+        };
+        /** UpsertStaffApiResponse */
+        UpsertStaffApiResponse: {
+            /** Profile Ids */
+            profile_ids?: string[] | null;
+            /** Created Count */
+            created_count?: number | null;
+            /** Updated Count */
+            updated_count?: number | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -20347,68 +20460,6 @@ export interface components {
             description?: string | null;
             /** Points */
             points: number;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__staff__data__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__staff__detail__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__staff__list__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * TrendData
-         * @description Trend data point.
-         */
-        app__api__v3__staff__list__TrendData: {
-            /** Date */
-            date: string;
-            /** Value */
-            value: number;
-            /** Count */
-            count: number;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__staff__new__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * DepartmentMappingItem
-         * @description Department mapping item.
-         */
-        app__api__v3__staff__search__DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
         };
     };
     responses: never;
@@ -25617,7 +25668,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["StaffFilters"];
+                "application/json": components["schemas"]["GetStaffListApiRequest"];
             };
         };
         responses: {
@@ -25627,7 +25678,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StaffListResponse"];
+                    "application/json": components["schemas"]["GetStaffListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25653,7 +25704,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["StaffDetailRequest"];
+                "application/json": components["schemas"]["GetStaffDetailApiRequest"];
             };
         };
         responses: {
@@ -25663,7 +25714,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StaffDetailResponse"];
+                    "application/json": components["schemas"]["GetStaffDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25689,7 +25740,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["StaffNewRequest"];
+                "application/json": components["schemas"]["GetStaffNewApiRequest"];
             };
         };
         responses: {
@@ -25699,7 +25750,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StaffNewResponse"];
+                    "application/json": components["schemas"]["GetStaffNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25725,7 +25776,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchStaffRequest"];
+                "application/json": components["schemas"]["GetStaffSearchApiRequest"];
             };
         };
         responses: {
@@ -25735,7 +25786,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchStaffResponse"];
+                    "application/json": components["schemas"]["GetStaffSearchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25761,7 +25812,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProcessCSVRequest"];
+                "application/json": components["schemas"]["ProcessCsvApiRequest"];
             };
         };
         responses: {
@@ -25771,7 +25822,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessCSVResponse"];
+                    "application/json": components["schemas"]["ProcessCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25797,7 +25848,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateStaffDataRequest"];
+                "application/json": components["schemas"]["GetCreateStaffDataApiRequest"];
             };
         };
         responses: {
@@ -25807,7 +25858,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateStaffDataResponse"];
+                    "application/json": components["schemas"]["GetCreateStaffDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25833,7 +25884,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BulkCreateStaffRequest"];
+                "application/json": components["schemas"]["BulkCreateStaffApiRequest"];
             };
         };
         responses: {
@@ -25843,7 +25894,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BulkCreateStaffResponse"];
+                    "application/json": components["schemas"]["BulkCreateStaffApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25869,7 +25920,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BulkUpdateStaffRequest"];
+                "application/json": components["schemas"]["BulkUpdateStaffApiRequest"];
             };
         };
         responses: {
@@ -25879,7 +25930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BulkUpdateStaffResponse"];
+                    "application/json": components["schemas"]["BulkUpdateStaffApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25905,7 +25956,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BulkDeleteStaffRequest"];
+                "application/json": components["schemas"]["BulkDeleteStaffApiRequest"];
             };
         };
         responses: {
@@ -25915,7 +25966,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BulkDeleteStaffResponse"];
+                    "application/json": components["schemas"]["BulkDeleteStaffApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25941,7 +25992,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BulkCreateOrUpdateStaffRequest"];
+                "application/json": components["schemas"]["UpsertStaffApiRequest"];
             };
         };
         responses: {
@@ -25951,7 +26002,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BulkCreateOrUpdateStaffResponse"];
+                    "application/json": components["schemas"]["UpsertStaffApiResponse"];
                 };
             };
             /** @description Validation Error */

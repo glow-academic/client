@@ -325,7 +325,7 @@ export default function StaffNewEdit({
   const filteredPrimaryDeptIds = useMemo(() => {
     if (
       !formData ||
-      !staffData?.department_mapping ||
+      !staffData?.departments ||
       !staffData?.valid_department_ids
     ) {
       return [];
@@ -341,7 +341,7 @@ export default function StaffNewEdit({
 
     const searchLower = primaryDeptSearchTerm.toLowerCase();
     return availableDeptIds.filter((deptId) => {
-      const dept = staffData.department_mapping?.[deptId];
+      const dept = staffData.departments?.find((d) => d.department_id === deptId);
       return (
         dept?.name?.toLowerCase().includes(searchLower) ||
         dept?.description?.toLowerCase().includes(searchLower)
@@ -350,7 +350,7 @@ export default function StaffNewEdit({
   }, [
     formData,
     staffData?.valid_department_ids,
-    staffData?.department_mapping,
+    staffData?.departments,
     primaryDeptSearchTerm,
   ]);
 
@@ -451,8 +451,8 @@ export default function StaffNewEdit({
             : formData.departmentIds || [];
 
         await handleCreateStaff({
-          firstName: formData.firstName,
-          lastName: formData.lastName || "",
+          first_name: formData.firstName,  // Convert to snake_case for API
+          last_name: formData.lastName || "",  // Convert to snake_case for API
           emails: validEmails,
           primary_email_index:
             formData.primaryEmailIndex != null &&
@@ -526,7 +526,7 @@ export default function StaffNewEdit({
             <div className="space-y-8">
               {/* First Name Section */}
               {formData?.firstName !== undefined &&
-                staffData?.department_mapping &&
+                staffData?.departments &&
                 staffData?.valid_department_ids !== undefined && (
                   <Card className="transition-all">
                     <CardContent className="pt-6">
@@ -573,7 +573,12 @@ export default function StaffNewEdit({
                             <Label htmlFor="department">Department</Label>
                             {formData?.departmentIds !== undefined ? (
                               <GenericPicker
-                                items={staffData.department_mapping}
+                                items={staffData.departments.reduce((acc, dept) => {
+                                  if (dept.department_id) {
+                                    acc[dept.department_id] = { name: dept.name || "", description: dept.description || "" };
+                                  }
+                                  return acc;
+                                }, {} as Record<string, { name: string; description: string }>)}
                                 itemIds={Array.from(
                                   new Set([
                                     ...staffData.valid_department_ids,
@@ -790,7 +795,7 @@ export default function StaffNewEdit({
 
               {/* Step 2: Primary Department */}
               {formData?.departmentIds !== undefined &&
-                staffData?.department_mapping &&
+                staffData?.departments &&
                 staffData?.valid_department_ids !== undefined &&
                 (formData.departmentIds.length > 0 ||
                   staffData.valid_department_ids.length > 1) && (
@@ -859,7 +864,7 @@ export default function StaffNewEdit({
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {filteredPrimaryDeptIds.map((deptId) => {
-                            const dept = staffData.department_mapping[deptId];
+                            const dept = staffData.departments?.find((d) => d.department_id === deptId);
                             // For primary selection, if departmentIds is empty, use all valid departments
                             const availableDeptIds =
                               (formData.departmentIds?.length || 0) === 0
@@ -983,7 +988,7 @@ export default function StaffNewEdit({
               )}
 
               {/* Step 4: Cohorts */}
-              {staffData?.cohort_mapping &&
+              {staffData?.cohorts &&
                 "valid_cohort_ids" in staffData &&
                 staffData.valid_cohort_ids !== undefined && (
                   <Card
@@ -1043,7 +1048,7 @@ export default function StaffNewEdit({
                             ? staffData.valid_cohort_ids || []
                             : []
                         }
-                        cohortMapping={staffData.cohort_mapping}
+                        cohorts={staffData.cohorts || []}
                         onCohortIdsChange={(ids) =>
                           handleInputChange("cohortIds", ids)
                         }

@@ -4,7 +4,8 @@ import * as React from "react";
 import { Search, Check, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export interface CohortMappingItem {
+export interface CohortItem {
+  cohort_id: string;
   name: string;
   description: string;
 }
@@ -12,7 +13,7 @@ export interface CohortMappingItem {
 export interface StaffCohortCardGridProps {
   cohortIds: string[];
   validCohortIds: string[];
-  cohortMapping: Record<string, CohortMappingItem>;
+  cohorts: CohortItem[];  // Array of cohort objects (replaces cohortMapping)
   onCohortIdsChange: (ids: string[]) => void;
   readonly?: boolean;
 }
@@ -20,22 +21,32 @@ export interface StaffCohortCardGridProps {
 export function StaffCohortCardGrid({
   cohortIds,
   validCohortIds,
-  cohortMapping,
+  cohorts,
   onCohortIdsChange,
   readonly = false,
 }: StaffCohortCardGridProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
 
-  // Build cohorts from mapping
+  // Build cohorts from array, filtered by validCohortIds
   const baseCohorts = React.useMemo(() => {
-    const cohorts = validCohortIds.map((id) => ({
-      id,
-      ...cohortMapping[id],
-    }));
+    const cohortMap = new Map(cohorts.map((c) => [c.cohort_id, c]));
+    const validCohorts = validCohortIds
+      .map((id) => {
+        const cohort = cohortMap.get(id);
+        if (cohort) {
+          return {
+            id: cohort.cohort_id,
+            name: cohort.name || "",
+            description: cohort.description || "",
+          };
+        }
+        return null;
+      })
+      .filter((c): c is { id: string; name: string; description: string } => c !== null);
 
     // Sort by name
-    return cohorts.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-  }, [validCohortIds, cohortMapping]);
+    return validCohorts.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }, [validCohortIds, cohorts]);
 
   // Apply search filter, then sort selected first
   const filteredCohorts = React.useMemo(() => {
