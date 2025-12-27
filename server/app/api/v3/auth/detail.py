@@ -1,67 +1,47 @@
 """Auth detail endpoint."""
 
-import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    GetAuthDetailApiRequest,
+    GetAuthDetailApiResponse,
+    GetAuthDetailSqlParams,
+    GetAuthDetailSqlRow,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
-from utils.sql_nest import nest
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class AuthDetailRequest(BaseModel):
-    authId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class AuthItemDetail(BaseModel):
-    auth_item_id: str
-    name: str
-    description: str
-    position: int
-    active: bool
-    value_masked: str  # Masked encrypted value or plain value for non-encrypted
-    key_id: str | None = None  # Key ID for encrypted items
-    encrypted: bool  # Whether this item is encrypted
-
-
-class AuthDetailResponse(BaseModel):
-    name: str
-    description: str
-    active: bool
-    auth_items: list[AuthItemDetail]
-    can_edit: bool
-
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/auth/get_auth_detail_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
     "/detail",
-    response_model=AuthDetailResponse,
+    response_model=GetAuthDetailApiResponse,
     dependencies=[
         audit_activity("auth.viewed", "{{ actor.name }} viewed auth '{{ auth.name }}'")
     ],
 )
 async def get_auth_detail(
-    request: AuthDetailRequest,
+    request: GetAuthDetailApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> AuthDetailResponse:
+) -> GetAuthDetailApiResponse:
     """Get detailed auth information with nested items and keys."""
     tags = ["auth"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = request.model_dump()
+    body_dict = request.model_dump(mode='json')
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
@@ -69,11 +49,7 @@ async def get_auth_detail(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        # Ensure can_edit is present in cached data (for backward compatibility)
-        cached_data = cached["data"]
-        if "can_edit" not in cached_data:
-            cached_data["can_edit"] = False
-        return AuthDetailResponse.model_validate(cached_data)
+        return GetAuthDetailApiResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -87,69 +63,49 @@ async def get_auth_detail(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/auth/get_auth_detail_complete.sql")
-        sql_params = (uuid.UUID(request.authId), profile_id)
-        rows = await conn.fetch(sql_query, uuid.UUID(request.authId), profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetAuthDetailSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        if not rows:
-            # Check if auth exists but user doesn't have access
-            auth_exists_check = await conn.fetchval(
-                "SELECT EXISTS(SELECT 1 FROM auth WHERE id = $1)",
-                uuid.UUID(request.authId),
-            )
-            if auth_exists_check:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this auth entry.",
-                )
-            raise HTTPException(
-                status_code=404, detail=f"Auth not found: {request.authId}"
-            )
-
-        # Use nest to group rows by auth_items (now returns dict)
-        nested_data = nest(rows)
-
-        # Extract auth_items from nested data (now a dict keyed by auth_item_id)
-        auth_items: list[AuthItemDetail] = []
-        auth_items_dict = nested_data.get("auth_items", {})
-        for item_data in auth_items_dict.values():
-            auth_items.append(
-                AuthItemDetail(
-                    auth_item_id=item_data.get("auth_item_id", ""),
-                    name=item_data.get("name", ""),
-                    description=item_data.get("description", ""),
-                    position=item_data.get("position", 1),
-                    active=item_data.get("active", True),
-                    value_masked=item_data.get("value_masked", "****"),
-                    key_id=item_data.get("key_id"),
-                    encrypted=item_data.get("encrypted", True),
-                )
-            )
-
-        # Get scalar values from nested data (same for all rows)
-        can_edit = nested_data.get("can_edit", False)
-        actor_name = nested_data.get("actor_name")
-        auth_name = nested_data.get("name")
-
-        if actor_name:
-            audit_set(
-                http_request,
-                actor={"name": actor_name, "id": profile_id},
-                auth={"name": auth_name, "id": request.authId},
-            )
-
-        response_data = AuthDetailResponse(
-            name=nested_data.get("name", ""),
-            description=nested_data.get("description", ""),
-            active=nested_data.get("active", False),
-            auth_items=auth_items,
-            can_edit=can_edit,
+        # Execute SQL with typed helper (single row result)
+        result = cast(
+            GetAuthDetailSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        # Cache response
+        # Check if auth exists and has access using SQL result
+        # SQL now returns auth_exists field to distinguish 404 vs 403
+        if not result.auth_exists:
+            raise HTTPException(
+                status_code=404, detail=f"Auth {request.auth_id} not found"
+            )
+        
+        if not result.name:
+            # Auth exists but user doesn't have access
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this auth entry. It may be restricted to other departments.",
+            )
+
+        # Set audit context with data from SQL query
+        if result.actor_name:
+            audit_set(
+                http_request,
+                actor={"name": result.actor_name, "id": profile_id},
+                auth={"name": result.name, "id": str(request.auth_id)},
+            )
+
+        # Convert SQL result to API response
+        response_data = GetAuthDetailApiResponse.model_validate(result.model_dump())
+
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": response_data.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )

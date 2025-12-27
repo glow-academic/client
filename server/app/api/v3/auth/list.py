@@ -1,67 +1,45 @@
 """Auth list endpoint."""
 
-import json
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (
+    GetAuthListApiRequest,
+    GetAuthListApiResponse,
+    GetAuthListSqlParams,
+    GetAuthListSqlRow,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class AuthFilters(BaseModel):
-    pass
-    # profileId removed - comes from X-Profile-Id header
-
-
-class AuthSampleItem(BaseModel):
-    auth_item_id: str
-    name: str
-    description: str
-
-
-class AuthItem(BaseModel):
-    auth_id: str
-    name: str
-    description: str
-    active: bool
-    num_items: int
-    sample_items: list[AuthSampleItem]
-    can_edit: bool
-    can_delete: bool
-    can_duplicate: bool
-
-
-class AuthListResponse(BaseModel):
-    auths: list[AuthItem]
-
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/auth/get_auth_list_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
     "/list",
-    response_model=AuthListResponse,
+    response_model=GetAuthListApiResponse,
     dependencies=[audit_activity("auth.list", "{{ actor.name }} viewed auth list")],
 )
 async def get_auth_list(
-    filters: AuthFilters,
+    request: GetAuthListApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> AuthListResponse:
+) -> GetAuthListApiResponse:
     """Get auth list with item counts and permissions."""
     tags = ["auth"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = filters.model_dump()
+    body_dict = request.model_dump(mode='json')
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
@@ -69,7 +47,7 @@ async def get_auth_list(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return AuthListResponse.model_validate(cached["data"])
+        return GetAuthListApiResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -83,64 +61,38 @@ async def get_auth_list(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/auth/list_auth.sql")
-        sql_params = (profile_id,)
-        result = await conn.fetch(sql_query, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetAuthListSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        # Get actor name from first row (same for all rows)
-        actor_name = result[0]["actor_name"] if result else None
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetAuthListSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
 
         # Set audit context
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
 
-        auths = []
+        # Convert SQL result to API response (no manual filtering needed - SQL handles it)
+        api_response = GetAuthListApiResponse.model_validate(result.model_dump())
 
-        for row in result:
-            # Parse sample items from JSONB
-            sample_items = []
-            if row.get("sample_items_json"):
-                items_data = row["sample_items_json"]
-                if isinstance(items_data, str):
-                    items_data = json.loads(items_data)
-                if isinstance(items_data, list):
-                    for item_data in items_data:
-                        if isinstance(item_data, dict):
-                            sample_items.append(
-                                AuthSampleItem(
-                                    auth_item_id=item_data.get("auth_item_id", ""),
-                                    name=item_data.get("name", ""),
-                                    description=item_data.get("description", ""),
-                                )
-                            )
-
-            auths.append(
-                AuthItem(
-                    auth_id=str(row["auth_id"]),
-                    name=row["name"],
-                    description=row["description"],
-                    active=row["active"],
-                    num_items=row["num_items"],
-                    sample_items=sample_items,
-                    can_edit=row["can_edit"],
-                    can_delete=row["can_delete"],
-                    can_duplicate=row["can_duplicate"],
-                )
-            )
-
-        response_data = AuthListResponse(auths=auths)
-
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

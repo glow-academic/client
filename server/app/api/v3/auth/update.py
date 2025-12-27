@@ -1,48 +1,25 @@
 """Auth update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, get_internal_sio, transaction
+from app.sql.types import (
+    UpdateAuthApiRequest,
+    UpdateAuthApiResponse,
+    UpdateAuthSqlParams,
+    UpdateAuthSqlRow,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
-
-# Inline request/response schemas
-class AuthItemUpdate(BaseModel):
-    """Auth item update schema."""
-
-    name: str
-    description: str
-    value: str | None = None  # Plain text value for non-encrypted items
-    key_id: str | None = None  # Key ID for encrypted items
-    encrypted: bool = True  # Default to encrypted for backward compatibility
-    position: int | None = None  # Position in the list (defaults to array order)
-    active: bool = True  # Whether this item is active
-
-
-class UpdateAuthRequest(BaseModel):
-    """Request to update auth with nested items."""
-
-    authId: str
-    name: str
-    description: str
-    active: bool
-    auth_items: list[AuthItemUpdate]
-    # profileId removed - comes from X-Profile-Id header
-
-
-class UpdateAuthResponse(BaseModel):
-    """Response from update auth."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/auth/update_auth_complete.sql"
 
 
 router = APIRouter()
@@ -50,7 +27,7 @@ router = APIRouter()
 
 @router.post(
     "/update",
-    response_model=UpdateAuthResponse,
+    response_model=UpdateAuthApiResponse,
     dependencies=[
         audit_activity(
             "auth.updated", "{{ actor.name }} updated auth '{{ auth.name }}'"
@@ -58,11 +35,11 @@ router = APIRouter()
     ],
 )
 async def update_auth(
-    request: UpdateAuthRequest,
+    request: UpdateAuthApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateAuthResponse:
+) -> UpdateAuthApiResponse:
     """Update an existing auth entry (replace all items)."""
     tags = ["auth"]
 
@@ -79,55 +56,33 @@ async def update_auth(
             )
 
         async with transaction(conn):
-            # Check if auth exists
-            check_sql = "SELECT name FROM auth WHERE id = $1"
-            existing = await conn.fetchrow(check_sql, request.authId)
+            # Convert API request to SQL params (add profile_id from header)
+            # Use double star pattern: **request.model_dump()
+            params = UpdateAuthSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            if not existing:
-                raise ValueError(f"Auth not found: {request.authId}")
-
-            # Prepare items as JSONB array
-            import json
-
-            items_data = []
-            for item in request.auth_items:
-                # Values are managed separately in settings, not included here
-                item_dict = {
-                    "name": item.name,
-                    "description": item.description,
-                    "encrypted": item.encrypted,
-                    "position": item.position,
-                    "active": item.active,
-                }
-                # Only include key_id for encrypted items if provided
-                if item.encrypted and hasattr(item, "key_id") and item.key_id:
-                    item_dict["key_id"] = item.key_id
-                items_data.append(item_dict)
-
-            items_json = json.dumps(items_data)
-
-            # Update auth with items and key links in single SQL (DHH style)
-            sql_query = load_sql("app/sql/v3/auth/update_auth_complete.sql")
-            sql_params = (
-                request.authId,
-                request.name,
-                request.description,
-                request.active,
-                items_json,  # JSONB array of items
-                profile_id,
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                UpdateAuthSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
-            result = await conn.fetchrow(sql_query, *sql_params)
 
-            if not result:
-                raise ValueError("Failed to update auth")
+            # Check if auth exists using SQL result
+            if not result.auth_exists:
+                raise HTTPException(
+                    status_code=404, detail=f"Auth {request.auth_id} not found"
+                )
 
             # Set audit context with data from SQL query
-            actor_name = result.get("actor_name")
-            if actor_name:
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    auth={"name": request.name, "id": request.authId},
+                    actor={"name": result.actor_name, "id": profile_id},
+                    auth={"name": request.name, "id": str(request.auth_id)},
                 )
 
         # Invalidate cache after mutation
@@ -137,9 +92,9 @@ async def update_auth(
         # Trigger Keycloak sync (fire-and-forget)
         await internal_sio.emit("keycloak_sync", {})
 
-        return UpdateAuthResponse(
-            success=True, message=f"Auth '{request.name}' updated successfully"
-        )
+        # Convert SQL result to API response
+        api_response = UpdateAuthApiResponse.model_validate(result.model_dump())
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

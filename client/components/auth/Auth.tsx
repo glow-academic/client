@@ -627,6 +627,7 @@ export default function Auth({
         encrypted: item.encrypted,
         position: index + 1,
         active: item.active,
+        key_id: null, // Explicitly set to null for items without keys (per note #2)
       }));
 
       // Ensure profileId exists - required for API calls
@@ -635,12 +636,20 @@ export default function Auth({
         return;
       }
 
+      // Generate slug from name (lowercase, replace spaces with hyphens)
+      const slug = formData.name!
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "");
+
       if (isEditMode) {
         await handleUpdateAuth({
           authId: authId!,
           name: formData.name!,
           description: formData.description!,
           active: formData.active || false,
+          auth_type: "oidc", // Default auth type (required by database)
+          slug: slug,
           auth_items,
         });
 
@@ -650,6 +659,8 @@ export default function Auth({
           name: formData.name!,
           description: formData.description!,
           active: formData.active || false,
+          auth_type: "oidc", // Default auth type (required by database)
+          slug: slug,
           auth_items,
         });
 

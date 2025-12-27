@@ -1,17 +1,100 @@
 -- Update auth with items (encrypted items use keys, values managed separately in settings)
--- Parameters: $1=auth_id, $2=name, $3=description, $4=active, $5=items_json (jsonb array), $6=profile_id (uuid)
--- items_json format: [{"name": "Item 1", "description": "Desc 1", "encrypted": true, "key_id": "uuid", "position": 1, "active": true}, ...]
--- For encrypted items: key_id can be provided to link keys
--- Values are managed separately in settings page, not included here
-WITH actor_profile AS (
+-- Converted to function with composite types
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_update_auth_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_update_auth_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+-- Drop all types matching prefix pattern to handle type additions/removals
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'i_update_auth_v3_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types
+CREATE TYPE types.i_update_auth_v3_auth_item AS (
+    name text,
+    description text,
+    encrypted boolean,
+    position integer,
+    active boolean,
+    key_id uuid  -- NULL allowed by default in PostgreSQL
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_update_auth_v3(
+    auth_id uuid,
+    name text,
+    description text,
+    active boolean,
+    auth_type text,
+    slug text,
+    profile_id uuid,
+    auth_items types.i_update_auth_v3_auth_item[] DEFAULT ARRAY[]::types.i_update_auth_v3_auth_item[]
+)
+RETURNS TABLE (
+    auth_exists boolean,
+    success boolean,
+    name text,
+    message text,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
+    SELECT
+        auth_id AS auth_id,
+        name AS name,
+        description AS description,
+        active AS active,
+        auth_type AS auth_type,
+        COALESCE(NULLIF(slug, ''), lower(replace(name, ' ', '-'))) AS slug,
+        profile_id AS profile_id,
+        COALESCE(auth_items, ARRAY[]::types.i_update_auth_v3_auth_item[]) AS auth_items
+),
+auth_exists_check AS (
+    -- Check if auth exists independently of access control
+    SELECT EXISTS(
+        SELECT 1 FROM auth WHERE id = (SELECT auth_id FROM params)
+    )::boolean as auth_exists
+),
+actor_profile AS (
     SELECT 
-        $6::uuid as profile_id,
+        x.profile_id as profile_id,
         p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $6::uuid
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 auth_id_resolved AS (
-    SELECT $1::uuid as auth_id
+    SELECT x.auth_id as auth_id
+    FROM params x
 ),
 delete_existing_keys AS (
     -- NOTE: auth_item_keys table was removed in migration 74
@@ -35,25 +118,26 @@ update_auth AS (
     -- Update auth entry
     UPDATE auth
     SET 
-        name = $2,
-        description = $3,
-        active = $4,
+        name = (SELECT name FROM params),
+        description = (SELECT description FROM params),
+        active = (SELECT active FROM params),
+        auth_type = (SELECT auth_type FROM params),
+        slug = (SELECT slug FROM params),
         updated_at = NOW()
     WHERE id = (SELECT auth_id FROM auth_id_resolved)
-    RETURNING id::text as auth_id
+    RETURNING id as auth_id
 ),
 items_expanded AS (
-    -- Expand JSONB items array
+    -- Expand composite type array
     SELECT 
-        (item->>'name')::text as item_name,
-        (item->>'description')::text as item_description,
-        (item->>'key_id')::text as item_key_id,
-        COALESCE((item->>'encrypted')::boolean, true) as item_encrypted,
-        COALESCE((item->>'position')::int, ordinality) as item_position,
-        COALESCE((item->>'active')::boolean, true) as item_active,
-        ordinality as item_order
-    FROM jsonb_array_elements(COALESCE($5::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(item, ordinality)
-    WHERE COALESCE(jsonb_array_length(COALESCE($5::jsonb, '[]'::jsonb)), 0) > 0
+        item.name as item_name,
+        item.description as item_description,
+        COALESCE(item.encrypted, true) as item_encrypted,
+        COALESCE(item.position, row_number() OVER ()) as item_position,
+        COALESCE(item.active, true) as item_active,
+        item.key_id as item_key_id
+    FROM params x
+    CROSS JOIN LATERAL unnest(x.auth_items) AS item
 ),
 new_items AS (
     -- Create all auth items (without value column - dropped in migration)
@@ -66,7 +150,7 @@ new_items AS (
         active
     )
     SELECT 
-        ua.auth_id::uuid,
+        ua.auth_id,
         ie.item_name,
         ie.item_description,
         ie.item_encrypted,
@@ -74,7 +158,7 @@ new_items AS (
         ie.item_active
     FROM update_auth ua
     CROSS JOIN items_expanded ie
-    RETURNING id::text as item_id, encrypted
+    RETURNING id as item_id, encrypted
 ),
 link_encrypted_keys AS (
     -- NOTE: auth_item_keys table was removed in migration 74
@@ -83,8 +167,14 @@ link_encrypted_keys AS (
     SELECT 1 WHERE false
 )
 SELECT 
-    ua.auth_id,
-    ap.actor_name
-FROM update_auth ua
+    aec.auth_exists::boolean as auth_exists,
+    aec.auth_exists::boolean as success,
+    x.name::text as name,
+    (x.name || ' updated successfully')::text as message,
+    ap.actor_name::text as actor_name
+FROM auth_exists_check aec
 CROSS JOIN actor_profile ap
+CROSS JOIN params x
+$$;
 
+COMMIT;

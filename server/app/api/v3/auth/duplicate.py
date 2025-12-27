@@ -1,31 +1,23 @@
 """Auth duplicate endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (
+    DuplicateAuthApiRequest,
+    DuplicateAuthApiResponse,
+    DuplicateAuthSqlParams,
+    DuplicateAuthSqlRow,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DuplicateAuthRequest(BaseModel):
-    """Request to duplicate auth."""
-
-    authId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DuplicateAuthResponse(BaseModel):
-    """Response from duplicate auth."""
-
-    success: bool
-    authId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/auth/duplicate_auth_complete.sql"
 
 
 router = APIRouter()
@@ -33,7 +25,7 @@ router = APIRouter()
 
 @router.post(
     "/duplicate",
-    response_model=DuplicateAuthResponse,
+    response_model=DuplicateAuthApiResponse,
     dependencies=[
         audit_activity(
             "auth.duplicated", "{{ actor.name }} duplicated auth '{{ auth.name }}'"
@@ -41,11 +33,11 @@ router = APIRouter()
     ],
 )
 async def duplicate_auth(
-    request: DuplicateAuthRequest,
+    request: DuplicateAuthApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DuplicateAuthResponse:
+) -> DuplicateAuthApiResponse:
     """Duplicate an auth entry with all items and their key associations."""
     tags = ["auth"]
 
@@ -62,37 +54,43 @@ async def duplicate_auth(
             )
 
         async with transaction(conn):
-            # Duplicate auth with items and key links in single SQL (DHH style)
-            sql_query = load_sql("app/sql/v3/auth/duplicate_auth_complete.sql")
-            sql_params = (request.authId, profile_id)
-            new_auth = await conn.fetchrow(sql_query, request.authId, profile_id)
+            # Convert API request to SQL params (add profile_id from header)
+            params = DuplicateAuthSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            if not new_auth:
-                raise ValueError(f"Auth not found: {request.authId}")
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                DuplicateAuthSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
 
-            new_auth_id = new_auth["auth_id"]
-            original_name = new_auth.get("original_name")
-            actor_name = new_auth.get("actor_name")
+            # Check if auth exists using SQL result
+            if not result.auth_exists:
+                raise HTTPException(
+                    status_code=404, detail=f"Auth {request.auth_id} not found"
+                )
+
+            actor_name = result.actor_name
 
             # Set audit context with data from SQL query
-            if actor_name and original_name:
+            if actor_name and result.original_name:
                 audit_set(
                     http_request,
                     actor={"name": actor_name, "id": profile_id},
-                    auth={"name": original_name, "id": request.authId},
+                    auth={"name": result.original_name, "id": str(request.auth_id)},
                 )
-
-            result_data = DuplicateAuthResponse(
-                success=True,
-                authId=new_auth_id,
-                message=f"Auth '{original_name}' duplicated successfully",
-            )
 
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-            return result_data
+            # Convert SQL result to API response
+            api_response = DuplicateAuthApiResponse.model_validate(result.model_dump())
+            return api_response
     except HTTPException:
         raise
     except ValueError as e:

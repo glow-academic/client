@@ -1,4 +1,4 @@
--- Get auth detail with items (values managed separately in settings)
+-- Get default auth detail for creation mode
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 
@@ -13,10 +13,10 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'api_get_auth_detail_v3'
+        WHERE proname = 'api_get_auth_new_v3'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_auth_detail_v3(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_auth_new_v3(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -30,7 +30,7 @@ BEGIN
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'q_get_auth_detail_v3_%'
+        WHERE typname LIKE 'q_get_auth_new_v3_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
@@ -38,7 +38,7 @@ BEGIN
 END $$;
 
 -- 3) Recreate types
-CREATE TYPE types.q_get_auth_detail_v3_auth_item AS (
+CREATE TYPE types.q_get_auth_new_v3_auth_item AS (
     auth_item_id uuid,
     name text,
     description text,
@@ -50,31 +50,20 @@ CREATE TYPE types.q_get_auth_detail_v3_auth_item AS (
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_auth_detail_v3(
-    auth_id uuid,
-    profile_id uuid
-)
+CREATE OR REPLACE FUNCTION api_get_auth_new_v3(profile_id uuid)
 RETURNS TABLE (
-    auth_exists boolean,
     name text,
     description text,
     active boolean,
     can_edit boolean,
-    auth_items types.q_get_auth_detail_v3_auth_item[],
+    auth_items types.q_get_auth_new_v3_auth_item[],
     actor_name text
 )
 LANGUAGE sql
 STABLE
 AS $$
 WITH params AS (
-    SELECT auth_id AS auth_id,
-           profile_id AS profile_id
-),
-auth_exists_check AS (
-    -- Check if auth exists independently of access control
-    SELECT EXISTS(
-        SELECT 1 FROM auth WHERE id = (SELECT auth_id FROM params)
-    )::boolean as auth_exists
+    SELECT profile_id AS profile_id
 ),
 user_profile AS (
     SELECT 
@@ -85,54 +74,25 @@ user_profile AS (
 ),
 auth_data AS (
     SELECT 
-        a.name,
-        a.description,
-        a.active,
+        ''::text as name,
+        ''::text as description,
+        false::boolean as active,
         CASE 
             WHEN up.role IN ('admin', 'superadmin') THEN true
             ELSE false
         END as can_edit
-    FROM params x
-    JOIN auth a ON a.id = x.auth_id
-    CROSS JOIN user_profile up
-),
-auth_items_data AS (
-    -- Get all auth items (values managed separately in settings page)
-    SELECT 
-        ai.id as auth_item_id,
-        ai.name,
-        ai.description,
-        ai.position,
-        ai.active,
-        ai.encrypted,
-        NULL::text as key_id,
-        CASE 
-            WHEN ai.encrypted THEN '****'::text
-            ELSE ''::text
-        END as value_masked
-    FROM params x
-    JOIN auth_items ai ON ai.auth_id = x.auth_id
-    ORDER BY ai.position
+    FROM user_profile up
 )
 SELECT 
-    aec.auth_exists::boolean as auth_exists,
     ad.name::text as name,
     ad.description::text as description,
     ad.active::boolean as active,
     ad.can_edit::boolean as can_edit,
-    COALESCE(
-        ARRAY_AGG(
-            (aid.auth_item_id, aid.name, aid.description, aid.position, aid.active, aid.value_masked, aid.key_id, aid.encrypted)::types.q_get_auth_detail_v3_auth_item
-            ORDER BY aid.position
-        ),
-        '{}'::types.q_get_auth_detail_v3_auth_item[]
-    ) as auth_items,
+    '{}'::types.q_get_auth_new_v3_auth_item[] as auth_items,
     up.actor_name::text as actor_name
-FROM auth_exists_check aec
+FROM auth_data ad
 CROSS JOIN user_profile up
-LEFT JOIN auth_data ad ON true
-LEFT JOIN auth_items_data aid ON true
-GROUP BY aec.auth_exists, ad.name, ad.description, ad.active, ad.can_edit, up.actor_name
 $$;
 
 COMMIT;
+

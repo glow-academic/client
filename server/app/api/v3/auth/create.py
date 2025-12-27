@@ -1,48 +1,25 @@
 """Auth create endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, get_internal_sio, transaction
+from app.sql.types import (
+    CreateAuthApiRequest,
+    CreateAuthApiResponse,
+    CreateAuthSqlParams,
+    CreateAuthSqlRow,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
-
-# Inline request/response schemas
-class AuthItemCreate(BaseModel):
-    """Auth item creation schema."""
-
-    name: str
-    description: str
-    value: str | None = None  # Plain text value for non-encrypted items
-    key_id: str | None = None  # Key ID for encrypted items
-    encrypted: bool = True  # Default to encrypted for backward compatibility
-    position: int | None = None  # Position in the list (defaults to array order)
-    active: bool = True  # Whether this item is active
-
-
-class CreateAuthRequest(BaseModel):
-    """Request to create auth with nested items."""
-
-    name: str
-    description: str
-    active: bool
-    auth_items: list[AuthItemCreate]
-    # profileId removed - comes from X-Profile-Id header
-
-
-class CreateAuthResponse(BaseModel):
-    """Response from create auth."""
-
-    success: bool
-    authId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/auth/create_auth_complete.sql"
 
 
 router = APIRouter()
@@ -50,7 +27,7 @@ router = APIRouter()
 
 @router.post(
     "/create",
-    response_model=CreateAuthResponse,
+    response_model=CreateAuthApiResponse,
     dependencies=[
         audit_activity(
             "auth.created", "{{ actor.name }} created auth '{{ auth.name }}'"
@@ -58,11 +35,11 @@ router = APIRouter()
     ],
 )
 async def create_auth(
-    request: CreateAuthRequest,
+    request: CreateAuthApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateAuthResponse:
+) -> CreateAuthApiResponse:
     """Create a new auth entry with nested items."""
     tags = ["auth"]
 
@@ -79,42 +56,23 @@ async def create_auth(
             )
 
         async with transaction(conn):
-            # Prepare items as JSONB array
-            import json
+            # Convert API request to SQL params (add profile_id from header)
+            # Use double star pattern: **request.model_dump()
+            params = CreateAuthSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            items_data = []
-            for item in request.auth_items:
-                # Values are managed separately in settings, not included here
-                item_dict = {
-                    "name": item.name,
-                    "description": item.description,
-                    "encrypted": item.encrypted,
-                    "position": item.position,
-                    "active": item.active,
-                }
-                # Only include key_id for encrypted items if provided
-                if item.encrypted and hasattr(item, "key_id") and item.key_id:
-                    item_dict["key_id"] = item.key_id
-                items_data.append(item_dict)
-
-            items_json = json.dumps(items_data)
-
-            # Create auth with items and key links in single SQL (DHH style)
-            sql_query = load_sql("app/sql/v3/auth/create_auth_complete.sql")
-            sql_params = (
-                request.name,
-                request.description,
-                request.active,
-                items_json,  # JSONB array of items
-                profile_id,
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                CreateAuthSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
-            auth_result = await conn.fetchrow(sql_query, *sql_params)
 
-            if not auth_result:
-                raise ValueError("Failed to create auth")
-
-            auth_id = auth_result["auth_id"]
-            actor_name = auth_result.get("actor_name")
+            auth_id = result.auth_id
+            actor_name = result.actor_name
 
             # Set audit context with data from SQL query
             if actor_name:
@@ -131,11 +89,9 @@ async def create_auth(
         # Trigger Keycloak sync (fire-and-forget)
         await internal_sio.emit("keycloak_sync", {})
 
-        return CreateAuthResponse(
-            success=True,
-            authId=auth_id,
-            message=f"Auth '{request.name}' created successfully",
-        )
+        # Convert SQL result to API response
+        api_response = CreateAuthApiResponse.model_validate(result.model_dump())
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

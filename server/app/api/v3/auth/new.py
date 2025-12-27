@@ -1,60 +1,49 @@
 """Auth new endpoint."""
 
-import json
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (GetAuthNewApiRequest, GetAuthNewApiResponse,
+                           GetAuthNewSqlParams, GetAuthNewSqlRow)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class AuthNewRequest(BaseModel):
-    pass
-    # profileId removed - comes from X-Profile-Id header
-
-
-# Reuse models from detail.py
-from app.api.v3.auth.detail import (AuthDetailResponse,  # noqa: E402
-                                    AuthItemDetail)
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/auth/get_auth_new_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
     "/new",
-    response_model=AuthDetailResponse,
+    response_model=GetAuthNewApiResponse,
     dependencies=[audit_activity("auth.new", "{{ actor.name }} viewed new auth form")],
 )
 async def get_auth_new(
-    request: AuthNewRequest,
+    request: GetAuthNewApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> AuthDetailResponse:
+) -> GetAuthNewApiResponse:
     """Get default auth detail for creation mode."""
     tags = ["auth"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = request.model_dump()
+    body_dict = request.model_dump(mode='json')
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
-        cached_data = cached["data"]
-        if "can_edit" not in cached_data:
-            cached_data["can_edit"] = True  # Default to True for new auth
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return AuthDetailResponse.model_validate(cached_data)
+        return GetAuthNewApiResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -68,62 +57,39 @@ async def get_auth_new(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/auth/get_auth_new.sql")
-        sql_params = (profile_id,)
-        result = await conn.fetchrow(sql_query, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetAuthNewSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        if not result:
-            raise HTTPException(
-                status_code=404, detail="No default auth found for user"
-            )
-
-        # Parse auth_items from JSONB (should be empty for default)
-        auth_items: list[AuthItemDetail] = []
-        items_data = result.get("auth_items_json")
-        if isinstance(items_data, str):
-            items_data = json.loads(items_data)
-        if items_data and isinstance(items_data, list):
-            for item_data in items_data:
-                if isinstance(item_data, dict):
-                    auth_items.append(
-                        AuthItemDetail(
-                            auth_item_id=item_data.get("auth_item_id", ""),
-                            name=item_data.get("name", ""),
-                            description=item_data.get("description", ""),
-                            value_masked=item_data.get("value_masked", "****"),
-                            key_id=item_data.get("key_id"),
-                            encrypted=item_data.get("encrypted", True),
-                        )
-                    )
-
-        # Get user role for default behavior
-        user_role = result.get("user_role", "trainee")
-        can_edit = user_role in ("admin", "superadmin")
-
-        # Set audit context with data from SQL query
-        actor_name = result.get("actor_name")
-        if actor_name:
-            audit_set(http_request, actor={"name": actor_name, "id": profile_id})
-
-        response_data = AuthDetailResponse(
-            name=result["name"],
-            description=result["description"],
-            active=result["active"],
-            auth_items=auth_items,
-            can_edit=can_edit,
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetAuthNewSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        # Cache response
+        # Set audit context with data from SQL query
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+
+        # Convert SQL result to API response
+        # auth_items is already an array from SQL, can_edit is already computed in SQL
+        api_response = GetAuthNewApiResponse.model_validate(result.model_dump())
+
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

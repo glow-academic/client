@@ -543,6 +543,402 @@ class RefreshAnalyticsApiResponse(BaseModel):
 
 
 
+# Generated from: create_auth
+
+class ICreateAuthV3AuthItem(BaseModel):
+
+    name: str | None
+    description: str | None
+    encrypted: bool | None
+    position: int | None
+    active: bool | None
+    key_id: UUID | None
+
+class CreateAuthSqlParams(BaseModel):
+
+    name: str
+    description: str
+    active: bool
+    auth_type: str
+    slug: str
+    profile_id: UUID
+    auth_items: list[ICreateAuthV3AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert auth_items composite array to tuples for asyncpg
+        auth_items_tuples = [
+            (conn.name, conn.description, conn.encrypted, conn.position, conn.active, conn.key_id)
+            for conn in self.auth_items
+        ]
+        return (
+            self.name,
+            self.description,
+            self.active,
+            self.auth_type,
+            self.slug,
+            self.profile_id,
+            auth_items_tuples,
+        )
+
+class CreateAuthSqlRow(BaseModel):
+
+    success: bool | None = None
+    auth_id: UUID | None = None
+    name: str | None = None
+    message: str | None = None
+    actor_name: str | None = None
+
+class CreateAuthApiRequest(BaseModel):
+
+    name: str
+    description: str
+    active: bool
+    auth_type: str
+    slug: str
+    auth_items: list[ICreateAuthV3AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class CreateAuthApiResponse(BaseModel):
+
+    success: bool | None = None
+    auth_id: UUID | None = None
+    name: str | None = None
+    message: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: delete_auth
+
+class DeleteAuthSqlParams(BaseModel):
+
+    auth_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.auth_id,
+            self.profile_id,
+        )
+
+class DeleteAuthSqlRow(BaseModel):
+
+    auth_exists: bool | None = None
+    success: bool | None = None
+    name: str | None = None
+    message: str | None = None
+    actor_name: str | None = None
+
+class DeleteAuthApiRequest(BaseModel):
+
+    auth_id: UUID
+
+class DeleteAuthApiResponse(BaseModel):
+
+    auth_exists: bool | None = None
+    success: bool | None = None
+    name: str | None = None
+    message: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: duplicate_auth
+
+class DuplicateAuthSqlParams(BaseModel):
+
+    auth_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.auth_id,
+            self.profile_id,
+        )
+
+class DuplicateAuthSqlRow(BaseModel):
+
+    auth_exists: bool | None = None
+    success: bool | None = None
+    auth_id: UUID | None = None
+    original_name: str | None = None
+    message: str | None = None
+    actor_name: str | None = None
+
+class DuplicateAuthApiRequest(BaseModel):
+
+    auth_id: UUID
+
+class DuplicateAuthApiResponse(BaseModel):
+
+    auth_exists: bool | None = None
+    success: bool | None = None
+    auth_id: UUID | None = None
+    original_name: str | None = None
+    message: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_auth_detail
+
+class GetAuthDetailSqlParams(BaseModel):
+
+    auth_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.auth_id,
+            self.profile_id,
+        )
+
+class QGetAuthDetailV3AuthItem(BaseModel):
+
+    auth_item_id: UUID | None
+    name: str | None
+    description: str | None
+    position: int | None
+    active: bool | None
+    value_masked: str | None
+    key_id: str | None
+    encrypted: bool | None
+
+class GetAuthDetailSqlRow(BaseModel):
+
+    auth_exists: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    auth_items: list[QGetAuthDetailV3AuthItem] | None = None
+    actor_name: str | None = None
+
+class GetAuthDetailApiRequest(BaseModel):
+
+    auth_id: UUID
+
+class GetAuthDetailApiResponse(BaseModel):
+
+    auth_exists: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    auth_items: list[QGetAuthDetailV3AuthItem] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_auth_list
+
+class GetAuthListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetAuthListV3AuthItem(BaseModel):
+
+    auth_item_id: UUID | None
+    name: str | None
+    description: str | None
+
+class QGetAuthListV3Auth(BaseModel):
+
+    auth_id: UUID | None
+    name: str | None
+    description: str | None
+    active: bool | None
+    updated_at: str | None
+    num_items: int | None
+    sample_items: list[QGetAuthListV3AuthItem] | None
+    can_edit: bool | None
+    can_delete: bool | None
+    can_duplicate: bool | None
+
+class GetAuthListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    auths: list[QGetAuthListV3Auth] | None = None
+
+class GetAuthListApiRequest(BaseModel):
+
+    pass
+
+class GetAuthListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    auths: list[QGetAuthListV3Auth] | None = None
+
+
+
+# Generated from: get_auth_new
+
+class GetAuthNewSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetAuthNewV3AuthItem(BaseModel):
+
+    auth_item_id: UUID | None
+    name: str | None
+    description: str | None
+    position: int | None
+    active: bool | None
+    value_masked: str | None
+    key_id: str | None
+    encrypted: bool | None
+
+class GetAuthNewSqlRow(BaseModel):
+
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    auth_items: list[QGetAuthNewV3AuthItem] | None = None
+    actor_name: str | None = None
+
+class GetAuthNewApiRequest(BaseModel):
+
+    pass
+
+class GetAuthNewApiResponse(BaseModel):
+
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    auth_items: list[QGetAuthNewV3AuthItem] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_login_data
+
+class GetLoginDataSqlParams(BaseModel):
+
+    department_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+        )
+
+class QGetLoginDataV3Department(BaseModel):
+
+    id: str | None
+    title: str | None
+    description: str | None
+
+
+
+
+class QGetLoginDataV3Provider(BaseModel):
+
+    id: str | None
+    name: str | None
+    icon: str | None
+    is_default: bool | None
+
+class GetLoginDataSqlRow(BaseModel):
+
+    providers: list[QGetLoginDataV3Provider] | None = None
+    departments: list[QGetLoginDataV3Department] | None = None
+    guest_login_enabled: bool | None = None
+    show_default_account: bool | None = None
+    default_department_id: str | None = None
+    realm_name: str | None = None
+
+class GetLoginDataApiRequest(BaseModel):
+
+    department_id: UUID | None = None
+
+class GetLoginDataApiResponse(BaseModel):
+
+    providers: list[QGetLoginDataV3Provider] | None = None
+    departments: list[QGetLoginDataV3Department] | None = None
+    guest_login_enabled: bool | None = None
+    show_default_account: bool | None = None
+    default_department_id: str | None = None
+    realm_name: str | None = None
+
+
+
+# Generated from: update_auth
+
+class IUpdateAuthV3AuthItem(BaseModel):
+
+    name: str | None
+    description: str | None
+    encrypted: bool | None
+    position: int | None
+    active: bool | None
+    key_id: UUID | None
+
+class UpdateAuthSqlParams(BaseModel):
+
+    auth_id: UUID
+    name: str
+    description: str
+    active: bool
+    auth_type: str
+    slug: str
+    profile_id: UUID
+    auth_items: list[IUpdateAuthV3AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert auth_items composite array to tuples for asyncpg
+        auth_items_tuples = [
+            (conn.name, conn.description, conn.encrypted, conn.position, conn.active, conn.key_id)
+            for conn in self.auth_items
+        ]
+        return (
+            self.auth_id,
+            self.name,
+            self.description,
+            self.active,
+            self.auth_type,
+            self.slug,
+            self.profile_id,
+            auth_items_tuples,
+        )
+
+class UpdateAuthSqlRow(BaseModel):
+
+    auth_exists: bool | None = None
+    success: bool | None = None
+    name: str | None = None
+    message: str | None = None
+    actor_name: str | None = None
+
+class UpdateAuthApiRequest(BaseModel):
+
+    auth_id: UUID
+    name: str
+    description: str
+    active: bool
+    auth_type: str
+    slug: str
+    auth_items: list[IUpdateAuthV3AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class UpdateAuthApiResponse(BaseModel):
+
+    auth_exists: bool | None = None
+    success: bool | None = None
+    name: str | None = None
+    message: str | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: create_cohort
 
 class CreateCohortSqlParams(BaseModel):
@@ -8513,6 +8909,54 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RefreshAnalyticsApiRequest",
         "RefreshAnalyticsApiResponse",
     ),
+    "app/sql/v3/auth/create_auth_complete.sql": (
+        "CreateAuthSqlParams",
+        "CreateAuthSqlRow",
+        "CreateAuthApiRequest",
+        "CreateAuthApiResponse",
+    ),
+    "app/sql/v3/auth/delete_auth_complete.sql": (
+        "DeleteAuthSqlParams",
+        "DeleteAuthSqlRow",
+        "DeleteAuthApiRequest",
+        "DeleteAuthApiResponse",
+    ),
+    "app/sql/v3/auth/duplicate_auth_complete.sql": (
+        "DuplicateAuthSqlParams",
+        "DuplicateAuthSqlRow",
+        "DuplicateAuthApiRequest",
+        "DuplicateAuthApiResponse",
+    ),
+    "app/sql/v3/auth/get_auth_detail_complete.sql": (
+        "GetAuthDetailSqlParams",
+        "GetAuthDetailSqlRow",
+        "GetAuthDetailApiRequest",
+        "GetAuthDetailApiResponse",
+    ),
+    "app/sql/v3/auth/get_auth_list_complete.sql": (
+        "GetAuthListSqlParams",
+        "GetAuthListSqlRow",
+        "GetAuthListApiRequest",
+        "GetAuthListApiResponse",
+    ),
+    "app/sql/v3/auth/get_auth_new_complete.sql": (
+        "GetAuthNewSqlParams",
+        "GetAuthNewSqlRow",
+        "GetAuthNewApiRequest",
+        "GetAuthNewApiResponse",
+    ),
+    "app/sql/v3/auth/get_login_data_complete.sql": (
+        "GetLoginDataSqlParams",
+        "GetLoginDataSqlRow",
+        "GetLoginDataApiRequest",
+        "GetLoginDataApiResponse",
+    ),
+    "app/sql/v3/auth/update_auth_complete.sql": (
+        "UpdateAuthSqlParams",
+        "UpdateAuthSqlRow",
+        "UpdateAuthApiRequest",
+        "UpdateAuthApiResponse",
+    ),
     "app/sql/v3/cohorts/create_cohort_complete.sql": (
         "CreateCohortSqlParams",
         "CreateCohortSqlRow",
@@ -9236,6 +9680,46 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/analytics/refresh_analytics_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/create_auth_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/delete_auth_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/duplicate_auth_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/get_auth_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/get_auth_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/get_auth_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/get_login_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/auth/update_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -6712,134 +6712,6 @@ export interface components {
             /** Sid */
             sid?: string | null;
         };
-        /** AuthDetailRequest */
-        AuthDetailRequest: {
-            /** Authid */
-            authId: string;
-        };
-        /** AuthDetailResponse */
-        AuthDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Auth Items */
-            auth_items: components["schemas"]["AuthItemDetail"][];
-            /** Can Edit */
-            can_edit: boolean;
-        };
-        /** AuthFilters */
-        AuthFilters: Record<string, never>;
-        /** AuthItem */
-        AuthItem: {
-            /** Auth Id */
-            auth_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Num Items */
-            num_items: number;
-            /** Sample Items */
-            sample_items: components["schemas"]["AuthSampleItem"][];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-        };
-        /**
-         * AuthItemCreate
-         * @description Auth item creation schema.
-         */
-        AuthItemCreate: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Value */
-            value?: string | null;
-            /** Key Id */
-            key_id?: string | null;
-            /**
-             * Encrypted
-             * @default true
-             */
-            encrypted: boolean;
-            /** Position */
-            position?: number | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /** AuthItemDetail */
-        AuthItemDetail: {
-            /** Auth Item Id */
-            auth_item_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Position */
-            position: number;
-            /** Active */
-            active: boolean;
-            /** Value Masked */
-            value_masked: string;
-            /** Key Id */
-            key_id?: string | null;
-            /** Encrypted */
-            encrypted: boolean;
-        };
-        /**
-         * AuthItemUpdate
-         * @description Auth item update schema.
-         */
-        AuthItemUpdate: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Value */
-            value?: string | null;
-            /** Key Id */
-            key_id?: string | null;
-            /**
-             * Encrypted
-             * @default true
-             */
-            encrypted: boolean;
-            /** Position */
-            position?: number | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /** AuthListResponse */
-        AuthListResponse: {
-            /** Auths */
-            auths: components["schemas"]["AuthItem"][];
-        };
-        /** AuthNewRequest */
-        AuthNewRequest: Record<string, never>;
-        /** AuthSampleItem */
-        AuthSampleItem: {
-            /** Auth Item Id */
-            auth_item_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
         /** AuthorizeEmulationApiRequest */
         AuthorizeEmulationApiRequest: {
             /**
@@ -7343,31 +7215,33 @@ export interface components {
             /** Status */
             status?: string | null;
         };
-        /**
-         * CreateAuthRequest
-         * @description Request to create auth with nested items.
-         */
-        CreateAuthRequest: {
+        /** CreateAuthApiRequest */
+        CreateAuthApiRequest: {
             /** Name */
             name: string;
             /** Description */
             description: string;
             /** Active */
             active: boolean;
+            /** Auth Type */
+            auth_type: string;
+            /** Slug */
+            slug: string;
             /** Auth Items */
-            auth_items: components["schemas"]["AuthItemCreate"][];
+            auth_items?: components["schemas"]["ICreateAuthV3AuthItem"][] | null;
         };
-        /**
-         * CreateAuthResponse
-         * @description Response from create auth.
-         */
-        CreateAuthResponse: {
+        /** CreateAuthApiResponse */
+        CreateAuthApiResponse: {
             /** Success */
-            success: boolean;
-            /** Authid */
-            authId: string;
+            success?: boolean | null;
+            /** Auth Id */
+            auth_id?: string | null;
+            /** Name */
+            name?: string | null;
             /** Message */
-            message: string;
+            message?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** CreateCohortApiRequest */
         CreateCohortApiRequest: {
@@ -8195,23 +8069,26 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * DeleteAuthRequest
-         * @description Request to delete auth.
-         */
-        DeleteAuthRequest: {
-            /** Authid */
-            authId: string;
+        /** DeleteAuthApiRequest */
+        DeleteAuthApiRequest: {
+            /**
+             * Auth Id
+             * Format: uuid
+             */
+            auth_id: string;
         };
-        /**
-         * DeleteAuthResponse
-         * @description Response from delete auth.
-         */
-        DeleteAuthResponse: {
+        /** DeleteAuthApiResponse */
+        DeleteAuthApiResponse: {
+            /** Auth Exists */
+            auth_exists?: boolean | null;
             /** Success */
-            success: boolean;
+            success?: boolean | null;
+            /** Name */
+            name?: string | null;
             /** Message */
-            message: string;
+            message?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** DeleteCohortApiRequest */
         DeleteCohortApiRequest: {
@@ -8529,18 +8406,6 @@ export interface components {
             description: string;
         };
         /**
-         * DepartmentOption
-         * @description Department option for login page.
-         */
-        DepartmentOption: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-        };
-        /**
          * DocumentTemplateGenerationCompletePayload
          * @description Response indicating document template generation completed successfully.
          */
@@ -8659,25 +8524,28 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * DuplicateAuthRequest
-         * @description Request to duplicate auth.
-         */
-        DuplicateAuthRequest: {
-            /** Authid */
-            authId: string;
+        /** DuplicateAuthApiRequest */
+        DuplicateAuthApiRequest: {
+            /**
+             * Auth Id
+             * Format: uuid
+             */
+            auth_id: string;
         };
-        /**
-         * DuplicateAuthResponse
-         * @description Response from duplicate auth.
-         */
-        DuplicateAuthResponse: {
+        /** DuplicateAuthApiResponse */
+        DuplicateAuthApiResponse: {
+            /** Auth Exists */
+            auth_exists?: boolean | null;
             /** Success */
-            success: boolean;
-            /** Authid */
-            authId: string;
+            success?: boolean | null;
+            /** Auth Id */
+            auth_id?: string | null;
+            /** Original Name */
+            original_name?: string | null;
             /** Message */
-            message: string;
+            message?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** DuplicateCohortApiRequest */
         DuplicateCohortApiRequest: {
@@ -9686,6 +9554,57 @@ export interface components {
             /** Agents */
             agents?: components["schemas"]["QListAgentsV3Agent"][] | null;
         };
+        /** GetAuthDetailApiRequest */
+        GetAuthDetailApiRequest: {
+            /**
+             * Auth Id
+             * Format: uuid
+             */
+            auth_id: string;
+        };
+        /** GetAuthDetailApiResponse */
+        GetAuthDetailApiResponse: {
+            /** Auth Exists */
+            auth_exists?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Auth Items */
+            auth_items?: components["schemas"]["QGetAuthDetailV3AuthItem"][] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetAuthListApiRequest */
+        GetAuthListApiRequest: Record<string, never>;
+        /** GetAuthListApiResponse */
+        GetAuthListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Auths */
+            auths?: components["schemas"]["QGetAuthListV3Auth"][] | null;
+        };
+        /** GetAuthNewApiRequest */
+        GetAuthNewApiRequest: Record<string, never>;
+        /** GetAuthNewApiResponse */
+        GetAuthNewApiResponse: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Auth Items */
+            auth_items?: components["schemas"]["QGetAuthNewV3AuthItem"][] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** GetCertificateDataApiRequest */
         GetCertificateDataApiRequest: Record<string, never>;
         /** GetCohortDetailApiRequest */
@@ -10408,6 +10327,26 @@ export interface components {
             department_options?: components["schemas"]["QGetKeysListV3DepartmentOption"][] | null;
             /** Model Options */
             model_options?: components["schemas"]["QGetKeysListV3ModelOption"][] | null;
+        };
+        /** GetLoginDataApiRequest */
+        GetLoginDataApiRequest: {
+            /** Department Id */
+            department_id?: string | null;
+        };
+        /** GetLoginDataApiResponse */
+        GetLoginDataApiResponse: {
+            /** Providers */
+            providers?: components["schemas"]["QGetLoginDataV3Provider"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetLoginDataV3Department"][] | null;
+            /** Guest Login Enabled */
+            guest_login_enabled?: boolean | null;
+            /** Show Default Account */
+            show_default_account?: boolean | null;
+            /** Default Department Id */
+            default_department_id?: string | null;
+            /** Realm Name */
+            realm_name?: string | null;
         };
         /** GetLogsBundleApiRequest */
         GetLogsBundleApiRequest: Record<string, never>;
@@ -12024,6 +11963,21 @@ export interface components {
             /** Primary Department Index */
             primary_department_index: number | null;
         };
+        /** ICreateAuthV3AuthItem */
+        ICreateAuthV3AuthItem: {
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Encrypted */
+            encrypted: boolean | null;
+            /** Position */
+            position: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Key Id */
+            key_id: string | null;
+        };
         /** ICreateModelV3Pricing */
         ICreateModelV3Pricing: {
             /** Pricing Type */
@@ -12059,6 +12013,21 @@ export interface components {
             csv_column: string | null;
             /** Target Field */
             target_field: string | null;
+        };
+        /** IUpdateAuthV3AuthItem */
+        IUpdateAuthV3AuthItem: {
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Encrypted */
+            encrypted: boolean | null;
+            /** Position */
+            position: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Key Id */
+            key_id: string | null;
         };
         /** IUpdateModelV3Pricing */
         IUpdateModelV3Pricing: {
@@ -12353,32 +12322,6 @@ export interface components {
             assistantOutput?: string | null;
             /** Departmentid */
             departmentId?: string | null;
-        };
-        /**
-         * LoginProvidersRequest
-         * @description Request for login providers with optional department ID.
-         */
-        LoginProvidersRequest: {
-            /** Departmentid */
-            departmentId?: string | null;
-        };
-        /**
-         * LoginProvidersResponse
-         * @description Response with list of active provider options and departments.
-         */
-        LoginProvidersResponse: {
-            /** Providers */
-            providers: components["schemas"]["ProviderOption"][];
-            /** Departments */
-            departments: components["schemas"]["DepartmentOption"][];
-            /** Guest Login Enabled */
-            guest_login_enabled: boolean;
-            /** Show Default Account */
-            show_default_account: boolean;
-            /** Default Department Id */
-            default_department_id: string | null;
-            /** Realm Name */
-            realm_name: string;
         };
         /** MessageFeedbackHighlightItem */
         MessageFeedbackHighlightItem: {
@@ -13359,20 +13302,6 @@ export interface components {
          */
         ProviderNewRequest: Record<string, never>;
         /**
-         * ProviderOption
-         * @description Provider option with id (slug), name, and icon URL.
-         */
-        ProviderOption: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Icon */
-            icon: string | null;
-            /** Is Default */
-            is_default: boolean;
-        };
-        /**
          * ProvidersListRequest
          * @description Request for providers list.
          */
@@ -13544,6 +13473,76 @@ export interface components {
             available_voices: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** QGetAuthDetailV3AuthItem */
+        QGetAuthDetailV3AuthItem: {
+            /** Auth Item Id */
+            auth_item_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Position */
+            position: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Value Masked */
+            value_masked: string | null;
+            /** Key Id */
+            key_id: string | null;
+            /** Encrypted */
+            encrypted: boolean | null;
+        };
+        /** QGetAuthListV3Auth */
+        QGetAuthListV3Auth: {
+            /** Auth Id */
+            auth_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Num Items */
+            num_items: number | null;
+            /** Sample Items */
+            sample_items: components["schemas"]["QGetAuthListV3AuthItem"][] | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Can Duplicate */
+            can_duplicate: boolean | null;
+        };
+        /** QGetAuthListV3AuthItem */
+        QGetAuthListV3AuthItem: {
+            /** Auth Item Id */
+            auth_item_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetAuthNewV3AuthItem */
+        QGetAuthNewV3AuthItem: {
+            /** Auth Item Id */
+            auth_item_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Position */
+            position: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Value Masked */
+            value_masked: string | null;
+            /** Key Id */
+            key_id: string | null;
+            /** Encrypted */
+            encrypted: boolean | null;
         };
         /** QGetCohortDetailV3Department */
         QGetCohortDetailV3Department: {
@@ -14113,6 +14112,26 @@ export interface components {
             value: string | null;
             /** Label */
             label: string | null;
+        };
+        /** QGetLoginDataV3Department */
+        QGetLoginDataV3Department: {
+            /** Id */
+            id: string | null;
+            /** Title */
+            title: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetLoginDataV3Provider */
+        QGetLoginDataV3Provider: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Is Default */
+            is_default: boolean | null;
         };
         /** QGetLogsBundleV3HealthKpi */
         QGetLogsBundleV3HealthKpi: {
@@ -18881,31 +18900,38 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * UpdateAuthRequest
-         * @description Request to update auth with nested items.
-         */
-        UpdateAuthRequest: {
-            /** Authid */
-            authId: string;
+        /** UpdateAuthApiRequest */
+        UpdateAuthApiRequest: {
+            /**
+             * Auth Id
+             * Format: uuid
+             */
+            auth_id: string;
             /** Name */
             name: string;
             /** Description */
             description: string;
             /** Active */
             active: boolean;
+            /** Auth Type */
+            auth_type: string;
+            /** Slug */
+            slug: string;
             /** Auth Items */
-            auth_items: components["schemas"]["AuthItemUpdate"][];
+            auth_items?: components["schemas"]["IUpdateAuthV3AuthItem"][] | null;
         };
-        /**
-         * UpdateAuthResponse
-         * @description Response from update auth.
-         */
-        UpdateAuthResponse: {
+        /** UpdateAuthApiResponse */
+        UpdateAuthApiResponse: {
+            /** Auth Exists */
+            auth_exists?: boolean | null;
             /** Success */
-            success: boolean;
+            success?: boolean | null;
+            /** Name */
+            name?: string | null;
             /** Message */
-            message: string;
+            message?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** UpdateCohortApiRequest */
         UpdateCohortApiRequest: {
@@ -21794,7 +21820,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AuthFilters"];
+                "application/json": components["schemas"]["GetAuthListApiRequest"];
             };
         };
         responses: {
@@ -21804,7 +21830,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthListResponse"];
+                    "application/json": components["schemas"]["GetAuthListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21830,7 +21856,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AuthDetailRequest"];
+                "application/json": components["schemas"]["GetAuthDetailApiRequest"];
             };
         };
         responses: {
@@ -21840,7 +21866,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthDetailResponse"];
+                    "application/json": components["schemas"]["GetAuthDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21866,7 +21892,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AuthNewRequest"];
+                "application/json": components["schemas"]["GetAuthNewApiRequest"];
             };
         };
         responses: {
@@ -21876,7 +21902,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthDetailResponse"];
+                    "application/json": components["schemas"]["GetAuthNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21902,7 +21928,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAuthRequest"];
+                "application/json": components["schemas"]["CreateAuthApiRequest"];
             };
         };
         responses: {
@@ -21912,7 +21938,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateAuthResponse"];
+                    "application/json": components["schemas"]["CreateAuthApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21938,7 +21964,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateAuthRequest"];
+                "application/json": components["schemas"]["UpdateAuthApiRequest"];
             };
         };
         responses: {
@@ -21948,7 +21974,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateAuthResponse"];
+                    "application/json": components["schemas"]["UpdateAuthApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21974,7 +22000,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DuplicateAuthRequest"];
+                "application/json": components["schemas"]["DuplicateAuthApiRequest"];
             };
         };
         responses: {
@@ -21984,7 +22010,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DuplicateAuthResponse"];
+                    "application/json": components["schemas"]["DuplicateAuthApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22010,7 +22036,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteAuthRequest"];
+                "application/json": components["schemas"]["DeleteAuthApiRequest"];
             };
         };
         responses: {
@@ -22020,7 +22046,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteAuthResponse"];
+                    "application/json": components["schemas"]["DeleteAuthApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22046,7 +22072,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LoginProvidersRequest"];
+                "application/json": components["schemas"]["GetLoginDataApiRequest"];
             };
         };
         responses: {
@@ -22056,7 +22082,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LoginProvidersResponse"];
+                    "application/json": components["schemas"]["GetLoginDataApiResponse"];
                 };
             };
             /** @description Validation Error */

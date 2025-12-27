@@ -2565,7 +2565,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AuthFilters"
+                "$ref": "#/components/schemas/GetAuthListApiRequest"
               }
             }
           }
@@ -2576,7 +2576,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthListResponse"
+                  "$ref": "#/components/schemas/GetAuthListApiResponse"
                 }
               }
             }
@@ -2646,7 +2646,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AuthDetailRequest"
+                "$ref": "#/components/schemas/GetAuthDetailApiRequest"
               }
             }
           }
@@ -2657,7 +2657,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthDetailResponse"
+                  "$ref": "#/components/schemas/GetAuthDetailApiResponse"
                 }
               }
             }
@@ -2727,7 +2727,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AuthNewRequest"
+                "$ref": "#/components/schemas/GetAuthNewApiRequest"
               }
             }
           }
@@ -2738,7 +2738,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthDetailResponse"
+                  "$ref": "#/components/schemas/GetAuthNewApiResponse"
                 }
               }
             }
@@ -2808,7 +2808,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateAuthRequest"
+                "$ref": "#/components/schemas/CreateAuthApiRequest"
               }
             }
           }
@@ -2819,7 +2819,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateAuthResponse"
+                  "$ref": "#/components/schemas/CreateAuthApiResponse"
                 }
               }
             }
@@ -2889,7 +2889,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateAuthRequest"
+                "$ref": "#/components/schemas/UpdateAuthApiRequest"
               }
             }
           }
@@ -2900,7 +2900,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateAuthResponse"
+                  "$ref": "#/components/schemas/UpdateAuthApiResponse"
                 }
               }
             }
@@ -2970,7 +2970,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DuplicateAuthRequest"
+                "$ref": "#/components/schemas/DuplicateAuthApiRequest"
               }
             }
           }
@@ -2981,7 +2981,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DuplicateAuthResponse"
+                  "$ref": "#/components/schemas/DuplicateAuthApiResponse"
                 }
               }
             }
@@ -3051,7 +3051,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteAuthRequest"
+                "$ref": "#/components/schemas/DeleteAuthApiRequest"
               }
             }
           }
@@ -3062,7 +3062,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteAuthResponse"
+                  "$ref": "#/components/schemas/DeleteAuthApiResponse"
                 }
               }
             }
@@ -3132,7 +3132,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LoginProvidersRequest"
+                "$ref": "#/components/schemas/GetLoginDataApiRequest"
               }
             }
           }
@@ -3143,7 +3143,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LoginProvidersResponse"
+                  "$ref": "#/components/schemas/GetLoginDataApiResponse"
                 }
               }
             }
@@ -22334,338 +22334,6 @@
         "title": "AudioToolPayload",
         "description": "Request to grade audio from grading tool."
       },
-      "AuthDetailRequest": {
-        "properties": {
-          "authId": {
-            "type": "string",
-            "title": "Authid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "authId"
-        ],
-        "title": "AuthDetailRequest"
-      },
-      "AuthDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "auth_items": {
-            "items": {
-              "$ref": "#/components/schemas/AuthItemDetail"
-            },
-            "type": "array",
-            "title": "Auth Items"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "active",
-          "auth_items",
-          "can_edit"
-        ],
-        "title": "AuthDetailResponse"
-      },
-      "AuthFilters": {
-        "properties": {},
-        "type": "object",
-        "title": "AuthFilters"
-      },
-      "AuthItem": {
-        "properties": {
-          "auth_id": {
-            "type": "string",
-            "title": "Auth Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "num_items": {
-            "type": "integer",
-            "title": "Num Items"
-          },
-          "sample_items": {
-            "items": {
-              "$ref": "#/components/schemas/AuthSampleItem"
-            },
-            "type": "array",
-            "title": "Sample Items"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          }
-        },
-        "type": "object",
-        "required": [
-          "auth_id",
-          "name",
-          "description",
-          "active",
-          "num_items",
-          "sample_items",
-          "can_edit",
-          "can_delete",
-          "can_duplicate"
-        ],
-        "title": "AuthItem"
-      },
-      "AuthItemCreate": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          },
-          "key_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Key Id"
-          },
-          "encrypted": {
-            "type": "boolean",
-            "title": "Encrypted",
-            "default": true
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Position"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "AuthItemCreate",
-        "description": "Auth item creation schema."
-      },
-      "AuthItemDetail": {
-        "properties": {
-          "auth_item_id": {
-            "type": "string",
-            "title": "Auth Item Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "position": {
-            "type": "integer",
-            "title": "Position"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "value_masked": {
-            "type": "string",
-            "title": "Value Masked"
-          },
-          "key_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Key Id"
-          },
-          "encrypted": {
-            "type": "boolean",
-            "title": "Encrypted"
-          }
-        },
-        "type": "object",
-        "required": [
-          "auth_item_id",
-          "name",
-          "description",
-          "position",
-          "active",
-          "value_masked",
-          "encrypted"
-        ],
-        "title": "AuthItemDetail"
-      },
-      "AuthItemUpdate": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          },
-          "key_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Key Id"
-          },
-          "encrypted": {
-            "type": "boolean",
-            "title": "Encrypted",
-            "default": true
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Position"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "AuthItemUpdate",
-        "description": "Auth item update schema."
-      },
-      "AuthListResponse": {
-        "properties": {
-          "auths": {
-            "items": {
-              "$ref": "#/components/schemas/AuthItem"
-            },
-            "type": "array",
-            "title": "Auths"
-          }
-        },
-        "type": "object",
-        "required": [
-          "auths"
-        ],
-        "title": "AuthListResponse"
-      },
-      "AuthNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "AuthNewRequest"
-      },
-      "AuthSampleItem": {
-        "properties": {
-          "auth_item_id": {
-            "type": "string",
-            "title": "Auth Item Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "auth_item_id",
-          "name",
-          "description"
-        ],
-        "title": "AuthSampleItem"
-      },
       "AuthorizeEmulationApiRequest": {
         "properties": {
           "requester_profile_id": {
@@ -24236,7 +23904,7 @@
         "type": "object",
         "title": "CreateAnalyticsViewFunctionApiResponse"
       },
-      "CreateAuthRequest": {
+      "CreateAuthApiRequest": {
         "properties": {
           "name": {
             "type": "string",
@@ -24250,11 +23918,26 @@
             "type": "boolean",
             "title": "Active"
           },
+          "auth_type": {
+            "type": "string",
+            "title": "Auth Type"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
           "auth_items": {
-            "items": {
-              "$ref": "#/components/schemas/AuthItemCreate"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ICreateAuthV3AuthItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Auth Items"
           }
         },
@@ -24263,34 +23946,72 @@
           "name",
           "description",
           "active",
-          "auth_items"
+          "auth_type",
+          "slug"
         ],
-        "title": "CreateAuthRequest",
-        "description": "Request to create auth with nested items."
+        "title": "CreateAuthApiRequest"
       },
-      "CreateAuthResponse": {
+      "CreateAuthApiResponse": {
         "properties": {
           "success": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Success"
           },
-          "authId": {
-            "type": "string",
-            "title": "Authid"
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
           },
           "message": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Message"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "authId",
-          "message"
-        ],
-        "title": "CreateAuthResponse",
-        "description": "Response from create auth."
+        "title": "CreateAuthApiResponse"
       },
       "CreateCohortApiRequest": {
         "properties": {
@@ -27043,38 +26764,80 @@
         "type": "object",
         "title": "DeleteAgentApiResponse"
       },
-      "DeleteAuthRequest": {
+      "DeleteAuthApiRequest": {
         "properties": {
-          "authId": {
+          "auth_id": {
             "type": "string",
-            "title": "Authid"
+            "format": "uuid",
+            "title": "Auth Id"
           }
         },
         "type": "object",
         "required": [
-          "authId"
+          "auth_id"
         ],
-        "title": "DeleteAuthRequest",
-        "description": "Request to delete auth."
+        "title": "DeleteAuthApiRequest"
       },
-      "DeleteAuthResponse": {
+      "DeleteAuthApiResponse": {
         "properties": {
+          "auth_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Exists"
+          },
           "success": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Success"
           },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
           "message": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Message"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteAuthResponse",
-        "description": "Response from delete auth."
+        "title": "DeleteAuthApiResponse"
       },
       "DeleteCohortApiRequest": {
         "properties": {
@@ -28077,30 +27840,6 @@
         "title": "DepartmentMappingItem",
         "description": "Department mapping item."
       },
-      "DepartmentOption": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "title",
-          "description"
-        ],
-        "title": "DepartmentOption",
-        "description": "Department option for login page."
-      },
       "DocumentTemplateGenerationCompletePayload": {
         "properties": {
           "success": {
@@ -28407,43 +28146,92 @@
         "type": "object",
         "title": "DuplicateAgentApiResponse"
       },
-      "DuplicateAuthRequest": {
+      "DuplicateAuthApiRequest": {
         "properties": {
-          "authId": {
+          "auth_id": {
             "type": "string",
-            "title": "Authid"
+            "format": "uuid",
+            "title": "Auth Id"
           }
         },
         "type": "object",
         "required": [
-          "authId"
+          "auth_id"
         ],
-        "title": "DuplicateAuthRequest",
-        "description": "Request to duplicate auth."
+        "title": "DuplicateAuthApiRequest"
       },
-      "DuplicateAuthResponse": {
+      "DuplicateAuthApiResponse": {
         "properties": {
+          "auth_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Exists"
+          },
           "success": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Success"
           },
-          "authId": {
-            "type": "string",
-            "title": "Authid"
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "original_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Name"
           },
           "message": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Message"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "authId",
-          "message"
-        ],
-        "title": "DuplicateAuthResponse",
-        "description": "Response from duplicate auth."
+        "title": "DuplicateAuthApiResponse"
       },
       "DuplicateCohortApiRequest": {
         "properties": {
@@ -31329,6 +31117,222 @@
         },
         "type": "object",
         "title": "GetAgentsListApiResponse"
+      },
+      "GetAuthDetailApiRequest": {
+        "properties": {
+          "auth_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Auth Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id"
+        ],
+        "title": "GetAuthDetailApiRequest"
+      },
+      "GetAuthDetailApiResponse": {
+        "properties": {
+          "auth_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Exists"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "auth_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthDetailV3AuthItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Items"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetAuthDetailApiResponse"
+      },
+      "GetAuthListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetAuthListApiRequest"
+      },
+      "GetAuthListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "auths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthListV3Auth"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auths"
+          }
+        },
+        "type": "object",
+        "title": "GetAuthListApiResponse"
+      },
+      "GetAuthNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetAuthNewApiRequest"
+      },
+      "GetAuthNewApiResponse": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "auth_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthNewV3AuthItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Items"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetAuthNewApiResponse"
       },
       "GetCertificateDataApiRequest": {
         "properties": {},
@@ -35104,6 +35108,102 @@
         },
         "type": "object",
         "title": "GetKeysListApiResponse"
+      },
+      "GetLoginDataApiRequest": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          }
+        },
+        "type": "object",
+        "title": "GetLoginDataApiRequest"
+      },
+      "GetLoginDataApiResponse": {
+        "properties": {
+          "providers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetLoginDataV3Provider"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providers"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetLoginDataV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "guest_login_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guest Login Enabled"
+          },
+          "show_default_account": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Default Account"
+          },
+          "default_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Department Id"
+          },
+          "realm_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realm Name"
+          }
+        },
+        "type": "object",
+        "title": "GetLoginDataApiResponse"
       },
       "GetLogsBundleApiRequest": {
         "properties": {},
@@ -43424,6 +43524,87 @@
         ],
         "title": "IBulkCreateStaffV3Profile"
       },
+      "ICreateAuthV3AuthItem": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "encrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encrypted"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "encrypted",
+          "position",
+          "active",
+          "key_id"
+        ],
+        "title": "ICreateAuthV3AuthItem"
+      },
       "ICreateModelV3Pricing": {
         "properties": {
           "pricing_type": {
@@ -43604,6 +43785,87 @@
           "target_field"
         ],
         "title": "IProcessCsvV3ColumnMapping"
+      },
+      "IUpdateAuthV3AuthItem": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "encrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encrypted"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "encrypted",
+          "position",
+          "active",
+          "key_id"
+        ],
+        "title": "IUpdateAuthV3AuthItem"
       },
       "IUpdateModelV3Pricing": {
         "properties": {
@@ -44580,76 +44842,6 @@
         ],
         "title": "LogRunPayload",
         "description": "Request to log run pricing and metrics."
-      },
-      "LoginProvidersRequest": {
-        "properties": {
-          "departmentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentid"
-          }
-        },
-        "type": "object",
-        "title": "LoginProvidersRequest",
-        "description": "Request for login providers with optional department ID."
-      },
-      "LoginProvidersResponse": {
-        "properties": {
-          "providers": {
-            "items": {
-              "$ref": "#/components/schemas/ProviderOption"
-            },
-            "type": "array",
-            "title": "Providers"
-          },
-          "departments": {
-            "items": {
-              "$ref": "#/components/schemas/DepartmentOption"
-            },
-            "type": "array",
-            "title": "Departments"
-          },
-          "guest_login_enabled": {
-            "type": "boolean",
-            "title": "Guest Login Enabled"
-          },
-          "show_default_account": {
-            "type": "boolean",
-            "title": "Show Default Account"
-          },
-          "default_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Default Department Id"
-          },
-          "realm_name": {
-            "type": "string",
-            "title": "Realm Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "providers",
-          "departments",
-          "guest_login_enabled",
-          "show_default_account",
-          "default_department_id",
-          "realm_name"
-        ],
-        "title": "LoginProvidersResponse",
-        "description": "Response with list of active provider options and departments."
       },
       "MessageFeedbackHighlightItem": {
         "properties": {
@@ -47339,42 +47531,6 @@
         "title": "ProviderNewRequest",
         "description": "Request for default provider detail."
       },
-      "ProviderOption": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "is_default": {
-            "type": "boolean",
-            "title": "Is Default"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "icon",
-          "is_default"
-        ],
-        "title": "ProviderOption",
-        "description": "Provider option with id (slug), name, and icon URL."
-      },
       "ProvidersListRequest": {
         "properties": {},
         "type": "object",
@@ -48170,6 +48326,393 @@
           "available_voices"
         ],
         "title": "QGetAgentNewV3Model"
+      },
+      "QGetAuthDetailV3AuthItem": {
+        "properties": {
+          "auth_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "value_masked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Masked"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "encrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encrypted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_item_id",
+          "name",
+          "description",
+          "position",
+          "active",
+          "value_masked",
+          "key_id",
+          "encrypted"
+        ],
+        "title": "QGetAuthDetailV3AuthItem"
+      },
+      "QGetAuthListV3Auth": {
+        "properties": {
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "num_items": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Items"
+          },
+          "sample_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthListV3AuthItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Items"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "name",
+          "description",
+          "active",
+          "updated_at",
+          "num_items",
+          "sample_items",
+          "can_edit",
+          "can_delete",
+          "can_duplicate"
+        ],
+        "title": "QGetAuthListV3Auth"
+      },
+      "QGetAuthListV3AuthItem": {
+        "properties": {
+          "auth_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_item_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetAuthListV3AuthItem"
+      },
+      "QGetAuthNewV3AuthItem": {
+        "properties": {
+          "auth_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "value_masked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Masked"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "encrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encrypted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_item_id",
+          "name",
+          "description",
+          "position",
+          "active",
+          "value_masked",
+          "key_id",
+          "encrypted"
+        ],
+        "title": "QGetAuthNewV3AuthItem"
       },
       "QGetCohortDetailV3Department": {
         "properties": {
@@ -51248,6 +51791,106 @@
           "label"
         ],
         "title": "QGetKeysListV3ModelOption"
+      },
+      "QGetLoginDataV3Department": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description"
+        ],
+        "title": "QGetLoginDataV3Department"
+      },
+      "QGetLoginDataV3Provider": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "is_default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Default"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "icon",
+          "is_default"
+        ],
+        "title": "QGetLoginDataV3Provider"
       },
       "QGetLogsBundleV3HealthKpi": {
         "properties": {
@@ -71461,11 +72104,12 @@
         "type": "object",
         "title": "UpdateAgentApiResponse"
       },
-      "UpdateAuthRequest": {
+      "UpdateAuthApiRequest": {
         "properties": {
-          "authId": {
+          "auth_id": {
             "type": "string",
-            "title": "Authid"
+            "format": "uuid",
+            "title": "Auth Id"
           },
           "name": {
             "type": "string",
@@ -71479,43 +72123,100 @@
             "type": "boolean",
             "title": "Active"
           },
+          "auth_type": {
+            "type": "string",
+            "title": "Auth Type"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
           "auth_items": {
-            "items": {
-              "$ref": "#/components/schemas/AuthItemUpdate"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IUpdateAuthV3AuthItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Auth Items"
           }
         },
         "type": "object",
         "required": [
-          "authId",
+          "auth_id",
           "name",
           "description",
           "active",
-          "auth_items"
+          "auth_type",
+          "slug"
         ],
-        "title": "UpdateAuthRequest",
-        "description": "Request to update auth with nested items."
+        "title": "UpdateAuthApiRequest"
       },
-      "UpdateAuthResponse": {
+      "UpdateAuthApiResponse": {
         "properties": {
+          "auth_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Exists"
+          },
           "success": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Success"
           },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
           "message": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Message"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateAuthResponse",
-        "description": "Response from update auth."
+        "title": "UpdateAuthApiResponse"
       },
       "UpdateCohortApiRequest": {
         "properties": {
