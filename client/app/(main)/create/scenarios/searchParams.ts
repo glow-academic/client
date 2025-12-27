@@ -166,3 +166,58 @@ export function stringifyJsonDict<T>(
     return null;
   }
 }
+
+// Helper to convert nuqs array parser result to array or null
+export function csvToArray<T>(value: T[] | null | undefined): T[] | null {
+  if (!value || value.length === 0) return null;
+  return value;
+}
+
+// Helper to extract field ranges from URL search params
+export function extractFieldRanges(
+  searchParams: URLSearchParams
+): Record<string, { min: number; max: number }> | null {
+  const fieldRangesStr = searchParams.get("fieldRanges");
+  if (!fieldRangesStr) return null;
+  try {
+    const parsed = JSON.parse(fieldRangesStr);
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
+      return parsed as Record<string, { min: number; max: number }>;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Helper to extract field show selected by param from URL search params
+export function extractFieldShowSelectedByParam(
+  searchParams: URLSearchParams
+): Record<string, boolean> | null {
+  const fieldShowSelectedStr = searchParams.get("fieldShowSelected");
+  if (!fieldShowSelectedStr) return null;
+  try {
+    const parsed = JSON.parse(fieldShowSelectedStr);
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
+      return parsed as Record<string, boolean>;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Helper to extract parameter item ranges from URL search params
+export function extractParameterItemRanges(
+  searchParams: URLSearchParams
+): Record<string, { min: number; max: number }> | null {
+  return extractFieldRanges(searchParams); // Same as field ranges
+}

@@ -5,12 +5,41 @@
 BEGIN;
 
 -- 1) Drop function first (breaks dependency on types)
-DROP FUNCTION IF EXISTS api_update_scenario_v3(uuid, text, boolean, boolean, boolean, boolean, boolean, boolean, text, text[], text[], text[], text[], jsonb, uuid, text[], text, text[], jsonb, uuid, uuid, text[], uuid, text, text, text[], text[], text[], text[], text[], jsonb);
+-- Drop update function only (this file manages update, not create)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN SELECT oidvectortypes(proargtypes) as sig FROM pg_proc WHERE proname = 'api_update_scenario_v3' LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_update_scenario_v3(%s) CASCADE', r.sig);
+    END LOOP;
+END $$;
 
 -- 2) Drop types WITHOUT CASCADE
--- No composite types needed for this simple endpoint
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DROP TYPE IF EXISTS types.q_update_scenario_v3_parameter;
+DROP TYPE IF EXISTS types.q_update_scenario_v3_question_timestamp;
+DROP TYPE IF EXISTS types.q_update_scenario_v3_upload_image;
 
--- 3) Recreate function
+-- 3) Recreate types (separate from create_scenario)
+CREATE TYPE types.q_update_scenario_v3_parameter AS (
+    parameter_id uuid,
+    field_ids uuid[]
+);
+
+CREATE TYPE types.q_update_scenario_v3_question_timestamp AS (
+    question_id uuid,
+    video_id uuid,
+    timestamps numeric[]
+);
+
+CREATE TYPE types.q_update_scenario_v3_upload_image AS (
+    upload_id uuid,
+    name text
+);
+
+-- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_update_scenario_v3(
     scenario_id uuid,
     name text,
@@ -23,7 +52,7 @@ CREATE OR REPLACE FUNCTION api_update_scenario_v3(
     problem_statement text,
     document_ids text[],
     objective_ids text[],
-    parameter_item_ids text[],
+    parameters types.q_update_scenario_v3_parameter[],
     profile_id uuid,
     description text DEFAULT NULL,
     video_agent_id uuid DEFAULT NULL,
@@ -31,14 +60,14 @@ CREATE OR REPLACE FUNCTION api_update_scenario_v3(
     department_ids text[] DEFAULT NULL,
     persona_ids text[] DEFAULT NULL,
     template_document_ids text[] DEFAULT NULL,
-    upload_images_json jsonb DEFAULT NULL,
-    scenario_agent_id uuid DEFAULT NULL,
-    image_agent_id uuid DEFAULT NULL,
-    parameter_ids text[] DEFAULT NULL,
+    upload_ids uuid[] DEFAULT NULL,
+    image_names text[] DEFAULT NULL,
     video_ids text[] DEFAULT NULL,
     active_video_id text DEFAULT NULL,
     question_ids text[] DEFAULT NULL,
-    question_timestamps jsonb DEFAULT NULL
+    question_timestamps types.q_update_scenario_v3_question_timestamp[] DEFAULT ARRAY[]::types.q_update_scenario_v3_question_timestamp[],
+    scenario_agent_id uuid DEFAULT NULL,
+    image_agent_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     scenario_exists boolean,
@@ -49,11 +78,11 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-WITH params AS (
+WITH raw_params AS (
     SELECT
         scenario_id AS scenario_id,
         name AS name,
-        COALESCE(NULLIF(description, ''), '') AS description,
+        description AS description,
         active AS active,
         objectives_enabled AS objectives_enabled,
         images_enabled AS images_enabled,
@@ -62,22 +91,104 @@ WITH params AS (
         problem_statement_enabled AS problem_statement_enabled,
         video_agent_id AS video_agent_id,
         problem_statement AS problem_statement,
-        COALESCE(problem_statement_name, name) AS problem_statement_name,
-        COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
-        COALESCE(persona_ids, ARRAY[]::text[]) AS persona_ids,
-        COALESCE(document_ids, ARRAY[]::text[]) AS document_ids,
-        COALESCE(template_document_ids, ARRAY[]::text[]) AS template_document_ids,
-        COALESCE(objective_ids, ARRAY[]::text[]) AS objective_ids,
-        COALESCE(parameter_item_ids, ARRAY[]::text[]) AS parameter_item_ids,
-        COALESCE(upload_images_json, '[]'::jsonb) AS upload_images_json,
+        problem_statement_name AS problem_statement_name,
+        department_ids AS department_ids,
+        persona_ids AS persona_ids,
+        document_ids AS document_ids,
+        template_document_ids AS template_document_ids,
+        objective_ids AS objective_ids,
+        parameters AS parameters,
+        upload_ids AS upload_ids,
+        image_names AS image_names,
         scenario_agent_id AS scenario_agent_id,
         image_agent_id AS image_agent_id,
-        COALESCE(parameter_ids, ARRAY[]::text[]) AS parameter_ids,
-        COALESCE(video_ids, ARRAY[]::text[]) AS video_ids,
+        video_ids AS video_ids,
         active_video_id AS active_video_id,
-        COALESCE(question_ids, ARRAY[]::text[]) AS question_ids,
+        question_ids AS question_ids,
         question_timestamps AS question_timestamps,
         profile_id AS profile_id
+),
+-- Preprocessing: Filter composite objective IDs (those with "_" and length 2 when split)
+filtered_objective_ids AS (
+    SELECT ARRAY_AGG(obj_id) FILTER (WHERE obj_id IS NOT NULL) as objective_ids
+    FROM raw_params rp
+    CROSS JOIN UNNEST(COALESCE(rp.objective_ids, ARRAY[]::text[])) as obj_id
+    WHERE NOT (obj_id LIKE '%_%' AND array_length(string_to_array(obj_id, '_'), 1) = 2)
+),
+-- Preprocessing: Extract parameter_item_ids and parameter_ids from parameters composite type array
+parameter_preprocessing AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(DISTINCT field_id::text) FILTER (WHERE field_id IS NOT NULL),
+            ARRAY[]::text[]
+        ) as parameter_item_ids,
+        COALESCE(
+            ARRAY_AGG(DISTINCT param.parameter_id::text) FILTER (WHERE param.parameter_id IS NOT NULL),
+            ARRAY[]::text[]
+        ) as parameter_ids
+    FROM raw_params rp
+    CROSS JOIN UNNEST(COALESCE(rp.parameters, ARRAY[]::types.q_update_scenario_v3_parameter[])) as param
+    CROSS JOIN UNNEST(COALESCE(param.field_ids, ARRAY[]::uuid[])) as field_id
+),
+-- Preprocessing: Construct upload_images array from upload_ids and image_names arrays
+upload_images_preprocessing AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (upload_id, image_name)::types.q_update_scenario_v3_upload_image
+                ORDER BY idx
+            ),
+            '{}'::types.q_update_scenario_v3_upload_image[]
+        ) as upload_images
+    FROM raw_params rp
+    CROSS JOIN LATERAL (
+        SELECT 
+            upload_id,
+            image_name,
+            ROW_NUMBER() OVER () - 1 as idx
+        FROM UNNEST(
+            COALESCE(rp.upload_ids, ARRAY[]::uuid[]),
+            COALESCE(rp.image_names, ARRAY[]::text[])
+        ) as t(upload_id, image_name)
+    ) paired
+    WHERE rp.upload_ids IS NOT NULL 
+      AND rp.image_names IS NOT NULL
+      AND array_length(rp.upload_ids, 1) = array_length(rp.image_names, 1)
+      AND array_length(rp.upload_ids, 1) > 0
+),
+params AS (
+    SELECT
+        rp.scenario_id AS scenario_id,
+        rp.name AS name,
+        COALESCE(NULLIF(rp.description, ''), '') AS description,
+        rp.active AS active,
+        rp.objectives_enabled AS objectives_enabled,
+        rp.images_enabled AS images_enabled,
+        rp.video_enabled AS video_enabled,
+        rp.questions_enabled AS questions_enabled,
+        rp.problem_statement_enabled AS problem_statement_enabled,
+        rp.video_agent_id AS video_agent_id,
+        rp.problem_statement AS problem_statement,
+        COALESCE(rp.problem_statement_name, rp.name) AS problem_statement_name,
+        COALESCE(rp.department_ids, ARRAY[]::text[]) AS department_ids,
+        COALESCE(rp.persona_ids, ARRAY[]::text[]) AS persona_ids,
+        COALESCE(rp.document_ids, ARRAY[]::text[]) AS document_ids,
+        COALESCE(rp.template_document_ids, ARRAY[]::text[]) AS template_document_ids,
+        COALESCE(foi.objective_ids, ARRAY[]::text[]) AS objective_ids,
+        COALESCE(pp.parameter_item_ids, ARRAY[]::text[]) AS parameter_item_ids,
+        COALESCE(uip.upload_images, ARRAY[]::types.q_update_scenario_v3_upload_image[]) AS upload_images,
+        rp.scenario_agent_id AS scenario_agent_id,
+        rp.image_agent_id AS image_agent_id,
+        COALESCE(pp.parameter_ids, ARRAY[]::text[]) AS parameter_ids,
+        COALESCE(rp.video_ids, ARRAY[]::text[]) AS video_ids,
+        rp.active_video_id AS active_video_id,
+        COALESCE(rp.question_ids, ARRAY[]::text[]) AS question_ids,
+        COALESCE(rp.question_timestamps, ARRAY[]::types.q_update_scenario_v3_question_timestamp[]) AS question_timestamps,
+        rp.profile_id AS profile_id
+    FROM raw_params rp
+    CROSS JOIN filtered_objective_ids foi
+    CROSS JOIN parameter_preprocessing pp
+    CROSS JOIN upload_images_preprocessing uip
 ),
 user_profile AS (
     SELECT 
@@ -326,17 +437,18 @@ create_images AS (
     -- Create images if they don't exist
     INSERT INTO images (name, created_at, updated_at, active)
     SELECT DISTINCT
-        img->>'name',
+        img.name,
         NOW(),
         NOW(),
         true
-    FROM jsonb_array_elements((SELECT upload_images_json FROM params)) as img
+    FROM params x
+    CROSS JOIN UNNEST(x.upload_images) as img
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND jsonb_array_length((SELECT upload_images_json FROM params)) > 0
+      AND array_length((SELECT upload_images FROM params), 1) > 0
       AND NOT EXISTS (
           SELECT 1 FROM images i
           JOIN image_uploads iu ON iu.image_id = i.id
-          WHERE iu.upload_id = (img->>'upload_id')::uuid AND i.name = img->>'name'
+          WHERE iu.upload_id = img.upload_id AND i.name = img.name
       )
     RETURNING id as image_id
 ),
@@ -345,14 +457,15 @@ link_image_uploads AS (
     INSERT INTO image_uploads (image_id, upload_id, active, created_at, updated_at)
     SELECT DISTINCT
         ci.image_id,
-        (img->>'upload_id')::uuid,
+        img.upload_id,
         true,
         NOW(),
         NOW()
     FROM create_images ci
-    CROSS JOIN jsonb_array_elements((SELECT upload_images_json FROM params)) as img
+    CROSS JOIN params x
+    CROSS JOIN UNNEST(x.upload_images) as img
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND jsonb_array_length((SELECT upload_images_json FROM params)) > 0
+      AND array_length((SELECT upload_images FROM params), 1) > 0
     ON CONFLICT (image_id, upload_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -360,9 +473,10 @@ link_image_uploads AS (
 get_images AS (
     -- Get existing images via image_uploads junction table
     SELECT i.id as image_id
-    FROM jsonb_array_elements((SELECT upload_images_json FROM params)) as img
-    JOIN image_uploads iu ON iu.upload_id = (img->>'upload_id')::uuid
-    JOIN images i ON i.id = iu.image_id AND i.name = img->>'name'
+    FROM params x
+    CROSS JOIN UNNEST(x.upload_images) as img
+    JOIN image_uploads iu ON iu.upload_id = img.upload_id
+    JOIN images i ON i.id = iu.image_id AND i.name = img.name
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
       AND iu.active = true
 ),
@@ -382,7 +496,7 @@ link_images AS (
         NOW()
     FROM all_images ai
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND jsonb_array_length((SELECT upload_images_json FROM params)) > 0
+      AND array_length((SELECT upload_images FROM params), 1) > 0
     ON CONFLICT (scenario_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

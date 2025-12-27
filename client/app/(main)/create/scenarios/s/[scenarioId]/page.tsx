@@ -86,13 +86,44 @@ const getScenario = async (
     problemStatementIds?: string[];
   }
 ): Promise<ScenarioDetailOut> => {
+  // Convert camelCase filter params to snake_case for API
+  const snakeCaseParams: Record<string, unknown> = {
+    scenario_id: scenarioId,
+  };
+  
+  if (filterParams) {
+    if (filterParams.departmentIds) snakeCaseParams.filter_department_ids = filterParams.departmentIds;
+    if (filterParams.personaIds) snakeCaseParams.filter_persona_ids = filterParams.personaIds;
+    if (filterParams.documentIds) snakeCaseParams.filter_document_ids = filterParams.documentIds;
+    if (filterParams.templateDocumentIds) snakeCaseParams.template_document_ids = filterParams.templateDocumentIds;
+    if (filterParams.parameterIds) snakeCaseParams.filter_parameter_ids = filterParams.parameterIds;
+    if (filterParams.parameterItemIds) snakeCaseParams.filter_field_ids = filterParams.parameterItemIds;
+    if (filterParams.personaSearch) snakeCaseParams.persona_search = filterParams.personaSearch;
+    if (filterParams.documentSearch) snakeCaseParams.document_search = filterParams.documentSearch;
+    if (filterParams.parameterSearch) snakeCaseParams.parameter_search = filterParams.parameterSearch;
+    if (filterParams.documentShowSelected !== undefined) snakeCaseParams.document_show_selected = filterParams.documentShowSelected;
+    if (filterParams.documentShowTemplate !== undefined) snakeCaseParams.document_show_template = filterParams.documentShowTemplate;
+    if (filterParams.personaShowSelected !== undefined) snakeCaseParams.persona_show_selected = filterParams.personaShowSelected;
+    if (filterParams.parameterShowSelected !== undefined) snakeCaseParams.parameter_show_selected = filterParams.parameterShowSelected;
+    if (filterParams.fieldShowSelectedByParam) snakeCaseParams.field_show_selected_by_param = filterParams.fieldShowSelectedByParam;
+    if (filterParams.personaMin !== undefined) snakeCaseParams.persona_min = filterParams.personaMin;
+    if (filterParams.personaMax !== undefined) snakeCaseParams.persona_max = filterParams.personaMax;
+    if (filterParams.documentMin !== undefined) snakeCaseParams.document_min = filterParams.documentMin;
+    if (filterParams.documentMax !== undefined) snakeCaseParams.document_max = filterParams.documentMax;
+    if (filterParams.parameterSelectionMin !== undefined) snakeCaseParams.parameter_selection_min = filterParams.parameterSelectionMin;
+    if (filterParams.parameterSelectionMax !== undefined) snakeCaseParams.parameter_selection_max = filterParams.parameterSelectionMax;
+    if (filterParams.parameterItemRanges) snakeCaseParams.field_ranges = filterParams.parameterItemRanges;
+    if (filterParams.useImage !== undefined) snakeCaseParams.use_image = filterParams.useImage;
+    if (filterParams.useVideo !== undefined) snakeCaseParams.use_video = filterParams.useVideo;
+    if (filterParams.imageIds) snakeCaseParams.image_ids = filterParams.imageIds;
+    if (filterParams.objectiveIds) snakeCaseParams.objective_ids = filterParams.objectiveIds;
+    if (filterParams.problemStatementIds) snakeCaseParams.problem_statement_ids = filterParams.problemStatementIds;
+  }
+  
   return api.post(
     "/scenarios/detail",
     {
-      body: {
-        scenarioId,
-        ...(filterParams || {}),
-      },
+      body: snakeCaseParams,
     },
     {
       cache: "no-store",

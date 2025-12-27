@@ -726,11 +726,11 @@ class GetAuthDetailAuthItemsItem(BaseModel):
 
 class GetAuthDetailSqlRow(BaseModel):
 
-    description: str
-    name: str
-    can_edit: bool
-    active: bool
     actor_name: str
+    can_edit: bool
+    description: str
+    active: bool
+    name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 class GetAuthDetailApiRequest(BaseModel):
@@ -740,11 +740,11 @@ class GetAuthDetailApiRequest(BaseModel):
 
 class GetAuthDetailApiResponse(BaseModel):
 
-    description: str
-    name: str
-    can_edit: bool
-    active: bool
     actor_name: str
+    can_edit: bool
+    description: str
+    active: bool
+    name: str
     auth_items: dict[str, GetAuthDetailAuthItemsItem]
 
 
@@ -5253,6 +5253,20 @@ class UpdateRubricApiResponse(BaseModel):
 
 # Generated from: create_scenario
 
+class QCreateScenarioV3Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    field_ids: list[UUID] | None
+
+
+
+
+class QCreateScenarioV3QuestionTimestamp(BaseModel):
+
+    question_id: UUID | None
+    video_id: UUID | None
+    timestamps: list[float] | None
+
 class CreateScenarioSqlParams(BaseModel):
 
     name: str
@@ -5265,7 +5279,7 @@ class CreateScenarioSqlParams(BaseModel):
     problem_statement: str
     document_ids: list[str]
     objective_ids: list[str]
-    parameter_item_ids: list[str]
+    parameters: list[QCreateScenarioV3Parameter]
     profile_id: UUID
     description: str | None = None
     video_agent_id: UUID | None = None
@@ -5274,15 +5288,25 @@ class CreateScenarioSqlParams(BaseModel):
     department_ids: list[str] | None = None
     persona_ids: list[str] | None = None
     template_document_ids: list[str] | None = None
-    upload_images_json: dict[str, Any] | None = None
+    upload_ids: list[UUID] | None = None
+    image_names: list[str] | None = None
     video_ids: list[str] | None = None
     active_video_id: str | None = None
     question_ids: list[str] | None = None
-    question_timestamps: dict[str, Any] | None = None
+    question_timestamps: list[QCreateScenarioV3QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
     run_id: UUID | None = None
-    parameter_ids: list[str] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert parameters composite array to tuples for asyncpg
+        parameters_tuples = [
+            (conn.parameter_id, conn.field_ids)
+            for conn in self.parameters
+        ]
+        # Convert question_timestamps composite array to tuples for asyncpg
+        question_timestamps_tuples = [
+            (conn.question_id, conn.video_id, conn.timestamps)
+            for conn in self.question_timestamps
+        ]
         return (
             self.name,
             self.active,
@@ -5294,7 +5318,7 @@ class CreateScenarioSqlParams(BaseModel):
             self.problem_statement,
             self.document_ids,
             self.objective_ids,
-            self.parameter_item_ids,
+            parameters_tuples,
             self.profile_id,
             self.description,
             self.video_agent_id,
@@ -5303,13 +5327,13 @@ class CreateScenarioSqlParams(BaseModel):
             self.department_ids,
             self.persona_ids,
             self.template_document_ids,
-            self.upload_images_json,
+            self.upload_ids,
+            self.image_names,
             self.video_ids,
             self.active_video_id,
             self.question_ids,
-            self.question_timestamps,
+            question_timestamps_tuples,
             self.run_id,
-            self.parameter_ids,
         )
 
 class CreateScenarioSqlRow(BaseModel):
@@ -5329,7 +5353,7 @@ class CreateScenarioApiRequest(BaseModel):
     problem_statement: str
     document_ids: list[str]
     objective_ids: list[str]
-    parameter_item_ids: list[str]
+    parameters: list[QCreateScenarioV3Parameter]
     description: str | None = None
     video_agent_id: UUID | None = None
     problem_statement_name: str | None = None
@@ -5337,13 +5361,13 @@ class CreateScenarioApiRequest(BaseModel):
     department_ids: list[str] | None = None
     persona_ids: list[str] | None = None
     template_document_ids: list[str] | None = None
-    upload_images_json: dict[str, Any] | None = None
+    upload_ids: list[UUID] | None = None
+    image_names: list[str] | None = None
     video_ids: list[str] | None = None
     active_video_id: str | None = None
     question_ids: list[str] | None = None
-    question_timestamps: dict[str, Any] | None = None
+    question_timestamps: list[QCreateScenarioV3QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
     run_id: UUID | None = None
-    parameter_ids: list[str] | None = None
 
 class CreateScenarioApiResponse(BaseModel):
 
@@ -5464,6 +5488,11 @@ class GetRandomizationDataApiResponse(BaseModel):
 
 # Generated from: get_scenario_detail
 
+class QGetScenarioDetailV3FieldParamFilter(BaseModel):
+
+    parameter_id: UUID | None
+    show_selected: bool | None
+
 class GetScenarioDetailSqlParams(BaseModel):
 
     scenario_id: UUID
@@ -5485,9 +5514,14 @@ class GetScenarioDetailSqlParams(BaseModel):
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
-    field_show_selected_by_param: dict[str, Any] | None = None
+    field_show_selected_by_param: list[QGetScenarioDetailV3FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert field_show_selected_by_param composite array to tuples for asyncpg
+        field_show_selected_by_param_tuples = [
+            (conn.parameter_id, conn.show_selected)
+            for conn in self.field_show_selected_by_param
+        ]
         return (
             self.scenario_id,
             self.profile_id,
@@ -5508,7 +5542,7 @@ class GetScenarioDetailSqlParams(BaseModel):
             self.persona_show_selected,
             self.document_show_selected,
             self.parameter_show_selected,
-            self.field_show_selected_by_param,
+            field_show_selected_by_param_tuples,
         )
 
 class QGetScenarioDetailV3Agent(BaseModel):
@@ -5792,7 +5826,7 @@ class GetScenarioDetailApiRequest(BaseModel):
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
-    field_show_selected_by_param: dict[str, Any] | None = None
+    field_show_selected_by_param: list[QGetScenarioDetailV3FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetScenarioDetailApiResponse(BaseModel):
 
@@ -5860,6 +5894,11 @@ class GetScenarioDetailApiResponse(BaseModel):
 
 # Generated from: get_scenario_new
 
+class QGetScenarioNewV3FieldParamFilter(BaseModel):
+
+    parameter_id: UUID | None
+    show_selected: bool | None
+
 class GetScenarioNewSqlParams(BaseModel):
 
     profile_id: UUID
@@ -5882,9 +5921,14 @@ class GetScenarioNewSqlParams(BaseModel):
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
-    field_show_selected_by_param: dict[str, Any] | None = None
+    field_show_selected_by_param: list[QGetScenarioNewV3FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert field_show_selected_by_param composite array to tuples for asyncpg
+        field_show_selected_by_param_tuples = [
+            (conn.parameter_id, conn.show_selected)
+            for conn in self.field_show_selected_by_param
+        ]
         return (
             self.profile_id,
             self.use_image,
@@ -5906,7 +5950,7 @@ class GetScenarioNewSqlParams(BaseModel):
             self.persona_show_selected,
             self.document_show_selected,
             self.parameter_show_selected,
-            self.field_show_selected_by_param,
+            field_show_selected_by_param_tuples,
         )
 
 class QGetScenarioNewV3Agent(BaseModel):
@@ -6149,7 +6193,7 @@ class GetScenarioNewApiRequest(BaseModel):
     persona_show_selected: bool | None = None
     document_show_selected: bool | None = None
     parameter_show_selected: bool | None = None
-    field_show_selected_by_param: dict[str, Any] | None = None
+    field_show_selected_by_param: list[QGetScenarioNewV3FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetScenarioNewApiResponse(BaseModel):
 
@@ -6328,6 +6372,20 @@ class GetScenariosListApiResponse(BaseModel):
 
 # Generated from: update_scenario
 
+class QUpdateScenarioV3Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    field_ids: list[UUID] | None
+
+
+
+
+class QUpdateScenarioV3QuestionTimestamp(BaseModel):
+
+    question_id: UUID | None
+    video_id: UUID | None
+    timestamps: list[float] | None
+
 class UpdateScenarioSqlParams(BaseModel):
 
     scenario_id: UUID
@@ -6341,7 +6399,7 @@ class UpdateScenarioSqlParams(BaseModel):
     problem_statement: str
     document_ids: list[str]
     objective_ids: list[str]
-    parameter_item_ids: list[str]
+    parameters: list[QUpdateScenarioV3Parameter]
     profile_id: UUID
     description: str | None = None
     video_agent_id: UUID | None = None
@@ -6349,16 +6407,26 @@ class UpdateScenarioSqlParams(BaseModel):
     department_ids: list[str] | None = None
     persona_ids: list[str] | None = None
     template_document_ids: list[str] | None = None
-    upload_images_json: dict[str, Any] | None = None
-    scenario_agent_id: UUID | None = None
-    image_agent_id: UUID | None = None
-    parameter_ids: list[str] | None = None
+    upload_ids: list[UUID] | None = None
+    image_names: list[str] | None = None
     video_ids: list[str] | None = None
     active_video_id: str | None = None
     question_ids: list[str] | None = None
-    question_timestamps: dict[str, Any] | None = None
+    question_timestamps: list[QUpdateScenarioV3QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_agent_id: UUID | None = None
+    image_agent_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert parameters composite array to tuples for asyncpg
+        parameters_tuples = [
+            (conn.parameter_id, conn.field_ids)
+            for conn in self.parameters
+        ]
+        # Convert question_timestamps composite array to tuples for asyncpg
+        question_timestamps_tuples = [
+            (conn.question_id, conn.video_id, conn.timestamps)
+            for conn in self.question_timestamps
+        ]
         return (
             self.scenario_id,
             self.name,
@@ -6371,7 +6439,7 @@ class UpdateScenarioSqlParams(BaseModel):
             self.problem_statement,
             self.document_ids,
             self.objective_ids,
-            self.parameter_item_ids,
+            parameters_tuples,
             self.profile_id,
             self.description,
             self.video_agent_id,
@@ -6379,14 +6447,14 @@ class UpdateScenarioSqlParams(BaseModel):
             self.department_ids,
             self.persona_ids,
             self.template_document_ids,
-            self.upload_images_json,
-            self.scenario_agent_id,
-            self.image_agent_id,
-            self.parameter_ids,
+            self.upload_ids,
+            self.image_names,
             self.video_ids,
             self.active_video_id,
             self.question_ids,
-            self.question_timestamps,
+            question_timestamps_tuples,
+            self.scenario_agent_id,
+            self.image_agent_id,
         )
 
 class UpdateScenarioSqlRow(BaseModel):
@@ -6409,21 +6477,21 @@ class UpdateScenarioApiRequest(BaseModel):
     problem_statement: str
     document_ids: list[str]
     objective_ids: list[str]
-    parameter_item_ids: list[str]
+    parameters: list[QUpdateScenarioV3Parameter]
     description: str | None = None
     video_agent_id: UUID | None = None
     problem_statement_name: str | None = None
     department_ids: list[str] | None = None
     persona_ids: list[str] | None = None
     template_document_ids: list[str] | None = None
-    upload_images_json: dict[str, Any] | None = None
-    scenario_agent_id: UUID | None = None
-    image_agent_id: UUID | None = None
-    parameter_ids: list[str] | None = None
+    upload_ids: list[UUID] | None = None
+    image_names: list[str] | None = None
     video_ids: list[str] | None = None
     active_video_id: str | None = None
     question_ids: list[str] | None = None
-    question_timestamps: dict[str, Any] | None = None
+    question_timestamps: list[QUpdateScenarioV3QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_agent_id: UUID | None = None
+    image_agent_id: UUID | None = None
 
 class UpdateScenarioApiResponse(BaseModel):
 

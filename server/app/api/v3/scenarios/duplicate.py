@@ -67,9 +67,8 @@ async def duplicate_scenario(
         )
 
         if not result.scenario_id:
-            raise ValueError(f"Scenario not found: {request.scenarioId}")
+            raise ValueError(f"Scenario not found: {request.scenario_id}")
 
-        new_scenario_id = str(result.scenario_id)
         scenario_name = result.scenario_name or "Unknown"
         actor_name = result.actor_name
 
@@ -78,20 +77,17 @@ async def duplicate_scenario(
             audit_set(
                 http_request,
                 actor={"name": actor_name, "id": profile_id},
-                scenario={"name": scenario_name, "id": new_scenario_id},
+                scenario={"name": scenario_name, "id": str(result.scenario_id)},
             )
 
-        result_data = DuplicateScenarioApiResponse(
-            success=True,
-            scenarioId=new_scenario_id,
-            message=f"Scenario '{scenario_name}' duplicated successfully",
-        )
+        # Convert SQL result to API response
+        api_response = DuplicateScenarioApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

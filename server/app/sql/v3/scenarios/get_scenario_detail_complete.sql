@@ -10,11 +10,14 @@ BEGIN;
 -- 1) Drop function first (breaks dependency on types)
 -- Drop with old signature (for migration)
 DROP FUNCTION IF EXISTS api_get_scenario_detail_v3(uuid, uuid, boolean, boolean, uuid[], uuid[], uuid[], boolean);
--- Drop with new signature (with filter parameters)
+-- Drop with new signature (with filter parameters - old JSONB version)
 DROP FUNCTION IF EXISTS api_get_scenario_detail_v3(uuid, uuid, boolean, boolean, uuid[], uuid[], uuid[], boolean, uuid[], uuid[], uuid[], uuid[], uuid[], text, text, text, boolean, boolean, boolean, jsonb);
+-- Drop with new signature (with composite type array)
+DROP FUNCTION IF EXISTS api_get_scenario_detail_v3(uuid, uuid, boolean, boolean, uuid[], uuid[], uuid[], boolean, uuid[], uuid[], uuid[], uuid[], uuid[], text, text, text, boolean, boolean, boolean, types.q_get_scenario_detail_v3_field_param_filter[]);
 
 -- 2) Drop types WITHOUT CASCADE
 -- If any other object depends on them, this will ERROR and stop the migration (good)
+DROP TYPE IF EXISTS types.q_get_scenario_detail_v3_field_param_filter;
 DROP TYPE IF EXISTS types.q_get_scenario_detail_v3_persona;
 DROP TYPE IF EXISTS types.q_get_scenario_detail_v3_document;
 DROP TYPE IF EXISTS types.q_get_scenario_detail_v3_parameter;
@@ -34,6 +37,11 @@ DROP TYPE IF EXISTS types.q_get_scenario_detail_v3_parameter_detail;
 DROP TYPE IF EXISTS types.q_get_scenario_detail_v3_field_range;
 
 -- 3) Recreate types
+CREATE TYPE types.q_get_scenario_detail_v3_field_param_filter AS (
+    parameter_id uuid,
+    show_selected boolean
+);
+
 CREATE TYPE types.q_get_scenario_detail_v3_persona AS (
     persona_id uuid,
     name text,
@@ -212,7 +220,7 @@ CREATE OR REPLACE FUNCTION api_get_scenario_detail_v3(
     persona_show_selected boolean DEFAULT NULL,
     document_show_selected boolean DEFAULT NULL,
     parameter_show_selected boolean DEFAULT NULL,
-    field_show_selected_by_param jsonb DEFAULT NULL
+    field_show_selected_by_param types.q_get_scenario_detail_v3_field_param_filter[] DEFAULT ARRAY[]::types.q_get_scenario_detail_v3_field_param_filter[]
 )
 RETURNS TABLE (
     scenario_exists boolean,
@@ -302,7 +310,7 @@ WITH params AS (
         COALESCE(persona_show_selected, false) AS persona_show_selected,
         COALESCE(document_show_selected, false) AS document_show_selected,
         COALESCE(parameter_show_selected, false) AS parameter_show_selected,
-        field_show_selected_by_param AS field_show_selected_by_param
+        COALESCE(field_show_selected_by_param, ARRAY[]::types.q_get_scenario_detail_v3_field_param_filter[]) AS field_show_selected_by_param
 ),
 scenario_exists_check AS (
     -- Check if scenario exists independently of access control
@@ -1503,9 +1511,11 @@ parameter_item_data AS (
         )
         -- Per-parameter show_selected filter
         AND (
-            (SELECT field_show_selected_by_param FROM params LIMIT 1) IS NULL
-            OR NOT (SELECT field_show_selected_by_param FROM params LIMIT 1) ? pf.parameter_id::text
-            OR (SELECT (field_show_selected_by_param->>pf.parameter_id::text)::boolean FROM params LIMIT 1) = false
+            array_length((SELECT field_show_selected_by_param FROM params LIMIT 1), 1) IS NULL
+            OR NOT EXISTS (
+                SELECT 1 FROM UNNEST((SELECT field_show_selected_by_param FROM params LIMIT 1)) as fp_filter
+                WHERE fp_filter.parameter_id = pf.parameter_id AND fp_filter.show_selected = true
+            )
             OR f.id = ANY((SELECT filter_field_ids FROM params LIMIT 1)::uuid[])
         )
     ORDER BY p.name, f.name
@@ -1604,9 +1614,11 @@ all_fields_array AS (
         )
         -- Per-parameter show_selected filter
         AND (
-            (SELECT field_show_selected_by_param FROM params LIMIT 1) IS NULL
-            OR NOT (SELECT field_show_selected_by_param FROM params LIMIT 1) ? afab.parameter_id::text
-            OR (SELECT (field_show_selected_by_param->>afab.parameter_id::text)::boolean FROM params LIMIT 1) = false
+            array_length((SELECT field_show_selected_by_param FROM params LIMIT 1), 1) IS NULL
+            OR NOT EXISTS (
+                SELECT 1 FROM UNNEST((SELECT field_show_selected_by_param FROM params LIMIT 1)) as fp_filter
+                WHERE fp_filter.parameter_id = afab.parameter_id AND fp_filter.show_selected = true
+            )
             OR afab.field_id = ANY((SELECT filter_field_ids FROM params LIMIT 1)::uuid[])
         )
 ),

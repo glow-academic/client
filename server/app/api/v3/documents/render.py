@@ -29,7 +29,8 @@ router = APIRouter()
 
 @router.post(
     "/render",
-    response_model=RenderTemplateApiResponse,
+    # Note: response_model removed because rendered_html is not in RenderTemplateApiResponse
+    # The response includes rendered_html which is generated in Python, not SQL
     dependencies=[
         audit_activity(
             "document.rendered",
@@ -41,7 +42,7 @@ async def render_document_template(
     request: RenderTemplateApiRequest,
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> RenderTemplateApiResponse:
+) -> dict[str, Any]:
     """Render Jinja2 template with template args and theme injection."""
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -116,8 +117,6 @@ async def render_document_template(
         # Get template schema (template_args contains the schema with placeholder/description metadata)
         # template_args is already parsed by execute_sql_typed (JSONB → dict)
         template_schema_raw = result.template_args or {}
-        if isinstance(template_schema_raw, str):
-            template_schema_raw = json.loads(template_schema_raw)
 
         # Extract placeholders from schema and build default values structure
         def extract_placeholders(
@@ -237,10 +236,15 @@ async def render_document_template(
 
             return result
 
+        # Get template args from request body (not in SQL params, so access from raw body)
+        # templateArgs is sent by client but not in the API request model since SQL doesn't use it
+        request_body = await http_request.json()
+        template_args_from_request = request_body.get("templateArgs") or request_body.get("template_args") or {}
+        
         # Merge placeholders as defaults with request args
         # This ensures placeholders are always present in the context
         merged_args = deep_merge_with_defaults(
-            placeholder_defaults, request.templateArgs
+            placeholder_defaults, template_args_from_request
         )
 
         # Recursively clean up item template keys (they're internal, not for templates)
@@ -466,14 +470,17 @@ async def render_document_template(
             theme_tokens=theme_tokens,
         )
 
-        # Convert to API response
-        api_response = RenderTemplateApiResponse(
-            success=True,
-            message="Template rendered successfully",
-            rendered_html=rendered_html,
-        )
-
-        return api_response
+        # Convert SQL result to API response
+        # Note: rendered_html is generated in Python, not SQL, so we need to add it manually
+        # The generated RenderTemplateApiResponse has: document_name, actor_name, file_path, template_args
+        # But the client expects rendered_html. Since it's not in the SQL response, we construct
+        # a response dict with all fields from result plus rendered_html
+        response_dict = result.model_dump()
+        response_dict["rendered_html"] = rendered_html
+        
+        # Return dict - FastAPI will serialize it
+        # We can't use model_validate because rendered_html isn't in the generated model
+        return response_dict
     except HTTPException:
         raise
     except Exception as e:

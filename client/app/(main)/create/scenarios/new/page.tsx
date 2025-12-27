@@ -11,7 +11,6 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import {
   csvToArray,
-  extractFieldRanges,
   extractFieldShowSelectedByParam,
   loadScenarioSearchParams,
 } from "../searchParams";
@@ -81,37 +80,28 @@ export default async function NewScenarioPage({
   // Extract dynamic params (not handled by nuqs parsers)
   const fieldShowSelectedByParam =
     extractFieldShowSelectedByParam(searchParamsObj);
-  const fieldRanges = extractFieldRanges(searchParamsObj);
 
   // Fetch default scenario detail server-side with filter params
   const scenarioDetailDefault = await getScenarioDefault({
     body: {
-      departmentIds: csvToArray(q.departmentIds) ?? null,
-      personaIds: csvToArray(q.personaIds) ?? null,
-      documentIds: csvToArray(q.documentIds) ?? null,
-      templateDocumentIds: csvToArray(q.templateDocumentIds) ?? null,
-      parameterIds: csvToArray(q.parameterIds) ?? null,
-      fieldIds: csvToArray(q.fieldIds) ?? null,
-      personaSearch: q.personaSearch ?? null,
-      documentSearch: q.documentSearch ?? null,
-      parameterSearch: q.parameterSearch ?? null,
-      documentShowSelected: q.documentShowSelected ?? null,
-      documentShowTemplate: q.documentShowTemplate ?? null,
-      personaShowSelected: q.personaShowSelected ?? null,
-      parameterShowSelected: q.parameterShowSelected ?? null,
-      fieldShowSelectedByParam: fieldShowSelectedByParam ?? null,
-      personaMin: q.personaMin ?? null,
-      personaMax: q.personaMax ?? null,
-      documentMin: q.documentMin ?? null,
-      documentMax: q.documentMax ?? null,
-      parameterSelectionMin: q.parameterSelectionMin ?? null,
-      parameterSelectionMax: q.parameterSelectionMax ?? null,
-      fieldRanges: fieldRanges ?? null,
-      useImage: q.useImage ?? null,
-      useVideo: q.useVideo ?? null,
-      imageIds: csvToArray(q.imageIds) ?? null,
-      objectiveIds: csvToArray(q.objectiveIds) ?? null,
-      problemStatementIds: csvToArray(q.problemStatementIds) ?? null,
+      filter_department_ids: csvToArray(q.departmentIds) ?? null,
+      filter_persona_ids: csvToArray(q.personaIds) ?? null,
+      filter_document_ids: csvToArray(q.documentIds) ?? null,
+      template_document_ids: csvToArray(q.templateDocumentIds) ?? null,
+      filter_parameter_ids: csvToArray(q.parameterIds) ?? null,
+      filter_field_ids: csvToArray(q.fieldIds) ?? null,
+      persona_search: q.personaSearch ?? null,
+      document_search: q.documentSearch ?? null,
+      parameter_search: q.parameterSearch ?? null,
+      document_show_selected: q.documentShowSelected ?? null,
+      persona_show_selected: q.personaShowSelected ?? null,
+      parameter_show_selected: q.parameterShowSelected ?? null,
+      field_show_selected_by_param: fieldShowSelectedByParam ?? null,
+      use_image: q.useImage ?? null,
+      use_video: q.useVideo ?? null,
+      image_ids: csvToArray(q.imageIds) ?? null,
+      objective_ids: csvToArray(q.objectiveIds) ?? null,
+      problem_statement_ids: csvToArray(q.problemStatementIds) ?? null,
     },
   });
 

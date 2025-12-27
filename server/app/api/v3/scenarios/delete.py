@@ -6,13 +6,9 @@ import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    DeleteScenarioApiRequest,
-    DeleteScenarioApiResponse,
-    DeleteScenarioSqlParams,
-    DeleteScenarioSqlRow,
-    load_sql_query,
-)
+from app.sql.types import (DeleteScenarioApiRequest, DeleteScenarioApiResponse,
+                           DeleteScenarioSqlParams, DeleteScenarioSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
@@ -72,7 +68,7 @@ async def delete_scenario(
         # Check if scenario exists using SQL result
         if not result.scenario_exists:
             raise HTTPException(
-                status_code=404, detail=f"Scenario not found: {request.scenarioId}"
+                status_code=404, detail=f"Scenario not found: {request.scenario_id}"
             )
 
         # Check if scenario was deleted or is in use
@@ -92,19 +88,18 @@ async def delete_scenario(
             audit_set(
                 http_request,
                 actor={"name": actor_name, "id": profile_id},
-                scenario={"name": scenario_name, "id": request.scenarioId},
+                scenario={"name": scenario_name, "id": str(request.scenario_id)},
             )
 
-        result_data = DeleteScenarioApiResponse(
-            success=True,
-            message=f"Scenario '{scenario_name}' deleted successfully",
-        )
+        # Convert SQL result to API response
+        # Note: API response matches SQL response structure (scenario_exists, scenario_id, name, usage_count, deleted, actor_name)
+        api_response = DeleteScenarioApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result_data
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

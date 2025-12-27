@@ -5,6 +5,7 @@ import json
 import os
 import subprocess
 import tempfile
+import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore

@@ -945,7 +945,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ScenarioDetailRequest"
+                "$ref": "#/components/schemas/GetScenarioDetailApiRequest"
               }
             }
           }
@@ -956,7 +956,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__scenarios__detail__ScenarioDetailResponse"
+                  "$ref": "#/components/schemas/GetScenarioDetailApiResponse"
                 }
               }
             }
@@ -1026,7 +1026,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ScenarioNewRequest"
+                "$ref": "#/components/schemas/GetScenarioNewApiRequest"
               }
             }
           }
@@ -1037,7 +1037,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__scenarios__new__ScenarioDetailResponse"
+                  "$ref": "#/components/schemas/GetScenarioNewApiResponse"
                 }
               }
             }
@@ -5085,7 +5085,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RenderTemplateApiResponse"
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Render Document Template Api V3 Documents Render Post"
                 }
               }
             }
@@ -22021,35 +22023,6 @@
         ],
         "title": "AllSimulationScenarioItem"
       },
-      "AllowedRanges": {
-        "properties": {
-          "persona": {
-            "$ref": "#/components/schemas/RangeMinMax"
-          },
-          "document": {
-            "$ref": "#/components/schemas/RangeMinMax"
-          },
-          "parameter_selection": {
-            "$ref": "#/components/schemas/RangeMinMax"
-          },
-          "fields": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/RangeMinMax"
-            },
-            "type": "object",
-            "title": "Fields"
-          }
-        },
-        "type": "object",
-        "required": [
-          "persona",
-          "document",
-          "parameter_selection",
-          "fields"
-        ],
-        "title": "AllowedRanges",
-        "description": "Allowed min/max ranges for each section."
-      },
       "AttemptFullRequest": {
         "properties": {
           "attemptId": {
@@ -25658,12 +25631,12 @@
             "type": "array",
             "title": "Objective Ids"
           },
-          "parameter_item_ids": {
+          "parameters": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/QCreateScenarioV3Parameter"
             },
             "type": "array",
-            "title": "Parameter Item Ids"
+            "title": "Parameters"
           },
           "description": {
             "anyOf": [
@@ -25755,17 +25728,34 @@
             ],
             "title": "Template Document Ids"
           },
-          "upload_images_json": {
+          "upload_ids": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Upload Images Json"
+            "title": "Upload Ids"
+          },
+          "image_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Names"
           },
           "video_ids": {
             "anyOf": [
@@ -25809,8 +25799,10 @@
           "question_timestamps": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "items": {
+                  "$ref": "#/components/schemas/QCreateScenarioV3QuestionTimestamp"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
@@ -25829,20 +25821,6 @@
               }
             ],
             "title": "Run Id"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
           }
         },
         "type": "object",
@@ -25857,7 +25835,7 @@
           "problem_statement",
           "document_ids",
           "objective_ids",
-          "parameter_item_ids"
+          "parameters"
         ],
         "title": "CreateScenarioApiRequest"
       },
@@ -34212,6 +34190,1735 @@
         "type": "object",
         "title": "GetPersonasListApiResponse"
       },
+      "GetScenarioDetailApiRequest": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Scenario Id"
+          },
+          "use_image": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Image"
+          },
+          "use_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Objectives"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "problem_statement_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Ids"
+          },
+          "template_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Document Ids"
+          },
+          "use_video": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Video"
+          },
+          "filter_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Department Ids"
+          },
+          "filter_persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Persona Ids"
+          },
+          "filter_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Document Ids"
+          },
+          "filter_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Parameter Ids"
+          },
+          "filter_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Field Ids"
+          },
+          "persona_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Search"
+          },
+          "document_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Search"
+          },
+          "parameter_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Search"
+          },
+          "persona_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Show Selected"
+          },
+          "document_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Show Selected"
+          },
+          "parameter_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Show Selected"
+          },
+          "field_show_selected_by_param": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3FieldParamFilter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Show Selected By Param"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id"
+        ],
+        "title": "GetScenarioDetailApiRequest"
+      },
+      "GetScenarioDetailApiResponse": {
+        "properties": {
+          "scenario_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Exists"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "problem_statement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement"
+          },
+          "problem_statement_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Id"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "parent_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Scenario Id"
+          },
+          "hints_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints Enabled"
+          },
+          "objectives_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives Enabled"
+          },
+          "image_input_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Input Enabled"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "objective_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "valid_persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Persona Ids"
+          },
+          "valid_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Document Ids"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "active_usage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Usage Count"
+          },
+          "user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Role"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "valid_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Ids"
+          },
+          "valid_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Field Ids"
+          },
+          "question_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Ids"
+          },
+          "persona_range_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Range Min"
+          },
+          "persona_range_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Range Max"
+          },
+          "document_range_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Range Min"
+          },
+          "document_range_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Range Max"
+          },
+          "parameter_range_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Range Min"
+          },
+          "parameter_range_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Range Max"
+          },
+          "video_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Enabled"
+          },
+          "questions_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions Enabled"
+          },
+          "problem_statement_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Enabled"
+          },
+          "scenario_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Agent Id"
+          },
+          "image_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Agent Id"
+          },
+          "video_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Agent Id"
+          },
+          "valid_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Agent Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "field_ranges": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3FieldRange"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ranges"
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3Persona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3Document"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documents"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3Field"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "simulations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3Simulation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulations"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3Objective"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "problem_statements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3ProblemStatement"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statements"
+          },
+          "scenario_images": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3ScenarioImage"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Images"
+          },
+          "scenario_videos": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3ScenarioVideo"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Videos"
+          },
+          "questions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3Question"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions"
+          },
+          "objectives_history": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3ObjectiveWithDepartments"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives History"
+          },
+          "document_details": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3DocumentDetail"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Details"
+          },
+          "parameters_detail": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioDetailV3ParameterDetail"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters Detail"
+          }
+        },
+        "type": "object",
+        "title": "GetScenarioDetailApiResponse"
+      },
+      "GetScenarioNewApiRequest": {
+        "properties": {
+          "use_image": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Image"
+          },
+          "use_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Objectives"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "problem_statement_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Ids"
+          },
+          "template_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Document Ids"
+          },
+          "objective_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective Ids"
+          },
+          "image_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Ids"
+          },
+          "use_video": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Video"
+          },
+          "filter_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Department Ids"
+          },
+          "filter_persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Persona Ids"
+          },
+          "filter_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Document Ids"
+          },
+          "filter_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Parameter Ids"
+          },
+          "filter_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Field Ids"
+          },
+          "persona_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Search"
+          },
+          "document_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Search"
+          },
+          "parameter_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Search"
+          },
+          "persona_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Show Selected"
+          },
+          "document_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Show Selected"
+          },
+          "parameter_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Show Selected"
+          },
+          "field_show_selected_by_param": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3FieldParamFilter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Show Selected By Param"
+          }
+        },
+        "type": "object",
+        "title": "GetScenarioNewApiRequest"
+      },
+      "GetScenarioNewApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "user_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Role"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "valid_persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Persona Ids"
+          },
+          "valid_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Document Ids"
+          },
+          "valid_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Ids"
+          },
+          "valid_field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Field Ids"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "scenario_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Agent Id"
+          },
+          "image_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Agent Id"
+          },
+          "video_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Agent Id"
+          },
+          "valid_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Agent Ids"
+          },
+          "selected_template_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Template Document Ids"
+          },
+          "video_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Enabled"
+          },
+          "questions_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions Enabled"
+          },
+          "persona_range_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Range Min"
+          },
+          "persona_range_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Range Max"
+          },
+          "document_range_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Range Min"
+          },
+          "document_range_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Range Max"
+          },
+          "parameter_range_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Range Min"
+          },
+          "parameter_range_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Range Max"
+          },
+          "question_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Ids"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3Persona"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personas"
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3Document"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documents"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3Field"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3Objective"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "problem_statements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3ProblemStatement"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statements"
+          },
+          "scenario_images": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3ScenarioImage"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Images"
+          },
+          "scenario_videos": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3ScenarioVideo"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Videos"
+          },
+          "questions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3Question"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions"
+          },
+          "objectives_history": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3ObjectiveWithDepartments"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives History"
+          },
+          "document_details": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3DocumentDetail"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Details"
+          },
+          "parameters_detail": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetScenarioNewV3ParameterDetail"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters Detail"
+          }
+        },
+        "type": "object",
+        "title": "GetScenarioNewApiResponse"
+      },
       "GetScenariosListApiRequest": {
         "properties": {},
         "type": "object",
@@ -41710,6 +43417,92 @@
         "title": "ProvidersListResponse",
         "description": "Response for providers list."
       },
+      "QCreateScenarioV3Parameter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "field_ids"
+        ],
+        "title": "QCreateScenarioV3Parameter"
+      },
+      "QCreateScenarioV3QuestionTimestamp": {
+        "properties": {
+          "question_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id"
+          },
+          "video_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Id"
+          },
+          "timestamps": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "video_id",
+          "timestamps"
+        ],
+        "title": "QCreateScenarioV3QuestionTimestamp"
+      },
       "QGetAgentDetailV3AvailableVoice": {
         "properties": {
           "id": {
@@ -45600,6 +47393,39 @@
         ],
         "title": "QGetScenarioDetailV3Field"
       },
+      "QGetScenarioDetailV3FieldParamFilter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "show_selected"
+        ],
+        "title": "QGetScenarioDetailV3FieldParamFilter"
+      },
       "QGetScenarioDetailV3FieldRange": {
         "properties": {
           "parameter_id": {
@@ -47065,6 +48891,39 @@
           "conditional_parameter_ids"
         ],
         "title": "QGetScenarioNewV3Field"
+      },
+      "QGetScenarioNewV3FieldParamFilter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "show_selected"
+        ],
+        "title": "QGetScenarioNewV3FieldParamFilter"
       },
       "QGetScenarioNewV3Objective": {
         "properties": {
@@ -53483,6 +55342,92 @@
         ],
         "title": "QListSimulationsV3Simulation"
       },
+      "QUpdateScenarioV3Parameter": {
+        "properties": {
+          "parameter_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Id"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameter_id",
+          "field_ids"
+        ],
+        "title": "QUpdateScenarioV3Parameter"
+      },
+      "QUpdateScenarioV3QuestionTimestamp": {
+        "properties": {
+          "question_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id"
+          },
+          "video_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Id"
+          },
+          "timestamps": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "video_id",
+          "timestamps"
+        ],
+        "title": "QUpdateScenarioV3QuestionTimestamp"
+      },
       "QuestionItem-Input": {
         "properties": {
           "question_text": {
@@ -53879,25 +55824,6 @@
         "title": "RandomizeScenarioPayload",
         "description": "Request to randomize scenario selections."
       },
-      "RangeMinMax": {
-        "properties": {
-          "min": {
-            "type": "integer",
-            "title": "Min"
-          },
-          "max": {
-            "type": "integer",
-            "title": "Max"
-          }
-        },
-        "type": "object",
-        "required": [
-          "min",
-          "max"
-        ],
-        "title": "RangeMinMax",
-        "description": "Min/max range values."
-      },
       "RealtimeContentItem": {
         "properties": {
           "type": {
@@ -54071,57 +55997,6 @@
           "document_id"
         ],
         "title": "RenderTemplateApiRequest"
-      },
-      "RenderTemplateApiResponse": {
-        "properties": {
-          "document_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Name"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "file_path": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Path"
-          },
-          "template_args": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template Args"
-          }
-        },
-        "type": "object",
-        "title": "RenderTemplateApiResponse"
       },
       "ReportsBundleFilters": {
         "properties": {
@@ -55963,400 +57838,6 @@
         "title": "ScenarioAttributeScenarioFact",
         "description": "Scenario attribute scenario fact."
       },
-      "ScenarioDetailRequest": {
-        "properties": {
-          "scenarioId": {
-            "type": "string",
-            "title": "Scenarioid"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "personaIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaids"
-          },
-          "documentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentids"
-          },
-          "templateDocumentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templatedocumentids"
-          },
-          "parameterIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterids"
-          },
-          "fieldIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldids"
-          },
-          "personaSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personasearch"
-          },
-          "documentSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentsearch"
-          },
-          "parameterSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parametersearch"
-          },
-          "documentShowSelected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentshowselected"
-          },
-          "documentShowTemplate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentshowtemplate"
-          },
-          "personaShowSelected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personashowselected"
-          },
-          "parameterShowSelected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parametershowselected"
-          },
-          "fieldShowSelectedByParam": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "boolean"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldshowselectedbyparam"
-          },
-          "personaMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personamin"
-          },
-          "personaMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personamax"
-          },
-          "documentMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentmin"
-          },
-          "documentMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentmax"
-          },
-          "parameterSelectionMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterselectionmin"
-          },
-          "parameterSelectionMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterselectionmax"
-          },
-          "objectivesMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectivesmin"
-          },
-          "objectivesMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectivesmax"
-          },
-          "fieldRanges": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "additionalProperties": {
-                    "type": "integer"
-                  },
-                  "type": "object"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldranges"
-          },
-          "useImage": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Useimage"
-          },
-          "useVideo": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Usevideo"
-          },
-          "imageIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Imageids"
-          },
-          "objectiveIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectiveids"
-          },
-          "problemStatementIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problemstatementids"
-          },
-          "problemStatement": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problemstatement"
-          },
-          "objectives": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "scenarioId"
-        ],
-        "title": "ScenarioDetailRequest",
-        "description": "Request to get scenario details - frontend uses camelCase."
-      },
       "ScenarioDocumentItem": {
         "properties": {
           "document_id": {
@@ -56768,357 +58249,6 @@
           "copyPasteAllowed"
         ],
         "title": "ScenarioItem"
-      },
-      "ScenarioNewRequest": {
-        "properties": {
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "personaIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaids"
-          },
-          "documentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentids"
-          },
-          "templateDocumentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Templatedocumentids"
-          },
-          "parameterIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterids"
-          },
-          "fieldIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldids"
-          },
-          "personaSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personasearch"
-          },
-          "documentSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentsearch"
-          },
-          "parameterSearch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parametersearch"
-          },
-          "documentShowSelected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentshowselected"
-          },
-          "documentShowTemplate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentshowtemplate"
-          },
-          "personaShowSelected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personashowselected"
-          },
-          "parameterShowSelected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parametershowselected"
-          },
-          "fieldShowSelectedByParam": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "boolean"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldshowselectedbyparam"
-          },
-          "personaMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personamin"
-          },
-          "personaMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personamax"
-          },
-          "documentMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentmin"
-          },
-          "documentMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentmax"
-          },
-          "parameterSelectionMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterselectionmin"
-          },
-          "parameterSelectionMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameterselectionmax"
-          },
-          "objectivesMin": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectivesmin"
-          },
-          "objectivesMax": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectivesmax"
-          },
-          "fieldRanges": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "additionalProperties": {
-                    "type": "integer"
-                  },
-                  "type": "object"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fieldranges"
-          },
-          "useImage": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Useimage"
-          },
-          "useVideo": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Usevideo"
-          },
-          "imageIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Imageids"
-          },
-          "objectiveIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectiveids"
-          },
-          "problemStatementIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problemstatementids"
-          }
-        },
-        "type": "object",
-        "title": "ScenarioNewRequest",
-        "description": "Request to get default scenario details - frontend uses camelCase."
       },
       "ScenarioPerformanceResponse": {
         "properties": {
@@ -62848,12 +63978,12 @@
             "type": "array",
             "title": "Objective Ids"
           },
-          "parameter_item_ids": {
+          "parameters": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/QUpdateScenarioV3Parameter"
             },
             "type": "array",
-            "title": "Parameter Item Ids"
+            "title": "Parameters"
           },
           "description": {
             "anyOf": [
@@ -62931,43 +64061,22 @@
             ],
             "title": "Template Document Ids"
           },
-          "upload_images_json": {
+          "upload_ids": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Upload Images Json"
+            "title": "Upload Ids"
           },
-          "scenario_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Agent Id"
-          },
-          "image_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Agent Id"
-          },
-          "parameter_ids": {
+          "image_names": {
             "anyOf": [
               {
                 "items": {
@@ -62979,7 +64088,7 @@
                 "type": "null"
               }
             ],
-            "title": "Parameter Ids"
+            "title": "Image Names"
           },
           "video_ids": {
             "anyOf": [
@@ -63023,14 +64132,40 @@
           "question_timestamps": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "items": {
+                  "$ref": "#/components/schemas/QUpdateScenarioV3QuestionTimestamp"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
             "title": "Question Timestamps"
+          },
+          "scenario_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Agent Id"
+          },
+          "image_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Agent Id"
           }
         },
         "type": "object",
@@ -63046,7 +64181,7 @@
           "problem_statement",
           "document_ids",
           "objective_ids",
-          "parameter_item_ids"
+          "parameters"
         ],
         "title": "UpdateScenarioApiRequest"
       },
@@ -68363,1629 +69498,6 @@
         ],
         "title": "StandardItem",
         "description": "Standard item for update."
-      },
-      "app__api__v3__scenarios__detail__ScenarioDetailResponse": {
-        "properties": {
-          "scenario_exists": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Exists"
-          },
-          "scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "problem_statement": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement"
-          },
-          "problem_statement_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Id"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "generated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Generated"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "parent_scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Scenario Id"
-          },
-          "hints_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hints Enabled"
-          },
-          "objectives_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Enabled"
-          },
-          "image_input_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Input Enabled"
-          },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
-          "objective_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objective Ids"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids"
-          },
-          "valid_persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Persona Ids"
-          },
-          "valid_document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Document Ids"
-          },
-          "valid_department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Department Ids"
-          },
-          "active_usage_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Usage Count"
-          },
-          "user_role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "User Role"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "valid_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Parameter Ids"
-          },
-          "valid_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Field Ids"
-          },
-          "question_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Question Ids"
-          },
-          "persona_range_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Range Min"
-          },
-          "persona_range_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Range Max"
-          },
-          "document_range_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Range Min"
-          },
-          "document_range_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Range Max"
-          },
-          "parameter_range_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Range Min"
-          },
-          "parameter_range_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Range Max"
-          },
-          "video_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Enabled"
-          },
-          "questions_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Enabled"
-          },
-          "problem_statement_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Enabled"
-          },
-          "scenario_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Agent Id"
-          },
-          "image_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Agent Id"
-          },
-          "video_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Agent Id"
-          },
-          "valid_agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Agent Ids"
-          },
-          "can_edit": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Delete"
-          },
-          "field_ranges": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3FieldRange"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ranges"
-          },
-          "personas": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3Persona"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas"
-          },
-          "documents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3Document"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents"
-          },
-          "parameters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3Parameter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters"
-          },
-          "fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3Field"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3Department"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "agents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3Agent"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agents"
-          },
-          "simulations": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3Simulation"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulations"
-          },
-          "objectives": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3Objective"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives"
-          },
-          "problem_statements": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3ProblemStatement"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statements"
-          },
-          "scenario_images": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3ScenarioImage"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Images"
-          },
-          "scenario_videos": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3ScenarioVideo"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Videos"
-          },
-          "questions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3Question"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions"
-          },
-          "objectives_history": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3ObjectiveWithDepartments"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives History"
-          },
-          "document_details": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3DocumentDetail"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Details"
-          },
-          "parameters_detail": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioDetailV3ParameterDetail"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Detail"
-          },
-          "allowed_ranges": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AllowedRanges"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "objective_count_range": {
-            "$ref": "#/components/schemas/RangeMinMax"
-          },
-          "valid_general_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid General Field Ids"
-          },
-          "images_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Images Enabled"
-          },
-          "scenario_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Parameter Ids"
-          },
-          "active_simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Simulation Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "objective_count_range"
-        ],
-        "title": "ScenarioDetailResponse",
-        "description": "Extended response with computed fields for frontend compatibility."
-      },
-      "app__api__v3__scenarios__new__ScenarioDetailResponse": {
-        "properties": {
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "user_role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "User Role"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "valid_persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Persona Ids"
-          },
-          "valid_document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Document Ids"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
-          "scenario_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Agent Id"
-          },
-          "image_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Agent Id"
-          },
-          "video_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Agent Id"
-          },
-          "valid_agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Agent Ids"
-          },
-          "selected_template_document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Template Document Ids"
-          },
-          "video_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Enabled"
-          },
-          "questions_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions Enabled"
-          },
-          "persona_range_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Range Min"
-          },
-          "persona_range_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Range Max"
-          },
-          "document_range_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Range Min"
-          },
-          "document_range_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Range Max"
-          },
-          "parameter_range_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Range Min"
-          },
-          "parameter_range_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Range Max"
-          },
-          "question_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Question Ids"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3Department"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "personas": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3Persona"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personas"
-          },
-          "documents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3Document"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents"
-          },
-          "parameters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3Parameter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters"
-          },
-          "fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3Field"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields"
-          },
-          "agents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3Agent"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agents"
-          },
-          "objectives": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3Objective"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives"
-          },
-          "problem_statements": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3ProblemStatement"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statements"
-          },
-          "scenario_images": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3ScenarioImage"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Images"
-          },
-          "scenario_videos": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3ScenarioVideo"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Videos"
-          },
-          "questions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3Question"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questions"
-          },
-          "objectives_history": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3ObjectiveWithDepartments"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives History"
-          },
-          "document_details": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3DocumentDetail"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Details"
-          },
-          "parameters_detail": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetScenarioNewV3ParameterDetail"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Detail"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name",
-            "default": ""
-          },
-          "problem_statement": {
-            "type": "string",
-            "title": "Problem Statement",
-            "default": ""
-          },
-          "problem_statement_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          },
-          "generated": {
-            "type": "boolean",
-            "title": "Generated",
-            "default": false
-          },
-          "hints_enabled": {
-            "type": "boolean",
-            "title": "Hints Enabled",
-            "default": false
-          },
-          "objectives_enabled": {
-            "type": "boolean",
-            "title": "Objectives Enabled",
-            "default": true
-          },
-          "image_input_enabled": {
-            "type": "boolean",
-            "title": "Image Input Enabled",
-            "default": false
-          },
-          "parent_scenario_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Scenario Id"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids",
-            "default": []
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Persona Ids",
-            "default": []
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids",
-            "default": []
-          },
-          "objective_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Objective Ids",
-            "default": []
-          },
-          "valid_objectives": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Objectives",
-            "default": []
-          },
-          "active_simulation_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Active Simulation Ids",
-            "default": []
-          },
-          "parameters_dict": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Parameters Dict",
-            "default": {}
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit",
-            "default": false
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate",
-            "default": false
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete",
-            "default": false
-          },
-          "scenario_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Parameter Ids",
-            "default": []
-          },
-          "valid_parameter_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Parameter Ids",
-            "default": []
-          },
-          "valid_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Field Ids"
-          },
-          "valid_general_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid General Field Ids"
-          },
-          "allowed_ranges": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AllowedRanges"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "objective_count_range": {
-            "$ref": "#/components/schemas/RangeMinMax",
-            "default": {
-              "min": 0,
-              "max": 3
-            }
-          },
-          "selected_persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Persona Ids"
-          },
-          "selected_document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Document Ids"
-          },
-          "selected_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Parameter Ids"
-          },
-          "selected_field_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Field Ids"
-          },
-          "persona_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Search"
-          },
-          "document_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Search"
-          },
-          "parameter_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Search"
-          },
-          "persona_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Min"
-          },
-          "persona_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Max"
-          },
-          "document_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Min"
-          },
-          "document_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Max"
-          },
-          "parameter_selection_min": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Selection Min"
-          },
-          "parameter_selection_max": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Selection Max"
-          },
-          "field_ranges": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "additionalProperties": {
-                    "type": "integer"
-                  },
-                  "type": "object"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Ranges"
-          }
-        },
-        "type": "object",
-        "title": "ScenarioDetailResponse",
-        "description": "Response for scenario new - extends auto-generated response with computed fields."
       },
       "app__api__v3__staff__data__DepartmentMappingItem": {
         "properties": {

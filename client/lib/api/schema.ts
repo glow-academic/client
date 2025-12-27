@@ -6530,19 +6530,6 @@ export interface components {
              */
             previousChats: components["schemas"]["PreviousChat"][];
         };
-        /**
-         * AllowedRanges
-         * @description Allowed min/max ranges for each section.
-         */
-        AllowedRanges: {
-            persona: components["schemas"]["RangeMinMax"];
-            document: components["schemas"]["RangeMinMax"];
-            parameter_selection: components["schemas"]["RangeMinMax"];
-            /** Fields */
-            fields: {
-                [key: string]: components["schemas"]["RangeMinMax"];
-            };
-        };
         /** AttemptFullRequest */
         AttemptFullRequest: {
             /** Attemptid */
@@ -7866,8 +7853,8 @@ export interface components {
             document_ids: string[];
             /** Objective Ids */
             objective_ids: string[];
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
+            /** Parameters */
+            parameters: components["schemas"]["QCreateScenarioV3Parameter"][];
             /** Description */
             description?: string | null;
             /** Video Agent Id */
@@ -7882,10 +7869,10 @@ export interface components {
             persona_ids?: string[] | null;
             /** Template Document Ids */
             template_document_ids?: string[] | null;
-            /** Upload Images Json */
-            upload_images_json?: {
-                [key: string]: unknown;
-            } | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Image Names */
+            image_names?: string[] | null;
             /** Video Ids */
             video_ids?: string[] | null;
             /** Active Video Id */
@@ -7893,13 +7880,9 @@ export interface components {
             /** Question Ids */
             question_ids?: string[] | null;
             /** Question Timestamps */
-            question_timestamps?: {
-                [key: string]: unknown;
-            } | null;
+            question_timestamps?: components["schemas"]["QCreateScenarioV3QuestionTimestamp"][] | null;
             /** Run Id */
             run_id?: string | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
         };
         /** CreateScenarioApiResponse */
         CreateScenarioApiResponse: {
@@ -10403,6 +10386,289 @@ export interface components {
             /** Departments */
             departments?: components["schemas"]["QListPersonasV3Department"][] | null;
         };
+        /** GetScenarioDetailApiRequest */
+        GetScenarioDetailApiRequest: {
+            /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /** Use Image */
+            use_image?: boolean | null;
+            /** Use Objectives */
+            use_objectives?: boolean | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids?: string[] | null;
+            /** Template Document Ids */
+            template_document_ids?: string[] | null;
+            /** Use Video */
+            use_video?: boolean | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Filter Persona Ids */
+            filter_persona_ids?: string[] | null;
+            /** Filter Document Ids */
+            filter_document_ids?: string[] | null;
+            /** Filter Parameter Ids */
+            filter_parameter_ids?: string[] | null;
+            /** Filter Field Ids */
+            filter_field_ids?: string[] | null;
+            /** Persona Search */
+            persona_search?: string | null;
+            /** Document Search */
+            document_search?: string | null;
+            /** Parameter Search */
+            parameter_search?: string | null;
+            /** Persona Show Selected */
+            persona_show_selected?: boolean | null;
+            /** Document Show Selected */
+            document_show_selected?: boolean | null;
+            /** Parameter Show Selected */
+            parameter_show_selected?: boolean | null;
+            /** Field Show Selected By Param */
+            field_show_selected_by_param?: components["schemas"]["QGetScenarioDetailV3FieldParamFilter"][] | null;
+        };
+        /** GetScenarioDetailApiResponse */
+        GetScenarioDetailApiResponse: {
+            /** Scenario Exists */
+            scenario_exists?: boolean | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Problem Statement */
+            problem_statement?: string | null;
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Generated */
+            generated?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Parent Scenario Id */
+            parent_scenario_id?: string | null;
+            /** Hints Enabled */
+            hints_enabled?: boolean | null;
+            /** Objectives Enabled */
+            objectives_enabled?: boolean | null;
+            /** Image Input Enabled */
+            image_input_enabled?: boolean | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Valid Persona Ids */
+            valid_persona_ids?: string[] | null;
+            /** Valid Document Ids */
+            valid_document_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Active Usage Count */
+            active_usage_count?: number | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Valid Parameter Ids */
+            valid_parameter_ids?: string[] | null;
+            /** Valid Field Ids */
+            valid_field_ids?: string[] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Persona Range Min */
+            persona_range_min?: number | null;
+            /** Persona Range Max */
+            persona_range_max?: number | null;
+            /** Document Range Min */
+            document_range_min?: number | null;
+            /** Document Range Max */
+            document_range_max?: number | null;
+            /** Parameter Range Min */
+            parameter_range_min?: number | null;
+            /** Parameter Range Max */
+            parameter_range_max?: number | null;
+            /** Video Enabled */
+            video_enabled?: boolean | null;
+            /** Questions Enabled */
+            questions_enabled?: boolean | null;
+            /** Problem Statement Enabled */
+            problem_statement_enabled?: boolean | null;
+            /** Scenario Agent Id */
+            scenario_agent_id?: string | null;
+            /** Image Agent Id */
+            image_agent_id?: string | null;
+            /** Video Agent Id */
+            video_agent_id?: string | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Field Ranges */
+            field_ranges?: components["schemas"]["QGetScenarioDetailV3FieldRange"][] | null;
+            /** Personas */
+            personas?: components["schemas"]["QGetScenarioDetailV3Persona"][] | null;
+            /** Documents */
+            documents?: components["schemas"]["QGetScenarioDetailV3Document"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetScenarioDetailV3Parameter"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetScenarioDetailV3Field"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetScenarioDetailV3Department"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetScenarioDetailV3Agent"][] | null;
+            /** Simulations */
+            simulations?: components["schemas"]["QGetScenarioDetailV3Simulation"][] | null;
+            /** Objectives */
+            objectives?: components["schemas"]["QGetScenarioDetailV3Objective"][] | null;
+            /** Problem Statements */
+            problem_statements?: components["schemas"]["QGetScenarioDetailV3ProblemStatement"][] | null;
+            /** Scenario Images */
+            scenario_images?: components["schemas"]["QGetScenarioDetailV3ScenarioImage"][] | null;
+            /** Scenario Videos */
+            scenario_videos?: components["schemas"]["QGetScenarioDetailV3ScenarioVideo"][] | null;
+            /** Questions */
+            questions?: components["schemas"]["QGetScenarioDetailV3Question"][] | null;
+            /** Objectives History */
+            objectives_history?: components["schemas"]["QGetScenarioDetailV3ObjectiveWithDepartments"][] | null;
+            /** Document Details */
+            document_details?: components["schemas"]["QGetScenarioDetailV3DocumentDetail"][] | null;
+            /** Parameters Detail */
+            parameters_detail?: components["schemas"]["QGetScenarioDetailV3ParameterDetail"][] | null;
+        };
+        /** GetScenarioNewApiRequest */
+        GetScenarioNewApiRequest: {
+            /** Use Image */
+            use_image?: boolean | null;
+            /** Use Objectives */
+            use_objectives?: boolean | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids?: string[] | null;
+            /** Template Document Ids */
+            template_document_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Use Video */
+            use_video?: boolean | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Filter Persona Ids */
+            filter_persona_ids?: string[] | null;
+            /** Filter Document Ids */
+            filter_document_ids?: string[] | null;
+            /** Filter Parameter Ids */
+            filter_parameter_ids?: string[] | null;
+            /** Filter Field Ids */
+            filter_field_ids?: string[] | null;
+            /** Persona Search */
+            persona_search?: string | null;
+            /** Document Search */
+            document_search?: string | null;
+            /** Parameter Search */
+            parameter_search?: string | null;
+            /** Persona Show Selected */
+            persona_show_selected?: boolean | null;
+            /** Document Show Selected */
+            document_show_selected?: boolean | null;
+            /** Parameter Show Selected */
+            parameter_show_selected?: boolean | null;
+            /** Field Show Selected By Param */
+            field_show_selected_by_param?: components["schemas"]["QGetScenarioNewV3FieldParamFilter"][] | null;
+        };
+        /** GetScenarioNewApiResponse */
+        GetScenarioNewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Valid Persona Ids */
+            valid_persona_ids?: string[] | null;
+            /** Valid Document Ids */
+            valid_document_ids?: string[] | null;
+            /** Valid Parameter Ids */
+            valid_parameter_ids?: string[] | null;
+            /** Valid Field Ids */
+            valid_field_ids?: string[] | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Scenario Agent Id */
+            scenario_agent_id?: string | null;
+            /** Image Agent Id */
+            image_agent_id?: string | null;
+            /** Video Agent Id */
+            video_agent_id?: string | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Selected Template Document Ids */
+            selected_template_document_ids?: string[] | null;
+            /** Video Enabled */
+            video_enabled?: boolean | null;
+            /** Questions Enabled */
+            questions_enabled?: boolean | null;
+            /** Persona Range Min */
+            persona_range_min?: number | null;
+            /** Persona Range Max */
+            persona_range_max?: number | null;
+            /** Document Range Min */
+            document_range_min?: number | null;
+            /** Document Range Max */
+            document_range_max?: number | null;
+            /** Parameter Range Min */
+            parameter_range_min?: number | null;
+            /** Parameter Range Max */
+            parameter_range_max?: number | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetScenarioNewV3Department"][] | null;
+            /** Personas */
+            personas?: components["schemas"]["QGetScenarioNewV3Persona"][] | null;
+            /** Documents */
+            documents?: components["schemas"]["QGetScenarioNewV3Document"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetScenarioNewV3Parameter"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetScenarioNewV3Field"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetScenarioNewV3Agent"][] | null;
+            /** Objectives */
+            objectives?: components["schemas"]["QGetScenarioNewV3Objective"][] | null;
+            /** Problem Statements */
+            problem_statements?: components["schemas"]["QGetScenarioNewV3ProblemStatement"][] | null;
+            /** Scenario Images */
+            scenario_images?: components["schemas"]["QGetScenarioNewV3ScenarioImage"][] | null;
+            /** Scenario Videos */
+            scenario_videos?: components["schemas"]["QGetScenarioNewV3ScenarioVideo"][] | null;
+            /** Questions */
+            questions?: components["schemas"]["QGetScenarioNewV3Question"][] | null;
+            /** Objectives History */
+            objectives_history?: components["schemas"]["QGetScenarioNewV3ObjectiveWithDepartments"][] | null;
+            /** Document Details */
+            document_details?: components["schemas"]["QGetScenarioNewV3DocumentDetail"][] | null;
+            /** Parameters Detail */
+            parameters_detail?: components["schemas"]["QGetScenarioNewV3ParameterDetail"][] | null;
+        };
         /** GetScenariosListApiRequest */
         GetScenariosListApiRequest: Record<string, never>;
         /** GetScenariosListApiResponse */
@@ -12872,6 +13138,22 @@ export interface components {
                 [key: string]: string;
             }[];
         };
+        /** QCreateScenarioV3Parameter */
+        QCreateScenarioV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+        };
+        /** QCreateScenarioV3QuestionTimestamp */
+        QCreateScenarioV3QuestionTimestamp: {
+            /** Question Id */
+            question_id: string | null;
+            /** Video Id */
+            video_id: string | null;
+            /** Timestamps */
+            timestamps: number[] | null;
+        };
         /** QGetAgentDetailV3AvailableVoice */
         QGetAgentDetailV3AvailableVoice: {
             /** Id */
@@ -13600,6 +13882,13 @@ export interface components {
             /** Conditional Parameter Ids */
             conditional_parameter_ids: string[] | null;
         };
+        /** QGetScenarioDetailV3FieldParamFilter */
+        QGetScenarioDetailV3FieldParamFilter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Show Selected */
+            show_selected: boolean | null;
+        };
         /** QGetScenarioDetailV3FieldRange */
         QGetScenarioDetailV3FieldRange: {
             /** Parameter Id */
@@ -13856,6 +14145,13 @@ export interface components {
             parameter_name: string | null;
             /** Conditional Parameter Ids */
             conditional_parameter_ids: string[] | null;
+        };
+        /** QGetScenarioNewV3FieldParamFilter */
+        QGetScenarioNewV3FieldParamFilter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Show Selected */
+            show_selected: boolean | null;
         };
         /** QGetScenarioNewV3Objective */
         QGetScenarioNewV3Objective: {
@@ -15005,6 +15301,22 @@ export interface components {
             /** Updated At */
             updated_at: string | null;
         };
+        /** QUpdateScenarioV3Parameter */
+        QUpdateScenarioV3Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+        };
+        /** QUpdateScenarioV3QuestionTimestamp */
+        QUpdateScenarioV3QuestionTimestamp: {
+            /** Question Id */
+            question_id: string | null;
+            /** Video Id */
+            video_id: string | null;
+            /** Timestamps */
+            timestamps: number[] | null;
+        };
         /**
          * QuestionItem
          * @description Question item for scenario questions tool.
@@ -15115,16 +15427,6 @@ export interface components {
             profileId: string;
         };
         /**
-         * RangeMinMax
-         * @description Min/max range values.
-         */
-        RangeMinMax: {
-            /** Min */
-            min: number;
-            /** Max */
-            max: number;
-        };
-        /**
          * RealtimeContentItem
          * @description Content item within a RealtimeItem message.
          */
@@ -15197,19 +15499,6 @@ export interface components {
              * Format: uuid
              */
             document_id: string;
-        };
-        /** RenderTemplateApiResponse */
-        RenderTemplateApiResponse: {
-            /** Document Name */
-            document_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** File Path */
-            file_path?: string | null;
-            /** Template Args */
-            template_args?: {
-                [key: string]: unknown;
-            } | null;
         };
         /**
          * ReportsBundleFilters
@@ -15827,82 +16116,6 @@ export interface components {
             /** Scenarioid */
             scenarioId: string;
         };
-        /**
-         * ScenarioDetailRequest
-         * @description Request to get scenario details - frontend uses camelCase.
-         */
-        ScenarioDetailRequest: {
-            /** Scenarioid */
-            scenarioId: string;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Personaids */
-            personaIds?: string[] | null;
-            /** Documentids */
-            documentIds?: string[] | null;
-            /** Templatedocumentids */
-            templateDocumentIds?: string[] | null;
-            /** Parameterids */
-            parameterIds?: string[] | null;
-            /** Fieldids */
-            fieldIds?: string[] | null;
-            /** Personasearch */
-            personaSearch?: string | null;
-            /** Documentsearch */
-            documentSearch?: string | null;
-            /** Parametersearch */
-            parameterSearch?: string | null;
-            /** Documentshowselected */
-            documentShowSelected?: boolean | null;
-            /** Documentshowtemplate */
-            documentShowTemplate?: boolean | null;
-            /** Personashowselected */
-            personaShowSelected?: boolean | null;
-            /** Parametershowselected */
-            parameterShowSelected?: boolean | null;
-            /** Fieldshowselectedbyparam */
-            fieldShowSelectedByParam?: {
-                [key: string]: boolean;
-            } | null;
-            /** Personamin */
-            personaMin?: number | null;
-            /** Personamax */
-            personaMax?: number | null;
-            /** Documentmin */
-            documentMin?: number | null;
-            /** Documentmax */
-            documentMax?: number | null;
-            /** Parameterselectionmin */
-            parameterSelectionMin?: number | null;
-            /** Parameterselectionmax */
-            parameterSelectionMax?: number | null;
-            /** Objectivesmin */
-            objectivesMin?: number | null;
-            /** Objectivesmax */
-            objectivesMax?: number | null;
-            /** Fieldranges */
-            fieldRanges?: {
-                [key: string]: {
-                    [key: string]: number;
-                };
-            } | null;
-            /** Useimage */
-            useImage?: boolean | null;
-            /** Usevideo */
-            useVideo?: boolean | null;
-            /** Imageids */
-            imageIds?: string[] | null;
-            /** Objectiveids */
-            objectiveIds?: string[] | null;
-            /** Problemstatementids */
-            problemStatementIds?: string[] | null;
-            /** Problemstatement */
-            problemStatement?: string | null;
-            /** Objectives */
-            objectives?: string[] | null;
-            /** Name */
-            name?: string | null;
-        };
         /** ScenarioDocumentItem */
         ScenarioDocumentItem: {
             /** Document Id */
@@ -16051,74 +16264,6 @@ export interface components {
             backgroundImage?: string | null;
             /** Objectives */
             objectives?: string[] | null;
-        };
-        /**
-         * ScenarioNewRequest
-         * @description Request to get default scenario details - frontend uses camelCase.
-         */
-        ScenarioNewRequest: {
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Personaids */
-            personaIds?: string[] | null;
-            /** Documentids */
-            documentIds?: string[] | null;
-            /** Templatedocumentids */
-            templateDocumentIds?: string[] | null;
-            /** Parameterids */
-            parameterIds?: string[] | null;
-            /** Fieldids */
-            fieldIds?: string[] | null;
-            /** Personasearch */
-            personaSearch?: string | null;
-            /** Documentsearch */
-            documentSearch?: string | null;
-            /** Parametersearch */
-            parameterSearch?: string | null;
-            /** Documentshowselected */
-            documentShowSelected?: boolean | null;
-            /** Documentshowtemplate */
-            documentShowTemplate?: boolean | null;
-            /** Personashowselected */
-            personaShowSelected?: boolean | null;
-            /** Parametershowselected */
-            parameterShowSelected?: boolean | null;
-            /** Fieldshowselectedbyparam */
-            fieldShowSelectedByParam?: {
-                [key: string]: boolean;
-            } | null;
-            /** Personamin */
-            personaMin?: number | null;
-            /** Personamax */
-            personaMax?: number | null;
-            /** Documentmin */
-            documentMin?: number | null;
-            /** Documentmax */
-            documentMax?: number | null;
-            /** Parameterselectionmin */
-            parameterSelectionMin?: number | null;
-            /** Parameterselectionmax */
-            parameterSelectionMax?: number | null;
-            /** Objectivesmin */
-            objectivesMin?: number | null;
-            /** Objectivesmax */
-            objectivesMax?: number | null;
-            /** Fieldranges */
-            fieldRanges?: {
-                [key: string]: {
-                    [key: string]: number;
-                };
-            } | null;
-            /** Useimage */
-            useImage?: boolean | null;
-            /** Usevideo */
-            useVideo?: boolean | null;
-            /** Imageids */
-            imageIds?: string[] | null;
-            /** Objectiveids */
-            objectiveIds?: string[] | null;
-            /** Problemstatementids */
-            problemStatementIds?: string[] | null;
         };
         /**
          * ScenarioPerformanceResponse
@@ -18262,8 +18407,8 @@ export interface components {
             document_ids: string[];
             /** Objective Ids */
             objective_ids: string[];
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
+            /** Parameters */
+            parameters: components["schemas"]["QUpdateScenarioV3Parameter"][];
             /** Description */
             description?: string | null;
             /** Video Agent Id */
@@ -18276,16 +18421,10 @@ export interface components {
             persona_ids?: string[] | null;
             /** Template Document Ids */
             template_document_ids?: string[] | null;
-            /** Upload Images Json */
-            upload_images_json?: {
-                [key: string]: unknown;
-            } | null;
-            /** Scenario Agent Id */
-            scenario_agent_id?: string | null;
-            /** Image Agent Id */
-            image_agent_id?: string | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Image Names */
+            image_names?: string[] | null;
             /** Video Ids */
             video_ids?: string[] | null;
             /** Active Video Id */
@@ -18293,9 +18432,11 @@ export interface components {
             /** Question Ids */
             question_ids?: string[] | null;
             /** Question Timestamps */
-            question_timestamps?: {
-                [key: string]: unknown;
-            } | null;
+            question_timestamps?: components["schemas"]["QUpdateScenarioV3QuestionTimestamp"][] | null;
+            /** Scenario Agent Id */
+            scenario_agent_id?: string | null;
+            /** Image Agent Id */
+            image_agent_id?: string | null;
         };
         /** UpdateScenarioApiResponse */
         UpdateScenarioApiResponse: {
@@ -20208,361 +20349,6 @@ export interface components {
             points: number;
         };
         /**
-         * ScenarioDetailResponse
-         * @description Extended response with computed fields for frontend compatibility.
-         */
-        app__api__v3__scenarios__detail__ScenarioDetailResponse: {
-            /** Scenario Exists */
-            scenario_exists?: boolean | null;
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Problem Statement */
-            problem_statement?: string | null;
-            /** Problem Statement Id */
-            problem_statement_id?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Generated */
-            generated?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Parent Scenario Id */
-            parent_scenario_id?: string | null;
-            /** Hints Enabled */
-            hints_enabled?: boolean | null;
-            /** Objectives Enabled */
-            objectives_enabled?: boolean | null;
-            /** Image Input Enabled */
-            image_input_enabled?: boolean | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Objective Ids */
-            objective_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Valid Persona Ids */
-            valid_persona_ids?: string[] | null;
-            /** Valid Document Ids */
-            valid_document_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Active Usage Count */
-            active_usage_count?: number | null;
-            /** User Role */
-            user_role?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Valid Parameter Ids */
-            valid_parameter_ids?: string[] | null;
-            /** Valid Field Ids */
-            valid_field_ids?: string[] | null;
-            /** Question Ids */
-            question_ids?: string[] | null;
-            /** Persona Range Min */
-            persona_range_min?: number | null;
-            /** Persona Range Max */
-            persona_range_max?: number | null;
-            /** Document Range Min */
-            document_range_min?: number | null;
-            /** Document Range Max */
-            document_range_max?: number | null;
-            /** Parameter Range Min */
-            parameter_range_min?: number | null;
-            /** Parameter Range Max */
-            parameter_range_max?: number | null;
-            /** Video Enabled */
-            video_enabled?: boolean | null;
-            /** Questions Enabled */
-            questions_enabled?: boolean | null;
-            /** Problem Statement Enabled */
-            problem_statement_enabled?: boolean | null;
-            /** Scenario Agent Id */
-            scenario_agent_id?: string | null;
-            /** Image Agent Id */
-            image_agent_id?: string | null;
-            /** Video Agent Id */
-            video_agent_id?: string | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Can Duplicate */
-            can_duplicate?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
-            /** Field Ranges */
-            field_ranges?: components["schemas"]["QGetScenarioDetailV3FieldRange"][] | null;
-            /** Personas */
-            personas?: components["schemas"]["QGetScenarioDetailV3Persona"][] | null;
-            /** Documents */
-            documents?: components["schemas"]["QGetScenarioDetailV3Document"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetScenarioDetailV3Parameter"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetScenarioDetailV3Field"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetScenarioDetailV3Department"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetScenarioDetailV3Agent"][] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["QGetScenarioDetailV3Simulation"][] | null;
-            /** Objectives */
-            objectives?: components["schemas"]["QGetScenarioDetailV3Objective"][] | null;
-            /** Problem Statements */
-            problem_statements?: components["schemas"]["QGetScenarioDetailV3ProblemStatement"][] | null;
-            /** Scenario Images */
-            scenario_images?: components["schemas"]["QGetScenarioDetailV3ScenarioImage"][] | null;
-            /** Scenario Videos */
-            scenario_videos?: components["schemas"]["QGetScenarioDetailV3ScenarioVideo"][] | null;
-            /** Questions */
-            questions?: components["schemas"]["QGetScenarioDetailV3Question"][] | null;
-            /** Objectives History */
-            objectives_history?: components["schemas"]["QGetScenarioDetailV3ObjectiveWithDepartments"][] | null;
-            /** Document Details */
-            document_details?: components["schemas"]["QGetScenarioDetailV3DocumentDetail"][] | null;
-            /** Parameters Detail */
-            parameters_detail?: components["schemas"]["QGetScenarioDetailV3ParameterDetail"][] | null;
-            allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
-            objective_count_range: components["schemas"]["RangeMinMax"];
-            /** Valid General Field Ids */
-            valid_general_field_ids?: string[] | null;
-            /** Images Enabled */
-            images_enabled?: boolean | null;
-            /** Scenario Parameter Ids */
-            scenario_parameter_ids?: string[] | null;
-            /** Active Simulation Ids */
-            active_simulation_ids?: string[] | null;
-        };
-        /**
-         * ScenarioDetailResponse
-         * @description Response for scenario new - extends auto-generated response with computed fields.
-         */
-        app__api__v3__scenarios__new__ScenarioDetailResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** User Role */
-            user_role?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Valid Persona Ids */
-            valid_persona_ids?: string[] | null;
-            /** Valid Document Ids */
-            valid_document_ids?: string[] | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
-            /** Scenario Agent Id */
-            scenario_agent_id?: string | null;
-            /** Image Agent Id */
-            image_agent_id?: string | null;
-            /** Video Agent Id */
-            video_agent_id?: string | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Selected Template Document Ids */
-            selected_template_document_ids?: string[] | null;
-            /** Video Enabled */
-            video_enabled?: boolean | null;
-            /** Questions Enabled */
-            questions_enabled?: boolean | null;
-            /** Persona Range Min */
-            persona_range_min?: number | null;
-            /** Persona Range Max */
-            persona_range_max?: number | null;
-            /** Document Range Min */
-            document_range_min?: number | null;
-            /** Document Range Max */
-            document_range_max?: number | null;
-            /** Parameter Range Min */
-            parameter_range_min?: number | null;
-            /** Parameter Range Max */
-            parameter_range_max?: number | null;
-            /** Question Ids */
-            question_ids?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetScenarioNewV3Department"][] | null;
-            /** Personas */
-            personas?: components["schemas"]["QGetScenarioNewV3Persona"][] | null;
-            /** Documents */
-            documents?: components["schemas"]["QGetScenarioNewV3Document"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetScenarioNewV3Parameter"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetScenarioNewV3Field"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetScenarioNewV3Agent"][] | null;
-            /** Objectives */
-            objectives?: components["schemas"]["QGetScenarioNewV3Objective"][] | null;
-            /** Problem Statements */
-            problem_statements?: components["schemas"]["QGetScenarioNewV3ProblemStatement"][] | null;
-            /** Scenario Images */
-            scenario_images?: components["schemas"]["QGetScenarioNewV3ScenarioImage"][] | null;
-            /** Scenario Videos */
-            scenario_videos?: components["schemas"]["QGetScenarioNewV3ScenarioVideo"][] | null;
-            /** Questions */
-            questions?: components["schemas"]["QGetScenarioNewV3Question"][] | null;
-            /** Objectives History */
-            objectives_history?: components["schemas"]["QGetScenarioNewV3ObjectiveWithDepartments"][] | null;
-            /** Document Details */
-            document_details?: components["schemas"]["QGetScenarioNewV3DocumentDetail"][] | null;
-            /** Parameters Detail */
-            parameters_detail?: components["schemas"]["QGetScenarioNewV3ParameterDetail"][] | null;
-            /**
-             * Name
-             * @default
-             */
-            name: string;
-            /**
-             * Problem Statement
-             * @default
-             */
-            problem_statement: string;
-            /** Problem Statement Id */
-            problem_statement_id?: string | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /**
-             * Generated
-             * @default false
-             */
-            generated: boolean;
-            /**
-             * Hints Enabled
-             * @default false
-             */
-            hints_enabled: boolean;
-            /**
-             * Objectives Enabled
-             * @default true
-             */
-            objectives_enabled: boolean;
-            /**
-             * Image Input Enabled
-             * @default false
-             */
-            image_input_enabled: boolean;
-            /** Parent Scenario Id */
-            parent_scenario_id?: string | null;
-            /**
-             * Valid Department Ids
-             * @default []
-             */
-            valid_department_ids: string[];
-            /**
-             * Persona Ids
-             * @default []
-             */
-            persona_ids: string[];
-            /**
-             * Document Ids
-             * @default []
-             */
-            document_ids: string[];
-            /**
-             * Objective Ids
-             * @default []
-             */
-            objective_ids: string[];
-            /**
-             * Valid Objectives
-             * @default []
-             */
-            valid_objectives: string[];
-            /**
-             * Active Simulation Ids
-             * @default []
-             */
-            active_simulation_ids: string[];
-            /**
-             * Parameters Dict
-             * @default {}
-             */
-            parameters_dict: {
-                [key: string]: {
-                    [key: string]: string[];
-                };
-            };
-            /**
-             * Can Edit
-             * @default false
-             */
-            can_edit: boolean;
-            /**
-             * Can Duplicate
-             * @default false
-             */
-            can_duplicate: boolean;
-            /**
-             * Can Delete
-             * @default false
-             */
-            can_delete: boolean;
-            /**
-             * Scenario Parameter Ids
-             * @default []
-             */
-            scenario_parameter_ids: string[];
-            /**
-             * Valid Parameter Ids
-             * @default []
-             */
-            valid_parameter_ids: string[];
-            /** Valid Field Ids */
-            valid_field_ids?: string[] | null;
-            /** Valid General Field Ids */
-            valid_general_field_ids?: string[] | null;
-            allowed_ranges?: components["schemas"]["AllowedRanges"] | null;
-            /**
-             * @default {
-             *       "min": 0,
-             *       "max": 3
-             *     }
-             */
-            objective_count_range: components["schemas"]["RangeMinMax"];
-            /** Selected Persona Ids */
-            selected_persona_ids?: string[] | null;
-            /** Selected Document Ids */
-            selected_document_ids?: string[] | null;
-            /** Selected Parameter Ids */
-            selected_parameter_ids?: string[] | null;
-            /** Selected Field Ids */
-            selected_field_ids?: string[] | null;
-            /** Persona Search */
-            persona_search?: string | null;
-            /** Document Search */
-            document_search?: string | null;
-            /** Parameter Search */
-            parameter_search?: string | null;
-            /** Persona Min */
-            persona_min?: number | null;
-            /** Persona Max */
-            persona_max?: number | null;
-            /** Document Min */
-            document_min?: number | null;
-            /** Document Max */
-            document_max?: number | null;
-            /** Parameter Selection Min */
-            parameter_selection_min?: number | null;
-            /** Parameter Selection Max */
-            parameter_selection_max?: number | null;
-            /** Field Ranges */
-            field_ranges?: {
-                [key: string]: {
-                    [key: string]: number;
-                };
-            } | null;
-        };
-        /**
          * DepartmentMappingItem
          * @description Department mapping item.
          */
@@ -21041,7 +20827,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ScenarioDetailRequest"];
+                "application/json": components["schemas"]["GetScenarioDetailApiRequest"];
             };
         };
         responses: {
@@ -21051,7 +20837,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__scenarios__detail__ScenarioDetailResponse"];
+                    "application/json": components["schemas"]["GetScenarioDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21077,7 +20863,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ScenarioNewRequest"];
+                "application/json": components["schemas"]["GetScenarioNewApiRequest"];
             };
         };
         responses: {
@@ -21087,7 +20873,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__scenarios__new__ScenarioDetailResponse"];
+                    "application/json": components["schemas"]["GetScenarioNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22887,7 +22673,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RenderTemplateApiResponse"];
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

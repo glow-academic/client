@@ -26,9 +26,6 @@ SQL_PATH = "app/sql/v3/scenarios/get_scenarios_list_complete.sql"
 router = APIRouter()
 
 
-router = APIRouter()
-
-
 @router.post(
     "/list",
     response_model=GetScenariosListApiResponse,
