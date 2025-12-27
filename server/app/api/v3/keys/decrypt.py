@@ -1,29 +1,21 @@
 """Keys decrypt endpoint - decrypt encrypted key value."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (GetKeyForDecryptApiRequest,
+                           GetKeyForDecryptApiResponse,
+                           GetKeyForDecryptSqlParams, GetKeyForDecryptSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DecryptKeyRequest(BaseModel):
-    """Request to decrypt key."""
-
-    keyId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DecryptKeyResponse(BaseModel):
-    """Response from decrypt key."""
-
-    key: str  # Decrypted key value
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/keys/get_key_for_decrypt_complete.sql"
 
 
 router = APIRouter()
@@ -31,7 +23,7 @@ router = APIRouter()
 
 @router.post(
     "/decrypt",
-    response_model=DecryptKeyResponse,
+    response_model=GetKeyForDecryptApiResponse,
     dependencies=[
         audit_activity(
             "key.decrypted", "{{ actor.name }} decrypted key '{{ key.name }}'"
@@ -39,13 +31,13 @@ router = APIRouter()
     ],
 )
 async def decrypt_key(
-    request: DecryptKeyRequest,
+    request: GetKeyForDecryptApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DecryptKeyResponse:
+) -> GetKeyForDecryptApiResponse:
     """Decrypt a key's encrypted value."""
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -57,40 +49,46 @@ async def decrypt_key(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch the encrypted key from database
-        sql_query = load_sql("app/sql/v3/keys/get_key_detail.sql")
-        sql_params = (
-            request.keyId,
-            True,
-            profile_id,
-        )  # show_full=True to get encrypted key
-        result = await conn.fetchrow(sql_query, request.keyId, True, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double star pattern: **request.model_dump()
+        params = GetKeyForDecryptSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        if not result:
+        # Execute SQL with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetKeyForDecryptSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
+        )
+
+        if not result or not result.key:
             raise HTTPException(
-                status_code=400, detail=f"Key not found: {request.keyId}"
+                status_code=400, detail=f"Key not found: {request.key_id}"
             )
-
-        # Get the encrypted key value
-        encrypted_key = result["key"]
-        key_name = result.get("name")
-        actor_name = result.get("actor_name")
 
         # Decrypt the key
         try:
-            decrypted_key = decrypt_api_key(encrypted_key)
+            decrypted_key = decrypt_api_key(result.key)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
 
         # Set audit context
-        if actor_name and key_name:
+        if result.actor_name and result.name:
             audit_set(
                 http_request,
-                actor={"name": actor_name, "id": profile_id},
-                key={"name": key_name, "id": request.keyId},
+                actor={"name": result.actor_name, "id": profile_id},
+                key={"name": result.name, "id": str(request.key_id)},
             )
 
-        return DecryptKeyResponse(key=decrypted_key)
+        # Convert SQL result to API response
+        api_response = GetKeyForDecryptApiResponse.model_validate({
+            "key": decrypted_key,
+        })
+
+        return api_response
     except HTTPException:
         raise
     except Exception as e:

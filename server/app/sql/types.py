@@ -2840,6 +2840,389 @@ class UpdateFieldApiResponse(BaseModel):
 
 
 
+# Generated from: create_key
+
+class CreateKeySqlParams(BaseModel):
+
+    name: str
+    key: str
+    description: str
+    active: bool
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.key,
+            self.description,
+            self.active,
+            self.profile_id,
+            self.department_ids,
+        )
+
+class CreateKeySqlRow(BaseModel):
+
+    key_id: UUID | None = None
+    key_masked: str | None = None
+    actor_name: str | None = None
+
+class CreateKeyApiRequest(BaseModel):
+
+    name: str
+    key: str
+    description: str
+    active: bool
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class CreateKeyApiResponse(BaseModel):
+
+    key_id: UUID | None = None
+    key_masked: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: delete_key
+
+class DeleteKeySqlParams(BaseModel):
+
+    key_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.key_id,
+            self.profile_id,
+        )
+
+class DeleteKeySqlRow(BaseModel):
+
+    key_exists: bool | None = None
+    key_id: UUID | None = None
+    name: str | None = None
+    actor_name: str | None = None
+
+class DeleteKeyApiRequest(BaseModel):
+
+    key_id: UUID
+
+class DeleteKeyApiResponse(BaseModel):
+
+    key_exists: bool | None = None
+    key_id: UUID | None = None
+    name: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_key_detail
+
+class GetKeyDetailSqlParams(BaseModel):
+
+    key_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.key_id,
+            self.profile_id,
+        )
+
+class QGetKeyDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetKeyDetailV3Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+    provider: str | None
+    active: bool | None
+
+class GetKeyDetailSqlRow(BaseModel):
+
+    key_exists: bool | None = None
+    key_id: UUID | None = None
+    name: str | None = None
+    key_masked: str | None = None
+    type: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    department_ids: list[str] | None = None
+    model_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    can_edit: bool | None = None
+    departments: list[QGetKeyDetailV3Department] | None = None
+    models: list[QGetKeyDetailV3Model] | None = None
+    actor_name: str | None = None
+
+class GetKeyDetailApiRequest(BaseModel):
+
+    key_id: UUID
+
+class GetKeyDetailApiResponse(BaseModel):
+
+    key_exists: bool | None = None
+    key_id: UUID | None = None
+    name: str | None = None
+    key_masked: str | None = None
+    type: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    department_ids: list[str] | None = None
+    model_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    can_edit: bool | None = None
+    departments: list[QGetKeyDetailV3Department] | None = None
+    models: list[QGetKeyDetailV3Model] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_key_for_decrypt
+
+class GetKeyForDecryptSqlParams(BaseModel):
+
+    key_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.key_id,
+            self.profile_id,
+        )
+
+class GetKeyForDecryptSqlRow(BaseModel):
+
+    key: str | None = None
+    name: str | None = None
+    actor_name: str | None = None
+
+class GetKeyForDecryptApiRequest(BaseModel):
+
+    key_id: UUID
+
+class GetKeyForDecryptApiResponse(BaseModel):
+
+    key: str | None = None
+    name: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_key_new
+
+class GetKeyNewSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetKeyNewV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetKeyNewV3Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+    provider: str | None
+    active: bool | None
+
+class GetKeyNewSqlRow(BaseModel):
+
+    key_id: str | None = None
+    name: str | None = None
+    key_masked: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    department_ids: list[str] | None = None
+    model_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    can_edit: bool | None = None
+    departments: list[QGetKeyNewV3Department] | None = None
+    models: list[QGetKeyNewV3Model] | None = None
+    actor_name: str | None = None
+
+class GetKeyNewApiRequest(BaseModel):
+
+    pass
+
+class GetKeyNewApiResponse(BaseModel):
+
+    key_id: str | None = None
+    name: str | None = None
+    key_masked: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    department_ids: list[str] | None = None
+    model_ids: list[str] | None = None
+    valid_department_ids: list[str] | None = None
+    can_edit: bool | None = None
+    departments: list[QGetKeyNewV3Department] | None = None
+    models: list[QGetKeyNewV3Model] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_keys_list
+
+class GetKeysListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetKeysListV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetKeysListV3DepartmentOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QGetKeysListV3Key(BaseModel):
+
+    key_id: UUID | None
+    name: str | None
+    key_masked: str | None
+    description: str | None
+    active: bool | None
+    created_at: str | None
+    updated_at: str | None
+    department_ids: list[str] | None
+    model_ids: list[str] | None
+    can_edit: bool | None
+    can_delete: bool | None
+    can_duplicate: bool | None
+
+
+
+
+class QGetKeysListV3Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+    provider: str | None
+    active: bool | None
+
+
+
+
+class QGetKeysListV3ModelOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+class GetKeysListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    keys: list[QGetKeysListV3Key] | None = None
+    departments: list[QGetKeysListV3Department] | None = None
+    models: list[QGetKeysListV3Model] | None = None
+    department_options: list[QGetKeysListV3DepartmentOption] | None = None
+    model_options: list[QGetKeysListV3ModelOption] | None = None
+
+class GetKeysListApiRequest(BaseModel):
+
+    pass
+
+class GetKeysListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    keys: list[QGetKeysListV3Key] | None = None
+    departments: list[QGetKeysListV3Department] | None = None
+    models: list[QGetKeysListV3Model] | None = None
+    department_options: list[QGetKeysListV3DepartmentOption] | None = None
+    model_options: list[QGetKeysListV3ModelOption] | None = None
+
+
+
+# Generated from: update_key
+
+class UpdateKeySqlParams(BaseModel):
+
+    key_id: UUID
+    name: str
+    key: str
+    description: str
+    active: bool
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.key_id,
+            self.name,
+            self.key,
+            self.description,
+            self.active,
+            self.profile_id,
+            self.department_ids,
+        )
+
+class UpdateKeySqlRow(BaseModel):
+
+    key_id: UUID | None = None
+    key_masked: str | None = None
+    key_name: str | None = None
+    actor_name: str | None = None
+
+class UpdateKeyApiRequest(BaseModel):
+
+    key_id: UUID
+    name: str
+    key: str
+    description: str
+    active: bool
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class UpdateKeyApiResponse(BaseModel):
+
+    key_id: UUID | None = None
+    key_masked: str | None = None
+    key_name: str | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: get_logs_bundle
 
 class GetLogsBundleSqlParams(BaseModel):
@@ -8346,6 +8729,48 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateFieldApiRequest",
         "UpdateFieldApiResponse",
     ),
+    "app/sql/v3/keys/create_key_complete.sql": (
+        "CreateKeySqlParams",
+        "CreateKeySqlRow",
+        "CreateKeyApiRequest",
+        "CreateKeyApiResponse",
+    ),
+    "app/sql/v3/keys/delete_key_complete.sql": (
+        "DeleteKeySqlParams",
+        "DeleteKeySqlRow",
+        "DeleteKeyApiRequest",
+        "DeleteKeyApiResponse",
+    ),
+    "app/sql/v3/keys/get_key_detail_complete.sql": (
+        "GetKeyDetailSqlParams",
+        "GetKeyDetailSqlRow",
+        "GetKeyDetailApiRequest",
+        "GetKeyDetailApiResponse",
+    ),
+    "app/sql/v3/keys/get_key_for_decrypt_complete.sql": (
+        "GetKeyForDecryptSqlParams",
+        "GetKeyForDecryptSqlRow",
+        "GetKeyForDecryptApiRequest",
+        "GetKeyForDecryptApiResponse",
+    ),
+    "app/sql/v3/keys/get_key_new_complete.sql": (
+        "GetKeyNewSqlParams",
+        "GetKeyNewSqlRow",
+        "GetKeyNewApiRequest",
+        "GetKeyNewApiResponse",
+    ),
+    "app/sql/v3/keys/get_keys_list_complete.sql": (
+        "GetKeysListSqlParams",
+        "GetKeysListSqlRow",
+        "GetKeysListApiRequest",
+        "GetKeysListApiResponse",
+    ),
+    "app/sql/v3/keys/update_key_complete.sql": (
+        "UpdateKeySqlParams",
+        "UpdateKeySqlRow",
+        "UpdateKeyApiRequest",
+        "UpdateKeyApiResponse",
+    ),
     "app/sql/v3/logs/get_logs_bundle_complete.sql": (
         "GetLogsBundleSqlParams",
         "GetLogsBundleSqlRow",
@@ -8991,6 +9416,41 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/fields/update_field_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/keys/create_key_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/keys/delete_key_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/keys/get_key_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/keys/get_key_for_decrypt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/keys/get_key_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/keys/get_keys_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/keys/update_key_complete.sql"]
     ) -> SqlString: ...
 
     @overload

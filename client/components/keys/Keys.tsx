@@ -262,7 +262,7 @@ export default function Keys({
     setIsDeleting(true);
     try {
       await deleteKeyAction({
-        body: { keyId: deleteItem.id },
+        body: { key_id: deleteItem.id },
       });
       toast.success("Key deleted successfully");
       router.refresh();

@@ -25,7 +25,7 @@ type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt", "post">;
 const getKey = async (keyId: string): Promise<KeyDetailOut> => {
   return api.post(
     "/keys/detail",
-    { body: { keyId } },
+    { body: { key_id: keyId } },
     {
       cache: "no-store",
       headers: {

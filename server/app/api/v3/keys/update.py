@@ -1,38 +1,20 @@
 """Keys update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, transaction
+from app.main import get_db
+from app.sql.types import (UpdateKeyApiRequest, UpdateKeyApiResponse,
+                           UpdateKeySqlParams, UpdateKeySqlRow, load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.auth.encrypt_api_key import encrypt_api_key
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class UpdateKeyRequest(BaseModel):
-    """Request to update key."""
-
-    keyId: str
-    name: str
-    key: str  # Plain text key that will be encrypted
-    description: str
-    active: bool
-    department_ids: list[str] | None = None
-    # profileId removed - comes from X-Profile-Id header
-
-
-class UpdateKeyResponse(BaseModel):
-    """Response from update key."""
-
-    success: bool
-    keyId: str
-    key_masked: str  # Masked key for display
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/keys/update_key_complete.sql"
 
 
 router = APIRouter()
@@ -40,21 +22,21 @@ router = APIRouter()
 
 @router.post(
     "/update",
-    response_model=UpdateKeyResponse,
+    response_model=UpdateKeyApiResponse,
     dependencies=[
         audit_activity("key.updated", "{{ actor.name }} updated key '{{ key.name }}'")
     ],
 )
 async def update_key(
-    request: UpdateKeyRequest,
+    request: UpdateKeyApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateKeyResponse:
+) -> UpdateKeyApiResponse:
     """Update an existing key."""
     tags = ["keys"]
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -66,53 +48,50 @@ async def update_key(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            # Encrypt the key before storing
-            encrypted_key = encrypt_api_key(request.key)
+        # Encrypt the key before storing
+        encrypted_key = encrypt_api_key(request.key)
 
-            # Ensure department_ids is always an array (empty if None)
-            department_ids = request.department_ids if request.department_ids else []
-
-            # Update key with department links
-            sql_query = load_sql("app/sql/v3/keys/update_key.sql")
-            sql_params = (
-                request.keyId,
-                request.name,
-                encrypted_key,
-                request.description,
-                request.active,
-                department_ids,
-                profile_id,
+        async with conn.transaction():
+            # Convert API request to SQL params (add profile_id from header)
+            # Use double star pattern: **request.model_dump()
+            # Note: encrypted_key replaces request.key in the params
+            params = UpdateKeySqlParams(
+                **{**request.model_dump(), "key": encrypted_key},
+                profile_id=profile_id,
             )
-            result = await conn.fetchrow(sql_query, *sql_params)
+            sql_params = params.to_tuple()
 
-            if not result:
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                UpdateKeySqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result or not result.key_id:
                 raise HTTPException(
-                    status_code=404, detail=f"Key not found: {request.keyId}"
+                    status_code=404, detail=f"Key not found: {request.key_id}"
                 )
 
-            key_id = result["key_id"]
-            key_masked = result["key_masked"]
-            key_name = result["key_name"]
-            actor_name = result["actor_name"]
-
-            if actor_name:
+            # Set audit context with data from SQL query
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    key={"name": key_name, "id": request.keyId},
+                    actor={"name": result.actor_name, "id": profile_id},
+                    key={"name": result.key_name, "id": str(request.key_id)},
                 )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return UpdateKeyResponse(
-            success=True,
-            keyId=key_id,
-            key_masked=key_masked,
-            message="Key updated successfully",
-        )
+        # Convert SQL result to API response
+        api_response = UpdateKeyApiResponse.model_validate(result.model_dump())
+
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

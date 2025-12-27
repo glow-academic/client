@@ -1,53 +1,22 @@
 """Key detail endpoint - v3 API following DHH principles."""
 
-import json
-import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (GetKeyDetailApiRequest, GetKeyDetailApiResponse,
+                           GetKeyDetailSqlParams, GetKeyDetailSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline mapping types (DHH style - no shared types)
-class DepartmentMappingItem(BaseModel):
-    """Department mapping item."""
-
-    name: str
-    description: str
-
-
-class KeyDetailRequest(BaseModel):
-    """Request for key detail."""
-
-    keyId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class KeyDetailResponse(BaseModel):
-    """Response for key detail endpoint."""
-
-    key_id: str
-    name: str
-    key_masked: str
-    type: str
-    description: str
-    active: bool
-    created_at: str
-    updated_at: str
-    department_ids: list[str]
-    model_ids: list[str]
-    valid_department_ids: list[str]
-    can_edit: bool
-    department_mapping: dict[str, DepartmentMappingItem]
-    model_mapping: dict[str, dict[str, Any]]
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/keys/get_key_detail_complete.sql"
 
 
 router = APIRouter()
@@ -55,140 +24,88 @@ router = APIRouter()
 
 @router.post(
     "/detail",
-    response_model=KeyDetailResponse,
+    response_model=GetKeyDetailApiResponse,
     dependencies=[
         audit_activity("key.viewed", "{{ actor.name }} viewed key '{{ key.name }}'")
     ],
 )
 async def get_key_detail(
-    request_body: KeyDetailRequest,
-    request: Request,
+    request: GetKeyDetailApiRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> KeyDetailResponse:
+) -> GetKeyDetailApiResponse:
     """Get key detail information."""
     tags = ["keys"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = request_body.model_dump()
-    cache_key_val = cache_key(request.url.path, body_dict)
+    # Use mode='json' to serialize UUIDs to strings for JSON compatibility
+    body_dict = request.model_dump(mode="json")
+    cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return KeyDetailResponse.model_validate(cached["data"])
+        return GetKeyDetailApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
-        profile_id = request.state.profile_id
+        profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/keys/get_key_detail_complete.sql")
-        sql_params = (
-            uuid.UUID(request_body.keyId),
-            uuid.UUID(profile_id),
-        )
-        row = await conn.fetchrow(
-            sql_query,
-            uuid.UUID(request_body.keyId),
-            uuid.UUID(profile_id),
+        # Convert API request to SQL params (add profile_id from header)
+        # Use double star pattern: **request.model_dump()
+        params = GetKeyDetailSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
+
+        # Execute SQL with typed helper (single row result)
+        result = cast(
+            GetKeyDetailSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        if not row:
-            # Check if key exists but user doesn't have department access
-            key_exists_check = await conn.fetchval(
-                "SELECT EXISTS(SELECT 1 FROM keys WHERE id = $1)",
-                uuid.UUID(request_body.keyId),
+        # Check if key exists and has access using SQL result
+        # SQL now returns key_exists field to distinguish 404 vs 403
+        if not result.key_exists:
+            raise HTTPException(
+                status_code=404, detail=f"Key {request.key_id} not found"
             )
-            if key_exists_check:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this key. It may be restricted to other departments.",
-                )
-            raise HTTPException(status_code=404, detail="Key not found")
-
-        # Parse department mapping
-        department_mapping: dict[str, DepartmentMappingItem] = {}
-        if row.get("department_mapping"):
-            dept_data = row["department_mapping"]
-            if isinstance(dept_data, str):
-                dept_data = json.loads(dept_data)
-            if isinstance(dept_data, dict):
-                for did, ddata in dept_data.items():
-                    if isinstance(ddata, dict):
-                        department_mapping[did] = DepartmentMappingItem(
-                            name=ddata.get("name", ""),
-                            description=ddata.get("description", ""),
-                        )
-
-        # Parse model mapping
-        model_mapping: dict[str, dict[str, Any]] = {}
-        if row.get("model_mapping"):
-            model_data = row["model_mapping"]
-            if isinstance(model_data, str):
-                model_data = json.loads(model_data)
-            if isinstance(model_data, dict):
-                model_mapping = model_data
-
-        # Get can_edit from SQL (handles default objects and role checks)
-        can_edit = row.get("can_edit", False)
+        
+        if not result.key_id:
+            # Key exists but user doesn't have access
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this key. It may be restricted to other departments.",
+            )
 
         # Set audit context with data from SQL query
-        actor_name = row.get("actor_name")
-        key_name = row.get("name")
-        if actor_name:
+        if result.actor_name:
             audit_set(
-                request,
-                actor={"name": actor_name, "id": profile_id},
-                key={"name": key_name, "id": request_body.keyId},
+                http_request,
+                actor={"name": result.actor_name, "id": profile_id},
+                key={"name": result.name, "id": str(request.key_id)},
             )
 
-        # Convert arrays
-        valid_department_ids = [
-            str(did) for did in (row.get("valid_department_ids") or [])
-        ]
-        dept_ids = []
-        if row.get("department_ids"):
-            dept_ids = [str(d) for d in row["department_ids"]]
+        # Convert SQL result to API response
+        response_data = GetKeyDetailApiResponse.model_validate(result.model_dump())
 
-        model_ids = []
-        if row.get("model_ids"):
-            model_ids = [str(mid) for mid in row["model_ids"]]
-
-        response_data = KeyDetailResponse(
-            key_id=str(row.get("key_id", "")),
-            name=row.get("name", ""),
-            key_masked=row.get("key_masked", "****"),
-            type=row.get("type", "api"),
-            description=row.get("description", ""),
-            active=row.get("active", False),
-            created_at=row.get("created_at").isoformat()
-            if row.get("created_at")
-            else "",
-            updated_at=row.get("updated_at").isoformat()
-            if row.get("updated_at")
-            else "",
-            department_ids=dept_ids,
-            model_ids=model_ids,
-            valid_department_ids=valid_department_ids,
-            can_edit=can_edit,
-            department_mapping=department_mapping,
-            model_mapping=model_mapping,
-        )
-
-        # Cache response
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": response_data.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )
@@ -201,9 +118,9 @@ async def get_key_detail(
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=request.url.path,
+            route_path=http_request.url.path,
             operation="get_key_detail",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=request,
+            request=http_request,
         )

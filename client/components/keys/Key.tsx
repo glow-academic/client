@@ -137,7 +137,7 @@ export default function Key({
       try {
         const result = await decryptKeyAction({
           body: {
-            keyId,
+            key_id: keyId,
           },
         });
         setDecryptedKey(result.key);
@@ -292,7 +292,7 @@ export default function Key({
     try {
       if (isEditMode && keyId) {
         await handleUpdateKey({
-          keyId: keyId,
+          key_id: keyId,
           name: formData.name!,
           key: formData.key || "", // Use existing key if not changed
           description: formData.description || "",

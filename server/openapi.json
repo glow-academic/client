@@ -7992,7 +7992,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/KeysListRequest"
+                "$ref": "#/components/schemas/GetKeysListApiRequest"
               }
             }
           }
@@ -8003,7 +8003,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/KeysListResponse"
+                  "$ref": "#/components/schemas/GetKeysListApiResponse"
                 }
               }
             }
@@ -8073,7 +8073,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/KeyDetailRequest"
+                "$ref": "#/components/schemas/GetKeyDetailApiRequest"
               }
             }
           }
@@ -8084,7 +8084,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/KeyDetailResponse"
+                  "$ref": "#/components/schemas/GetKeyDetailApiResponse"
                 }
               }
             }
@@ -8154,7 +8154,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/KeyNewRequest"
+                "$ref": "#/components/schemas/GetKeyNewApiRequest"
               }
             }
           }
@@ -8165,7 +8165,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/KeyDetailResponse"
+                  "$ref": "#/components/schemas/GetKeyNewApiResponse"
                 }
               }
             }
@@ -8235,7 +8235,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateKeyRequest"
+                "$ref": "#/components/schemas/CreateKeyApiRequest"
               }
             }
           }
@@ -8246,7 +8246,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateKeyResponse"
+                  "$ref": "#/components/schemas/CreateKeyApiResponse"
                 }
               }
             }
@@ -8316,7 +8316,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateKeyRequest"
+                "$ref": "#/components/schemas/UpdateKeyApiRequest"
               }
             }
           }
@@ -8327,7 +8327,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateKeyResponse"
+                  "$ref": "#/components/schemas/UpdateKeyApiResponse"
                 }
               }
             }
@@ -8397,7 +8397,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteKeyRequest"
+                "$ref": "#/components/schemas/DeleteKeyApiRequest"
               }
             }
           }
@@ -8408,7 +8408,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteKeyResponse"
+                  "$ref": "#/components/schemas/DeleteKeyApiResponse"
                 }
               }
             }
@@ -8478,7 +8478,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DecryptKeyRequest"
+                "$ref": "#/components/schemas/GetKeyForDecryptApiRequest"
               }
             }
           }
@@ -8489,7 +8489,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DecryptKeyResponse"
+                  "$ref": "#/components/schemas/GetKeyForDecryptApiResponse"
                 }
               }
             }
@@ -24769,7 +24769,7 @@
         "type": "object",
         "title": "CreateFieldApiResponse"
       },
-      "CreateKeyRequest": {
+      "CreateKeyApiRequest": {
         "properties": {
           "name": {
             "type": "string",
@@ -24785,14 +24785,14 @@
           },
           "active": {
             "type": "boolean",
-            "title": "Active",
-            "default": true
+            "title": "Active"
           },
           "department_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -24807,39 +24807,50 @@
         "required": [
           "name",
           "key",
-          "description"
+          "description",
+          "active"
         ],
-        "title": "CreateKeyRequest",
-        "description": "Request to create key."
+        "title": "CreateKeyApiRequest"
       },
-      "CreateKeyResponse": {
+      "CreateKeyApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "keyId": {
-            "type": "string",
-            "title": "Keyid"
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
           },
           "key_masked": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Key Masked"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "keyId",
-          "key_masked",
-          "message"
-        ],
-        "title": "CreateKeyResponse",
-        "description": "Response from create key."
+        "title": "CreateKeyApiResponse"
       },
       "CreateModelApiRequest": {
         "properties": {
@@ -26968,34 +26979,6 @@
         "title": "DebugInfoItem",
         "description": "Debug information item."
       },
-      "DecryptKeyRequest": {
-        "properties": {
-          "keyId": {
-            "type": "string",
-            "title": "Keyid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "keyId"
-        ],
-        "title": "DecryptKeyRequest",
-        "description": "Request to decrypt key."
-      },
-      "DecryptKeyResponse": {
-        "properties": {
-          "key": {
-            "type": "string",
-            "title": "Key"
-          }
-        },
-        "type": "object",
-        "required": [
-          "key"
-        ],
-        "title": "DecryptKeyResponse",
-        "description": "Response from decrypt key."
-      },
       "DeleteAgentApiRequest": {
         "properties": {
           "agent_id": {
@@ -27415,38 +27398,70 @@
         "type": "object",
         "title": "DeleteFieldApiResponse"
       },
-      "DeleteKeyRequest": {
+      "DeleteKeyApiRequest": {
         "properties": {
-          "keyId": {
+          "key_id": {
             "type": "string",
-            "title": "Keyid"
+            "format": "uuid",
+            "title": "Key Id"
           }
         },
         "type": "object",
         "required": [
-          "keyId"
+          "key_id"
         ],
-        "title": "DeleteKeyRequest",
-        "description": "Request to delete key."
+        "title": "DeleteKeyApiRequest"
       },
-      "DeleteKeyResponse": {
+      "DeleteKeyApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "key_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Exists"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteKeyResponse",
-        "description": "Response from delete key."
+        "title": "DeleteKeyApiResponse"
       },
       "DeleteModelApiRequest": {
         "properties": {
@@ -34552,6 +34567,543 @@
         },
         "type": "object",
         "title": "GetFieldsListApiResponse"
+      },
+      "GetKeyDetailApiRequest": {
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Key Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id"
+        ],
+        "title": "GetKeyDetailApiRequest"
+      },
+      "GetKeyDetailApiResponse": {
+        "properties": {
+          "key_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Exists"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "key_masked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Masked"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "model_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Ids"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeyDetailV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeyDetailV3Model"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetKeyDetailApiResponse"
+      },
+      "GetKeyForDecryptApiRequest": {
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Key Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id"
+        ],
+        "title": "GetKeyForDecryptApiRequest"
+      },
+      "GetKeyForDecryptApiResponse": {
+        "properties": {
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetKeyForDecryptApiResponse"
+      },
+      "GetKeyNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetKeyNewApiRequest"
+      },
+      "GetKeyNewApiResponse": {
+        "properties": {
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "key_masked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Masked"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "model_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Ids"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeyNewV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeyNewV3Model"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetKeyNewApiResponse"
+      },
+      "GetKeysListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetKeysListApiRequest"
+      },
+      "GetKeysListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "keys": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeysListV3Key"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keys"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeysListV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeysListV3Model"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "department_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeysListV3DepartmentOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Options"
+          },
+          "model_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetKeysListV3ModelOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Options"
+          }
+        },
+        "type": "object",
+        "title": "GetKeysListApiResponse"
       },
       "GetLogsBundleApiRequest": {
         "properties": {},
@@ -43526,268 +44078,6 @@
         "title": "InputTokenDetails",
         "description": "Input token details from Realtime API usage."
       },
-      "KeyDetailRequest": {
-        "properties": {
-          "keyId": {
-            "type": "string",
-            "title": "Keyid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "keyId"
-        ],
-        "title": "KeyDetailRequest",
-        "description": "Request for key detail."
-      },
-      "KeyDetailResponse": {
-        "properties": {
-          "key_id": {
-            "type": "string",
-            "title": "Key Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "key_masked": {
-            "type": "string",
-            "title": "Key Masked"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "model_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Model Ids"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "model_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Model Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "key_id",
-          "name",
-          "key_masked",
-          "type",
-          "description",
-          "active",
-          "created_at",
-          "updated_at",
-          "department_ids",
-          "model_ids",
-          "valid_department_ids",
-          "can_edit",
-          "department_mapping",
-          "model_mapping"
-        ],
-        "title": "KeyDetailResponse",
-        "description": "Response for key detail endpoint."
-      },
-      "KeyItem": {
-        "properties": {
-          "key_id": {
-            "type": "string",
-            "title": "Key Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "key_masked": {
-            "type": "string",
-            "title": "Key Masked"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "model_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Model Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          }
-        },
-        "type": "object",
-        "required": [
-          "key_id",
-          "name",
-          "key_masked",
-          "description",
-          "active",
-          "created_at",
-          "updated_at",
-          "department_ids",
-          "model_ids",
-          "can_edit",
-          "can_delete",
-          "can_duplicate"
-        ],
-        "title": "KeyItem",
-        "description": "Key item for list view."
-      },
-      "KeyNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "KeyNewRequest",
-        "description": "Request for default key detail."
-      },
-      "KeysListRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "KeysListRequest",
-        "description": "Request for keys list."
-      },
-      "KeysListResponse": {
-        "properties": {
-          "keys": {
-            "items": {
-              "$ref": "#/components/schemas/KeyItem"
-            },
-            "type": "array",
-            "title": "Keys"
-          },
-          "department_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Department Options"
-          },
-          "model_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Model Options"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "model_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Model Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "keys",
-          "department_options",
-          "model_options",
-          "department_mapping",
-          "model_mapping"
-        ],
-        "title": "KeysListResponse",
-        "description": "Response for keys list."
-      },
       "LeaderboardBundleFilters": {
         "properties": {
           "startDate": {
@@ -50393,6 +50683,571 @@
           "description"
         ],
         "title": "QGetFieldNewV3Parameter"
+      },
+      "QGetKeyDetailV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetKeyDetailV3Department"
+      },
+      "QGetKeyDetailV3Model": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "name",
+          "description",
+          "provider",
+          "active"
+        ],
+        "title": "QGetKeyDetailV3Model"
+      },
+      "QGetKeyNewV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetKeyNewV3Department"
+      },
+      "QGetKeyNewV3Model": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "name",
+          "description",
+          "provider",
+          "active"
+        ],
+        "title": "QGetKeyNewV3Model"
+      },
+      "QGetKeysListV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetKeysListV3Department"
+      },
+      "QGetKeysListV3DepartmentOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "QGetKeysListV3DepartmentOption"
+      },
+      "QGetKeysListV3Key": {
+        "properties": {
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "key_masked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Masked"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "model_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id",
+          "name",
+          "key_masked",
+          "description",
+          "active",
+          "created_at",
+          "updated_at",
+          "department_ids",
+          "model_ids",
+          "can_edit",
+          "can_delete",
+          "can_duplicate"
+        ],
+        "title": "QGetKeysListV3Key"
+      },
+      "QGetKeysListV3Model": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "name",
+          "description",
+          "provider",
+          "active"
+        ],
+        "title": "QGetKeysListV3Model"
+      },
+      "QGetKeysListV3ModelOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "QGetKeysListV3ModelOption"
       },
       "QGetLogsBundleV3HealthKpi": {
         "properties": {
@@ -71229,11 +72084,12 @@
         "type": "object",
         "title": "UpdateFieldApiResponse"
       },
-      "UpdateKeyRequest": {
+      "UpdateKeyApiRequest": {
         "properties": {
-          "keyId": {
+          "key_id": {
             "type": "string",
-            "title": "Keyid"
+            "format": "uuid",
+            "title": "Key Id"
           },
           "name": {
             "type": "string",
@@ -71255,7 +72111,8 @@
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -71268,43 +72125,64 @@
         },
         "type": "object",
         "required": [
-          "keyId",
+          "key_id",
           "name",
           "key",
           "description",
           "active"
         ],
-        "title": "UpdateKeyRequest",
-        "description": "Request to update key."
+        "title": "UpdateKeyApiRequest"
       },
-      "UpdateKeyResponse": {
+      "UpdateKeyApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "keyId": {
-            "type": "string",
-            "title": "Keyid"
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
           },
           "key_masked": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Key Masked"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "key_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "keyId",
-          "key_masked",
-          "message"
-        ],
-        "title": "UpdateKeyResponse",
-        "description": "Response from update key."
+        "title": "UpdateKeyApiResponse"
       },
       "UpdateModelApiRequest": {
         "properties": {

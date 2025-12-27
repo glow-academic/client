@@ -7515,38 +7515,27 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * CreateKeyRequest
-         * @description Request to create key.
-         */
-        CreateKeyRequest: {
+        /** CreateKeyApiRequest */
+        CreateKeyApiRequest: {
             /** Name */
             name: string;
             /** Key */
             key: string;
             /** Description */
             description: string;
-            /**
-             * Active
-             * @default true
-             */
+            /** Active */
             active: boolean;
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /**
-         * CreateKeyResponse
-         * @description Response from create key.
-         */
-        CreateKeyResponse: {
-            /** Success */
-            success: boolean;
-            /** Keyid */
-            keyId: string;
+        /** CreateKeyApiResponse */
+        CreateKeyApiResponse: {
+            /** Key Id */
+            key_id?: string | null;
             /** Key Masked */
-            key_masked: string;
-            /** Message */
-            message: string;
+            key_masked?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** CreateModelApiRequest */
         CreateModelApiRequest: {
@@ -8187,22 +8176,6 @@ export interface components {
             /** Content */
             content: string;
         };
-        /**
-         * DecryptKeyRequest
-         * @description Request to decrypt key.
-         */
-        DecryptKeyRequest: {
-            /** Keyid */
-            keyId: string;
-        };
-        /**
-         * DecryptKeyResponse
-         * @description Response from decrypt key.
-         */
-        DecryptKeyResponse: {
-            /** Key */
-            key: string;
-        };
         /** DeleteAgentApiRequest */
         DeleteAgentApiRequest: {
             /**
@@ -8335,23 +8308,24 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * DeleteKeyRequest
-         * @description Request to delete key.
-         */
-        DeleteKeyRequest: {
-            /** Keyid */
-            keyId: string;
+        /** DeleteKeyApiRequest */
+        DeleteKeyApiRequest: {
+            /**
+             * Key Id
+             * Format: uuid
+             */
+            key_id: string;
         };
-        /**
-         * DeleteKeyResponse
-         * @description Response from delete key.
-         */
-        DeleteKeyResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** DeleteKeyApiResponse */
+        DeleteKeyApiResponse: {
+            /** Key Exists */
+            key_exists?: boolean | null;
+            /** Key Id */
+            key_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** DeleteModelApiRequest */
         DeleteModelApiRequest: {
@@ -10325,6 +10299,116 @@ export interface components {
             /** Department Options */
             department_options?: components["schemas"]["QListFieldsV3Option"][] | null;
         };
+        /** GetKeyDetailApiRequest */
+        GetKeyDetailApiRequest: {
+            /**
+             * Key Id
+             * Format: uuid
+             */
+            key_id: string;
+        };
+        /** GetKeyDetailApiResponse */
+        GetKeyDetailApiResponse: {
+            /** Key Exists */
+            key_exists?: boolean | null;
+            /** Key Id */
+            key_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Key Masked */
+            key_masked?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetKeyDetailV3Department"][] | null;
+            /** Models */
+            models?: components["schemas"]["QGetKeyDetailV3Model"][] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetKeyForDecryptApiRequest */
+        GetKeyForDecryptApiRequest: {
+            /**
+             * Key Id
+             * Format: uuid
+             */
+            key_id: string;
+        };
+        /** GetKeyForDecryptApiResponse */
+        GetKeyForDecryptApiResponse: {
+            /** Key */
+            key?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetKeyNewApiRequest */
+        GetKeyNewApiRequest: Record<string, never>;
+        /** GetKeyNewApiResponse */
+        GetKeyNewApiResponse: {
+            /** Key Id */
+            key_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Key Masked */
+            key_masked?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetKeyNewV3Department"][] | null;
+            /** Models */
+            models?: components["schemas"]["QGetKeyNewV3Model"][] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetKeysListApiRequest */
+        GetKeysListApiRequest: Record<string, never>;
+        /** GetKeysListApiResponse */
+        GetKeysListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Keys */
+            keys?: components["schemas"]["QGetKeysListV3Key"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetKeysListV3Department"][] | null;
+            /** Models */
+            models?: components["schemas"]["QGetKeysListV3Model"][] | null;
+            /** Department Options */
+            department_options?: components["schemas"]["QGetKeysListV3DepartmentOption"][] | null;
+            /** Model Options */
+            model_options?: components["schemas"]["QGetKeysListV3ModelOption"][] | null;
+        };
         /** GetLogsBundleApiRequest */
         GetLogsBundleApiRequest: Record<string, never>;
         /** GetLogsBundleApiResponse */
@@ -12090,122 +12174,6 @@ export interface components {
             /** Cached Tokens */
             cached_tokens?: number | null;
             cached_tokens_details?: components["schemas"]["CachedTokenDetails"] | null;
-        };
-        /**
-         * KeyDetailRequest
-         * @description Request for key detail.
-         */
-        KeyDetailRequest: {
-            /** Keyid */
-            keyId: string;
-        };
-        /**
-         * KeyDetailResponse
-         * @description Response for key detail endpoint.
-         */
-        KeyDetailResponse: {
-            /** Key Id */
-            key_id: string;
-            /** Name */
-            name: string;
-            /** Key Masked */
-            key_masked: string;
-            /** Type */
-            type: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[];
-            /** Model Ids */
-            model_ids: string[];
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        /**
-         * KeyItem
-         * @description Key item for list view.
-         */
-        KeyItem: {
-            /** Key Id */
-            key_id: string;
-            /** Name */
-            name: string;
-            /** Key Masked */
-            key_masked: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Model Ids */
-            model_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-        };
-        /**
-         * KeyNewRequest
-         * @description Request for default key detail.
-         */
-        KeyNewRequest: Record<string, never>;
-        /**
-         * KeysListRequest
-         * @description Request for keys list.
-         */
-        KeysListRequest: Record<string, never>;
-        /**
-         * KeysListResponse
-         * @description Response for keys list.
-         */
-        KeysListResponse: {
-            /** Keys */
-            keys: components["schemas"]["KeyItem"][];
-            /** Department Options */
-            department_options: {
-                [key: string]: string;
-            }[];
-            /** Model Options */
-            model_options: {
-                [key: string]: string;
-            }[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
         };
         /**
          * LeaderboardBundleFilters
@@ -14038,6 +14006,113 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+        };
+        /** QGetKeyDetailV3Department */
+        QGetKeyDetailV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetKeyDetailV3Model */
+        QGetKeyDetailV3Model: {
+            /** Model Id */
+            model_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Provider */
+            provider: string | null;
+            /** Active */
+            active: boolean | null;
+        };
+        /** QGetKeyNewV3Department */
+        QGetKeyNewV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetKeyNewV3Model */
+        QGetKeyNewV3Model: {
+            /** Model Id */
+            model_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Provider */
+            provider: string | null;
+            /** Active */
+            active: boolean | null;
+        };
+        /** QGetKeysListV3Department */
+        QGetKeysListV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetKeysListV3DepartmentOption */
+        QGetKeysListV3DepartmentOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
+        /** QGetKeysListV3Key */
+        QGetKeysListV3Key: {
+            /** Key Id */
+            key_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Key Masked */
+            key_masked: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Model Ids */
+            model_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Can Duplicate */
+            can_duplicate: boolean | null;
+        };
+        /** QGetKeysListV3Model */
+        QGetKeysListV3Model: {
+            /** Model Id */
+            model_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Provider */
+            provider: string | null;
+            /** Active */
+            active: boolean | null;
+        };
+        /** QGetKeysListV3ModelOption */
+        QGetKeysListV3ModelOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
         };
         /** QGetLogsBundleV3HealthKpi */
         QGetLogsBundleV3HealthKpi: {
@@ -19005,13 +19080,13 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * UpdateKeyRequest
-         * @description Request to update key.
-         */
-        UpdateKeyRequest: {
-            /** Keyid */
-            keyId: string;
+        /** UpdateKeyApiRequest */
+        UpdateKeyApiRequest: {
+            /**
+             * Key Id
+             * Format: uuid
+             */
+            key_id: string;
             /** Name */
             name: string;
             /** Key */
@@ -19023,19 +19098,16 @@ export interface components {
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /**
-         * UpdateKeyResponse
-         * @description Response from update key.
-         */
-        UpdateKeyResponse: {
-            /** Success */
-            success: boolean;
-            /** Keyid */
-            keyId: string;
+        /** UpdateKeyApiResponse */
+        UpdateKeyApiResponse: {
+            /** Key Id */
+            key_id?: string | null;
             /** Key Masked */
-            key_masked: string;
-            /** Message */
-            message: string;
+            key_masked?: string | null;
+            /** Key Name */
+            key_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** UpdateModelApiRequest */
         UpdateModelApiRequest: {
@@ -24136,7 +24208,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["KeysListRequest"];
+                "application/json": components["schemas"]["GetKeysListApiRequest"];
             };
         };
         responses: {
@@ -24146,7 +24218,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["KeysListResponse"];
+                    "application/json": components["schemas"]["GetKeysListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24172,7 +24244,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["KeyDetailRequest"];
+                "application/json": components["schemas"]["GetKeyDetailApiRequest"];
             };
         };
         responses: {
@@ -24182,7 +24254,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["KeyDetailResponse"];
+                    "application/json": components["schemas"]["GetKeyDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24208,7 +24280,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["KeyNewRequest"];
+                "application/json": components["schemas"]["GetKeyNewApiRequest"];
             };
         };
         responses: {
@@ -24218,7 +24290,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["KeyDetailResponse"];
+                    "application/json": components["schemas"]["GetKeyNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24244,7 +24316,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateKeyRequest"];
+                "application/json": components["schemas"]["CreateKeyApiRequest"];
             };
         };
         responses: {
@@ -24254,7 +24326,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateKeyResponse"];
+                    "application/json": components["schemas"]["CreateKeyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24280,7 +24352,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateKeyRequest"];
+                "application/json": components["schemas"]["UpdateKeyApiRequest"];
             };
         };
         responses: {
@@ -24290,7 +24362,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateKeyResponse"];
+                    "application/json": components["schemas"]["UpdateKeyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24316,7 +24388,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteKeyRequest"];
+                "application/json": components["schemas"]["DeleteKeyApiRequest"];
             };
         };
         responses: {
@@ -24326,7 +24398,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteKeyResponse"];
+                    "application/json": components["schemas"]["DeleteKeyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24352,7 +24424,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DecryptKeyRequest"];
+                "application/json": components["schemas"]["GetKeyForDecryptApiRequest"];
             };
         };
         responses: {
@@ -24362,7 +24434,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DecryptKeyResponse"];
+                    "application/json": components["schemas"]["GetKeyForDecryptApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -1,15 +1,16 @@
 #!/bin/bash
 
 # Export script for Glow codebase deployment
-# This script packages and transfers the codebase to another machine via SCP
+# This script packages and transfers the codebase to another machine via SCP or locally
 #
 # Usage:
 #   Interactive mode: ./export.sh
-#   Non-interactive:  ./export.sh --env alpha --destination user@host:/path [--yes]
+#   Remote:  ./export.sh --env alpha --destination user@host:/path [--yes]
+#   Local:   ./export.sh --env alpha --destination /path/to/folder [--yes]
 #
 # Options:
 #   -e, --env ENV          Environment (alpha, beta, or prod)
-#   -d, --destination DEST  SCP destination (user@host:/path or alias:/path)
+#   -d, --destination DEST Destination path (user@host:/path for remote, /path/to/folder for local)
 #   -y, --yes              Skip confirmation prompt
 #   -h, --help             Show this help message
 
@@ -84,14 +85,15 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  -e, --env ENV          Environment (alpha, beta, or prod)"
-            echo "  -d, --destination DEST SCP destination (user@host:/path or alias:/path)"
+            echo "  -d, --destination DEST Destination path (user@host:/path for remote, /path/to/folder for local)"
             echo "  -y, --yes              Skip confirmation prompt"
             echo "  -h, --help             Show this help message"
             echo ""
             echo "Examples:"
             echo "  $0                                    # Interactive mode"
-            echo "  $0 -e alpha -d ai:/path/to/folder    # Non-interactive mode"
-            echo "  $0 -e prod -d user@host:/path -y     # Non-interactive with auto-confirm"
+            echo "  $0 -e alpha -d ai:/path/to/folder    # Remote (SCP)"
+            echo "  $0 -e alpha -d ./exports              # Local directory"
+            echo "  $0 -e prod -d user@host:/path -y     # Remote with auto-confirm"
             exit 0
             ;;
         *)
@@ -138,37 +140,61 @@ fi
 
 success "Selected environment: $ENV"
 
-# Get SCP destination (interactive or from args)
+# Get destination (interactive or from args)
 if [ -z "$SCP_DEST" ]; then
-    # Interactive prompt for SCP destination
+    # Interactive prompt for destination
     echo ""
-    read -p "Enter SCP destination (user@host:/path/to/folder or alias:/path/to/folder): " scp_dest
+    read -p "Enter destination (user@host:/path for remote, or /path/to/folder for local): " dest_input
     
-    if [ -z "$scp_dest" ]; then
-        error "SCP destination cannot be empty"
+    if [ -z "$dest_input" ]; then
+        error "Destination cannot be empty"
         exit 1
     fi
 else
-    scp_dest="$SCP_DEST"
+    dest_input="$SCP_DEST"
 fi
 
-# Validate SCP format - supports both user@host:/path and alias:/path formats
-# Must contain a colon with non-empty content before and after
-if [[ ! "$scp_dest" =~ ^[^:]+:.+$ ]]; then
-    error "Invalid SCP format. Expected: user@host:/path/to/folder or alias:/path/to/folder"
-    exit 1
+# Detect if destination is remote (SCP) or local
+# Remote format: user@host:/path or alias:/path (contains colon and @ before colon, or known SSH alias)
+# Local format: any path without colon, or path with colon but no @ before it
+IS_REMOTE=false
+LOCAL_DEST=""
+SCP_USER_HOST=""
+SCP_PATH=""
+
+if [[ "$dest_input" =~ ^[^:]+:.+$ ]]; then
+    # Contains colon - check if it's SSH format (user@host:path)
+    SCP_USER_HOST=$(echo "$dest_input" | cut -d: -f1)
+    SCP_PATH=$(echo "$dest_input" | cut -d: -f2)
+    
+    # Check if it's user@host format (definitely remote)
+    if [[ "$SCP_USER_HOST" =~ @ ]]; then
+        IS_REMOTE=true
+        success "Remote destination detected (user@host format): $dest_input"
+    # Check if it's a known SSH alias (check SSH config, but only if ssh is available)
+    elif command -v ssh >/dev/null 2>&1 && ssh -G "$SCP_USER_HOST" >/dev/null 2>&1; then
+        IS_REMOTE=true
+        success "Remote destination detected (SSH alias): $dest_input"
+    else
+        # Contains colon but not SSH format - treat as local (might be Windows path or special case)
+        IS_REMOTE=false
+        LOCAL_DEST="$dest_input"
+        warning "Destination contains colon but doesn't appear to be SSH. Treating as local path."
+        success "Local destination: $LOCAL_DEST"
+    fi
+else
+    # No colon - definitely local
+    IS_REMOTE=false
+    LOCAL_DEST="$dest_input"
+    success "Local destination: $LOCAL_DEST"
 fi
 
-success "SCP destination: $scp_dest"
-
-# Extract host/alias and path from SCP destination
-SCP_USER_HOST=$(echo "$scp_dest" | cut -d: -f1)
-SCP_PATH=$(echo "$scp_dest" | cut -d: -f2)
-
-# Validate extracted components
-if [ -z "$SCP_USER_HOST" ] || [ -z "$SCP_PATH" ]; then
-    error "Failed to parse SCP destination"
-    exit 1
+# Validate remote destination components
+if [ "$IS_REMOTE" = true ]; then
+    if [ -z "$SCP_USER_HOST" ] || [ -z "$SCP_PATH" ]; then
+        error "Failed to parse remote destination"
+        exit 1
+    fi
 fi
 
 # Create temporary export directory
@@ -386,8 +412,12 @@ ls -1 "$EXPORT_DIR" | sed 's/^/  - /'
 
 # Check for required tools
 command -v zip >/dev/null 2>&1 || { error "zip is required but not installed"; exit 1; }
-command -v scp >/dev/null 2>&1 || { error "scp is required but not installed"; exit 1; }
-command -v ssh >/dev/null 2>&1 || { error "ssh is required but not installed"; exit 1; }
+
+# Only check SSH tools if remote destination
+if [ "$IS_REMOTE" = true ]; then
+    command -v scp >/dev/null 2>&1 || { error "scp is required but not installed"; exit 1; }
+    command -v ssh >/dev/null 2>&1 || { error "ssh is required but not installed"; exit 1; }
+fi
 
 # Create zip archive
 ZIP_NAME="glow-export-${ENV}-${TIMESTAMP}.zip"
@@ -409,8 +439,13 @@ info "Archive size: $(du -h "$ZIP_PATH" | cut -f1)"
 # Confirm before transfer (unless --yes flag is set)
 if [ "$SKIP_CONFIRM" = false ]; then
     echo ""
-    warning "Ready to transfer to $scp_dest"
-    read -p "Continue with SCP transfer? (y/N): " confirm
+    if [ "$IS_REMOTE" = true ]; then
+        warning "Ready to transfer to $dest_input"
+        read -p "Continue with SCP transfer? (y/N): " confirm
+    else
+        warning "Ready to copy to $LOCAL_DEST"
+        read -p "Continue? (y/N): " confirm
+    fi
     
     if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
         info "Transfer cancelled by user"
@@ -418,132 +453,173 @@ if [ "$SKIP_CONFIRM" = false ]; then
     fi
 fi
 
-# Test SSH connection before transfer (works with both user@host and aliases)
-info "Testing SSH connection..."
-if ! ssh -o BatchMode=yes -o ConnectTimeout=5 "$SCP_USER_HOST" "echo 'Connection test'" > /dev/null 2>&1; then
-    warning "SSH connection test failed, but continuing anyway..."
-    warning "You may be prompted for password/authentication"
-    warning "Note: If using an SSH alias, make sure it's configured in ~/.ssh/config"
-fi
-
-# Create destination directory on remote machine if it doesn't exist
-info "Ensuring destination directory exists on remote machine..."
-info "Creating directory: $SCP_PATH on $SCP_USER_HOST"
-
-# Escape the path properly for SSH command
-ESCAPED_PATH=$(printf '%q' "$SCP_PATH")
-
-# Check if directory already exists
-if ssh "$SCP_USER_HOST" "test -d $ESCAPED_PATH" 2>/dev/null; then
-    info "Directory already exists: $SCP_PATH"
-else
-    # Create directory with proper error handling
-    info "Creating directory..."
-    CREATE_OUTPUT=$(ssh "$SCP_USER_HOST" "mkdir -p $ESCAPED_PATH && echo 'Directory created successfully'" 2>&1)
-    CREATE_EXIT_CODE=$?
+# Handle remote or local destination
+if [ "$IS_REMOTE" = true ]; then
+    # REMOTE DESTINATION (SCP)
     
-    if [ $CREATE_EXIT_CODE -ne 0 ]; then
-        error "Failed to create destination directory on remote machine"
+    # Test SSH connection before transfer (works with both user@host and aliases)
+    info "Testing SSH connection..."
+    if ! ssh -o BatchMode=yes -o ConnectTimeout=5 "$SCP_USER_HOST" "echo 'Connection test'" > /dev/null 2>&1; then
+        warning "SSH connection test failed, but continuing anyway..."
+        warning "You may be prompted for password/authentication"
+        warning "Note: If using an SSH alias, make sure it's configured in ~/.ssh/config"
+    fi
+
+    # Create destination directory on remote machine if it doesn't exist
+    info "Ensuring destination directory exists on remote machine..."
+    info "Creating directory: $SCP_PATH on $SCP_USER_HOST"
+
+    # Escape the path properly for SSH command
+    ESCAPED_PATH=$(printf '%q' "$SCP_PATH")
+
+    # Check if directory already exists
+    if ssh "$SCP_USER_HOST" "test -d $ESCAPED_PATH" 2>/dev/null; then
+        info "Directory already exists: $SCP_PATH"
+    else
+        # Create directory with proper error handling
+        info "Creating directory..."
+        CREATE_OUTPUT=$(ssh "$SCP_USER_HOST" "mkdir -p $ESCAPED_PATH && echo 'Directory created successfully'" 2>&1)
+        CREATE_EXIT_CODE=$?
+        
+        if [ $CREATE_EXIT_CODE -ne 0 ]; then
+            error "Failed to create destination directory on remote machine"
+            error "Path: $SCP_PATH"
+            error "Host: $SCP_USER_HOST"
+            error "SSH output: $CREATE_OUTPUT"
+            error "Exit code: $CREATE_EXIT_CODE"
+            error ""
+            error "Troubleshooting:"
+            error "  1. Test SSH connection: ssh $SCP_USER_HOST 'echo test'"
+            error "  2. Check parent directory exists: ssh $SCP_USER_HOST 'ls -ld $(dirname $ESCAPED_PATH)'"
+            error "  3. Check write permissions: ssh $SCP_USER_HOST 'test -w $(dirname $ESCAPED_PATH) && echo writable || echo not writable'"
+            exit 1
+        fi
+        
+        info "Directory creation output: $CREATE_OUTPUT"
+    fi
+
+    # Verify the directory was actually created
+    info "Verifying directory exists..."
+    VERIFY_OUTPUT=$(ssh "$SCP_USER_HOST" "test -d $ESCAPED_PATH && ls -ld $ESCAPED_PATH" 2>&1)
+    VERIFY_EXIT_CODE=$?
+
+    if [ $VERIFY_EXIT_CODE -ne 0 ]; then
+        error "Directory creation verification failed - directory may not exist"
         error "Path: $SCP_PATH"
-        error "Host: $SCP_USER_HOST"
-        error "SSH output: $CREATE_OUTPUT"
-        error "Exit code: $CREATE_EXIT_CODE"
+        error "Verification output: $VERIFY_OUTPUT"
+        error "Exit code: $VERIFY_EXIT_CODE"
+        exit 1
+    fi
+
+    info "Directory verified: $VERIFY_OUTPUT"
+    success "Destination directory ready: $SCP_PATH"
+
+    # Transfer via SCP
+    info "Transferring archive via SCP..."
+    info "Source: $ZIP_PATH"
+    info "Destination: $dest_input/"
+
+    # Verify directory exists one more time before SCP
+    info "Verifying destination directory exists before transfer..."
+    if ! ssh "$SCP_USER_HOST" "test -d $ESCAPED_PATH" 2>/dev/null; then
+        error "Destination directory does not exist: $SCP_PATH"
+        error "Directory creation may have failed. Please check SSH connection and permissions."
+        exit 1
+    fi
+
+    # Transfer with error capture
+    info "Starting SCP transfer..."
+    SCP_OUTPUT=$(scp "$ZIP_PATH" "$dest_input/" 2>&1)
+    SCP_EXIT_CODE=$?
+
+    if [ $SCP_EXIT_CODE -ne 0 ]; then
+        error "SCP transfer failed with exit code: $SCP_EXIT_CODE"
+        if [ -n "$SCP_OUTPUT" ]; then
+            error "SCP error output:"
+            echo "$SCP_OUTPUT" | while IFS= read -r line; do
+                error "  $line"
+            done
+        fi
         error ""
         error "Troubleshooting:"
-        error "  1. Test SSH connection: ssh $SCP_USER_HOST 'echo test'"
-        error "  2. Check parent directory exists: ssh $SCP_USER_HOST 'ls -ld $(dirname $ESCAPED_PATH)'"
-        error "  3. Check write permissions: ssh $SCP_USER_HOST 'test -w $(dirname $ESCAPED_PATH) && echo writable || echo not writable'"
+        error "  1. Verify SSH connection works: ssh $SCP_USER_HOST"
+        error "  2. Verify directory exists: ssh $SCP_USER_HOST 'ls -ld $ESCAPED_PATH'"
+        error "  3. Verify write permissions: ssh $SCP_USER_HOST 'test -w $ESCAPED_PATH && echo writable || echo not writable'"
+        error "  4. Check disk space: ssh $SCP_USER_HOST 'df -h $(dirname $ESCAPED_PATH)'"
+        exit 1
+    fi
+
+    success "Archive transferred successfully"
+
+    # Extract on remote machine
+    info "Extracting archive on remote machine..."
+    ESCAPED_PATH=$(printf '%q' "$SCP_PATH")
+    EXTRACT_CMD="mkdir -p $ESCAPED_PATH && \
+        cd $ESCAPED_PATH && \
+        if ! command -v unzip >/dev/null 2>&1; then \
+            echo 'Error: unzip not found on remote machine'; \
+            exit 1; \
+        fi && \
+        rm -rf client server database web notify 2>/dev/null || true && \
+        rm -rf uploads history 2>/dev/null || true && \
+        rm -f .gitignore .cursorignore AGENTS.md Makefile docker-compose.yml pyproject.toml README.md .env.example export.sh 2>/dev/null || true && \
+        unzip -q -o \"$ZIP_NAME\" && \
+        rm \"$ZIP_NAME\" && \
+        echo 'Extraction complete'"
+
+    if ! ssh "$SCP_USER_HOST" "$EXTRACT_CMD"; then
+        error "Failed to extract archive on remote machine"
+        error "Archive is available at: $dest_input/$ZIP_NAME"
+        error "You can manually extract it with: unzip $ZIP_NAME"
+        warning "Note: The zip file was transferred but extraction failed"
+        exit 1
+    fi
+
+    success "Archive extracted successfully on remote machine"
+    FINAL_DEST="$dest_input"
+else
+    # LOCAL DESTINATION
+    
+    # Convert to absolute path
+    LOCAL_DEST_ABS=$(cd "$(dirname "$LOCAL_DEST")" 2>/dev/null && pwd)/$(basename "$LOCAL_DEST") || {
+        # If parent doesn't exist, use relative to current directory
+        LOCAL_DEST_ABS="$SCRIPT_DIR/$LOCAL_DEST"
+    }
+    
+    # Create destination directory
+    info "Creating destination directory: $LOCAL_DEST_ABS"
+    mkdir -p "$LOCAL_DEST_ABS"
+    
+    # Copy zip archive to destination
+    info "Copying zip archive to destination..."
+    FINAL_ZIP_PATH="$LOCAL_DEST_ABS/$ZIP_NAME"
+    cp "$ZIP_PATH" "$FINAL_ZIP_PATH"
+    success "Archive copied successfully"
+    info "Archive location: $FINAL_ZIP_PATH"
+    
+    # Extract archive locally (matching remote behavior - extract directly into destination)
+    info "Extracting archive locally..."
+    cd "$LOCAL_DEST_ABS"
+    
+    # Remove existing directories/files that will be replaced (matching remote behavior)
+    rm -rf client server database web notify 2>/dev/null || true
+    rm -rf uploads history 2>/dev/null || true
+    rm -f .gitignore .cursorignore AGENTS.md Makefile docker-compose.yml pyproject.toml README.md .env.example export.sh 2>/dev/null || true
+    
+    if ! unzip -q -o "$FINAL_ZIP_PATH"; then
+        error "Failed to extract archive"
         exit 1
     fi
     
-    info "Directory creation output: $CREATE_OUTPUT"
+    # Remove zip file after extraction (matching remote behavior)
+    rm "$FINAL_ZIP_PATH"
+    
+    cd "$SCRIPT_DIR"
+    success "Archive extracted successfully"
+    FINAL_DEST="$LOCAL_DEST_ABS"
 fi
-
-# Verify the directory was actually created
-info "Verifying directory exists..."
-VERIFY_OUTPUT=$(ssh "$SCP_USER_HOST" "test -d $ESCAPED_PATH && ls -ld $ESCAPED_PATH" 2>&1)
-VERIFY_EXIT_CODE=$?
-
-if [ $VERIFY_EXIT_CODE -ne 0 ]; then
-    error "Directory creation verification failed - directory may not exist"
-    error "Path: $SCP_PATH"
-    error "Verification output: $VERIFY_OUTPUT"
-    error "Exit code: $VERIFY_EXIT_CODE"
-    exit 1
-fi
-
-info "Directory verified: $VERIFY_OUTPUT"
-success "Destination directory ready: $SCP_PATH"
-
-# Transfer via SCP
-info "Transferring archive via SCP..."
-info "Source: $ZIP_PATH"
-info "Destination: $scp_dest/"
-
-# Verify directory exists one more time before SCP
-info "Verifying destination directory exists before transfer..."
-if ! ssh "$SCP_USER_HOST" "test -d $ESCAPED_PATH" 2>/dev/null; then
-    error "Destination directory does not exist: $SCP_PATH"
-    error "Directory creation may have failed. Please check SSH connection and permissions."
-    exit 1
-fi
-
-# Transfer with error capture
-info "Starting SCP transfer..."
-SCP_OUTPUT=$(scp "$ZIP_PATH" "$scp_dest/" 2>&1)
-SCP_EXIT_CODE=$?
-
-if [ $SCP_EXIT_CODE -ne 0 ]; then
-    error "SCP transfer failed with exit code: $SCP_EXIT_CODE"
-    if [ -n "$SCP_OUTPUT" ]; then
-        error "SCP error output:"
-        echo "$SCP_OUTPUT" | while IFS= read -r line; do
-            error "  $line"
-        done
-    fi
-    error ""
-    error "Troubleshooting:"
-    error "  1. Verify SSH connection works: ssh $SCP_USER_HOST"
-    error "  2. Verify directory exists: ssh $SCP_USER_HOST 'ls -ld $ESCAPED_PATH'"
-    error "  3. Verify write permissions: ssh $SCP_USER_HOST 'test -w $ESCAPED_PATH && echo writable || echo not writable'"
-    error "  4. Check disk space: ssh $SCP_USER_HOST 'df -h $(dirname $ESCAPED_PATH)'"
-    exit 1
-fi
-
-success "Archive transferred successfully"
-
-# Extract on remote machine
-info "Extracting archive on remote machine..."
-# Verify remote path exists and create if needed, then extract directly into destination
-# Check if unzip is available on remote machine
-# Full rewrite: remove directories and root files that will be replaced
-# Handle permission errors gracefully (e.g., web/generated files created by docker-gen)
-# Escape the path for safe use in SSH command
-ESCAPED_PATH=$(printf '%q' "$SCP_PATH")
-EXTRACT_CMD="mkdir -p $ESCAPED_PATH && \
-    cd $ESCAPED_PATH && \
-    if ! command -v unzip >/dev/null 2>&1; then \
-        echo 'Error: unzip not found on remote machine'; \
-        exit 1; \
-    fi && \
-    rm -rf client server database web notify 2>/dev/null || true && \
-    rm -rf uploads history 2>/dev/null || true && \
-    rm -f .gitignore .cursorignore AGENTS.md Makefile docker-compose.yml pyproject.toml README.md .env.example export.sh 2>/dev/null || true && \
-    unzip -q -o \"$ZIP_NAME\" && \
-    rm \"$ZIP_NAME\" && \
-    echo 'Extraction complete'"
-
-if ! ssh "$SCP_USER_HOST" "$EXTRACT_CMD"; then
-    error "Failed to extract archive on remote machine"
-    error "Archive is available at: $scp_dest/$ZIP_NAME"
-    error "You can manually extract it with: unzip $ZIP_NAME"
-    warning "Note: The zip file was transferred but extraction failed"
-    exit 1
-fi
-
-success "Archive extracted successfully on remote machine"
 
 echo ""
 success "Export completed successfully!"
-info "Files are available at: $scp_dest"
+info "Files are available at: $FINAL_DEST"
 
