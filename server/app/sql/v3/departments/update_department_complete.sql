@@ -1,49 +1,98 @@
--- Update department with settings relationship in single query (DHH style)
--- Parameters: $1=department_id (uuid), $2=title, $3=description, $4=active, $5=settings_id (text, nullable), $6=current_profile_id (uuid)
--- Returns: id, title, actor_name
+-- Update department with settings relationship in single query
+-- Converted to function pattern
+-- Uses safe drop/recreate pattern: drop function first, then recreate
 
-WITH actor_profile AS (
+BEGIN;
+
+-- 1) Drop function first
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_update_department_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_update_department_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Recreate function
+CREATE OR REPLACE FUNCTION api_update_department_v3(
+    department_id uuid,
+    title text,
+    description text,
+    active boolean,
+    settings_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    department_id uuid,
+    title text,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
     SELECT 
-        p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $6::uuid
+        department_id AS department_id,
+        title AS title,
+        description AS description,
+        active AS active,
+        settings_id AS settings_id,
+        profile_id AS profile_id
+),
+actor_profile AS (
+    SELECT 
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 department_update AS (
     -- Update department
     UPDATE departments SET
-        title = $2,
-        description = $3,
-        active = $4,
+        title = (SELECT title FROM params),
+        description = (SELECT description FROM params),
+        active = (SELECT active FROM params),
         updated_at = NOW()
-    WHERE id = $1::uuid
+    WHERE id = (SELECT department_id FROM params)
     RETURNING id, title
 ),
 remove_existing_settings AS (
-    -- Remove existing settings link if settingsId is null or different
+    -- Remove existing settings link if settings_id is null or different
     DELETE FROM department_settings
-    WHERE department_id = $1::uuid
-      AND ($5::text IS NULL OR settings_id != $5::uuid)
+    WHERE department_id = (SELECT department_id FROM params)
+      AND (
+          (SELECT settings_id FROM params) IS NULL 
+          OR settings_id != (SELECT settings_id FROM params)
+      )
 ),
 link_settings AS (
     -- Link settings if provided
     INSERT INTO department_settings (settings_id, department_id, active, created_at, updated_at)
     SELECT 
-        $5::uuid,
+        settings_id,
         du.id,
         true,
         NOW(),
         NOW()
     FROM department_update du
-    WHERE $5 IS NOT NULL
+    CROSS JOIN params p
+    WHERE p.settings_id IS NOT NULL
     ON CONFLICT (settings_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )
 -- Return updated department info
 SELECT 
-    du.id, 
-    du.title,
-    ap.actor_name
+    du.id as department_id,
+    du.title::text as title,
+    ap.actor_name::text as actor_name
 FROM department_update du
 CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;

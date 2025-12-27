@@ -1095,6 +1095,375 @@ class UpdateCohortApiResponse(BaseModel):
 
 
 
+# Generated from: create_department
+
+class CreateDepartmentSqlParams(BaseModel):
+
+    title: str
+    description: str
+    active: bool
+    settings_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.title,
+            self.description,
+            self.active,
+            self.settings_id,
+            self.profile_id,
+        )
+
+class CreateDepartmentSqlRow(BaseModel):
+
+    department_id: UUID | None = None
+    actor_name: str | None = None
+
+class CreateDepartmentApiRequest(BaseModel):
+
+    title: str
+    description: str
+    active: bool
+    settings_id: UUID
+
+class CreateDepartmentApiResponse(BaseModel):
+
+    department_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: delete_department
+
+class DeleteDepartmentSqlParams(BaseModel):
+
+    department_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.profile_id,
+        )
+
+class DeleteDepartmentSqlRow(BaseModel):
+
+    department_exists: bool | None = None
+    deleted: bool | None = None
+    total_usage: int | None = None
+    title: str | None = None
+    actor_name: str | None = None
+
+class DeleteDepartmentApiRequest(BaseModel):
+
+    department_id: UUID
+
+class DeleteDepartmentApiResponse(BaseModel):
+
+    department_exists: bool | None = None
+    deleted: bool | None = None
+    total_usage: int | None = None
+    title: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: duplicate_department
+
+class DuplicateDepartmentSqlParams(BaseModel):
+
+    department_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.profile_id,
+        )
+
+class DuplicateDepartmentSqlRow(BaseModel):
+
+    new_department_id: UUID | None = None
+    original_title: str | None = None
+    actor_name: str | None = None
+
+class DuplicateDepartmentApiRequest(BaseModel):
+
+    department_id: UUID
+
+class DuplicateDepartmentApiResponse(BaseModel):
+
+    new_department_id: UUID | None = None
+    original_title: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_department_detail
+
+class GetDepartmentDetailSqlParams(BaseModel):
+
+    department_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.profile_id,
+        )
+
+class QGetDepartmentDetailV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetDepartmentDetailV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetDepartmentDetailV3Key(BaseModel):
+
+    key_id: UUID | None
+    name: str | None
+    description: str | None
+    key_masked: str | None
+    active: bool | None
+
+
+
+
+class QGetDepartmentDetailV3Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetDepartmentDetailV3ModelKey(BaseModel):
+
+    model_id: UUID | None
+    key_id: UUID | None
+
+
+
+
+class QGetDepartmentDetailV3Setting(BaseModel):
+
+    settings_id: UUID | None
+    created_at: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+
+class GetDepartmentDetailSqlRow(BaseModel):
+
+    department_exists: bool | None = None
+    department_id: UUID | None = None
+    title: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    staff_count: int | None = None
+    total_price_spent: float | None = None
+    settings_id: UUID | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_model_ids: list[UUID] | None = None
+    valid_key_ids: list[UUID] | None = None
+    actor_name: str | None = None
+    settings: list[QGetDepartmentDetailV3Setting] | None = None
+    cohorts: list[QGetDepartmentDetailV3Cohort] | None = None
+    departments: list[QGetDepartmentDetailV3Department] | None = None
+    models: list[QGetDepartmentDetailV3Model] | None = None
+    keys: list[QGetDepartmentDetailV3Key] | None = None
+    model_keys: list[QGetDepartmentDetailV3ModelKey] | None = None
+
+class GetDepartmentDetailApiRequest(BaseModel):
+
+    department_id: UUID
+
+class GetDepartmentDetailApiResponse(BaseModel):
+
+    department_exists: bool | None = None
+    department_id: UUID | None = None
+    title: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    staff_count: int | None = None
+    total_price_spent: float | None = None
+    settings_id: UUID | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_model_ids: list[UUID] | None = None
+    valid_key_ids: list[UUID] | None = None
+    actor_name: str | None = None
+    settings: list[QGetDepartmentDetailV3Setting] | None = None
+    cohorts: list[QGetDepartmentDetailV3Cohort] | None = None
+    departments: list[QGetDepartmentDetailV3Department] | None = None
+    models: list[QGetDepartmentDetailV3Model] | None = None
+    keys: list[QGetDepartmentDetailV3Key] | None = None
+    model_keys: list[QGetDepartmentDetailV3ModelKey] | None = None
+
+
+
+# Generated from: get_department_new
+
+class GetDepartmentNewSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetDepartmentNewV3Setting(BaseModel):
+
+    settings_id: UUID | None
+    created_at: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+
+class GetDepartmentNewSqlRow(BaseModel):
+
+    profile_role: str | None = None
+    actor_name: str | None = None
+    settings: list[QGetDepartmentNewV3Setting] | None = None
+
+class GetDepartmentNewApiRequest(BaseModel):
+
+    pass
+
+class GetDepartmentNewApiResponse(BaseModel):
+
+    profile_role: str | None = None
+    actor_name: str | None = None
+    settings: list[QGetDepartmentNewV3Setting] | None = None
+
+
+
+# Generated from: get_departments_list
+
+class GetDepartmentsListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListDepartmentsV3Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QListDepartmentsV3Department(BaseModel):
+
+    department_id: UUID | None
+    title: str | None
+    description: str | None
+    active: bool | None
+    updated_at: str | None
+    total_price_spent: float | None
+    staff_count: int | None
+    cohort_ids: list[UUID] | None
+    profile_ids: list[UUID] | None
+    can_edit: bool | None
+    can_delete: bool | None
+    can_duplicate: bool | None
+
+
+
+
+class QListDepartmentsV3Profile(BaseModel):
+
+    profile_id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetDepartmentsListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    departments: list[QListDepartmentsV3Department] | None = None
+    cohorts: list[QListDepartmentsV3Cohort] | None = None
+    profiles: list[QListDepartmentsV3Profile] | None = None
+
+class GetDepartmentsListApiRequest(BaseModel):
+
+    pass
+
+class GetDepartmentsListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    departments: list[QListDepartmentsV3Department] | None = None
+    cohorts: list[QListDepartmentsV3Cohort] | None = None
+    profiles: list[QListDepartmentsV3Profile] | None = None
+
+
+
+# Generated from: update_department
+
+class UpdateDepartmentSqlParams(BaseModel):
+
+    department_id: UUID
+    title: str
+    description: str
+    active: bool
+    settings_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.department_id,
+            self.title,
+            self.description,
+            self.active,
+            self.settings_id,
+            self.profile_id,
+        )
+
+class UpdateDepartmentSqlRow(BaseModel):
+
+    department_id: UUID | None = None
+    title: str | None = None
+    actor_name: str | None = None
+
+class UpdateDepartmentApiRequest(BaseModel):
+
+    department_id: UUID
+    title: str
+    description: str
+    active: bool
+    settings_id: UUID
+
+class UpdateDepartmentApiResponse(BaseModel):
+
+    department_id: UUID | None = None
+    title: str | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: create_document
 
 class CreateDocumentSqlParams(BaseModel):
@@ -7277,6 +7646,48 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateCohortApiRequest",
         "UpdateCohortApiResponse",
     ),
+    "app/sql/v3/departments/create_department_complete.sql": (
+        "CreateDepartmentSqlParams",
+        "CreateDepartmentSqlRow",
+        "CreateDepartmentApiRequest",
+        "CreateDepartmentApiResponse",
+    ),
+    "app/sql/v3/departments/delete_department_complete.sql": (
+        "DeleteDepartmentSqlParams",
+        "DeleteDepartmentSqlRow",
+        "DeleteDepartmentApiRequest",
+        "DeleteDepartmentApiResponse",
+    ),
+    "app/sql/v3/departments/duplicate_department_complete.sql": (
+        "DuplicateDepartmentSqlParams",
+        "DuplicateDepartmentSqlRow",
+        "DuplicateDepartmentApiRequest",
+        "DuplicateDepartmentApiResponse",
+    ),
+    "app/sql/v3/departments/get_department_detail_complete.sql": (
+        "GetDepartmentDetailSqlParams",
+        "GetDepartmentDetailSqlRow",
+        "GetDepartmentDetailApiRequest",
+        "GetDepartmentDetailApiResponse",
+    ),
+    "app/sql/v3/departments/get_department_new_complete.sql": (
+        "GetDepartmentNewSqlParams",
+        "GetDepartmentNewSqlRow",
+        "GetDepartmentNewApiRequest",
+        "GetDepartmentNewApiResponse",
+    ),
+    "app/sql/v3/departments/get_departments_list_complete.sql": (
+        "GetDepartmentsListSqlParams",
+        "GetDepartmentsListSqlRow",
+        "GetDepartmentsListApiRequest",
+        "GetDepartmentsListApiResponse",
+    ),
+    "app/sql/v3/departments/update_department_complete.sql": (
+        "UpdateDepartmentSqlParams",
+        "UpdateDepartmentSqlRow",
+        "UpdateDepartmentApiRequest",
+        "UpdateDepartmentApiResponse",
+    ),
     "app/sql/v3/documents/create_document_complete.sql": (
         "CreateDocumentSqlParams",
         "CreateDocumentSqlRow",
@@ -7871,6 +8282,41 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/cohorts/update_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/create_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/delete_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/duplicate_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/get_department_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/get_department_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/get_departments_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/departments/update_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -1,13 +1,55 @@
 -- Delete department with existence and usage checks in a single transaction
--- Parameters: $1=departmentId, $2=current_profile_id (uuid)
--- Returns: department_id, title, and usage counts (or no rows if department doesn't exist), actor_name
--- If total_usage > 0, department is not deleted (caller should raise 400 error)
--- If no rows returned, department doesn't exist (caller should raise 404 error)
-WITH actor_profile AS (
+-- Converted to function pattern
+-- Uses safe drop/recreate pattern: drop function first, then recreate
+
+BEGIN;
+
+-- 1) Drop function first
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_delete_department_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_delete_department_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Recreate function
+CREATE OR REPLACE FUNCTION api_delete_department_v3(
+    department_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    department_exists boolean,
+    deleted boolean,
+    total_usage bigint,
+    title text,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
     SELECT 
-        p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+        department_id AS department_id,
+        profile_id AS profile_id
+),
+department_exists_check AS (
+    -- Check if department exists independently of deletion
+    SELECT EXISTS(
+        SELECT 1 FROM departments WHERE id = (SELECT department_id FROM params)
+    )::boolean as department_exists
+),
+actor_profile AS (
+    SELECT 
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 department_info AS (
     -- Check if department exists and get usage counts
@@ -20,7 +62,7 @@ department_info AS (
         (SELECT COUNT(*) FROM document_departments WHERE department_id = d.id AND active = true) as document_count,
         (SELECT COUNT(*) FROM cohort_departments WHERE department_id = d.id AND active = true) as cohort_count
     FROM departments d
-    WHERE d.id = $1::uuid
+    WHERE d.id = (SELECT department_id FROM params)
 ),
 usage_summary AS (
     -- Calculate total usage
@@ -41,21 +83,19 @@ delete_department AS (
     WHERE id IN (
         SELECT id FROM usage_summary WHERE total_usage = 0
     )
-    RETURNING id::text as department_id
+    RETURNING id
 )
 -- Return department info and usage counts (even if not deleted, so caller can determine error)
 SELECT 
-    di.id::text as department_id,
-    di.title,
-    di.simulation_count,
-    di.scenario_count,
-    di.persona_count,
-    di.document_count,
-    di.cohort_count,
-    di.total_usage,
-    CASE WHEN dd.department_id IS NOT NULL THEN true ELSE false END as deleted,
-    ap.actor_name
-FROM usage_summary di
+    dec.department_exists::boolean as department_exists,
+    CASE WHEN dd.id IS NOT NULL THEN true ELSE false END::boolean as deleted,
+    COALESCE(us.total_usage, 0)::bigint as total_usage,
+    COALESCE(us.title, '')::text as title,
+    ap.actor_name::text as actor_name
+FROM department_exists_check dec
 CROSS JOIN actor_profile ap
-LEFT JOIN delete_department dd ON dd.department_id = di.id::text
+LEFT JOIN usage_summary us ON dec.department_exists = true
+LEFT JOIN delete_department dd ON dd.id = us.id AND us.total_usage = 0
+$$;
 
+COMMIT;

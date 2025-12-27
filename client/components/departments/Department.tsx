@@ -277,7 +277,7 @@ export default function Department({
       if (isEditMode && departmentId) {
         // UPDATE mode
         await handleUpdateDepartment({
-          departmentId: departmentId,
+          department_id: departmentId,
           title: formData.title || "",
           description: formData.description || "",
           active: formData.active ?? true,
@@ -310,7 +310,7 @@ export default function Department({
     setIsSubmitting(true);
     try {
       await deleteDepartmentAction({
-        body: { departmentId },
+        body: { department_id: departmentId },
       });
       toast.success("Department deleted successfully");
       router.push("/departments");

@@ -1,37 +1,31 @@
 """Department duplicate endpoint - v3 API."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (
+    DuplicateDepartmentApiRequest,
+    DuplicateDepartmentApiResponse,
+    DuplicateDepartmentSqlParams,
+    DuplicateDepartmentSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class DuplicateDepartmentRequest(BaseModel):
-    """Request for duplicating a department."""
-
-    departmentId: str
-
-
-class DuplicateDepartmentResponse(BaseModel):
-    """Response for duplicating a department."""
-
-    success: bool
-    departmentId: str
-    message: str
-
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/departments/duplicate_department_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
     "/duplicate",
-    response_model=DuplicateDepartmentResponse,
+    response_model=DuplicateDepartmentApiResponse,
     dependencies=[
         audit_activity(
             "department.duplicated",
@@ -40,15 +34,15 @@ router = APIRouter()
     ],
 )
 async def duplicate_department(
-    request: DuplicateDepartmentRequest,
+    request: DuplicateDepartmentApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DuplicateDepartmentResponse:
+) -> DuplicateDepartmentApiResponse:
     """Duplicate a department."""
     tags = ["departments"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -61,40 +55,45 @@ async def duplicate_department(
             )
 
         async with transaction(conn):
-            # Duplicate department (fetch and duplicate in single query)
-            sql_query = load_sql("app/sql/v3/departments/duplicate_department_complete.sql")
-            sql_params = (request.departmentId, profile_id)
-            result = await conn.fetchrow(sql_query, request.departmentId, profile_id)
+            # Convert API request to SQL params (add profile_id from header)
+            params = DuplicateDepartmentSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            if not result or not result.get("new_department_id"):
+            # Execute SQL with typed helper
+            result = cast(
+                DuplicateDepartmentSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result.new_department_id:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Department {request.departmentId} not found",
+                    detail=f"Department {request.department_id} not found",
                 )
 
-            new_department_id = result["new_department_id"]
-            original_title = result.get("original_title", "Unknown")
-            actor_name = result.get("actor_name")
+            new_department_id = result.new_department_id
+            original_title = result.original_title or "Unknown"
+            actor_name = result.actor_name
 
             # Set audit context with data from SQL query
             if actor_name:
                 audit_set(
                     http_request,
                     actor={"name": actor_name, "id": profile_id},
-                    department={"title": original_title, "id": request.departmentId},
+                    department={"title": original_title, "id": str(request.department_id)},
                 )
 
-        result = DuplicateDepartmentResponse(
-            success=True,
-            departmentId=new_department_id,
-            message="Department duplicated successfully",
-        )
+        result_response = DuplicateDepartmentApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return result
+        return result_response
     except HTTPException:
         raise
     except Exception as e:

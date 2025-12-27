@@ -84,41 +84,43 @@ export default function Departments({
   // Use server-provided data directly
   const departmentsData = serverListData;
 
-  // Extract data from response
+  // Extract data from response - arrays instead of dicts (composite types)
   const departments = useMemo(
     () => departmentsData?.departments || [],
     [departmentsData?.departments],
   );
-  const cohortMapping = useMemo(
+  const cohorts = useMemo(
     () =>
-      (departmentsData?.cohort_mapping as Record<
-        string,
-        { name: string; description: string }
-      >) || {},
-    [departmentsData?.cohort_mapping],
+      (departmentsData?.cohorts as Array<{
+        cohort_id: string;
+        name: string;
+        description: string;
+      }>) || [],
+    [departmentsData?.cohorts],
   );
-  const profileMapping = useMemo(
+  const profiles = useMemo(
     () =>
-      (departmentsData?.profile_mapping as Record<
-        string,
-        { name: string; description: string }
-      >) || {},
-    [departmentsData?.profile_mapping],
+      (departmentsData?.profiles as Array<{
+        profile_id: string;
+        name: string;
+        description: string;
+      }>) || [],
+    [departmentsData?.profiles],
   );
 
-  // Build filter options from mappings
+  // Build filter options from arrays
   const cohortOptions = useMemo(() => {
-    return Object.entries(cohortMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj?.name || id,
+    return cohorts.map((cohort) => ({
+      value: cohort.cohort_id,
+      label: cohort.name || cohort.cohort_id,
     }));
-  }, [cohortMapping]);
+  }, [cohorts]);
   const profileOptions = useMemo(() => {
-    return Object.entries(profileMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj?.name || id,
+    return profiles.map((profile) => ({
+      value: profile.profile_id,
+      label: profile.name || profile.profile_id,
     }));
-  }, [profileMapping]);
+  }, [profiles]);
 
   // Define table columns inline
   const columns: ColumnDef<(typeof departments)[number]>[] = useMemo(
@@ -273,7 +275,7 @@ export default function Departments({
     setIsDuplicating(department.department_id);
     try {
       await duplicateDepartmentAction({
-        body: { departmentId: department.department_id },
+        body: { department_id: department.department_id },
       });
       toast.success(`Department "${department.title}" duplicated successfully`);
       router.refresh();
@@ -289,7 +291,7 @@ export default function Departments({
 
     try {
       await deleteDepartmentAction({
-        body: { departmentId: deleteItem.id },
+        body: { department_id: deleteItem.id },
       });
       toast.success(`Department "${deleteItem.name}" deleted successfully`);
       router.refresh();

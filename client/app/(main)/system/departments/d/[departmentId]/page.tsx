@@ -33,7 +33,7 @@ const getDepartment = async (
 ): Promise<DepartmentDetailOut> => {
   return api.post(
     "/departments/detail",
-    { body: { departmentId } },
+    { body: { department_id: departmentId } },
     {
       cache: "no-store",
       headers: {

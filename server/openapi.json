@@ -3294,7 +3294,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DepartmentsListRequest"
+                "$ref": "#/components/schemas/GetDepartmentsListApiRequest"
               }
             }
           }
@@ -3305,7 +3305,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DepartmentsListResponse"
+                  "$ref": "#/components/schemas/GetDepartmentsListApiResponse"
                 }
               }
             }
@@ -3375,7 +3375,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DepartmentDetailRequest"
+                "$ref": "#/components/schemas/GetDepartmentDetailApiRequest"
               }
             }
           }
@@ -3386,7 +3386,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__departments__detail__DepartmentDetailResponse"
+                  "$ref": "#/components/schemas/GetDepartmentDetailApiResponse"
                 }
               }
             }
@@ -3456,7 +3456,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DepartmentNewRequest"
+                "$ref": "#/components/schemas/GetDepartmentNewApiRequest"
               }
             }
           }
@@ -3467,7 +3467,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__departments__new__DepartmentDetailResponse"
+                  "$ref": "#/components/schemas/GetDepartmentNewApiResponse"
                 }
               }
             }
@@ -3537,7 +3537,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateDepartmentRequest"
+                "$ref": "#/components/schemas/CreateDepartmentApiRequest"
               }
             }
           }
@@ -3548,7 +3548,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateDepartmentResponse"
+                  "$ref": "#/components/schemas/CreateDepartmentApiResponse"
                 }
               }
             }
@@ -3618,7 +3618,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateDepartmentRequest"
+                "$ref": "#/components/schemas/UpdateDepartmentApiRequest"
               }
             }
           }
@@ -3629,7 +3629,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateDepartmentResponse"
+                  "$ref": "#/components/schemas/UpdateDepartmentApiResponse"
                 }
               }
             }
@@ -3699,7 +3699,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DuplicateDepartmentRequest"
+                "$ref": "#/components/schemas/DuplicateDepartmentApiRequest"
               }
             }
           }
@@ -3710,7 +3710,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DuplicateDepartmentResponse"
+                  "$ref": "#/components/schemas/DuplicateDepartmentApiResponse"
                 }
               }
             }
@@ -3780,7 +3780,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteDepartmentRequest"
+                "$ref": "#/components/schemas/DeleteDepartmentApiRequest"
               }
             }
           }
@@ -3791,7 +3791,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteDepartmentResponse"
+                  "$ref": "#/components/schemas/DeleteDepartmentApiResponse"
                 }
               }
             }
@@ -23944,25 +23944,6 @@
         "title": "CohortFact",
         "description": "Cohort fact."
       },
-      "CohortMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "CohortMappingItem",
-        "description": "Cohort mapping item."
-      },
       "CohortPerformanceResponse": {
         "properties": {
           "cohortData": {
@@ -24498,7 +24479,7 @@
         "type": "object",
         "title": "CreateCohortApiResponse"
       },
-      "CreateDepartmentRequest": {
+      "CreateDepartmentApiRequest": {
         "properties": {
           "title": {
             "type": "string",
@@ -24512,7 +24493,36 @@
             "type": "boolean",
             "title": "Active"
           },
-          "settingsId": {
+          "settings_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Settings Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "active",
+          "settings_id"
+        ],
+        "title": "CreateDepartmentApiRequest"
+      },
+      "CreateDepartmentApiResponse": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "actor_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -24521,41 +24531,11 @@
                 "type": "null"
               }
             ],
-            "title": "Settingsid"
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "title",
-          "description",
-          "active"
-        ],
-        "title": "CreateDepartmentRequest",
-        "description": "Request for creating a department."
-      },
-      "CreateDepartmentResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "departmentId": {
-            "type": "string",
-            "title": "Departmentid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "departmentId",
-          "message"
-        ],
-        "title": "CreateDepartmentResponse",
-        "description": "Response for creating a department."
+        "title": "CreateDepartmentApiResponse"
       },
       "CreateDocumentApiRequest": {
         "properties": {
@@ -27290,38 +27270,80 @@
         "type": "object",
         "title": "DeleteCohortApiResponse"
       },
-      "DeleteDepartmentRequest": {
+      "DeleteDepartmentApiRequest": {
         "properties": {
-          "departmentId": {
+          "department_id": {
             "type": "string",
-            "title": "Departmentid"
+            "format": "uuid",
+            "title": "Department Id"
           }
         },
         "type": "object",
         "required": [
-          "departmentId"
+          "department_id"
         ],
-        "title": "DeleteDepartmentRequest",
-        "description": "Request for deleting a department."
+        "title": "DeleteDepartmentApiRequest"
       },
-      "DeleteDepartmentResponse": {
+      "DeleteDepartmentApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "department_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Exists"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted"
+          },
+          "total_usage": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Usage"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteDepartmentResponse",
-        "description": "Response for deleting a department."
+        "title": "DeleteDepartmentApiResponse"
       },
       "DeleteDocumentApiRequest": {
         "properties": {
@@ -28113,95 +28135,6 @@
         "type": "object",
         "title": "DeleteSimulationApiResponse"
       },
-      "DepartmentDetailRequest": {
-        "properties": {
-          "departmentId": {
-            "type": "string",
-            "title": "Departmentid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "departmentId"
-        ],
-        "title": "DepartmentDetailRequest",
-        "description": "Request for department detail."
-      },
-      "DepartmentItem": {
-        "properties": {
-          "department_id": {
-            "type": "string",
-            "title": "Department Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "total_price_spent": {
-            "type": "number",
-            "title": "Total Price Spent"
-          },
-          "staff_count": {
-            "type": "integer",
-            "title": "Staff Count"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          },
-          "profile_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Profile Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          }
-        },
-        "type": "object",
-        "required": [
-          "department_id",
-          "title",
-          "description",
-          "active",
-          "updated_at",
-          "total_price_spent",
-          "staff_count",
-          "cohort_ids",
-          "profile_ids",
-          "can_edit",
-          "can_delete",
-          "can_duplicate"
-        ],
-        "title": "DepartmentItem",
-        "description": "Department item for list view."
-      },
       "DepartmentMappingItem": {
         "properties": {
           "name": {
@@ -28220,12 +28153,6 @@
         ],
         "title": "DepartmentMappingItem",
         "description": "Department mapping item."
-      },
-      "DepartmentNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "DepartmentNewRequest",
-        "description": "Request for default department detail."
       },
       "DepartmentOption": {
         "properties": {
@@ -28250,45 +28177,6 @@
         ],
         "title": "DepartmentOption",
         "description": "Department option for login page."
-      },
-      "DepartmentsListRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "DepartmentsListRequest",
-        "description": "Request for departments list."
-      },
-      "DepartmentsListResponse": {
-        "properties": {
-          "departments": {
-            "items": {
-              "$ref": "#/components/schemas/DepartmentItem"
-            },
-            "type": "array",
-            "title": "Departments"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "profile_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ProfileMappingItem"
-            },
-            "type": "object",
-            "title": "Profile Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "departments",
-          "cohort_mapping",
-          "profile_mapping"
-        ],
-        "title": "DepartmentsListResponse",
-        "description": "Response for departments list."
       },
       "DocumentTemplateGenerationCompletePayload": {
         "properties": {
@@ -28699,43 +28587,59 @@
         "type": "object",
         "title": "DuplicateCohortApiResponse"
       },
-      "DuplicateDepartmentRequest": {
+      "DuplicateDepartmentApiRequest": {
         "properties": {
-          "departmentId": {
+          "department_id": {
             "type": "string",
-            "title": "Departmentid"
+            "format": "uuid",
+            "title": "Department Id"
           }
         },
         "type": "object",
         "required": [
-          "departmentId"
+          "department_id"
         ],
-        "title": "DuplicateDepartmentRequest",
-        "description": "Request for duplicating a department."
+        "title": "DuplicateDepartmentApiRequest"
       },
-      "DuplicateDepartmentResponse": {
+      "DuplicateDepartmentApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "new_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Department Id"
           },
-          "departmentId": {
-            "type": "string",
-            "title": "Departmentid"
+          "original_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Title"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "departmentId",
-          "message"
-        ],
-        "title": "DuplicateDepartmentResponse",
-        "description": "Response for duplicating a department."
+        "title": "DuplicateDepartmentApiResponse"
       },
       "DuplicateFieldApiRequest": {
         "properties": {
@@ -32525,6 +32429,411 @@
         },
         "type": "object",
         "title": "GetCreateStaffDataApiResponse"
+      },
+      "GetDepartmentDetailApiRequest": {
+        "properties": {
+          "department_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Department Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id"
+        ],
+        "title": "GetDepartmentDetailApiRequest"
+      },
+      "GetDepartmentDetailApiResponse": {
+        "properties": {
+          "department_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Exists"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "in_use": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Use"
+          },
+          "staff_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Count"
+          },
+          "total_price_spent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Price Spent"
+          },
+          "settings_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Id"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "valid_model_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Model Ids"
+          },
+          "valid_key_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Key Ids"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentDetailV3Setting"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings"
+          },
+          "cohorts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentDetailV3Cohort"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentDetailV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentDetailV3Model"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "keys": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentDetailV3Key"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keys"
+          },
+          "model_keys": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentDetailV3ModelKey"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Keys"
+          }
+        },
+        "type": "object",
+        "title": "GetDepartmentDetailApiResponse"
+      },
+      "GetDepartmentNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetDepartmentNewApiRequest"
+      },
+      "GetDepartmentNewApiResponse": {
+        "properties": {
+          "profile_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Role"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetDepartmentNewV3Setting"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings"
+          }
+        },
+        "type": "object",
+        "title": "GetDepartmentNewApiResponse"
+      },
+      "GetDepartmentsListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetDepartmentsListApiRequest"
+      },
+      "GetDepartmentsListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListDepartmentsV3Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "cohorts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListDepartmentsV3Cohort"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohorts"
+          },
+          "profiles": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListDepartmentsV3Profile"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profiles"
+          }
+        },
+        "type": "object",
+        "title": "GetDepartmentsListApiResponse"
       },
       "GetDocumentDetailApiRequest": {
         "properties": {
@@ -42658,35 +42967,6 @@
         "title": "KeyItem",
         "description": "Key item for list view."
       },
-      "KeyMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "key_masked": {
-            "type": "string",
-            "title": "Key Masked"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "key_masked",
-          "active"
-        ],
-        "title": "KeyMappingItem",
-        "description": "Key mapping item."
-      },
       "KeyNewRequest": {
         "properties": {},
         "type": "object",
@@ -43841,25 +44121,6 @@
         ],
         "title": "MetricResponse",
         "description": "Standard metric response."
-      },
-      "ModelMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ModelMappingItem",
-        "description": "Model mapping item."
       },
       "ModelMappingWithPricing": {
         "properties": {
@@ -45948,25 +46209,6 @@
         ],
         "title": "ProfileDataEnhanced",
         "description": "Enhanced profile data row."
-      },
-      "ProfileMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ProfileMappingItem",
-        "description": "Profile mapping item."
       },
       "ProfileMetrics": {
         "properties": {
@@ -48087,6 +48329,366 @@
           "requests_in_last_day"
         ],
         "title": "QGetCreateStaffDataV3Staff"
+      },
+      "QGetDepartmentDetailV3Cohort": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetDepartmentDetailV3Cohort"
+      },
+      "QGetDepartmentDetailV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetDepartmentDetailV3Department"
+      },
+      "QGetDepartmentDetailV3Key": {
+        "properties": {
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "key_masked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Masked"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id",
+          "name",
+          "description",
+          "key_masked",
+          "active"
+        ],
+        "title": "QGetDepartmentDetailV3Key"
+      },
+      "QGetDepartmentDetailV3Model": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "name",
+          "description"
+        ],
+        "title": "QGetDepartmentDetailV3Model"
+      },
+      "QGetDepartmentDetailV3ModelKey": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "key_id"
+        ],
+        "title": "QGetDepartmentDetailV3ModelKey"
+      },
+      "QGetDepartmentDetailV3Setting": {
+        "properties": {
+          "settings_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings_id",
+          "created_at",
+          "active",
+          "department_ids"
+        ],
+        "title": "QGetDepartmentDetailV3Setting"
+      },
+      "QGetDepartmentNewV3Setting": {
+        "properties": {
+          "settings_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings_id",
+          "created_at",
+          "active",
+          "department_ids"
+        ],
+        "title": "QGetDepartmentNewV3Setting"
       },
       "QGetDocumentDetailV3Agent": {
         "properties": {
@@ -57463,6 +58065,257 @@
         ],
         "title": "QListCohortsV3Simulation"
       },
+      "QListDepartmentsV3Cohort": {
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "name",
+          "description"
+        ],
+        "title": "QListDepartmentsV3Cohort"
+      },
+      "QListDepartmentsV3Department": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "total_price_spent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Price Spent"
+          },
+          "staff_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Count"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "profile_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "title",
+          "description",
+          "active",
+          "updated_at",
+          "total_price_spent",
+          "staff_count",
+          "cohort_ids",
+          "profile_ids",
+          "can_edit",
+          "can_delete",
+          "can_duplicate"
+        ],
+        "title": "QListDepartmentsV3Department"
+      },
+      "QListDepartmentsV3Profile": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "name",
+          "description"
+        ],
+        "title": "QListDepartmentsV3Profile"
+      },
       "QListDocumentsV3Department": {
         "properties": {
           "department_id": {
@@ -65673,44 +66526,6 @@
         ],
         "title": "SettingsListResponse"
       },
-      "SettingsMappingItem": {
-        "properties": {
-          "settings_id": {
-            "type": "string",
-            "title": "Settings Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "settings_id",
-          "created_at",
-          "active"
-        ],
-        "title": "SettingsMappingItem",
-        "description": "Settings mapping item."
-      },
       "SimulationCompositionResponse": {
         "properties": {
           "validSimulationIds": {
@@ -68281,11 +69096,12 @@
         "type": "object",
         "title": "UpdateCohortApiResponse"
       },
-      "UpdateDepartmentRequest": {
+      "UpdateDepartmentApiRequest": {
         "properties": {
-          "departmentId": {
+          "department_id": {
             "type": "string",
-            "title": "Departmentid"
+            "format": "uuid",
+            "title": "Department Id"
           },
           "title": {
             "type": "string",
@@ -68299,7 +69115,37 @@
             "type": "boolean",
             "title": "Active"
           },
-          "settingsId": {
+          "settings_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Settings Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "title",
+          "description",
+          "active",
+          "settings_id"
+        ],
+        "title": "UpdateDepartmentApiRequest"
+      },
+      "UpdateDepartmentApiResponse": {
+        "properties": {
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "title": {
             "anyOf": [
               {
                 "type": "string"
@@ -68308,37 +69154,22 @@
                 "type": "null"
               }
             ],
-            "title": "Settingsid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "departmentId",
-          "title",
-          "description",
-          "active"
-        ],
-        "title": "UpdateDepartmentRequest",
-        "description": "Request for updating a department."
-      },
-      "UpdateDepartmentResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+            "title": "Title"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateDepartmentResponse",
-        "description": "Response for updating a department."
+        "title": "UpdateDepartmentApiResponse"
       },
       "UpdateDocumentApiRequest": {
         "properties": {
@@ -71700,234 +72531,6 @@
         ],
         "title": "AttemptHistoryRow",
         "description": "Attempt history row - shared across dashboard, home, reports, and practice history endpoints."
-      },
-      "app__api__v3__departments__detail__DepartmentDetailResponse": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "in_use": {
-            "type": "boolean",
-            "title": "In Use"
-          },
-          "staff_count": {
-            "type": "integer",
-            "title": "Staff Count"
-          },
-          "total_price_spent": {
-            "type": "number",
-            "title": "Total Price Spent"
-          },
-          "settings_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Id"
-          },
-          "settings_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/SettingsMappingItem"
-            },
-            "type": "object",
-            "title": "Settings Mapping"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "valid_model_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Model Ids"
-          },
-          "model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ModelMappingItem"
-            },
-            "type": "object",
-            "title": "Model Mapping"
-          },
-          "valid_key_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Key Ids"
-          },
-          "key_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/KeyMappingItem"
-            },
-            "type": "object",
-            "title": "Key Mapping"
-          },
-          "model_key_mapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Model Key Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "title",
-          "description",
-          "active",
-          "can_edit",
-          "can_duplicate",
-          "can_delete",
-          "in_use",
-          "staff_count",
-          "total_price_spent",
-          "settings_id",
-          "settings_mapping",
-          "cohort_mapping",
-          "department_mapping",
-          "valid_department_ids",
-          "valid_model_ids",
-          "model_mapping",
-          "valid_key_ids",
-          "key_mapping",
-          "model_key_mapping"
-        ],
-        "title": "DepartmentDetailResponse",
-        "description": "Response for department detail."
-      },
-      "app__api__v3__departments__new__DepartmentDetailResponse": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "in_use": {
-            "type": "boolean",
-            "title": "In Use"
-          },
-          "staff_count": {
-            "type": "integer",
-            "title": "Staff Count"
-          },
-          "total_price_spent": {
-            "type": "number",
-            "title": "Total Price Spent"
-          },
-          "settings_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings Id"
-          },
-          "settings_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/SettingsMappingItem"
-            },
-            "type": "object",
-            "title": "Settings Mapping"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "title",
-          "description",
-          "active",
-          "can_edit",
-          "can_duplicate",
-          "can_delete",
-          "in_use",
-          "staff_count",
-          "total_price_spent",
-          "settings_id",
-          "settings_mapping",
-          "cohort_mapping",
-          "department_mapping"
-        ],
-        "title": "DepartmentDetailResponse",
-        "description": "Response for department detail."
       },
       "app__api__v3__evals__attempt__full__AttemptItem": {
         "properties": {

@@ -1,42 +1,33 @@
 """Department update endpoint - v3 API."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, get_internal_sio, transaction
+from app.sql.types import (
+    UpdateDepartmentApiRequest,
+    UpdateDepartmentApiResponse,
+    UpdateDepartmentSqlParams,
+    UpdateDepartmentSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
-
-class UpdateDepartmentRequest(BaseModel):
-    """Request for updating a department."""
-
-    departmentId: str
-    title: str
-    description: str
-    active: bool
-    settingsId: str | None = None
-
-
-class UpdateDepartmentResponse(BaseModel):
-    """Response for updating a department."""
-
-    success: bool
-    message: str
-
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/departments/update_department_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
     "/update",
-    response_model=UpdateDepartmentResponse,
+    response_model=UpdateDepartmentApiResponse,
     dependencies=[
         audit_activity(
             "department.updated",
@@ -45,15 +36,15 @@ router = APIRouter()
     ],
 )
 async def update_department(
-    request: UpdateDepartmentRequest,
+    request: UpdateDepartmentApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateDepartmentResponse:
+) -> UpdateDepartmentApiResponse:
     """Update a department."""
     tags = ["departments"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -66,35 +57,34 @@ async def update_department(
             )
 
         async with transaction(conn):
-            # Single consolidated query: updates department and settings relationship
-            sql_query = load_sql("app/sql/v3/departments/update_department_complete.sql")
-            sql_params = (
-                request.departmentId,
-                request.title,
-                request.description,
-                request.active,
-                request.settingsId,
-                profile_id,  # For actor_name
-            )
-            result = await conn.fetchrow(sql_query, *sql_params)
+            # Convert API request to SQL params (add profile_id from header)
+            params = UpdateDepartmentSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            if not result:
+            # Execute SQL with typed helper
+            result = cast(
+                UpdateDepartmentSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result.department_id:
                 raise HTTPException(status_code=404, detail="Department not found")
 
             # Set audit context with data from SQL query
-            actor_name = result.get("actor_name")
-            department_title = result.get("title") or request.title
+            actor_name = result.actor_name
+            department_title = result.title or request.title
             if actor_name:
                 audit_set(
                     http_request,
                     actor={"name": actor_name, "id": profile_id},
-                    department={"title": department_title, "id": request.departmentId},
+                    department={"title": department_title, "id": str(request.department_id)},
                 )
 
-        result = UpdateDepartmentResponse(
-            success=True,
-            message="Department updated successfully",
-        )
+        result_response = UpdateDepartmentApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
@@ -102,10 +92,10 @@ async def update_department(
 
         # Trigger Keycloak sync for the updated department
         await internal_sio.emit(
-            "keycloak_sync", {"department_id": request.departmentId}
+            "keycloak_sync", {"department_id": str(request.department_id)}
         )
 
-        return result
+        return result_response
     except HTTPException:
         raise
     except Exception as e:

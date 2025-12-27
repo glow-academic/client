@@ -1,12 +1,47 @@
 -- Duplicate department - fetches original and creates copy in single query
--- Parameters: $1 = department_id (uuid), $2 = current_profile_id (uuid)
--- Returns: new_department_id (text), original_title (text), actor_name
+-- Converted to function pattern
+-- Uses safe drop/recreate pattern: drop function first, then recreate
 
-WITH actor_profile AS (
+BEGIN;
+
+-- 1) Drop function first
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_duplicate_department_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_duplicate_department_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Recreate function
+CREATE OR REPLACE FUNCTION api_duplicate_department_v3(
+    department_id uuid,
+    profile_id uuid
+)
+RETURNS TABLE (
+    new_department_id uuid,
+    original_title text,
+    actor_name text
+)
+LANGUAGE sql
+VOLATILE
+AS $$
+WITH params AS (
     SELECT 
-        p.first_name || ' ' || p.last_name as actor_name
-    FROM profiles p
-    WHERE p.id = $2::uuid
+        department_id AS department_id,
+        profile_id AS profile_id
+),
+actor_profile AS (
+    SELECT 
+        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+    FROM params x
+    JOIN profiles p ON p.id = x.profile_id
 ),
 original_dept AS (
     SELECT 
@@ -15,7 +50,7 @@ original_dept AS (
         description,
         active
     FROM departments
-    WHERE id = $1
+    WHERE id = (SELECT department_id FROM params)
 ),
 new_dept AS (
     INSERT INTO departments (title, description, active, created_at, updated_at)
@@ -26,11 +61,15 @@ new_dept AS (
         NOW(),
         NOW()
     FROM original_dept
-    RETURNING id::text as department_id
+    RETURNING id
 )
 SELECT 
-    (SELECT department_id FROM new_dept) as new_department_id,
-    (SELECT title FROM original_dept) as original_title,
-    ap.actor_name
-FROM actor_profile ap
+    nd.id as new_department_id,
+    od.title::text as original_title,
+    ap.actor_name::text as actor_name
+FROM new_dept nd
+CROSS JOIN original_dept od
+CROSS JOIN actor_profile ap
+$$;
 
+COMMIT;
