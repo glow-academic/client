@@ -11,13 +11,13 @@ import type { Metadata } from "next";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type LogsBundleIn = InputOf<"/api/v3/logs/bundle", "post">;
-type LogsBundleOut = OutputOf<"/api/v3/logs/bundle", "post">;
+type HealthBundleIn = InputOf<"/api/v3/health/bundle", "post">;
+type HealthBundleOut = OutputOf<"/api/v3/health/bundle", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getLogsBundle = cache(
-  async (input: LogsBundleIn): Promise<LogsBundleOut> => {
-    return api.post("/logs/bundle", input);
+const getHealthBundle = cache(
+  async (input: HealthBundleIn): Promise<HealthBundleOut> => {
+    return api.post("/health/bundle", input);
   },
 );
 
@@ -38,7 +38,7 @@ export default async function HealthPage(_props: HealthPageProps) {
   // profileId removed - comes from X-Profile-Id header (auto-injected)
 
   // Fetch bundle data server-side (for KPIs and metrics)
-  const bundleData = await getLogsBundle({
+  const bundleData = await getHealthBundle({
     body: {},
   });
 
@@ -50,4 +50,4 @@ export default async function HealthPage(_props: HealthPageProps) {
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { LogsBundleIn, LogsBundleOut };
+export type { HealthBundleIn, HealthBundleOut };

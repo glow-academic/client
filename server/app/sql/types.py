@@ -3457,6 +3457,70 @@ class UpdateFieldApiResponse(BaseModel):
 
 
 
+# Generated from: get_health_bundle
+
+class GetHealthBundleSqlParams(BaseModel):
+
+    profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetHealthBundleV3TrendData(BaseModel):
+
+    date: str | None
+    value: float | None
+    latency: float | None
+    count: int | None
+
+class QGetHealthBundleV3HealthKpi(BaseModel):
+
+    ok: bool | None
+    latency_ms: float | None
+    error: str | None
+    trend: list[QGetHealthBundleV3TrendData] | None
+
+class QGetHealthBundleV3HealthKpis(BaseModel):
+
+    websocket: QGetHealthBundleV3HealthKpi | None
+    redis: QGetHealthBundleV3HealthKpi | None
+    document: QGetHealthBundleV3HealthKpi | None
+    database: QGetHealthBundleV3HealthKpi | None
+    authentication: QGetHealthBundleV3HealthKpi | None
+
+
+
+
+class QGetHealthBundleV3MetricsDataPoint(BaseModel):
+
+    date: str | None
+    cpu_percent: float | None
+    latency_ms: float | None
+    memory_bytes: int | None
+    requests_total: int | None
+    errors_total: int | None
+    sample_count: int | None
+
+class GetHealthBundleSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    health_kpis: QGetHealthBundleV3HealthKpis | None = None
+    metrics: list[QGetHealthBundleV3MetricsDataPoint] | None = None
+
+class GetHealthBundleApiRequest(BaseModel):
+
+    pass
+
+class GetHealthBundleApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    health_kpis: QGetHealthBundleV3HealthKpis | None = None
+    metrics: list[QGetHealthBundleV3MetricsDataPoint] | None = None
+
+
+
 # Generated from: create_key
 
 class CreateKeySqlParams(BaseModel):
@@ -10653,6 +10717,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateFieldApiRequest",
         "UpdateFieldApiResponse",
     ),
+    "app/sql/v3/health/get_health_bundle_complete.sql": (
+        "GetHealthBundleSqlParams",
+        "GetHealthBundleSqlRow",
+        "GetHealthBundleApiRequest",
+        "GetHealthBundleApiResponse",
+    ),
     "app/sql/v3/keys/create_key_complete.sql": (
         "CreateKeySqlParams",
         "CreateKeySqlRow",
@@ -11487,6 +11557,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/fields/update_field_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/health/get_health_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload

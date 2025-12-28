@@ -2701,7 +2701,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/logs/bundle": {
+    "/api/v3/health/bundle": {
         parameters: {
             query?: never;
             header?: never;
@@ -2711,10 +2711,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Logs Bundle
-         * @description Get logs bundle with health KPIs and metrics.
+         * Get Health Bundle
+         * @description Get health bundle with health KPIs and metrics.
          */
-        post: operations["get_logs_bundle_api_v3_logs_bundle_post"];
+        post: operations["get_health_bundle_api_v3_health_bundle_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6341,7 +6341,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/metrics/snapshot": {
+    "/metrics": {
         parameters: {
             query?: never;
             header?: never;
@@ -6357,7 +6357,7 @@ export interface paths {
          *     Called by notify service to log metrics snapshot.
          *     No leader election needed since notify service is single instance.
          */
-        post: operations["metrics_snapshot_metrics_snapshot_post"];
+        post: operations["metrics_snapshot_metrics_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10157,6 +10157,16 @@ export interface components {
             /** Department Options */
             department_options?: components["schemas"]["QListFieldsV3Option"][] | null;
         };
+        /** GetHealthBundleApiRequest */
+        GetHealthBundleApiRequest: Record<string, never>;
+        /** GetHealthBundleApiResponse */
+        GetHealthBundleApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            health_kpis?: components["schemas"]["QGetHealthBundleV3HealthKpis"] | null;
+            /** Metrics */
+            metrics?: components["schemas"]["QGetHealthBundleV3MetricsDataPoint"][] | null;
+        };
         /** GetKeyDetailApiRequest */
         GetKeyDetailApiRequest: {
             /**
@@ -10286,16 +10296,6 @@ export interface components {
             default_department_id?: string | null;
             /** Realm Name */
             realm_name?: string | null;
-        };
-        /** GetLogsBundleApiRequest */
-        GetLogsBundleApiRequest: Record<string, never>;
-        /** GetLogsBundleApiResponse */
-        GetLogsBundleApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            health_kpis?: components["schemas"]["QGetLogsBundleV3HealthKpis"] | null;
-            /** Metrics */
-            metrics?: components["schemas"]["QGetLogsBundleV3MetricsDataPoint"][] | null;
         };
         /** GetModelDetailApiRequest */
         GetModelDetailApiRequest: {
@@ -14391,6 +14391,53 @@ export interface components {
             /** Description */
             description: string | null;
         };
+        /** QGetHealthBundleV3HealthKpi */
+        QGetHealthBundleV3HealthKpi: {
+            /** Ok */
+            ok: boolean | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Error */
+            error: string | null;
+            /** Trend */
+            trend: components["schemas"]["QGetHealthBundleV3TrendData"][] | null;
+        };
+        /** QGetHealthBundleV3HealthKpis */
+        QGetHealthBundleV3HealthKpis: {
+            websocket: components["schemas"]["QGetHealthBundleV3HealthKpi"] | null;
+            redis: components["schemas"]["QGetHealthBundleV3HealthKpi"] | null;
+            document: components["schemas"]["QGetHealthBundleV3HealthKpi"] | null;
+            database: components["schemas"]["QGetHealthBundleV3HealthKpi"] | null;
+            authentication: components["schemas"]["QGetHealthBundleV3HealthKpi"] | null;
+        };
+        /** QGetHealthBundleV3MetricsDataPoint */
+        QGetHealthBundleV3MetricsDataPoint: {
+            /** Date */
+            date: string | null;
+            /** Cpu Percent */
+            cpu_percent: number | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Memory Bytes */
+            memory_bytes: number | null;
+            /** Requests Total */
+            requests_total: number | null;
+            /** Errors Total */
+            errors_total: number | null;
+            /** Sample Count */
+            sample_count: number | null;
+        };
+        /** QGetHealthBundleV3TrendData */
+        QGetHealthBundleV3TrendData: {
+            /** Date */
+            date: string | null;
+            /** Value */
+            value: number | null;
+            /** Latency */
+            latency: number | null;
+            /** Count */
+            count: number | null;
+        };
         /** QGetKeyDetailV3Department */
         QGetKeyDetailV3Department: {
             /** Department Id */
@@ -14517,53 +14564,6 @@ export interface components {
             icon: string | null;
             /** Is Default */
             is_default: boolean | null;
-        };
-        /** QGetLogsBundleV3HealthKpi */
-        QGetLogsBundleV3HealthKpi: {
-            /** Ok */
-            ok: boolean | null;
-            /** Latency Ms */
-            latency_ms: number | null;
-            /** Error */
-            error: string | null;
-            /** Trend */
-            trend: components["schemas"]["QGetLogsBundleV3TrendData"][] | null;
-        };
-        /** QGetLogsBundleV3HealthKpis */
-        QGetLogsBundleV3HealthKpis: {
-            websocket: components["schemas"]["QGetLogsBundleV3HealthKpi"] | null;
-            redis: components["schemas"]["QGetLogsBundleV3HealthKpi"] | null;
-            document: components["schemas"]["QGetLogsBundleV3HealthKpi"] | null;
-            database: components["schemas"]["QGetLogsBundleV3HealthKpi"] | null;
-            authentication: components["schemas"]["QGetLogsBundleV3HealthKpi"] | null;
-        };
-        /** QGetLogsBundleV3MetricsDataPoint */
-        QGetLogsBundleV3MetricsDataPoint: {
-            /** Date */
-            date: string | null;
-            /** Cpu Percent */
-            cpu_percent: number | null;
-            /** Latency Ms */
-            latency_ms: number | null;
-            /** Memory Bytes */
-            memory_bytes: number | null;
-            /** Requests Total */
-            requests_total: number | null;
-            /** Errors Total */
-            errors_total: number | null;
-            /** Sample Count */
-            sample_count: number | null;
-        };
-        /** QGetLogsBundleV3TrendData */
-        QGetLogsBundleV3TrendData: {
-            /** Date */
-            date: string | null;
-            /** Value */
-            value: number | null;
-            /** Latency */
-            latency: number | null;
-            /** Count */
-            count: number | null;
         };
         /** QGetModelDetailV3Department */
         QGetModelDetailV3Department: {
@@ -25569,7 +25569,7 @@ export interface operations {
             };
         };
     };
-    get_logs_bundle_api_v3_logs_bundle_post: {
+    get_health_bundle_api_v3_health_bundle_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25581,7 +25581,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetLogsBundleApiRequest"];
+                "application/json": components["schemas"]["GetHealthBundleApiRequest"];
             };
         };
         responses: {
@@ -25591,7 +25591,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetLogsBundleApiResponse"];
+                    "application/json": components["schemas"]["GetHealthBundleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -31968,7 +31968,7 @@ export interface operations {
             };
         };
     };
-    metrics_snapshot_metrics_snapshot_post: {
+    metrics_snapshot_metrics_post: {
         parameters: {
             query?: never;
             header?: never;

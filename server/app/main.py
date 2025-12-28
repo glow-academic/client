@@ -798,7 +798,7 @@ async def health_services() -> JSONResponse:
     )
 
 
-@fastapi_app.post("/metrics/snapshot")
+@fastapi_app.post("/metrics")
 async def metrics_snapshot() -> JSONResponse:
     """Trigger metrics snapshot to database.
 

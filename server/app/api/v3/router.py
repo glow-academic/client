@@ -34,7 +34,7 @@ from app.api.v3.fields import router as fields_router
 from app.api.v3.home import router as home_router
 from app.api.v3.keys import router as keys_router
 from app.api.v3.leaderboard import router as leaderboard_router
-from app.api.v3.logs import router as logs_router
+from app.api.v3.health import router as health_router
 from app.api.v3.models import router as models_router
 from app.api.v3.parameters import router as parameters_router
 from app.api.v3.personas import router as personas_router
@@ -105,7 +105,7 @@ router.include_router(providers_router)
 router.include_router(parameters_router)
 router.include_router(fields_router)
 router.include_router(feedback_router)
-router.include_router(logs_router)
+router.include_router(health_router)
 router.include_router(attempts_router)
 router.include_router(prompts_router)
 router.include_router(staff_router)

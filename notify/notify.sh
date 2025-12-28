@@ -17,7 +17,7 @@ WAIT_DELAY="${WAIT_DELAY:-2}"
 # Build URLs
 HEALTH_URL="${SERVER_URL}${APP_PREFIX}/health"
 SYNC_URL="${SERVER_URL}${APP_PREFIX}/api/v3/auth/sync"
-METRICS_URL="${SERVER_URL}${APP_PREFIX}/metrics/snapshot"
+METRICS_URL="${SERVER_URL}${APP_PREFIX}/metrics"
 
 # Colors for output
 RED='\033[0;31m'

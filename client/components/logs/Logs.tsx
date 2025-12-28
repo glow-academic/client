@@ -13,7 +13,7 @@ import DocumentKPI from "./kpis/DocumentKPI";
 import RedisKPI from "./kpis/RedisKPI";
 import WebSocketKPI from "./kpis/WebSocketKPI";
 
-import type { LogsBundleOut } from "@/app/(main)/health/page";
+import type { HealthBundleOut } from "@/app/(main)/health/page";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useChartColors } from "@/lib/utils/chartColors";
 import {
@@ -28,7 +28,7 @@ import {
 
 export interface LogsProps {
   // Server-provided data (for server-side rendering)
-  bundleData: LogsBundleOut;
+  bundleData: HealthBundleOut;
 }
 
 export default function Logs({ bundleData: serverBundleData }: LogsProps) {
@@ -47,7 +47,7 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
 
   // Prepare metrics chart data
   const metricsChartData = useMemo(() => {
-    return metrics.map((m: LogsBundleOut["metrics"][number]) => ({
+    return metrics.map((m: HealthBundleOut["metrics"][number]) => ({
       date: m.date,
       cpu: m.cpu_percent,
       latency: m.latency_ms,
