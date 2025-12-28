@@ -87,24 +87,36 @@ type LocalParameterItem = {
   parameterId: string;
 };
 
+type Simulation = {
+  simulation_id: string;
+  name: string;
+  description: string;
+};
+
+type Parameter = {
+  parameter_id: string;
+  name: string;
+  description: string;
+};
+
+type Field = {
+  field_id: string;
+  name: string;
+  description: string;
+  parameter_id: string;
+  parameter_name: string;
+};
+
 export interface SimulationCompositionProps {
   simulationFacts: SimulationFact[];
   simulationParameterFactsCategorical: SimulationParameterFactCategorical[];
   simulationParameterFactsNumeric: SimulationParameterFactNumeric[];
-  /** Simulation mapping object */
-  simulationMapping: Record<string, { name: string; description: string }>;
-  /** Parameter mapping object */
-  parameterMapping: Record<string, { name: string; description: string }>;
-  /** Parameter item mapping object */
-  parameterItemMapping: Record<
-    string,
-    {
-      name: string;
-      description: string;
-      parameter_id: string;
-      parameter_name: string;
-    }
-  >;
+  /** Simulations array */
+  simulations: Simulation[];
+  /** Parameters array */
+  parameters: Parameter[];
+  /** Fields array */
+  fields: Field[];
   /** Valid simulation IDs */
   validSimulationIds: string[];
   actionableInsight?: string | null;
@@ -115,13 +127,33 @@ export default function SimulationComposition({
   simulationFacts,
   simulationParameterFactsCategorical,
   simulationParameterFactsNumeric,
-  simulationMapping: _simulationMapping,
-  parameterMapping,
-  parameterItemMapping,
+  simulations: _simulations,
+  parameters,
+  fields,
   validSimulationIds: _validSimulationIds,
   actionableInsight,
   status,
 }: SimulationCompositionProps) {
+  // Create lookup maps from arrays for backward compatibility
+  const parameterMapping = useMemo(() => {
+    return parameters.reduce((acc, param) => {
+      acc[param.parameter_id] = { name: param.name, description: param.description };
+      return acc;
+    }, {} as Record<string, { name: string; description: string }>);
+  }, [parameters]);
+
+  const parameterItemMapping = useMemo(() => {
+    return fields.reduce((acc, field) => {
+      acc[field.field_id] = {
+        name: field.name,
+        description: field.description,
+        parameter_id: field.parameter_id,
+        parameter_name: field.parameter_name,
+      };
+      return acc;
+    }, {} as Record<string, { name: string; description: string; parameter_id: string; parameter_name: string }>);
+  }, [fields]);
+
   // Build entities from mappings
   const allParameters = useMemo(
     (): LocalParameter[] =>

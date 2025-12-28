@@ -147,8 +147,8 @@ function WrappedTick({
 export interface SimulationPerformanceProps {
   validSimulationIds: string[];
   scenarioFacts: ScenarioFact[];
-  /** Simulation mapping object */
-  simulationMapping: Record<string, { name: string; description: string }>;
+  /** Simulations array */
+  simulations: Array<{ simulation_id: string; name: string; description: string }>;
   actionableInsight?: string | null;
   status: "success" | "warning" | "danger" | "neutral";
 }
@@ -156,10 +156,18 @@ export interface SimulationPerformanceProps {
 export default function SimulationPerformance({
   validSimulationIds,
   scenarioFacts,
-  simulationMapping,
+  simulations,
   actionableInsight,
   status,
 }: SimulationPerformanceProps) {
+  // Create lookup map from array for backward compatibility
+  const simulationMapping = useMemo(() => {
+    return simulations.reduce((acc, sim) => {
+      acc[sim.simulation_id] = { name: sim.name, description: sim.description };
+      return acc;
+    }, {} as Record<string, { name: string; description: string }>);
+  }, [simulations]);
+
   const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
 

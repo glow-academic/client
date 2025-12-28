@@ -117,21 +117,30 @@ type AttributeElement = {
   trendData: { date: string; score: number; timestamp: number }[];
 };
 
+type Parameter = {
+  parameter_id: string;
+  name: string;
+  description: string;
+  numerical?: boolean;
+  document_parameter?: boolean;
+  persona_parameter?: boolean;
+};
+
+type Field = {
+  field_id: string;
+  name: string;
+  description: string;
+  parameter_id: string;
+  parameter_name: string;
+};
+
 export interface ScenarioPerformanceProps {
   attributeAttemptFacts: ScenarioAttributeAttemptFact[];
   attributeScenarioFacts: ScenarioAttributeScenarioFact[];
-  /** Parameter mapping object */
-  parameterMapping: Record<string, { name: string; description: string }>;
-  /** Parameter item mapping object */
-  parameterItemMapping: Record<
-    string,
-    {
-      name: string;
-      description: string;
-      parameter_id: string;
-      parameter_name: string;
-    }
-  >;
+  /** Parameters array */
+  parameters: Parameter[];
+  /** Fields array */
+  fields: Field[];
   /** Valid parameter IDs */
   validParameterIds: string[];
   actionableInsight?: string | null;
@@ -141,12 +150,32 @@ export interface ScenarioPerformanceProps {
 export default function ScenarioPerformance({
   attributeAttemptFacts,
   attributeScenarioFacts,
-  parameterMapping,
-  parameterItemMapping,
+  parameters,
+  fields,
   validParameterIds,
   actionableInsight,
   status,
 }: ScenarioPerformanceProps) {
+  // Create lookup maps from arrays for backward compatibility
+  const parameterMapping = useMemo(() => {
+    return parameters.reduce((acc, param) => {
+      acc[param.parameter_id] = { name: param.name, description: param.description };
+      return acc;
+    }, {} as Record<string, { name: string; description: string }>);
+  }, [parameters]);
+
+  const parameterItemMapping = useMemo(() => {
+    return fields.reduce((acc, field) => {
+      acc[field.field_id] = {
+        name: field.name,
+        description: field.description,
+        parameter_id: field.parameter_id,
+        parameter_name: field.parameter_name,
+      };
+      return acc;
+    }, {} as Record<string, { name: string; description: string; parameter_id: string; parameter_name: string }>);
+  }, [fields]);
+
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
 

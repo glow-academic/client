@@ -33,7 +33,17 @@ const getDashboardOverview = async (
 ): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/dashboard/overview", input, {
+  // Convert camelCase to snake_case for API
+  const apiInput = {
+    start_date: input.startDate,
+    end_date: input.endDate,
+    cohort_ids: input.cohortIds,
+    roles: input.roles,
+    simulation_filters: input.simulationFilters,
+    department_ids: input.departmentIds,
+  };
+
+  return api.post("/dashboard/overview", apiInput, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -53,7 +63,26 @@ const getDashboardHistory = async (
 ): Promise<DashboardHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/dashboard/history", input, {
+  // Convert camelCase to snake_case for API
+  const apiInput = {
+    start_date: input.startDate,
+    end_date: input.endDate,
+    cohort_ids: input.cohortIds,
+    department_ids: input.departmentIds,
+    roles: input.roles,
+    simulation_filters: input.simulationFilters,
+    search: input.search,
+    profile_ids: input.profileIds,
+    simulation_ids: input.simulationIds,
+    scenario_ids: input.scenarioIds,
+    infinite_mode: input.infiniteMode,
+    sort_by: input.sortBy,
+    sort_order: input.sortOrder,
+    page: input.page,
+    page_size: input.pageSize,
+  };
+
+  return api.post("/dashboard/history", apiInput, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

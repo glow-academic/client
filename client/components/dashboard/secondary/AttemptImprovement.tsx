@@ -68,14 +68,19 @@ type AttemptFact = {
   passRate: number;
 };
 
+type Simulation = {
+  simulation_id: string;
+  name: string;
+  description: string;
+  department_ids?: string[] | null;
+  time_limit?: number | null;
+};
+
 export interface AttemptImprovementProps {
   chartData: AttemptRow[];
   facts: AttemptFact[];
-  /** Simulation mapping object */
-  simulationMapping: Record<
-    string,
-    { name: string; description: string; department_ids: string[] | null }
-  >;
+  /** Simulations array */
+  simulations: Simulation[];
   /** Valid simulation IDs */
   validSimulationIds: string[];
   actionableInsight?: string | null;
@@ -85,11 +90,23 @@ export interface AttemptImprovementProps {
 export default function AttemptImprovement({
   chartData,
   facts,
-  simulationMapping,
+  simulations,
   validSimulationIds,
   actionableInsight,
   status,
 }: AttemptImprovementProps) {
+  // Create lookup map from array for backward compatibility
+  const simulationMapping = useMemo(() => {
+    return simulations.reduce((acc, sim) => {
+      acc[sim.simulation_id] = {
+        name: sim.name,
+        description: sim.description,
+        department_ids: sim.department_ids ?? null,
+      };
+      return acc;
+    }, {} as Record<string, { name: string; description: string; department_ids: string[] | null }>);
+  }, [simulations]);
+
   const [selected, setSelected] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
 

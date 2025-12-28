@@ -58,21 +58,21 @@ type CohortFact = {
 };
 type DailyFact = { date: string; simulationId: string; avgScore: number };
 
+type Simulation = {
+  simulation_id: string;
+  name: string;
+  description: string;
+  department_ids?: string[] | null;
+  time_limit?: number | null;
+};
+
 export interface CohortPerformanceProps {
   cohortData: CohortRow[];
   dailyData: DailyRow[];
   cohortFacts: CohortFact[];
   dailyFacts: DailyFact[];
-  /** Simulation mapping object */
-  simulationMapping: Record<
-    string,
-    {
-      name: string;
-      description: string;
-      department_ids?: string[] | null;
-      time_limit?: number | null;
-    }
-  >;
+  /** Simulations array */
+  simulations: Simulation[];
   /** Valid simulation IDs */
   validSimulationIds: string[];
   /** If rendering for a single learner detail view */
@@ -86,12 +86,25 @@ export default function CohortPerformance({
   dailyData,
   cohortFacts,
   dailyFacts: _dailyFacts,
-  simulationMapping,
+  simulations,
   validSimulationIds,
   profileId,
   actionableInsights,
   status,
 }: CohortPerformanceProps) {
+  // Create lookup map from array for backward compatibility
+  const simulationMapping = useMemo(() => {
+    return simulations.reduce((acc, sim) => {
+      acc[sim.simulation_id] = {
+        name: sim.name,
+        description: sim.description,
+        department_ids: sim.department_ids ?? null,
+        time_limit: sim.time_limit ?? null,
+      };
+      return acc;
+    }, {} as Record<string, { name: string; description: string; department_ids?: string[] | null; time_limit?: number | null }>);
+  }, [simulations]);
+
   const [selected, setSelected] = useState<string[]>([]);
   const isSingleProfileMode = !!profileId;
   const [isMobile, setIsMobile] = useState(false);

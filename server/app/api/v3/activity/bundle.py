@@ -4,7 +4,6 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.api.v3.dashboard.bundle import Method, MetricResponse, TrendData
 from app.infra.v3.activity.audit import audit_activity
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -14,6 +13,31 @@ from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import load_sql
+
+
+# Type definitions (previously imported from dashboard.bundle, now defined locally)
+class Method:
+    COUNT_DISTINCT = "countDistinct"
+    AVG = "avg"
+    MAX = "max"
+    MIN = "min"
+    SUM = "sum"
+
+
+class TrendData(BaseModel):
+    date: str
+    value: float
+    count: int
+
+
+class MetricResponse(BaseModel):
+    hasData: bool
+    method: str
+    currentValue: int
+    status: str
+    trendAnalysis: str | None = None
+    trendData: list[TrendData]
+    dataPoints: list[Any]
 
 
 # Inline request/response schemas

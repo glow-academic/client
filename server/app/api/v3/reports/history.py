@@ -4,8 +4,10 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.api.v3.dashboard.history import (AttemptHistoryRow,
-                                          DashboardHistoryResponse)
+from app.sql.types import (
+    QGetDashboardHistoryV3AttemptHistoryRow as AttemptHistoryRow,
+    GetDashboardHistoryApiResponse as DashboardHistoryResponse
+)
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db

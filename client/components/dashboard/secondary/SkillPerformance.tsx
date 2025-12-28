@@ -76,10 +76,16 @@ type Package = {
   groupFacts: StandardFact[];
 };
 
+type Rubric = {
+  rubric_id: string;
+  name: string;
+  description: string;
+};
+
 export interface SkillPerformanceProps {
   packages: Package[];
-  /** Rubric mapping object */
-  rubricMapping: Record<string, { name: string; description: string }>;
+  /** Rubrics array */
+  rubrics: Rubric[];
   /** Valid rubric IDs */
   validRubricIds: string[];
   actionableInsight?: string | null;
@@ -88,11 +94,19 @@ export interface SkillPerformanceProps {
 
 export default function SkillPerformance({
   packages,
-  rubricMapping,
+  rubrics,
   validRubricIds,
   actionableInsight,
   status,
 }: SkillPerformanceProps) {
+  // Create lookup map from array for backward compatibility
+  const rubricMapping = useMemo(() => {
+    return rubrics.reduce((acc, rubric) => {
+      acc[rubric.rubric_id] = { name: rubric.name, description: rubric.description };
+      return acc;
+    }, {} as Record<string, { name: string; description: string }>);
+  }, [rubrics]);
+
   const [selectedRubrics, setSelectedRubrics] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
 

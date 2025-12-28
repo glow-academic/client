@@ -6,8 +6,7 @@ from enum import Enum
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.api.v3.dashboard.bundle import (DashboardBundleResponse,
-                                         _parse_dashboard_bundle)
+from app.sql.types import GetDashboardBundleApiResponse
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
@@ -47,7 +46,7 @@ class ReportsOverviewFilters(BaseModel):
 
 @router.post(
     "/overview",
-    response_model=DashboardBundleResponse,
+    response_model=GetDashboardBundleApiResponse,
     dependencies=[
         audit_activity("reports.overview", "{{ actor.name }} viewed reports overview")
     ],
@@ -57,7 +56,7 @@ async def get_reports_overview(
     request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DashboardBundleResponse:
+) -> GetDashboardBundleApiResponse:
     """Get complete reports overview bundle for individual profile - requires profileId."""
     tags = ["reports", "overview"]
 
@@ -74,7 +73,7 @@ async def get_reports_overview(
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return DashboardBundleResponse.model_validate(cached["data"])
+            return GetDashboardBundleApiResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -138,10 +137,10 @@ async def get_reports_overview(
             if not isinstance(data, dict):
                 data = {}
 
-        # Use the same parsing logic as dashboard bundle
-        # This manually parses the SQL result to match the expected response structure
-        # The parsing function handles missing keys gracefully with .get() defaults
-        response_data = _parse_dashboard_bundle(data)
+        # TODO: Reports endpoint should be migrated to use execute_sql_typed() like dashboard bundle
+        # For now, use the data directly (reports endpoint uses manual SQL with JSONB parsing)
+        # This is a temporary workaround - reports endpoint needs full migration
+        response_data = GetDashboardBundleApiResponse.model_validate(data) if data else GetDashboardBundleApiResponse.model_validate({})
 
         # Fetch actor_name separately
         actor_name_row = await conn.fetchrow(

@@ -146,11 +146,17 @@ type PersonaPerformanceData = {
   status: "success" | "warning" | "danger" | "neutral";
 };
 
-type SimulationMapping = Record<string, { name: string; description: string }>;
+type Simulation = {
+  simulation_id: string;
+  name: string;
+  description: string;
+  department_ids?: string[] | null;
+  time_limit?: number | null;
+};
 
 export interface PersonaPerformanceProps {
   chartData: PersonaPerformanceData[];
-  simulationMapping: SimulationMapping;
+  simulations: Simulation[];
   validSimulationIds: string[];
   personaColors: Record<string, string>;
   hasDataAvailable: boolean;
@@ -165,7 +171,7 @@ export interface PersonaPerformanceProps {
 
 export default function PersonaPerformance({
   chartData,
-  simulationMapping,
+  simulations,
   validSimulationIds,
   personaColors,
   hasDataAvailable,
@@ -173,6 +179,14 @@ export default function PersonaPerformance({
   actionableInsights,
   thresholds,
 }: PersonaPerformanceProps) {
+  // Create lookup map from array for backward compatibility
+  const simulationMapping = useMemo(() => {
+    return simulations.reduce((acc, sim) => {
+      acc[sim.simulation_id] = { name: sim.name, description: sim.description };
+      return acc;
+    }, {} as Record<string, { name: string; description: string }>);
+  }, [simulations]);
+
   const [selectedSimulations, setSelectedSimulations] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
 

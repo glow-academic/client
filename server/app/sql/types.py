@@ -1684,6 +1684,729 @@ class UpdateCohortApiResponse(BaseModel):
 
 
 
+# Generated from: get_dashboard_bundle
+
+class GetDashboardBundleSqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.cohort_ids,
+            self.roles,
+            self.simulation_filters,
+            self.department_ids,
+            self.profile_id,
+        )
+
+class QGetDashboardBundleV3AttemptHistoryRow(BaseModel):
+
+    attempt_id: UUID | None
+    date: str | None
+    profile_id: UUID | None
+    profile_name: str | None
+    simulation_name: str | None
+    num_scenarios: int | None
+    num_scenarios_completed: int | None
+    infinite_mode: bool | None
+    time_limit: int | None
+    persona_names: list[str] | None
+    persona_colors: list[str] | None
+    score: int | None
+    score_status: str | None
+    simulation_id: UUID | None
+    scenario_ids: list[str] | None
+    scenario_titles: list[str] | None
+    is_archived: bool | None
+    show_view: bool | None
+    show_continue: bool | None
+    practice_simulation: bool | None
+    pass_pct: int | None
+    department_ids: list[str] | None
+    cohort_names: list[str] | None
+    practice_scenario_id: UUID | None
+
+
+
+
+class QGetDashboardBundleV3Field(BaseModel):
+
+    field_id: str | None
+    name: str | None
+    description: str | None
+    parameter_id: str | None
+    parameter_name: str | None
+
+
+
+
+class QGetDashboardBundleV3ScenarioAttributeAttemptFact(BaseModel):
+
+    parameter_id: str | None
+    parameter_item_id: str | None
+    date: str | None
+    timestamp: int | None
+    avg_score: float | None
+    attempts: int | None
+    passed_attempts: int | None
+
+
+
+
+class QGetDashboardBundleV3ScenarioAttributeScenarioFact(BaseModel):
+
+    parameter_id: str | None
+    parameter_item_id: str | None
+    scenario_id: str | None
+
+class QGetDashboardBundleV3ScenarioPerformanceResponse(BaseModel):
+
+    valid_parameter_ids: list[str] | None
+    attribute_attempt_facts: list[QGetDashboardBundleV3ScenarioAttributeAttemptFact] | None
+    attribute_scenario_facts: list[QGetDashboardBundleV3ScenarioAttributeScenarioFact] | None
+    status: str | None
+
+
+
+
+class QGetDashboardBundleV3NumericAttemptFact(BaseModel):
+
+    parameter_id: str | None
+    level_label: str | None
+    level_value: float | None
+    score: float | None
+    attempts: int | None
+
+
+
+
+class QGetDashboardBundleV3NumericScenarioFact(BaseModel):
+
+    parameter_id: str | None
+    scenario_id: str | None
+    level_label: str | None
+    level_value: float | None
+
+class QGetDashboardBundleV3ScenarioStatsResponse(BaseModel):
+
+    valid_numeric_parameter_ids: list[str] | None
+    numeric_attempt_facts: list[QGetDashboardBundleV3NumericAttemptFact] | None
+    numeric_scenario_facts: list[QGetDashboardBundleV3NumericScenarioFact] | None
+    status: str | None
+
+
+
+
+class QGetDashboardBundleV3SimulationFact(BaseModel):
+
+    simulation_id: str | None
+    title: str | None
+    avg_score: float | None
+    completion_rate: float | None
+    total_attempts: int | None
+    scenario_count: int | None
+
+
+
+
+class QGetDashboardBundleV3SimulationParameterFactCategorical(BaseModel):
+
+    simulation_id: str | None
+    parameter_id: str | None
+    parameter_item_id: str | None
+    scenario_count: int | None
+
+
+
+
+class QGetDashboardBundleV3SimulationParameterFactNumeric(BaseModel):
+
+    simulation_id: str | None
+    parameter_id: str | None
+    avg_level: float | None
+    level_label: str | None
+    scenario_count: int | None
+
+class QGetDashboardBundleV3SimulationCompositionResponse(BaseModel):
+
+    valid_simulation_ids: list[str] | None
+    simulation_facts: list[QGetDashboardBundleV3SimulationFact] | None
+    simulation_parameter_facts_categorical: list[QGetDashboardBundleV3SimulationParameterFactCategorical] | None
+    simulation_parameter_facts_numeric: list[QGetDashboardBundleV3SimulationParameterFactNumeric] | None
+    has_data: bool | None
+    status: str | None
+
+
+
+
+class QGetDashboardBundleV3ScenarioFact(BaseModel):
+
+    simulation_id: str | None
+    scenario_id: str | None
+    scenario_name: str | None
+    avg_score: float | None
+    success_rate: float | None
+    total_attempts: int | None
+    completed_attempts: int | None
+
+class QGetDashboardBundleV3SimulationPerformanceResponse(BaseModel):
+
+    valid_simulation_ids: list[str] | None
+    scenario_facts: list[QGetDashboardBundleV3ScenarioFact] | None
+    status: str | None
+
+class QGetDashboardBundleV3FooterMetrics(BaseModel):
+
+    scenario_performance: QGetDashboardBundleV3ScenarioPerformanceResponse | None
+    scenario_stats: QGetDashboardBundleV3ScenarioStatsResponse | None
+    simulation_performance: QGetDashboardBundleV3SimulationPerformanceResponse | None
+    simulation_composition: QGetDashboardBundleV3SimulationCompositionResponse | None
+
+
+
+
+class QGetDashboardBundleV3DataPoint(BaseModel):
+
+    profile_id: str | None
+    date: str | None
+    value: float | None
+    attempt_id: str | None
+    simulation_id: str | None
+    scenario_id: str | None
+    count: int | None
+
+
+
+
+class QGetDashboardBundleV3TrendData(BaseModel):
+
+    date: str | None
+    value: float | None
+    count: int | None
+
+class QGetDashboardBundleV3MetricResponse(BaseModel):
+
+    has_data: bool | None
+    method: str | None
+    current_value: int | None
+    status: str | None
+    trend_analysis: str | None
+    value_field: str | None
+    key_field: str | None
+    trend_data: list[QGetDashboardBundleV3TrendData] | None
+    data_points: list[QGetDashboardBundleV3DataPoint] | None
+
+class QGetDashboardBundleV3HeaderMetrics(BaseModel):
+
+    average_score: QGetDashboardBundleV3MetricResponse | None
+    completion_percentage: QGetDashboardBundleV3MetricResponse | None
+    first_attempt_pass_rate: QGetDashboardBundleV3MetricResponse | None
+    highest_score: QGetDashboardBundleV3MetricResponse | None
+    messages_per_session: QGetDashboardBundleV3MetricResponse | None
+    persona_response_times: QGetDashboardBundleV3MetricResponse | None
+    session_efficiency: QGetDashboardBundleV3MetricResponse | None
+    stagnation_rate: QGetDashboardBundleV3MetricResponse | None
+    time_spent: QGetDashboardBundleV3MetricResponse | None
+    total_attempts: QGetDashboardBundleV3MetricResponse | None
+
+
+
+
+class QGetDashboardBundleV3CohortInsight(BaseModel):
+
+    cohort_id: str | None
+    insight: str | None
+
+
+
+
+class QGetDashboardBundleV3PersonaInsight(BaseModel):
+
+    persona_name: str | None
+    insight: str | None
+
+class QGetDashboardBundleV3Insights(BaseModel):
+
+    growth: str | None
+    persona: list[QGetDashboardBundleV3PersonaInsight] | None
+    rubric_heatmap: str | None
+    attempt_improvement: str | None
+    cohort: list[QGetDashboardBundleV3CohortInsight] | None
+    skill_performance: str | None
+    scenario_performance: str | None
+    scenario_stats: str | None
+    simulation_performance: str | None
+    simulation_composition: str | None
+
+
+
+
+class QGetDashboardBundleV3Parameter(BaseModel):
+
+    parameter_id: str | None
+    name: str | None
+    description: str | None
+    numerical: bool | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+
+
+
+
+class QGetDashboardBundleV3GrowthDataPoint(BaseModel):
+
+    date: str | None
+    average_score: float | None
+    completion_rate: float | None
+    first_attempt_pass_rate: float | None
+    session_efficiency: float | None
+    stagnation_rate: float | None
+
+
+
+
+class QGetDashboardBundleV3GrowthMetric(BaseModel):
+
+    id: str | None
+    name: str | None
+    color: str | None
+    unit: str | None
+    description: str | None
+    formatter_id: str | None
+
+
+
+
+class QGetDashboardBundleV3GrowthWindowAverage(BaseModel):
+
+    n: int | None
+    last: float | None
+    prev: float | None
+
+class QGetDashboardBundleV3GrowthWindowAverages(BaseModel):
+
+    average_score: QGetDashboardBundleV3GrowthWindowAverage | None
+
+class QGetDashboardBundleV3GrowthDataResponse(BaseModel):
+
+    chart_data: list[QGetDashboardBundleV3GrowthDataPoint] | None
+    available_metrics: list[QGetDashboardBundleV3GrowthMetric] | None
+    window_averages: QGetDashboardBundleV3GrowthWindowAverages | None
+    status: str | None
+
+
+
+
+class QGetDashboardBundleV3PersonaColor(BaseModel):
+
+    persona_name: str | None
+    color: str | None
+
+
+
+
+class QGetDashboardBundleV3PersonaTrendData(BaseModel):
+
+    date: str | None
+    score: float | None
+    timestamp: int | None
+    simulation_id: str | None
+
+class QGetDashboardBundleV3PersonaPerformanceData(BaseModel):
+
+    name: str | None
+    score: float | None
+    sessions: int | None
+    color: str | None
+    simulation_ids: list[str] | None
+    trend_data: list[QGetDashboardBundleV3PersonaTrendData] | None
+    status: str | None
+
+class QGetDashboardBundleV3PersonaPerformanceResponse(BaseModel):
+
+    chart_data: list[QGetDashboardBundleV3PersonaPerformanceData] | None
+    valid_simulation_ids: list[str] | None
+    persona_colors: list[QGetDashboardBundleV3PersonaColor] | None
+
+
+
+
+class QGetDashboardBundleV3RubricHeatmapCell(BaseModel):
+
+    rubric_id: str | None
+    correlation: float | None
+    p_value: float | None
+    color: str | None
+    strength: str | None
+    data_points: int | None
+
+
+
+
+class QGetDashboardBundleV3StandardGroup(BaseModel):
+
+    id: str | None
+    name: str | None
+    short_name: str | None
+    rubric_id: str | None
+
+class QGetDashboardBundleV3RubricMatrixPackage(BaseModel):
+
+    rubric_id: str | None
+    standard_groups: list[QGetDashboardBundleV3StandardGroup] | None
+    matrix: list[QGetDashboardBundleV3RubricHeatmapCell] | None
+    insights: str | None
+    has_data: bool | None
+
+class QGetDashboardBundleV3RubricHeatmapResponse(BaseModel):
+
+    matrices: list[QGetDashboardBundleV3RubricMatrixPackage] | None
+    valid_rubric_ids: list[str] | None
+    status: str | None
+
+class QGetDashboardBundleV3PrimaryMetrics(BaseModel):
+
+    growth_data: QGetDashboardBundleV3GrowthDataResponse | None
+    persona_performance: QGetDashboardBundleV3PersonaPerformanceResponse | None
+    rubric_heatmap: QGetDashboardBundleV3RubricHeatmapResponse | None
+
+
+
+
+class QGetDashboardBundleV3Rubric(BaseModel):
+
+    rubric_id: str | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetDashboardBundleV3AttemptImprovementData(BaseModel):
+
+    attempt: str | None
+    average_score: float | None
+    average_time: float | None
+    pass_rate: float | None
+
+
+
+
+class QGetDashboardBundleV3AttemptImprovementFact(BaseModel):
+
+    simulation_id: str | None
+    attempt_no: int | None
+    avg_grade: float | None
+    avg_minutes: float | None
+    pass_rate: float | None
+
+class QGetDashboardBundleV3AttemptImprovementResponse(BaseModel):
+
+    chart_data: list[QGetDashboardBundleV3AttemptImprovementData] | None
+    facts: list[QGetDashboardBundleV3AttemptImprovementFact] | None
+    valid_simulation_ids: list[str] | None
+    status: str | None
+
+
+
+
+class QGetDashboardBundleV3CohortDailyFact(BaseModel):
+
+    date: str | None
+    simulation_id: str | None
+    avg_score: float | None
+
+
+
+
+class QGetDashboardBundleV3CohortData(BaseModel):
+
+    id: str | None
+    name: str | None
+    pass_rate: float | None
+    avg_percentage_score: float | None
+    total_students: int | None
+    passed_students: int | None
+    total_attempts: int | None
+    passed_attempts: int | None
+    simulation_count: int | None
+    required_simulations: int | None
+    status: str | None
+
+
+
+
+class QGetDashboardBundleV3CohortFact(BaseModel):
+
+    cohort_id: str | None
+    simulation_id: str | None
+    pass_rate: float | None
+    avg_score: float | None
+    attempts: int | None
+
+
+
+
+class QGetDashboardBundleV3DailyData(BaseModel):
+
+    date: str | None
+    avg_score: float | None
+    cohort_id: str | None
+
+class QGetDashboardBundleV3CohortPerformanceResponse(BaseModel):
+
+    cohort_data: list[QGetDashboardBundleV3CohortData] | None
+    daily_data: list[QGetDashboardBundleV3DailyData] | None
+    cohort_facts: list[QGetDashboardBundleV3CohortFact] | None
+    daily_facts: list[QGetDashboardBundleV3CohortDailyFact] | None
+    valid_simulation_ids: list[str] | None
+    status: str | None
+
+
+
+
+class QGetDashboardBundleV3SkillRadarData(BaseModel):
+
+    metric: str | None
+    description: str | None
+    value: float | None
+    full_mark: float | None
+
+
+
+
+class QGetDashboardBundleV3SkillStandardFact(BaseModel):
+
+    group_id: str | None
+    group_name: str | None
+    group_description: str | None
+    simulation_id: str | None
+    score: float | None
+    points: float | None
+    avg_pct: float | None
+
+class QGetDashboardBundleV3SkillPackage(BaseModel):
+
+    rubric_id: str | None
+    radar_data: list[QGetDashboardBundleV3SkillRadarData] | None
+    group_facts: list[QGetDashboardBundleV3SkillStandardFact] | None
+
+class QGetDashboardBundleV3SkillPerformanceResponse(BaseModel):
+
+    packages: list[QGetDashboardBundleV3SkillPackage] | None
+    valid_rubric_ids: list[str] | None
+    status: str | None
+
+class QGetDashboardBundleV3SecondaryMetrics(BaseModel):
+
+    attempt_improvement: QGetDashboardBundleV3AttemptImprovementResponse | None
+    cohort_performance: QGetDashboardBundleV3CohortPerformanceResponse | None
+    skill_performance: QGetDashboardBundleV3SkillPerformanceResponse | None
+
+
+
+
+class QGetDashboardBundleV3Simulation(BaseModel):
+
+    simulation_id: str | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetDashboardBundleV3Thresholds(BaseModel):
+
+    success: int | None
+    warning: int | None
+    danger: int | None
+
+class GetDashboardBundleSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    header_metrics: QGetDashboardBundleV3HeaderMetrics | None = None
+    primary_metrics: QGetDashboardBundleV3PrimaryMetrics | None = None
+    secondary_metrics: QGetDashboardBundleV3SecondaryMetrics | None = None
+    footer_metrics: QGetDashboardBundleV3FooterMetrics | None = None
+    history: list[QGetDashboardBundleV3AttemptHistoryRow] | None = None
+    insights: QGetDashboardBundleV3Insights | None = None
+    thresholds: QGetDashboardBundleV3Thresholds | None = None
+    simulations: list[QGetDashboardBundleV3Simulation] | None = None
+    rubrics: list[QGetDashboardBundleV3Rubric] | None = None
+    parameters: list[QGetDashboardBundleV3Parameter] | None = None
+    fields: list[QGetDashboardBundleV3Field] | None = None
+
+class GetDashboardBundleApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetDashboardBundleApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    header_metrics: QGetDashboardBundleV3HeaderMetrics | None = None
+    primary_metrics: QGetDashboardBundleV3PrimaryMetrics | None = None
+    secondary_metrics: QGetDashboardBundleV3SecondaryMetrics | None = None
+    footer_metrics: QGetDashboardBundleV3FooterMetrics | None = None
+    history: list[QGetDashboardBundleV3AttemptHistoryRow] | None = None
+    insights: QGetDashboardBundleV3Insights | None = None
+    thresholds: QGetDashboardBundleV3Thresholds | None = None
+    simulations: list[QGetDashboardBundleV3Simulation] | None = None
+    rubrics: list[QGetDashboardBundleV3Rubric] | None = None
+    parameters: list[QGetDashboardBundleV3Parameter] | None = None
+    fields: list[QGetDashboardBundleV3Field] | None = None
+
+
+
+# Generated from: get_dashboard_history
+
+class GetDashboardHistorySqlParams(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_size: int | None = 20
+    offset: int
+    profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.start_date,
+            self.end_date,
+            self.cohort_ids,
+            self.department_ids,
+            self.roles,
+            self.simulation_filters,
+            self.search,
+            self.profile_ids,
+            self.simulation_ids,
+            self.scenario_ids,
+            self.infinite_mode,
+            self.sort_by,
+            self.sort_order,
+            self.page_size,
+            self.offset,
+            self.profile_id,
+        )
+
+class QGetDashboardHistoryV3AttemptHistoryRow(BaseModel):
+
+    attempt_id: UUID | None
+    date: str | None
+    profile_id: UUID | None
+    profile_name: str | None
+    simulation_name: str | None
+    num_scenarios: int | None
+    num_scenarios_completed: int | None
+    infinite_mode: bool | None
+    time_limit: int | None
+    persona_names: list[str] | None
+    persona_colors: list[str] | None
+    score: int | None
+    score_status: str | None
+    simulation_id: UUID | None
+    scenario_ids: list[str] | None
+    scenario_titles: list[str] | None
+    is_archived: bool | None
+    show_view: bool | None
+    show_continue: bool | None
+    practice_simulation: bool | None
+    pass_pct: int | None
+    department_ids: list[str] | None
+    cohort_names: list[str] | None
+    practice_scenario_id: UUID | None
+
+
+
+
+class QGetDashboardHistoryV3ProfileOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+
+
+
+class QGetDashboardHistoryV3ScenarioOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+
+
+
+class QGetDashboardHistoryV3SimulationOption(BaseModel):
+
+    value: str | None
+    label: str | None
+    count: int | None
+
+class GetDashboardHistorySqlRow(BaseModel):
+
+    data: list[QGetDashboardHistoryV3AttemptHistoryRow] | None = None
+    total_count: int | None = None
+    archived_count: int | None = None
+    unarchived_count: int | None = None
+    profile_options: list[QGetDashboardHistoryV3ProfileOption] | None = None
+    simulation_options: list[QGetDashboardHistoryV3SimulationOption] | None = None
+    scenario_options: list[QGetDashboardHistoryV3ScenarioOption] | None = None
+
+class GetDashboardHistoryApiRequest(BaseModel):
+
+    start_date: str
+    end_date: str
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    roles: Any | None = None
+    simulation_filters: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    search: str | None = None
+    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page_size: int | None = 20
+    offset: int
+
+class GetDashboardHistoryApiResponse(BaseModel):
+
+    data: list[QGetDashboardHistoryV3AttemptHistoryRow] | None = None
+    total_count: int | None = None
+    archived_count: int | None = None
+    unarchived_count: int | None = None
+    profile_options: list[QGetDashboardHistoryV3ProfileOption] | None = None
+    simulation_options: list[QGetDashboardHistoryV3SimulationOption] | None = None
+    scenario_options: list[QGetDashboardHistoryV3ScenarioOption] | None = None
+
+
+
 # Generated from: create_department
 
 class CreateDepartmentSqlParams(BaseModel):
@@ -10555,6 +11278,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateCohortApiRequest",
         "UpdateCohortApiResponse",
     ),
+    "app/sql/v3/dashboard/get_dashboard_bundle_complete.sql": (
+        "GetDashboardBundleSqlParams",
+        "GetDashboardBundleSqlRow",
+        "GetDashboardBundleApiRequest",
+        "GetDashboardBundleApiResponse",
+    ),
+    "app/sql/v3/dashboard/get_dashboard_history_complete.sql": (
+        "GetDashboardHistorySqlParams",
+        "GetDashboardHistorySqlRow",
+        "GetDashboardHistoryApiRequest",
+        "GetDashboardHistoryApiResponse",
+    ),
     "app/sql/v3/departments/create_department_complete.sql": (
         "CreateDepartmentSqlParams",
         "CreateDepartmentSqlRow",
@@ -11422,6 +12157,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/cohorts/update_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/dashboard/get_dashboard_bundle_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/dashboard/get_dashboard_history_complete.sql"]
     ) -> SqlString: ...
 
     @overload

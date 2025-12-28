@@ -70,7 +70,7 @@ import {
 
 export interface RubricHeatmapProps {
   matrices: RubricMatrixPackage[];
-  rubricMapping: RubricMapping;
+  rubrics: Rubric[];
   validRubricIds: string[];
   hasDataAvailable: boolean;
   actionableInsight?: string | null | undefined;
@@ -79,12 +79,20 @@ export interface RubricHeatmapProps {
 
 export default function RubricHeatmap({
   matrices,
-  rubricMapping,
+  rubrics,
   validRubricIds,
   hasDataAvailable,
   actionableInsight,
   status,
 }: RubricHeatmapProps) {
+  // Create lookup map from array for backward compatibility
+  const rubricMapping = useMemo(() => {
+    return rubrics.reduce((acc, rubric) => {
+      acc[rubric.rubric_id] = { name: rubric.name, description: rubric.description };
+      return acc;
+    }, {} as Record<string, { name: string; description: string }>);
+  }, [rubrics]);
+
   const [selectedRubrics, setSelectedRubrics] = useState<string[]>([]);
 
   // State to track hovered cell for highlighting

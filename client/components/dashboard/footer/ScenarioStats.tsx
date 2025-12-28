@@ -81,11 +81,18 @@ function CustomBarTooltip({
   );
 }
 
+type Parameter = {
+  parameter_id: string;
+  name: string;
+  description: string;
+  numerical?: boolean;
+};
+
 export interface ScenarioStatsProps {
   numericAttemptFacts: NumericAttemptFact[];
   numericScenarioFacts: NumericScenarioFact[];
-  /** Parameter mapping object */
-  parameterMapping: Record<string, { name: string; description: string }>;
+  /** Parameters array */
+  parameters: Parameter[];
   /** Valid numeric parameter IDs */
   validNumericParameterIds: string[];
   actionableInsight?: string | null;
@@ -95,11 +102,18 @@ export interface ScenarioStatsProps {
 export default function ScenarioStats({
   numericAttemptFacts,
   numericScenarioFacts,
-  parameterMapping,
+  parameters,
   validNumericParameterIds,
   actionableInsight,
   status,
 }: ScenarioStatsProps) {
+  // Create lookup map from array for backward compatibility
+  const parameterMapping = useMemo(() => {
+    return parameters.reduce((acc, param) => {
+      acc[param.parameter_id] = { name: param.name, description: param.description };
+      return acc;
+    }, {} as Record<string, { name: string; description: string }>);
+  }, [parameters]);
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
 

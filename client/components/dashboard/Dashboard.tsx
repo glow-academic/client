@@ -61,6 +61,9 @@ export default function Dashboard({
 
   const bundle = dashboardData;
 
+  // API returns arrays directly (simulations, rubrics, parameters, fields)
+  // Components receive arrays and do lookups internally if needed
+
   // Get trend analysis from server (computed server-side)
   const trendAnalysis = useMemo(() => {
     if (!bundle) {
@@ -258,7 +261,7 @@ export default function Dashboard({
       <PersonaPerformance
         key="persona-performance"
         chartData={normalizedPersonaChartData}
-        simulationMapping={bundle.simulation_mapping}
+        simulations={bundle.simulations || []}
         validSimulationIds={
           bundle.primary.personaPerformance.validSimulationIds
         }
@@ -273,7 +276,7 @@ export default function Dashboard({
       <RubricHeatmap
         key="rubric-heatmap"
         matrices={normalizedRubricMatrices}
-        rubricMapping={bundle.rubric_mapping}
+        rubrics={bundle.rubrics || []}
         validRubricIds={bundle.primary.rubricHeatmap.validRubricIds}
         hasDataAvailable={bundle.primary.rubricHeatmap.matrices.length > 0}
         actionableInsight={bundle.insights.rubric_heatmap ?? null}
@@ -286,59 +289,6 @@ export default function Dashboard({
   const secondaryComponents = useMemo(() => {
     if (!bundle) return [];
 
-    // Normalize simulation_mapping to convert undefined to null for exactOptionalPropertyTypes
-    // For CohortPerformance: optional department_ids and time_limit
-    const normalizedSimulationMapping = Object.entries(
-      bundle.simulation_mapping,
-    ).reduce(
-      (acc, [key, value]) => {
-        const normalized: {
-          name: string;
-          description: string;
-          department_ids?: string[] | null;
-          time_limit?: number | null;
-        } = {
-          name: value.name,
-          description: value.description,
-        };
-        // Only include optional properties if they're not undefined
-        if (value.department_ids !== undefined) {
-          normalized.department_ids = value.department_ids;
-        }
-        if (value.time_limit !== undefined) {
-          normalized.time_limit = value.time_limit;
-        }
-        acc[key] = normalized;
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          name: string;
-          description: string;
-          department_ids?: string[] | null;
-          time_limit?: number | null;
-        }
-      >,
-    );
-
-    // For AttemptImprovement: required department_ids (must always be present)
-    const normalizedSimulationMappingRequired = Object.entries(
-      bundle.simulation_mapping,
-    ).reduce(
-      (acc, [key, value]) => {
-        acc[key] = {
-          name: value.name,
-          description: value.description,
-          department_ids: value.department_ids ?? null,
-        };
-        return acc;
-      },
-      {} as Record<
-        string,
-        { name: string; description: string; department_ids: string[] | null }
-      >,
-    );
 
     // Normalize CohortPerformance dailyData to convert null to undefined
     const normalizedDailyData =
@@ -371,7 +321,7 @@ export default function Dashboard({
         dailyData={normalizedDailyData}
         cohortFacts={bundle.secondary.cohortPerformance.cohortFacts}
         dailyFacts={bundle.secondary.cohortPerformance.dailyFacts}
-        simulationMapping={normalizedSimulationMapping}
+        simulations={bundle.simulations || []}
         validSimulationIds={
           bundle.secondary.cohortPerformance.validSimulationIds
         }
@@ -383,7 +333,7 @@ export default function Dashboard({
         key="attempt-improvement"
         chartData={bundle.secondary.attemptImprovement.chartData}
         facts={bundle.secondary.attemptImprovement.facts}
-        simulationMapping={normalizedSimulationMappingRequired}
+        simulations={bundle.simulations || []}
         validSimulationIds={
           bundle.secondary.attemptImprovement.validSimulationIds
         }
@@ -393,7 +343,7 @@ export default function Dashboard({
       <SkillPerformance
         key="skill-performance"
         packages={normalizedSkillPackages}
-        rubricMapping={bundle.rubric_mapping}
+        rubrics={bundle.rubrics || []}
         validRubricIds={bundle.secondary.skillPerformance.validRubricIds}
         actionableInsight={bundle.insights.skill_performance ?? null}
         status={bundle.secondary.skillPerformance.status ?? "neutral"}
@@ -414,8 +364,8 @@ export default function Dashboard({
         attributeScenarioFacts={
           bundle.footer.scenarioPerformance.attributeScenarioFacts
         }
-        parameterMapping={bundle.parameter_mapping}
-        parameterItemMapping={bundle.field_mapping}
+        parameters={bundle.parameters || []}
+        fields={bundle.fields || []}
         validParameterIds={bundle.footer.scenarioPerformance.validParameterIds}
         actionableInsight={bundle.insights.scenario_performance ?? null}
         status={bundle.footer.scenarioPerformance.status ?? "neutral"}
@@ -424,7 +374,7 @@ export default function Dashboard({
         key="scenario-stats"
         numericAttemptFacts={bundle.footer.scenarioStats.numericAttemptFacts}
         numericScenarioFacts={bundle.footer.scenarioStats.numericScenarioFacts}
-        parameterMapping={bundle.parameter_mapping}
+        parameters={bundle.parameters || []}
         validNumericParameterIds={
           bundle.footer.scenarioStats.validNumericParameterIds
         }
@@ -444,7 +394,7 @@ export default function Dashboard({
           bundle.footer.simulationPerformance.validSimulationIds
         }
         scenarioFacts={bundle.footer.simulationPerformance.scenarioFacts}
-        simulationMapping={bundle.simulation_mapping}
+        simulations={bundle.simulations || []}
         actionableInsight={bundle.insights.simulation_performance ?? null}
         status={bundle.footer.simulationPerformance.status ?? "neutral"}
       />,
@@ -458,9 +408,9 @@ export default function Dashboard({
         simulationParameterFactsNumeric={
           bundle.footer.simulationComposition.simulationParameterFactsNumeric
         }
-        simulationMapping={bundle.simulation_mapping}
-        parameterMapping={bundle.parameter_mapping}
-        parameterItemMapping={bundle.field_mapping}
+        simulations={bundle.simulations || []}
+        parameters={bundle.parameters || []}
+        fields={bundle.fields || []}
         validSimulationIds={
           bundle.footer.simulationComposition.validSimulationIds
         }
