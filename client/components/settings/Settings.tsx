@@ -305,6 +305,86 @@ export default function Settings({
     default_guest_profile_id: null as string | null,
   });
 
+  // Helper functions to convert arrays to dicts for backward compatibility
+  // API now returns arrays (composite types), but frontend uses dicts internally
+  const convertProviderKeysToMapping = (providerKeys: SettingsDetailOut["provider_keys"] | undefined): Record<string, string> => {
+    if (!providerKeys) return {};
+    const mapping: Record<string, string> = {};
+    providerKeys.forEach((pk) => {
+      mapping[pk.provider_id] = pk.key_id;
+    });
+    return mapping;
+  };
+
+  const convertAuthKeysToMapping = (authKeys: SettingsDetailOut["auth_keys"] | undefined): Record<string, Record<string, string>> => {
+    if (!authKeys) return {};
+    const mapping: Record<string, Record<string, string>> = {};
+    authKeys.forEach((ak) => {
+      const itemsMapping: Record<string, string> = {};
+      ak.items.forEach((item) => {
+        itemsMapping[item.auth_item_id] = item.key_id;
+      });
+      mapping[ak.auth_id] = itemsMapping;
+    });
+    return mapping;
+  };
+
+  const convertAuthValuesToMapping = (authValues: SettingsDetailOut["auth_values"] | undefined): Record<string, Record<string, string>> => {
+    if (!authValues) return {};
+    const mapping: Record<string, Record<string, string>> = {};
+    authValues.forEach((av) => {
+      const itemsMapping: Record<string, string> = {};
+      av.items.forEach((item) => {
+        itemsMapping[item.auth_item_id] = item.value;
+      });
+      mapping[av.auth_id] = itemsMapping;
+    });
+    return mapping;
+  };
+
+  // Helper functions to convert dicts back to arrays for API (reverse of above)
+  // Frontend uses dicts internally, but API expects arrays (composite types)
+  const convertProviderKeysMappingToArray = (mapping: Record<string, string>): Array<{provider_id: string, key_id: string}> => {
+    return Object.entries(mapping).map(([provider_id, key_id]) => ({
+      provider_id,
+      key_id,
+    }));
+  };
+
+  const convertAuthKeysMappingToArray = (mapping: Record<string, Record<string, string>>): Array<{auth_id: string, items: Array<{auth_item_id: string, key_id: string}>}> => {
+    return Object.entries(mapping).map(([auth_id, itemsMapping]) => ({
+      auth_id,
+      items: Object.entries(itemsMapping).map(([auth_item_id, key_id]) => ({
+        auth_item_id,
+        key_id,
+      })),
+    }));
+  };
+
+  const convertProviderEnabledMappingToArray = (mapping: Record<string, boolean>): Array<{provider_id: string, enabled: boolean}> => {
+    return Object.entries(mapping).map(([provider_id, enabled]) => ({
+      provider_id,
+      enabled,
+    }));
+  };
+
+  const convertAuthEnabledMappingToArray = (mapping: Record<string, boolean>): Array<{auth_id: string, enabled: boolean}> => {
+    return Object.entries(mapping).map(([auth_id, enabled]) => ({
+      auth_id,
+      enabled,
+    }));
+  };
+
+  const convertAuthValuesMappingToArray = (mapping: Record<string, Record<string, string>>): Array<{auth_id: string, items: Array<{auth_item_id: string, value: string}>}> => {
+    return Object.entries(mapping).map(([auth_id, itemsMapping]) => ({
+      auth_id,
+      items: Object.entries(itemsMapping).map(([auth_item_id, value]) => ({
+        auth_item_id,
+        value,
+      })),
+    }));
+  };
+
   // Update form data and key mappings when settings detail changes
   useEffect(() => {
     if (settingsDetail) {
@@ -347,9 +427,10 @@ export default function Settings({
         setOriginalSelectedSettingsId(selectedSettingsId);
       }
 
-      // Initialize key mappings from settings detail
-      const providerKeyMap = settingsDetail.provider_key_mapping || {};
-      const authKeyMap = settingsDetail.auth_key_mapping || {};
+      // Convert arrays to dicts for backward compatibility
+      // API now returns arrays (composite types), convert to dicts for internal use
+      const providerKeyMap = convertProviderKeysToMapping(settingsDetail.provider_keys);
+      const authKeyMap = convertAuthKeysToMapping(settingsDetail.auth_keys);
       setProviderKeyMapping(providerKeyMap);
       setAuthKeyMapping(authKeyMap);
       // Store original mappings
@@ -357,26 +438,31 @@ export default function Settings({
       setOriginalAuthKeyMapping(JSON.parse(JSON.stringify(authKeyMap)));
 
       // Initialize provider enabled state
+      // Use all_providers array if available, otherwise fall back to all_provider_ids
+      const allProviderIds = settingsDetail.all_providers?.map(p => p.provider_id) || settingsDetail.all_provider_ids || [];
+      const linkedProviderIds = settingsDetail.providers?.map(p => p.provider_id) || settingsDetail.provider_ids || [];
       const enabled: Record<string, boolean> = {};
-      settingsDetail.all_provider_ids.forEach((providerId) => {
-        enabled[providerId] = settingsDetail.provider_ids.includes(providerId);
+      allProviderIds.forEach((providerId) => {
+        enabled[providerId] = linkedProviderIds.includes(providerId);
       });
       setProviderEnabled(enabled);
       // Store original provider enabled state
       setOriginalProviderEnabled(JSON.parse(JSON.stringify(enabled)));
 
       // Initialize auth enabled state
+      // Use all_auths array if available, otherwise fall back to all_auth_ids
+      const allAuthIds = settingsDetail.all_auths?.map(a => a.auth_id) || settingsDetail.all_auth_ids || [];
+      const linkedAuthIds = settingsDetail.auths?.map(a => a.auth_id) || settingsDetail.auth_ids || [];
       const authEnabledState: Record<string, boolean> = {};
-      settingsDetail.all_auth_ids?.forEach((authId) => {
-        authEnabledState[authId] =
-          settingsDetail.auth_ids?.includes(authId) ?? false;
+      allAuthIds.forEach((authId) => {
+        authEnabledState[authId] = linkedAuthIds.includes(authId);
       });
       setAuthEnabled(authEnabledState);
       // Store original auth enabled state
       setOriginalAuthEnabled(JSON.parse(JSON.stringify(authEnabledState)));
 
-      // Initialize auth value mapping
-      const authValueMap = settingsDetail.auth_value_mapping || {};
+      // Initialize auth value mapping (convert from array to dict)
+      const authValueMap = convertAuthValuesToMapping(settingsDetail.auth_values);
       setAuthValueMapping(authValueMap);
       // Store original auth value mapping
       setOriginalAuthValueMapping(JSON.parse(JSON.stringify(authValueMap)));
@@ -389,14 +475,14 @@ export default function Settings({
 
       // Auto-select enabled auth methods and providers
       const enabledAuthIds = new Set(
-        settingsDetail.all_auth_ids?.filter(
+        allAuthIds.filter(
           (authId) => authEnabledState[authId]
-        ) || []
+        )
       );
       setSelectedAuthMethodIds(enabledAuthIds);
 
       const enabledProviderIds = new Set(
-        settingsDetail.all_provider_ids.filter(
+        allProviderIds.filter(
           (providerId) => enabled[providerId]
         )
       );
@@ -461,21 +547,16 @@ export default function Settings({
 
   // Build auth methods list for searchable section
   const authMethodsList = useMemo(() => {
-    if (!settingsDetail || !settingsDetail.all_auth_ids) return [];
-    return settingsDetail.all_auth_ids.map((authId) => {
-      const auth =
-        settingsDetail.all_auth_mapping?.[authId] ||
-        settingsDetail.auth_mapping?.[authId];
-      const enabled = authEnabled[authId] ?? false;
-      const authName = typeof auth?.["name"] === "string" ? auth["name"] : "";
-      const authDesc =
-        typeof auth?.["description"] === "string" ? auth["description"] : "";
-      const authSlug = typeof auth?.["slug"] === "string" ? auth["slug"] : null;
+    if (!settingsDetail) return [];
+    // Use all_auths array (composite types) - convert to list
+    const allAuths = settingsDetail.all_auths || [];
+    return allAuths.map((auth) => {
+      const enabled = authEnabled[auth.auth_id] ?? false;
       return {
-        auth_id: authId,
-        auth_name: authName,
-        auth_description: authDesc,
-        auth_slug: authSlug,
+        auth_id: auth.auth_id,
+        auth_name: auth.name,
+        auth_description: auth.description,
+        auth_slug: auth.slug,
         enabled,
       };
     });
@@ -483,7 +564,7 @@ export default function Settings({
 
   // Build auth table data - use ALL auths, show ALL items (encrypted and non-encrypted)
   const authTableData = useMemo(() => {
-    if (!settingsDetail || !settingsDetail.all_auth_ids) return [];
+    if (!settingsDetail) return [];
     const data: Array<{
       auth_id: string;
       auth_name: string;
@@ -498,25 +579,21 @@ export default function Settings({
       enabled: boolean;
     }> = [];
 
-    settingsDetail.all_auth_ids.forEach((authId) => {
-      const auth =
-        settingsDetail.all_auth_mapping?.[authId] ||
-        settingsDetail.auth_mapping?.[authId];
+    // Use all_auths array (composite types) instead of all_auth_ids + mapping
+    const allAuths = settingsDetail.all_auths || [];
+    allAuths.forEach((auth) => {
+      const authId = auth.auth_id;
       const enabled = authEnabled[authId] ?? false;
 
-      const authItems = settingsDetail.auth_items_mapping?.[authId] || [];
+      // Auth items are now nested in the auth object (composite types)
+      const authItems = auth.auth_items || [];
 
       if (authItems.length === 0) {
-        const authName = typeof auth?.["name"] === "string" ? auth["name"] : "";
-        const authDesc =
-          typeof auth?.["description"] === "string" ? auth["description"] : "";
-        const authSlug =
-          typeof auth?.["slug"] === "string" ? auth["slug"] : null;
         data.push({
           auth_id: authId,
-          auth_name: authName,
-          auth_description: authDesc,
-          auth_slug: authSlug,
+          auth_name: auth.name,
+          auth_description: auth.description,
+          auth_slug: auth.slug,
           auth_item_id: "",
           auth_item_name: "",
           auth_item_description: "",
@@ -526,20 +603,14 @@ export default function Settings({
           enabled,
         });
       } else {
-        authItems.forEach((item: { [key: string]: unknown }) => {
-          const authItemId =
-            typeof item["auth_item_id"] === "string"
-              ? item["auth_item_id"]
-              : "";
-          const itemName = typeof item["name"] === "string" ? item["name"] : "";
-          const itemDesc =
-            typeof item["description"] === "string" ? item["description"] : "";
-          const itemEncrypted =
-            typeof item["encrypted"] === "boolean" ? item["encrypted"] : false;
+        authItems.forEach((item) => {
+          const authItemId = item.auth_item_id;
+          const itemName = item.name;
+          const itemDesc = item.description;
+          const itemEncrypted = item.encrypted;
 
           const itemKeyMapping = authKeyMapping[authId] || {};
-          const itemValueMapping =
-            settingsDetail.auth_value_mapping?.[authId] || {};
+          const itemValueMapping = authValueMapping[authId] || {};
           const selectedKeyId = itemEncrypted
             ? itemKeyMapping[authItemId] || null
             : null;
@@ -547,14 +618,9 @@ export default function Settings({
             ? itemValueMapping[authItemId] || null
             : null;
 
-          const authName =
-            typeof auth?.["name"] === "string" ? auth["name"] : "";
-          const authDesc =
-            typeof auth?.["description"] === "string"
-              ? auth["description"]
-              : "";
-          const authSlug =
-            typeof auth?.["slug"] === "string" ? auth["slug"] : null;
+          const authName = auth.name;
+          const authDesc = auth.description;
+          const authSlug = auth.slug;
           data.push({
             auth_id: authId,
             auth_name: authName,
@@ -573,28 +639,22 @@ export default function Settings({
     });
 
     return data;
-  }, [settingsDetail, authKeyMapping, authEnabled]);
+  }, [settingsDetail, authKeyMapping, authValueMapping, authEnabled]);
 
   // Build provider table data
   const providerTableData = useMemo(() => {
     if (!settingsDetail) return [];
-    return settingsDetail.all_provider_ids.map((providerId) => {
-      const provider = settingsDetail.all_provider_mapping[providerId];
+    // Use all_providers array (composite types) instead of all_provider_ids + mapping
+    const allProviders = settingsDetail.all_providers || [];
+    return allProviders.map((provider) => {
+      const providerId = provider.provider_id;
       const selectedKeyId = providerKeyMapping[providerId] || null;
       const enabled = providerEnabled[providerId] ?? false;
-      const providerName =
-        typeof provider?.["name"] === "string" ? provider["name"] : "";
-      const providerDesc =
-        typeof provider?.["description"] === "string"
-          ? provider["description"]
-          : "";
-      const providerValue =
-        typeof provider?.["value"] === "string" ? provider["value"] : null;
       return {
         provider_id: providerId,
-        provider_name: providerName,
-        provider_description: providerDesc,
-        provider_value: providerValue,
+        provider_name: provider.name,
+        provider_description: provider.description,
+        provider_value: provider.value,
         selected_key_id: selectedKeyId,
         enabled,
       };
@@ -797,33 +857,33 @@ export default function Settings({
           success_threshold: originalFormData.success_threshold,
           warning_threshold: originalFormData.warning_threshold,
           danger_threshold: originalFormData.danger_threshold,
-          provider_key_mapping:
+          provider_keys:
             Object.keys(originalProviderKeyMapping).length > 0
-              ? originalProviderKeyMapping
-              : null,
+              ? convertProviderKeysMappingToArray(originalProviderKeyMapping)
+              : [],
           provider_enabled:
             Object.keys(originalProviderEnabled).length > 0
-              ? originalProviderEnabled
-              : null,
+              ? convertProviderEnabledMappingToArray(originalProviderEnabled)
+              : [],
           auth_enabled:
             Object.keys(originalAuthEnabled).length > 0
-              ? originalAuthEnabled
-              : null,
-          auth_value_mapping:
+              ? convertAuthEnabledMappingToArray(originalAuthEnabled)
+              : [],
+          auth_values:
             Object.keys(originalAuthValueMapping).length > 0
-              ? originalAuthValueMapping
-              : null,
-          auth_key_mapping:
+              ? convertAuthValuesMappingToArray(originalAuthValueMapping)
+              : [],
+          auth_keys:
             Object.keys(originalAuthKeyMapping).length > 0
-              ? originalAuthKeyMapping
-              : null,
+              ? convertAuthKeysMappingToArray(originalAuthKeyMapping)
+              : [],
           default_admin_profile_id: formData.default_admin_profile_id || null,
           default_guest_profile_id: formData.default_guest_profile_id || null,
           department_ids: departmentIds.length > 0 ? departmentIds : null,
         },
       });
 
-      if (result.success) {
+      if (result.settings_id) {
         toast.success("General settings updated successfully");
         // Update original state
         setOriginalFormData({
@@ -834,7 +894,7 @@ export default function Settings({
         setOriginalSelectedSettingsId(selectedSettingsId);
         router.refresh();
       } else {
-        toast.error(result.message || "Failed to update general settings");
+        toast.error("Failed to update general settings");
       }
     } catch (error) {
       toast.error(
@@ -880,20 +940,26 @@ export default function Settings({
           success_threshold: originalFormData.success_threshold,
           warning_threshold: originalFormData.warning_threshold,
           danger_threshold: originalFormData.danger_threshold,
-          provider_key_mapping:
+          provider_keys:
             Object.keys(originalProviderKeyMapping).length > 0
-              ? originalProviderKeyMapping
-              : null,
+              ? convertProviderKeysMappingToArray(originalProviderKeyMapping)
+              : [],
           provider_enabled:
             Object.keys(originalProviderEnabled).length > 0
-              ? originalProviderEnabled
-              : null,
+              ? convertProviderEnabledMappingToArray(originalProviderEnabled)
+              : [],
           auth_enabled:
-            Object.keys(authEnabled).length > 0 ? authEnabled : null,
-          auth_value_mapping:
-            Object.keys(authValueMapping).length > 0 ? authValueMapping : null,
-          auth_key_mapping:
-            Object.keys(authKeyMapping).length > 0 ? authKeyMapping : null,
+            Object.keys(authEnabled).length > 0
+              ? convertAuthEnabledMappingToArray(authEnabled)
+              : [],
+          auth_values:
+            Object.keys(authValueMapping).length > 0
+              ? convertAuthValuesMappingToArray(authValueMapping)
+              : [],
+          auth_keys:
+            Object.keys(authKeyMapping).length > 0
+              ? convertAuthKeysMappingToArray(authKeyMapping)
+              : [],
           default_admin_profile_id:
             originalFormData.default_admin_profile_id || null,
           default_guest_profile_id:
@@ -903,7 +969,7 @@ export default function Settings({
         },
       });
 
-      if (result.success) {
+      if (result.settings_id) {
         toast.success("Auth settings updated successfully");
         // Update original state
         setOriginalAuthEnabled(JSON.parse(JSON.stringify(authEnabled)));
@@ -913,7 +979,7 @@ export default function Settings({
         );
         router.refresh();
       } else {
-        toast.error(result.message || "Failed to update auth settings");
+        toast.error("Failed to update auth settings");
       }
     } catch (error) {
       toast.error(
@@ -959,24 +1025,26 @@ export default function Settings({
           success_threshold: originalFormData.success_threshold,
           warning_threshold: originalFormData.warning_threshold,
           danger_threshold: originalFormData.danger_threshold,
-          provider_key_mapping:
+          provider_keys:
             Object.keys(providerKeyMapping).length > 0
-              ? providerKeyMapping
-              : null,
+              ? convertProviderKeysMappingToArray(providerKeyMapping)
+              : [],
           provider_enabled:
-            Object.keys(providerEnabled).length > 0 ? providerEnabled : null,
+            Object.keys(providerEnabled).length > 0
+              ? convertProviderEnabledMappingToArray(providerEnabled)
+              : [],
           auth_enabled:
             Object.keys(originalAuthEnabled).length > 0
-              ? originalAuthEnabled
-              : null,
-          auth_value_mapping:
+              ? convertAuthEnabledMappingToArray(originalAuthEnabled)
+              : [],
+          auth_values:
             Object.keys(originalAuthValueMapping).length > 0
-              ? originalAuthValueMapping
-              : null,
-          auth_key_mapping:
+              ? convertAuthValuesMappingToArray(originalAuthValueMapping)
+              : [],
+          auth_keys:
             Object.keys(originalAuthKeyMapping).length > 0
-              ? originalAuthKeyMapping
-              : null,
+              ? convertAuthKeysMappingToArray(originalAuthKeyMapping)
+              : [],
           default_admin_profile_id:
             originalFormData.default_admin_profile_id || null,
           default_guest_profile_id:
@@ -986,7 +1054,7 @@ export default function Settings({
         },
       });
 
-      if (result.success) {
+      if (result.settings_id) {
         toast.success("Provider settings updated successfully");
         // Update original state
         setOriginalProviderEnabled(JSON.parse(JSON.stringify(providerEnabled)));
@@ -995,7 +1063,7 @@ export default function Settings({
         );
         router.refresh();
       } else {
-        toast.error(result.message || "Failed to update provider settings");
+        toast.error("Failed to update provider settings");
       }
     } catch (error) {
       toast.error(
@@ -1041,26 +1109,26 @@ export default function Settings({
           success_threshold: formData.success_threshold,
           warning_threshold: formData.warning_threshold,
           danger_threshold: formData.danger_threshold,
-          provider_key_mapping:
+          provider_keys:
             Object.keys(originalProviderKeyMapping).length > 0
-              ? originalProviderKeyMapping
-              : null,
+              ? convertProviderKeysMappingToArray(originalProviderKeyMapping)
+              : [],
           provider_enabled:
             Object.keys(originalProviderEnabled).length > 0
-              ? originalProviderEnabled
-              : null,
+              ? convertProviderEnabledMappingToArray(originalProviderEnabled)
+              : [],
           auth_enabled:
             Object.keys(originalAuthEnabled).length > 0
-              ? originalAuthEnabled
-              : null,
-          auth_value_mapping:
+              ? convertAuthEnabledMappingToArray(originalAuthEnabled)
+              : [],
+          auth_values:
             Object.keys(originalAuthValueMapping).length > 0
-              ? originalAuthValueMapping
-              : null,
-          auth_key_mapping:
+              ? convertAuthValuesMappingToArray(originalAuthValueMapping)
+              : [],
+          auth_keys:
             Object.keys(originalAuthKeyMapping).length > 0
-              ? originalAuthKeyMapping
-              : null,
+              ? convertAuthKeysMappingToArray(originalAuthKeyMapping)
+              : [],
           default_admin_profile_id:
             originalFormData.default_admin_profile_id || null,
           default_guest_profile_id:
@@ -1070,7 +1138,7 @@ export default function Settings({
         },
       });
 
-      if (result.success) {
+      if (result.settings_id) {
         toast.success("Theme settings updated successfully");
         // Update original state
         setOriginalFormData({
@@ -1095,7 +1163,7 @@ export default function Settings({
         });
         router.refresh();
       } else {
-        toast.error(result.message || "Failed to update theme settings");
+        toast.error("Failed to update theme settings");
       }
     } catch (error) {
       toast.error(

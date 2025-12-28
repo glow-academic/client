@@ -1601,26 +1601,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/settings/active": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Active Settings
-         * @description Get active settings information.
-         */
-        post: operations["get_active_settings_api_v3_settings_active_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/analytics/refresh": {
         parameters: {
             query?: never;
@@ -5092,6 +5072,26 @@ export interface paths {
          * @description Server-to-client event: User transcript from voice simulation.
          */
         post: operations["simulation_voice_user_transcript_server_api_socket_v3_server_simulations_voice_user_transcript_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v3/server/simulations/voice/user/transcript_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Voice User Transcript Error Api
+         * @description Server-to-client event: Error handling user transcript from voice simulation.
+         */
+        post: operations["simulation_voice_user_transcript_error_api_socket_v3_server_simulations_voice_user_transcript_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11360,6 +11360,104 @@ export interface components {
             /** Department Options */
             department_options?: components["schemas"]["QListScenariosV3Option"][] | null;
         };
+        /** GetSettingsDetailApiRequest */
+        GetSettingsDetailApiRequest: {
+            /**
+             * Settings Id
+             * Format: uuid
+             */
+            settings_id: string;
+        };
+        /** GetSettingsDetailApiResponse */
+        GetSettingsDetailApiResponse: {
+            /** Settings Exists */
+            settings_exists?: boolean | null;
+            /** Settings Id */
+            settings_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Primary Color */
+            primary_color?: string | null;
+            /** Accent */
+            accent?: string | null;
+            /** Background */
+            background?: string | null;
+            /** Surface */
+            surface?: string | null;
+            /** Success */
+            success?: string | null;
+            /** Warning */
+            warning?: string | null;
+            /** Error */
+            error?: string | null;
+            /** Sidebar Background */
+            sidebar_background?: string | null;
+            /** Sidebar Primary */
+            sidebar_primary?: string | null;
+            /** Chart1 */
+            chart1?: string | null;
+            /** Chart2 */
+            chart2?: string | null;
+            /** Chart3 */
+            chart3?: string | null;
+            /** Chart4 */
+            chart4?: string | null;
+            /** Chart5 */
+            chart5?: string | null;
+            /** Guest Login Enabled */
+            guest_login_enabled?: boolean | null;
+            /** Success Threshold */
+            success_threshold?: number | null;
+            /** Warning Threshold */
+            warning_threshold?: number | null;
+            /** Danger Threshold */
+            danger_threshold?: number | null;
+            /** Auth Ids */
+            auth_ids?: string[] | null;
+            /** Auths */
+            auths?: components["schemas"]["QGetSettingsDetailV3Auth"][] | null;
+            /** Provider Ids */
+            provider_ids?: string[] | null;
+            /** Providers */
+            providers?: components["schemas"]["QGetSettingsDetailV3Provider"][] | null;
+            /** Provider Keys */
+            provider_keys?: components["schemas"]["QGetSettingsDetailV3ProviderKey"][] | null;
+            /** Auth Keys */
+            auth_keys?: components["schemas"]["QGetSettingsDetailV3AuthKey"][] | null;
+            /** Auth Values */
+            auth_values?: components["schemas"]["QGetSettingsDetailV3AuthValue"][] | null;
+            /** All Providers */
+            all_providers?: components["schemas"]["QGetSettingsDetailV3Provider"][] | null;
+            /** All Auths */
+            all_auths?: components["schemas"]["QGetSettingsDetailV3Auth"][] | null;
+            /** Default Admin Profile Id */
+            default_admin_profile_id?: string | null;
+            /** Default Admin Name */
+            default_admin_name?: string | null;
+            /** Default Guest Profile Id */
+            default_guest_profile_id?: string | null;
+            /** Default Guest Name */
+            default_guest_name?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetSettingsListApiRequest */
+        GetSettingsListApiRequest: Record<string, never>;
+        /** GetSettingsListApiResponse */
+        GetSettingsListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Settings */
+            settings?: components["schemas"]["QGetSettingsListV3Setting"][] | null;
+        };
         /** GetSimulationDetailApiRequest */
         GetSimulationDetailApiRequest: {
             /**
@@ -12191,6 +12289,55 @@ export interface components {
             active: boolean | null;
             /** Standards */
             standards: components["schemas"]["IUpdateRubricV3Standard"][] | null;
+        };
+        /** IUpdateSettingsV3AuthEnabled */
+        IUpdateSettingsV3AuthEnabled: {
+            /** Auth Id */
+            auth_id: string | null;
+            /** Enabled */
+            enabled: boolean | null;
+        };
+        /** IUpdateSettingsV3AuthKey */
+        IUpdateSettingsV3AuthKey: {
+            /** Auth Id */
+            auth_id: string | null;
+            /** Items */
+            items: components["schemas"]["IUpdateSettingsV3AuthKeyItem"][] | null;
+        };
+        /** IUpdateSettingsV3AuthKeyItem */
+        IUpdateSettingsV3AuthKeyItem: {
+            /** Auth Item Id */
+            auth_item_id: string | null;
+            /** Key Id */
+            key_id: string | null;
+        };
+        /** IUpdateSettingsV3AuthValue */
+        IUpdateSettingsV3AuthValue: {
+            /** Auth Id */
+            auth_id: string | null;
+            /** Items */
+            items: components["schemas"]["IUpdateSettingsV3AuthValueItem"][] | null;
+        };
+        /** IUpdateSettingsV3AuthValueItem */
+        IUpdateSettingsV3AuthValueItem: {
+            /** Auth Item Id */
+            auth_item_id: string | null;
+            /** Value */
+            value: string | null;
+        };
+        /** IUpdateSettingsV3ProviderEnabled */
+        IUpdateSettingsV3ProviderEnabled: {
+            /** Provider Id */
+            provider_id: string | null;
+            /** Enabled */
+            enabled: boolean | null;
+        };
+        /** IUpdateSettingsV3ProviderKey */
+        IUpdateSettingsV3ProviderKey: {
+            /** Provider Id */
+            provider_id: string | null;
+            /** Key Id */
+            key_id: string | null;
         };
         /** IUpsertStaffV3Profile */
         IUpsertStaffV3Profile: {
@@ -15553,6 +15700,95 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
+        /** QGetSettingsDetailV3Auth */
+        QGetSettingsDetailV3Auth: {
+            /** Auth Id */
+            auth_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Slug */
+            slug: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Auth Items */
+            auth_items: components["schemas"]["QGetSettingsDetailV3AuthItem"][] | null;
+        };
+        /** QGetSettingsDetailV3AuthItem */
+        QGetSettingsDetailV3AuthItem: {
+            /** Auth Item Id */
+            auth_item_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Encrypted */
+            encrypted: boolean | null;
+        };
+        /** QGetSettingsDetailV3AuthKey */
+        QGetSettingsDetailV3AuthKey: {
+            /** Auth Id */
+            auth_id: string | null;
+            /** Items */
+            items: components["schemas"]["QGetSettingsDetailV3AuthKeyItem"][] | null;
+        };
+        /** QGetSettingsDetailV3AuthKeyItem */
+        QGetSettingsDetailV3AuthKeyItem: {
+            /** Auth Item Id */
+            auth_item_id: string | null;
+            /** Key Id */
+            key_id: string | null;
+        };
+        /** QGetSettingsDetailV3AuthValue */
+        QGetSettingsDetailV3AuthValue: {
+            /** Auth Id */
+            auth_id: string | null;
+            /** Items */
+            items: components["schemas"]["QGetSettingsDetailV3AuthValueItem"][] | null;
+        };
+        /** QGetSettingsDetailV3AuthValueItem */
+        QGetSettingsDetailV3AuthValueItem: {
+            /** Auth Item Id */
+            auth_item_id: string | null;
+            /** Value */
+            value: string | null;
+        };
+        /** QGetSettingsDetailV3Provider */
+        QGetSettingsDetailV3Provider: {
+            /** Provider Id */
+            provider_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Value */
+            value: string | null;
+            /** Active */
+            active: boolean | null;
+        };
+        /** QGetSettingsDetailV3ProviderKey */
+        QGetSettingsDetailV3ProviderKey: {
+            /** Provider Id */
+            provider_id: string | null;
+            /** Key Id */
+            key_id: string | null;
+        };
+        /** QGetSettingsListV3Setting */
+        QGetSettingsListV3Setting: {
+            /** Settings Id */
+            settings_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
         /** QGetSimulationDetailV3Agent */
         QGetSimulationDetailV3Agent: {
             /** Agent Id */
@@ -17894,6 +18130,8 @@ export interface components {
             video_id?: string | null;
             /** Image Ids */
             image_ids?: string[] | null;
+            /** Images Ready */
+            images_ready?: boolean | null;
             /** Agent Id */
             agent_id: string;
             /** Department Id */
@@ -17937,198 +18175,6 @@ export interface components {
              * @default false
              */
             is_retry: boolean;
-        };
-        /**
-         * SettingsActiveRequest
-         * @description Request to get active settings.
-         */
-        SettingsActiveRequest: {
-            /** Departmentid */
-            departmentId?: string | null;
-        };
-        /**
-         * SettingsActiveResponse
-         * @description Active settings response.
-         */
-        SettingsActiveResponse: {
-            /** Settings Id */
-            settings_id: string;
-            /** Created At */
-            created_at: string;
-            /** Active */
-            active: boolean;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Mode
-             * @default light
-             * @enum {string}
-             */
-            mode: "light" | "dark" | "system";
-            tokens: components["schemas"]["ThemeTokens"];
-            /** Guest Login Enabled */
-            guest_login_enabled: boolean;
-            /** Success Threshold */
-            success_threshold: number;
-            /** Warning Threshold */
-            warning_threshold: number;
-            /** Danger Threshold */
-            danger_threshold: number;
-            /** Guestprofileid */
-            guestProfileId?: string | null;
-            /** Defaultaccountprofileid */
-            defaultAccountProfileId?: string | null;
-        };
-        /**
-         * SettingsDetailRequest
-         * @description Request to get settings details.
-         */
-        SettingsDetailRequest: {
-            /** Settingsid */
-            settingsId: string;
-        };
-        /**
-         * SettingsDetailResponse
-         * @description Detailed settings response.
-         */
-        SettingsDetailResponse: {
-            /** Settings Id */
-            settings_id: string;
-            /** Created At */
-            created_at: string;
-            /** Active */
-            active: boolean;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Primary Color */
-            primary_color: string;
-            /** Accent */
-            accent: string;
-            /** Background */
-            background: string;
-            /** Surface */
-            surface: string;
-            /** Success */
-            success: string;
-            /** Warning */
-            warning: string;
-            /** Error */
-            error: string;
-            /** Sidebar Background */
-            sidebar_background: string;
-            /** Sidebar Primary */
-            sidebar_primary: string;
-            /** Chart1 */
-            chart1: string;
-            /** Chart2 */
-            chart2: string;
-            /** Chart3 */
-            chart3: string;
-            /** Chart4 */
-            chart4: string;
-            /** Chart5 */
-            chart5: string;
-            /** Guest Login Enabled */
-            guest_login_enabled: boolean;
-            /** Success Threshold */
-            success_threshold: number;
-            /** Warning Threshold */
-            warning_threshold: number;
-            /** Danger Threshold */
-            danger_threshold: number;
-            /** Auth Ids */
-            auth_ids: string[];
-            /** Auth Mapping */
-            auth_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Provider Ids */
-            provider_ids: string[];
-            /** Provider Mapping */
-            provider_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Provider Key Mapping */
-            provider_key_mapping: {
-                [key: string]: string;
-            };
-            /** Auth Key Mapping */
-            auth_key_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Auth Value Mapping */
-            auth_value_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Auth Items Mapping */
-            auth_items_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                }[];
-            };
-            /** Default Admin Profile Id */
-            default_admin_profile_id: string | null;
-            /** Default Admin Name */
-            default_admin_name: string | null;
-            /** Default Guest Profile Id */
-            default_guest_profile_id: string | null;
-            /** Default Guest Name */
-            default_guest_name: string | null;
-            /** All Provider Ids */
-            all_provider_ids: string[];
-            /** All Provider Mapping */
-            all_provider_mapping: {
-                [key: string]: {
-                    [key: string]: string | boolean;
-                };
-            };
-            /** All Auth Ids */
-            all_auth_ids: string[];
-            /** All Auth Mapping */
-            all_auth_mapping: {
-                [key: string]: {
-                    [key: string]: string | boolean;
-                };
-            };
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /**
-         * SettingsItem
-         * @description Settings item.
-         */
-        SettingsItem: {
-            /** Settings Id */
-            settings_id: string;
-            /** Created At */
-            created_at: string;
-            /** Active */
-            active: boolean;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /** SettingsListRequest */
-        SettingsListRequest: Record<string, never>;
-        /** SettingsListResponse */
-        SettingsListResponse: {
-            /** Settings */
-            settings: components["schemas"]["SettingsItem"][];
         };
         /**
          * SimulationCompositionResponse
@@ -18808,11 +18854,8 @@ export interface components {
             transcription_model?: string | null;
             /** Transcription Prompt */
             transcription_prompt?: string | null;
-            /**
-             * History
-             * @default []
-             */
-            history: components["schemas"]["RealtimeItem"][];
+            /** History */
+            history?: components["schemas"]["RealtimeItem"][];
         };
         /**
          * StatusSummary
@@ -18905,88 +18948,6 @@ export interface components {
             department_id?: string | null;
             /** Error */
             error?: string | null;
-        };
-        /**
-         * ThemeTokens
-         * @description Full internal design tokens derived from ThemePrimitives.
-         *     This is what components consume via CSS variables.
-         *     Users do not edit this directly.
-         */
-        ThemeTokens: {
-            /** Background */
-            background: string;
-            /** Foreground */
-            foreground: string;
-            /** Card */
-            card: string;
-            /** Cardforeground */
-            cardForeground: string;
-            /** Popover */
-            popover: string;
-            /** Popoverforeground */
-            popoverForeground: string;
-            /** Primary */
-            primary: string;
-            /** Primaryforeground */
-            primaryForeground: string;
-            /** Secondary */
-            secondary: string;
-            /** Secondaryforeground */
-            secondaryForeground: string;
-            /** Muted */
-            muted: string;
-            /** Mutedforeground */
-            mutedForeground: string;
-            /** Accent */
-            accent: string;
-            /** Accentforeground */
-            accentForeground: string;
-            /** Destructive */
-            destructive: string;
-            /** Border */
-            border: string;
-            /** Input */
-            input: string;
-            /** Ring */
-            ring: string;
-            /** Success */
-            success: string;
-            /** Successforeground */
-            successForeground: string;
-            /** Warning */
-            warning: string;
-            /** Warningforeground */
-            warningForeground: string;
-            /** Info */
-            info: string;
-            /** Infoforeground */
-            infoForeground: string;
-            /** Chart1 */
-            chart1: string;
-            /** Chart2 */
-            chart2: string;
-            /** Chart3 */
-            chart3: string;
-            /** Chart4 */
-            chart4: string;
-            /** Chart5 */
-            chart5: string;
-            /** Sidebar */
-            sidebar: string;
-            /** Sidebarforeground */
-            sidebarForeground: string;
-            /** Sidebarprimary */
-            sidebarPrimary: string;
-            /** Sidebarprimaryforeground */
-            sidebarPrimaryForeground: string;
-            /** Sidebaraccent */
-            sidebarAccent: string;
-            /** Sidebaraccentforeground */
-            sidebarAccentForeground: string;
-            /** Sidebarborder */
-            sidebarBorder: string;
-            /** Sidebarring */
-            sidebarRing: string;
         };
         /**
          * Thresholds
@@ -19592,11 +19553,8 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * UpdateSettingsRequest
-         * @description Request to update settings.
-         */
-        UpdateSettingsRequest: {
+        /** UpdateSettingsApiRequest */
+        UpdateSettingsApiRequest: {
             /** Name */
             name: string;
             /** Description */
@@ -19637,48 +19595,31 @@ export interface components {
             warning_threshold: number;
             /** Danger Threshold */
             danger_threshold: number;
-            /** Provider Key Mapping */
-            provider_key_mapping?: {
-                [key: string]: string;
-            } | null;
-            /** Provider Enabled */
-            provider_enabled?: {
-                [key: string]: boolean;
-            } | null;
-            /** Auth Enabled */
-            auth_enabled?: {
-                [key: string]: boolean;
-            } | null;
-            /** Auth Key Mapping */
-            auth_key_mapping?: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            } | null;
-            /** Auth Value Mapping */
-            auth_value_mapping?: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            } | null;
+            /** Provider Keys */
+            provider_keys?: components["schemas"]["IUpdateSettingsV3ProviderKey"][] | null;
+            /** Auth Keys */
+            auth_keys?: components["schemas"]["IUpdateSettingsV3AuthKey"][] | null;
             /** Default Admin Profile Id */
             default_admin_profile_id?: string | null;
             /** Default Guest Profile Id */
             default_guest_profile_id?: string | null;
+            /** Provider Enabled */
+            provider_enabled?: components["schemas"]["IUpdateSettingsV3ProviderEnabled"][] | null;
+            /** Auth Enabled */
+            auth_enabled?: components["schemas"]["IUpdateSettingsV3AuthEnabled"][] | null;
+            /** Auth Values */
+            auth_values?: components["schemas"]["IUpdateSettingsV3AuthValue"][] | null;
             /** Department Ids */
             department_ids?: string[] | null;
         };
-        /**
-         * UpdateSettingsResponse
-         * @description Response from update settings.
-         */
-        UpdateSettingsResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** UpdateSettingsApiResponse */
+        UpdateSettingsApiResponse: {
             /** Settings Id */
-            settings_id: string;
+            settings_id?: string | null;
+            /** Settings Name */
+            settings_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** UpdateSimulationApiRequest */
         UpdateSimulationApiRequest: {
@@ -20012,6 +19953,16 @@ export interface components {
             chat_id: string;
             /** Item Id */
             item_id: string;
+        };
+        /**
+         * VoiceUserTranscriptErrorPayload
+         * @description Response indicating an error occurred while processing transcript.
+         */
+        VoiceUserTranscriptErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * VoiceUserTranscriptPayload
@@ -23486,7 +23437,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SettingsListRequest"];
+                "application/json": components["schemas"]["GetSettingsListApiRequest"];
             };
         };
         responses: {
@@ -23496,7 +23447,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SettingsListResponse"];
+                    "application/json": components["schemas"]["GetSettingsListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23522,7 +23473,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SettingsDetailRequest"];
+                "application/json": components["schemas"]["GetSettingsDetailApiRequest"];
             };
         };
         responses: {
@@ -23532,7 +23483,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SettingsDetailResponse"];
+                    "application/json": components["schemas"]["GetSettingsDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23558,7 +23509,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateSettingsRequest"];
+                "application/json": components["schemas"]["UpdateSettingsApiRequest"];
             };
         };
         responses: {
@@ -23568,43 +23519,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateSettingsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_active_settings_api_v3_settings_active_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SettingsActiveRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SettingsActiveResponse"];
+                    "application/json": components["schemas"]["UpdateSettingsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -29797,6 +29712,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["VoiceUserTranscriptPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_voice_user_transcript_error_api_socket_v3_server_simulations_voice_user_transcript_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceUserTranscriptErrorPayload"];
             };
         };
         responses: {

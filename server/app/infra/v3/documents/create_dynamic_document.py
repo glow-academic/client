@@ -2,22 +2,28 @@
 
 import os
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import Request, Response
+from fastapi import Request
 
-from app.api.v3.settings.active import (
-    SettingsActiveRequest,
+from app.sql.types import (
+    GetActiveSettingsSqlParams,
+    GetActiveSettingsSqlRow,
+)
+from utils.settings.theme import (
+    ThemePrimitives,
     ThemeTokens,
-    get_active_settings,
+    derive_theme_tokens,
 )
 from app.main import UPLOAD_FOLDER
 from app.infra.v3.templates.jinja_renderer import render_template
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed, load_sql
 
 logger = get_logger(__name__)
+
+ACTIVE_SETTINGS_SQL_PATH = "app/sql/v3/settings/get_active_settings_complete.sql"
 
 
 async def create_dynamic_document(
@@ -76,63 +82,61 @@ async def create_dynamic_document(
     # Get theme tokens for rendering
     theme_tokens: ThemeTokens
     if http_request and profile_id:
-        settings_request = SettingsActiveRequest(profileId=str(profile_id))
-        dummy_response = Response()
-        settings_response = await get_active_settings(
-            settings_request, http_request, dummy_response, conn
+        # Get active settings directly via SQL function (cross-route independent)
+        settings_params = GetActiveSettingsSqlParams(
+            profile_id=str(profile_id),
+            department_id=None,
         )
-        theme_tokens = settings_response.tokens
+        settings_result = cast(
+            GetActiveSettingsSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACTIVE_SETTINGS_SQL_PATH,
+                params=settings_params,
+            ),
+        )
+
+        if settings_result and settings_result.settings_id:
+            # Extract theme primitives from SQL result and derive theme tokens
+            theme_primitives = ThemePrimitives(
+                primary=settings_result.primary_color or "",
+                accent=settings_result.accent or "",
+                background=settings_result.background or "",
+                surface=settings_result.surface or "",
+                success=settings_result.success or "",
+                warning=settings_result.warning or "",
+                error=settings_result.error or "",
+                sidebarBackground=settings_result.sidebar_background or "",
+                sidebarPrimary=settings_result.sidebar_primary or "",
+                chart1=settings_result.chart1 or "",
+                chart2=settings_result.chart2 or "",
+                chart3=settings_result.chart3 or "",
+                chart4=settings_result.chart4 or "",
+                chart5=settings_result.chart5 or "",
+            )
+            theme_tokens = derive_theme_tokens(theme_primitives)
+        else:
+            # Fallback to default theme if no settings found
+            theme_tokens = _get_default_theme_tokens()
     else:
         # Use default theme tokens if no request/profile provided
-        from app.api.v3.settings.active import ThemeTokens as ThemeTokensType
-
-        theme_tokens = ThemeTokensType(
-            primary="#000000",
-            primaryForeground="#ffffff",
-            background="#ffffff",
-            foreground="#000000",
-            card="#ffffff",
-            cardForeground="#000000",
-            popover="#ffffff",
-            popoverForeground="#000000",
-            secondary="#f3f4f6",
-            secondaryForeground="#000000",
-            muted="#f3f4f6",
-            mutedForeground="#6b7280",
-            accent="#f3f4f6",
-            accentForeground="#000000",
-            destructive="#ef4444",
-            border="#e5e7eb",
-            input="#ffffff",
-            ring="#000000",
-            success="#10b981",
-            successForeground="#ffffff",
-            warning="#f59e0b",
-            warningForeground="#ffffff",
-            info="#3b82f6",
-            infoForeground="#ffffff",
-            chart1="#8884d8",
-            chart2="#82ca9d",
-            chart3="#ffc658",
-            chart4="#ff7300",
-            chart5="#0088fe",
-            sidebar="#ffffff",
-            sidebarForeground="#000000",
-            sidebarPrimary="#000000",
-            sidebarPrimaryForeground="#ffffff",
-            sidebarAccent="#f3f4f6",
-            sidebarAccentForeground="#000000",
-            sidebarBorder="#e5e7eb",
-            sidebarRing="#000000",
-        )
+        theme_tokens = _get_default_theme_tokens()
 
     # Merge template args with organization info if available
     merged_args = template_args.copy()
     if http_request and profile_id:
-        settings_request = SettingsActiveRequest(profileId=str(profile_id))
-        dummy_response = Response()
-        settings_response = await get_active_settings(
-            settings_request, http_request, dummy_response, conn
+        # Get settings again for organization info (if needed)
+        settings_params = GetActiveSettingsSqlParams(
+            profile_id=str(profile_id),
+            department_id=None,
+        )
+        settings_result = cast(
+            GetActiveSettingsSqlRow,
+            await execute_sql_typed(
+                conn,
+                ACTIVE_SETTINGS_SQL_PATH,
+                params=settings_params,
+            ),
         )
 
     # Render template HTML with Jinja
@@ -205,4 +209,47 @@ async def create_dynamic_document(
     )
 
     return child_document_id
+
+
+def _get_default_theme_tokens() -> ThemeTokens:
+    """Get default theme tokens when no settings are available."""
+    return ThemeTokens(
+        primary="#000000",
+            primaryForeground="#ffffff",
+            background="#ffffff",
+            foreground="#000000",
+            card="#ffffff",
+            cardForeground="#000000",
+            popover="#ffffff",
+            popoverForeground="#000000",
+            secondary="#f3f4f6",
+            secondaryForeground="#000000",
+            muted="#f3f4f6",
+            mutedForeground="#6b7280",
+            accent="#f3f4f6",
+            accentForeground="#000000",
+            destructive="#ef4444",
+            border="#e5e7eb",
+            input="#ffffff",
+            ring="#000000",
+            success="#10b981",
+            successForeground="#ffffff",
+            warning="#f59e0b",
+            warningForeground="#ffffff",
+            info="#3b82f6",
+            infoForeground="#ffffff",
+            chart1="#8884d8",
+            chart2="#82ca9d",
+            chart3="#ffc658",
+            chart4="#ff7300",
+            chart5="#0088fe",
+            sidebar="#ffffff",
+            sidebarForeground="#000000",
+            sidebarPrimary="#000000",
+            sidebarPrimaryForeground="#ffffff",
+            sidebarAccent="#f3f4f6",
+            sidebarAccentForeground="#000000",
+            sidebarBorder="#e5e7eb",
+        sidebarRing="#000000",
+    )
 

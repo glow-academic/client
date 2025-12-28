@@ -6210,7 +6210,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SettingsListRequest"
+                "$ref": "#/components/schemas/GetSettingsListApiRequest"
               }
             }
           }
@@ -6221,7 +6221,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SettingsListResponse"
+                  "$ref": "#/components/schemas/GetSettingsListApiResponse"
                 }
               }
             }
@@ -6291,7 +6291,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SettingsDetailRequest"
+                "$ref": "#/components/schemas/GetSettingsDetailApiRequest"
               }
             }
           }
@@ -6302,7 +6302,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SettingsDetailResponse"
+                  "$ref": "#/components/schemas/GetSettingsDetailApiResponse"
                 }
               }
             }
@@ -6372,7 +6372,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateSettingsRequest"
+                "$ref": "#/components/schemas/UpdateSettingsApiRequest"
               }
             }
           }
@@ -6383,88 +6383,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateSettingsResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "settings"
-        ]
-      }
-    },
-    "/api/v3/settings/active": {
-      "post": {
-        "tags": [
-          "v3",
-          "settings"
-        ],
-        "summary": "Get Active Settings",
-        "description": "Get active settings information.",
-        "operationId": "get_active_settings_api_v3_settings_active_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SettingsActiveRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SettingsActiveResponse"
+                  "$ref": "#/components/schemas/UpdateSettingsApiResponse"
                 }
               }
             }
@@ -18225,6 +18144,63 @@
                   },
                   "type": "object",
                   "title": "Response Simulation Voice User Transcript Server Api Socket V3 Server Simulations Voice User Transcript Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v3/server/simulations/voice/user/transcript_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Simulation Voice User Transcript Error Api",
+        "description": "Server-to-client event: Error handling user transcript from voice simulation.",
+        "operationId": "simulation_voice_user_transcript_error_api_socket_v3_server_simulations_voice_user_transcript_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceUserTranscriptErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Simulation Voice User Transcript Error Api Socket V3 Server Simulations Voice User Transcript Error Post"
                 }
               }
             }
@@ -41217,6 +41193,524 @@
         "type": "object",
         "title": "GetScenariosListApiResponse"
       },
+      "GetSettingsDetailApiRequest": {
+        "properties": {
+          "settings_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Settings Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings_id"
+        ],
+        "title": "GetSettingsDetailApiRequest"
+      },
+      "GetSettingsDetailApiResponse": {
+        "properties": {
+          "settings_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Exists"
+          },
+          "settings_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "primary_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Color"
+          },
+          "accent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accent"
+          },
+          "background": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Background"
+          },
+          "surface": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surface"
+          },
+          "success": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "sidebar_background": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Background"
+          },
+          "sidebar_primary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sidebar Primary"
+          },
+          "chart1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart1"
+          },
+          "chart2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart2"
+          },
+          "chart3": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart3"
+          },
+          "chart4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart4"
+          },
+          "chart5": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart5"
+          },
+          "guest_login_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guest Login Enabled"
+          },
+          "success_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success Threshold"
+          },
+          "warning_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning Threshold"
+          },
+          "danger_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Danger Threshold"
+          },
+          "auth_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Ids"
+          },
+          "auths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsDetailV3Auth"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auths"
+          },
+          "provider_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Ids"
+          },
+          "providers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsDetailV3Provider"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providers"
+          },
+          "provider_keys": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsDetailV3ProviderKey"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Keys"
+          },
+          "auth_keys": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsDetailV3AuthKey"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Keys"
+          },
+          "auth_values": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsDetailV3AuthValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Values"
+          },
+          "all_providers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsDetailV3Provider"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "All Providers"
+          },
+          "all_auths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsDetailV3Auth"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "All Auths"
+          },
+          "default_admin_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Admin Profile Id"
+          },
+          "default_admin_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Admin Name"
+          },
+          "default_guest_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Guest Profile Id"
+          },
+          "default_guest_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Guest Name"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetSettingsDetailApiResponse"
+      },
+      "GetSettingsListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetSettingsListApiRequest"
+      },
+      "GetSettingsListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsListV3Setting"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings"
+          }
+        },
+        "type": "object",
+        "title": "GetSettingsListApiResponse"
+      },
       "GetSimulationDetailApiRequest": {
         "properties": {
           "simulation_id": {
@@ -44948,6 +45442,245 @@
           "standards"
         ],
         "title": "IUpdateRubricV3StandardGroup"
+      },
+      "IUpdateSettingsV3AuthEnabled": {
+        "properties": {
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "enabled"
+        ],
+        "title": "IUpdateSettingsV3AuthEnabled"
+      },
+      "IUpdateSettingsV3AuthKey": {
+        "properties": {
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IUpdateSettingsV3AuthKeyItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "items"
+        ],
+        "title": "IUpdateSettingsV3AuthKey"
+      },
+      "IUpdateSettingsV3AuthKeyItem": {
+        "properties": {
+          "auth_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Id"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_item_id",
+          "key_id"
+        ],
+        "title": "IUpdateSettingsV3AuthKeyItem"
+      },
+      "IUpdateSettingsV3AuthValue": {
+        "properties": {
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IUpdateSettingsV3AuthValueItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "items"
+        ],
+        "title": "IUpdateSettingsV3AuthValue"
+      },
+      "IUpdateSettingsV3AuthValueItem": {
+        "properties": {
+          "auth_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_item_id",
+          "value"
+        ],
+        "title": "IUpdateSettingsV3AuthValueItem"
+      },
+      "IUpdateSettingsV3ProviderEnabled": {
+        "properties": {
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "enabled"
+        ],
+        "title": "IUpdateSettingsV3ProviderEnabled"
+      },
+      "IUpdateSettingsV3ProviderKey": {
+        "properties": {
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "key_id"
+        ],
+        "title": "IUpdateSettingsV3ProviderKey"
       },
       "IUpsertStaffV3Profile": {
         "properties": {
@@ -59926,6 +60659,473 @@
         ],
         "title": "QGetScenarioNewV3ScenarioVideo"
       },
+      "QGetSettingsDetailV3Auth": {
+        "properties": {
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "auth_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsDetailV3AuthItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "name",
+          "description",
+          "slug",
+          "active",
+          "auth_items"
+        ],
+        "title": "QGetSettingsDetailV3Auth"
+      },
+      "QGetSettingsDetailV3AuthItem": {
+        "properties": {
+          "auth_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "encrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encrypted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_item_id",
+          "name",
+          "description",
+          "encrypted"
+        ],
+        "title": "QGetSettingsDetailV3AuthItem"
+      },
+      "QGetSettingsDetailV3AuthKey": {
+        "properties": {
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsDetailV3AuthKeyItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "items"
+        ],
+        "title": "QGetSettingsDetailV3AuthKey"
+      },
+      "QGetSettingsDetailV3AuthKeyItem": {
+        "properties": {
+          "auth_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Id"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_item_id",
+          "key_id"
+        ],
+        "title": "QGetSettingsDetailV3AuthKeyItem"
+      },
+      "QGetSettingsDetailV3AuthValue": {
+        "properties": {
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSettingsDetailV3AuthValueItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "items"
+        ],
+        "title": "QGetSettingsDetailV3AuthValue"
+      },
+      "QGetSettingsDetailV3AuthValueItem": {
+        "properties": {
+          "auth_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Item Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_item_id",
+          "value"
+        ],
+        "title": "QGetSettingsDetailV3AuthValueItem"
+      },
+      "QGetSettingsDetailV3Provider": {
+        "properties": {
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "name",
+          "description",
+          "value",
+          "active"
+        ],
+        "title": "QGetSettingsDetailV3Provider"
+      },
+      "QGetSettingsDetailV3ProviderKey": {
+        "properties": {
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "key_id"
+        ],
+        "title": "QGetSettingsDetailV3ProviderKey"
+      },
+      "QGetSettingsListV3Setting": {
+        "properties": {
+          "settings_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings_id",
+          "created_at",
+          "active",
+          "name",
+          "description",
+          "department_ids"
+        ],
+        "title": "QGetSettingsListV3Setting"
+      },
       "QGetSimulationDetailV3Agent": {
         "properties": {
           "agent_id": {
@@ -70694,6 +71894,17 @@
             ],
             "title": "Image Ids"
           },
+          "images_ready": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Images Ready"
+          },
           "agent_id": {
             "type": "string",
             "title": "Agent Id"
@@ -70817,515 +72028,6 @@
         ],
         "title": "SendSimulationMessagePayload",
         "description": "Request to send a simulation message."
-      },
-      "SettingsActiveRequest": {
-        "properties": {
-          "departmentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentid"
-          }
-        },
-        "type": "object",
-        "title": "SettingsActiveRequest",
-        "description": "Request to get active settings."
-      },
-      "SettingsActiveResponse": {
-        "properties": {
-          "settings_id": {
-            "type": "string",
-            "title": "Settings Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "light",
-              "dark",
-              "system"
-            ],
-            "title": "Mode",
-            "default": "light"
-          },
-          "tokens": {
-            "$ref": "#/components/schemas/ThemeTokens"
-          },
-          "guest_login_enabled": {
-            "type": "boolean",
-            "title": "Guest Login Enabled"
-          },
-          "success_threshold": {
-            "type": "integer",
-            "title": "Success Threshold"
-          },
-          "warning_threshold": {
-            "type": "integer",
-            "title": "Warning Threshold"
-          },
-          "danger_threshold": {
-            "type": "integer",
-            "title": "Danger Threshold"
-          },
-          "guestProfileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Guestprofileid"
-          },
-          "defaultAccountProfileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Defaultaccountprofileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "settings_id",
-          "created_at",
-          "active",
-          "name",
-          "description",
-          "tokens",
-          "guest_login_enabled",
-          "success_threshold",
-          "warning_threshold",
-          "danger_threshold"
-        ],
-        "title": "SettingsActiveResponse",
-        "description": "Active settings response."
-      },
-      "SettingsDetailRequest": {
-        "properties": {
-          "settingsId": {
-            "type": "string",
-            "title": "Settingsid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "settingsId"
-        ],
-        "title": "SettingsDetailRequest",
-        "description": "Request to get settings details."
-      },
-      "SettingsDetailResponse": {
-        "properties": {
-          "settings_id": {
-            "type": "string",
-            "title": "Settings Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "primary_color": {
-            "type": "string",
-            "title": "Primary Color"
-          },
-          "accent": {
-            "type": "string",
-            "title": "Accent"
-          },
-          "background": {
-            "type": "string",
-            "title": "Background"
-          },
-          "surface": {
-            "type": "string",
-            "title": "Surface"
-          },
-          "success": {
-            "type": "string",
-            "title": "Success"
-          },
-          "warning": {
-            "type": "string",
-            "title": "Warning"
-          },
-          "error": {
-            "type": "string",
-            "title": "Error"
-          },
-          "sidebar_background": {
-            "type": "string",
-            "title": "Sidebar Background"
-          },
-          "sidebar_primary": {
-            "type": "string",
-            "title": "Sidebar Primary"
-          },
-          "chart1": {
-            "type": "string",
-            "title": "Chart1"
-          },
-          "chart2": {
-            "type": "string",
-            "title": "Chart2"
-          },
-          "chart3": {
-            "type": "string",
-            "title": "Chart3"
-          },
-          "chart4": {
-            "type": "string",
-            "title": "Chart4"
-          },
-          "chart5": {
-            "type": "string",
-            "title": "Chart5"
-          },
-          "guest_login_enabled": {
-            "type": "boolean",
-            "title": "Guest Login Enabled"
-          },
-          "success_threshold": {
-            "type": "integer",
-            "title": "Success Threshold"
-          },
-          "warning_threshold": {
-            "type": "integer",
-            "title": "Warning Threshold"
-          },
-          "danger_threshold": {
-            "type": "integer",
-            "title": "Danger Threshold"
-          },
-          "auth_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Auth Ids"
-          },
-          "auth_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Auth Mapping"
-          },
-          "provider_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Provider Ids"
-          },
-          "provider_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Provider Mapping"
-          },
-          "provider_key_mapping": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Provider Key Mapping"
-          },
-          "auth_key_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Auth Key Mapping"
-          },
-          "auth_value_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Auth Value Mapping"
-          },
-          "auth_items_mapping": {
-            "additionalProperties": {
-              "items": {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              "type": "array"
-            },
-            "type": "object",
-            "title": "Auth Items Mapping"
-          },
-          "default_admin_profile_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Default Admin Profile Id"
-          },
-          "default_admin_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Default Admin Name"
-          },
-          "default_guest_profile_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Default Guest Profile Id"
-          },
-          "default_guest_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Default Guest Name"
-          },
-          "all_provider_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "All Provider Ids"
-          },
-          "all_provider_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "boolean"
-                  }
-                ]
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "All Provider Mapping"
-          },
-          "all_auth_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "All Auth Ids"
-          },
-          "all_auth_mapping": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "boolean"
-                  }
-                ]
-              },
-              "type": "object"
-            },
-            "type": "object",
-            "title": "All Auth Mapping"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "settings_id",
-          "created_at",
-          "active",
-          "name",
-          "description",
-          "primary_color",
-          "accent",
-          "background",
-          "surface",
-          "success",
-          "warning",
-          "error",
-          "sidebar_background",
-          "sidebar_primary",
-          "chart1",
-          "chart2",
-          "chart3",
-          "chart4",
-          "chart5",
-          "guest_login_enabled",
-          "success_threshold",
-          "warning_threshold",
-          "danger_threshold",
-          "auth_ids",
-          "auth_mapping",
-          "provider_ids",
-          "provider_mapping",
-          "provider_key_mapping",
-          "auth_key_mapping",
-          "auth_value_mapping",
-          "auth_items_mapping",
-          "default_admin_profile_id",
-          "default_admin_name",
-          "default_guest_profile_id",
-          "default_guest_name",
-          "all_provider_ids",
-          "all_provider_mapping",
-          "all_auth_ids",
-          "all_auth_mapping"
-        ],
-        "title": "SettingsDetailResponse",
-        "description": "Detailed settings response."
-      },
-      "SettingsItem": {
-        "properties": {
-          "settings_id": {
-            "type": "string",
-            "title": "Settings Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "settings_id",
-          "created_at",
-          "active",
-          "name",
-          "description"
-        ],
-        "title": "SettingsItem",
-        "description": "Settings item."
-      },
-      "SettingsListRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "SettingsListRequest"
-      },
-      "SettingsListResponse": {
-        "properties": {
-          "settings": {
-            "items": {
-              "$ref": "#/components/schemas/SettingsItem"
-            },
-            "type": "array",
-            "title": "Settings"
-          }
-        },
-        "type": "object",
-        "required": [
-          "settings"
-        ],
-        "title": "SettingsListResponse"
       },
       "SimulationCompositionResponse": {
         "properties": {
@@ -73026,8 +73728,7 @@
               "$ref": "#/components/schemas/RealtimeItem"
             },
             "type": "array",
-            "title": "History",
-            "default": []
+            "title": "History"
           }
         },
         "type": "object",
@@ -73234,200 +73935,6 @@
         ],
         "title": "SyncKeycloakResponse",
         "description": "Response from Keycloak sync trigger."
-      },
-      "ThemeTokens": {
-        "properties": {
-          "background": {
-            "type": "string",
-            "title": "Background"
-          },
-          "foreground": {
-            "type": "string",
-            "title": "Foreground"
-          },
-          "card": {
-            "type": "string",
-            "title": "Card"
-          },
-          "cardForeground": {
-            "type": "string",
-            "title": "Cardforeground"
-          },
-          "popover": {
-            "type": "string",
-            "title": "Popover"
-          },
-          "popoverForeground": {
-            "type": "string",
-            "title": "Popoverforeground"
-          },
-          "primary": {
-            "type": "string",
-            "title": "Primary"
-          },
-          "primaryForeground": {
-            "type": "string",
-            "title": "Primaryforeground"
-          },
-          "secondary": {
-            "type": "string",
-            "title": "Secondary"
-          },
-          "secondaryForeground": {
-            "type": "string",
-            "title": "Secondaryforeground"
-          },
-          "muted": {
-            "type": "string",
-            "title": "Muted"
-          },
-          "mutedForeground": {
-            "type": "string",
-            "title": "Mutedforeground"
-          },
-          "accent": {
-            "type": "string",
-            "title": "Accent"
-          },
-          "accentForeground": {
-            "type": "string",
-            "title": "Accentforeground"
-          },
-          "destructive": {
-            "type": "string",
-            "title": "Destructive"
-          },
-          "border": {
-            "type": "string",
-            "title": "Border"
-          },
-          "input": {
-            "type": "string",
-            "title": "Input"
-          },
-          "ring": {
-            "type": "string",
-            "title": "Ring"
-          },
-          "success": {
-            "type": "string",
-            "title": "Success"
-          },
-          "successForeground": {
-            "type": "string",
-            "title": "Successforeground"
-          },
-          "warning": {
-            "type": "string",
-            "title": "Warning"
-          },
-          "warningForeground": {
-            "type": "string",
-            "title": "Warningforeground"
-          },
-          "info": {
-            "type": "string",
-            "title": "Info"
-          },
-          "infoForeground": {
-            "type": "string",
-            "title": "Infoforeground"
-          },
-          "chart1": {
-            "type": "string",
-            "title": "Chart1"
-          },
-          "chart2": {
-            "type": "string",
-            "title": "Chart2"
-          },
-          "chart3": {
-            "type": "string",
-            "title": "Chart3"
-          },
-          "chart4": {
-            "type": "string",
-            "title": "Chart4"
-          },
-          "chart5": {
-            "type": "string",
-            "title": "Chart5"
-          },
-          "sidebar": {
-            "type": "string",
-            "title": "Sidebar"
-          },
-          "sidebarForeground": {
-            "type": "string",
-            "title": "Sidebarforeground"
-          },
-          "sidebarPrimary": {
-            "type": "string",
-            "title": "Sidebarprimary"
-          },
-          "sidebarPrimaryForeground": {
-            "type": "string",
-            "title": "Sidebarprimaryforeground"
-          },
-          "sidebarAccent": {
-            "type": "string",
-            "title": "Sidebaraccent"
-          },
-          "sidebarAccentForeground": {
-            "type": "string",
-            "title": "Sidebaraccentforeground"
-          },
-          "sidebarBorder": {
-            "type": "string",
-            "title": "Sidebarborder"
-          },
-          "sidebarRing": {
-            "type": "string",
-            "title": "Sidebarring"
-          }
-        },
-        "type": "object",
-        "required": [
-          "background",
-          "foreground",
-          "card",
-          "cardForeground",
-          "popover",
-          "popoverForeground",
-          "primary",
-          "primaryForeground",
-          "secondary",
-          "secondaryForeground",
-          "muted",
-          "mutedForeground",
-          "accent",
-          "accentForeground",
-          "destructive",
-          "border",
-          "input",
-          "ring",
-          "success",
-          "successForeground",
-          "warning",
-          "warningForeground",
-          "info",
-          "infoForeground",
-          "chart1",
-          "chart2",
-          "chart3",
-          "chart4",
-          "chart5",
-          "sidebar",
-          "sidebarForeground",
-          "sidebarPrimary",
-          "sidebarPrimaryForeground",
-          "sidebarAccent",
-          "sidebarAccentForeground",
-          "sidebarBorder",
-          "sidebarRing"
-        ],
-        "title": "ThemeTokens",
-        "description": "Full internal design tokens derived from ThemePrimitives.\nThis is what components consume via CSS variables.\nUsers do not edit this directly."
       },
       "Thresholds": {
         "properties": {
@@ -75561,7 +76068,7 @@
         "type": "object",
         "title": "UpdateScenarioApiResponse"
       },
-      "UpdateSettingsRequest": {
+      "UpdateSettingsApiRequest": {
         "properties": {
           "name": {
             "type": "string",
@@ -75643,86 +76150,39 @@
             "type": "integer",
             "title": "Danger Threshold"
           },
-          "provider_key_mapping": {
+          "provider_keys": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "type": "string"
+                "items": {
+                  "$ref": "#/components/schemas/IUpdateSettingsV3ProviderKey"
                 },
-                "type": "object"
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Provider Key Mapping"
+            "title": "Provider Keys"
           },
-          "provider_enabled": {
+          "auth_keys": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "type": "boolean"
+                "items": {
+                  "$ref": "#/components/schemas/IUpdateSettingsV3AuthKey"
                 },
-                "type": "object"
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Provider Enabled"
-          },
-          "auth_enabled": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "boolean"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Enabled"
-          },
-          "auth_key_mapping": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Key Mapping"
-          },
-          "auth_value_mapping": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Value Mapping"
+            "title": "Auth Keys"
           },
           "default_admin_profile_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -75733,7 +76193,8 @@
           "default_guest_profile_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -75741,11 +76202,54 @@
             ],
             "title": "Default Guest Profile Id"
           },
+          "provider_enabled": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IUpdateSettingsV3ProviderEnabled"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Enabled"
+          },
+          "auth_enabled": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IUpdateSettingsV3AuthEnabled"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Enabled"
+          },
+          "auth_values": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IUpdateSettingsV3AuthValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Values"
+          },
           "department_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -75779,32 +76283,47 @@
           "warning_threshold",
           "danger_threshold"
         ],
-        "title": "UpdateSettingsRequest",
-        "description": "Request to update settings."
+        "title": "UpdateSettingsApiRequest"
       },
-      "UpdateSettingsResponse": {
+      "UpdateSettingsApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
           "settings_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Settings Id"
+          },
+          "settings_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message",
-          "settings_id"
-        ],
-        "title": "UpdateSettingsResponse",
-        "description": "Response from update settings."
+        "title": "UpdateSettingsApiResponse"
       },
       "UpdateSimulationApiRequest": {
         "properties": {
@@ -76679,6 +77198,25 @@
         ],
         "title": "VoiceUserStartPayload",
         "description": "Request to start user speech input in voice simulation."
+      },
+      "VoiceUserTranscriptErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "VoiceUserTranscriptErrorPayload",
+        "description": "Response indicating an error occurred while processing transcript."
       },
       "VoiceUserTranscriptPayload": {
         "properties": {

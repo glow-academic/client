@@ -2270,6 +2270,20 @@ class RenderTemplateSqlRow(BaseModel):
     actor_name: str | None = None
     file_path: str | None = None
     template_args: dict[str, Any] | None = None
+    settings_primary_color: str | None = None
+    settings_accent: str | None = None
+    settings_background: str | None = None
+    settings_surface: str | None = None
+    settings_success: str | None = None
+    settings_warning: str | None = None
+    settings_error: str | None = None
+    settings_sidebar_background: str | None = None
+    settings_sidebar_primary: str | None = None
+    settings_chart1: str | None = None
+    settings_chart2: str | None = None
+    settings_chart3: str | None = None
+    settings_chart4: str | None = None
+    settings_chart5: str | None = None
 
 class RenderTemplateApiRequest(BaseModel):
 
@@ -2281,6 +2295,20 @@ class RenderTemplateApiResponse(BaseModel):
     actor_name: str | None = None
     file_path: str | None = None
     template_args: dict[str, Any] | None = None
+    settings_primary_color: str | None = None
+    settings_accent: str | None = None
+    settings_background: str | None = None
+    settings_surface: str | None = None
+    settings_success: str | None = None
+    settings_warning: str | None = None
+    settings_error: str | None = None
+    settings_sidebar_background: str | None = None
+    settings_sidebar_primary: str | None = None
+    settings_chart1: str | None = None
+    settings_chart2: str | None = None
+    settings_chart3: str | None = None
+    settings_chart4: str | None = None
+    settings_chart5: str | None = None
 
 
 
@@ -7853,6 +7881,470 @@ class UpdateScenarioApiResponse(BaseModel):
 
 
 
+# Generated from: get_active_settings
+
+class GetActiveSettingsSqlParams(BaseModel):
+
+    profile_id: str
+    department_id: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_id,
+        )
+
+class QGetSettingsDetailV3AuthItem(BaseModel):
+
+    auth_item_id: UUID | None
+    name: str | None
+    description: str | None
+    encrypted: bool | None
+
+class QGetSettingsDetailV3Auth(BaseModel):
+
+    auth_id: UUID | None
+    name: str | None
+    description: str | None
+    slug: str | None
+    active: bool | None
+    auth_items: list[QGetSettingsDetailV3AuthItem] | None
+
+
+
+
+class QGetSettingsDetailV3Provider(BaseModel):
+
+    provider_id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+    active: bool | None
+
+class GetActiveSettingsSqlRow(BaseModel):
+
+    settings_id: UUID | None = None
+    created_at: str | None = None
+    active: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    guest_login_enabled: bool | None = None
+    success_threshold: int | None = None
+    warning_threshold: int | None = None
+    danger_threshold: int | None = None
+    auth_ids: list[str] | None = None
+    auths: list[QGetSettingsDetailV3Auth] | None = None
+    provider_ids: list[str] | None = None
+    providers: list[QGetSettingsDetailV3Provider] | None = None
+    default_guest_profile_id: UUID | None = None
+    default_account_profile_id: UUID | None = None
+
+class GetActiveSettingsApiRequest(BaseModel):
+
+    department_id: str | None = None
+
+class GetActiveSettingsApiResponse(BaseModel):
+
+    settings_id: UUID | None = None
+    created_at: str | None = None
+    active: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    guest_login_enabled: bool | None = None
+    success_threshold: int | None = None
+    warning_threshold: int | None = None
+    danger_threshold: int | None = None
+    auth_ids: list[str] | None = None
+    auths: list[QGetSettingsDetailV3Auth] | None = None
+    provider_ids: list[str] | None = None
+    providers: list[QGetSettingsDetailV3Provider] | None = None
+    default_guest_profile_id: UUID | None = None
+    default_account_profile_id: UUID | None = None
+
+
+
+# Generated from: get_settings_detail
+
+class GetSettingsDetailSqlParams(BaseModel):
+
+    settings_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.settings_id,
+            self.profile_id,
+        )
+
+class QGetSettingsDetailV3AuthKeyItem(BaseModel):
+
+    auth_item_id: UUID | None
+    key_id: UUID | None
+
+class QGetSettingsDetailV3AuthKey(BaseModel):
+
+    auth_id: UUID | None
+    items: list[QGetSettingsDetailV3AuthKeyItem] | None
+
+
+
+
+class QGetSettingsDetailV3AuthValueItem(BaseModel):
+
+    auth_item_id: UUID | None
+    value: str | None
+
+class QGetSettingsDetailV3AuthValue(BaseModel):
+
+    auth_id: UUID | None
+    items: list[QGetSettingsDetailV3AuthValueItem] | None
+
+
+
+
+class QGetSettingsDetailV3ProviderKey(BaseModel):
+
+    provider_id: UUID | None
+    key_id: UUID | None
+
+class GetSettingsDetailSqlRow(BaseModel):
+
+    settings_exists: bool | None = None
+    settings_id: UUID | None = None
+    created_at: str | None = None
+    active: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    guest_login_enabled: bool | None = None
+    success_threshold: int | None = None
+    warning_threshold: int | None = None
+    danger_threshold: int | None = None
+    auth_ids: list[str] | None = None
+    auths: list[QGetSettingsDetailV3Auth] | None = None
+    provider_ids: list[str] | None = None
+    providers: list[QGetSettingsDetailV3Provider] | None = None
+    provider_keys: list[QGetSettingsDetailV3ProviderKey] | None = None
+    auth_keys: list[QGetSettingsDetailV3AuthKey] | None = None
+    auth_values: list[QGetSettingsDetailV3AuthValue] | None = None
+    all_providers: list[QGetSettingsDetailV3Provider] | None = None
+    all_auths: list[QGetSettingsDetailV3Auth] | None = None
+    default_admin_profile_id: UUID | None = None
+    default_admin_name: str | None = None
+    default_guest_profile_id: UUID | None = None
+    default_guest_name: str | None = None
+    department_ids: list[str] | None = None
+    actor_name: str | None = None
+
+class GetSettingsDetailApiRequest(BaseModel):
+
+    settings_id: UUID
+
+class GetSettingsDetailApiResponse(BaseModel):
+
+    settings_exists: bool | None = None
+    settings_id: UUID | None = None
+    created_at: str | None = None
+    active: bool | None = None
+    name: str | None = None
+    description: str | None = None
+    primary_color: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    sidebar_background: str | None = None
+    sidebar_primary: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+    guest_login_enabled: bool | None = None
+    success_threshold: int | None = None
+    warning_threshold: int | None = None
+    danger_threshold: int | None = None
+    auth_ids: list[str] | None = None
+    auths: list[QGetSettingsDetailV3Auth] | None = None
+    provider_ids: list[str] | None = None
+    providers: list[QGetSettingsDetailV3Provider] | None = None
+    provider_keys: list[QGetSettingsDetailV3ProviderKey] | None = None
+    auth_keys: list[QGetSettingsDetailV3AuthKey] | None = None
+    auth_values: list[QGetSettingsDetailV3AuthValue] | None = None
+    all_providers: list[QGetSettingsDetailV3Provider] | None = None
+    all_auths: list[QGetSettingsDetailV3Auth] | None = None
+    default_admin_profile_id: UUID | None = None
+    default_admin_name: str | None = None
+    default_guest_profile_id: UUID | None = None
+    default_guest_name: str | None = None
+    department_ids: list[str] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_settings_list
+
+class GetSettingsListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QGetSettingsListV3Setting(BaseModel):
+
+    settings_id: UUID | None
+    created_at: str | None
+    active: bool | None
+    name: str | None
+    description: str | None
+    department_ids: list[str] | None
+
+class GetSettingsListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    settings: list[QGetSettingsListV3Setting] | None = None
+
+class GetSettingsListApiRequest(BaseModel):
+
+    pass
+
+class GetSettingsListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    settings: list[QGetSettingsListV3Setting] | None = None
+
+
+
+# Generated from: update_settings
+
+class IUpdateSettingsV3AuthEnabled(BaseModel):
+
+    auth_id: UUID | None
+    enabled: bool | None
+
+
+
+
+class IUpdateSettingsV3AuthKeyItem(BaseModel):
+
+    auth_item_id: UUID | None
+    key_id: UUID | None
+
+class IUpdateSettingsV3AuthKey(BaseModel):
+
+    auth_id: UUID | None
+    items: list[IUpdateSettingsV3AuthKeyItem] | None
+
+
+
+
+class IUpdateSettingsV3AuthValueItem(BaseModel):
+
+    auth_item_id: UUID | None
+    value: str | None
+
+class IUpdateSettingsV3AuthValue(BaseModel):
+
+    auth_id: UUID | None
+    items: list[IUpdateSettingsV3AuthValueItem] | None
+
+
+
+
+class IUpdateSettingsV3ProviderEnabled(BaseModel):
+
+    provider_id: UUID | None
+    enabled: bool | None
+
+
+
+
+class IUpdateSettingsV3ProviderKey(BaseModel):
+
+    provider_id: UUID | None
+    key_id: UUID | None
+
+class UpdateSettingsSqlParams(BaseModel):
+
+    name: str
+    description: str
+    primary_color: str
+    accent: str
+    background: str
+    surface: str
+    success: str
+    warning: str
+    error: str
+    sidebar_background: str
+    sidebar_primary: str
+    chart1: str
+    chart2: str
+    chart3: str
+    chart4: str
+    chart5: str
+    guest_login_enabled: bool
+    success_threshold: int
+    warning_threshold: int
+    danger_threshold: int
+    profile_id: UUID
+    provider_keys: list[IUpdateSettingsV3ProviderKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_keys: list[IUpdateSettingsV3AuthKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    default_admin_profile_id: UUID | None = None
+    default_guest_profile_id: UUID | None = None
+    provider_enabled: list[IUpdateSettingsV3ProviderEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_enabled: list[IUpdateSettingsV3AuthEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_values: list[IUpdateSettingsV3AuthValue] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert provider_keys composite array to tuples for asyncpg
+        provider_keys_tuples = [
+            (conn.provider_id, conn.key_id)
+            for conn in self.provider_keys
+        ]
+        # Convert auth_keys composite array to tuples for asyncpg
+        auth_keys_tuples = [
+            (conn.auth_id, conn.items)
+            for conn in self.auth_keys
+        ]
+        # Convert provider_enabled composite array to tuples for asyncpg
+        provider_enabled_tuples = [
+            (conn.provider_id, conn.enabled)
+            for conn in self.provider_enabled
+        ]
+        # Convert auth_enabled composite array to tuples for asyncpg
+        auth_enabled_tuples = [
+            (conn.auth_id, conn.enabled)
+            for conn in self.auth_enabled
+        ]
+        # Convert auth_values composite array to tuples for asyncpg
+        auth_values_tuples = [
+            (conn.auth_id, conn.items)
+            for conn in self.auth_values
+        ]
+        return (
+            self.name,
+            self.description,
+            self.primary_color,
+            self.accent,
+            self.background,
+            self.surface,
+            self.success,
+            self.warning,
+            self.error,
+            self.sidebar_background,
+            self.sidebar_primary,
+            self.chart1,
+            self.chart2,
+            self.chart3,
+            self.chart4,
+            self.chart5,
+            self.guest_login_enabled,
+            self.success_threshold,
+            self.warning_threshold,
+            self.danger_threshold,
+            self.profile_id,
+            provider_keys_tuples,
+            auth_keys_tuples,
+            self.default_admin_profile_id,
+            self.default_guest_profile_id,
+            provider_enabled_tuples,
+            auth_enabled_tuples,
+            auth_values_tuples,
+            self.department_ids,
+        )
+
+class UpdateSettingsSqlRow(BaseModel):
+
+    settings_id: UUID | None = None
+    settings_name: str | None = None
+    actor_name: str | None = None
+
+class UpdateSettingsApiRequest(BaseModel):
+
+    name: str
+    description: str
+    primary_color: str
+    accent: str
+    background: str
+    surface: str
+    success: str
+    warning: str
+    error: str
+    sidebar_background: str
+    sidebar_primary: str
+    chart1: str
+    chart2: str
+    chart3: str
+    chart4: str
+    chart5: str
+    guest_login_enabled: bool
+    success_threshold: int
+    warning_threshold: int
+    danger_threshold: int
+    provider_keys: list[IUpdateSettingsV3ProviderKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_keys: list[IUpdateSettingsV3AuthKey] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    default_admin_profile_id: UUID | None = None
+    default_guest_profile_id: UUID | None = None
+    provider_enabled: list[IUpdateSettingsV3ProviderEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_enabled: list[IUpdateSettingsV3AuthEnabled] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_values: list[IUpdateSettingsV3AuthValue] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class UpdateSettingsApiResponse(BaseModel):
+
+    settings_id: UUID | None = None
+    settings_name: str | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: create_simulation
 
 class CreateSimulationSqlParams(BaseModel):
@@ -10015,6 +10507,30 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateScenarioApiRequest",
         "UpdateScenarioApiResponse",
     ),
+    "app/sql/v3/settings/get_active_settings_complete.sql": (
+        "GetActiveSettingsSqlParams",
+        "GetActiveSettingsSqlRow",
+        "GetActiveSettingsApiRequest",
+        "GetActiveSettingsApiResponse",
+    ),
+    "app/sql/v3/settings/get_settings_detail_complete.sql": (
+        "GetSettingsDetailSqlParams",
+        "GetSettingsDetailSqlRow",
+        "GetSettingsDetailApiRequest",
+        "GetSettingsDetailApiResponse",
+    ),
+    "app/sql/v3/settings/get_settings_list_complete.sql": (
+        "GetSettingsListSqlParams",
+        "GetSettingsListSqlRow",
+        "GetSettingsListApiRequest",
+        "GetSettingsListApiResponse",
+    ),
+    "app/sql/v3/settings/update_settings_complete.sql": (
+        "UpdateSettingsSqlParams",
+        "UpdateSettingsSqlRow",
+        "UpdateSettingsApiRequest",
+        "UpdateSettingsApiResponse",
+    ),
     "app/sql/v3/simulations/create_simulation_complete.sql": (
         "CreateSimulationSqlParams",
         "CreateSimulationSqlRow",
@@ -10729,6 +11245,26 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/scenarios/update_scenario_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/settings/get_active_settings_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/settings/get_settings_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/settings/get_settings_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/settings/update_settings_complete.sql"]
     ) -> SqlString: ...
 
     @overload

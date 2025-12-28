@@ -1,72 +1,22 @@
 """Settings update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, get_internal_sio, transaction
+from app.sql.types import (UpdateSettingsApiRequest, UpdateSettingsApiResponse,
+                           UpdateSettingsSqlParams, UpdateSettingsSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
-
-# Inline request/response schemas
-class UpdateSettingsRequest(BaseModel):
-    """Request to update settings."""
-
-    name: str
-    description: str
-    primary_color: str
-    accent: str
-    background: str
-    surface: str
-    success: str
-    warning: str
-    error: str
-    sidebar_background: str
-    sidebar_primary: str
-    chart1: str
-    chart2: str
-    chart3: str
-    chart4: str
-    chart5: str
-    guest_login_enabled: bool
-    success_threshold: int
-    warning_threshold: int
-    danger_threshold: int
-    # profileId removed - comes from X-Profile-Id header
-    provider_key_mapping: dict[str, str] | None = (
-        None  # Provider key mapping (provider_id -> key_id)
-    )
-    provider_enabled: dict[str, bool] | None = (
-        None  # Provider enabled mapping (provider_id -> enabled)
-    )
-    auth_enabled: dict[str, bool] | None = (
-        None  # Auth enabled mapping (auth_id -> enabled)
-    )
-    auth_key_mapping: dict[str, dict[str, str]] | None = (
-        None  # Auth key mapping (auth_id -> auth_item_id -> key_id) for encrypted items
-    )
-    auth_value_mapping: dict[str, dict[str, str]] | None = (
-        None  # Auth value mapping (auth_id -> auth_item_id -> value) for non-encrypted items
-    )
-    default_admin_profile_id: str | None = None  # Default admin/superadmin profile ID
-    default_guest_profile_id: str | None = None  # Default guest profile ID
-    department_ids: list[str] | None = (
-        None  # Department IDs - empty/null = global settings, non-empty = department-specific
-    )
-
-
-class UpdateSettingsResponse(BaseModel):
-    """Response from update settings."""
-
-    success: bool
-    message: str
-    settings_id: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/settings/update_settings_complete.sql"
 
 
 router = APIRouter()
@@ -74,7 +24,7 @@ router = APIRouter()
 
 @router.post(
     "/update",
-    response_model=UpdateSettingsResponse,
+    response_model=UpdateSettingsApiResponse,
     dependencies=[
         audit_activity(
             "settings.updated",
@@ -83,15 +33,15 @@ router = APIRouter()
     ],
 )
 async def update_settings(
-    request: UpdateSettingsRequest,
+    request: UpdateSettingsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateSettingsResponse:
+) -> UpdateSettingsApiResponse:
     """Update settings (creates new active row, deactivates old)."""
     tags = ["settings"]  # From router tags
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -104,93 +54,28 @@ async def update_settings(
             )
 
         async with transaction(conn):
-            # Prepare key mappings as JSONB
-            import json
+            # Convert API request to SQL params using double star pattern
+            # Frontend now sends arrays directly (provider_keys, auth_keys, etc.)
+            # Pydantic handles UUID conversion automatically
+            params = UpdateSettingsSqlParams(**request.model_dump(), profile_id=profile_id)
+            sql_params = params.to_tuple()
 
-            provider_key_mapping_json = json.dumps(request.provider_key_mapping or {})
-            provider_enabled_json = json.dumps(request.provider_enabled or {})
-            auth_enabled_json = json.dumps(request.auth_enabled or {})
-            auth_key_mapping_json = json.dumps(request.auth_key_mapping or {})
-            auth_value_mapping_json = json.dumps(request.auth_value_mapping or {})
-            auth_value_mapping_json = json.dumps(request.auth_value_mapping or {})
-
-            # Update settings: deactivate current active, insert new active row
-            sql_query = load_sql("app/sql/v3/settings/update_settings.sql")
-            # Prepare department_ids array (empty array = global, non-empty = department-specific)
-            department_ids_array = (
-                request.department_ids if request.department_ids else None
+            # Execute SQL with typed helper
+            result = cast(
+                UpdateSettingsSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
             )
 
-            sql_params = (
-                request.name,
-                request.description,
-                request.primary_color,
-                request.accent,
-                request.background,
-                request.surface,
-                request.success,
-                request.warning,
-                request.error,
-                request.sidebar_background,
-                request.sidebar_primary,
-                request.chart1,
-                request.chart2,
-                request.chart3,
-                request.chart4,
-                request.chart5,
-                request.guest_login_enabled,
-                request.success_threshold,
-                request.warning_threshold,
-                request.danger_threshold,
-                profile_id,
-                provider_key_mapping_json,
-                auth_key_mapping_json,
-                request.default_admin_profile_id or None,
-                request.default_guest_profile_id or None,
-                provider_enabled_json,
-                auth_enabled_json,
-                auth_value_mapping_json,
-                department_ids_array,
-            )
-            result = await conn.fetchrow(
-                sql_query,
-                request.name,
-                request.description,
-                request.primary_color,
-                request.accent,
-                request.background,
-                request.surface,
-                request.success,
-                request.warning,
-                request.error,
-                request.sidebar_background,
-                request.sidebar_primary,
-                request.chart1,
-                request.chart2,
-                request.chart3,
-                request.chart4,
-                request.chart5,
-                request.guest_login_enabled,
-                request.success_threshold,
-                request.warning_threshold,
-                request.danger_threshold,
-                profile_id,
-                provider_key_mapping_json,
-                auth_key_mapping_json,
-                request.default_admin_profile_id or None,
-                request.default_guest_profile_id or None,
-                provider_enabled_json,
-                auth_enabled_json,
-                auth_value_mapping_json,
-                department_ids_array,
-            )
-
-            if not result:
+            if not result or not result.settings_id:
                 raise HTTPException(status_code=500, detail="Failed to update settings")
 
-            settings_id = result["settings_id"]
-            settings_name = result.get("settings_name", request.name)
-            actor_name = result.get("actor_name")
+            settings_id = str(result.settings_id)
+            settings_name = result.settings_name or request.name
+            actor_name = result.actor_name
 
             if actor_name:
                 audit_set(
@@ -199,26 +84,27 @@ async def update_settings(
                     settings={"name": settings_name, "id": settings_id},
                 )
 
-            result_data = UpdateSettingsResponse(
-                success=True,
-                message="Settings updated successfully",
-                settings_id=settings_id,
-            )
+            # Convert SQL result to API response
+            api_response = UpdateSettingsApiResponse.model_validate({
+                "settings_id": result.settings_id,
+                "settings_name": settings_name,
+                "actor_name": actor_name,
+            })
 
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
             # Trigger Keycloak sync for affected departments
-            if request.department_ids:
+            if request.department_ids and len(request.department_ids) > 0:
                 # Sync each affected department realm
                 for dept_id in request.department_ids:
-                    await internal_sio.emit("keycloak_sync", {"department_id": dept_id})
+                    await internal_sio.emit("keycloak_sync", {"department_id": str(dept_id)})
             else:
                 # Global settings - sync default department (None)
                 await internal_sio.emit("keycloak_sync", {"department_id": None})
 
-            return result_data
+            return api_response
     except HTTPException:
         raise
     except Exception as e:

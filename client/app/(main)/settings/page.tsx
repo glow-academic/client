@@ -36,9 +36,10 @@ const getSettingsDetail = async (
   settingsId: string
 ): Promise<SettingsDetailOut> => {
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  // Convert camelCase to snake_case for API
   return api.post(
     "/settings/detail",
-    { body: { settingsId } },
+    { body: { settings_id: settingsId } },
     {
       cache: "no-store",
       headers: {

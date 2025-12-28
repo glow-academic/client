@@ -1,17 +1,74 @@
 -- Get active settings row based on profile's primary department or direct department ID
--- Parameters: 
---   $1 = profile_id (uuid, null, or empty string)
---   $2 = department_id (optional uuid, null, or empty string for direct department lookup)
--- Returns: Settings row (default for null/empty, department-specific for authenticated users or when departmentId provided)
--- Logic: 
---   1. If department_id ($2) is provided and not empty: use it directly for department-specific settings
---   2. If profile_id ($1) is a real UUID: get primary_department_id, then department-specific settings
---   3. If profile_id is null or empty: return default settings (no department links)
---   4. Fall back to default settings (settings with no department_settings records = cross-department)
---   5. Final fallback: any active settings row
-WITH default_settings AS (
+-- Converted to function with composite types (NO JSONB)
+-- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
+-- Reuses composite types from get_settings_detail_complete.sql
+
+BEGIN;
+
+-- 1) Drop function first (breaks dependency on types)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_get_active_settings_v3'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_active_settings_v3(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- Note: We reuse types from get_settings_detail_complete.sql, so we don't drop them here
+-- Types: q_get_settings_detail_v3_auth, q_get_settings_detail_v3_provider
+
+-- 2) Recreate function (reuses existing types)
+CREATE OR REPLACE FUNCTION api_get_active_settings_v3(
+    profile_id text,  -- Empty string for null/guest
+    department_id text DEFAULT ''  -- Empty string for null
+)
+RETURNS TABLE (
+    settings_id uuid,
+    created_at timestamptz,
+    active boolean,
+    name text,
+    description text,
+    primary_color text,
+    accent text,
+    background text,
+    surface text,
+    success text,
+    warning text,
+    error text,
+    sidebar_background text,
+    sidebar_primary text,
+    chart1 text,
+    chart2 text,
+    chart3 text,
+    chart4 text,
+    chart5 text,
+    guest_login_enabled boolean,
+    success_threshold integer,
+    warning_threshold integer,
+    danger_threshold integer,
+    auth_ids text[],
+    auths types.q_get_settings_detail_v3_auth[],
+    provider_ids text[],
+    providers types.q_get_settings_detail_v3_provider[],
+    default_guest_profile_id uuid,
+    default_account_profile_id uuid
+)
+LANGUAGE sql
+STABLE
+AS $$
+WITH params AS (
+    SELECT 
+        profile_id AS profile_id,
+        department_id AS department_id
+),
+default_settings AS (
     -- Get settings with no department links (cross-department/default)
-    -- These are settings that have no records in department_settings
     SELECT s.id as settings_id
     FROM settings s
     WHERE s.active = true
@@ -23,24 +80,23 @@ WITH default_settings AS (
 ),
 is_guest AS (
     -- Check if this is a guest request (empty string)
-    -- Parameter is passed as text (empty string for null/guest, UUID string for authenticated users)
-    SELECT ($1::text = '') as is_guest_flag
+    SELECT (profile_id = '') as is_guest_flag
+    FROM params
 ),
 resolve_profile_id AS (
     -- Resolve profile_id (keep as-is if UUID, null if guest)
-    -- Parameter is passed as text (empty string for null/guest, UUID string for authenticated users)
     SELECT 
         CASE 
-            WHEN $1::text = '' THEN NULL::uuid
-            ELSE $1::uuid
+            WHEN (SELECT profile_id FROM params) = '' THEN NULL::uuid
+            ELSE (SELECT profile_id::uuid FROM params)
         END as resolved_profile_id
 ),
 resolve_department_id AS (
-    -- Resolve department ID: use $2 if provided, otherwise get from profile's primary department
+    -- Resolve department ID: use department_id if provided, otherwise get from profile's primary department
     SELECT 
         CASE 
-            -- If $2 (departmentId) is provided and not empty, use it directly
-            WHEN $2::text IS NOT NULL AND $2::text != '' THEN $2::uuid
+            -- If department_id is provided and not empty, use it directly
+            WHEN (SELECT department_id FROM params) IS NOT NULL AND (SELECT department_id FROM params) != '' THEN (SELECT department_id::uuid FROM params)
             -- Otherwise, try to get from profile's primary department
             ELSE (
                 SELECT pd.department_id
@@ -65,10 +121,7 @@ dept_specific_settings AS (
     LIMIT 1
 ),
 selected_settings AS (
-    -- Priority: department-specific settings (if departmentId provided or profile has department), then default, then any active
-    -- If departmentId ($2) is provided: prefer department-specific settings
-    -- If profileId ($1) is a UUID: prefer department-specific settings from profile's department
-    -- Otherwise: use default settings
+    -- Priority: department-specific settings, then default, then any active
     SELECT 
         CASE 
             -- If departmentId is provided or profile has a department, prefer department-specific settings
@@ -93,40 +146,51 @@ selected_settings AS (
                 )
         END as settings_id
 ),
-settings_auths_data AS (
-    -- Get linked auths for this settings
+settings_auths_with_items AS (
+    -- Get linked auths for this settings with nested auth_items
     SELECT 
-        ARRAY_AGG(a.id::text ORDER BY a.name) as auth_ids,
+        a.id as auth_id,
+        a.name,
+        COALESCE(a.description, '') as description,
+        a.slug,
+        a.active,
         COALESCE(
-            jsonb_object_agg(
-                a.id::text,
-                jsonb_build_object(
-                    'name', a.name,
-                    'description', COALESCE(a.description, ''),
-                    'slug', a.slug
-                )
-            ),
-            '{}'::jsonb
-        ) as auth_mapping
+            ARRAY_AGG(
+                (ai.id, ai.name, COALESCE(ai.description, ''), ai.encrypted)::types.q_get_settings_detail_v3_auth_item
+                ORDER BY ai.name
+            ) FILTER (WHERE ai.id IS NOT NULL),
+            '{}'::types.q_get_settings_detail_v3_auth_item[]
+        ) as auth_items
     FROM selected_settings ss
     JOIN setting_auths sa ON sa.settings_id = ss.settings_id AND sa.active = true
     JOIN auth a ON a.id = sa.auth_id AND a.active = true
+    LEFT JOIN auth_items ai ON ai.auth_id = a.id
+    GROUP BY a.id, a.name, a.description, a.slug, a.active
+),
+settings_auths_data AS (
+    -- Aggregate linked auths into array
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (sawi.auth_id, sawi.name, sawi.description, sawi.slug, sawi.active, sawi.auth_items)::types.q_get_settings_detail_v3_auth
+                ORDER BY sawi.name
+            ),
+            '{}'::types.q_get_settings_detail_v3_auth[]
+        ) as auths,
+        ARRAY_AGG(sawi.auth_id::text ORDER BY sawi.auth_id::text) FILTER (WHERE sawi.auth_id IS NOT NULL) as auth_ids
+    FROM settings_auths_with_items sawi
 ),
 settings_providers_data AS (
     -- Get linked providers for this settings
     SELECT 
-        ARRAY_AGG(p.id::text ORDER BY p.name) as provider_ids,
         COALESCE(
-            jsonb_object_agg(
-                p.id::text,
-                jsonb_build_object(
-                    'name', p.name,
-                    'description', COALESCE(p.description, ''),
-                    'value', p.value
-                )
+            ARRAY_AGG(
+                (p.id, p.name, COALESCE(p.description, ''), p.value, p.active)::types.q_get_settings_detail_v3_provider
+                ORDER BY p.name
             ),
-            '{}'::jsonb
-        ) as provider_mapping
+            '{}'::types.q_get_settings_detail_v3_provider[]
+        ) as providers,
+        ARRAY_AGG(p.id::text ORDER BY p.id::text) FILTER (WHERE p.id IS NOT NULL) as provider_ids
     FROM selected_settings ss
     JOIN setting_providers sp ON sp.settings_id = ss.settings_id AND sp.active = true
     JOIN providers p ON p.id = sp.provider_id AND p.active = true
@@ -135,11 +199,11 @@ settings_default_guest_data AS (
     -- Get default guest account: try selected settings first, fall back to default settings
     SELECT 
         COALESCE(
-            (SELECT sdg.profile_id::text
+            (SELECT sdg.profile_id
              FROM selected_settings ss
              JOIN settings_default_guest sdg ON sdg.settings_id = ss.settings_id AND sdg.active = true
              LIMIT 1),
-            (SELECT sdg.profile_id::text
+            (SELECT sdg.profile_id
              FROM default_settings ds
              JOIN settings_default_guest sdg ON sdg.settings_id = ds.settings_id AND sdg.active = true
              LIMIT 1)
@@ -149,18 +213,18 @@ settings_default_account_data AS (
     -- Get default account: try selected settings first, fall back to default settings
     SELECT 
         COALESCE(
-            (SELECT sda.profile_id::text
+            (SELECT sda.profile_id
              FROM selected_settings ss
              JOIN settings_default_account sda ON sda.settings_id = ss.settings_id AND sda.active = true
              LIMIT 1),
-            (SELECT sda.profile_id::text
+            (SELECT sda.profile_id
              FROM default_settings ds
              JOIN settings_default_account sda ON sda.settings_id = ds.settings_id AND sda.active = true
              LIMIT 1)
         ) as default_account_profile_id
 )
 SELECT 
-    s.id::text as settings_id,
+    s.id as settings_id,
     s.created_at,
     s.active,
     s.name,
@@ -184,9 +248,9 @@ SELECT
     s.warning_threshold,
     s.danger_threshold,
     COALESCE(sad.auth_ids, ARRAY[]::text[]) as auth_ids,
-    COALESCE(sad.auth_mapping, '{}'::jsonb) as auth_mapping,
+    COALESCE(sad.auths, '{}'::types.q_get_settings_detail_v3_auth[]) as auths,
     COALESCE(spd.provider_ids, ARRAY[]::text[]) as provider_ids,
-    COALESCE(spd.provider_mapping, '{}'::jsonb) as provider_mapping,
+    COALESCE(spd.providers, '{}'::types.q_get_settings_detail_v3_provider[]) as providers,
     sdgd.default_guest_profile_id,
     sdad.default_account_profile_id
 FROM selected_settings ss
@@ -195,4 +259,7 @@ LEFT JOIN settings_auths_data sad ON true
 LEFT JOIN settings_providers_data spd ON true
 LEFT JOIN settings_default_guest_data sdgd ON true
 LEFT JOIN settings_default_account_data sdad ON true
-LIMIT 1
+$$;
+
+COMMIT;
+

@@ -7,7 +7,7 @@ import uuid
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.api.v3.settings.active import ThemeTokens
+from utils.settings.theme import ThemeTokens
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.infra.v3.templates.jinja_renderer import render_template

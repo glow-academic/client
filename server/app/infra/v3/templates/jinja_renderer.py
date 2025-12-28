@@ -5,7 +5,7 @@ from typing import Any
 from jinja2 import Environment, TemplateError
 from jinja2.environment import Template as JinjaTemplate
 
-from app.api.v3.settings.active import ThemeTokens
+from utils.settings.theme import ThemeTokens
 from utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

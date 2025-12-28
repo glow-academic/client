@@ -5,8 +5,6 @@ import os
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from app.api.v3.settings.active import (SettingsActiveRequest,
-                                        get_active_settings)
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.infra.v3.templates.jinja_renderer import render_template
@@ -16,6 +14,8 @@ from app.sql.types import (RenderTemplateApiRequest, RenderTemplateApiResponse,
                            load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.logging.db_logger import get_logger
+from utils.settings.theme import (ThemePrimitives, ThemeTokens,
+                                  derive_theme_tokens)
 from utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
@@ -106,13 +106,26 @@ async def render_document_template(
         with open(full_path, encoding="utf-8") as f:
             template_html = f.read()
 
-        settings_request = SettingsActiveRequest()  # profileId comes from header
-        # Create a dummy response object for get_active_settings
-        dummy_response = Response()
-        settings_response = await get_active_settings(
-            settings_request, http_request, dummy_response, conn
+        # Extract theme primitives from SQL result (settings fetched in same query)
+        # Settings are now included in render_template_complete.sql
+        theme_primitives = ThemePrimitives(
+            primary=result.settings_primary_color or "",
+            accent=result.settings_accent or "",
+            background=result.settings_background or "",
+            surface=result.settings_surface or "",
+            success=result.settings_success or "",
+            warning=result.settings_warning or "",
+            error=result.settings_error or "",
+            sidebarBackground=result.settings_sidebar_background or "",
+            sidebarPrimary=result.settings_sidebar_primary or "",
+            chart1=result.settings_chart1 or "",
+            chart2=result.settings_chart2 or "",
+            chart3=result.settings_chart3 or "",
+            chart4=result.settings_chart4 or "",
+            chart5=result.settings_chart5 or "",
         )
-        theme_tokens = settings_response.tokens
+
+        theme_tokens = derive_theme_tokens(theme_primitives)
 
         # Get template schema (template_args contains the schema with placeholder/description metadata)
         # template_args is already parsed by execute_sql_typed (JSONB → dict)

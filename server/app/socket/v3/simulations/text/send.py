@@ -2064,9 +2064,9 @@ Tool Usage Instructions:
                                                             message_id=str(
                                                                 db_message_id
                                                             ),
-                                                            "chat_id": chat_id_str,
-                                                            "final_content": final_message,
-                                                        },
+                                                            chat_id=chat_id_str,
+                                                            final_content=final_message,
+                                                        ),
                                                     )
 
                                                     completed_tool_messages.append(

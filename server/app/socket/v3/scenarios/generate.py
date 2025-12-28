@@ -9,7 +9,7 @@ from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
                     ToolsToFinalOutputResult, function_tool, gen_trace_id,
                     trace)
 from agents.items import TResponseInputItem
-from app.api.v3.settings.active import ThemePrimitives, derive_theme_tokens
+from utils.settings.theme import ThemePrimitives, derive_theme_tokens
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
 from app.infra.v3.agents.generic_agent import GenericAgent
 from app.infra.v3.debug.debug_info import DebugContext

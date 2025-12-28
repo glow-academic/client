@@ -23,7 +23,6 @@ export async function generateMetadata(): Promise<Metadata> {
 type LoginDataIn = InputOf<"/api/v3/auth/login", "post">;
 type LoginDataOut = OutputOf<"/api/v3/auth/login", "post">;
 type ProfileContextOut = OutputOf<"/api/v3/profile/context", "post">;
-type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
 
 interface LoginPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -152,9 +151,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   // - If department-id provided: tries department-specific settings first, then falls back to default
   const profileContext = await getProfileContext(departmentIdFromQuery);
   // Extract settings from profile context (SettingsData is compatible with SettingsActiveOut)
-  const activeSettings: SettingsActiveOut | null = profileContext?.settings
-    ? (profileContext.settings as SettingsActiveOut)
-    : null;
+  const activeSettings: ProfileContextOut["settings_tokens"] | null =
+    profileContext?.settings_tokens
+      ? (profileContext.settings_tokens as ProfileContextOut["settings_tokens"])
+      : null;
 
   // Business logic: Validate department_id from query param exists in departments list
   const validDepartmentId =
