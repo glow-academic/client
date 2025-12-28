@@ -307,7 +307,9 @@ export default function Settings({
 
   // Helper functions to convert arrays to dicts for backward compatibility
   // API now returns arrays (composite types), but frontend uses dicts internally
-  const convertProviderKeysToMapping = (providerKeys: SettingsDetailOut["provider_keys"] | undefined): Record<string, string> => {
+  const convertProviderKeysToMapping = (
+    providerKeys: SettingsDetailOut["provider_keys"] | undefined
+  ): Record<string, string> => {
     if (!providerKeys) return {};
     const mapping: Record<string, string> = {};
     providerKeys.forEach((pk) => {
@@ -316,7 +318,9 @@ export default function Settings({
     return mapping;
   };
 
-  const convertAuthKeysToMapping = (authKeys: SettingsDetailOut["auth_keys"] | undefined): Record<string, Record<string, string>> => {
+  const convertAuthKeysToMapping = (
+    authKeys: SettingsDetailOut["auth_keys"] | undefined
+  ): Record<string, Record<string, string>> => {
     if (!authKeys) return {};
     const mapping: Record<string, Record<string, string>> = {};
     authKeys.forEach((ak) => {
@@ -329,7 +333,9 @@ export default function Settings({
     return mapping;
   };
 
-  const convertAuthValuesToMapping = (authValues: SettingsDetailOut["auth_values"] | undefined): Record<string, Record<string, string>> => {
+  const convertAuthValuesToMapping = (
+    authValues: SettingsDetailOut["auth_values"] | undefined
+  ): Record<string, Record<string, string>> => {
     if (!authValues) return {};
     const mapping: Record<string, Record<string, string>> = {};
     authValues.forEach((av) => {
@@ -344,14 +350,21 @@ export default function Settings({
 
   // Helper functions to convert dicts back to arrays for API (reverse of above)
   // Frontend uses dicts internally, but API expects arrays (composite types)
-  const convertProviderKeysMappingToArray = (mapping: Record<string, string>): Array<{provider_id: string, key_id: string}> => {
+  const convertProviderKeysMappingToArray = (
+    mapping: Record<string, string>
+  ): Array<{ provider_id: string; key_id: string }> => {
     return Object.entries(mapping).map(([provider_id, key_id]) => ({
       provider_id,
       key_id,
     }));
   };
 
-  const convertAuthKeysMappingToArray = (mapping: Record<string, Record<string, string>>): Array<{auth_id: string, items: Array<{auth_item_id: string, key_id: string}>}> => {
+  const convertAuthKeysMappingToArray = (
+    mapping: Record<string, Record<string, string>>
+  ): Array<{
+    auth_id: string;
+    items: Array<{ auth_item_id: string; key_id: string }>;
+  }> => {
     return Object.entries(mapping).map(([auth_id, itemsMapping]) => ({
       auth_id,
       items: Object.entries(itemsMapping).map(([auth_item_id, key_id]) => ({
@@ -361,21 +374,30 @@ export default function Settings({
     }));
   };
 
-  const convertProviderEnabledMappingToArray = (mapping: Record<string, boolean>): Array<{provider_id: string, enabled: boolean}> => {
+  const convertProviderEnabledMappingToArray = (
+    mapping: Record<string, boolean>
+  ): Array<{ provider_id: string; enabled: boolean }> => {
     return Object.entries(mapping).map(([provider_id, enabled]) => ({
       provider_id,
       enabled,
     }));
   };
 
-  const convertAuthEnabledMappingToArray = (mapping: Record<string, boolean>): Array<{auth_id: string, enabled: boolean}> => {
+  const convertAuthEnabledMappingToArray = (
+    mapping: Record<string, boolean>
+  ): Array<{ auth_id: string; enabled: boolean }> => {
     return Object.entries(mapping).map(([auth_id, enabled]) => ({
       auth_id,
       enabled,
     }));
   };
 
-  const convertAuthValuesMappingToArray = (mapping: Record<string, Record<string, string>>): Array<{auth_id: string, items: Array<{auth_item_id: string, value: string}>}> => {
+  const convertAuthValuesMappingToArray = (
+    mapping: Record<string, Record<string, string>>
+  ): Array<{
+    auth_id: string;
+    items: Array<{ auth_item_id: string; value: string }>;
+  }> => {
     return Object.entries(mapping).map(([auth_id, itemsMapping]) => ({
       auth_id,
       items: Object.entries(itemsMapping).map(([auth_item_id, value]) => ({
@@ -429,7 +451,9 @@ export default function Settings({
 
       // Convert arrays to dicts for backward compatibility
       // API now returns arrays (composite types), convert to dicts for internal use
-      const providerKeyMap = convertProviderKeysToMapping(settingsDetail.provider_keys);
+      const providerKeyMap = convertProviderKeysToMapping(
+        settingsDetail.provider_keys
+      );
       const authKeyMap = convertAuthKeysToMapping(settingsDetail.auth_keys);
       setProviderKeyMapping(providerKeyMap);
       setAuthKeyMapping(authKeyMap);
@@ -439,8 +463,14 @@ export default function Settings({
 
       // Initialize provider enabled state
       // Use all_providers array if available, otherwise fall back to all_provider_ids
-      const allProviderIds = settingsDetail.all_providers?.map(p => p.provider_id) || settingsDetail.all_provider_ids || [];
-      const linkedProviderIds = settingsDetail.providers?.map(p => p.provider_id) || settingsDetail.provider_ids || [];
+      const allProviderIds =
+        settingsDetail.all_providers?.map((p) => p.provider_id) ||
+        settingsDetail.all_provider_ids ||
+        [];
+      const linkedProviderIds =
+        settingsDetail.providers?.map((p) => p.provider_id) ||
+        settingsDetail.provider_ids ||
+        [];
       const enabled: Record<string, boolean> = {};
       allProviderIds.forEach((providerId) => {
         enabled[providerId] = linkedProviderIds.includes(providerId);
@@ -451,8 +481,14 @@ export default function Settings({
 
       // Initialize auth enabled state
       // Use all_auths array if available, otherwise fall back to all_auth_ids
-      const allAuthIds = settingsDetail.all_auths?.map(a => a.auth_id) || settingsDetail.all_auth_ids || [];
-      const linkedAuthIds = settingsDetail.auths?.map(a => a.auth_id) || settingsDetail.auth_ids || [];
+      const allAuthIds =
+        settingsDetail.all_auths?.map((a) => a.auth_id) ||
+        settingsDetail.all_auth_ids ||
+        [];
+      const linkedAuthIds =
+        settingsDetail.auths?.map((a) => a.auth_id) ||
+        settingsDetail.auth_ids ||
+        [];
       const authEnabledState: Record<string, boolean> = {};
       allAuthIds.forEach((authId) => {
         authEnabledState[authId] = linkedAuthIds.includes(authId);
@@ -462,7 +498,9 @@ export default function Settings({
       setOriginalAuthEnabled(JSON.parse(JSON.stringify(authEnabledState)));
 
       // Initialize auth value mapping (convert from array to dict)
-      const authValueMap = convertAuthValuesToMapping(settingsDetail.auth_values);
+      const authValueMap = convertAuthValuesToMapping(
+        settingsDetail.auth_values
+      );
       setAuthValueMapping(authValueMap);
       // Store original auth value mapping
       setOriginalAuthValueMapping(JSON.parse(JSON.stringify(authValueMap)));
@@ -475,20 +513,21 @@ export default function Settings({
 
       // Auto-select enabled auth methods and providers
       const enabledAuthIds = new Set(
-        allAuthIds.filter(
-          (authId) => authEnabledState[authId]
-        )
+        allAuthIds.filter((authId) => authEnabledState[authId])
       );
       setSelectedAuthMethodIds(enabledAuthIds);
 
       const enabledProviderIds = new Set(
-        allProviderIds.filter(
-          (providerId) => enabled[providerId]
-        )
+        allProviderIds.filter((providerId) => enabled[providerId])
       );
       setSelectedProviderIds(enabledProviderIds);
     }
-  }, [settingsDetail, selectedSettingsId, originalFormData, originalSelectedSettingsId]);
+  }, [
+    settingsDetail,
+    selectedSettingsId,
+    originalFormData,
+    originalSelectedSettingsId,
+  ]);
 
   // Sync originalSelectedSettingsId when selectedSettingsId changes from null to a value
   // This handles the case where auto-select sets selectedSettingsId after settingsDetail loads

@@ -9045,7 +9045,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProvidersListRequest"
+                "$ref": "#/components/schemas/GetProvidersListApiRequest"
               }
             }
           }
@@ -9056,7 +9056,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProvidersListResponse"
+                  "$ref": "#/components/schemas/GetProvidersListApiResponse"
                 }
               }
             }
@@ -9126,7 +9126,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProviderDetailRequest"
+                "$ref": "#/components/schemas/GetProviderDetailApiRequest"
               }
             }
           }
@@ -9137,7 +9137,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProviderDetailResponse"
+                  "$ref": "#/components/schemas/GetProviderDetailApiResponse"
                 }
               }
             }
@@ -9207,7 +9207,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProviderNewRequest"
+                "$ref": "#/components/schemas/GetProviderNewApiRequest"
               }
             }
           }
@@ -9218,7 +9218,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProviderDetailResponse"
+                  "$ref": "#/components/schemas/GetProviderNewApiResponse"
                 }
               }
             }
@@ -9288,7 +9288,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateProviderRequest"
+                "$ref": "#/components/schemas/CreateProviderApiRequest"
               }
             }
           }
@@ -9299,7 +9299,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateProviderResponse"
+                  "$ref": "#/components/schemas/CreateProviderApiResponse"
                 }
               }
             }
@@ -9369,7 +9369,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateProviderRequest"
+                "$ref": "#/components/schemas/UpdateProviderApiRequest"
               }
             }
           }
@@ -9380,7 +9380,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateProviderResponse"
+                  "$ref": "#/components/schemas/UpdateProviderApiResponse"
                 }
               }
             }
@@ -9450,7 +9450,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteProviderRequest"
+                "$ref": "#/components/schemas/DeleteProviderApiRequest"
               }
             }
           }
@@ -9461,7 +9461,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteProviderResponse"
+                  "$ref": "#/components/schemas/DeleteProviderApiResponse"
                 }
               }
             }
@@ -25288,7 +25288,7 @@
         "type": "object",
         "title": "CreateProfileApiResponse"
       },
-      "CreateProviderRequest": {
+      "CreateProviderApiRequest": {
         "properties": {
           "name": {
             "type": "string",
@@ -25304,10 +25304,38 @@
           },
           "active": {
             "type": "boolean",
-            "title": "Active",
-            "default": true
+            "title": "Active"
           },
           "base_url": {
+            "type": "string",
+            "title": "Base Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "value",
+          "active",
+          "base_url"
+        ],
+        "title": "CreateProviderApiRequest"
+      },
+      "CreateProviderApiResponse": {
+        "properties": {
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "actor_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -25316,41 +25344,11 @@
                 "type": "null"
               }
             ],
-            "title": "Base Url"
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "name",
-          "description",
-          "value"
-        ],
-        "title": "CreateProviderRequest",
-        "description": "Request to create provider."
-      },
-      "CreateProviderResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "providerId",
-          "message"
-        ],
-        "title": "CreateProviderResponse",
-        "description": "Response from create provider."
+        "title": "CreateProviderApiResponse"
       },
       "CreateRubricApiRequest": {
         "properties": {
@@ -27565,38 +27563,81 @@
         "type": "object",
         "title": "DeletePromptApiResponse"
       },
-      "DeleteProviderRequest": {
+      "DeleteProviderApiRequest": {
         "properties": {
-          "providerId": {
+          "provider_id": {
             "type": "string",
-            "title": "Providerid"
+            "format": "uuid",
+            "title": "Provider Id"
           }
         },
         "type": "object",
         "required": [
-          "providerId"
+          "provider_id"
         ],
-        "title": "DeleteProviderRequest",
-        "description": "Request to delete provider."
+        "title": "DeleteProviderApiRequest"
       },
-      "DeleteProviderResponse": {
+      "DeleteProviderApiResponse": {
         "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
+          "provider_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Exists"
           },
-          "message": {
-            "type": "string",
-            "title": "Message"
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted"
           }
         },
         "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteProviderResponse",
-        "description": "Response from delete provider."
+        "title": "DeleteProviderApiResponse"
       },
       "DeleteRubricApiRequest": {
         "properties": {
@@ -38715,6 +38756,355 @@
         "type": "object",
         "title": "GetProfileNewApiResponse"
       },
+      "GetProviderDetailApiRequest": {
+        "properties": {
+          "provider_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Provider Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id"
+        ],
+        "title": "GetProviderDetailApiRequest"
+      },
+      "GetProviderDetailApiResponse": {
+        "properties": {
+          "provider_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Exists"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetProviderDetailApiResponse"
+      },
+      "GetProviderNewApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetProviderNewApiRequest"
+      },
+      "GetProviderNewApiResponse": {
+        "properties": {
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "GetProviderNewApiResponse"
+      },
+      "GetProvidersListApiRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "GetProvidersListApiRequest"
+      },
+      "GetProvidersListApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "providers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListProvidersV3Provider"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providers"
+          },
+          "provider_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListProvidersV3ProviderOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Options"
+          },
+          "status_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QListProvidersV3StatusOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Options"
+          }
+        },
+        "type": "object",
+        "title": "GetProvidersListApiResponse"
+      },
       "GetRubricDetailApiRequest": {
         "properties": {
           "rubric_id": {
@@ -49053,194 +49443,6 @@
         ],
         "title": "ProfileMetrics",
         "description": "Profile metrics - each metric is a full MetricResponse object."
-      },
-      "ProviderDetailRequest": {
-        "properties": {
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "providerId"
-        ],
-        "title": "ProviderDetailRequest",
-        "description": "Request for provider detail."
-      },
-      "ProviderDetailResponse": {
-        "properties": {
-          "provider_id": {
-            "type": "string",
-            "title": "Provider Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "base_url": {
-            "type": "string",
-            "title": "Base Url"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "provider_id",
-          "name",
-          "description",
-          "value",
-          "active",
-          "created_at",
-          "updated_at",
-          "base_url",
-          "can_edit",
-          "can_delete"
-        ],
-        "title": "ProviderDetailResponse",
-        "description": "Response for provider detail endpoint."
-      },
-      "ProviderItem": {
-        "properties": {
-          "provider_id": {
-            "type": "string",
-            "title": "Provider Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "base_url": {
-            "type": "string",
-            "title": "Base Url"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          }
-        },
-        "type": "object",
-        "required": [
-          "provider_id",
-          "name",
-          "description",
-          "value",
-          "active",
-          "created_at",
-          "updated_at",
-          "base_url",
-          "can_edit",
-          "can_delete",
-          "can_duplicate"
-        ],
-        "title": "ProviderItem",
-        "description": "Provider item for list view."
-      },
-      "ProviderNewRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "ProviderNewRequest",
-        "description": "Request for default provider detail."
-      },
-      "ProvidersListRequest": {
-        "properties": {},
-        "type": "object",
-        "title": "ProvidersListRequest",
-        "description": "Request for providers list."
-      },
-      "ProvidersListResponse": {
-        "properties": {
-          "providers": {
-            "items": {
-              "$ref": "#/components/schemas/ProviderItem"
-            },
-            "type": "array",
-            "title": "Providers"
-          },
-          "provider_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Provider Options"
-          },
-          "status_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Status Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "providers",
-          "provider_options",
-          "status_options"
-        ],
-        "title": "ProvidersListResponse",
-        "description": "Response for providers list."
       },
       "QCreateScenarioV3Parameter": {
         "properties": {
@@ -66652,6 +66854,211 @@
         ],
         "title": "QListPersonasV3Scenario"
       },
+      "QListProvidersV3Provider": {
+        "properties": {
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "name",
+          "description",
+          "value",
+          "active",
+          "created_at",
+          "updated_at",
+          "base_url",
+          "can_edit",
+          "can_delete",
+          "can_duplicate"
+        ],
+        "title": "QListProvidersV3Provider"
+      },
+      "QListProvidersV3ProviderOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "QListProvidersV3ProviderOption"
+      },
+      "QListProvidersV3StatusOption": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "QListProvidersV3StatusOption"
+      },
       "QListScenariosV3Cohort": {
         "properties": {
           "cohort_id": {
@@ -75573,11 +75980,12 @@
         "type": "object",
         "title": "UpdateProfileApiResponse"
       },
-      "UpdateProviderRequest": {
+      "UpdateProviderApiRequest": {
         "properties": {
-          "providerId": {
+          "provider_id": {
             "type": "string",
-            "title": "Providerid"
+            "format": "uuid",
+            "title": "Provider Id"
           },
           "name": {
             "type": "string",
@@ -75596,6 +76004,47 @@
             "title": "Active"
           },
           "base_url": {
+            "type": "string",
+            "title": "Base Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "name",
+          "description",
+          "value",
+          "active",
+          "base_url"
+        ],
+        "title": "UpdateProviderApiRequest"
+      },
+      "UpdateProviderApiResponse": {
+        "properties": {
+          "provider_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Exists"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "actor_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -75604,38 +76053,11 @@
                 "type": "null"
               }
             ],
-            "title": "Base Url"
+            "title": "Actor Name"
           }
         },
         "type": "object",
-        "required": [
-          "providerId",
-          "name",
-          "description",
-          "value",
-          "active"
-        ],
-        "title": "UpdateProviderRequest",
-        "description": "Request to update provider."
-      },
-      "UpdateProviderResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateProviderResponse",
-        "description": "Response from update provider."
+        "title": "UpdateProviderApiResponse"
       },
       "UpdateRubricApiRequest": {
         "properties": {

@@ -1,35 +1,20 @@
 """Providers create endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (CreateProviderApiRequest, CreateProviderApiResponse,
+                           CreateProviderSqlParams, CreateProviderSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class CreateProviderRequest(BaseModel):
-    """Request to create provider."""
-
-    name: str
-    description: str
-    value: str
-    active: bool = True
-    base_url: str | None = None
-    # profileId removed - comes from X-Profile-Id header
-
-
-class CreateProviderResponse(BaseModel):
-    """Response from create provider."""
-
-    success: bool
-    providerId: str
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/providers/create_provider_complete.sql"
 
 
 router = APIRouter()
@@ -37,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/create",
-    response_model=CreateProviderResponse,
+    response_model=CreateProviderApiResponse,
     dependencies=[
         audit_activity(
             "provider.created",
@@ -46,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def create_provider(
-    request: CreateProviderRequest,
+    request: CreateProviderApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateProviderResponse:
+) -> CreateProviderApiResponse:
     """Create a new provider."""
     tags = ["providers"]
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -66,42 +51,40 @@ async def create_provider(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            # Create provider with optional endpoint
-            sql_query = load_sql("app/sql/v3/providers/create_provider_complete.sql")
-            sql_params = (
-                request.name,
-                request.description,
-                request.value,
-                request.active,
-                request.base_url,
-                profile_id,
-            )
-            result = await conn.fetchrow(sql_query, *sql_params)
+        # Convert API request to SQL params (add profile_id from header)
+        params = CreateProviderSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-            if not result:
+        async with transaction(conn):
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                CreateProviderSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            if not result or not result.provider_id:
                 raise ValueError("Failed to create provider")
 
-            provider_id = result["provider_id"]
-            actor_name = result.get("actor_name")
-
             # Set audit context with data from SQL query
-            if actor_name:
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    provider={"name": request.name, "id": provider_id},
+                    actor={"name": result.actor_name, "id": profile_id},
+                    provider={"name": request.name, "id": str(result.provider_id)},
                 )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return CreateProviderResponse(
-            success=True,
-            providerId=provider_id,
-            message="Provider created successfully",
-        )
+        # Convert SQL result to API response
+        api_response = CreateProviderApiResponse.model_validate(result.model_dump())
+
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

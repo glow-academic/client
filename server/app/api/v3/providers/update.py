@@ -1,35 +1,20 @@
 """Providers update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (UpdateProviderApiRequest, UpdateProviderApiResponse,
+                           UpdateProviderSqlParams, UpdateProviderSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class UpdateProviderRequest(BaseModel):
-    """Request to update provider."""
-
-    providerId: str
-    name: str
-    description: str
-    value: str
-    active: bool
-    base_url: str | None = None
-    # profileId removed - comes from X-Profile-Id header
-
-
-class UpdateProviderResponse(BaseModel):
-    """Response from update provider."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/providers/update_provider_complete.sql"
 
 
 router = APIRouter()
@@ -37,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/update",
-    response_model=UpdateProviderResponse,
+    response_model=UpdateProviderApiResponse,
     dependencies=[
         audit_activity(
             "provider.updated",
@@ -46,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def update_provider(
-    request: UpdateProviderRequest,
+    request: UpdateProviderApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateProviderResponse:
+) -> UpdateProviderApiResponse:
     """Update an existing provider."""
     tags = ["providers"]
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -66,42 +51,48 @@ async def update_provider(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            # Update provider with optional endpoint
-            sql_query = load_sql("app/sql/v3/providers/update_provider_complete.sql")
-            sql_params = (
-                request.providerId,
-                request.name,
-                request.description,
-                request.value,
-                request.active,
-                request.base_url,
-                profile_id,
-            )
-            result = await conn.fetchrow(sql_query, *sql_params)
+        # Convert API request to SQL params (add profile_id from header)
+        params = UpdateProviderSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-            if not result:
+        async with transaction(conn):
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                UpdateProviderSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            # Check if provider exists using SQL result
+            if not result.provider_exists:
                 raise HTTPException(
-                    status_code=404, detail=f"Provider not found: {request.providerId}"
+                    status_code=404, detail=f"Provider {request.provider_id} not found"
+                )
+
+            if not result.provider_id:
+                raise HTTPException(
+                    status_code=404, detail=f"Provider {request.provider_id} not found"
                 )
 
             # Set audit context with data from SQL query
-            actor_name = result.get("actor_name")
-            if actor_name:
+            if result.actor_name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    provider={"name": request.name, "id": request.providerId},
+                    actor={"name": result.actor_name, "id": profile_id},
+                    provider={"name": request.name, "id": str(request.provider_id)},
                 )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return UpdateProviderResponse(
-            success=True,
-            message="Provider updated successfully",
-        )
+        # Convert SQL result to API response
+        api_response = UpdateProviderApiResponse.model_validate(result.model_dump())
+
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

@@ -6160,6 +6160,283 @@ class DeletePromptApiResponse(BaseModel):
 
 
 
+# Generated from: create_provider
+
+class CreateProviderSqlParams(BaseModel):
+
+    name: str
+    description: str
+    value: str
+    active: bool
+    base_url: str
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.description,
+            self.value,
+            self.active,
+            self.base_url,
+            self.profile_id,
+        )
+
+class CreateProviderSqlRow(BaseModel):
+
+    provider_id: UUID | None = None
+    actor_name: str | None = None
+
+class CreateProviderApiRequest(BaseModel):
+
+    name: str
+    description: str
+    value: str
+    active: bool
+    base_url: str
+
+class CreateProviderApiResponse(BaseModel):
+
+    provider_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: delete_provider
+
+class DeleteProviderSqlParams(BaseModel):
+
+    provider_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.provider_id,
+            self.profile_id,
+        )
+
+class DeleteProviderSqlRow(BaseModel):
+
+    provider_exists: bool | None = None
+    provider_id: UUID | None = None
+    name: str | None = None
+    actor_name: str | None = None
+    deleted: bool | None = None
+
+class DeleteProviderApiRequest(BaseModel):
+
+    provider_id: UUID
+
+class DeleteProviderApiResponse(BaseModel):
+
+    provider_exists: bool | None = None
+    provider_id: UUID | None = None
+    name: str | None = None
+    actor_name: str | None = None
+    deleted: bool | None = None
+
+
+
+# Generated from: get_provider_detail
+
+class GetProviderDetailSqlParams(BaseModel):
+
+    provider_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.provider_id,
+            self.profile_id,
+        )
+
+class GetProviderDetailSqlRow(BaseModel):
+
+    provider_exists: bool | None = None
+    provider_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    value: str | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    base_url: str | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    actor_name: str | None = None
+
+class GetProviderDetailApiRequest(BaseModel):
+
+    provider_id: UUID
+
+class GetProviderDetailApiResponse(BaseModel):
+
+    provider_exists: bool | None = None
+    provider_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    value: str | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    base_url: str | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_provider_new
+
+class GetProviderNewSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class GetProviderNewSqlRow(BaseModel):
+
+    provider_id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    value: str | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    base_url: str | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    actor_name: str | None = None
+
+class GetProviderNewApiRequest(BaseModel):
+
+    pass
+
+class GetProviderNewApiResponse(BaseModel):
+
+    provider_id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    value: str | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    base_url: str | None = None
+    can_edit: bool | None = None
+    can_delete: bool | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_providers_list
+
+class GetProvidersListSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class QListProvidersV3Provider(BaseModel):
+
+    provider_id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+    active: bool | None
+    created_at: str | None
+    updated_at: str | None
+    base_url: str | None
+    can_edit: bool | None
+    can_delete: bool | None
+    can_duplicate: bool | None
+
+
+
+
+class QListProvidersV3ProviderOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QListProvidersV3StatusOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+class GetProvidersListSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    providers: list[QListProvidersV3Provider] | None = None
+    provider_options: list[QListProvidersV3ProviderOption] | None = None
+    status_options: list[QListProvidersV3StatusOption] | None = None
+
+class GetProvidersListApiRequest(BaseModel):
+
+    pass
+
+class GetProvidersListApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    providers: list[QListProvidersV3Provider] | None = None
+    provider_options: list[QListProvidersV3ProviderOption] | None = None
+    status_options: list[QListProvidersV3StatusOption] | None = None
+
+
+
+# Generated from: update_provider
+
+class UpdateProviderSqlParams(BaseModel):
+
+    provider_id: UUID
+    name: str
+    description: str
+    value: str
+    active: bool
+    base_url: str
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.provider_id,
+            self.name,
+            self.description,
+            self.value,
+            self.active,
+            self.base_url,
+            self.profile_id,
+        )
+
+class UpdateProviderSqlRow(BaseModel):
+
+    provider_exists: bool | None = None
+    provider_id: UUID | None = None
+    actor_name: str | None = None
+
+class UpdateProviderApiRequest(BaseModel):
+
+    provider_id: UUID
+    name: str
+    description: str
+    value: str
+    active: bool
+    base_url: str
+
+class UpdateProviderApiResponse(BaseModel):
+
+    provider_exists: bool | None = None
+    provider_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: create_rubric
 
 class ICreateRubricV3Standard(BaseModel):
@@ -10423,6 +10700,42 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeletePromptApiRequest",
         "DeletePromptApiResponse",
     ),
+    "app/sql/v3/providers/create_provider_complete.sql": (
+        "CreateProviderSqlParams",
+        "CreateProviderSqlRow",
+        "CreateProviderApiRequest",
+        "CreateProviderApiResponse",
+    ),
+    "app/sql/v3/providers/delete_provider_complete.sql": (
+        "DeleteProviderSqlParams",
+        "DeleteProviderSqlRow",
+        "DeleteProviderApiRequest",
+        "DeleteProviderApiResponse",
+    ),
+    "app/sql/v3/providers/get_provider_detail_complete.sql": (
+        "GetProviderDetailSqlParams",
+        "GetProviderDetailSqlRow",
+        "GetProviderDetailApiRequest",
+        "GetProviderDetailApiResponse",
+    ),
+    "app/sql/v3/providers/get_provider_new_complete.sql": (
+        "GetProviderNewSqlParams",
+        "GetProviderNewSqlRow",
+        "GetProviderNewApiRequest",
+        "GetProviderNewApiResponse",
+    ),
+    "app/sql/v3/providers/get_providers_list_complete.sql": (
+        "GetProvidersListSqlParams",
+        "GetProvidersListSqlRow",
+        "GetProvidersListApiRequest",
+        "GetProvidersListApiResponse",
+    ),
+    "app/sql/v3/providers/update_provider_complete.sql": (
+        "UpdateProviderSqlParams",
+        "UpdateProviderSqlRow",
+        "UpdateProviderApiRequest",
+        "UpdateProviderApiResponse",
+    ),
     "app/sql/v3/rubrics/create_rubric_complete.sql": (
         "CreateRubricSqlParams",
         "CreateRubricSqlRow",
@@ -11175,6 +11488,36 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/prompts/delete_prompt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/providers/create_provider_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/providers/delete_provider_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/providers/get_provider_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/providers/get_provider_new_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/providers/get_providers_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/providers/update_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -272,7 +272,7 @@ export default function Providers({
     try {
       await deleteProviderAction({
         body: {
-          providerId: deleteItem.id,
+          provider_id: deleteItem.id,
         },
       });
       // profileId comes from X-Profile-Id header automatically

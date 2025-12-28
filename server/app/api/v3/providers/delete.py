@@ -1,31 +1,20 @@
 """Providers delete endpoint - v3 API following DHH principles."""
 
-import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db, transaction
+from app.sql.types import (DeleteProviderApiRequest, DeleteProviderApiResponse,
+                           DeleteProviderSqlParams, DeleteProviderSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.invalidate_tags import invalidate_tags
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-# Inline request/response schemas
-class DeleteProviderRequest(BaseModel):
-    """Request to delete provider."""
-
-    providerId: str
-    # profileId removed - comes from X-Profile-Id header
-
-
-class DeleteProviderResponse(BaseModel):
-    """Response from delete provider."""
-
-    success: bool
-    message: str
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/providers/delete_provider_complete.sql"
 
 
 router = APIRouter()
@@ -33,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/delete",
-    response_model=DeleteProviderResponse,
+    response_model=DeleteProviderApiResponse,
     dependencies=[
         audit_activity(
             "provider.deleted",
@@ -42,15 +31,15 @@ router = APIRouter()
     ],
 )
 async def delete_provider(
-    request: DeleteProviderRequest,
+    request: DeleteProviderApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> DeleteProviderResponse:
+) -> DeleteProviderApiResponse:
     """Delete a provider (prevents deletion if used by models)."""
     tags = ["providers"]
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
@@ -62,45 +51,50 @@ async def delete_provider(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        async with transaction(conn):
-            # Check if provider exists and can be deleted
-            sql_query = load_sql("app/sql/v3/providers/delete_provider.sql")
-            sql_params = (uuid.UUID(request.providerId), profile_id)
-            result = await conn.fetchrow(sql_query, *sql_params)
+        # Convert API request to SQL params (add profile_id from header)
+        params = DeleteProviderSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-            if not result:
-                # Check if provider exists
-                provider_exists = await conn.fetchval(
-                    "SELECT EXISTS(SELECT 1 FROM providers WHERE id = $1)",
-                    uuid.UUID(request.providerId),
-                )
-                if provider_exists:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Cannot delete provider: it is being used by one or more models",
-                    )
+        async with transaction(conn):
+            # Execute SQL with typed helper - automatically detects and calls function if present
+            result = cast(
+                DeleteProviderSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    SQL_PATH,
+                    params=params,
+                ),
+            )
+
+            # Check if provider exists using SQL result
+            if not result.provider_exists:
                 raise HTTPException(
-                    status_code=404, detail=f"Provider not found: {request.providerId}"
+                    status_code=404, detail=f"Provider {request.provider_id} not found"
+                )
+
+            if not result.deleted:
+                # Provider exists but couldn't be deleted (likely in use)
+                raise HTTPException(
+                    status_code=400,
+                    detail="Cannot delete provider: it is being used by one or more models",
                 )
 
             # Set audit context with data from SQL query
-            provider_name = result.get("name")
-            actor_name = result.get("actor_name")
-            if actor_name and provider_name:
+            if result.actor_name and result.name:
                 audit_set(
                     http_request,
-                    actor={"name": actor_name, "id": profile_id},
-                    provider={"name": provider_name, "id": request.providerId},
+                    actor={"name": result.actor_name, "id": profile_id},
+                    provider={"name": result.name, "id": str(request.provider_id)},
                 )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return DeleteProviderResponse(
-            success=True,
-            message="Provider deleted successfully",
-        )
+        # Convert SQL result to API response
+        api_response = DeleteProviderApiResponse.model_validate(result.model_dump())
+
+        return api_response
     except HTTPException:
         raise
     except ValueError as e:

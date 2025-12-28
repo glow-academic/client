@@ -1,49 +1,23 @@
 """Providers list endpoint - v3 API following DHH principles."""
 
-import json
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
-import asyncpg  # type: ignore
+import asyncpg
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
 from app.main import get_db
+from app.sql.types import (GetProvidersListApiRequest,
+                           GetProvidersListApiResponse,
+                           GetProvidersListSqlParams, GetProvidersListSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed
 
-
-class ProvidersListRequest(BaseModel):
-    """Request for providers list."""
-
-    pass
-    # profileId removed - comes from X-Profile-Id header
-
-
-class ProviderItem(BaseModel):
-    """Provider item for list view."""
-
-    provider_id: str
-    name: str
-    description: str
-    value: str
-    active: bool
-    created_at: str
-    updated_at: str
-    base_url: str
-    can_edit: bool
-    can_delete: bool
-    can_duplicate: bool
-
-
-class ProvidersListResponse(BaseModel):
-    """Response for providers list."""
-
-    providers: list[ProviderItem]
-    provider_options: list[dict[str, str]]
-    status_options: list[dict[str, str]]
+# Load SQL with types at module level - makes it clear what SQL file is used
+SQL_PATH = "app/sql/v3/providers/get_providers_list_complete.sql"
 
 
 router = APIRouter()
@@ -51,119 +25,83 @@ router = APIRouter()
 
 @router.post(
     "/list",
-    response_model=ProvidersListResponse,
+    response_model=GetProvidersListApiResponse,
     dependencies=[
         audit_activity("providers.list", "{{ actor.name }} visited the Providers page")
     ],
 )
 async def get_providers_list(
-    filters: ProvidersListRequest,
-    request: Request,
+    request: GetProvidersListApiRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> ProvidersListResponse:
+) -> GetProvidersListApiResponse:
     """Get providers list with permissions and endpoint info."""
     tags = ["providers"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = filters.model_dump()
-    cache_key_val = cache_key(request.url.path, body_dict)
+    body_dict = request.model_dump(mode='json')
+    cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return ProvidersListResponse.model_validate(cached["data"])
+        return GetProvidersListApiResponse.model_validate(cached["data"])
 
-    sql_query: str | None = None
+    sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
-        profile_id = request.state.profile_id
+        profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        sql_query = load_sql("app/sql/v3/providers/list_providers.sql")
-        sql_params = (profile_id,)
-        rows = await conn.fetch(sql_query, profile_id)
+        # Convert API request to SQL params (add profile_id from header)
+        params = GetProvidersListSqlParams(**request.model_dump(), profile_id=profile_id)
+        sql_params = params.to_tuple()
 
-        # Get actor name from first row (same for all rows)
-        actor_name = rows[0]["actor_name"] if rows else None
-
-        # Set audit context
-        if actor_name:
-            audit_set(request, actor={"name": actor_name, "id": profile_id})
-
-        providers = []
-        provider_options: list[dict[str, str]] = []
-        status_options: list[dict[str, str]] = []
-
-        for row in rows:
-            providers.append(
-                ProviderItem(
-                    provider_id=str(row["provider_id"]),
-                    name=row["name"],
-                    description=row.get("description", ""),
-                    value=row["value"],
-                    active=row["active"],
-                    created_at=row["created_at"].isoformat()
-                    if row.get("created_at")
-                    else "",
-                    updated_at=row["updated_at"].isoformat()
-                    if row.get("updated_at")
-                    else "",
-                    base_url=row.get("base_url", ""),
-                    can_edit=row["can_edit"],
-                    can_delete=row["can_delete"],
-                    can_duplicate=row["can_duplicate"],
-                )
-            )
-
-            # Parse facet options from first row
-            if not provider_options and row.get("provider_options"):
-                opts = row["provider_options"]
-                if isinstance(opts, str):
-                    opts = json.loads(opts)
-                if isinstance(opts, list):
-                    provider_options = opts
-
-            if not status_options and row.get("status_options"):
-                opts = row["status_options"]
-                if isinstance(opts, str):
-                    opts = json.loads(opts)
-                if isinstance(opts, list):
-                    status_options = opts
-
-        response_data = ProvidersListResponse(
-            providers=providers,
-            provider_options=provider_options,
-            status_options=status_options,
+        # Execute query with typed helper - automatically detects and calls function if present
+        result = cast(
+            GetProvidersListSqlRow,
+            await execute_sql_typed(
+                conn,
+                SQL_PATH,
+                params=params,
+            ),
         )
 
-        # Cache response
+        # Set audit context
+        if result.actor_name:
+            audit_set(http_request, actor={"name": result.actor_name, "id": profile_id})
+
+        # Convert SQL result to API response (no manual filtering needed - SQL handles it)
+        api_response = GetProvidersListApiResponse.model_validate(result.model_dump())
+
+        # Cache response (use mode='json' to serialize UUIDs and other types)
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": api_response.model_dump(mode='json')},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        return api_response
     except HTTPException:
         raise
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=request.url.path,
+            route_path=http_request.url.path,
             operation="get_providers_list",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=request,
+            request=http_request,
         )

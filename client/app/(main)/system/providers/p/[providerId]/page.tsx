@@ -22,7 +22,7 @@ type UpdateProviderOut = OutputOf<"/api/v3/providers/update", "post">;
 const getProvider = async (providerId: string): Promise<ProviderDetailOut> => {
   return api.post(
     "/providers/detail",
-    { body: { providerId } },
+    { body: { provider_id: providerId } },
     {
       cache: "no-store",
       headers: {

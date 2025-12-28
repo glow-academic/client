@@ -210,7 +210,7 @@ export default function Provider({
     try {
       if (isEditMode && providerId) {
         await handleUpdateProvider({
-          providerId: providerId,
+          provider_id: providerId,
           name: formData.name!,
           description: formData.description || "",
           value: formData.value!,

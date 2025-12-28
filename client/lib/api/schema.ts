@@ -7614,36 +7614,25 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * CreateProviderRequest
-         * @description Request to create provider.
-         */
-        CreateProviderRequest: {
+        /** CreateProviderApiRequest */
+        CreateProviderApiRequest: {
             /** Name */
             name: string;
             /** Description */
             description: string;
             /** Value */
             value: string;
-            /**
-             * Active
-             * @default true
-             */
+            /** Active */
             active: boolean;
             /** Base Url */
-            base_url?: string | null;
+            base_url: string;
         };
-        /**
-         * CreateProviderResponse
-         * @description Response from create provider.
-         */
-        CreateProviderResponse: {
-            /** Success */
-            success: boolean;
-            /** Providerid */
-            providerId: string;
-            /** Message */
-            message: string;
+        /** CreateProviderApiResponse */
+        CreateProviderApiResponse: {
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** CreateRubricApiRequest */
         CreateRubricApiRequest: {
@@ -8288,23 +8277,26 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * DeleteProviderRequest
-         * @description Request to delete provider.
-         */
-        DeleteProviderRequest: {
-            /** Providerid */
-            providerId: string;
+        /** DeleteProviderApiRequest */
+        DeleteProviderApiRequest: {
+            /**
+             * Provider Id
+             * Format: uuid
+             */
+            provider_id: string;
         };
-        /**
-         * DeleteProviderResponse
-         * @description Response from delete provider.
-         */
-        DeleteProviderResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** DeleteProviderApiResponse */
+        DeleteProviderApiResponse: {
+            /** Provider Exists */
+            provider_exists?: boolean | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Deleted */
+            deleted?: boolean | null;
         };
         /** DeleteRubricApiRequest */
         DeleteRubricApiRequest: {
@@ -10943,6 +10935,81 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** GetProviderDetailApiRequest */
+        GetProviderDetailApiRequest: {
+            /**
+             * Provider Id
+             * Format: uuid
+             */
+            provider_id: string;
+        };
+        /** GetProviderDetailApiResponse */
+        GetProviderDetailApiResponse: {
+            /** Provider Exists */
+            provider_exists?: boolean | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Value */
+            value?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Base Url */
+            base_url?: string | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetProviderNewApiRequest */
+        GetProviderNewApiRequest: Record<string, never>;
+        /** GetProviderNewApiResponse */
+        GetProviderNewApiResponse: {
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Value */
+            value?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Base Url */
+            base_url?: string | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** GetProvidersListApiRequest */
+        GetProvidersListApiRequest: Record<string, never>;
+        /** GetProvidersListApiResponse */
+        GetProvidersListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Providers */
+            providers?: components["schemas"]["QListProvidersV3Provider"][] | null;
+            /** Provider Options */
+            provider_options?: components["schemas"]["QListProvidersV3ProviderOption"][] | null;
+            /** Status Options */
+            status_options?: components["schemas"]["QListProvidersV3StatusOption"][] | null;
+        };
         /** GetRubricDetailApiRequest */
         GetRubricDetailApiRequest: {
             /**
@@ -13514,94 +13581,6 @@ export interface components {
             stagnationRate: components["schemas"]["MetricResponse"];
             timeSpent: components["schemas"]["MetricResponse"];
             totalAttempts: components["schemas"]["MetricResponse"];
-        };
-        /**
-         * ProviderDetailRequest
-         * @description Request for provider detail.
-         */
-        ProviderDetailRequest: {
-            /** Providerid */
-            providerId: string;
-        };
-        /**
-         * ProviderDetailResponse
-         * @description Response for provider detail endpoint.
-         */
-        ProviderDetailResponse: {
-            /** Provider Id */
-            provider_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Value */
-            value: string;
-            /** Active */
-            active: boolean;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Base Url */
-            base_url: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * ProviderItem
-         * @description Provider item for list view.
-         */
-        ProviderItem: {
-            /** Provider Id */
-            provider_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Value */
-            value: string;
-            /** Active */
-            active: boolean;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Base Url */
-            base_url: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-        };
-        /**
-         * ProviderNewRequest
-         * @description Request for default provider detail.
-         */
-        ProviderNewRequest: Record<string, never>;
-        /**
-         * ProvidersListRequest
-         * @description Request for providers list.
-         */
-        ProvidersListRequest: Record<string, never>;
-        /**
-         * ProvidersListResponse
-         * @description Response for providers list.
-         */
-        ProvidersListResponse: {
-            /** Providers */
-            providers: components["schemas"]["ProviderItem"][];
-            /** Provider Options */
-            provider_options: {
-                [key: string]: string;
-            }[];
-            /** Status Options */
-            status_options: {
-                [key: string]: string;
-            }[];
         };
         /** QCreateScenarioV3Parameter */
         QCreateScenarioV3Parameter: {
@@ -16784,6 +16763,45 @@ export interface components {
             /** Parameter Item Ids */
             parameter_item_ids: string[] | null;
         };
+        /** QListProvidersV3Provider */
+        QListProvidersV3Provider: {
+            /** Provider Id */
+            provider_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Value */
+            value: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Base Url */
+            base_url: string | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Can Duplicate */
+            can_duplicate: boolean | null;
+        };
+        /** QListProvidersV3ProviderOption */
+        QListProvidersV3ProviderOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
+        /** QListProvidersV3StatusOption */
+        QListProvidersV3StatusOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
         /** QListScenariosV3Cohort */
         QListScenariosV3Cohort: {
             /** Cohort Id */
@@ -19423,13 +19441,13 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /**
-         * UpdateProviderRequest
-         * @description Request to update provider.
-         */
-        UpdateProviderRequest: {
-            /** Providerid */
-            providerId: string;
+        /** UpdateProviderApiRequest */
+        UpdateProviderApiRequest: {
+            /**
+             * Provider Id
+             * Format: uuid
+             */
+            provider_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -19439,17 +19457,16 @@ export interface components {
             /** Active */
             active: boolean;
             /** Base Url */
-            base_url?: string | null;
+            base_url: string;
         };
-        /**
-         * UpdateProviderResponse
-         * @description Response from update provider.
-         */
-        UpdateProviderResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
+        /** UpdateProviderApiResponse */
+        UpdateProviderApiResponse: {
+            /** Provider Exists */
+            provider_exists?: boolean | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** UpdateRubricApiRequest */
         UpdateRubricApiRequest: {
@@ -24697,7 +24714,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProvidersListRequest"];
+                "application/json": components["schemas"]["GetProvidersListApiRequest"];
             };
         };
         responses: {
@@ -24707,7 +24724,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProvidersListResponse"];
+                    "application/json": components["schemas"]["GetProvidersListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24733,7 +24750,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProviderDetailRequest"];
+                "application/json": components["schemas"]["GetProviderDetailApiRequest"];
             };
         };
         responses: {
@@ -24743,7 +24760,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProviderDetailResponse"];
+                    "application/json": components["schemas"]["GetProviderDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24769,7 +24786,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProviderNewRequest"];
+                "application/json": components["schemas"]["GetProviderNewApiRequest"];
             };
         };
         responses: {
@@ -24779,7 +24796,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProviderDetailResponse"];
+                    "application/json": components["schemas"]["GetProviderNewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24805,7 +24822,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateProviderRequest"];
+                "application/json": components["schemas"]["CreateProviderApiRequest"];
             };
         };
         responses: {
@@ -24815,7 +24832,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateProviderResponse"];
+                    "application/json": components["schemas"]["CreateProviderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24841,7 +24858,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateProviderRequest"];
+                "application/json": components["schemas"]["UpdateProviderApiRequest"];
             };
         };
         responses: {
@@ -24851,7 +24868,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UpdateProviderResponse"];
+                    "application/json": components["schemas"]["UpdateProviderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24877,7 +24894,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteProviderRequest"];
+                "application/json": components["schemas"]["DeleteProviderApiRequest"];
             };
         };
         responses: {
@@ -24887,7 +24904,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeleteProviderResponse"];
+                    "application/json": components["schemas"]["DeleteProviderApiResponse"];
                 };
             };
             /** @description Validation Error */
