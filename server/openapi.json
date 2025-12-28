@@ -3165,87 +3165,6 @@
         ]
       }
     },
-    "/api/v3/auth/sync": {
-      "post": {
-        "tags": [
-          "v3",
-          "auth"
-        ],
-        "summary": "Sync Keycloak",
-        "description": "Trigger Keycloak sync to update identity providers from database.\n\nThis endpoint performs the Keycloak sync process synchronously and returns\nthe actual result. The sync process:\n- Creates/updates department realms\n- Syncs identity providers (Microsoft, Google, etc.) with credentials from database\n- Updates client configurations\n\nArgs:\n    request: Optional department_id to sync specific department, or None to sync all\n    http_request: FastAPI request object\n\nReturns:\n    SyncKeycloakResponse with success status, message, and optional error details",
-        "operationId": "sync_keycloak_api_v3_auth_sync_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SyncKeycloakRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SyncKeycloakResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "auth"
-        ]
-      }
-    },
     "/api/v3/departments/list": {
       "post": {
         "tags": [
@@ -21488,6 +21407,23 @@
         "summary": "Metrics Snapshot",
         "description": "Trigger metrics snapshot to database.\n\nCalled by notify service to log metrics snapshot.\nNo leader election needed since notify service is single instance.",
         "operationId": "metrics_snapshot_metrics_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/init": {
+      "post": {
+        "summary": "Init System",
+        "description": "Initialize system - triggers Keycloak sync for identity providers.\n\nThis endpoint performs the Keycloak sync process synchronously and returns\nthe actual result. The sync process:\n- Creates/updates department realms\n- Syncs identity providers (Microsoft, Google, etc.) with credentials from database\n- Updates client configurations\n\nArgs:\n    request: FastAPI request object (may contain optional department_id in body)\n\nReturns:\n    JSONResponse with success status, message, and optional error details",
+        "operationId": "init_system_init_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -75183,65 +75119,6 @@
         ],
         "title": "StrikeItem",
         "description": "Strike/replace item for message improvement."
-      },
-      "SyncKeycloakRequest": {
-        "properties": {
-          "department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
-          }
-        },
-        "type": "object",
-        "title": "SyncKeycloakRequest",
-        "description": "Request to sync Keycloak identity providers."
-      },
-      "SyncKeycloakResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
-          },
-          "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "SyncKeycloakResponse",
-        "description": "Response from Keycloak sync trigger."
       },
       "Thresholds": {
         "properties": {

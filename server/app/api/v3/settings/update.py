@@ -5,15 +5,13 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from app.infra.v3.activity.audit import audit_activity, audit_set
 from app.infra.v3.error.handle_route_error import handle_route_error
-from app.main import get_db, get_internal_sio, transaction
+from app.main import get_db, transaction
 from app.sql.types import (UpdateSettingsApiRequest, UpdateSettingsApiResponse,
                            UpdateSettingsSqlParams, UpdateSettingsSqlRow,
                            load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
-
-internal_sio = get_internal_sio()
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v3/settings/update_settings_complete.sql"
@@ -96,13 +94,15 @@ async def update_settings(
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
             # Trigger Keycloak sync for affected departments
+            from app.infra.v3.auth.keycloak_sync import perform_keycloak_sync
+
             if request.department_ids and len(request.department_ids) > 0:
                 # Sync each affected department realm
                 for dept_id in request.department_ids:
-                    await internal_sio.emit("keycloak_sync", {"department_id": str(dept_id)})
+                    await perform_keycloak_sync(department_id=str(dept_id))
             else:
                 # Global settings - sync default department (None)
-                await internal_sio.emit("keycloak_sync", {"department_id": None})
+                await perform_keycloak_sync(department_id=None)
 
             return api_response
     except HTTPException:

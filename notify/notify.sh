@@ -1,5 +1,5 @@
 #!/bin/bash
-# Notify service - triggers Keycloak sync and periodic health/metrics logging
+# Notify service - triggers system initialization and periodic health/metrics logging
 
 set -euo pipefail
 
@@ -7,8 +7,8 @@ set -euo pipefail
 SERVER_URL="${SERVER_URL:-http://localhost:8000}"
 APP_PREFIX="${APP_PREFIX:-}"
 INTERVAL="${INTERVAL:-60}"
-SYNC_RETRIES="${SYNC_RETRIES:-15}"
-SYNC_INITIAL_DELAY="${SYNC_INITIAL_DELAY:-10}"
+INIT_RETRIES="${INIT_RETRIES:-15}"
+INIT_INITIAL_DELAY="${INIT_INITIAL_DELAY:-10}"
 HEALTH_RETRIES="${HEALTH_RETRIES:-3}"
 METRICS_RETRIES="${METRICS_RETRIES:-3}"
 WAIT_MAX_RETRIES="${WAIT_MAX_RETRIES:-30}"
@@ -16,7 +16,7 @@ WAIT_DELAY="${WAIT_DELAY:-2}"
 
 # Build URLs
 HEALTH_URL="${SERVER_URL}${APP_PREFIX}/health"
-SYNC_URL="${SERVER_URL}${APP_PREFIX}/api/v3/auth/sync"
+INIT_URL="${SERVER_URL}${APP_PREFIX}/init"
 METRICS_URL="${SERVER_URL}${APP_PREFIX}/metrics"
 
 # Colors for output
@@ -94,15 +94,15 @@ wait_for_keycloak() {
     return 0  # Don't fail, just proceed
 }
 
-# Trigger Keycloak sync with retries and exponential backoff
-trigger_sync() {
-    log_info "Triggering Keycloak sync..."
+# Trigger system initialization (Keycloak sync) with retries and exponential backoff
+trigger_init() {
+    log_info "Triggering system initialization..."
     local retries=0
     local delay=2
-    while [ $retries -lt $SYNC_RETRIES ]; do
+    while [ $retries -lt $INIT_RETRIES ]; do
         # Check response status and body
         # Get response with http_code appended as last line
-        local response=$(curl -sfX POST "${SYNC_URL}" \
+        local response=$(curl -sfX POST "${INIT_URL}" \
             -H "Content-Type: application/json" \
             -d '{}' \
             -w "\n%{http_code}" 2>/dev/null || echo -e "\n000")
@@ -144,31 +144,31 @@ trigger_sync() {
                     message=$(echo "$body" | jq -r '.message // ""' 2>/dev/null || echo "")
                 fi
                 if [ -n "$message" ]; then
-                    log_success "Keycloak sync completed: $message"
+                    log_success "System initialization completed: $message"
                 else
-                    log_success "Keycloak sync completed successfully"
+                    log_success "System initialization completed successfully"
                 fi
                 return 0
             else
-                # Sync endpoint returned but sync failed - extract error message
+                # Init endpoint returned but initialization failed - extract error message
                 local error_msg=""
                 if command -v jq >/dev/null 2>&1; then
                     error_msg=$(echo "$body" | jq -r '.error // .message // "unknown error"' 2>/dev/null || echo "unknown error")
                 else
                     error_msg=$(echo "$body" | grep -oE '"error"[[:space:]]*:[[:space:]]*"[^"]*"' 2>/dev/null | head -1 | sed 's/.*"error"[^"]*"\([^"]*\)".*/\1/' || echo "unknown error")
                 fi
-                log_warning "Keycloak sync failed: ${error_msg}"
+                log_warning "System initialization failed: ${error_msg}"
                 # Continue retrying
             fi
         elif [ "$http_code" = "500" ]; then
-            # Server error - sync failed
+            # Server error - initialization failed
             local error_msg=$(echo "$body" | grep -oE '"detail"[[:space:]]*:[[:space:]]*"[^"]*"' 2>/dev/null | head -1 || echo "$body")
-            log_warning "Keycloak sync failed (HTTP 500): ${error_msg}"
+            log_warning "System initialization failed (HTTP 500): ${error_msg}"
         fi
         
         retries=$((retries + 1))
-        if [ $retries -lt $SYNC_RETRIES ]; then
-            log_warning "Sync attempt $retries/$SYNC_RETRIES failed (HTTP $http_code), retrying in ${delay}s..."
+        if [ $retries -lt $INIT_RETRIES ]; then
+            log_warning "Init attempt $retries/$INIT_RETRIES failed (HTTP $http_code), retrying in ${delay}s..."
             sleep $delay
             # Exponential backoff: 2s, 4s, 8s, 16s, then cap at 20s
             delay=$((delay * 2))
@@ -177,7 +177,7 @@ trigger_sync() {
             fi
         fi
     done
-    log_error "Failed to trigger Keycloak sync after ${SYNC_RETRIES} retries"
+    log_error "Failed to trigger system initialization after ${INIT_RETRIES} retries"
     return 1
 }
 
@@ -227,11 +227,11 @@ main() {
     log_info "Starting notify service..."
     log_info "Server URL: ${SERVER_URL}"
     log_info "Health URL: ${HEALTH_URL}"
-    log_info "Sync URL: ${SYNC_URL}"
+    log_info "Init URL: ${INIT_URL}"
     log_info "Metrics URL: ${METRICS_URL}"
     log_info "Interval: ${INTERVAL}s"
-    log_info "Sync retries: ${SYNC_RETRIES} (with exponential backoff)"
-    log_info "Initial Keycloak wait: ${SYNC_INITIAL_DELAY}s"
+    log_info "Init retries: ${INIT_RETRIES} (with exponential backoff)"
+    log_info "Initial Keycloak wait: ${INIT_INITIAL_DELAY}s"
 
     # Wait for server to be ready
     if ! wait_for_server; then
@@ -240,15 +240,15 @@ main() {
     fi
 
     # Wait additional time for Keycloak to initialize (if starting fresh)
-    log_info "Waiting ${SYNC_INITIAL_DELAY}s for Keycloak to initialize..."
-    sleep $SYNC_INITIAL_DELAY
+    log_info "Waiting ${INIT_INITIAL_DELAY}s for Keycloak to initialize..."
+    sleep $INIT_INITIAL_DELAY
 
-    # Trigger initial Keycloak sync with retries
-    # The sync endpoint itself has retry logic and will wait for Keycloak to be ready
-    # So we don't need to check Keycloak health here - just trigger sync and let it handle retries
-    # The sync endpoint performs the sync synchronously and returns success/failure, so we get immediate feedback
-    if ! trigger_sync; then
-        log_warning "Initial sync failed after ${SYNC_RETRIES} retries, continuing anyway..."
+    # Trigger initial system initialization with retries
+    # The init endpoint itself has retry logic and will wait for Keycloak to be ready
+    # So we don't need to check Keycloak health here - just trigger init and let it handle retries
+    # The init endpoint performs initialization synchronously and returns success/failure, so we get immediate feedback
+    if ! trigger_init; then
+        log_warning "Initial system initialization failed after ${INIT_RETRIES} retries, continuing anyway..."
     fi
 
     # Periodic loop

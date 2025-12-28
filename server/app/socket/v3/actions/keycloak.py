@@ -5,13 +5,12 @@ import os
 import socket
 from typing import Any
 
-from app.main import get_internal_sio, get_pool, sio
+from app.main import get_pool
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 logger = get_logger(__name__)
-internal_sio = get_internal_sio()
 
 # Retry configuration
 MAX_RETRIES = 10
@@ -985,33 +984,5 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         logger.warning(f"Keycloak sync failed (non-blocking): {e}", exc_info=True)
 
 
-@sio.event  # type: ignore
-async def keycloak_sync(sid: str, data: dict[str, Any]) -> None:
-    """WebSocket event handler for manual Keycloak sync trigger."""
-    logger.info(f"Keycloak sync requested via WebSocket from {sid}")
-    department_id = data.get("department_id") if isinstance(data, dict) else None
-
-    # Use utility function for consistent behavior
-    from app.infra.v3.auth.keycloak_sync import perform_keycloak_sync
-
-    result = await perform_keycloak_sync(department_id=department_id)
-    if not result.success:
-        logger.warning(f"Keycloak sync failed via WebSocket: {result.message}")
-
-
-@internal_sio.on("keycloak_sync")
-async def keycloak_sync_internal(data: dict[str, Any]) -> None:
-    """Internal event handler for API-triggered Keycloak syncs.
-
-    DEPRECATED: This handler is kept for backward compatibility but is no longer
-    used by the sync endpoint. The endpoint now calls perform_keycloak_sync() directly.
-    """
-    logger.info("Keycloak sync requested via internal event")
-    department_id = data.get("department_id") if isinstance(data, dict) else None
-
-    # Use utility function for consistent behavior
-    from app.infra.v3.auth.keycloak_sync import perform_keycloak_sync
-
-    result = await perform_keycloak_sync(department_id=department_id)
-    if not result.success:
-        logger.warning(f"Keycloak sync failed via internal event: {result.message}")
+# WebSocket event handlers removed - Keycloak sync now handled via infra function
+# Use app.infra.v3.auth.keycloak_sync.perform_keycloak_sync() directly
