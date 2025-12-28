@@ -25,6 +25,19 @@ async def disconnect(sid: str) -> None:
     """Handle WebSocket disconnection with immediate cleanup"""
     logger.info(f"Client disconnecting: {sid}")
 
+    # Log activity before cleanup, so profile lookup still works
+    try:
+        await log_websocket_activity(
+            sid=sid,
+            event_key="websocket.disconnected",
+            template="{{ actor.name }} disconnected from WebSocket",
+            context={},
+            endpoint="/socket/v3/disconnect",
+            error=False,
+        )
+    except Exception as e:
+        logger.warning(f"Error logging WebSocket disconnect activity: {e}")
+
     # Find and clean up profile for this socket
     # Find and clean up profile for this socket using Redis
     profile_to_cleanup = await find_profile_by_socket(sid)
@@ -66,19 +79,6 @@ async def disconnect(sid: str) -> None:
     chat_ids = await find_chats_by_socket(sid)
     for chat_id in chat_ids:
         await remove_active_connection(chat_id)
-
-    # Log activity (before cleanup, so find_profile_by_socket still works)
-    try:
-        await log_websocket_activity(
-            sid=sid,
-            event_key="websocket.disconnected",
-            template="{{ actor.name }} disconnected from WebSocket",
-            context={},
-            endpoint="/socket/v3/disconnect",
-            error=False,
-        )
-    except Exception as e:
-        logger.warning(f"Error logging WebSocket disconnect activity: {e}")
 
 
 # FastAPI endpoint for OpenAPI documentation (disconnect is a lifecycle event, no request payload)

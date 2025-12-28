@@ -6,7 +6,13 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 
-from app.main import _voice_message_ids, get_internal_sio, get_pool, sio
+from app.main import (
+    _voice_message_ids,
+    _voice_message_ids_lock,
+    get_internal_sio,
+    get_pool,
+    sio,
+)
 from app.socket.v3.simulations.text.send import (
     SimulationRunCompletePayload,
     simulation_run_complete,
@@ -66,6 +72,23 @@ class VoiceUserSpeechPayload(BaseModel):
     usage: VoiceUsage
 
 
+class VoiceUserSpeechErrorPayload(BaseModel):
+    """Response indicating an error occurred while processing speech event."""
+
+    success: bool
+    message: str
+
+
+async def simulation_voice_user_speech_error(
+    payload: VoiceUserSpeechErrorPayload, room: str
+) -> None:
+    await sio.emit(
+        "simulations_voice_user_speech_error",
+        payload.model_dump(),
+        room=room,
+    )
+
+
 async def _simulation_voice_user_speech_impl(
     sid: str, data: VoiceUserSpeechPayload
 ) -> None:
@@ -91,10 +114,18 @@ async def _simulation_voice_user_speech_impl(
         pool = get_pool()
         if not pool:
             logger.error("Database connection pool not available")
+            await simulation_voice_user_speech_error(
+                VoiceUserSpeechErrorPayload(
+                    success=False,
+                    message="Database connection pool not available",
+                ),
+                room=sid,
+            )
             return
 
         # Get accumulated message IDs for this chat
-        message_ids = _voice_message_ids.get(chat_id, [])
+        async with _voice_message_ids_lock:
+            message_ids = list(_voice_message_ids.get(chat_id, []))
 
         # Process message IDs if any exist (for run creation)
         if message_ids:
@@ -110,8 +141,9 @@ async def _simulation_voice_user_speech_impl(
                 if not context_row:
                     logger.error(f"Chat {chat_id} not found or no scenario configured")
                     # Clear accumulator even on error to prevent stale data
-                    if chat_id in _voice_message_ids:
-                        del _voice_message_ids[chat_id]
+                    async with _voice_message_ids_lock:
+                        if chat_id in _voice_message_ids:
+                            del _voice_message_ids[chat_id]
                     return
 
                 # Extract required fields from context
@@ -126,8 +158,9 @@ async def _simulation_voice_user_speech_impl(
                     logger.error(
                         f"Missing department_id or model_id in context for chat {chat_id}"
                     )
-                    if chat_id in _voice_message_ids:
-                        del _voice_message_ids[chat_id]
+                    async with _voice_message_ids_lock:
+                        if chat_id in _voice_message_ids:
+                            del _voice_message_ids[chat_id]
                     return
 
                 # Convert to UUID objects
@@ -144,16 +177,18 @@ async def _simulation_voice_user_speech_impl(
                     )
                 except (ValueError, TypeError) as e:
                     logger.error(f"Invalid UUID format: {e}")
-                    if chat_id in _voice_message_ids:
-                        del _voice_message_ids[chat_id]
+                    async with _voice_message_ids_lock:
+                        if chat_id in _voice_message_ids:
+                            del _voice_message_ids[chat_id]
                     return
 
                 if not voice_agent_id_uuid:
                     logger.error(
                         f"Missing voice_agent_id in context for chat {chat_id}"
                     )
-                    if chat_id in _voice_message_ids:
-                        del _voice_message_ids[chat_id]
+                    async with _voice_message_ids_lock:
+                        if chat_id in _voice_message_ids:
+                            del _voice_message_ids[chat_id]
                     return
 
                 # Get key_id via settings system: provider -> active settings -> setting_provider_keys
@@ -187,8 +222,9 @@ async def _simulation_voice_user_speech_impl(
                 persona_rows = await conn.fetch(sql_personas, str(chat_id_uuid))
                 if not persona_rows or len(persona_rows) == 0:
                     logger.error(f"No personas found for chat {chat_id}")
-                    if chat_id in _voice_message_ids:
-                        del _voice_message_ids[chat_id]
+                    async with _voice_message_ids_lock:
+                        if chat_id in _voice_message_ids:
+                            del _voice_message_ids[chat_id]
                     return
 
                 first_persona_id = None
@@ -205,8 +241,9 @@ async def _simulation_voice_user_speech_impl(
 
                 if not first_persona_id:
                     logger.error(f"No valid persona ID found for chat {chat_id}")
-                    if chat_id in _voice_message_ids:
-                        del _voice_message_ids[chat_id]
+                    async with _voice_message_ids_lock:
+                        if chat_id in _voice_message_ids:
+                            del _voice_message_ids[chat_id]
                     return
 
                 # Extract usage data
@@ -259,10 +296,13 @@ async def _simulation_voice_user_speech_impl(
 
                 # Create a run for each message ID
                 sql_create_run = load_sql(
-                    "sql/v3/model_runs/create_model_run_complete.sql"
+                    "app/sql/v3/model_runs/create_model_run_complete.sql"
                 )
                 sql_link_message = load_sql(
-                    "sql/v3/simulations/link_message_to_run.sql"
+                    "app/sql/v3/simulations/link_message_to_run.sql"
+                )
+                sql_link_run = load_sql(
+                    "app/sql/v3/simulations/link_run_to_group_for_chat_complete.sql"
                 )
 
                 runs_created = 0
@@ -291,13 +331,15 @@ async def _simulation_voice_user_speech_impl(
                         run_id = uuid.UUID(run_row["run_id"])
 
                         # Link run to chat's group (now uses groups/group_runs)
-                        # Get or create group for chat, then link run to group
-                        sql_get_group = load_sql("app/sql/v3/simulations/get_or_create_group_for_chat.sql")
-                        chat_group_row = await conn.fetchrow(sql_get_group, str(chat_id_uuid))
-                        if chat_group_row:
-                            group_id = chat_group_row["group_id"]
-                            sql_link_run = load_sql("app/sql/v3/simulations/link_run_to_group_complete.sql")
-                            await conn.execute(sql_link_run, str(group_id), str(run_id))
+                        link_row = await conn.fetchrow(
+                            sql_link_run, str(chat_id_uuid), str(run_id)
+                        )
+                        if not link_row or not link_row.get("group_id"):
+                            logger.warning(
+                                "Failed to link run %s to chat %s",
+                                run_id,
+                                chat_id_uuid,
+                            )
 
                         # Link message to run (if message exists)
                         try:
@@ -363,8 +405,9 @@ async def _simulation_voice_user_speech_impl(
                 )
 
                 # Clear accumulated message IDs after processing
-                if chat_id in _voice_message_ids:
-                    del _voice_message_ids[chat_id]
+                async with _voice_message_ids_lock:
+                    if chat_id in _voice_message_ids:
+                        del _voice_message_ids[chat_id]
         else:
             logger.info(
                 f"No accumulated message IDs for chat {chat_id}, skipping run creation"
@@ -382,8 +425,13 @@ async def _simulation_voice_user_speech_impl(
             f"Error in simulation_voice_user_speech for {sid}: {str(e)}", exc_info=True
         )
         # Clear accumulator on error to prevent stale data
-        if chat_id in _voice_message_ids:
-            del _voice_message_ids[chat_id]
+        async with _voice_message_ids_lock:
+            if chat_id in _voice_message_ids:
+                del _voice_message_ids[chat_id]
+        await simulation_voice_user_speech_error(
+            VoiceUserSpeechErrorPayload(success=False, message=str(e)),
+            room=sid,
+        )
         # Still emit simulation_run_complete even on error to hide stop button
         try:
             chat_uuid: uuid.UUID | None = uuid.UUID(chat_id) if chat_id else None
@@ -407,6 +455,12 @@ async def simulation_voice_user_speech(sid: str, data: dict[str, Any]) -> None:
         await _simulation_voice_user_speech_impl(sid, validated)
     except ValidationError as e:
         logger.error(f"Validation error in simulation_voice_user_speech for {sid}: {e}")
+        await simulation_voice_user_speech_error(
+            VoiceUserSpeechErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
+            room=sid,
+        )
 
 
 # FastAPI endpoint for OpenAPI documentation
@@ -415,4 +469,12 @@ async def simulation_voice_user_speech_api(
     request: VoiceUserSpeechPayload,
 ) -> dict[str, bool]:
     """Client-to-server event: Send user speech audio in voice simulation."""
+    return {"success": True}
+
+
+@server_router.post("/speech_error", response_model=dict[str, bool])
+async def simulation_voice_user_speech_error_api(
+    request: VoiceUserSpeechErrorPayload,
+) -> dict[str, bool]:
+    """Server-to-client event: Error handling user speech in voice simulation."""
     return {"success": True}

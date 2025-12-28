@@ -951,11 +951,9 @@ async def _simulation_grading_start_impl(sid: str, data: dict[str, Any]) -> None
             logger.info("Grading agent completed successfully")
 
             # Calculate overall score from feedbacks in database
-            sql_get_feedbacks = """
-                SELECT total
-                FROM feedbacks
-                WHERE grade_id = $1::uuid
-            """
+            sql_get_feedbacks = load_sql(
+                "app/sql/v3/grading/get_feedback_totals_for_grade.sql"
+            )
             feedback_rows = await conn.fetch(sql_get_feedbacks, str(grade_id))
             overall_score = sum(row["total"] for row in feedback_rows)
 

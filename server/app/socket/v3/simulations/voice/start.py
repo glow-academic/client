@@ -86,7 +86,9 @@ class StartVoiceResponsePayload(BaseModel):
         None  # Transcription model (e.g., "gpt-4o-mini-transcribe")
     )
     transcription_prompt: str | None = None  # Transcription prompt
-    history: list[RealtimeItem] = []  # Conversation history in RealtimeItem format
+    history: list[RealtimeItem] = Field(
+        default_factory=list
+    )  # Conversation history in RealtimeItem format
 
 
 # Emit helper functions
@@ -357,7 +359,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
             # Get or create run for this chat
             sql_get_or_create_run = load_sql(
-                "sql/v3/simulations/get_or_create_run_for_chat.sql"
+                "app/sql/v3/simulations/get_or_create_run_for_chat.sql"
             )
             run_row = await conn.fetchrow(
                 sql_get_or_create_run,
@@ -531,7 +533,7 @@ async def _simulation_voice_start_impl(sid: str, data: StartVoicePayload) -> Non
 
             # Get persona instructions only (not full system prompts)
             sql_get_persona_instructions = load_sql(
-                "sql/v3/voice/get_persona_instructions.sql"
+                "app/sql/v3/voice/get_persona_instructions.sql"
             )
             persona_instruction_rows = await conn.fetch(
                 sql_get_persona_instructions,

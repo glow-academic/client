@@ -80,19 +80,10 @@ async def _eval_stop_impl(sid: str, data: EvalStopPayload) -> None:
 
         async with pool.acquire() as conn:
             # Find active run for the attempt (via attempt_tests → test_runs)
-            active_run_row = await conn.fetchrow(
-                """
-                SELECT tr.run_id::text as run_id, t.id::text as test_id
-                FROM attempt_tests at
-                JOIN tests t ON t.id = at.test_id
-                JOIN test_runs tr ON tr.test_id = t.id
-                WHERE at.attempt_id = $1::uuid
-                  AND t.completed = false
-                ORDER BY t.created_at DESC
-                LIMIT 1
-                """,
-                attempt_id,
+            sql_get_active_run = load_sql(
+                "app/sql/v3/evals/get_active_run_for_attempt.sql"
             )
+            active_run_row = await conn.fetchrow(sql_get_active_run, attempt_id)
 
             if not active_run_row:
                 logger.warning(f"No active run found for eval attempt {attempt_id}")

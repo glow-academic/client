@@ -120,17 +120,9 @@ async def image_generation_complete(sid: str, data: dict[str, Any]) -> None:
 @internal_sio.on("image_generation_complete")
 async def image_generation_complete_internal(data: dict[str, Any]) -> None:
     """Handle image generation completion event from internal bus (server-to-server)."""
-    # Extract room from payload (it's passed as "room" not "sid")
-    room = data.get("room")
-    if not room:
-        logger.error("[image_generation_complete_internal] Missing 'room' in payload")
-        return
-
     try:
         payload = ImageGenerationCompletePayload(**data)
-        await _image_generation_complete_impl(
-            room, payload
-        )  # Use room as sid for internal calls
+        await _image_generation_complete_impl("internal", payload)
     except Exception as e:
         logger.error(
             f"Error in image_generation_complete_internal: {str(e)}", exc_info=True

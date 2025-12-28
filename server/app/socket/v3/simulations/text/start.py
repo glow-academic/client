@@ -2199,7 +2199,7 @@ async def _simulation_text_start_impl(sid: str, data: StartSimulationPayload) ->
                         if child_scenario:
                             # Get problem statement from child
                             sql = load_sql(
-                                "sql/v3/scenarios/get_scenario_problem_statement_active.sql"
+                                "app/sql/v3/scenarios/get_scenario_problem_statement_active.sql"
                             )
                             problem_row = await conn.fetchrow(sql, new_scenario_id)
                             child_problem_statement = (

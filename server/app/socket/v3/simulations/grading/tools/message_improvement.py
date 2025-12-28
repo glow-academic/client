@@ -166,7 +166,7 @@ async def _grading_tool_message_improvement_impl(
 
             # Create message feedback record
             sql_create_feedback = load_sql(
-                "sql/v3/grading/create_message_feedback_complete.sql"
+                "app/sql/v3/grading/create_message_feedback_complete.sql"
             )
             sql_query = sql_create_feedback
             sql_params = (
@@ -208,7 +208,7 @@ async def _grading_tool_message_improvement_impl(
                     ]
                 )
                 sql_create_replaces = load_sql(
-                    "sql/v3/grading/create_message_feedback_replace.sql"
+                    "app/sql/v3/grading/create_message_feedback_replace.sql"
                 )
                 await conn.execute(
                     sql_create_replaces, str(message_feedback_id), replaces_json

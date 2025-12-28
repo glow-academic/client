@@ -10,6 +10,7 @@ from pydantic import BaseModel, ValidationError
 
 from app.main import (
     _voice_message_ids,
+    _voice_message_ids_lock,
     get_pool,
     get_simulation_tool_calls_dict,
     get_simulation_tool_calls_locks,
@@ -318,7 +319,7 @@ async def _simulation_voice_assistant_done_impl(
                     )
                     # Get run_id (now uses groups/group_runs)
                     sql_get_latest_run = load_sql(
-                        "sql/v3/simulations/get_latest_run_for_chat.sql"
+                        "app/sql/v3/simulations/get_latest_run_for_chat.sql"
                     )
                     latest_run_row = await conn.fetchrow(
                         sql_get_latest_run,
@@ -368,10 +369,11 @@ async def _simulation_voice_assistant_done_impl(
                 )
 
                 # Add message ID to accumulator for voice_response_done handler
-                if chat_id_str not in _voice_message_ids:
-                    _voice_message_ids[chat_id_str] = []
-                if str(db_message_id) not in _voice_message_ids[chat_id_str]:
-                    _voice_message_ids[chat_id_str].append(str(db_message_id))
+                async with _voice_message_ids_lock:
+                    if chat_id_str not in _voice_message_ids:
+                        _voice_message_ids[chat_id_str] = []
+                    if str(db_message_id) not in _voice_message_ids[chat_id_str]:
+                        _voice_message_ids[chat_id_str].append(str(db_message_id))
 
                 # Note: simulation_new_message is already emitted by _simulation_message_complete_impl
                 # No need to emit again here

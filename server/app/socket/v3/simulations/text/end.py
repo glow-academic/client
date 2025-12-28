@@ -411,7 +411,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                             existing_chat["id"]
                         ) != str(chat_id):
                             sql = load_sql(
-                                "sql/v3/simulations/update_chat_completed.sql"
+                                "app/sql/v3/simulations/update_chat_completed.sql"
                             )
                             await conn.execute(sql, str(existing_chat["id"]))
 
@@ -471,7 +471,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
 
                             # Check if the previous chat has a grade and update scenarios_with_grades_set
                             sql = load_sql(
-                                "sql/v3/simulations/get_previous_chat_info.sql"
+                                "app/sql/v3/simulations/get_previous_chat_info.sql"
                             )
                             prev_chat_info = await conn.fetchrow(sql, prev_chat_id)
                             if (
@@ -484,7 +484,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                                     prev_chat_info["scenario_id"]
                                 )
                                 sql = load_sql(
-                                    "sql/v3/scenarios/get_root_scenario_id.sql"
+                                    "app/sql/v3/scenarios/get_root_scenario_id.sql"
                                 )
                                 prev_chat_parent_row = await conn.fetchrow(
                                     sql, prev_chat_child_scenario_id

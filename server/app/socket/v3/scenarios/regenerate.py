@@ -648,31 +648,16 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
             assistant_output = getattr(result, "final_output", None) or ""
             
             # Get latest message from previous run (assistant if exists, otherwise developer/system)
-            sql_get_latest = """
-                SELECT m.id as latest_message_id
-                FROM messages m
-                JOIN message_runs mr ON mr.message_id = m.id
-                WHERE mr.run_id = $1::uuid
-                AND NOT EXISTS (
-                    SELECT 1 FROM message_tree mt 
-                    WHERE mt.parent_id = m.id AND mt.active = true
-                )
-                ORDER BY m.created_at DESC
-                LIMIT 1
-            """
+            sql_get_latest = load_sql(
+                "app/sql/v3/scenarios/get_latest_message_without_children_for_run.sql"
+            )
             latest_row = await conn.fetchrow(sql_get_latest, str(previous_run_id))
 
             if not latest_row or not latest_row.get("latest_message_id"):
                 # Fallback: get any system/developer message from previous run
-                sql_fallback = """
-                    SELECT m.id as latest_message_id
-                    FROM messages m
-                    JOIN message_runs mr ON mr.message_id = m.id
-                    WHERE mr.run_id = $1::uuid
-                    AND m.role IN ('system', 'developer')
-                    ORDER BY m.created_at ASC
-                    LIMIT 1
-                """
+                sql_fallback = load_sql(
+                    "app/sql/v3/scenarios/get_first_system_developer_message_for_run.sql"
+                )
                 latest_row = await conn.fetchrow(sql_fallback, str(previous_run_id))
 
             parent_message_id: uuid.UUID | None = None
@@ -681,20 +666,12 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
 
             # Link existing system/developer messages to new run (reuse them)
             # They're already shared via deduplication, just need to link via message_runs
-            sql_link_existing = """
-                INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-                SELECT DISTINCT mr.message_id, $1::uuid, NOW(), NOW()
-                FROM message_runs mr
-                WHERE mr.run_id = $2::uuid
-                AND EXISTS (
-                    SELECT 1 FROM messages m 
-                    WHERE m.id = mr.message_id 
-                    AND m.role IN ('system', 'developer')
-                )
-                ON CONFLICT (message_id, run_id) 
-                DO UPDATE SET updated_at = NOW()
-            """
-            await conn.execute(sql_link_existing, str(model_run_id), str(previous_run_id))
+            sql_link_existing = load_sql(
+                "app/sql/v3/messages/link_existing_messages_to_run.sql"
+            )
+            await conn.execute(
+                sql_link_existing, str(model_run_id), str(previous_run_id)
+            )
 
             # Create user message with branch from latest message
             user_message_id: uuid.UUID | None = None

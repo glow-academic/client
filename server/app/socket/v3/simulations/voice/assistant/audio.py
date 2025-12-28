@@ -102,7 +102,7 @@ async def _simulation_voice_assistant_audio_link_impl(
         async with pool.acquire() as conn:
             # Validate message belongs to chat
             sql_validate_message = load_sql(
-                "sql/v3/simulations/validate_message_belongs_to_chat.sql"
+                "app/sql/v3/simulations/validate_message_belongs_to_chat.sql"
             )
             message_row = await conn.fetchrow(
                 sql_validate_message, str(chat_id_uuid), str(message_id_uuid)
@@ -138,7 +138,7 @@ async def _simulation_voice_assistant_audio_link_impl(
             # Link audio upload to message
             try:
                 sql_insert_message_audio = load_sql(
-                    "sql/v3/simulations/insert_message_audio.sql"
+                    "app/sql/v3/simulations/insert_message_audio.sql"
                 )
                 await conn.execute(
                     sql_insert_message_audio,

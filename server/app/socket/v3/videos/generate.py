@@ -232,8 +232,10 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                 "seconds": seconds,
                 "size": size,
             }
+            if data.imageReferenceId:
+                create_params["image_reference_id"] = data.imageReferenceId
 
-            video_job = client.videos.create(**create_params)
+            video_job = await asyncio.to_thread(client.videos.create, **create_params)
 
             video_job_id = video_job.id
             logger.info(
@@ -244,7 +246,9 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
             max_polls = 60  # 5 minutes max (5 second intervals)
             poll_count = 0
             while poll_count < max_polls:
-                video_status = client.videos.retrieve(video_job_id)
+                video_status = await asyncio.to_thread(
+                    client.videos.retrieve, video_job_id
+                )
                 logger.info(
                     f"Video job {video_job_id} status: {video_status.status}, progress: {video_status.progress}"
                 )
@@ -268,7 +272,9 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
 
                 if video_status.status == "completed":
                     # Download video
-                    video_response = client.videos.download_content(video_job_id)
+                    video_response = await asyncio.to_thread(
+                        client.videos.download_content, video_job_id
+                    )
                     video_content_bytes: bytes = getattr(video_response, "content", b"")
                     if not video_content_bytes:
                         if hasattr(video_response, "read"):
@@ -308,7 +314,7 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
 
                     # Create generation and link to video (with run_id from SQL)
                     sql_create_generation = load_sql(
-                        "sql/v3/videos/create_generation_and_link.sql"
+                        "app/sql/v3/videos/create_generation_and_link.sql"
                     )
                     generation_result = await conn.fetchrow(
                         sql_create_generation,

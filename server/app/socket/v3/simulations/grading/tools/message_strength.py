@@ -159,7 +159,7 @@ async def _grading_tool_message_strength_impl(
 
             # Create message feedback record
             sql_create_feedback = load_sql(
-                "sql/v3/grading/create_message_feedback_complete.sql"
+                "app/sql/v3/grading/create_message_feedback_complete.sql"
             )
             sql_query = sql_create_feedback
             sql_params = (
@@ -198,7 +198,7 @@ async def _grading_tool_message_strength_impl(
                     [{"section": section} for section in validated.highlight]
                 )
                 sql_create_highlights = load_sql(
-                    "sql/v3/grading/create_message_feedback_highlight.sql"
+                    "app/sql/v3/grading/create_message_feedback_highlight.sql"
                 )
                 await conn.execute(
                     sql_create_highlights, str(message_feedback_id), highlights_json

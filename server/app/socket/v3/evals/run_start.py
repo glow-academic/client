@@ -98,14 +98,8 @@ async def _eval_run_start_impl(sid: str, data: EvalRunStartPayload) -> None:
 
         async with pool.acquire() as conn:
             # Get eval data from attempt
-            attempt_row = await conn.fetchrow(
-                """
-                SELECT ea.eval_id::text as eval_id
-                FROM eval_attempts ea
-                WHERE ea.id = $1::uuid
-                """,
-                attempt_id,
-            )
+            sql_get_eval_id = load_sql("app/sql/v3/evals/get_eval_id_for_attempt.sql")
+            attempt_row = await conn.fetchrow(sql_get_eval_id, attempt_id)
             if not attempt_row:
                 await eval_run_start_error(
                     EvalRunStartErrorPayload(
@@ -120,12 +114,11 @@ async def _eval_run_start_impl(sid: str, data: EvalRunStartPayload) -> None:
             eval_id = attempt_row["eval_id"]
 
             # Check if run is already completed (idempotency check)
+            sql_check_completed = load_sql(
+                "app/sql/v3/evals/get_eval_run_completed.sql"
+            )
             completed_check = await conn.fetchrow(
-                """
-                SELECT completed
-                FROM eval_runs
-                WHERE eval_id = $1::uuid AND run_id = $2::uuid
-                """,
+                sql_check_completed,
                 eval_id,
                 run_id,
             )

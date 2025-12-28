@@ -37,21 +37,16 @@ async def _simulation_group_link_impl(
 
     async with pool.acquire() as conn:
         try:
-            # Get or create group for chat
-            sql_get_group = load_sql(
-                "sql/v3/simulations/get_or_create_group_for_chat.sql"
+            sql_link = load_sql(
+                "app/sql/v3/simulations/link_run_to_group_for_chat_complete.sql"
             )
-            group_row = await conn.fetchrow(sql_get_group, str(chat_id))
+            link_row = await conn.fetchrow(sql_link, str(chat_id), str(run_id))
 
-            if not group_row or not group_row.get("group_id"):
-                logger.error(f"Failed to get or create group for chat {chat_id}")
+            if not link_row or not link_row.get("group_id"):
+                logger.error(f"Failed to link run {run_id} to chat {chat_id}")
                 return False
 
-            group_id = group_row["group_id"]
-
-            # Link run to group
-            sql_link = load_sql("app/sql/v3/simulations/link_run_to_group_complete.sql")
-            await conn.execute(sql_link, str(group_id), str(run_id))
+            group_id = link_row["group_id"]
 
             logger.info(
                 f"Linked run {run_id} to group {group_id} for chat {chat_id}"
@@ -91,4 +86,3 @@ async def simulation_group_link_api(
 ) -> dict[str, bool]:
     """Internal event: Link a run to a group for a simulation chat."""
     return {"success": True}
-

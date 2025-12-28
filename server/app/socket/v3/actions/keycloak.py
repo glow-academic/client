@@ -215,15 +215,10 @@ async def delete_department_realm(department_id: str) -> None:
 
         # Get default department ID to check if this is the default department
         async with pool.acquire() as conn:
-            default_dept_result = await conn.fetchval(
-                """
-                SELECT sdd.department_id::text
-                FROM settings s
-                JOIN settings_default_department sdd ON sdd.settings_id = s.id
-                WHERE s.active = true AND sdd.active = true
-                LIMIT 1
-                """
+            sql_default_department = load_sql(
+                "app/sql/v3/settings/get_default_department.sql"
             )
+            default_dept_result = await conn.fetchval(sql_default_department)
 
         realm_name = get_realm_name(department_id, default_dept_result)
 

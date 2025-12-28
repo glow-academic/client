@@ -64,7 +64,7 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
         async with pool.acquire() as conn:
             # Load SQL query at top (DHH style - one SQL file per route)
             sql = load_sql(
-                "sql/v3/images/get_image_generation_context_and_create_upload.sql"
+                "app/sql/v3/images/get_image_generation_context_and_create_upload.sql"
             )
 
             # Get context + create run atomically
@@ -242,7 +242,8 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                     try:
                         import httpx
 
-                        async with httpx.AsyncClient() as client:
+                        timeout = httpx.Timeout(30.0, connect=10.0)
+                        async with httpx.AsyncClient(timeout=timeout) as client:
                             image_response = await client.get(image_url)
                             image_response.raise_for_status()
                             image_bytes = image_response.content
@@ -251,21 +252,6 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
                                 f"bytes_length={len(image_bytes)}, "
                                 f"content_type={image_response.headers.get('content-type')}"
                             )
-                    except ImportError:
-                        # Fallback to requests if httpx not available
-                        logger.info(
-                            f"httpx not available, using requests for {image_id}"
-                        )
-                        import requests  # type: ignore
-
-                        requests_response = requests.get(image_url)  # type: ignore
-                        requests_response.raise_for_status()  # type: ignore
-                        image_bytes = requests_response.content  # type: ignore
-                        logger.info(
-                            f"Successfully downloaded image for {image_id} using requests: "
-                            f"bytes_length={len(image_bytes)}, "
-                            f"content_type={requests_response.headers.get('content-type')}"
-                        )
                     except Exception as download_error:
                         error_msg = (
                             f"Failed to download image from URL for {image_id}: "

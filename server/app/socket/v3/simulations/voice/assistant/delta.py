@@ -133,7 +133,7 @@ async def _simulation_voice_assistant_delta_impl(
                     # First delta for this tool call - initialize state
                     # Validate chat exists and get context
                     sql_context = load_sql(
-                        "sql/v3/agents/get_simulation_run_context.sql"
+                        "app/sql/v3/agents/get_simulation_run_context.sql"
                     )
                     context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
 
@@ -149,7 +149,7 @@ async def _simulation_voice_assistant_delta_impl(
 
                     # Get run_id (now uses groups/group_runs)
                     sql_get_latest_run = load_sql(
-                        "sql/v3/simulations/get_latest_run_for_chat.sql"
+                        "app/sql/v3/simulations/get_latest_run_for_chat.sql"
                     )
                     latest_run_row = await conn.fetchrow(
                         sql_get_latest_run,
@@ -180,7 +180,7 @@ async def _simulation_voice_assistant_delta_impl(
 
                     # Get latest message in chat to use as parent for message_tree
                     sql_get_latest_message = load_sql(
-                        "sql/v3/simulations/get_latest_message.sql"
+                        "app/sql/v3/simulations/get_latest_message.sql"
                     )
                     latest_message_row = await conn.fetchrow(
                         sql_get_latest_message,

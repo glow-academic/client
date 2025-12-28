@@ -53,6 +53,16 @@ class SimulationMessageCompleteInternalPayload(BaseModel):
     sid: str | None = None
 
 
+class SimulationMessageLinkPersonaPayload(BaseModel):
+    """Internal event to link a message to a persona."""
+
+    message_id: str
+    persona_id: str | None = None
+    persona_name: str | None = None
+    chat_id: str | None = None
+    sid: str | None = None
+
+
 # Client-facing payload models (reused from text/send.py)
 class SimulationNewMessagePayload(BaseModel):
     """Response indicating a new simulation message was created."""
@@ -143,118 +153,128 @@ async def _simulation_message_start_impl(
     try:
         chat_id_uuid = uuid.UUID(chat_id)
 
-        # Resolve persona_id if persona_name is provided
-        persona_id_str = validated.persona_id
-        if not persona_id_str and validated.persona_name:
-            # Look up persona by name
-            sql_find_persona = load_sql("app/sql/v3/personas/get_persona_by_name.sql")
-            persona_row = await conn.fetchrow(
-                sql_find_persona, validated.persona_name, str(chat_id_uuid)
-            )
-            if persona_row:
-                persona_id_str = str(persona_row["id"])
-
-        # Create message in database
-        sql_create_message = load_sql("app/sql/v3/simulations/create_message.sql")
-        created_at_param = None
-        if validated.created_at:
-            from datetime import datetime
-
-            try:
-                created_at_param = datetime.fromisoformat(
-                    validated.created_at.replace("Z", "+00:00")
+        async with conn.transaction():
+            # Resolve persona_id if persona_name is provided
+            persona_id_str = validated.persona_id
+            if not persona_id_str and validated.persona_name:
+                # Look up persona by name
+                sql_find_persona = load_sql(
+                    "app/sql/v3/personas/get_persona_by_name.sql"
                 )
-            except Exception:
-                logger.warning(
-                    f"Invalid created_at format: {validated.created_at}, using NOW()"
+                persona_row = await conn.fetchrow(
+                    sql_find_persona, validated.persona_name, str(chat_id_uuid)
                 )
+                if persona_row:
+                    persona_id_str = str(persona_row["id"])
 
-        message_row = await conn.fetchrow(
-            sql_create_message,
-            validated.role,
-            validated.content,
-            validated.completed,
-            created_at_param,
-        )
+            # Create message in database
+            sql_create_message = load_sql("app/sql/v3/simulations/create_message.sql")
+            created_at_param = None
+            if validated.created_at:
+                from datetime import datetime
 
-        if not message_row:
-            logger.error(f"Failed to create message for chat {chat_id}")
-            return None
-
-        db_message_id = message_row["id"]
-        message_created_at = message_row["created_at"]
-
-        # Handle message ordering for voice mode (ensure assistant messages come after user messages)
-        if validated.role == "assistant" and not validated.created_at:
-            latest_user_message_row = await conn.fetchrow(
-                """
-                SELECT m.created_at
-                FROM messages m
-                JOIN message_runs mr ON mr.message_id = m.id
-                JOIN runs r ON r.id = mr.run_id
-                JOIN group_runs gr ON gr.run_id = r.id
-                JOIN groups g ON g.id = gr.group_id
-                JOIN chat_groups cg ON cg.group_id = g.id
-                JOIN chats c ON c.id = cg.chat_id
-                WHERE c.id = $1::uuid
-                  AND m.role = 'user'
-                  AND m.id != $2::uuid
-                ORDER BY m.created_at DESC
-                LIMIT 1
-                """,
-                chat_id_uuid,
-                db_message_id,
-            )
-
-            if latest_user_message_row:
-                user_created_at = latest_user_message_row["created_at"]
-                if user_created_at >= message_created_at:
-                    sql_update_created_at = load_sql("app/sql/v3/messages/update_message_created_at.sql")
-                    await conn.execute(sql_update_created_at, user_created_at, db_message_id)
-                    # Fetch updated created_at
-                    sql_get_created_at = load_sql("app/sql/v3/messages/get_message_created_at.sql")
-                    updated_row = await conn.fetchrow(sql_get_created_at, db_message_id)
-                    if updated_row:
-                        message_created_at = updated_row["created_at"]
-
-        # Link message to run if run_id is provided
-        if validated.run_id:
-            sql_link = load_sql("app/sql/v3/simulations/link_message_to_run.sql")
-            try:
-                await conn.execute(sql_link, str(db_message_id), validated.run_id)
-            except Exception as e:
-                logger.warning(f"Failed to link message to run: {e}")
-
-        # Link to persona if persona_id is available
-        if persona_id_str:
-            sql_link_persona = load_sql(
-                "sql/v3/simulations/link_message_to_persona.sql"
-            )
-            try:
-                await conn.execute(sql_link_persona, str(db_message_id), persona_id_str)
-            except Exception as link_err:
-                logger.warning(f"Failed to link message to persona: {link_err}")
-
-        # Create message branch if parent_message_id is provided
-        parent_id_str = validated.parent_message_id
-        if not parent_id_str and validated.role == "assistant":
-            # For assistant messages, find latest message with no active children
-            sql_get_latest = load_sql("app/sql/v3/simulations/get_latest_message_without_children.sql")
-            latest_message_row = await conn.fetchrow(sql_get_latest, chat_id_uuid, db_message_id)
-            if latest_message_row and latest_message_row.get("id"):
-                parent_id_str = str(latest_message_row["id"])
-
-        if parent_id_str:
-            assistant_id_str = str(db_message_id)
-            if parent_id_str != assistant_id_str:
-                sql_branch = load_sql("app/sql/v3/simulations/create_message_branch.sql")
                 try:
-                    await conn.execute(sql_branch, parent_id_str, assistant_id_str)
-                    logger.info(
-                        f"Created branch from message {parent_id_str} to message {assistant_id_str}"
+                    created_at_param = datetime.fromisoformat(
+                        validated.created_at.replace("Z", "+00:00")
                     )
+                except Exception:
+                    logger.warning(
+                        f"Invalid created_at format: {validated.created_at}, using NOW()"
+                    )
+
+            message_row = await conn.fetchrow(
+                sql_create_message,
+                validated.role,
+                validated.content,
+                validated.completed,
+                created_at_param,
+            )
+
+            if not message_row:
+                logger.error(f"Failed to create message for chat {chat_id}")
+                return None
+
+            db_message_id = message_row["id"]
+            message_created_at = message_row["created_at"]
+
+            # Handle message ordering for voice mode (ensure assistant messages come after user messages)
+            if validated.role == "assistant" and not validated.created_at:
+                sql_latest_user_message = load_sql(
+                    "app/sql/v3/simulations/get_latest_user_message_created_at.sql"
+                )
+                latest_user_message_row = await conn.fetchrow(
+                    sql_latest_user_message,
+                    chat_id_uuid,
+                    db_message_id,
+                )
+
+                if latest_user_message_row:
+                    user_created_at = latest_user_message_row["created_at"]
+                    if user_created_at >= message_created_at:
+                        sql_update_created_at = load_sql(
+                            "app/sql/v3/messages/update_message_created_at.sql"
+                        )
+                        await conn.execute(
+                            sql_update_created_at, user_created_at, db_message_id
+                        )
+                        # Fetch updated created_at
+                        sql_get_created_at = load_sql(
+                            "app/sql/v3/messages/get_message_created_at.sql"
+                        )
+                        updated_row = await conn.fetchrow(
+                            sql_get_created_at, db_message_id
+                        )
+                        if updated_row:
+                            message_created_at = updated_row["created_at"]
+
+            # Link message to run if run_id is provided
+            if validated.run_id:
+                sql_link = load_sql("app/sql/v3/simulations/link_message_to_run.sql")
+                try:
+                    await conn.execute(sql_link, str(db_message_id), validated.run_id)
                 except Exception as e:
-                    logger.warning(f"Failed to create message branch: {e}")
+                    logger.warning(f"Failed to link message to run: {e}")
+
+            # Link to persona if persona_id is available
+            if persona_id_str:
+                sql_link_persona = load_sql(
+                    "app/sql/v3/simulations/link_message_to_persona.sql"
+                )
+                try:
+                    await conn.execute(
+                        sql_link_persona, str(db_message_id), persona_id_str
+                    )
+                except Exception as link_err:
+                    logger.warning(f"Failed to link message to persona: {link_err}")
+
+            # Create message branch if parent_message_id is provided
+            parent_id_str = validated.parent_message_id
+            if not parent_id_str and validated.role == "assistant":
+                # For assistant messages, find latest message with no active children
+                sql_get_latest = load_sql(
+                    "app/sql/v3/simulations/get_latest_message_without_children.sql"
+                )
+                latest_message_row = await conn.fetchrow(
+                    sql_get_latest, chat_id_uuid, db_message_id
+                )
+                if latest_message_row and latest_message_row.get("id"):
+                    parent_id_str = str(latest_message_row["id"])
+
+            if parent_id_str:
+                assistant_id_str = str(db_message_id)
+                if parent_id_str != assistant_id_str:
+                    sql_branch = load_sql(
+                        "app/sql/v3/simulations/create_message_branch.sql"
+                    )
+                    try:
+                        await conn.execute(sql_branch, parent_id_str, assistant_id_str)
+                        logger.info(
+                            "Created branch from message %s to message %s",
+                            parent_id_str,
+                            assistant_id_str,
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to create message branch: {e}")
 
         # Emit new message event to clients
         room = f"simulation_{chat_id_uuid}"
@@ -382,21 +402,24 @@ async def _simulation_message_complete_impl(
     assert conn is not None  # Type guard
 
     try:
-        # Update message content with final content
-        sql_update = load_sql("app/sql/v3/simulations/update_message_content.sql")
-        await conn.execute(sql_update, validated.final_content, validated.message_id)
+        async with conn.transaction():
+            # Update message content with final content
+            sql_update = load_sql("app/sql/v3/simulations/update_message_content.sql")
+            await conn.execute(
+                sql_update, validated.final_content, validated.message_id
+            )
 
-        # Update final content in message_content
-        sql_update_final = load_sql(
-            "sql/v3/simulations/update_message_content_final.sql"
-        )
-        await conn.execute(
-            sql_update_final, validated.final_content, validated.message_id
-        )
+            # Update final content in message_content
+            sql_update_final = load_sql(
+                "app/sql/v3/simulations/update_message_content_final.sql"
+            )
+            await conn.execute(
+                sql_update_final, validated.final_content, validated.message_id
+            )
 
-        # Complete message in database
-        sql_complete = load_sql("app/sql/v3/simulations/complete_message.sql")
-        await conn.execute(sql_complete, validated.message_id)
+            # Complete message in database
+            sql_complete = load_sql("app/sql/v3/simulations/complete_message.sql")
+            await conn.execute(sql_complete, validated.message_id)
 
         # Emit completion event to clients
         room = f"simulation_{validated.chat_id}"
@@ -444,14 +467,77 @@ async def _simulation_message_complete_impl(
             await conn_context.__aexit__(None, None, None)
 
 
+async def _simulation_message_link_persona_impl(
+    sid: str, data: dict[str, Any], conn: asyncpg.Connection | None = None
+) -> None:
+    """Internal implementation for linking a persona to a message."""
+    logger.info(
+        f"[simulation_message_link_persona] Handler received event: sid={sid}, "
+        f"message_id={data.get('message_id', 'unknown')}"
+    )
+    try:
+        validated = SimulationMessageLinkPersonaPayload(**data)
+    except ValidationError as e:
+        logger.error(
+            f"Validation error in simulation_message_link_persona for {sid}: {e}"
+        )
+        return
+
+    use_provided_conn = conn is not None
+    conn_context = None
+    if not use_provided_conn:
+        pool = get_pool()
+        if not pool:
+            logger.error("Database connection pool not available")
+            return
+        conn_context = pool.acquire()
+        conn = await conn_context.__aenter__()
+
+    assert conn is not None  # Type guard
+
+    try:
+        persona_id_str = validated.persona_id
+        if not persona_id_str and validated.persona_name and validated.chat_id:
+            sql_find_persona = load_sql("app/sql/v3/personas/get_persona_by_name.sql")
+            persona_row = await conn.fetchrow(
+                sql_find_persona,
+                validated.persona_name,
+                validated.chat_id,
+            )
+            if persona_row:
+                persona_id_str = str(persona_row["id"])
+
+        if not persona_id_str:
+            logger.warning(
+                "Skipping persona link: missing persona_id/persona_name for "
+                f"message {validated.message_id}"
+            )
+            return
+
+        sql_link_persona = load_sql(
+            "app/sql/v3/simulations/link_message_to_persona.sql"
+        )
+        await conn.execute(
+            sql_link_persona, validated.message_id, persona_id_str
+        )
+        logger.info(
+            f"Linked persona {persona_id_str} to message {validated.message_id}"
+        )
+    except Exception as e:
+        logger.error(
+            f"Error in simulation_message_link_persona for {sid}: {str(e)}",
+            exc_info=True,
+        )
+    finally:
+        if not use_provided_conn and conn_context:
+            await conn_context.__aexit__(None, None, None)
+
+
 # Internal event handlers
 @internal_sio.on("simulation_message_start")
 async def simulation_message_start_internal(data: dict[str, Any]) -> None:
     """Handle message start event from internal bus (server-to-server)."""
-    sid = data.get("sid")
-    if not sid:
-        logger.error("[simulation_message_start_internal] Missing 'sid' in payload")
-        return
+    sid = data.get("sid", "internal")
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}
     await _simulation_message_start_impl(sid, payload, conn=None)
@@ -474,6 +560,14 @@ async def simulation_message_complete_internal(data: dict[str, Any]) -> None:
     # Remove sid from data before passing to implementation
     payload = {k: v for k, v in data.items() if k != "sid"}
     await _simulation_message_complete_impl(sid, payload, conn=None)
+
+
+@internal_sio.on("simulation_message_link_persona")
+async def simulation_message_link_persona_internal(data: dict[str, Any]) -> None:
+    """Handle message persona link event from internal bus (server-to-server)."""
+    sid = data.get("sid", "internal")
+    payload = {k: v for k, v in data.items() if k != "sid"}
+    await _simulation_message_link_persona_impl(sid, payload, conn=None)
 
 
 # FastAPI endpoints for OpenAPI documentation

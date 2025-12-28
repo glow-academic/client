@@ -156,14 +156,10 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
 
             # Filter out runs that have already been processed (including current_run_id)
             # Get all completed runs for this eval
-            completed_runs = await conn.fetch(
-                """
-                SELECT run_id::text as run_id
-                FROM eval_runs
-                WHERE eval_id = $1::uuid AND completed = true
-                """,
-                eval_id,
+            sql_get_completed_runs = load_sql(
+                "app/sql/v3/evals/get_completed_runs_for_eval.sql"
             )
+            completed_runs = await conn.fetch(sql_get_completed_runs, eval_id)
             completed_run_ids = {row["run_id"] for row in completed_runs}
 
             # Find next unprocessed run
@@ -203,18 +199,10 @@ async def _eval_process_next_impl(sid: str, data: EvalProcessNextPayload) -> Non
 
             # Get department_id from next run if not provided
             if not department_id:
-                dept_row = await conn.fetchrow(
-                    """
-                    SELECT d.id::text as department_id
-                    FROM runs r
-                    JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
-                    JOIN profile_departments pd ON pd.profile_id = rp.profile_id AND pd.active = true
-                    JOIN departments d ON d.id = pd.department_id AND d.active = true
-                    WHERE r.id = $1::uuid
-                    LIMIT 1
-                    """,
-                    next_run_id,
+                sql_get_department = load_sql(
+                    "app/sql/v3/evals/get_department_for_run.sql"
                 )
+                dept_row = await conn.fetchrow(sql_get_department, next_run_id)
                 if dept_row:
                     department_id = dept_row["department_id"]
 

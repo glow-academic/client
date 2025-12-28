@@ -176,6 +176,7 @@ _voice_sessions: dict[str, dict[str, Any]] = {}
 # Global storage for voice message IDs (chat_id -> list of message IDs)
 # Accumulates message IDs created during voice tool calls, processed when response.done arrives
 _voice_message_ids: dict[str, list[str]] = {}
+_voice_message_ids_lock = asyncio.Lock()
 
 # Global storage for simulation tool calls (chat_id -> {tool_call_id: {state...}})
 # Tracks tool call state for streaming persona messages from tool call arguments

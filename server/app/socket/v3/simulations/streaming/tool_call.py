@@ -79,42 +79,47 @@ async def _simulation_tool_call_start_impl(
     assert conn is not None  # Type guard
 
     try:
-        # Look up tool_id by tool_name
-        sql_get_tool_id = """
-            SELECT id FROM tools 
-            WHERE name = $1::text AND active = TRUE
-            LIMIT 1
-        """
-        row = await conn.fetchrow(sql_get_tool_id, validated.tool_name)
-        tool_id = row["id"] if row else None
-        if not tool_id:
-            logger.error(
-                f"Tool not found: {validated.tool_name} for chat {validated.chat_id}, call_id={validated.call_id}"
+        async with conn.transaction():
+            # Look up tool_id by tool_name
+            sql_get_tool_id = load_sql(
+                "app/sql/v3/tool_calls/get_tool_id_by_name.sql"
             )
-            return None
+            row = await conn.fetchrow(sql_get_tool_id, validated.tool_name)
+            tool_id = row["id"] if row else None
+            if not tool_id:
+                logger.error(
+                    "Tool not found: %s for chat %s, call_id=%s",
+                    validated.tool_name,
+                    validated.chat_id,
+                    validated.call_id,
+                )
+                return None
 
-        # Create tool call in database
-        sql_create_tool_call = load_sql("app/sql/v3/tool_calls/create_tool_call.sql")
-        tool_call_row = await conn.fetchrow(
-            sql_create_tool_call, validated.call_id, str(tool_id)
-        )
-
-        if not tool_call_row:
-            logger.error(
-                f"Failed to create tool call for chat {validated.chat_id}, call_id={validated.call_id}"
+            # Create tool call in database
+            sql_create_tool_call = load_sql(
+                "app/sql/v3/tool_calls/create_tool_call.sql"
             )
-            return None
+            tool_call_row = await conn.fetchrow(
+                sql_create_tool_call, validated.call_id, str(tool_id)
+            )
 
-        db_tool_call_id = tool_call_row["id"]
+            if not tool_call_row:
+                logger.error(
+                    "Failed to create tool call for chat %s, call_id=%s",
+                    validated.chat_id,
+                    validated.call_id,
+                )
+                return None
 
-        # Link tool call to run
-        sql_link_tool_call = load_sql("app/sql/v3/tool_calls/link_tool_call_to_run.sql")
-        try:
+            db_tool_call_id = tool_call_row["id"]
+
+            # Link tool call to run
+            sql_link_tool_call = load_sql(
+                "app/sql/v3/tool_calls/link_tool_call_to_run.sql"
+            )
             await conn.execute(
                 sql_link_tool_call, str(db_tool_call_id), validated.run_id
             )
-        except Exception as e:
-            logger.warning(f"Failed to link tool call to run: {e}")
 
         logger.info(
             f"Created tool call {db_tool_call_id} for chat {validated.chat_id} "
@@ -211,17 +216,20 @@ async def _simulation_tool_call_complete_impl(
     assert conn is not None  # Type guard
 
     try:
-        # Finalize tool call in database (mark as completed)
-        sql_update_completed = load_sql(
-            "sql/v3/tool_calls/update_tool_call_completed.sql"
-        )
-        await conn.execute(sql_update_completed, validated.tool_call_id)
+        async with conn.transaction():
+            # Finalize tool call in database (mark as completed)
+            sql_update_completed = load_sql(
+                "app/sql/v3/tool_calls/update_tool_call_completed.sql"
+            )
+            await conn.execute(sql_update_completed, validated.tool_call_id)
 
-        # Update arguments with final version
-        sql_update_args = load_sql("app/sql/v3/tool_calls/update_tool_call_arguments.sql")
-        await conn.execute(
-            sql_update_args, validated.tool_call_id, validated.arguments_raw
-        )
+            # Update arguments with final version
+            sql_update_args = load_sql(
+                "app/sql/v3/tool_calls/update_tool_call_arguments.sql"
+            )
+            await conn.execute(
+                sql_update_args, validated.tool_call_id, validated.arguments_raw
+            )
 
         logger.info(
             f"Finalized tool call {validated.tool_call_id} for chat {validated.chat_id}"

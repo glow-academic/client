@@ -64,76 +64,82 @@ async def _document_template_create_impl(
             with open(full_path, "w", encoding="utf-8") as f:
                 f.write(template_html)
 
-            # Create upload record
-            sql_insert_upload = load_sql("app/sql/v3/uploads/insert_upload.sql")
-            upload_id_result = await conn.fetchrow(
-                sql_insert_upload,
-                file_path,
-                "text/html",
-                len(template_html.encode("utf-8")),
-            )
-            upload_id = upload_id_result["id"]
-
             template_mapping: dict[str, Any] | None = None
 
-            # If documentId is provided, create template and link to document and run
-            if document_id:
-                template_schema_jsonb = json.dumps(template_schema)
-                template_name = f"Template for {document_name or 'Document'}"
-
-                # Create template and link to document and run
-                sql_create_template = load_sql(
-                    "app/sql/v3/documents/create_template_and_link.sql"
+            async with conn.transaction():
+                # Create upload record
+                sql_insert_upload = load_sql("app/sql/v3/uploads/insert_upload.sql")
+                upload_id_result = await conn.fetchrow(
+                    sql_insert_upload,
+                    file_path,
+                    "text/html",
+                    len(template_html.encode("utf-8")),
                 )
-                template_result = await conn.fetchrow(
-                    sql_create_template,
-                    str(document_id),
-                    str(uuid.UUID(upload_id)),
-                    template_name,
-                    template_schema_jsonb,
-                    True,  # active = true
-                    str(run_id),  # run_id
-                )
+                upload_id = upload_id_result["id"]
 
-                if template_result:
-                    template_id = template_result["template_id"]
-                    logger.info(
-                        f"Created template {template_id} and linked to document {document_id} and run {run_id}"
+                # If documentId is provided, create template and link to document and run
+                if document_id:
+                    template_schema_jsonb = json.dumps(template_schema)
+                    template_name = f"Template for {document_name or 'Document'}"
+
+                    # Create template and link to document and run
+                    sql_create_template = load_sql(
+                        "app/sql/v3/documents/create_template_and_link.sql"
+                    )
+                    template_result = await conn.fetchrow(
+                        sql_create_template,
+                        str(document_id),
+                        str(uuid.UUID(upload_id)),
+                        template_name,
+                        template_schema_jsonb,
+                        True,  # active = true
+                        str(run_id),  # run_id
                     )
 
-                # Fetch updated templates and build mapping from array (no JSONB)
-                # Query templates directly - build mapping client-side from array
-                templates_query = """
-                    SELECT 
-                        t.upload_id,
-                        t.id as template_id,
-                        t.args as template_args,
-                        dt.active,
-                        dt.created_at,
-                        dt.updated_at
-                    FROM document_templates dt
-                    JOIN templates t ON t.id = dt.template_id
-                    WHERE dt.document_id = $1::uuid
-                    ORDER BY dt.created_at DESC
-                """
-                template_rows = await conn.fetch(templates_query, str(document_id))
-                
-                # Build mapping from array (replacing JSONB pattern)
-                template_mapping = {}
-                for row in template_rows:
-                    upload_id_str = str(row["upload_id"])
-                    template_mapping[upload_id_str] = {
-                        "template_id": str(row["template_id"]),
-                        "template_args": row["template_args"] if isinstance(row["template_args"], dict) else json.loads(row["template_args"]) if isinstance(row["template_args"], str) else {},
-                        "active": row["active"],
-                        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                        "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
-                    }
+                    if template_result:
+                        template_id = template_result["template_id"]
+                        logger.info(
+                            "Created template %s and linked to document %s and run %s",
+                            template_id,
+                            document_id,
+                            run_id,
+                        )
 
+                    # Fetch updated templates and build mapping from array (no JSONB)
+                    sql_templates = load_sql(
+                        "app/sql/v3/documents/get_document_templates.sql"
+                    )
+                    template_rows = await conn.fetch(
+                        sql_templates, str(document_id)
+                    )
+
+                    # Build mapping from array (replacing JSONB pattern)
+                    template_mapping = {}
+                    for row in template_rows:
+                        upload_id_str = str(row["upload_id"])
+                        template_mapping[upload_id_str] = {
+                            "template_id": str(row["template_id"]),
+                            "template_args": row["template_args"]
+                            if isinstance(row["template_args"], dict)
+                            else json.loads(row["template_args"])
+                            if isinstance(row["template_args"], str)
+                            else {},
+                            "active": row["active"],
+                            "created_at": row["created_at"].isoformat()
+                            if row["created_at"]
+                            else None,
+                            "updated_at": row["updated_at"].isoformat()
+                            if row["updated_at"]
+                            else None,
+                        }
+
+            if document_id:
                 # Invalidate documents cache
                 await invalidate_tags(["documents"])
                 logger.info(
-                    f"Template saved to document {document_id} with upload_id {upload_id}"
+                    "Template saved to document %s with upload_id %s",
+                    document_id,
+                    upload_id,
                 )
 
             # Emit completion event if room provided
@@ -197,4 +203,3 @@ async def document_template_create_api(
 ) -> dict[str, bool]:
     """Internal event: Create a document template."""
     return {"success": True}
-

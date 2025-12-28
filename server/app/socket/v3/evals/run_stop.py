@@ -94,16 +94,11 @@ async def _eval_run_stop_impl(sid: str, data: EvalRunStopPayload) -> None:
         async with pool.acquire() as conn:
             # Find active test for this run_id
             # Test trace_id format: "eval_{attempt_id}_{run_id}"
+            sql_get_active_test = load_sql(
+                "app/sql/v3/evals/get_active_test_for_run.sql"
+            )
             test_row = await conn.fetchrow(
-                """
-                SELECT t.id::text as test_id, t.completed
-                FROM tests t
-                JOIN attempt_tests at ON at.test_id = t.id
-                WHERE at.attempt_id = $1::uuid
-                  AND t.trace_id = $2
-                  AND t.completed = false
-                LIMIT 1
-                """,
+                sql_get_active_test,
                 attempt_id,
                 f"eval_{attempt_id}_{run_id}",
             )

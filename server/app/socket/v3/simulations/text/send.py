@@ -22,8 +22,8 @@ from app.socket.v3.simulations.group.link import _simulation_group_link_impl
 from app.socket.v3.simulations.message.create import \
     _simulation_message_create_impl
 from app.socket.v3.simulations.streaming.message import (
-    _simulation_message_complete_impl, _simulation_message_start_impl,
-    _simulation_message_token_impl)
+    _simulation_message_complete_impl, _simulation_message_link_persona_impl,
+    _simulation_message_start_impl, _simulation_message_token_impl)
 from app.socket.v3.simulations.streaming.tool_call import (
     _simulation_tool_call_complete_impl, _simulation_tool_call_start_impl,
     _simulation_tool_call_token_impl)
@@ -326,74 +326,12 @@ async def _simulation_text_send_impl(
 
         async with pool.acquire() as conn:
             try:
-                # 1. Get or create a run for this chat (needed for message creation)
-                # We'll get the run details from context later, but for now we need a run_id
-                # For user messages, we'll use the latest run or create one
-                sql_get_run = load_sql(
-                    "sql/v3/simulations/get_or_create_run_for_chat.sql"
-                )
-                # We need context to create a run, so we'll get it first
-                # For now, get the latest run for the chat's group
-                sql_get_latest_run = load_sql(
-                    "sql/v3/simulations/get_latest_run_for_chat.sql"
-                )
-                latest_run_row = await conn.fetchrow(
-                    sql_get_latest_run,
-                    str(chat_id_uuid),
-                )
-
                 # 1. Add the user message to the chat (skip if this is a retry)
                 user_message = None
-                if message_str and message_str.strip() != "" and not is_retry:
-                    # If no run exists yet, we'll create one later when we have context
-                    # For now, we need to get or create a run
-                    if not latest_run_row:
-                        # We'll create the run later when we have full context
-                        # For now, skip message creation and create it after run creation
-                        pass
-                    else:
-                        # Emit internal event to create user message (separate event for database operations)
-                        run_id_for_message = latest_run_row["run_id"]
-                        user_message_result = await _simulation_message_create_impl(
-                            chat_id_uuid,
-                            message_str,
-                            uuid.UUID(run_id_for_message),
-                            sid,
-                        )
-                        if user_message_result:
-                            user_message = {
-                                "id": uuid.UUID(user_message_result["message_id"]),
-                                "created_at": user_message_result["created_at"],
-                            }
-                            # Emit message_sent event for tour progression and cross-component communication
-                            await message_sent(
-                                MessageSentPayload(
-                                    message_id=user_message_result["message_id"],
-                                    chat_id=str(chat_id_uuid),
-                                    message=message_str,
-                                    created_at=user_message_result["created_at"],
-                                ),
-                                room=f"simulation_{chat_id_uuid}",
-                            )
-                            # Log activity
-                            try:
-                                await log_websocket_activity(
-                                    sid=sid,
-                                    event_key="simulations.text.message_sent",
-                                    template="{{ actor.name }} sent message in simulation",
-                                    context={"chat_id": str(chat_id_uuid)},
-                                    endpoint="/socket/v3/simulations/text/send",
-                                    error=False,
-                                )
-                            except Exception as log_error:
-                                logger.warning(
-                                    f"Error logging simulation send activity: {log_error}"
-                                )
-                else:
-                    if is_retry:
-                        logger.info(
-                            f"Skipping user message creation for retry in chat {chat_id_uuid}"
-                        )
+                if is_retry:
+                    logger.info(
+                        f"Skipping user message creation for retry in chat {chat_id_uuid}"
+                    )
 
                 logger.info(f"Processing simulation message for chat {chat_id_uuid}")
 
@@ -411,7 +349,7 @@ async def _simulation_text_send_impl(
                     # Pattern: All AI operations use atomic context+run creation SQL files
                     # See WEBSOCKET_STANDARDS.md for details
                     sql_context = load_sql(
-                        "sql/v3/agents/get_simulation_run_context_and_create_run.sql"
+                        "app/sql/v3/agents/get_simulation_run_context_and_create_run.sql"
                     )
                     try:
                         context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
@@ -551,7 +489,7 @@ async def _simulation_text_send_impl(
 
                     # Get all messages using SQL file
                     sql_messages = load_sql(
-                        "sql/v3/simulations/get_simulation_messages.sql"
+                        "app/sql/v3/simulations/get_simulation_messages.sql"
                     )
                     message_rows = await conn.fetch(sql_messages, str(chat_id_uuid))
                     messages = [dict(row) for row in message_rows]
@@ -593,7 +531,7 @@ async def _simulation_text_send_impl(
                         sid,
                     )
 
-                    # Create user message if it wasn't created earlier (no run existed)
+                    # Create user message after run creation to ensure it links to this run
                     if (
                         not user_message
                         and message_str
@@ -612,6 +550,31 @@ async def _simulation_text_send_impl(
                                 "id": uuid.UUID(user_message_result["message_id"]),
                                 "created_at": user_message_result["created_at"],
                             }
+                            # Emit message_sent event for tour progression and cross-component communication
+                            await message_sent(
+                                MessageSentPayload(
+                                    message_id=user_message_result["message_id"],
+                                    chat_id=str(chat_id_uuid),
+                                    message=message_str,
+                                    created_at=user_message_result["created_at"],
+                                ),
+                                room=f"simulation_{chat_id_uuid}",
+                            )
+                            # Log activity
+                            try:
+                                await log_websocket_activity(
+                                    sid=sid,
+                                    event_key="simulations.text.message_sent",
+                                    template="{{ actor.name }} sent message in simulation",
+                                    context={"chat_id": str(chat_id_uuid)},
+                                    endpoint="/socket/v3/simulations/text/send",
+                                    error=False,
+                                )
+                            except Exception as log_error:
+                                logger.warning(
+                                    "Error logging simulation send activity: "
+                                    f"{log_error}"
+                                )
 
                     # Get all personas for this scenario and create persona tools
                     sql_personas = load_sql("app/sql/v3/voice/get_chat_personas.sql")
@@ -623,7 +586,7 @@ async def _simulation_text_send_impl(
                     if is_retry:
                         # For retry: branch from previous user message
                         sql_prev_user = load_sql(
-                            "sql/v3/simulations/get_previous_user_message.sql"
+                            "app/sql/v3/simulations/get_previous_user_message.sql"
                         )
                         prev_user_row = await conn.fetchrow(
                             sql_prev_user, str(chat_id_uuid)
@@ -640,7 +603,7 @@ async def _simulation_text_send_impl(
                         else:
                             # Fallback: use latest message (shouldn't happen in normal flow)
                             sql_latest = load_sql(
-                                "sql/v3/simulations/get_latest_message.sql"
+                                "app/sql/v3/simulations/get_latest_message.sql"
                             )
                             latest_message_row = await conn.fetchrow(
                                 sql_latest, str(chat_id_uuid)
@@ -673,6 +636,46 @@ async def _simulation_text_send_impl(
 
                     # Track completed tool messages for hint generation
                     completed_tool_messages: list[dict[str, Any]] = []
+
+                    async def finalize_tool_call_message(
+                        tool_call_state: dict[str, Any],
+                        final_message: str,
+                        final_persona: str | None,
+                    ) -> None:
+                        """Finalize a tool call message using unified handlers."""
+                        db_message_id = tool_call_state.get("db_message_id")
+                        if not db_message_id:
+                            return
+
+                        if final_persona:
+                            persona_match = find_persona_by_name_inline(
+                                final_persona, personas
+                            )
+                            if persona_match:
+                                persona_id, _ = persona_match
+                                await _simulation_message_link_persona_impl(
+                                    sid,
+                                    {
+                                        "message_id": str(db_message_id),
+                                        "persona_id": str(persona_id),
+                                        "chat_id": chat_id_str,
+                                    },
+                                    conn=conn,
+                                )
+
+                        await _simulation_message_complete_impl(
+                            sid,
+                            {
+                                "message_id": str(db_message_id),
+                                "chat_id": chat_id_str,
+                                "final_content": final_message,
+                            },
+                            conn=conn,
+                        )
+
+                        completed_tool_messages.append(
+                            {"id": db_message_id, "content": final_message}
+                        )
 
                     # Create wrapper that tracks completed messages
                     async def emit_complete_with_tracking(
@@ -742,7 +745,7 @@ async def _simulation_text_send_impl(
 
                         # Get persona instructions for developer message
                         sql_get_persona_instructions = load_sql(
-                            "sql/v3/voice/get_persona_instructions.sql"
+                            "app/sql/v3/voice/get_persona_instructions.sql"
                         )
                         persona_instruction_rows = await conn.fetch(
                             sql_get_persona_instructions,
@@ -816,36 +819,7 @@ Tool Usage Instructions:
                     # Link run to chat's group (already done above, but keeping for clarity)
                     # Note: Run is already linked to group above via _simulation_group_link_impl
 
-                    # Link system/developer messages to run
-                    sql_link_sys_dev = load_sql(
-                        "sql/v3/model_runs/link_system_developer_messages_to_run.sql"
-                    )
-                    await conn.fetchrow(
-                        sql_link_sys_dev,
-                        str(model_run_id),
-                        context.get("department_id"),
-                        str(chat_id_uuid),
-                    )
-
-                    # Create user message if it wasn't created earlier (no run existed)
-                    if (
-                        not user_message
-                        and message_str
-                        and message_str.strip() != ""
-                        and not is_retry
-                    ):
-                        # Emit internal event to create user message (separate event for database operations)
-                        user_message_result = await _simulation_message_create_impl(
-                            chat_id_uuid,
-                            message_str,
-                            model_run_id,
-                            sid,
-                        )
-                        if user_message_result:
-                            user_message = {
-                                "id": uuid.UUID(user_message_result["message_id"]),
-                                "created_at": user_message_result["created_at"],
-                            }
+                    # Link system/developer messages to run (handled above via internal event)
 
                     # Get tool calls tracking dict for this chat
                     tool_calls_dict = get_simulation_tool_calls_dict()
@@ -1405,7 +1379,7 @@ Tool Usage Instructions:
                                                 if db_message_id:
                                                     # Update DB with final content
                                                     sql_update = load_sql(
-                                                        "sql/v3/simulations/update_message_content.sql"
+                                                        "app/sql/v3/simulations/update_message_content.sql"
                                                     )
                                                     await conn.execute(
                                                         sql_update,
@@ -1415,7 +1389,7 @@ Tool Usage Instructions:
 
                                                     # Update final content
                                                     sql_update_final = load_sql(
-                                                        "sql/v3/simulations/update_message_content_final.sql"
+                                                        "app/sql/v3/simulations/update_message_content_final.sql"
                                                     )
                                                     await conn.execute(
                                                         sql_update_final,
@@ -1425,7 +1399,7 @@ Tool Usage Instructions:
 
                                                     # Complete message
                                                     sql_complete = load_sql(
-                                                        "sql/v3/simulations/complete_message.sql"
+                                                        "app/sql/v3/simulations/complete_message.sql"
                                                     )
                                                     await conn.execute(
                                                         sql_complete,
@@ -1444,7 +1418,7 @@ Tool Usage Instructions:
                                                                 persona_match
                                                             )
                                                             sql_link_persona = load_sql(
-                                                                "sql/v3/simulations/link_message_to_persona.sql"
+                                                                "app/sql/v3/simulations/link_message_to_persona.sql"
                                                             )
                                                             try:
                                                                 await conn.execute(
@@ -1513,24 +1487,14 @@ Tool Usage Instructions:
                                                     f"Failed to parse final tool call arguments: {e}"
                                                 )
                                                 # Still try to complete with what we have
-                                                if tool_call_state["db_message_id"]:
-                                                    final_message = tool_call_state[
-                                                        "message_so_far"
-                                                    ]
-                                                    # Complete message via unified handler
-                                                    await _simulation_message_complete_impl(
-                                                        sid,
-                                                        {
-                                                            "message_id": str(
-                                                                tool_call_state[
-                                                                    "db_message_id"
-                                                                ]
-                                                            ),
-                                                            "chat_id": chat_id_str,
-                                                            "final_content": final_message,
-                                                        },
-                                                        conn=conn,
-                                                    )
+                                                final_message = tool_call_state[
+                                                    "message_so_far"
+                                                ]
+                                                await finalize_tool_call_message(
+                                                    tool_call_state,
+                                                    final_message,
+                                                    tool_call_state["persona_so_far"],
+                                                )
                                                 del tool_calls_dict[chat_id_str][
                                                     tool_call_id
                                                 ]
@@ -1641,7 +1605,7 @@ Tool Usage Instructions:
                                                 if db_message_id:
                                                     # Update DB with final content
                                                     sql_update = load_sql(
-                                                        "sql/v3/simulations/update_message_content.sql"
+                                                        "app/sql/v3/simulations/update_message_content.sql"
                                                     )
                                                     await conn.execute(
                                                         sql_update,
@@ -1651,7 +1615,7 @@ Tool Usage Instructions:
 
                                                     # Update final content
                                                     sql_update_final = load_sql(
-                                                        "sql/v3/simulations/update_message_content_final.sql"
+                                                        "app/sql/v3/simulations/update_message_content_final.sql"
                                                     )
                                                     await conn.execute(
                                                         sql_update_final,
@@ -1661,7 +1625,7 @@ Tool Usage Instructions:
 
                                                     # Complete message
                                                     sql_complete = load_sql(
-                                                        "sql/v3/simulations/complete_message.sql"
+                                                        "app/sql/v3/simulations/complete_message.sql"
                                                     )
                                                     await conn.execute(
                                                         sql_complete,
@@ -1680,7 +1644,7 @@ Tool Usage Instructions:
                                                                 persona_match
                                                             )
                                                             sql_link_persona = load_sql(
-                                                                "sql/v3/simulations/link_message_to_persona.sql"
+                                                                "app/sql/v3/simulations/link_message_to_persona.sql"
                                                             )
                                                             try:
                                                                 await conn.execute(
@@ -1749,27 +1713,17 @@ Tool Usage Instructions:
                                                     f"Failed to parse final tool call arguments: {e}"
                                                 )
                                                 # Still try to complete with what we have
-                                                if tool_call_state["db_message_id"]:
-                                                    final_message = tool_call_state[
-                                                        "message_so_far"
-                                                    ]
-                                                    # Complete message via unified handler
-                                                    await _simulation_message_complete_impl(
-                                                        sid,
-                                                        {
-                                                            "message_id": str(
-                                                                tool_call_state[
-                                                                    "db_message_id"
-                                                                ]
-                                                            ),
-                                                            "chat_id": chat_id_str,
-                                                            "final_content": final_message,
-                                                        },
-                                                        conn=conn,
-                                                    )
-                                                    del tool_calls_dict[chat_id_str][
-                                                        tool_call_id
-                                                    ]
+                                                final_message = tool_call_state[
+                                                    "message_so_far"
+                                                ]
+                                                await finalize_tool_call_message(
+                                                    tool_call_state,
+                                                    final_message,
+                                                    tool_call_state["persona_so_far"],
+                                                )
+                                                del tool_calls_dict[chat_id_str][
+                                                    tool_call_id
+                                                ]
 
                             # Also check for response.output_item.done event which indicates completion
                             if (
@@ -1871,7 +1825,7 @@ Tool Usage Instructions:
                                                     if db_message_id:
                                                         # Update DB with final content
                                                         sql_update = load_sql(
-                                                            "sql/v3/simulations/update_message_content.sql"
+                                                            "app/sql/v3/simulations/update_message_content.sql"
                                                         )
                                                         await conn.execute(
                                                             sql_update,
@@ -1881,7 +1835,7 @@ Tool Usage Instructions:
 
                                                         # Update final content
                                                         sql_update_final = load_sql(
-                                                            "sql/v3/simulations/update_message_content_final.sql"
+                                                            "app/sql/v3/simulations/update_message_content_final.sql"
                                                         )
                                                         await conn.execute(
                                                             sql_update_final,
@@ -1891,7 +1845,7 @@ Tool Usage Instructions:
 
                                                         # Complete message
                                                         sql_complete = load_sql(
-                                                            "sql/v3/simulations/complete_message.sql"
+                                                            "app/sql/v3/simulations/complete_message.sql"
                                                         )
                                                         await conn.execute(
                                                             sql_complete,
@@ -1911,7 +1865,7 @@ Tool Usage Instructions:
                                                                     persona_match
                                                                 )
                                                                 sql_link_persona = load_sql(
-                                                                    "sql/v3/simulations/link_message_to_persona.sql"
+                                                                    "app/sql/v3/simulations/link_message_to_persona.sql"
                                                                 )
                                                                 try:
                                                                     await conn.execute(
@@ -1988,11 +1942,10 @@ Tool Usage Instructions:
                                                             "message_so_far"
                                                         ]
                                                         sql_complete = load_sql(
-                                                            "sql/v3/simulations/complete_message.sql"
+                                                            "app/sql/v3/simulations/complete_message.sql"
                                                         )
                                                         await conn.execute(
                                                             sql_complete,
-                                                            final_message,
                                                             str(
                                                                 tool_call_state[
                                                                     "db_message_id"
@@ -2080,7 +2033,7 @@ Tool Usage Instructions:
 
                                                     # Update DB
                                                     sql_update = load_sql(
-                                                        "sql/v3/simulations/update_message_content.sql"
+                                                        "app/sql/v3/simulations/update_message_content.sql"
                                                     )
                                                     await cleanup_conn.execute(
                                                         sql_update,
@@ -2089,7 +2042,7 @@ Tool Usage Instructions:
                                                     )
 
                                                     sql_update_final = load_sql(
-                                                        "sql/v3/simulations/update_message_content_final.sql"
+                                                        "app/sql/v3/simulations/update_message_content_final.sql"
                                                     )
                                                     await cleanup_conn.execute(
                                                         sql_update_final,
@@ -2098,7 +2051,7 @@ Tool Usage Instructions:
                                                     )
 
                                                     sql_complete = load_sql(
-                                                        "sql/v3/simulations/complete_message.sql"
+                                                        "app/sql/v3/simulations/complete_message.sql"
                                                     )
                                                     await cleanup_conn.execute(
                                                         sql_complete,
@@ -2111,10 +2064,9 @@ Tool Usage Instructions:
                                                             message_id=str(
                                                                 db_message_id
                                                             ),
-                                                            chat_id=chat_id_str,
-                                                            final_content=final_message,
-                                                        ),
-                                                        room=f"simulation_{chat_id_uuid}",
+                                                            "chat_id": chat_id_str,
+                                                            "final_content": final_message,
+                                                        },
                                                     )
 
                                                     completed_tool_messages.append(
@@ -2207,7 +2159,7 @@ Tool Usage Instructions:
                     # Trigger hint generation for practice simulations only (fire and forget)
                     # Use optimized query to get simulation metadata
                     sql = load_sql(
-                        "sql/v3/simulations/get_simulation_metadata_for_chat.sql"
+                        "app/sql/v3/simulations/get_simulation_metadata_for_chat.sql"
                     )
                     sim_metadata_row = await conn.fetchrow(sql, str(chat_id_uuid))
                     if not sim_metadata_row:
@@ -2289,7 +2241,7 @@ Tool Usage Instructions:
                     async with pool.acquire() as conn:
                         # Get run_id from chat_id
                         sql_get_run = load_sql(
-                            "sql/v3/simulations/get_latest_run_for_chat.sql"
+                            "app/sql/v3/simulations/get_latest_run_for_chat.sql"
                         )
                         run_row = await conn.fetchrow(
                             sql_get_run,
@@ -2298,7 +2250,7 @@ Tool Usage Instructions:
                         if run_row:
                             # Create an error message in the database
                             sql = load_sql(
-                                "sql/v3/simulations/insert_error_message.sql"
+                                "app/sql/v3/simulations/insert_error_message.sql"
                             )
                             error_message_record = await conn.fetchrow(
                                 sql,

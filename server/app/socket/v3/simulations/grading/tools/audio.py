@@ -189,7 +189,7 @@ async def _grading_tool_audio_impl(sid: str, data: dict[str, Any]) -> str | None
 
             # Get audio agent context
             sql_audio_context = load_sql(
-                "sql/v3/agents/get_audio_grading_run_context.sql"
+                "app/sql/v3/agents/get_audio_grading_run_context.sql"
             )
             audio_context_row = await conn.fetchrow(
                 sql_audio_context, str(agent_id_uuid), str(department_id_uuid)

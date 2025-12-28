@@ -3,7 +3,7 @@
 from typing import Any
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
-from app.main import _voice_message_ids, _voice_sessions, sio
+from app.main import _voice_message_ids, _voice_message_ids_lock, _voice_sessions, sio
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
@@ -71,9 +71,10 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
             logger.warning(f"No voice session found for chat {chat_id}")
 
         # Clear accumulated message IDs to prevent stale data
-        if chat_id in _voice_message_ids:
-            del _voice_message_ids[chat_id]
-            logger.info(f"Cleared accumulated message IDs for chat {chat_id}")
+        async with _voice_message_ids_lock:
+            if chat_id in _voice_message_ids:
+                del _voice_message_ids[chat_id]
+                logger.info(f"Cleared accumulated message IDs for chat {chat_id}")
 
         await simulation_voice_stop_response(
             StopVoiceResponsePayload(

@@ -127,7 +127,7 @@ async def _rubric_generate_impl(sid: str, data: GenerateRubricPayload) -> None:
             # Get all context data AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
             sql_query = load_sql(
-                "sql/v3/agents/get_rubric_run_context_and_create_run.sql"
+                "app/sql/v3/agents/get_rubric_run_context_and_create_run.sql"
             )
             try:
                 context_row = await conn.fetchrow(

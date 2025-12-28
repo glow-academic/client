@@ -82,7 +82,7 @@ async def _simulation_voice_debug_info_impl(
 
             # Get the latest run for this chat
             sql_get_latest_run = load_sql(
-                "sql/v3/simulations/get_latest_run_for_chat.sql"
+                "app/sql/v3/simulations/get_latest_run_for_chat.sql"
             )
             run_row = await conn.fetchrow(sql_get_latest_run, str(chat_id_uuid))
 

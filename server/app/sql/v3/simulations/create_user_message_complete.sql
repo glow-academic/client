@@ -20,10 +20,15 @@ link_to_run AS (
 ),
 latest_message AS (
     SELECT m.id as parent_id
-    FROM messages m
-    JOIN message_runs mr ON mr.message_id = m.id
-    JOIN chats c ON c.id = $1::uuid
+    FROM chats c
+    JOIN chat_groups cg ON cg.chat_id = c.id
+    JOIN groups g ON g.id = cg.group_id
+    JOIN group_runs gr ON gr.group_id = g.id
+    JOIN runs r ON r.id = gr.run_id
+    JOIN message_runs mr ON mr.run_id = r.id
+    JOIN messages m ON m.id = mr.message_id
     WHERE m.role IN ('user', 'assistant', 'system', 'developer')
+      AND c.id = $1::uuid
     ORDER BY m.created_at DESC
     LIMIT 1
 ),
@@ -49,4 +54,3 @@ SELECT
     lm.parent_id
 FROM new_message nm
 LEFT JOIN latest_message lm ON true
-

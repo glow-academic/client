@@ -43,7 +43,7 @@ async def _simulation_messages_link_impl(
         try:
             # Link system/developer messages to run
             sql_link_sys_dev = load_sql(
-                "sql/v3/model_runs/link_system_developer_messages_to_run.sql"
+                "app/sql/v3/model_runs/link_system_developer_messages_to_run.sql"
             )
             result = await conn.fetchrow(
                 sql_link_sys_dev,

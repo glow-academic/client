@@ -24,6 +24,7 @@ class ScenarioVideoToolPayload(BaseModel):
     scenario_id: str
     video_id: str | None = None  # Optional: if provided, update existing video
     image_ids: list[str] | None = None  # If provided, video generation waits for images
+    images_ready: bool | None = None  # Set by image tool when images are ready
     agent_id: str
     department_id: str | None = None
 
@@ -109,40 +110,47 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
             # Otherwise, store as pending and wait
             import app.socket.v3.scenarios.tools.image as image_tool_module
 
-            # Check if this scenario_id was already pending (meaning images just completed)
-            was_pending = (
-                validated.scenario_id in image_tool_module._pending_video_generations
-            )
+            async with image_tool_module._pending_video_generations_lock:
+                # Check if this scenario_id was already pending (meaning images just completed)
+                was_pending = (
+                    validated.scenario_id in image_tool_module._pending_video_generations
+                )
 
-            if was_pending:
-                # Images are ready - proceed with video generation
-                logger.info(
-                    f"All images ready for scenario {validated.scenario_id}, starting video generation"
-                )
-                # Remove from pending
-                pending_data = image_tool_module._pending_video_generations[
-                    validated.scenario_id
-                ]
-                del image_tool_module._pending_video_generations[validated.scenario_id]
-                # Use pending video_id if available
-                validated.video_id = pending_data.get("video_id")
-                # Fall through to video generation below
-            else:
-                # Store pending video generation - image tool will trigger when ready
-                image_tool_module._pending_video_generations[validated.scenario_id] = {
-                    "image_ids": set(validated.image_ids),
-                    "prompt": validated.prompt,
-                    "agent_id": validated.agent_id,
-                    "department_id": validated.department_id,
-                    "sid": sid,
-                    "trace_id": trace_id,
-                    "video_id": validated.video_id,
-                }
-                logger.info(
-                    f"Video generation queued for scenario {validated.scenario_id}, waiting for {len(validated.image_ids)} images"
-                )
-                # Don't emit completion yet - image tool will trigger actual generation
-                return
+                if was_pending:
+                    # Images are ready - proceed with video generation
+                    logger.info(
+                        f"All images ready for scenario {validated.scenario_id}, starting video generation"
+                    )
+                    # Remove from pending
+                    pending_data = image_tool_module._pending_video_generations[
+                        validated.scenario_id
+                    ]
+                    del image_tool_module._pending_video_generations[validated.scenario_id]
+                    # Use pending video_id if available
+                    validated.video_id = pending_data.get("video_id")
+                    # Fall through to video generation below
+                else:
+                    # If image tool indicates readiness, proceed immediately
+                    if validated.images_ready:
+                        logger.info(
+                            f"Images provided for scenario {validated.scenario_id}, starting video generation"
+                        )
+                    else:
+                        # Store pending video generation - image tool will trigger when ready
+                        image_tool_module._pending_video_generations[validated.scenario_id] = {
+                            "image_ids": set(validated.image_ids),
+                            "prompt": validated.prompt,
+                            "agent_id": validated.agent_id,
+                            "department_id": validated.department_id,
+                            "sid": sid,
+                            "trace_id": trace_id,
+                            "video_id": validated.video_id,
+                        }
+                        logger.info(
+                            f"Video generation queued for scenario {validated.scenario_id}, waiting for {len(validated.image_ids)} images"
+                        )
+                        # Don't emit completion yet - image tool will trigger actual generation
+                        return
 
         # Create or update video for scenario
         # For now, we'll create a new video and link it to the scenario

@@ -208,7 +208,7 @@ async def _simulation_text_practice_impl(
                 # Link parameter items (use selected ones)
                 if data.parameter_item_ids:
                     sql = load_sql(
-                        "sql/v3/scenarios/insert_scenario_parameter_link.sql"
+                        "app/sql/v3/scenarios/insert_scenario_parameter_link.sql"
                     )
                     for param_id_str in data.parameter_item_ids:
                         param_id = uuid.UUID(param_id_str)
@@ -220,7 +220,7 @@ async def _simulation_text_practice_impl(
                 # Link department (only if we have one)
                 if selected_dept_id:
                     sql = load_sql(
-                        "sql/v3/scenarios/insert_scenario_department_link.sql"
+                        "app/sql/v3/scenarios/insert_scenario_department_link.sql"
                     )
                     await conn.execute(sql, new_scenario_id, selected_dept_id, True)
                     logger.info(

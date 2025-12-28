@@ -1,6 +1,7 @@
 """Handler for connect WebSocket event."""
 
 import time
+import uuid
 from urllib.parse import parse_qs
 
 from app.infra.v3.activity.websocket_logger import log_websocket_activity
@@ -52,6 +53,21 @@ async def connect(
         guest_id = params.get("guestId", [None])[0]
     except Exception:  # defensive; ignore malformed
         pass
+
+    # Validate IDs to avoid storing invalid identifiers in Redis/rooms
+    if profile_id:
+        try:
+            uuid.UUID(profile_id)
+        except ValueError:
+            logger.warning(f"Invalid profileId in connect query params: {profile_id}")
+            profile_id = None
+
+    if guest_id:
+        try:
+            uuid.UUID(guest_id)
+        except ValueError:
+            logger.warning(f"Invalid guestId in connect query params: {guest_id}")
+            guest_id = None
 
     logger.info(
         f"Client connecting: sid={sid}, profile_id={profile_id}, guest_id={guest_id}"

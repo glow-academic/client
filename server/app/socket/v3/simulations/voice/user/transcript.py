@@ -29,12 +29,30 @@ class VoiceUserTranscriptPayload(BaseModel):
     upload_id: str | None = None
 
 
+class VoiceUserTranscriptErrorPayload(BaseModel):
+    """Response indicating an error occurred while processing transcript."""
+
+    success: bool
+    message: str
+
+
 # Emit helper functions
 async def simulation_voice_user_transcript_emit(
     payload: VoiceUserTranscriptPayload, room: str
 ) -> None:
     """Emit simulation_voice_user_transcript event to room (server-to-client)."""
     await sio.emit("simulations_voice_user_transcript", payload.model_dump(), room=room)
+
+
+async def simulation_voice_user_transcript_error(
+    payload: VoiceUserTranscriptErrorPayload, room: str
+) -> None:
+    """Emit transcript error event to room (server-to-client)."""
+    await sio.emit(
+        "simulations_voice_user_transcript_error",
+        payload.model_dump(),
+        room=room,
+    )
 
 
 async def _simulation_voice_user_transcript_impl(
@@ -76,12 +94,19 @@ async def _simulation_voice_user_transcript_impl(
         pool = get_pool()
         if not pool:
             logger.error("Database connection pool not available")
+            await simulation_voice_user_transcript_error(
+                VoiceUserTranscriptErrorPayload(
+                    success=False,
+                    message="Database connection pool not available",
+                ),
+                room=room,
+            )
             return
 
         async with pool.acquire() as conn:
             # Get latest run for the chat (now uses groups/group_runs)
             sql_get_latest_run = load_sql(
-                "sql/v3/simulations/get_latest_run_for_chat.sql"
+                "app/sql/v3/simulations/get_latest_run_for_chat.sql"
             )
             latest_run_row = await conn.fetchrow(
                 sql_get_latest_run,
@@ -90,6 +115,13 @@ async def _simulation_voice_user_transcript_impl(
 
             if not latest_run_row:
                 logger.error(f"No run found for chat {chat_id}")
+                await simulation_voice_user_transcript_error(
+                    VoiceUserTranscriptErrorPayload(
+                        success=False,
+                        message="No active run found for chat",
+                    ),
+                    room=room,
+                )
                 return
 
             run_id_for_message = latest_run_row["run_id"]
@@ -129,6 +161,13 @@ async def _simulation_voice_user_transcript_impl(
             )
             if not db_message_id_str:
                 logger.error("Failed to create user message via unified handler")
+                await simulation_voice_user_transcript_error(
+                    VoiceUserTranscriptErrorPayload(
+                        success=False,
+                        message="Failed to create user message",
+                    ),
+                    room=room,
+                )
                 return
 
             user_message_id = uuid.UUID(db_message_id_str)
@@ -143,7 +182,7 @@ async def _simulation_voice_user_transcript_impl(
                 try:
                     upload_id_uuid = uuid.UUID(data.upload_id)
                     sql_insert_message_audio = load_sql(
-                        "sql/v3/simulations/insert_message_audio.sql"
+                        "app/sql/v3/simulations/insert_message_audio.sql"
                     )
                     await conn.execute(
                         sql_insert_message_audio,
@@ -187,9 +226,20 @@ async def _simulation_voice_user_transcript_impl(
         logger.error(
             f"Invalid UUID format in simulation_voice_user_transcript for {sid}: {e}"
         )
+        await simulation_voice_user_transcript_error(
+            VoiceUserTranscriptErrorPayload(
+                success=False,
+                message=f"Invalid UUID format: {str(e)}",
+            ),
+            room=sid,
+        )
     except Exception as e:
         logger.error(
             f"Error handling simulation_voice_user_transcript: {e}", exc_info=True
+        )
+        await simulation_voice_user_transcript_error(
+            VoiceUserTranscriptErrorPayload(success=False, message=str(e)),
+            room=sid,
         )
 
 
@@ -219,4 +269,12 @@ async def simulation_voice_user_transcript_server_api(
     request: VoiceUserTranscriptPayload,
 ) -> dict[str, bool]:
     """Server-to-client event: User transcript from voice simulation."""
+    return {"success": True}
+
+
+@server_router.post("/transcript_error", response_model=dict[str, bool])
+async def simulation_voice_user_transcript_error_api(
+    request: VoiceUserTranscriptErrorPayload,
+) -> dict[str, bool]:
+    """Server-to-client event: Error handling user transcript from voice simulation."""
     return {"success": True}

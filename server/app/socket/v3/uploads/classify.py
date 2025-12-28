@@ -121,10 +121,10 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                 return
 
             # Get user's department for agent selection (use first department or None)
-            user_dept_rows = await conn.fetch(
-                "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true LIMIT 1",
-                profile_id,
+            sql_get_department = load_sql(
+                "app/sql/v3/profile/get_first_department_for_profile.sql"
             )
+            user_dept_rows = await conn.fetch(sql_get_department, profile_id)
             department_id = user_dept_rows[0]["department_id"] if user_dept_rows else None
 
             # Get all context data AND create run in single atomic transaction
@@ -279,7 +279,11 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
             if is_zip:
                 try:
                     with zipfile.ZipFile(file_path, "r") as zip_ref:
-                        file_names = sorted(zip_ref.namelist())
+                        file_names = sorted(
+                            name
+                            for name in zip_ref.namelist()
+                            if name and not name.endswith("/")
+                        )
                 except Exception as e:
                     logger.error(f"Error reading ZIP file: {str(e)}")
                     await classify_upload_error(
@@ -317,11 +321,11 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                         "argument_descriptions", {}
                     ).get(
                         "file_names",
-                        f"List of file names (from the file list above) that match the parameter item '{item['name']}'",
+                        f"List of file numbers (from the file list above) that match the parameter item '{item['name']}'",
                     )
                 else:
                     file_names_desc = (
-                        f"List of file names (from the file list above) that match the parameter item '{item['name']}'"
+                        f"List of file numbers (from the file list above) that match the parameter item '{item['name']}'"
                     )
 
                 # Create function with proper closure capture
@@ -329,12 +333,12 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                     item_dict: dict[str, Any], file_names_descr: str
                 ):
                     async def classify_parameter_item(
-                        file_names: list[str] = Field(description=file_names_descr),
+                        file_numbers: list[str] = Field(description=file_names_descr),
                     ) -> str:
                         """Classify files by matching them to the parameter item: {item_name}
 
                         Args:
-                            file_names: List of file names that match this parameter item
+                            file_numbers: List of file numbers (from the file list above) that match this parameter item
 
                         Returns:
                             Confirmation message
@@ -344,11 +348,11 @@ async def _classify_upload_impl(sid: str, data: ClassifyUploadPayload) -> None:
                         # Store classification result in function-scoped dict
                         if item_dict["id"] not in classification_results:
                             classification_results[item_dict["id"]] = []
-                        classification_results[item_dict["id"]].extend(file_names)
+                        classification_results[item_dict["id"]].extend(file_numbers)
                         logger.info(
-                            f"✓ Classified {len(file_names)} files for {item_dict['name']}"
+                            f"✓ Classified {len(file_numbers)} files for {item_dict['name']}"
                         )
-                        return f"Classified {len(file_names)} file(s) for {item_dict['name']}"
+                        return f"Classified {len(file_numbers)} file(s) for {item_dict['name']}"
 
                     # Set unique function name
                     safe_name = "".join(
@@ -430,7 +434,7 @@ Use the provided classification tools to indicate which files match each paramet
             # Link system message (and scenario developer message if chat_id provided)
             if context["system_prompt"]:
                 sql_link_sys_dev = load_sql(
-                    "sql/v3/model_runs/link_system_developer_messages_to_run.sql"
+                    "app/sql/v3/model_runs/link_system_developer_messages_to_run.sql"
                 )
                 await conn.fetchrow(
                     sql_link_sys_dev,
@@ -623,4 +627,3 @@ async def classify_upload_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred during upload classification."""
     return {"success": True}
-

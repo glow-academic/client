@@ -88,7 +88,7 @@ async def _simulation_voice_user_text_impl(
         async with pool.acquire() as conn:
             # Get latest run for the chat (now uses groups/group_runs)
             sql_get_latest_run = load_sql(
-                "sql/v3/simulations/get_latest_run_for_chat.sql"
+                "app/sql/v3/simulations/get_latest_run_for_chat.sql"
             )
             latest_run_row = await conn.fetchrow(
                 sql_get_latest_run,
