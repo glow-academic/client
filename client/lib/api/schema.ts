@@ -6738,90 +6738,6 @@ export interface components {
              */
             hasOptions: boolean;
         };
-        /**
-         * BenchmarkBundleFilters
-         * @description Filters for benchmark bundle request.
-         */
-        BenchmarkBundleFilters: {
-            /** Evalids */
-            evalIds?: string[] | null;
-            /** Status */
-            status?: string | null;
-            /** Archived */
-            archived?: boolean | null;
-            /** Search */
-            search?: string | null;
-            /**
-             * Page
-             * @default 0
-             */
-            page: number;
-            /**
-             * Pagesize
-             * @default 20
-             */
-            pageSize: number;
-        };
-        /**
-         * BenchmarkBundleResponse
-         * @description Response for benchmark bundle endpoint.
-         */
-        BenchmarkBundleResponse: {
-            /** Evals */
-            evals: components["schemas"]["app__api__v3__benchmark__bundle__EvalItem"][];
-            /** Attempts */
-            attempts: components["schemas"]["EvalAttemptItem"][];
-            /** Total Count */
-            total_count: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__benchmark__bundle__StandardGroupMappingItem"];
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["StandardMappingItem"];
-            };
-            /** Rubric Standard Groups Mapping */
-            rubric_standard_groups_mapping: {
-                [key: string]: {
-                    [key: string]: string[];
-                };
-            };
-            /** Rubric Options */
-            rubric_options: {
-                [key: string]: string;
-            }[];
-            /** Department Options */
-            department_options: {
-                [key: string]: string;
-            }[];
-            /** Agent Options */
-            agent_options: {
-                [key: string]: string;
-            }[];
-        };
         /** BulkArchiveAttemptsRequest */
         BulkArchiveAttemptsRequest: {
             /** Archived */
@@ -8778,40 +8694,10 @@ export interface components {
          */
         EvalAttemptFullResponse: {
             attempt: components["schemas"]["app__api__v3__attempts__eval__AttemptItem"];
-            eval: components["schemas"]["app__api__v3__attempts__eval__EvalItem"];
+            eval: components["schemas"]["EvalItem"];
             /** Runs */
             runs: components["schemas"]["RunItem"][];
             status_summary: components["schemas"]["StatusSummary"];
-        };
-        /**
-         * EvalAttemptItem
-         * @description Individual eval attempt item in the response.
-         */
-        EvalAttemptItem: {
-            /** Attempt Id */
-            attempt_id: string;
-            /** Eval Id */
-            eval_id: string;
-            /** Eval Name */
-            eval_name: string;
-            /** Eval Description */
-            eval_description: string;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Rubric Name */
-            rubric_name: string;
-            /** Created At */
-            created_at: string;
-            /** Archived */
-            archived: boolean;
-            /** Status */
-            status: string;
-            /** Total Runs */
-            total_runs: number;
-            /** Completed Runs */
-            completed_runs: number;
-            /** Pending Runs */
-            pending_runs: number;
         };
         /**
          * EvalCompletedPayload
@@ -8856,6 +8742,40 @@ export interface components {
             message: string;
             /** Test Id */
             test_id: string;
+        };
+        /**
+         * EvalItem
+         * @description Eval item in attempt response.
+         */
+        EvalItem: {
+            /** Eval Id */
+            eval_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Agent Id */
+            agent_id: string;
+            /** Eval Agent Id */
+            eval_agent_id: string;
+            /**
+             * Dynamic
+             * @default false
+             */
+            dynamic: boolean;
+            /** Rubric Name */
+            rubric_name: string;
+            /** Rubric Description */
+            rubric_description: string;
+            /**
+             * System Prompt
+             * @default
+             */
+            system_prompt: string;
+            /** Conversation Agent Name */
+            conversation_agent_name?: string | null;
         };
         /**
          * EvalJoinErrorPayload
@@ -9567,6 +9487,62 @@ export interface components {
             auth_items?: components["schemas"]["QGetAuthNewV3AuthItem"][] | null;
             /** Actor Name */
             actor_name?: string | null;
+        };
+        /** GetBenchmarkBundleApiRequest */
+        GetBenchmarkBundleApiRequest: {
+            /** Eval Ids */
+            eval_ids?: string[] | null;
+            /** Status */
+            status?: string | null;
+            /** Archived */
+            archived?: boolean | null;
+            /** Search */
+            search?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number | null;
+            /**
+             * Page Size
+             * @default 20
+             */
+            page_size: number | null;
+        };
+        /** GetBenchmarkBundleApiResponse */
+        GetBenchmarkBundleApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Evals */
+            evals?: components["schemas"]["QGetBenchmarkBundleV3Eval"][] | null;
+            /** Attempts */
+            attempts?: components["schemas"]["QGetBenchmarkBundleV3EvalAttempt"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetBenchmarkBundleV3Rubric"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetBenchmarkBundleV3Department"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetBenchmarkBundleV3Agent"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["QGetBenchmarkBundleV3StandardGroup"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["QGetBenchmarkBundleV3Standard"][] | null;
+            /** Rubric Standard Groups */
+            rubric_standard_groups?: components["schemas"]["QGetBenchmarkBundleV3RubricStandardGroup"][] | null;
+            /** Rubric Options */
+            rubric_options?: components["schemas"]["QGetBenchmarkBundleV3RubricOption"][] | null;
+            /** Department Options */
+            department_options?: components["schemas"]["QGetBenchmarkBundleV3DepartmentOption"][] | null;
+            /** Agent Options */
+            agent_options?: components["schemas"]["QGetBenchmarkBundleV3AgentOption"][] | null;
+            /** Total Count */
+            total_count?: number | null;
+            /** Page */
+            page?: number | null;
+            /** Page Size */
+            page_size?: number | null;
+            /** Total Pages */
+            total_pages?: number | null;
         };
         /** GetCertificateDataApiRequest */
         GetCertificateDataApiRequest: Record<string, never>;
@@ -13803,6 +13779,155 @@ export interface components {
             key_id: string | null;
             /** Encrypted */
             encrypted: boolean | null;
+        };
+        /** QGetBenchmarkBundleV3Agent */
+        QGetBenchmarkBundleV3Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetBenchmarkBundleV3AgentOption */
+        QGetBenchmarkBundleV3AgentOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
+        /** QGetBenchmarkBundleV3Department */
+        QGetBenchmarkBundleV3Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetBenchmarkBundleV3DepartmentOption */
+        QGetBenchmarkBundleV3DepartmentOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
+        /** QGetBenchmarkBundleV3Eval */
+        QGetBenchmarkBundleV3Eval: {
+            /** Eval Id */
+            eval_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Dynamic */
+            dynamic: boolean | null;
+            /** Rubric Name */
+            rubric_name: string | null;
+            /** Rubric Description */
+            rubric_description: string | null;
+            /** Total Runs */
+            total_runs: number | null;
+            /** Completed Runs */
+            completed_runs: number | null;
+            /** Pending Runs */
+            pending_runs: number | null;
+            /** Status */
+            status: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+        };
+        /** QGetBenchmarkBundleV3EvalAttempt */
+        QGetBenchmarkBundleV3EvalAttempt: {
+            /** Attempt Id */
+            attempt_id: string | null;
+            /** Eval Id */
+            eval_id: string | null;
+            /** Eval Name */
+            eval_name: string | null;
+            /** Eval Description */
+            eval_description: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Rubric Name */
+            rubric_name: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Archived */
+            archived: boolean | null;
+            /** Status */
+            status: string | null;
+            /** Total Runs */
+            total_runs: number | null;
+            /** Completed Runs */
+            completed_runs: number | null;
+            /** Pending Runs */
+            pending_runs: number | null;
+        };
+        /** QGetBenchmarkBundleV3Rubric */
+        QGetBenchmarkBundleV3Rubric: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+        };
+        /** QGetBenchmarkBundleV3RubricOption */
+        QGetBenchmarkBundleV3RubricOption: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
+        };
+        /** QGetBenchmarkBundleV3RubricStandardGroup */
+        QGetBenchmarkBundleV3RubricStandardGroup: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Standard Ids */
+            standard_ids: string[] | null;
+        };
+        /** QGetBenchmarkBundleV3Standard */
+        QGetBenchmarkBundleV3Standard: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** QGetBenchmarkBundleV3StandardGroup */
+        QGetBenchmarkBundleV3StandardGroup: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
         };
         /** QGetCohortDetailV3Department */
         QGetCohortDetailV3Department: {
@@ -20018,40 +20143,6 @@ export interface components {
             /** Conversation Max Turns */
             conversation_max_turns?: number | null;
         };
-        /**
-         * EvalItem
-         * @description Eval item in attempt response.
-         */
-        app__api__v3__attempts__eval__EvalItem: {
-            /** Eval Id */
-            eval_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Agent Id */
-            agent_id: string;
-            /** Eval Agent Id */
-            eval_agent_id: string;
-            /**
-             * Dynamic
-             * @default false
-             */
-            dynamic: boolean;
-            /** Rubric Name */
-            rubric_name: string;
-            /** Rubric Description */
-            rubric_description: string;
-            /**
-             * System Prompt
-             * @default
-             */
-            system_prompt: string;
-            /** Conversation Agent Name */
-            conversation_agent_name?: string | null;
-        };
         /** AttemptItem */
         app__api__v3__attempts__simulation__AttemptItem: {
             /** Id */
@@ -20090,58 +20181,6 @@ export interface components {
         };
         /** StandardGroupMappingItem */
         app__api__v3__attempts__simulation__StandardGroupMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-        };
-        /**
-         * EvalItem
-         * @description Individual eval item in the response.
-         */
-        app__api__v3__benchmark__bundle__EvalItem: {
-            /** Eval Id */
-            eval_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Agent Id */
-            agent_id: string;
-            /** Rubric Name */
-            rubric_name: string;
-            /** Rubric Description */
-            rubric_description: string;
-            /** Total Runs */
-            total_runs: number;
-            /** Completed Runs */
-            completed_runs: number;
-            /** Pending Runs */
-            pending_runs: number;
-            /** Status */
-            status: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * StandardGroupMappingItem
-         * @description Standard group mapping item with rubric context.
-         */
-        app__api__v3__benchmark__bundle__StandardGroupMappingItem: {
             /** Name */
             name: string;
             /** Description */
@@ -26082,7 +26121,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BenchmarkBundleFilters"];
+                "application/json": components["schemas"]["GetBenchmarkBundleApiRequest"];
             };
         };
         responses: {
@@ -26092,7 +26131,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BenchmarkBundleResponse"];
+                    "application/json": components["schemas"]["GetBenchmarkBundleApiResponse"];
                 };
             };
             /** @description Validation Error */

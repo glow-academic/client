@@ -66,18 +66,75 @@ export default async function BenchmarkPage() {
   // Fetch benchmark bundle server-side (includes evals list and attempts)
   const bundleData = await getBenchmarkBundle(bundleFilters);
 
+  // Convert arrays to dicts for backward compatibility with Benchmark component
+  // API now returns arrays instead of dicts (composite types)
+  const rubricMapping: Record<string, Record<string, unknown>> = {};
+  for (const rubric of bundleData.rubrics || []) {
+    rubricMapping[rubric.rubric_id] = {
+      name: rubric.name,
+      description: rubric.description,
+      points: rubric.points,
+      pass_points: rubric.pass_points,
+    };
+  }
+
+  const departmentMapping: Record<string, { name: string; description: string }> = {};
+  for (const dept of bundleData.departments || []) {
+    departmentMapping[dept.department_id] = {
+      name: dept.name,
+      description: dept.description,
+    };
+  }
+
+  const agentMapping: Record<string, Record<string, unknown>> = {};
+  for (const agent of bundleData.agents || []) {
+    agentMapping[agent.agent_id] = {
+      name: agent.name,
+      description: agent.description,
+    };
+  }
+
+  const standardGroupsMapping: Record<string, { name: string; description: string; points: number; passPoints: number }> = {};
+  for (const sg of bundleData.standard_groups || []) {
+    standardGroupsMapping[sg.standard_group_id] = {
+      name: sg.name,
+      description: sg.description,
+      points: sg.points,
+      passPoints: sg.pass_points,
+    };
+  }
+
+  const standardsMapping: Record<string, { name: string; description: string; points: number }> = {};
+  for (const std of bundleData.standards || []) {
+    standardsMapping[std.standard_id] = {
+      name: std.name,
+      description: std.description,
+      points: std.points,
+    };
+  }
+
+  // Build rubric_standard_groups_mapping from array
+  const rubricStandardGroupsMapping: Record<string, Record<string, string[]>> = {};
+  for (const rsg of bundleData.rubric_standard_groups || []) {
+    if (!rubricStandardGroupsMapping[rsg.rubric_id]) {
+      rubricStandardGroupsMapping[rsg.rubric_id] = {};
+    }
+    rubricStandardGroupsMapping[rsg.rubric_id][rsg.standard_group_id] = 
+      rsg.standard_ids.map(id => id.toString());
+  }
+
   // Extract evals list structure from bundle for Benchmark component
   const evalsData: EvalsListOut = {
     evals: bundleData.evals,
-    rubric_mapping: bundleData.rubric_mapping,
-    department_mapping: bundleData.department_mapping,
-    agent_mapping: bundleData.agent_mapping,
-    standard_groups_mapping: bundleData.standard_groups_mapping,
-    standards_mapping: bundleData.standards_mapping,
-    rubric_standard_groups_mapping: bundleData.rubric_standard_groups_mapping,
-    rubric_options: bundleData.rubric_options,
-    department_options: bundleData.department_options,
-    agent_options: bundleData.agent_options,
+    rubric_mapping: rubricMapping,
+    department_mapping: departmentMapping,
+    agent_mapping: agentMapping,
+    standard_groups_mapping: standardGroupsMapping,
+    standards_mapping: standardsMapping,
+    rubric_standard_groups_mapping: rubricStandardGroupsMapping,
+    rubric_options: bundleData.rubric_options || [],
+    department_options: bundleData.department_options || [],
+    agent_options: bundleData.agent_options || [],
   };
 
   // Build rubric mappings from evals list response (similar to practice page)

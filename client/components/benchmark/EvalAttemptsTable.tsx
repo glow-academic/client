@@ -141,7 +141,7 @@ export default function EvalAttemptsTable({
         const filters: BenchmarkBundleIn = {
           body: {
             page,
-            pageSize,
+            page_size: pageSize,  // snake_case
             ...(status && { status }),
             ...(searchTerm && { search: searchTerm }),
           },

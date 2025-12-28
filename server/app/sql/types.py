@@ -939,6 +939,199 @@ class UpdateAuthApiResponse(BaseModel):
 
 
 
+# Generated from: get_benchmark_bundle
+
+class GetBenchmarkBundleSqlParams(BaseModel):
+
+    profile_id: UUID
+    eval_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    status: str | None = None
+    archived: bool | None = None
+    search: str | None = None
+    page: int | None = 0
+    page_size: int | None = 20
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.eval_ids,
+            self.status,
+            self.archived,
+            self.search,
+            self.page,
+            self.page_size,
+        )
+
+class QGetBenchmarkBundleV3Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetBenchmarkBundleV3AgentOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QGetBenchmarkBundleV3Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetBenchmarkBundleV3DepartmentOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QGetBenchmarkBundleV3Eval(BaseModel):
+
+    eval_id: UUID | None
+    name: str | None
+    description: str | None
+    rubric_id: UUID | None
+    agent_id: UUID | None
+    dynamic: bool | None
+    rubric_name: str | None
+    rubric_description: str | None
+    total_runs: int | None
+    completed_runs: int | None
+    pending_runs: int | None
+    status: str | None
+    created_at: str | None
+    updated_at: str | None
+    department_ids: list[str] | None
+    can_edit: bool | None
+    can_delete: bool | None
+
+
+
+
+class QGetBenchmarkBundleV3EvalAttempt(BaseModel):
+
+    attempt_id: UUID | None
+    eval_id: UUID | None
+    eval_name: str | None
+    eval_description: str | None
+    rubric_id: UUID | None
+    rubric_name: str | None
+    created_at: str | None
+    archived: bool | None
+    status: str | None
+    total_runs: int | None
+    completed_runs: int | None
+    pending_runs: int | None
+
+
+
+
+class QGetBenchmarkBundleV3Rubric(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+
+
+
+class QGetBenchmarkBundleV3RubricOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QGetBenchmarkBundleV3RubricStandardGroup(BaseModel):
+
+    rubric_id: UUID | None
+    standard_group_id: UUID | None
+    standard_ids: list[UUID] | None
+
+
+
+
+class QGetBenchmarkBundleV3Standard(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetBenchmarkBundleV3StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetBenchmarkBundleSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    evals: list[QGetBenchmarkBundleV3Eval] | None = None
+    attempts: list[QGetBenchmarkBundleV3EvalAttempt] | None = None
+    rubrics: list[QGetBenchmarkBundleV3Rubric] | None = None
+    departments: list[QGetBenchmarkBundleV3Department] | None = None
+    agents: list[QGetBenchmarkBundleV3Agent] | None = None
+    standard_groups: list[QGetBenchmarkBundleV3StandardGroup] | None = None
+    standards: list[QGetBenchmarkBundleV3Standard] | None = None
+    rubric_standard_groups: list[QGetBenchmarkBundleV3RubricStandardGroup] | None = None
+    rubric_options: list[QGetBenchmarkBundleV3RubricOption] | None = None
+    department_options: list[QGetBenchmarkBundleV3DepartmentOption] | None = None
+    agent_options: list[QGetBenchmarkBundleV3AgentOption] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+
+class GetBenchmarkBundleApiRequest(BaseModel):
+
+    eval_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    status: str | None = None
+    archived: bool | None = None
+    search: str | None = None
+    page: int | None = 0
+    page_size: int | None = 20
+
+class GetBenchmarkBundleApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    evals: list[QGetBenchmarkBundleV3Eval] | None = None
+    attempts: list[QGetBenchmarkBundleV3EvalAttempt] | None = None
+    rubrics: list[QGetBenchmarkBundleV3Rubric] | None = None
+    departments: list[QGetBenchmarkBundleV3Department] | None = None
+    agents: list[QGetBenchmarkBundleV3Agent] | None = None
+    standard_groups: list[QGetBenchmarkBundleV3StandardGroup] | None = None
+    standards: list[QGetBenchmarkBundleV3Standard] | None = None
+    rubric_standard_groups: list[QGetBenchmarkBundleV3RubricStandardGroup] | None = None
+    rubric_options: list[QGetBenchmarkBundleV3RubricOption] | None = None
+    department_options: list[QGetBenchmarkBundleV3DepartmentOption] | None = None
+    agent_options: list[QGetBenchmarkBundleV3AgentOption] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+
+
+
 # Generated from: create_cohort
 
 class CreateCohortSqlParams(BaseModel):
@@ -10238,6 +10431,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateAuthApiRequest",
         "UpdateAuthApiResponse",
     ),
+    "app/sql/v3/benchmark/get_benchmark_bundle_complete.sql": (
+        "GetBenchmarkBundleSqlParams",
+        "GetBenchmarkBundleSqlRow",
+        "GetBenchmarkBundleApiRequest",
+        "GetBenchmarkBundleApiResponse",
+    ),
     "app/sql/v3/cohorts/create_cohort_complete.sql": (
         "CreateCohortSqlParams",
         "CreateCohortSqlRow",
@@ -11103,6 +11302,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v3/auth/update_auth_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v3/benchmark/get_benchmark_bundle_complete.sql"]
     ) -> SqlString: ...
 
     @overload
